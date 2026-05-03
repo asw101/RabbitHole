@@ -72,7 +72,22 @@ public class ProjectCodeGeneratorTest {
 
   @Test
   public void generatedLauncherPassesStartingArgsToProgramMain() throws Exception {
-    Path sourceDirectory = temporaryFolder.newFolder("launcher-runtime-src").toPath();
+    assertGeneratedLauncherPassesStartingArgsToProgramMain(
+        "launcher-runtime",
+        new String[] {"alpha", "beta"});
+  }
+
+  @Test
+  public void generatedLauncherPreservesEmptyStartingArgsToProgramMain() throws Exception {
+    String[] args = {};
+    assertSame(
+        args,
+        assertGeneratedLauncherPassesStartingArgsToProgramMain("launcher-empty-args-runtime", args));
+  }
+
+  private String[] assertGeneratedLauncherPassesStartingArgsToProgramMain(String folderName, String[] args)
+      throws Exception {
+    Path sourceDirectory = temporaryFolder.newFolder(folderName + "-src").toPath();
     ProjectCodeGenerator.generateLauncher(sourceDirectory.toFile());
     writeJavaSource(
         sourceDirectory.resolve("Program.java"),
@@ -117,7 +132,7 @@ public class ProjectCodeGeneratorTest {
         public class Stage {
         }
         """);
-    Path classesDirectory = temporaryFolder.newFolder("launcher-runtime-classes").toPath();
+    Path classesDirectory = temporaryFolder.newFolder(folderName + "-classes").toPath();
     compileJavaSources(
         classesDirectory,
         sourceDirectory.resolve("AliceJavaFXLauncher.java"),
@@ -130,11 +145,12 @@ public class ProjectCodeGeneratorTest {
         ClassLoader.getPlatformClassLoader())) {
       Class<?> launcherClass = Class.forName("AliceJavaFXLauncher", true, classLoader);
       Class<?> programClass = Class.forName("Program", true, classLoader);
-      String[] args = {"alpha", "beta"};
 
       launcherClass.getMethod("main", String[].class).invoke(null, (Object) args);
 
-      assertArrayEquals(args, waitForStringArray(programClass.getField("receivedArgs")));
+      String[] receivedArgs = waitForStringArray(programClass.getField("receivedArgs"));
+      assertArrayEquals(args, receivedArgs);
+      return receivedArgs;
     }
   }
 
