@@ -108,7 +108,7 @@ public class AudioResource extends Resource {
   private double duration = Double.NaN;
   private File tempFile = null;
 
-  protected AudioResource(UUID uuid) {
+  public AudioResource(UUID uuid) {
     super(uuid);
   }
 

@@ -167,14 +167,14 @@ public class JsonProjectIo extends DataSourceIo implements ProjectIo {
       try (InputStream resourceStream = is) {
         byte[] data = InputStreamUtilities.getBytes(resourceStream);
         if (resourceReference instanceof ImageReference imageReference) {
-          ImageResource resource = ImageResource.valueOf(imageReference.uuid.toString());
+          ImageResource resource = new ImageResource(Objects.requireNonNull(imageReference.uuid));
           applyResourceReference(resource, imageReference, data);
           resource.setWidth((int) imageReference.width);
           resource.setHeight((int) imageReference.height);
           return resource;
         }
         if (resourceReference instanceof AudioReference audioReference) {
-          AudioResource resource = AudioResource.valueOf(audioReference.uuid.toString());
+          AudioResource resource = new AudioResource(Objects.requireNonNull(audioReference.uuid));
           applyResourceReference(resource, audioReference, data);
           resource.setDuration(audioReference.duration);
           return resource;

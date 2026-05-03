@@ -1,6 +1,10 @@
 package org.lgna.project.io;
 
+import org.alice.tweedle.file.Manifest;
 import org.alice.tweedle.file.ManifestEncoderDecoder;
+import org.alice.tweedle.file.AudioReference;
+import org.alice.tweedle.file.ImageReference;
+import org.alice.tweedle.file.ResourceReference;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -8,6 +12,7 @@ import org.lgna.common.Resource;
 import org.lgna.common.resources.AudioResource;
 import org.lgna.common.resources.ImageResource;
 import org.lgna.project.Project;
+import org.lgna.project.ProjectVersion;
 import org.lgna.project.Version;
 import org.lgna.project.ast.BlockStatement;
 import org.lgna.project.ast.JavaType;
@@ -173,6 +178,52 @@ public class IoUtilitiesTest {
     assertArrayEquals(pathLike.getData(), resourcesById.get(pathLike.getId()).getData());
   }
 
+  @Test
+  public void jsonPlayerImageReadsWithSameUuidDoNotMutateEarlierRead() throws Exception {
+    UUID sharedId = UUID.randomUUID();
+    byte[] firstData = new byte[] {1, 2, 3};
+    byte[] secondData = new byte[] {4, 5, 6};
+    File firstArchive = temporaryFolder.newFile("first-image.a3w");
+    File secondArchive = temporaryFolder.newFile("second-image.a3w");
+    writePlayerArchive(firstArchive, imageReference(sharedId, "first.png", "png"), firstData);
+    writePlayerArchive(secondArchive, imageReference(sharedId, "second.png", "png"), secondData);
+
+    ImageResource firstRead = (ImageResource) onlyResource(IoUtilities.readProject(firstArchive));
+    ImageResource secondRead = (ImageResource) onlyResource(IoUtilities.readProject(secondArchive));
+
+    assertNotSame(firstRead, secondRead);
+    assertEquals(sharedId, firstRead.getId());
+    assertEquals(sharedId, secondRead.getId());
+    assertEquals("first.png", firstRead.getName());
+    assertArrayEquals(firstData, firstRead.getData());
+    assertEquals("second.png", secondRead.getName());
+    assertArrayEquals(secondData, secondRead.getData());
+  }
+
+  @Test
+  public void jsonPlayerAudioReadsWithSameUuidDoNotMutateEarlierRead() throws Exception {
+    UUID sharedId = UUID.randomUUID();
+    byte[] firstData = new byte[] {1, 2, 3};
+    byte[] secondData = new byte[] {4, 5, 6};
+    File firstArchive = temporaryFolder.newFile("first-audio.a3w");
+    File secondArchive = temporaryFolder.newFile("second-audio.a3w");
+    writePlayerArchive(firstArchive, audioReference(sharedId, "first.wav", 1.0), firstData);
+    writePlayerArchive(secondArchive, audioReference(sharedId, "second.wav", 2.0), secondData);
+
+    AudioResource firstRead = (AudioResource) onlyResource(IoUtilities.readProject(firstArchive));
+    AudioResource secondRead = (AudioResource) onlyResource(IoUtilities.readProject(secondArchive));
+
+    assertNotSame(firstRead, secondRead);
+    assertEquals(sharedId, firstRead.getId());
+    assertEquals(sharedId, secondRead.getId());
+    assertEquals("first.wav", firstRead.getName());
+    assertArrayEquals(firstData, firstRead.getData());
+    assertEquals(1.0, firstRead.getDuration(), 0.0);
+    assertEquals("second.wav", secondRead.getName());
+    assertArrayEquals(secondData, secondRead.getData());
+    assertEquals(2.0, secondRead.getDuration(), 0.0);
+  }
+
   private static NamedUserType programType(String name) {
     NamedUserType type = new NamedUserType();
     type.name.setValue(name);
@@ -214,6 +265,32 @@ public class IoUtilitiesTest {
     return resources;
   }
 
+  private static Resource onlyResource(Project project) {
+    assertEquals(1, project.getResources().size());
+    return project.getResources().iterator().next();
+  }
+
+  private static ImageReference imageReference(UUID uuid, String name, String format) {
+    ImageReference reference = new ImageReference();
+    reference.uuid = uuid;
+    reference.name = name;
+    reference.format = format;
+    reference.file = "resources/" + name;
+    reference.width = 1;
+    reference.height = 1;
+    return reference;
+  }
+
+  private static AudioReference audioReference(UUID uuid, String name, double duration) {
+    AudioReference reference = new AudioReference();
+    reference.uuid = uuid;
+    reference.name = name;
+    reference.format = "audio.x_wav";
+    reference.file = "resources/" + name;
+    reference.duration = duration;
+    return reference;
+  }
+
   private static void writePlayerArchive(File file, String version) throws Exception {
     Project project = new Project(programType("Program"), Project.SceneCameraType.WindowCamera);
     try (ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(file))) {
@@ -222,9 +299,26 @@ public class IoUtilitiesTest {
     }
   }
 
+  private static void writePlayerArchive(File file, ResourceReference resourceReference, byte[] data) throws Exception {
+    Project project = new Project(programType("Program"), Project.SceneCameraType.WindowCamera);
+    Manifest manifest = project.createExportManifest();
+    manifest.resources.add(resourceReference);
+    try (ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(file))) {
+      writeZipEntry(zipOutputStream, ProjectIo.VERSION_ENTRY_NAME, ProjectVersion.getCurrentVersion().toString());
+      writeZipEntry(zipOutputStream, ProjectIo.MANIFEST_ENTRY_NAME, ManifestEncoderDecoder.toJson(manifest));
+      writeZipEntry(zipOutputStream, resourceReference.file, data);
+    }
+  }
+
   private static void writeZipEntry(ZipOutputStream zipOutputStream, String name, String content) throws Exception {
     zipOutputStream.putNextEntry(new ZipEntry(name));
     zipOutputStream.write(content.getBytes(StandardCharsets.UTF_8));
+    zipOutputStream.closeEntry();
+  }
+
+  private static void writeZipEntry(ZipOutputStream zipOutputStream, String name, byte[] content) throws Exception {
+    zipOutputStream.putNextEntry(new ZipEntry(name));
+    zipOutputStream.write(content);
     zipOutputStream.closeEntry();
   }
 
