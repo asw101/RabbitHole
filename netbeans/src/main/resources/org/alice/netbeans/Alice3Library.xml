@@ -21,7 +21,7 @@
     <resource>nbinst:/modules/ext/org.alice.netbeans/org-alice/scenegraph.jar</resource>
     <resource>nbinst:/modules/ext/org.alice.netbeans/org-alice/glrender.jar</resource>
     <resource>nbinst:/modules/ext/org.alice.netbeans/org-alice/ast.jar</resource>
-    <resource>nbinst:/modules/ext/org.alice.netbeans/org-alice/story-api.jar/</resource>
+    <resource>nbinst:/modules/ext/org.alice.netbeans/org-alice/story-api.jar</resource>
     <resource>nbinst:/modules/ext/org.alice.netbeans/org-alice/tweedle.jar</resource>
 
     <resource>nbinst:/modules/ext/org.alice.netbeans/org-alice/models.jar</resource>
