@@ -3,6 +3,7 @@ package org.alice.netbeans.project;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.lgna.common.Resource;
 import org.lgna.project.Project;
 import org.lgna.project.ast.JavaType;
 import org.lgna.project.ast.NamedUserType;
@@ -12,10 +13,12 @@ import org.openide.filesystems.FileObject;
 
 import java.io.File;
 import java.io.Reader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Properties;
+import java.util.UUID;
 
 import static org.junit.Assert.*;
 
@@ -73,10 +76,48 @@ public class ProjectCodeGeneratorTest {
     assertTrue(programSource.contains("class Program extends SProgram"));
   }
 
+  @Test
+  public void generatesResourceFileAndResourcesTypeFromSyntheticAliceProject() throws Exception {
+    byte[] data = "hello alice".getBytes(StandardCharsets.UTF_8);
+    Project project = new Project(programType("Program"), Project.SceneCameraType.WindowCamera);
+    project.addResource(new TestResource("note.txt", "text/plain", data));
+    File aliceProject = temporaryFolder.newFile("synthetic-resource.a3p");
+    IoUtilities.writeProject(aliceProject, project);
+    File sourceDirectory = temporaryFolder.newFolder("generated-resource-src");
+
+    ProjectCodeGenerator.generateCode(aliceProject, sourceDirectory, null, false);
+
+    Path generatedResourcePath = sourceDirectory.toPath().resolve("resources").resolve("note.txt");
+    Path resourcesTypePath = sourceDirectory.toPath().resolve("Resources.java");
+    assertArrayEquals(data, Files.readAllBytes(generatedResourcePath));
+    assertTrue(Files.exists(resourcesTypePath));
+    String resourcesSource = Files.readString(resourcesTypePath);
+    assertTrue(resourcesSource.contains("class Resources"));
+    assertTrue(resourcesSource.contains("note.txt"));
+  }
+
   private static NamedUserType programType(String name) {
     NamedUserType type = new NamedUserType();
     type.name.setValue(name);
     type.superType.setValue(JavaType.getInstance(SProgram.class));
     return type;
+  }
+
+  public static class TestResource extends Resource {
+    public TestResource(String fileName, String contentType, byte[] data) {
+      super(fileName, contentType, data);
+    }
+
+    public TestResource(Class<?> resourceClass, String resourceName, String contentType) {
+      super(resourceClass, resourceName, contentType);
+    }
+
+    private TestResource(UUID uuid) {
+      super(uuid);
+    }
+
+    public static TestResource valueOf(String uuidText) {
+      return new TestResource(UUID.fromString(uuidText));
+    }
   }
 }
