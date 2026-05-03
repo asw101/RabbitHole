@@ -204,7 +204,7 @@ public class ProjectCodeGenerator {
     return filesToOpen;
   }
 
-  private static FileObject generateLauncher(File javaSrcDirectory) {
+  static FileObject generateLauncher(File javaSrcDirectory) {
     File file = new File(javaSrcDirectory, LAUNCHER_FILE_NAME);
     TextFileUtilities.write(file, LAUNCHER_FILE);
     return FileUtil.toFileObject(file);

@@ -269,6 +269,13 @@
       <artifactId>commons-discovery</artifactId>
       <version>${commons.discovery.version}</version>
     </dependency>
+
+    <!-- Test -->
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <profiles>
