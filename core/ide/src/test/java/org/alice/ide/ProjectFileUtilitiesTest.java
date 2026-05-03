@@ -85,12 +85,7 @@ public class ProjectFileUtilitiesTest {
     Files.writeString(secondBackup, "second", StandardCharsets.UTF_8);
     Files.writeString(savedBackup, "saved", StandardCharsets.UTF_8);
     Files.writeString(nonProjectBackup, "text", StandardCharsets.UTF_8);
-    ProjectFileUtilities backupUtilities = new ProjectFileUtilities(null) {
-      @Override
-      public Path defaultBackupDirectory() {
-        return defaultBackupDirectory;
-      }
-    };
+    ProjectFileUtilities backupUtilities = defaultBackupDirectoryUtilities(defaultBackupDirectory);
     File savedProject = new File(temporaryFolder.getRoot(), "world.a3p");
 
     backupUtilities.copyDefaultBackupDirectory(savedProject);
@@ -102,6 +97,30 @@ public class ProjectFileUtilitiesTest {
     assertEquals("second", Files.readString(namedBackupDirectory.resolve(secondBackup.getFileName()), StandardCharsets.UTF_8));
     assertEquals("saved", Files.readString(savedBackup, StandardCharsets.UTF_8));
     assertEquals("text", Files.readString(nonProjectBackup, StandardCharsets.UTF_8));
+  }
+
+  @Test
+  public void copyDefaultBackupDirectoryDoesNothingWhenDefaultBackupDirectoryIsMissing() throws IOException {
+    Path defaultBackupDirectory = temporaryFolder.getRoot().toPath().resolve(".defaultbak");
+    ProjectFileUtilities backupUtilities = defaultBackupDirectoryUtilities(defaultBackupDirectory);
+    File savedProject = new File(temporaryFolder.getRoot(), "world.a3p");
+
+    backupUtilities.copyDefaultBackupDirectory(savedProject);
+
+    assertFalse(Files.exists(defaultBackupDirectory));
+    assertFalse(Files.exists(temporaryFolder.getRoot().toPath().resolve("world.bak")));
+  }
+
+  @Test
+  public void copyDefaultBackupDirectoryDoesNothingWhenDefaultBackupDirectoryIsEmpty() throws IOException {
+    Path defaultBackupDirectory = temporaryFolder.newFolder(".defaultbak").toPath();
+    ProjectFileUtilities backupUtilities = defaultBackupDirectoryUtilities(defaultBackupDirectory);
+    File savedProject = new File(temporaryFolder.getRoot(), "world.a3p");
+
+    backupUtilities.copyDefaultBackupDirectory(savedProject);
+
+    assertTrue(Files.isDirectory(defaultBackupDirectory));
+    assertFalse(Files.exists(temporaryFolder.getRoot().toPath().resolve("world.bak")));
   }
 
   @Test
@@ -313,6 +332,16 @@ public class ProjectFileUtilitiesTest {
     type.name.setValue(name);
     type.superType.setValue(JavaType.getInstance(SProgram.class));
     return type;
+  }
+
+  private static ProjectFileUtilities defaultBackupDirectoryUtilities(Path defaultBackupDirectory) {
+    return new ProjectFileUtilities(null) {
+      @Override
+      Path defaultBackupDirectory(boolean createIfMissing) {
+        assertFalse(createIfMissing);
+        return defaultBackupDirectory;
+      }
+    };
   }
 
   private static NamedUserType programTypeReferencingImageResource(String name, ImageResource imageResource) {

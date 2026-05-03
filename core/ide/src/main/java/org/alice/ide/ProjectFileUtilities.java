@@ -23,11 +23,11 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 import static edu.cmu.cs.dennisc.java.io.FileUtilities.*;
 import static org.lgna.project.io.IoUtilities.PROJECT_EXTENSION;
@@ -65,21 +65,32 @@ public class ProjectFileUtilities {
     return PROJECT_EXTENSION.equals(getExtension(f.getName()));
   }
 
-  final void copyDefaultBackupDirectory(File file) {
-    File defaultBackupDir = defaultBackupDirectory().toFile();
-    File namedBackupDir = backupDirectory(file, false).toFile();
+  final void copyDefaultBackupDirectory(File file) throws IOException {
+    Path defaultBackupDir = defaultBackupDirectory(false);
+    if (!Files.isDirectory(defaultBackupDir)) {
+      return;
+    }
 
-    try {
-      namedBackupDir.createNewFile();
+    List<Path> backups;
+    try (Stream<Path> defaultBackups = Files.list(defaultBackupDir)) {
+      backups = defaultBackups
+          .filter(path -> {
+            String name = path.getFileName().toString();
+            return name.startsWith("auto") && name.endsWith(".a3p");
+          })
+          .toList();
+    }
+    if (backups.isEmpty()) {
+      return;
+    }
 
-      File[] files = defaultBackupDir.listFiles((f, name) -> name.startsWith("auto") && name.endsWith(".a3p"));
+    Path namedBackupDir = backupDirectory(file, false);
+    if (namedBackupDir == null) {
+      throw new IOException("Unable to create backup directory for " + file);
+    }
 
-      for (File f : Objects.requireNonNull(files)) {
-        Path dest = namedBackupDir.toPath().resolve(f.getName());
-        Files.move(f.toPath(), dest);
-      }
-    } catch (SecurityException | IOException e) {
-      Logger.throwable(e, "Unable to copy backup directory for new project to " + namedBackupDir);
+    for (Path backup : backups) {
+      Files.move(backup, namedBackupDir.resolve(backup.getFileName()));
     }
   }
 
@@ -233,9 +244,14 @@ public class ProjectFileUtilities {
   }
 
   public Path defaultBackupDirectory() {
-    Path projectsDir = StageIDE.getActiveInstance().getProjectsDirectory().toPath();
+    return defaultBackupDirectory(true);
+  }
 
-    return createAndGetBackupDirectory(projectsDir.resolve("." + DEFAULT_BACKUP_DIR));
+  Path defaultBackupDirectory(boolean createIfMissing) {
+    Path projectsDir = StageIDE.getActiveInstance().getProjectsDirectory().toPath();
+    Path backupDir = projectsDir.resolve("." + DEFAULT_BACKUP_DIR);
+
+    return createIfMissing ? createAndGetBackupDirectory(backupDir) : backupDir;
   }
 
   public Path appropriateBackupDirectory(File saved) {
