@@ -88,6 +88,14 @@ public class ProjectCodeGenerator {
   }
 
   public static Collection<FileObject> generateCode(File aliceProjectFile, File javaSrcDirectory, ProgressHandle progressHandle) throws IOException, VersionNotSupportedException {
+    return generateCode(aliceProjectFile, javaSrcDirectory, progressHandle, true);
+  }
+
+  static Collection<FileObject> generateCode(
+      File aliceProjectFile,
+      File javaSrcDirectory,
+      ProgressHandle progressHandle,
+      boolean formatGeneratedFiles) throws IOException, VersionNotSupportedException {
     Project aliceProject = IoUtilities.readProject(aliceProjectFile);
     JavaCodeGenerator.Builder javaCodeGeneratorBuilder = JavaCodeUtilities.createJavaCodeGeneratorBuilder();
     //JavaCodeGenerator.Builder javaCodeGeneratorBuilder = new JavaCodeGenerator.Builder().isLambdaSupported(true);
@@ -167,6 +175,13 @@ public class ProjectCodeGenerator {
     filesToOpen.add(fileObject);
     progress(progressHandle, "create: ", fileObject, createWorkUnit);
 
+    if (formatGeneratedFiles) {
+      formatGeneratedFiles(fileObjectsToFormat, progressHandle);
+    }
+    return filesToOpen;
+  }
+
+  private static void formatGeneratedFiles(List<FileObject> fileObjectsToFormat, ProgressHandle progressHandle) {
     if (progressHandle != null) {
       progressHandle.switchToDeterminate(fileObjectsToFormat.size());
     }
@@ -201,7 +216,6 @@ public class ProjectCodeGenerator {
       }
       formatWorkUnit++;
     }
-    return filesToOpen;
   }
 
   static FileObject generateLauncher(File javaSrcDirectory) {
