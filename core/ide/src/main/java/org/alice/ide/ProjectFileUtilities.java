@@ -207,7 +207,8 @@ public class ProjectFileUtilities {
 
   public Path backupDirectory(File saved, boolean isBackup) {
     if (isBackup) {
-      return saved.getParentFile().toPath();
+      File parent = saved.getParentFile();
+      return parent == null ? null : parent.toPath();
     }
 
     String fileName = saved.getName();
