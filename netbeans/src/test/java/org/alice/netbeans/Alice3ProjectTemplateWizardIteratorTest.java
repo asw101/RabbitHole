@@ -41,6 +41,8 @@ public class Alice3ProjectTemplateWizardIteratorTest {
           StandardCharsets.UTF_8);
 
       assertTrue(properties.contains("javac.release = 21"));
+      assertTrue(properties.contains("javac.source = 21"));
+      assertTrue(properties.contains("javac.target = 21"));
       assertTrue(properties.contains("javac.classpath = \\\n    ${libs.Alice3Library.classpath}"));
       assertTrue(properties.contains("main.class = AliceJavaFXLauncher"));
       assertTrue(properties.contains("-Dorg.alice.ide.rootDirectory=\"${libs.Alice3Library.src}_root\""));
