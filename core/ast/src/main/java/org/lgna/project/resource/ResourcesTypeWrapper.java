@@ -102,9 +102,20 @@ public class ResourcesTypeWrapper {
   private static String getResourceFileName(Resource resource) {
     String originalFileName = resource.getOriginalFileName();
     if (originalFileName != null && !originalFileName.trim().isEmpty()) {
-      return originalFileName;
+      String sanitizedFileName = sanitizeFileName(originalFileName);
+      if (!sanitizedFileName.isEmpty()) {
+        return sanitizedFileName;
+      }
     }
     return getFixedName(resource);
+  }
+
+  private static String sanitizeFileName(String fileName) {
+    String sanitized = fileName.replace('/', '_').replace('\\', '_').trim();
+    if (sanitized.equals(".") || sanitized.equals("..")) {
+      return "";
+    }
+    return sanitized;
   }
 
   private static String createResourcePath(Resource resource, Set<String> usedResourcePaths) {

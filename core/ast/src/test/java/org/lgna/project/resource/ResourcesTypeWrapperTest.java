@@ -60,6 +60,23 @@ public class ResourcesTypeWrapperTest {
     assertEquals("resources/friendly_image", wrapper.getResourcePathForResource(resource));
   }
 
+  @Test
+  public void mapsUnsafeOriginalFileNameToSingleResourceFileSegment() {
+    TestResource resource = new TestResource("../folder\\image.png");
+    ResourcesTypeWrapper wrapper = new ResourcesTypeWrapper(resources(resource));
+
+    assertEquals("resources/.._folder_image.png", wrapper.getResourcePathForResource(resource));
+  }
+
+  @Test
+  public void mapsParentDirectoryOriginalFileNameToFixedResourceNamePath() {
+    TestResource resource = new TestResource("..");
+    resource.setName("safe image");
+    ResourcesTypeWrapper wrapper = new ResourcesTypeWrapper(resources(resource));
+
+    assertEquals("resources/safe_image", wrapper.getResourcePathForResource(resource));
+  }
+
   private static Set<Resource> resources(Resource... resources) {
     Set<Resource> resourceSet = new LinkedHashSet<>();
     for (Resource resource : resources) {

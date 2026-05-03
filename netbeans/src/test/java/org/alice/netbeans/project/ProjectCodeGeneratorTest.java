@@ -215,6 +215,23 @@ public class ProjectCodeGeneratorTest {
     assertGeneratedResourceLoads(sourceDirectory.toPath(), data);
   }
 
+  @Test
+  public void generatedSyntheticResourcesLoadUnsafeOriginalFileName() throws Exception {
+    byte[] data = "hello alice".getBytes(StandardCharsets.UTF_8);
+    TestResource resource = new TestResource("note.txt", "text/plain", data);
+    resource.setOriginalFileName("../folder\\note.txt");
+    Project project = new Project(programType("Program"), Project.SceneCameraType.WindowCamera);
+    project.addResource(resource);
+    File aliceProject = temporaryFolder.newFile("synthetic-resource-unsafe-original-name.a3p");
+    IoUtilities.writeProject(aliceProject, project);
+    File sourceDirectory = temporaryFolder.newFolder("runtime-unsafe-original-name-src");
+    ProjectCodeGenerator.generateCode(aliceProject, sourceDirectory, null, false);
+
+    assertTrue(Files.exists(sourceDirectory.toPath().resolve("resources").resolve(".._folder_note.txt")));
+    assertFalse(Files.exists(sourceDirectory.toPath().resolve("folder").resolve("note.txt")));
+    assertGeneratedResourceLoads(sourceDirectory.toPath(), data);
+  }
+
   private static NamedUserType programType(String name) {
     NamedUserType type = new NamedUserType();
     type.name.setValue(name);
