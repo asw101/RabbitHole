@@ -122,6 +122,22 @@ public class ProjectCodeGeneratorTest {
         sourceDirectory.toPath().resolve("AliceJavaFXLauncher.java"));
   }
 
+  @Test
+  public void generatedSyntheticResourceProjectSourcesCompile() throws Exception {
+    Project project = new Project(programType("Program"), Project.SceneCameraType.WindowCamera);
+    project.addResource(new TestResource("note.txt", "text/plain", "hello alice".getBytes(StandardCharsets.UTF_8)));
+    File aliceProject = temporaryFolder.newFile("synthetic-resource-compile.a3p");
+    IoUtilities.writeProject(aliceProject, project);
+    File sourceDirectory = temporaryFolder.newFolder("compiled-resource-source-src");
+    ProjectCodeGenerator.generateCode(aliceProject, sourceDirectory, null, false);
+
+    compileJavaSources(
+        temporaryFolder.newFolder("compiled-resource-classes").toPath(),
+        sourceDirectory.toPath().resolve("Program.java"),
+        sourceDirectory.toPath().resolve("AliceJavaFXLauncher.java"),
+        sourceDirectory.toPath().resolve("Resources.java"));
+  }
+
   private static NamedUserType programType(String name) {
     NamedUserType type = new NamedUserType();
     type.name.setValue(name);
