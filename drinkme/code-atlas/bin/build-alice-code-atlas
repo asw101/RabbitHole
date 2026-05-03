@@ -1,0 +1,909 @@
+#!/usr/bin/env bash
+# Generate Alice source-truth code-atlas artifacts under a caller-provided output directory.
+
+set -euo pipefail
+
+usage() {
+  cat >&2 <<'EOF'
+Usage: build-alice-code-atlas --repo-root PATH --output-dir PATH [--format both|mermaid|dot]
+EOF
+}
+
+fail() {
+  printf 'error: %s\n' "$*" >&2
+  exit 1
+}
+
+repo_root=""
+output_dir=""
+format="both"
+
+while [[ "$#" -gt 0 ]]; do
+  case "$1" in
+    --repo-root)
+      [[ "$#" -ge 2 ]] || fail "--repo-root requires a path"
+      repo_root="$2"
+      shift 2
+      ;;
+    --output-dir)
+      [[ "$#" -ge 2 ]] || fail "--output-dir requires a path"
+      output_dir="$2"
+      shift 2
+      ;;
+    --format)
+      [[ "$#" -ge 2 ]] || fail "--format requires mermaid, dot, or both"
+      format="$2"
+      shift 2
+      ;;
+    --help|-h)
+      usage
+      exit 0
+      ;;
+    *)
+      fail "unsupported argument: $1"
+      ;;
+  esac
+done
+
+[[ -n "${repo_root}" ]] || fail "missing --repo-root"
+[[ -n "${output_dir}" ]] || fail "missing --output-dir"
+
+if [[ ! -d "${repo_root}" ]]; then
+  fail "repo root not found or not a directory: ${repo_root}"
+fi
+
+repo_root="$(cd "${repo_root}" && pwd)"
+[[ -f "${repo_root}/pom.xml" ]] || fail "repository pom.xml not found under repo root: ${repo_root}"
+
+case "${format}" in
+  both|mermaid|dot) ;;
+  *) fail "unsupported format '${format}'; expected Mermaid, DOT, or both" ;;
+esac
+
+if [[ -e "${output_dir}" && ! -d "${output_dir}" ]]; then
+  fail "output path exists but is not a directory: ${output_dir}"
+fi
+mkdir -p "${output_dir}"
+output_dir="$(cd "${output_dir}" && pwd)"
+
+rel() {
+  local path="$1"
+  path="${path#${repo_root}/}"
+  printf '%s\n' "${path}"
+}
+
+line_for() {
+  local file="$1"
+  local pattern="$2"
+  local line
+  line="$(grep -n -F "${pattern}" "${repo_root}/${file}" | head -1 | cut -d: -f1 || true)"
+  if [[ -n "${line}" ]]; then
+    printf '%s:%s' "${file}" "${line}"
+  else
+    printf '%s' "${file}"
+  fi
+}
+
+extract_first_reactor_modules() {
+  awk '
+    /<modules>/ {
+      in_modules = 1
+      next
+    }
+    /<\/modules>/ {
+      if (in_modules) {
+        exit
+      }
+    }
+    in_modules && /<module>/ {
+      line = $0
+      sub(/^.*<module>/, "", line)
+      sub(/<\/module>.*$/, "", line)
+      print line
+    }
+  ' "${repo_root}/pom.xml"
+}
+
+java_scan_roots() {
+  for root in core alice-ide netbeans installer external core-nonfree; do
+    [[ -d "${repo_root}/${root}" ]] && printf '%s\0' "${repo_root}/${root}"
+  done
+}
+
+largest_java_files() {
+  local roots=()
+  while IFS= read -r -d '' root; do
+    roots+=("${root}")
+  done < <(java_scan_roots)
+
+  [[ "${#roots[@]}" -gt 0 ]] || return 0
+  find "${roots[@]}" \
+    -path '*/src/*/java/*' \
+    -name '*.java' \
+    -type f \
+    -not -path '*/target/*' \
+    -print0 2>/dev/null \
+    | xargs -0 -r -n 100000 wc -l \
+    | awk -v root="${repo_root}/" '$2 != "total" {
+        path = $2
+        sub(root, "", path)
+        print $1 "\t" path
+      }' \
+    | sort -nr \
+    | sed -n '1,25p'
+}
+
+module_java_loc_rows() {
+  for module in core/* alice-ide netbeans installer external/* core-nonfree/*; do
+    [[ -d "${repo_root}/${module}/src" ]] || continue
+    local loc
+    loc="$(
+      find "${repo_root}/${module}/src" \
+        -name '*.java' \
+        -type f \
+        -not -path '*/target/*' \
+        -print0 2>/dev/null \
+        | xargs -0 -r -n 100000 wc -l \
+        | awk '$2 != "total" {sum += $1} END {print sum + 0}'
+    )"
+    printf '%s\t%s\n' "${loc}" "${module}"
+  done | sort -nr
+}
+
+write_module_graph_mmd() {
+  cat >"${output_dir}/alice-module-graph.mmd" <<'EOF'
+flowchart TD
+  repo["rysweet/alice3-modernization<br/>source-truth input"]
+  rootPom["root pom.xml<br/>default reactor"]
+
+  repo --> rootPom
+
+  subgraph defaultReactor["Default Maven reactor (pom.xml:101-126)"]
+    core["core"]
+    coreAst["core/ast"]
+    coreCroquet["core/croquet"]
+    coreI18n["core/i18n"]
+    coreIde["core/ide"]
+    coreImageEditor["core/image-editor"]
+    coreIssueReporting["core/issue-reporting"]
+    coreResources["core/resources"]
+    coreScenegraph["core/scenegraph"]
+    coreGlrender["core/glrender"]
+    coreMigration["core/story-api-migration"]
+    coreStoryApi["core/story-api"]
+    coreUtil["core/util"]
+    coreModelLoading["core/model-loading"]
+    coreTweedle["core/tweedle"]
+    coreModels["core/models"]
+    external["external"]
+    externalCollada["external/collada"]
+    externalColladaSchema["external/collada-schema-1-4-1"]
+    externalWrappedFlow["external/wrapped-flow-layout"]
+    aliceIde["alice-ide"]
+    netbeans["netbeans"]
+  end
+
+  rootPom --> defaultReactor
+  core --> coreAst
+  core --> coreCroquet
+  core --> coreI18n
+  core --> coreIde
+  core --> coreImageEditor
+  core --> coreIssueReporting
+  core --> coreResources
+  core --> coreScenegraph
+  core --> coreGlrender
+  core --> coreMigration
+  core --> coreStoryApi
+  core --> coreUtil
+  core --> coreModelLoading
+  core --> coreTweedle
+  core --> coreModels
+  external --> externalCollada
+  external --> externalColladaSchema
+  external --> externalWrappedFlow
+
+  subgraph includeSims["includeSims profile (default active unless -DincludeSims=false)"]
+    coreNonfree["core-nonfree"]
+    ideNonfree["core-nonfree/ide-nonfree"]
+    resourcesNonfree["core-nonfree/resources-nonfree"]
+    storyApiNonfree["core-nonfree/story-api-nonfree"]
+    modelsNonfree["core-nonfree/models-nonfree"]
+  end
+
+  rootPom -. "pom.xml:681-696" .-> includeSims
+  coreNonfree --> ideNonfree
+  coreNonfree --> resourcesNonfree
+  coreNonfree --> storyApiNonfree
+  coreNonfree --> modelsNonfree
+
+  subgraph buildInstaller["buildInstaller profile (-DbuildInstaller=true)"]
+    installer["installer"]
+  end
+
+  rootPom -. "pom.xml:765-776" .-> buildInstaller
+
+  subgraph tweedleGeneration["Tweedle generation seam"]
+    tweedleLang["tweedle-lang/Grammar<br/>TweedleLexer.g4<br/>TweedleParser.g4"]
+    antlr["antlr4-maven-plugin<br/>core/tweedle/pom.xml:90-107"]
+    generatedTweedle["target/generated-sources/antlr4/org/alice/tweedle"]
+  end
+
+  tweedleLang --> antlr --> generatedTweedle --> coreTweedle
+
+  subgraph aliceRuntime["Alice IDE runtime-root seam"]
+    execPlugin["exec-maven-plugin<br/>alice-ide/pom.xml:172-180"]
+    rootProperty["org.alice.ide.rootDirectory"]
+    resourcesDistribution["../core/resources/target/distribution"]
+    applicationRoot["ApplicationRoot.initializeIfNecessary()<br/>hard failure if missing"]
+  end
+
+  aliceIde --> execPlugin --> rootProperty --> resourcesDistribution
+  rootProperty --> applicationRoot
+  coreResources --> resourcesDistribution
+
+  subgraph netbeansPackaging["NetBeans packaging and template seam"]
+    nbmPlugin["nbm-maven-plugin<br/>netbeans/pom.xml:430-441"]
+    pack200["installerPack200Enable=true"]
+    projectTemplate["ProjectTemplate.zip"]
+    antSmoke["Alice3ProjectTemplateAntSmokeTest"]
+    optionalArtifacts["optional models-nonfree<br/>story-api-nonfree"]
+  end
+
+  netbeans --> nbmPlugin --> pack200
+  netbeans --> projectTemplate --> antSmoke
+  antSmoke --> optionalArtifacts
+  optionalArtifacts -. "candidate path mismatch" .-> includeSims
+
+  classDef default fill:#eef7ff,stroke:#4b83b6,color:#111;
+  classDef profile fill:#fff4dc,stroke:#b67b00,color:#111;
+  classDef seam fill:#f2ecff,stroke:#7353ba,color:#111;
+  classDef risk fill:#ffecec,stroke:#b64b4b,color:#111;
+
+  class core,coreAst,coreCroquet,coreI18n,coreIde,coreImageEditor,coreIssueReporting,coreResources,coreScenegraph,coreGlrender,coreMigration,coreStoryApi,coreUtil,coreModelLoading,coreTweedle,coreModels,external,externalCollada,externalColladaSchema,externalWrappedFlow,aliceIde,netbeans default;
+  class coreNonfree,ideNonfree,resourcesNonfree,storyApiNonfree,modelsNonfree,installer profile;
+  class tweedleLang,antlr,generatedTweedle,execPlugin,rootProperty,resourcesDistribution,applicationRoot,nbmPlugin,pack200,projectTemplate,antSmoke seam;
+  class optionalArtifacts risk;
+EOF
+}
+
+write_module_graph_dot() {
+  cat >"${output_dir}/alice-module-graph.dot" <<'EOF'
+digraph AliceCodeAtlas {
+  graph [
+    label="Alice source-truth code-atlas",
+    labelloc="t",
+    fontsize=20,
+    rankdir=LR,
+    compound=true
+  ];
+
+  node [shape=box, style="rounded,filled", fillcolor="#eef7ff", color="#4b83b6", fontname="Arial"];
+  edge [fontname="Arial", color="#555555"];
+
+  repo [label="rysweet/alice3-modernization\nsource-truth input"];
+  rootPom [label="root pom.xml\ndefault reactor"];
+  repo -> rootPom;
+
+  subgraph cluster_default {
+    label="Default Maven reactor (pom.xml:101-126)";
+    color="#4b83b6";
+    style="rounded";
+    core [label="core"];
+    coreAst [label="core/ast"];
+    coreCroquet [label="core/croquet"];
+    coreI18n [label="core/i18n"];
+    coreIde [label="core/ide"];
+    coreImageEditor [label="core/image-editor"];
+    coreIssueReporting [label="core/issue-reporting"];
+    coreResources [label="core/resources"];
+    coreScenegraph [label="core/scenegraph"];
+    coreGlrender [label="core/glrender"];
+    coreMigration [label="core/story-api-migration"];
+    coreStoryApi [label="core/story-api"];
+    coreUtil [label="core/util"];
+    coreModelLoading [label="core/model-loading"];
+    coreTweedle [label="core/tweedle"];
+    coreModels [label="core/models"];
+    external [label="external"];
+    externalCollada [label="external/collada"];
+    externalColladaSchema [label="external/collada-schema-1-4-1"];
+    externalWrappedFlow [label="external/wrapped-flow-layout"];
+    aliceIde [label="alice-ide"];
+    netbeans [label="netbeans"];
+  }
+
+  rootPom -> core [lhead=cluster_default];
+  core -> coreAst;
+  core -> coreCroquet;
+  core -> coreI18n;
+  core -> coreIde;
+  core -> coreImageEditor;
+  core -> coreIssueReporting;
+  core -> coreResources;
+  core -> coreScenegraph;
+  core -> coreGlrender;
+  core -> coreMigration;
+  core -> coreStoryApi;
+  core -> coreUtil;
+  core -> coreModelLoading;
+  core -> coreTweedle;
+  core -> coreModels;
+  external -> externalCollada;
+  external -> externalColladaSchema;
+  external -> externalWrappedFlow;
+
+  subgraph cluster_includeSims {
+    label="includeSims profile - default active unless -DincludeSims=false (pom.xml:681-696)";
+    color="#b67b00";
+    style="rounded";
+    node [fillcolor="#fff4dc", color="#b67b00"];
+    coreNonfree [label="core-nonfree"];
+    ideNonfree [label="core-nonfree/ide-nonfree"];
+    resourcesNonfree [label="core-nonfree/resources-nonfree"];
+    storyApiNonfree [label="core-nonfree/story-api-nonfree"];
+    modelsNonfree [label="core-nonfree/models-nonfree"];
+  }
+
+  rootPom -> coreNonfree [style=dashed, label="profile"];
+  coreNonfree -> ideNonfree;
+  coreNonfree -> resourcesNonfree;
+  coreNonfree -> storyApiNonfree;
+  coreNonfree -> modelsNonfree;
+
+  subgraph cluster_buildInstaller {
+    label="buildInstaller profile - -DbuildInstaller=true (pom.xml:765-776)";
+    color="#b67b00";
+    style="rounded";
+    node [fillcolor="#fff4dc", color="#b67b00"];
+    installer [label="installer"];
+  }
+
+  rootPom -> installer [style=dashed, label="profile"];
+
+  subgraph cluster_tweedle {
+    label="Tweedle generation seam";
+    color="#7353ba";
+    style="rounded";
+    node [fillcolor="#f2ecff", color="#7353ba"];
+    tweedleLang [label="tweedle-lang/Grammar\nTweedleLexer.g4\nTweedleParser.g4"];
+    antlr [label="antlr4-maven-plugin\ncore/tweedle/pom.xml:90-107"];
+    generatedTweedle [label="target/generated-sources/antlr4/org/alice/tweedle"];
+  }
+
+  tweedleLang -> antlr -> generatedTweedle -> coreTweedle;
+
+  subgraph cluster_runtime {
+    label="Alice IDE runtime-root seam";
+    color="#7353ba";
+    style="rounded";
+    node [fillcolor="#f2ecff", color="#7353ba"];
+    execPlugin [label="exec-maven-plugin\nalice-ide/pom.xml:172-180"];
+    rootProperty [label="org.alice.ide.rootDirectory"];
+    resourcesDistribution [label="../core/resources/target/distribution"];
+    applicationRoot [label="ApplicationRoot.initializeIfNecessary()\nhard failure if missing"];
+  }
+
+  aliceIde -> execPlugin -> rootProperty -> resourcesDistribution;
+  rootProperty -> applicationRoot;
+  coreResources -> resourcesDistribution;
+
+  subgraph cluster_netbeans {
+    label="NetBeans packaging and template seam";
+    color="#7353ba";
+    style="rounded";
+    node [fillcolor="#f2ecff", color="#7353ba"];
+    nbmPlugin [label="nbm-maven-plugin\nnetbeans/pom.xml:430-441"];
+    pack200 [label="installerPack200Enable=true"];
+    projectTemplate [label="ProjectTemplate.zip"];
+    antSmoke [label="Alice3ProjectTemplateAntSmokeTest"];
+    optionalArtifacts [label="optional models-nonfree\nstory-api-nonfree", fillcolor="#ffecec", color="#b64b4b"];
+  }
+
+  netbeans -> nbmPlugin -> pack200;
+  netbeans -> projectTemplate -> antSmoke;
+  antSmoke -> optionalArtifacts;
+  optionalArtifacts -> coreNonfree [style=dashed, label="candidate path mismatch"];
+}
+EOF
+}
+
+write_source_truth() {
+  {
+    cat <<'EOF'
+# Alice Code-Atlas Source-Truth Contract
+
+This artifact is generated from the current checked-out source for `rysweet/alice3-modernization`. It defines the durable `drinkme/code-atlas` source-truth contract for the Alice code-atlas bug-hunt lane.
+
+The atlas output is for bug-hunt and refactor planning. It exposes structural risks, stale documentation risks, dead-path candidates, class and module hotspots, and refactor seams without changing Alice runtime behavior.
+
+## Feature contract
+
+| Requirement | Documentation behavior |
+| --- | --- |
+| Artifact-only lane | Write durable atlas output only under `drinkme/code-atlas/` |
+| Source truth first | Derive claims from checked-in files, Maven metadata, tests, and repository docs |
+| No runtime changes | Do not modify Alice source or generated runtime output while refreshing atlas docs |
+| No source copying | Do not copy Alice source into `drinkme`; cite paths and line ranges instead |
+| Profile-aware architecture | Keep default reactor, `includeSims`, and `buildInstaller` boundaries visually distinct |
+| Conservative findings | Keep candidates and needs-attention risks separate from confirmed bugs |
+| Repository-local tracking | If an issue is later justified, file only against `rysweet/alice3-modernization` |
+
+## How to use these artifacts
+
+| Need | Artifact |
+| --- | --- |
+| Understand Maven reactor and profile boundaries | [alice-module-graph.mmd](./alice-module-graph.mmd) or [alice-module-graph.dot](./alice-module-graph.dot) |
+| Identify large classes and modules before refactoring | [alice-hotspots.md](./alice-hotspots.md) |
+| Check stale docs, TODOs, HACKs, and compatibility markers | [alice-staleness-map.md](./alice-staleness-map.md) |
+| Review candidate bug-hunt findings | [alice-bughunt-findings.md](./alice-bughunt-findings.md) |
+
+## Source truth
+
+| Source | Role |
+| --- | --- |
+| `pom.xml` | Root Maven reactor, default modules, profile-gated modules, dependency-management source |
+| Module `pom.xml` files | Per-module packaging, plugin, dependency, launch, and generation source |
+| Java source under `core/`, `alice-ide/`, `netbeans/`, `installer/`, `external/`, and `core-nonfree/` | Structural and hotspot source |
+| `README.md` and checked-in docs | Documentation-drift source |
+| `tweedle-lang/Grammar` | Required grammar submodule for broad Maven validation |
+| Existing tests | Characterization and integration evidence |
+
+Generated `target/` output is excluded from hotspot metrics unless a finding explicitly discusses generated-code risk.
+
+## Repository and scan metadata
+
+| Field | Value |
+| --- | --- |
+| Repository | `rysweet/alice3-modernization` |
+| Atlas scope | Source-truth architecture and bug-hunt documentation |
+| Durable artifact root | `drinkme/code-atlas/` |
+| Upstream tracking | Not used for modernization findings |
+| Merge policy | No merge without explicit approval |
+
+## Root reactor
+
+The default root reactor is defined in `pom.xml:101-126`.
+
+| Module | Evidence | Notes |
+| --- | --- | --- |
+EOF
+
+    while IFS= read -r module; do
+      case "${module}" in
+        core) note="Parent/aggregator for core modules" ;;
+        core/ast) note="AST, serialization, VM-related code" ;;
+        core/croquet) note="UI framework" ;;
+        core/i18n) note="Internationalization support" ;;
+        core/ide) note="Main IDE implementation" ;;
+        core/image-editor) note="Image editor module" ;;
+        core/issue-reporting) note="Issue reporting module" ;;
+        core/resources) note="Runtime resources and distribution content" ;;
+        core/scenegraph) note="Scenegraph model" ;;
+        core/glrender) note="OpenGL rendering" ;;
+        core/story-api-migration) note="Project migration logic" ;;
+        core/story-api) note="Story API" ;;
+        core/util) note="Shared utilities" ;;
+        core/model-loading) note="Model loading/export" ;;
+        core/tweedle) note="Tweedle language integration" ;;
+        core/models) note="Built-in model resources" ;;
+        external) note="External parent/aggregator" ;;
+        external/collada) note="Collada support" ;;
+        external/collada-schema-1-4-1) note="Collada schema" ;;
+        external/wrapped-flow-layout) note="Wrapped flow layout dependency" ;;
+        alice-ide) note="Alice IDE launcher module" ;;
+        netbeans) note="NetBeans plugin and project template" ;;
+        *) note="Root reactor module" ;;
+      esac
+      printf '| `%s` | `%s` | %s |\n' "${module}" "$(line_for pom.xml "<module>${module}</module>")" "${note}"
+    done < <(extract_first_reactor_modules)
+
+    cat <<'EOF'
+
+## Profile-gated boundaries
+
+| Boundary | Source truth | Behavior |
+| --- | --- | --- |
+| `includeSims` | `pom.xml:681-696` | Active by default unless `-DincludeSims=false`; adds `core-nonfree` modules |
+| `buildInstaller` | `pom.xml:765-776` | Active only with `-DbuildInstaller=true`; adds `installer` |
+| `only-eclipse` | `pom.xml:724-763` | Stores Eclipse m2e lifecycle mapping only; no Maven build behavior change |
+
+The `includeSims` modules are:
+
+| Module | Evidence |
+| --- | --- |
+| `core-nonfree` | `pom.xml:691` |
+| `core-nonfree/ide-nonfree` | `pom.xml:692` |
+| `core-nonfree/resources-nonfree` | `pom.xml:693` |
+| `core-nonfree/story-api-nonfree` | `pom.xml:694` |
+| `core-nonfree/models-nonfree` | `pom.xml:695` |
+
+## Build and validation preconditions
+
+Alice builds that reach `core/tweedle` require the Tweedle grammar submodule. The build enforces `tweedle-lang/Grammar/TweedleLexer.g4` and `tweedle-lang/Grammar/TweedleParser.g4` in `core/tweedle/pom.xml:61-73`.
+
+Use these checks before broad Maven validation:
+
+```bash
+git submodule status tweedle-lang
+test -d tweedle-lang/Grammar
+```
+
+If the grammar directory is missing:
+
+```bash
+git submodule update --init tweedle-lang
+```
+
+The README documents the same checkout diagnostic in `README.md:26-43`.
+
+## Runtime and packaging seams
+
+| Seam | Evidence | Atlas treatment |
+| --- | --- | --- |
+| Alice IDE launch root | `alice-ide/pom.xml:172-180` sets `org.alice.ide.rootDirectory` to `../core/resources/target/distribution` | Show as a runtime-root dependency in both module graphs |
+| ApplicationRoot hard failure | `core/util/src/main/java/edu/cmu/cs/dennisc/app/ApplicationRoot.java:61-87` exits when `org.alice.ide.rootDirectory` is missing or invalid | Track as a refactor-risk seam, not a bug by itself |
+| NetBeans NBM packaging | `netbeans/pom.xml:430-441` uses `nbm-maven-plugin` and `installerPack200Enable=true` | Track as a packaging compatibility seam |
+| NetBeans Ant smoke template | `netbeans/src/test/java/org/alice/netbeans/Alice3ProjectTemplateAntSmokeTest.java:33-67` validates packaged template classpath and jar output | Use as characterization evidence for NetBeans template behavior |
+| Optional nonfree classpath outputs | `netbeans/src/test/java/org/alice/netbeans/Alice3ProjectTemplateAntSmokeTest.java:215-223` maps expected module outputs | Keep as a candidate finding until focused NetBeans smoke validation reproduces the mismatch |
+
+## Configuration reference
+
+| Command | Purpose |
+| --- | --- |
+| `mvn compile install` | Builds and installs default reactor artifacts |
+| `mvn -DincludeSims=false compile install` | Builds without default-active nonfree Sims modules |
+| `mvn -DbuildInstaller=true install` | Includes the installer module and Install4J path |
+| `mvn test` | Runs repository tests after required submodules and dependencies are present |
+
+Install4J is only required for installer builds, matching `README.md:17` and `README.md:55-59`.
+
+## Refresh procedure
+
+Regenerate atlas output from source truth, not external issue trackers:
+
+```bash
+drinkme/code-atlas/bin/build-alice-code-atlas --repo-root . --output-dir drinkme/code-atlas --format both
+```
+
+After refreshing, confirm:
+
+1. Every cited path exists in the repository.
+2. Default, `includeSims`, and `buildInstaller` boundaries remain visually distinct in both graphs.
+3. Hotspot metrics exclude generated output under `target/`.
+4. Candidate findings remain labeled as candidate or needs-attention until verified.
+5. Any issue filing targets only `rysweet/alice3-modernization`.
+
+## Reporting standard
+
+| Status | Meaning |
+| --- | --- |
+| `confirmed` | Source/build/test evidence proves a current defect or stale statement |
+| `candidate` | Evidence suggests a defect, but focused reproduction is still required |
+| `needs-attention` | Risk is real enough to track but not necessarily a defect |
+| `pass` | Checked area currently aligns with source truth |
+| `speculative` | Observation is useful for future review but not validated |
+
+Do not report speculative observations as bugs. File repository-scoped issues only when the evidence is strong enough and the scope belongs to `rysweet/alice3-modernization`.
+EOF
+  } >"${output_dir}/alice-source-truth.md"
+}
+
+write_hotspots() {
+  {
+    cat <<'EOF'
+# Alice Hotspots
+
+This source-derived hotspot report is generated for the Alice code-atlas lane. Use it before refactoring, test planning, or ownership discussions.
+
+Hotspots are risk indicators, not bugs. The atlas presents them as characterization priorities unless source, build, or test evidence proves a concrete defect.
+
+## Usage
+
+1. Find the file or module you plan to touch.
+2. Check the risk class and characterization guidance.
+3. Add characterization tests before refactor work in a hotspot.
+4. Keep generated output out of source metrics.
+
+## Metric method
+
+The hotspot tables are generated from Java source under `core`, `alice-ide`, `netbeans`, `installer`, `external`, and `core-nonfree`. Generated files under build output directories are excluded.
+
+## Largest Java files
+
+| Rank | Lines | File | Risk class | Characterization guidance |
+| ---: | ---: | --- | --- | --- |
+EOF
+
+    local rank=1
+    while IFS=$'\t' read -r lines file; do
+      local risk guidance
+      case "${file}" in
+        *ProjectMigrationManager.java) risk="Migration behavior concentration"; guidance="Use project migration fixtures before changing conversion logic" ;;
+        *NonCachingTextRenderer.java|*Graphics2D.java|*GlrSkeletonVisual.java) risk="Rendering compatibility"; guidance="Add visual, GL-path, or output-shape checks before renderer changes" ;;
+        *ModelResourceExporter.java|*JointedModelColladaExporter.java|*JointedModelGltfExporter.java|*JointedModelColladaImporter.java) risk="Model import/export behavior"; guidance="Use asset fixture imports or exports before refactoring" ;;
+        *TightPositionalIkEnforcer.java) risk="IK/math behavior"; guidance="Characterize positional IK outcomes before algorithm changes" ;;
+        *StorytellingSceneEditor.java|*CameraMarkerTracker.java|*ProjectApplication.java) risk="IDE scene editing and lifecycle"; guidance="Cover editor actions and project state transitions before UI refactors" ;;
+        *ASG.java) risk="Scenegraph serialization"; guidance="Use import/export round-trip fixtures before serialization changes" ;;
+        *VirtualMachine.java) risk="Runtime semantics"; guidance="Add execution characterization tests before VM changes" ;;
+        *AbstractComposite.java) risk="UI framework behavior"; guidance="Verify Croquet lifecycle and composition behavior before extraction" ;;
+        *Jama/*) risk="Math dependency behavior"; guidance="Avoid behavior changes unless replacing with a validated equivalent" ;;
+        *Encoder.java) risk="Tweedle serialization"; guidance="Use encode/decode fixtures before modifying serialization" ;;
+        *IngredientsComposite.java) risk="Nonfree UI/resource behavior"; guidance="Confirm resource UI flows before refactoring" ;;
+        *) risk="Size hotspot"; guidance="Add focused characterization around current behavior before extraction" ;;
+      esac
+      printf '| %d | %s | `%s` | %s | %s |\n' "${rank}" "${lines}" "${file}" "${risk}" "${guidance}"
+      rank=$((rank + 1))
+    done < <(largest_java_files)
+
+    cat <<'EOF'
+
+## Largest Java modules
+
+| Rank | Approx module Java LOC | Module | Risk class | Notes |
+| ---: | ---: | --- | --- | --- |
+EOF
+
+    rank=1
+    while IFS=$'\t' read -r loc module; do
+      local risk notes
+      case "${module}" in
+        core/ide) risk="IDE behavior concentration"; notes="Highest module hotspot; prefer narrow characterization before UI changes" ;;
+        core/story-api) risk="Public story API/runtime"; notes="Preserve baseline compatibility" ;;
+        core/croquet) risk="UI framework"; notes="High fan-out framework risk" ;;
+        core-nonfree/story-api-nonfree|core-nonfree/ide-nonfree|core-nonfree/models-nonfree) risk="Nonfree module"; notes="Default-active through includeSims unless disabled" ;;
+        core/util) risk="Shared utilities"; notes="Broad dependency surface" ;;
+        core/ast) risk="AST and serialization"; notes="Runtime and persistence semantics" ;;
+        core/models) risk="Model resources"; notes="Asset/resource compatibility risk" ;;
+        core/glrender) risk="Rendering"; notes="Platform and GL compatibility risk" ;;
+        core/scenegraph) risk="Scenegraph"; notes="Serialization/import-export risk" ;;
+        core/story-api-migration) risk="Migration"; notes="Project compatibility risk" ;;
+        core/tweedle) risk="Language integration"; notes="Requires initialized grammar submodule" ;;
+        netbeans) risk="NetBeans plugin/template"; notes="Packaging compatibility risk" ;;
+        *) risk="Module size"; notes="Use module-local characterization before structural changes" ;;
+      esac
+      printf '| %d | %s | `%s` | %s | %s |\n' "${rank}" "${loc}" "${module}" "${risk}" "${notes}"
+      rank=$((rank + 1))
+    done < <(module_java_loc_rows | awk 'NR <= 25')
+
+    cat <<'EOF'
+
+## Refactor-risk rules
+
+| Hotspot type | Rule |
+| --- | --- |
+| Migration code | Add fixture-based before/after migration tests first |
+| Serialization code | Add round-trip fixtures first |
+| Rendering code | Add visual, GL-path, or output-shape checks first |
+| Public story API code | Preserve source and behavior compatibility unless the behavior change is explicit and tested |
+| IDE/UI framework code | Cover user-visible workflow and state transitions before extraction |
+| Nonfree modules | Keep `includeSims` profile behavior visible in validation and docs |
+| Tweedle code | Confirm `tweedle-lang/Grammar` before broad Maven validation |
+
+## Pass/fail interpretation
+
+Large files are not bugs by themselves. They are refactor-risk indicators. A hotspot becomes a bug-hunt finding only when source/build/test evidence shows stale behavior, unreachable behavior, packaging mismatch, or a compatibility hazard.
+EOF
+  } >"${output_dir}/alice-hotspots.md"
+}
+
+write_staleness_map() {
+  local marker_count
+  marker_count="$(
+    grep -RInE 'TODO|FIXME|HACK|XXX|@Deprecated|deprecated|unused|dead code|not used|stale|legacy' \
+      "${repo_root}/core" "${repo_root}/alice-ide" "${repo_root}/netbeans" "${repo_root}/installer" \
+      "${repo_root}/external" "${repo_root}/core-nonfree" "${repo_root}/README.md" "${repo_root}/docs" \
+      --include='*.java' --include='*.md' --include='*.xml' --include='*.properties' \
+      --exclude-dir=target 2>/dev/null \
+      | wc -l \
+      | tr -d ' '
+  )"
+
+  cat >"${output_dir}/alice-staleness-map.md" <<EOF
+# Alice Staleness Map
+
+This generated staleness map classifies stale documentation risks, compatibility markers, TODO/FIXME/HACK clusters, and dead-path candidates discovered by source-truth scans.
+
+Unverified stale-looking text remains \`candidate\`, \`needs-attention\`, or \`not-a-bug\`; it is not promoted to \`confirmed\` without focused evidence.
+
+## Documentation drift checks
+
+| Area | Status | Evidence | Notes |
+| --- | --- | --- | --- |
+| Repository identity | pass | \`README.md:21-24\` clones \`rysweet/alice3-modernization\` | README points at the modernization repository |
+| Java and Maven build tools | pass | \`README.md:11-18\` lists Java 21, Maven 3.9.9+, git, git-lfs, Install4J for installers | Aligns with current build expectations |
+| Tweedle submodule precondition | pass | \`README.md:26-43\`; \`core/tweedle/pom.xml:61-73\` | README and Maven enforcer both document grammar requirement |
+| Installer profile | pass | \`README.md:55-59\`; \`pom.xml:765-776\` | README uses \`-DbuildInstaller=true\`, matching root profile |
+| NetBeans build output | pass | \`README.md:49-54\`; \`netbeans/pom.xml:430-441\` | README states default install builds NetBeans plugin |
+| Alice IDE execution | needs-attention | \`README.md:63-67\`; \`alice-ide/pom.xml:172-180\`; \`ApplicationRoot.java:61-87\` | Launch depends on generated \`core/resources/target/distribution\` and fails hard if missing |
+| docs freshness | needs-attention | checked-in docs plus atlas refresh evidence | Architecture docs should be refreshed when Maven reactor, launcher, NetBeans packaging, or major module ownership changes |
+
+## Build and packaging compatibility markers
+
+| Marker | Status | Evidence | Impact |
+| --- | --- | --- | --- |
+| \`includeSims\` active by default | needs-attention | \`pom.xml:681-696\` | Builds include nonfree modules unless \`-DincludeSims=false\`; atlas diagrams show this separately |
+| Installer isolated behind profile | pass | \`pom.xml:765-776\` | Install4J path is not part of default reactor |
+| NetBeans Pack200 enabled | needs-attention | \`netbeans/pom.xml:430-441\` | Pack200 is a legacy packaging seam; validate when upgrading NetBeans tooling or JDK assumptions |
+| Generated parser output under target/ | pass | \`core/tweedle/pom.xml:90-107\` | Generated sources are intentionally excluded from hotspot metrics |
+
+## Marker inventory
+
+The source-truth marker scan found approximately ${marker_count} matching lines across source, Maven XML, README, and docs files after excluding generated build output.
+
+| Marker | Status | Classification |
+| --- | --- | --- |
+| TODO | needs-attention | Review concrete implementation TODOs before related refactors |
+| FIXME | needs-attention | Treat any occurrence as a focused follow-up, not automatic proof of a defect |
+| HACK | needs-attention | Preserve compatibility unless a fixture proves the workaround is obsolete |
+| XXX | needs-attention | Review as modernization debt when touching nearby code |
+| Deprecated | needs-attention | Distinguish API compatibility from dead code before removal |
+| deprecated | needs-attention | Same as \`Deprecated\`; do not remove solely by text match |
+
+## TODO/FIXME/HACK clusters
+
+| Cluster | Status | Evidence | Interpretation |
+| --- | --- | --- | --- |
+| NetBeans project wizard I18n TODOs | needs-attention | \`netbeans/src/main/java/org/alice/netbeans/Alice3ProjectTemplatePanelVisual.java:176\`, \`:218\`, \`:285\`, \`:292\`, \`:299\`, \`:305\`, \`:317\`, \`:323\`, \`:331\`; \`Alice3ProjectTemplateWizardIterator.java:136\`, \`:141\`, \`:263\`, \`:270\` | Localized UI polish and modernization debt |
+| NetBeans wizard API TODOs | needs-attention | \`Alice3ProjectTemplatePanelVisual.java:298\`; \`Alice3ProjectTemplateWizardIterator.java:185\` | Legacy NetBeans API comments should be rechecked during NetBeans plugin modernization |
+| Alice IDE entrypoint setting TODO | needs-attention | \`alice-ide/src/main/java/org/alice/stageide/EntryPoint.java:91\` | Runtime setting or OS auto-detection behavior is intentionally unresolved |
+| AST Tweedle serialization TODOs | needs-attention | \`core/ast/src/main/java/org/alice/serialization/tweedle/Decoder.java:21\`, \`:26\`; \`Encoder.java:459\`, \`:681\` | Serialization refactors require fixtures before cleanup |
+| XML decoder \`EPIC_HACK\` compatibility maps | needs-attention | \`core/ast/src/main/java/org/alice/serialization/xml/Decoder.java:170\`, \`:264\`, \`:266\`, \`:349-365\`, \`:452-454\` | Naming signals compatibility workaround; do not remove without legacy project fixtures |
+| NetBeans generated template comments | not-a-bug | \`netbeans/src/main/resources/ProjectTemplate/nbproject/build-impl.xml:671\` | Template-generated or compatibility text; do not file as source defect by itself |
+| Palette snippet \`TODO: Code goes here\` | not-a-bug | \`Alice3CompletionProvider.java:61\`; \`DoTogether.java:67\`; localized bundle hints | User-facing code templates, not implementation TODOs |
+| Logger \`TODO\` level | not-a-bug | \`core/util/src/main/java/edu/cmu/cs/dennisc/java/util/logging/Logger.java:63\`, \`:98\`, \`:191\`, \`:195\` | Log-level naming, not stale implementation marker |
+
+## Dead-path candidates
+
+| Candidate | Status | Evidence | Next check |
+| --- | --- | --- | --- |
+| NetBeans optional nonfree module-output paths | candidate | \`Alice3ProjectTemplateAntSmokeTest.java:222-223\` maps \`models-nonfree\` to \`../core-nonfree/models/...\` and \`story-api-nonfree\` to \`../core-nonfree/story-api/...\`; root profile modules are \`core-nonfree/models-nonfree\` and \`core-nonfree/story-api-nonfree\` in \`pom.xml:691-695\` | Run focused NetBeans Ant smoke validation with \`includeSims\` outputs present; confirm whether classpath falls back to jars or misses module outputs |
+| Alice IDE root fallback path | needs-attention | \`ApplicationRoot.java:61-87\` exits when the system property is missing or invalid; comment at \`ApplicationRoot.java:62\` asks about fallback | Treat as intentional fail-fast until launch behavior is explicitly redesigned and tested |
+| NetBeans optional artifacts ignored when absent | needs-attention | \`Alice3ProjectTemplateAntSmokeTest.java:36\`, \`:123-133\` | Confirm optional classification still matches intended plugin behavior |
+
+## Source-derived refresh checks
+
+Use a source scan equivalent to:
+
+\`\`\`bash
+rg -n "TODO|FIXME|HACK|XXX|@Deprecated|deprecated|unused|dead code|not used|stale|legacy" \\
+  core alice-ide netbeans installer external core-nonfree README.md docs \\
+  --glob '*.{java,md,xml,properties}' \\
+  --glob '!**/target/**'
+\`\`\`
+
+Classify each result before reporting it. Template placeholders, localized example snippets, and logger level names are usually not bugs.
+EOF
+}
+
+write_findings() {
+  cat >"${output_dir}/alice-bughunt-findings.md" <<'EOF'
+# Alice Code-Atlas Bug-Hunt Findings
+
+This generated findings register is scoped only to `rysweet/alice3-modernization`. Candidate and needs-attention items guide future validation, but they are not implementation changes or issue filings by themselves.
+
+## Status vocabulary
+
+| Status | Meaning |
+| --- | --- |
+| `confirmed` | Current source/build/test evidence proves a defect or stale statement |
+| `candidate` | Evidence indicates a likely defect, but focused reproduction is still required |
+| `needs-attention` | Real structural or modernization risk; not necessarily a defect |
+| `pass` | Checked surface aligns with source truth |
+| `speculative` | Useful observation without enough evidence for action |
+
+## Findings
+
+### Finding: NetBeans optional nonfree module output paths appear inconsistent
+
+Status: candidate
+
+| Field | Value |
+| --- | --- |
+| Severity | Medium |
+| Status | candidate |
+| Category | Structural bug candidate, packaging/test seam |
+| Evidence | `netbeans/src/test/java/org/alice/netbeans/Alice3ProjectTemplateAntSmokeTest.java:222-223` maps `models-nonfree` to `../core-nonfree/models/...` and `story-api-nonfree` to `../core-nonfree/story-api/...`; root `includeSims` modules are `core-nonfree/models-nonfree` and `core-nonfree/story-api-nonfree` in `pom.xml:691-695` |
+| Impact | When optional nonfree module output directories exist, the smoke test may fail to resolve them from module classes and may rely on jar fallback instead. If jar fallback is unavailable, NetBeans project-template classpath coverage can miss optional nonfree artifacts. |
+| Suggested next action | Run a focused NetBeans Ant smoke validation with `includeSims` outputs present. If the mismatch reproduces, file a repository issue with label `code-atlas-bughunt` and update the path mapping to the `*-nonfree` module directories as separate implementation work. |
+
+### Finding: Alice IDE launch root is a hard runtime seam
+
+Status: needs-attention
+
+| Field | Value |
+| --- | --- |
+| Severity | Medium |
+| Status | needs-attention |
+| Category | Runtime seam, refactor risk |
+| Evidence | `alice-ide/pom.xml:172-180` sets `org.alice.ide.rootDirectory` to `../core/resources/target/distribution`; `core/util/src/main/java/edu/cmu/cs/dennisc/app/ApplicationRoot.java:61-87` shows an error dialog and exits when the property is missing or invalid |
+| Impact | Launch behavior depends on a generated resources distribution path. Refactors to launch, resources, or build output can break startup without touching IDE code directly. |
+| Suggested next action | Keep this seam explicit in diagrams and validation. Add launch characterization before changing resource distribution, `exec-maven-plugin`, or `ApplicationRoot` behavior. |
+
+### Finding: Tweedle grammar submodule is a required validation precondition
+
+Status: pass
+
+| Field | Value |
+| --- | --- |
+| Severity | Medium |
+| Status | pass |
+| Category | Build precondition |
+| Evidence | `core/tweedle/pom.xml:61-73` enforces `tweedle-lang/Grammar/TweedleLexer.g4` and `TweedleParser.g4`; `README.md:26-43` documents submodule initialization and diagnostics |
+| Impact | Broad Maven validation fails early and clearly when the grammar submodule is missing. The current README and Maven configuration agree. |
+| Suggested next action | Keep this precondition in atlas refresh and validation instructions. If Maven reports missing generated Tweedle parser classes, check submodule status before debugging parser generation. |
+
+### Finding: NetBeans Pack200 packaging flag is a modernization compatibility seam
+
+Status: needs-attention
+
+| Field | Value |
+| --- | --- |
+| Severity | Low |
+| Status | needs-attention |
+| Category | Packaging compatibility risk |
+| Evidence | `netbeans/pom.xml:430-441` configures `nbm-maven-plugin` version `14.2` and `installerPack200Enable=true` |
+| Impact | Pack200-era packaging assumptions may become fragile during NetBeans plugin or JDK modernization. This is not a confirmed bug in the current build by itself. |
+| Suggested next action | Revalidate during NetBeans tooling upgrades. Do not remove or change packaging flags without NetBeans plugin build/install characterization. |
+
+### Finding: XML decoder compatibility maps are explicitly hack-labeled
+
+Status: needs-attention
+
+| Field | Value |
+| --- | --- |
+| Severity | Medium |
+| Status | needs-attention |
+| Category | Serialization refactor risk |
+| Evidence | `core/ast/src/main/java/org/alice/serialization/xml/Decoder.java:170`, `:264`, `:266`, `:349-365`, and `:452-454` reference `EPIC_HACK` maps for array, getter, and setter key compatibility |
+| Impact | These maps likely preserve compatibility with legacy serialized projects. Simplifying them without fixtures can break loading older Alice projects. |
+| Suggested next action | Add legacy project load fixtures before touching XML decoder compatibility paths. Treat cleanup as behavior-sensitive implementation work, not atlas work. |
+
+### Finding: Hotspot concentration is high in IDE, story API, Croquet, and migration code
+
+Status: needs-attention
+
+| Field | Value |
+| --- | --- |
+| Severity | Medium |
+| Status | needs-attention |
+| Category | Refactor risk |
+| Evidence | `core/ide` is the largest Java module by source LOC; `core/story-api`, `core/croquet`, and `core-nonfree/story-api-nonfree` are also large; `core/story-api-migration/src/main/java/org/lgna/project/migration/ProjectMigrationManager.java` is the largest Java source file |
+| Impact | Large modules and files are more likely to hide implicit coupling, broad behavior dependencies, and insufficient characterization. Size alone is not a bug. |
+| Suggested next action | Use [alice-hotspots.md](./alice-hotspots.md) to choose characterization tests before refactoring hotspot files or modules. |
+
+## Passes
+
+| Surface | Status | Evidence |
+| --- | --- | --- |
+| Root reactor represented in atlas | pass | `pom.xml:101-126`; [alice-module-graph.mmd](./alice-module-graph.mmd); [alice-module-graph.dot](./alice-module-graph.dot) |
+| `includeSims` boundary represented separately | pass | `pom.xml:681-696`; both module graphs |
+| `buildInstaller` boundary represented separately | pass | `pom.xml:765-776`; both module graphs |
+| Generated output excluded from hotspot metrics | pass | [alice-hotspots.md](./alice-hotspots.md) metric method |
+| Upstream issue database excluded | pass | This findings file is scoped only to `rysweet/alice3-modernization` |
+
+## Issue filing rule
+
+The feature must support issue-ready evidence, but issue filing is not automatic. File an issue only when the finding is `confirmed` or when a `candidate` has focused reproduction evidence. Issues must be opened only against `rysweet/alice3-modernization` and should use the `code-atlas-bughunt` label when available.
+EOF
+}
+
+write_source_truth
+write_hotspots
+write_staleness_map
+write_findings
+
+case "${format}" in
+  both)
+    write_module_graph_mmd
+    write_module_graph_dot
+    ;;
+  mermaid)
+    write_module_graph_mmd
+    ;;
+  dot)
+    write_module_graph_dot
+    ;;
+esac
+
+printf 'Generated Alice code-atlas artifacts in %s\n' "$(rel "${output_dir}")"

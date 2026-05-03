@@ -1,0 +1,112 @@
+flowchart TD
+  repo["rysweet/alice3-modernization<br/>source-truth input"]
+  rootPom["root pom.xml<br/>default reactor"]
+
+  repo --> rootPom
+
+  subgraph defaultReactor["Default Maven reactor (pom.xml:101-126)"]
+    core["core"]
+    coreAst["core/ast"]
+    coreCroquet["core/croquet"]
+    coreI18n["core/i18n"]
+    coreIde["core/ide"]
+    coreImageEditor["core/image-editor"]
+    coreIssueReporting["core/issue-reporting"]
+    coreResources["core/resources"]
+    coreScenegraph["core/scenegraph"]
+    coreGlrender["core/glrender"]
+    coreMigration["core/story-api-migration"]
+    coreStoryApi["core/story-api"]
+    coreUtil["core/util"]
+    coreModelLoading["core/model-loading"]
+    coreTweedle["core/tweedle"]
+    coreModels["core/models"]
+    external["external"]
+    externalCollada["external/collada"]
+    externalColladaSchema["external/collada-schema-1-4-1"]
+    externalWrappedFlow["external/wrapped-flow-layout"]
+    aliceIde["alice-ide"]
+    netbeans["netbeans"]
+  end
+
+  rootPom --> defaultReactor
+  core --> coreAst
+  core --> coreCroquet
+  core --> coreI18n
+  core --> coreIde
+  core --> coreImageEditor
+  core --> coreIssueReporting
+  core --> coreResources
+  core --> coreScenegraph
+  core --> coreGlrender
+  core --> coreMigration
+  core --> coreStoryApi
+  core --> coreUtil
+  core --> coreModelLoading
+  core --> coreTweedle
+  core --> coreModels
+  external --> externalCollada
+  external --> externalColladaSchema
+  external --> externalWrappedFlow
+
+  subgraph includeSims["includeSims profile (default active unless -DincludeSims=false)"]
+    coreNonfree["core-nonfree"]
+    ideNonfree["core-nonfree/ide-nonfree"]
+    resourcesNonfree["core-nonfree/resources-nonfree"]
+    storyApiNonfree["core-nonfree/story-api-nonfree"]
+    modelsNonfree["core-nonfree/models-nonfree"]
+  end
+
+  rootPom -. "pom.xml:681-696" .-> includeSims
+  coreNonfree --> ideNonfree
+  coreNonfree --> resourcesNonfree
+  coreNonfree --> storyApiNonfree
+  coreNonfree --> modelsNonfree
+
+  subgraph buildInstaller["buildInstaller profile (-DbuildInstaller=true)"]
+    installer["installer"]
+  end
+
+  rootPom -. "pom.xml:765-776" .-> buildInstaller
+
+  subgraph tweedleGeneration["Tweedle generation seam"]
+    tweedleLang["tweedle-lang/Grammar<br/>TweedleLexer.g4<br/>TweedleParser.g4"]
+    antlr["antlr4-maven-plugin<br/>core/tweedle/pom.xml:90-107"]
+    generatedTweedle["target/generated-sources/antlr4/org/alice/tweedle"]
+  end
+
+  tweedleLang --> antlr --> generatedTweedle --> coreTweedle
+
+  subgraph aliceRuntime["Alice IDE runtime-root seam"]
+    execPlugin["exec-maven-plugin<br/>alice-ide/pom.xml:172-180"]
+    rootProperty["org.alice.ide.rootDirectory"]
+    resourcesDistribution["../core/resources/target/distribution"]
+    applicationRoot["ApplicationRoot.initializeIfNecessary()<br/>hard failure if missing"]
+  end
+
+  aliceIde --> execPlugin --> rootProperty --> resourcesDistribution
+  rootProperty --> applicationRoot
+  coreResources --> resourcesDistribution
+
+  subgraph netbeansPackaging["NetBeans packaging and template seam"]
+    nbmPlugin["nbm-maven-plugin<br/>netbeans/pom.xml:430-441"]
+    pack200["installerPack200Enable=true"]
+    projectTemplate["ProjectTemplate.zip"]
+    antSmoke["Alice3ProjectTemplateAntSmokeTest"]
+    optionalArtifacts["optional models-nonfree<br/>story-api-nonfree"]
+  end
+
+  netbeans --> nbmPlugin --> pack200
+  netbeans --> projectTemplate --> antSmoke
+  antSmoke --> optionalArtifacts
+  optionalArtifacts -. "candidate path mismatch" .-> includeSims
+
+  classDef default fill:#eef7ff,stroke:#4b83b6,color:#111;
+  classDef profile fill:#fff4dc,stroke:#b67b00,color:#111;
+  classDef seam fill:#f2ecff,stroke:#7353ba,color:#111;
+  classDef risk fill:#ffecec,stroke:#b64b4b,color:#111;
+
+  class core,coreAst,coreCroquet,coreI18n,coreIde,coreImageEditor,coreIssueReporting,coreResources,coreScenegraph,coreGlrender,coreMigration,coreStoryApi,coreUtil,coreModelLoading,coreTweedle,coreModels,external,externalCollada,externalColladaSchema,externalWrappedFlow,aliceIde,netbeans default;
+  class coreNonfree,ideNonfree,resourcesNonfree,storyApiNonfree,modelsNonfree,installer profile;
+  class tweedleLang,antlr,generatedTweedle,execPlugin,rootProperty,resourcesDistribution,applicationRoot,nbmPlugin,pack200,projectTemplate,antSmoke seam;
+  class optionalArtifacts risk;
