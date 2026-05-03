@@ -589,9 +589,10 @@ public abstract class ProjectApplication extends PerspectiveApplication<ProjectD
 
   private void createProjectFromBackup(File backup, File original, boolean isMainProjectCorrupted) {
     YesNoCancelResult result = backupProjectOperation.showBackupProjectOpenedDialog(original.getName(), backup.getName(), isMainProjectCorrupted);
+    ProjectBackupAdoptionPlan plan = ProjectBackupAdoptionPlan.afterUserChoice(result);
 
-    switch (result) {
-      case YES -> {
+    switch (plan.getAction()) {
+      case SAVE_BACKUP_TO_ORIGINAL_PROJECT -> {
         // replace the main project file
 
         try {
@@ -600,11 +601,11 @@ public abstract class ProjectApplication extends PerspectiveApplication<ProjectD
           Dialogs.showError("Unable to save file", ioe.getMessage());
         }
       }
-      case NO -> {
+      case KEEP_BACKUP_AS_CURRENT_PROJECT -> {
         // Do nothing for now
         // When the user saves, a new project will be created from this one
       }
-      case CANCEL -> {
+      case RELOAD_ORIGINAL_PROJECT -> {
         // load the main project file
 
         loadProject(newProjectActivity(), new FileProjectLoader(original, uriProjectLoader.shouldMakeVrReady()));
