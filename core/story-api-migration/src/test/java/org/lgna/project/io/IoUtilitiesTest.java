@@ -1,11 +1,13 @@
 package org.lgna.project.io;
 
+import org.alice.tweedle.file.ManifestEncoderDecoder;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.lgna.common.Resource;
 import org.lgna.common.resources.ImageResource;
 import org.lgna.project.Project;
+import org.lgna.project.Version;
 import org.lgna.project.ast.BlockStatement;
 import org.lgna.project.ast.JavaType;
 import org.lgna.project.ast.NamedUserType;
@@ -17,9 +19,12 @@ import org.lgna.story.SProgram;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
+import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import java.util.zip.ZipOutputStream;
 
 import static org.junit.Assert.*;
 
@@ -103,6 +108,17 @@ public class IoUtilitiesTest {
     assertArrayEquals(imageResource.getData(), readResource.getData());
   }
 
+  @Test
+  public void jsonPlayerReaderReportsFutureVersion() throws Exception {
+    String futureVersion = "999.0.0.0";
+    File exportFile = temporaryFolder.newFile("future-export.a3w");
+    writePlayerArchive(exportFile, futureVersion);
+
+    Version version = IoUtilities.projectReader(exportFile).checkForFutureVersion();
+
+    assertEquals(futureVersion, version.toString());
+  }
+
   private static NamedUserType programType(String name) {
     NamedUserType type = new NamedUserType();
     type.name.setValue(name);
@@ -120,6 +136,20 @@ public class IoUtilitiesTest {
         new BlockStatement(new LocalDeclarationStatement(image, new ResourceExpression(ImageResource.class, imageResource))));
     type.methods.add(userMethod);
     return type;
+  }
+
+  private static void writePlayerArchive(File file, String version) throws Exception {
+    Project project = new Project(programType("Program"), Project.SceneCameraType.WindowCamera);
+    try (ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(file))) {
+      writeZipEntry(zipOutputStream, ProjectIo.VERSION_ENTRY_NAME, version);
+      writeZipEntry(zipOutputStream, ProjectIo.MANIFEST_ENTRY_NAME, ManifestEncoderDecoder.toJson(project.createExportManifest()));
+    }
+  }
+
+  private static void writeZipEntry(ZipOutputStream zipOutputStream, String name, String content) throws Exception {
+    zipOutputStream.putNextEntry(new ZipEntry(name));
+    zipOutputStream.write(content.getBytes(StandardCharsets.UTF_8));
+    zipOutputStream.closeEntry();
   }
 
   public static class TestResource extends Resource {

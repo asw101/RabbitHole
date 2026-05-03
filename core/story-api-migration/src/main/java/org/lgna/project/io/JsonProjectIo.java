@@ -104,7 +104,10 @@ public class JsonProjectIo extends DataSourceIo implements ProjectIo {
 
     @Override
     public Version checkForFutureVersion() throws IOException {
-      // TODO
+      Version decodedProjectVersion = readSourceProgramVersion();
+      if (ProjectVersion.getCurrentVersion().compareTo(decodedProjectVersion) < 0) {
+        return decodedProjectVersion;
+      }
       return null;
     }
 
@@ -121,6 +124,17 @@ public class JsonProjectIo extends DataSourceIo implements ProjectIo {
       try (InputStream manifestStream = is) {
         byte[] manifestBytes = InputStreamUtilities.getBytes(manifestStream);
         return ManifestEncoderDecoder.fromJson(new String(manifestBytes, StandardCharsets.UTF_8), ProjectManifest.class);
+      }
+    }
+
+    private Version readSourceProgramVersion() throws IOException {
+      InputStream is = container.getInputStream(VERSION_ENTRY_NAME);
+      if (is == null) {
+        throw new IOException("Archive does not contain entry " + VERSION_ENTRY_NAME);
+      }
+      try (InputStream versionStream = is) {
+        byte[] versionBytes = InputStreamUtilities.getBytes(versionStream);
+        return new Version(new String(versionBytes, StandardCharsets.UTF_8));
       }
     }
 
