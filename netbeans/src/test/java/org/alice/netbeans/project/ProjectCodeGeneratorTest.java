@@ -7,7 +7,10 @@ import org.lgna.common.Resource;
 import org.lgna.project.Project;
 import org.lgna.project.ast.AstUtilities;
 import org.lgna.project.ast.BlockStatement;
+import org.lgna.project.ast.BooleanExpressionBodyPair;
+import org.lgna.project.ast.BooleanLiteral;
 import org.lgna.project.ast.Comment;
+import org.lgna.project.ast.ConditionalStatement;
 import org.lgna.project.ast.JavaType;
 import org.lgna.project.ast.LocalDeclarationStatement;
 import org.lgna.project.ast.NamedUserType;
@@ -234,6 +237,26 @@ public class ProjectCodeGeneratorTest {
   }
 
   @Test
+  public void generatedSyntheticUserMethodConditionalSourceCompiles() throws Exception {
+    File aliceProject = temporaryFolder.newFile("synthetic-conditional.a3p");
+    IoUtilities.writeProject(
+        aliceProject,
+        new Project(programTypeWithConditionalMethod(), Project.SceneCameraType.WindowCamera));
+    File sourceDirectory = temporaryFolder.newFolder("generated-conditional-src");
+    ProjectCodeGenerator.generateCode(aliceProject, sourceDirectory, null, false);
+
+    Path programPath = sourceDirectory.toPath().resolve("Program.java");
+    String programSource = Files.readString(programPath);
+    assertTrue(programSource.contains("void choose()"));
+    assertTrue(programSource, programSource.contains("if(true)"));
+    assertTrue(programSource, programSource.contains(" else"));
+    compileJavaSources(
+        temporaryFolder.newFolder("generated-conditional-classes").toPath(),
+        programPath,
+        sourceDirectory.toPath().resolve("AliceJavaFXLauncher.java"));
+  }
+
+  @Test
   public void generatedSyntheticResourceProjectSourcesCompile() throws Exception {
     Project project = new Project(programType("Program"), Project.SceneCameraType.WindowCamera);
     project.addResource(new TestResource("note.txt", "text/plain", "hello alice".getBytes(StandardCharsets.UTF_8)));
@@ -416,6 +439,21 @@ public class ProjectCodeGeneratorTest {
             new StringLiteral("hello alice"))));
     type.methods.add(remember);
     type.methods.add(callRemember);
+    return type;
+  }
+
+  private static NamedUserType programTypeWithConditionalMethod() {
+    NamedUserType type = programType("Program");
+    UserMethod choose = new UserMethod(
+        "choose",
+        Void.TYPE,
+        new UserParameter[0],
+        new BlockStatement(new ConditionalStatement(
+            new BooleanExpressionBodyPair[] {
+                new BooleanExpressionBodyPair(new BooleanLiteral(true), new BlockStatement(new Comment("then branch")))
+            },
+            new BlockStatement(new Comment("else branch")))));
+    type.methods.add(choose);
     return type;
   }
 
