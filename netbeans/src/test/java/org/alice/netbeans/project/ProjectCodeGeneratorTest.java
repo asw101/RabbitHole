@@ -17,9 +17,13 @@ import org.openide.filesystems.FileObject;
 import java.io.File;
 import java.io.Reader;
 import java.io.StringWriter;
+import java.lang.reflect.Field;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -136,6 +140,41 @@ public class ProjectCodeGeneratorTest {
         sourceDirectory.toPath().resolve("Program.java"),
         sourceDirectory.toPath().resolve("AliceJavaFXLauncher.java"),
         sourceDirectory.toPath().resolve("Resources.java"));
+  }
+
+  @Test
+  public void generatedSyntheticResourcesLoadCopiedResourceBytes() throws Exception {
+    byte[] data = "hello alice".getBytes(StandardCharsets.UTF_8);
+    Project project = new Project(programType("Program"), Project.SceneCameraType.WindowCamera);
+    project.addResource(new TestResource("note.txt", "text/plain", data));
+    File aliceProject = temporaryFolder.newFile("synthetic-resource-runtime.a3p");
+    IoUtilities.writeProject(aliceProject, project);
+    File sourceDirectory = temporaryFolder.newFolder("runtime-resource-source-src");
+    ProjectCodeGenerator.generateCode(aliceProject, sourceDirectory, null, false);
+    Path classesDirectory = temporaryFolder.newFolder("runtime-resource-classes").toPath();
+    compileJavaSources(
+        classesDirectory,
+        sourceDirectory.toPath().resolve("Program.java"),
+        sourceDirectory.toPath().resolve("AliceJavaFXLauncher.java"),
+        sourceDirectory.toPath().resolve("Resources.java"));
+    Path generatedResourcePath = sourceDirectory.toPath().resolve("resources").resolve("note.txt");
+    Path classpathResourcePath = classesDirectory.resolve("resources").resolve("note.txt");
+    Files.createDirectories(classpathResourcePath.getParent());
+    Files.copy(generatedResourcePath, classpathResourcePath, StandardCopyOption.REPLACE_EXISTING);
+
+    try (URLClassLoader classLoader = new URLClassLoader(
+        new URL[] {classesDirectory.toUri().toURL()},
+        ProjectCodeGeneratorTest.class.getClassLoader())) {
+      Class<?> resourcesClass = Class.forName("Resources", true, classLoader);
+      Field resourceField = Arrays.stream(resourcesClass.getFields())
+          .filter(field -> TestResource.class.isAssignableFrom(field.getType()))
+          .findFirst()
+          .orElseThrow(AssertionError::new);
+      resourceField.setAccessible(true);
+      Resource generatedResource = (Resource) resourceField.get(null);
+      assertEquals("text/plain", generatedResource.getContentType());
+      assertArrayEquals(data, generatedResource.getData());
+    }
   }
 
   private static NamedUserType programType(String name) {
