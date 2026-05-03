@@ -4,9 +4,11 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import org.lgna.common.Resource;
 import org.lgna.project.Project;
 import org.lgna.project.ast.JavaType;
 import org.lgna.project.ast.NamedUserType;
+import org.lgna.project.io.IoUtilities;
 import org.lgna.project.io.ProjectIo;
 import org.lgna.story.SProgram;
 
@@ -16,6 +18,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.UUID;
 import java.util.zip.ZipFile;
 
 import static org.junit.Assert.*;
@@ -96,10 +99,72 @@ public class ProjectFileUtilitiesTest {
     }
   }
 
+  @Test
+  public void saveCopyWritesReadableEditorArchiveWithResourceManifestAndThumbnail() throws Exception {
+    byte[] data = "hello alice".getBytes(StandardCharsets.UTF_8);
+    Project project = new Project(programType("Program"), Project.SceneCameraType.WindowCamera);
+    TestResource resource = new TestResource("note.txt", "text/plain", data);
+    project.addResource(resource);
+    ProjectFileUtilities saveUtilities = new ProjectFileUtilities(null) {
+      @Override
+      Project getUpToDateProject() {
+        return project;
+      }
+
+      @Override
+      BufferedImage createThumbnail() {
+        return new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
+      }
+    };
+    File saveFile = temporaryFolder.newFile("saved-copy.a3p");
+
+    saveUtilities.saveCopyOfProjectTo(saveFile);
+
+    try (ZipFile zipFile = new ZipFile(saveFile)) {
+      assertNotNull(zipFile.getEntry(ProjectIo.VERSION_ENTRY_NAME));
+      assertNotNull(zipFile.getEntry(ProjectIo.MANIFEST_ENTRY_NAME));
+      assertNotNull(zipFile.getEntry("thumbnail.png"));
+      assertNotNull(zipFile.getEntry("programType.xml"));
+      assertNotNull(zipFile.getEntry("resources.xml"));
+      assertNotNull(zipFile.getEntry("resources/note.txt"));
+      String manifest = new String(
+          zipFile.getInputStream(zipFile.getEntry(ProjectIo.MANIFEST_ENTRY_NAME)).readAllBytes(),
+          StandardCharsets.UTF_8);
+      assertTrue(manifest, manifest.contains("\"name\":\"Program\""));
+      assertTrue(manifest, manifest.contains("\"icon\":\"thumbnail.png\""));
+    }
+
+    Project readProject = IoUtilities.readProject(saveFile);
+    assertEquals("Program", readProject.getProgramType().getName());
+    assertEquals(Project.SceneCameraType.WindowCamera, readProject.createSaveManifest().projectStructure.sceneCameraType);
+    assertEquals(1, readProject.getResources().size());
+    Resource readResource = readProject.getResources().iterator().next();
+    assertEquals(TestResource.class, readResource.getClass());
+    assertEquals(resource.getId(), readResource.getId());
+    assertEquals("note.txt", readResource.getOriginalFileName());
+    assertEquals("note.txt", readResource.getName());
+    assertEquals("text/plain", readResource.getContentType());
+    assertArrayEquals(data, readResource.getData());
+  }
+
   private static NamedUserType programType(String name) {
     NamedUserType type = new NamedUserType();
     type.name.setValue(name);
     type.superType.setValue(JavaType.getInstance(SProgram.class));
     return type;
+  }
+
+  public static class TestResource extends Resource {
+    public TestResource(String fileName, String contentType, byte[] data) {
+      super(fileName, contentType, data);
+    }
+
+    private TestResource(UUID uuid) {
+      super(uuid);
+    }
+
+    public static TestResource valueOf(String uuidText) {
+      return new TestResource(UUID.fromString(uuidText));
+    }
   }
 }
