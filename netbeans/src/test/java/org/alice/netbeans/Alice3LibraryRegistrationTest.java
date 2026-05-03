@@ -10,9 +10,11 @@ import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.jar.Manifest;
 import java.util.stream.IntStream;
 
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -22,7 +24,9 @@ import static org.junit.Assert.assertTrue;
 
 public class Alice3LibraryRegistrationTest {
   private static final String LIBRARY_PATH = "target/classes/org/alice/netbeans/Alice3Library.xml";
+  private static final String MANIFEST_PATH = "target/classes/META-INF/MANIFEST.MF";
   private static final String MODULE_EXTENSION_ROOT = "nbinst:/modules/ext/org.alice.netbeans/";
+  private static final String MODULE_EXTENSION_MANIFEST_ROOT = "ext/org.alice.netbeans/";
 
   @Test
   public void layerRegistersAlice3LibraryDefinition() throws Exception {
@@ -75,6 +79,16 @@ public class Alice3LibraryRegistrationTest {
   }
 
   @Test
+  public void alice3LibraryClasspathEntriesResolveToNetBeansModuleArtifacts() throws Exception {
+    Set<String> moduleClassPathEntries = moduleManifestClassPathEntries();
+
+    for (String resource : resourcesForVolume("classpath")) {
+      String moduleEntry = toModuleClassPathEntry(resource);
+      assertTrue(resource, moduleClassPathEntries.contains(moduleEntry));
+    }
+  }
+
+  @Test
   public void pomPackagesAliceLibrarySourceAndJavadocVolumes() throws Exception {
     String pom = Files.readString(Path.of("pom.xml"), StandardCharsets.UTF_8);
 
@@ -105,5 +119,21 @@ public class Alice3LibraryRegistrationTest {
     return IntStream.range(0, nodes.getLength())
         .mapToObj(index -> (Element) nodes.item(index))
         .toList();
+  }
+
+  private static Set<String> moduleManifestClassPathEntries() throws Exception {
+    try (var manifestStream = Files.newInputStream(Path.of(MANIFEST_PATH))) {
+      String classPath = new Manifest(manifestStream)
+          .getMainAttributes()
+          .getValue("X-Class-Path");
+
+      assertTrue("Generated NetBeans manifest must declare X-Class-Path", classPath != null);
+      return new HashSet<>(Arrays.asList(classPath.split("\\s+")));
+    }
+  }
+
+  private static String toModuleClassPathEntry(String resource) {
+    assertTrue(resource, resource.startsWith(MODULE_EXTENSION_ROOT));
+    return MODULE_EXTENSION_MANIFEST_ROOT + resource.substring(MODULE_EXTENSION_ROOT.length());
   }
 }
