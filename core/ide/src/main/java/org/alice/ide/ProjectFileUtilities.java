@@ -107,7 +107,7 @@ public class ProjectFileUtilities {
   }
 
   void exportCopyOfProjectTo(File file) throws IOException {
-    Project project = projectApp.getForcedUpToDateProject();
+    Project project = getForcedUpToDateProject();
     IoUtilities.exportProject(file, project, thumbnailDataSources());
   }
 
@@ -118,7 +118,7 @@ public class ProjectFileUtilities {
 
   private DataSource thumbnailDataSource() {
     try {
-      final BufferedImage thumbnailImage = projectApp.createThumbnail();
+      final BufferedImage thumbnailImage = createThumbnail();
       if (thumbnailImage == null
           || thumbnailImage.getWidth() <= 0
           || thumbnailImage.getHeight() <= 0) {
@@ -201,8 +201,20 @@ public class ProjectFileUtilities {
   }
 
   public void saveCopyOfProjectTo(File file) throws IOException {
-    Project project = projectApp.getUpToDateProject();
+    Project project = getUpToDateProject();
     IoUtilities.writeProject(file, project, thumbnailAndManifestDataSources(project));
+  }
+
+  Project getForcedUpToDateProject() {
+    return projectApp.getForcedUpToDateProject();
+  }
+
+  Project getUpToDateProject() {
+    return projectApp.getUpToDateProject();
+  }
+
+  BufferedImage createThumbnail() throws Throwable {
+    return projectApp.createThumbnail();
   }
 
   public Path backupDirectory(File saved, boolean isBackup) {
