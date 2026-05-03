@@ -152,6 +152,28 @@ public class IoUtilitiesTest {
   }
 
   @Test
+  public void jsonPlayerReaderReportsMissingImageResourceData() throws Exception {
+    ImageReference imageReference = imageReference(UUID.randomUUID(), "missing.png", "png");
+    File exportFile = temporaryFolder.newFile("missing-image.a3w");
+    writePlayerArchiveManifestOnly(exportFile, imageReference);
+
+    IOException thrown = assertThrows(IOException.class, () -> IoUtilities.readProject(exportFile));
+
+    assertTrue(thrown.getMessage().contains(imageReference.file));
+  }
+
+  @Test
+  public void jsonPlayerReaderReportsMissingAudioResourceData() throws Exception {
+    AudioReference audioReference = audioReference(UUID.randomUUID(), "missing.wav", 1.0);
+    File exportFile = temporaryFolder.newFile("missing-audio.a3w");
+    writePlayerArchiveManifestOnly(exportFile, audioReference);
+
+    IOException thrown = assertThrows(IOException.class, () -> IoUtilities.readProject(exportFile));
+
+    assertTrue(thrown.getMessage().contains(audioReference.file));
+  }
+
+  @Test
   public void readsExportedPlayerArchiveModelAndGeneratedTypeReferencesWithoutBinaryResources() throws Exception {
     ProjectManifest manifest = new ProjectManifest();
     manifest.metadata.fileType = IoUtilities.EXPORT_EXTENSION;
@@ -587,6 +609,16 @@ public class IoUtilitiesTest {
       writeZipEntry(zipOutputStream, ProjectIo.VERSION_ENTRY_NAME, ProjectVersion.getCurrentVersion().toString());
       writeZipEntry(zipOutputStream, ProjectIo.MANIFEST_ENTRY_NAME, ManifestEncoderDecoder.toJson(manifest));
       writeZipEntry(zipOutputStream, resourceReference.file, data);
+    }
+  }
+
+  private static void writePlayerArchiveManifestOnly(File file, ResourceReference resourceReference) throws Exception {
+    Project project = new Project(programType("Program"), Project.SceneCameraType.WindowCamera);
+    Manifest manifest = project.createExportManifest();
+    manifest.resources.add(resourceReference);
+    try (ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(file))) {
+      writeZipEntry(zipOutputStream, ProjectIo.VERSION_ENTRY_NAME, ProjectVersion.getCurrentVersion().toString());
+      writeZipEntry(zipOutputStream, ProjectIo.MANIFEST_ENTRY_NAME, ManifestEncoderDecoder.toJson(manifest));
     }
   }
 

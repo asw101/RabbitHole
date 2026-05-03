@@ -155,14 +155,16 @@ public class JsonProjectIo extends DataSourceIo implements ProjectIo {
     }
 
     private Resource readResource(ResourceReference resourceReference) throws IOException {
+      if (!(resourceReference instanceof ImageReference) && !(resourceReference instanceof AudioReference)) {
+        return null;
+      }
       String entry = resourceReference.file;
       if (entry == null) {
-        return null;
+        throw new IOException("Resource " + resourceReference.name + " does not specify archive entry");
       }
       InputStream is = container.getInputStream(entry);
       if (is == null) {
-        PrintUtilities.println("WARNING: no data for resource:", entry);
-        return null;
+        throw new IOException("Archive does not contain resource entry " + entry);
       }
       try (InputStream resourceStream = is) {
         byte[] data = InputStreamUtilities.getBytes(resourceStream);
