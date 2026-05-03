@@ -85,10 +85,11 @@ public class ProjectCodeGeneratorStandaloneProjectTest {
     assertEquals("src", properties.getProperty("src.dir"));
     assertEquals("AliceJavaFXLauncher", properties.getProperty("main.class"));
     assertEquals("${libs.Alice3Library.classpath}", properties.getProperty("javac.classpath").trim());
+    assertTemplateCompilerStructure(properties);
     assertTrue(Files.exists(projectDirectory.resolve("build.xml")));
     assertTrue(Files.exists(projectDirectory.resolve("nbproject").resolve("build-impl.xml")));
 
-    Path classesDirectory = projectDirectory.resolve("build").resolve("classes");
+    Path classesDirectory = resolveBuildClassesDirectory(projectDirectory, properties);
     compileJavaSources(classesDirectory, javaSourcesUnder(sourceDirectory));
 
     assertTrue(Files.exists(classesDirectory.resolve("Program.class")));
@@ -212,6 +213,19 @@ public class ProjectCodeGeneratorStandaloneProjectTest {
       properties.load(reader);
     }
     return properties;
+  }
+
+  private static void assertTemplateCompilerStructure(Properties properties) {
+    assertEquals("build", properties.getProperty("build.dir"));
+    assertEquals("${build.dir}/classes", properties.getProperty("build.classes.dir"));
+    String runClasspath = properties.getProperty("run.classpath");
+    assertTrue(runClasspath, runClasspath.contains("${build.classes.dir}"));
+  }
+
+  private static Path resolveBuildClassesDirectory(Path projectDirectory, Properties properties) {
+    String buildClassesDirectory = properties.getProperty("build.classes.dir")
+        .replace("${build.dir}", properties.getProperty("build.dir"));
+    return projectDirectory.resolve(buildClassesDirectory);
   }
 
   private static void writeJavaSource(Path sourcePath, String source) throws Exception {
