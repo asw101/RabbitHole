@@ -5,6 +5,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.lgna.common.Resource;
+import org.lgna.common.resources.AudioResource;
 import org.lgna.common.resources.ImageResource;
 import org.lgna.project.Project;
 import org.lgna.project.Version;
@@ -21,6 +22,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -111,6 +113,31 @@ public class IoUtilitiesTest {
   }
 
   @Test
+  public void readsExportedPlayerArchiveAudioResource() throws Exception {
+    byte[] audioBytes = new byte[] {0, 1, 2, 3};
+    File audioFile = temporaryFolder.newFile("sound.wav");
+    Files.write(audioFile.toPath(), audioBytes);
+    AudioResource audioResource = new AudioResource(audioFile, "audio.x_wav");
+    Project project = new Project(programTypeReferencingResource("Program", AudioResource.class, audioResource), Project.SceneCameraType.WindowCamera);
+    project.addResource(audioResource);
+    File exportFile = temporaryFolder.newFile("exported-audio.a3w");
+
+    IoUtilities.exportProject(exportFile, project);
+
+    Project readProject = IoUtilities.readProject(exportFile);
+    assertNull("Tweedle decoding is still not implemented for player archives", readProject.getProgramType());
+    assertEquals(1, readProject.getResources().size());
+    Resource readResource = readProject.getResources().iterator().next();
+    assertEquals(AudioResource.class, readResource.getClass());
+    assertEquals(audioResource.getId(), readResource.getId());
+    assertEquals("sound.wav", readResource.getOriginalFileName());
+    assertEquals("sound.wav", readResource.getName());
+    assertEquals("audio.x_wav", readResource.getContentType());
+    assertArrayEquals(audioBytes, readResource.getData());
+    assertEquals(0.0, ((AudioResource) readResource).getDuration(), 0.0);
+  }
+
+  @Test
   public void jsonPlayerReaderReportsFutureVersion() throws Exception {
     String futureVersion = "999.0.0.0";
     File exportFile = temporaryFolder.newFile("future-export.a3w");
@@ -158,13 +185,17 @@ public class IoUtilitiesTest {
   }
 
   private static NamedUserType programTypeReferencingImageResources(String name, ImageResource... imageResources) {
+    return programTypeReferencingResource(name, ImageResource.class, imageResources);
+  }
+
+  private static <T extends Resource> NamedUserType programTypeReferencingResource(String name, Class<T> resourceClass, T... resources) {
     NamedUserType type = programType(name);
     BlockStatement body = new BlockStatement();
-    for (int i = 0; i < imageResources.length; i++) {
-      UserLocal image = new UserLocal("image" + i, ImageResource.class, true);
-      body.statements.add(new LocalDeclarationStatement(image, new ResourceExpression(ImageResource.class, imageResources[i])));
+    for (int i = 0; i < resources.length; i++) {
+      UserLocal resource = new UserLocal("resource" + i, resourceClass, true);
+      body.statements.add(new LocalDeclarationStatement(resource, new ResourceExpression(resourceClass, resources[i])));
     }
-    UserMethod userMethod = new UserMethod("rememberImages", Void.TYPE, new org.lgna.project.ast.UserParameter[0], body);
+    UserMethod userMethod = new UserMethod("rememberResources", Void.TYPE, new org.lgna.project.ast.UserParameter[0], body);
     type.methods.add(userMethod);
     return type;
   }
