@@ -11,6 +11,8 @@ import org.lgna.project.ast.BooleanExpressionBodyPair;
 import org.lgna.project.ast.BooleanLiteral;
 import org.lgna.project.ast.Comment;
 import org.lgna.project.ast.ConditionalStatement;
+import org.lgna.project.ast.CountLoop;
+import org.lgna.project.ast.IntegerLiteral;
 import org.lgna.project.ast.JavaType;
 import org.lgna.project.ast.LocalDeclarationStatement;
 import org.lgna.project.ast.NamedUserType;
@@ -257,6 +259,25 @@ public class ProjectCodeGeneratorTest {
   }
 
   @Test
+  public void generatedSyntheticUserMethodCountLoopSourceCompiles() throws Exception {
+    File aliceProject = temporaryFolder.newFile("synthetic-count-loop.a3p");
+    IoUtilities.writeProject(
+        aliceProject,
+        new Project(programTypeWithCountLoopMethod(), Project.SceneCameraType.WindowCamera));
+    File sourceDirectory = temporaryFolder.newFolder("generated-count-loop-src");
+    ProjectCodeGenerator.generateCode(aliceProject, sourceDirectory, null, false);
+
+    Path programPath = sourceDirectory.toPath().resolve("Program.java");
+    String programSource = Files.readString(programPath);
+    assertTrue(programSource.contains("void repeat()"));
+    assertTrue(programSource, programSource.contains("for(Integer indexA=0;indexA<3;indexA++)"));
+    compileJavaSources(
+        temporaryFolder.newFolder("generated-count-loop-classes").toPath(),
+        programPath,
+        sourceDirectory.toPath().resolve("AliceJavaFXLauncher.java"));
+  }
+
+  @Test
   public void generatedSyntheticResourceProjectSourcesCompile() throws Exception {
     Project project = new Project(programType("Program"), Project.SceneCameraType.WindowCamera);
     project.addResource(new TestResource("note.txt", "text/plain", "hello alice".getBytes(StandardCharsets.UTF_8)));
@@ -454,6 +475,19 @@ public class ProjectCodeGeneratorTest {
             },
             new BlockStatement(new Comment("else branch")))));
     type.methods.add(choose);
+    return type;
+  }
+
+  private static NamedUserType programTypeWithCountLoopMethod() {
+    NamedUserType type = programType("Program");
+    CountLoop loop = AstUtilities.createCountLoop(new IntegerLiteral(3));
+    loop.body.getValue().statements.add(new Comment("loop body"));
+    UserMethod repeat = new UserMethod(
+        "repeat",
+        Void.TYPE,
+        new UserParameter[0],
+        new BlockStatement(loop));
+    type.methods.add(repeat);
     return type;
   }
 
