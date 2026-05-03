@@ -195,6 +195,9 @@ public class XmlProjectIo implements ProjectIo {
 
     private Document readXML(String entryName, MigrationManager migrationManager, Version decodedVersion) throws IOException {
       InputStream is = container.getInputStream(entryName);
+      if (is == null) {
+        throw new IOException("Archive does not contain entry " + entryName);
+      }
       return readXML(is, migrationManager, decodedVersion);
     }
 

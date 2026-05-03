@@ -287,6 +287,60 @@ public class IoUtilitiesTest {
   }
 
   @Test
+  public void corruptTypeManifestDoesNotFallBackToXmlReader() throws Exception {
+    File typeFile = temporaryFolder.newFile("corrupt-manifest-type.a3c");
+    try (ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(typeFile))) {
+      String currentVersion = ProjectVersion.getCurrentVersion().toString();
+      writeZipEntry(zipOutputStream, ProjectIo.VERSION_ENTRY_NAME, currentVersion);
+      writeZipEntry(zipOutputStream, ProjectIo.MANIFEST_ENTRY_NAME, "{not-json");
+    }
+
+    IOException thrown = assertThrows(IOException.class, () -> IoUtilities.projectReader(typeFile));
+
+    assertTrue(thrown.getMessage().contains(ProjectIo.MANIFEST_ENTRY_NAME));
+  }
+
+  @Test
+  public void missingTypeManifestUsesXmlTypeFallback() throws Exception {
+    File typeFile = temporaryFolder.newFile("xml-type-without-manifest.a3c");
+    IoUtilities.writeType(typeFile, programType("LegacyType"));
+
+    try (ZipFile zipFile = new ZipFile(typeFile)) {
+      assertNull(zipFile.getEntry(ProjectIo.MANIFEST_ENTRY_NAME));
+      assertNotNull(zipFile.getEntry("type.xml"));
+    }
+    TypeResourcesPair readType = IoUtilities.readType(typeFile);
+
+    assertEquals("LegacyType", readType.getType().getName());
+  }
+
+  @Test
+  public void jsonStyleTypeArchiveWithoutManifestFailsInXmlFallback() throws Exception {
+    File typeFile = temporaryFolder.newFile("json-type-without-manifest.a3c");
+    try (ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(typeFile))) {
+      writeZipEntry(zipOutputStream, ProjectIo.VERSION_ENTRY_NAME, ProjectVersion.getCurrentVersion().toString());
+      writeZipEntry(zipOutputStream, "src/SyntheticType.twe", "class SyntheticType {}");
+    }
+
+    IOException thrown = assertThrows(IOException.class, () -> IoUtilities.readType(typeFile));
+
+    assertTrue(thrown.getMessage().contains("type.xml"));
+  }
+
+  @Test
+  public void jsonStylePlayerArchiveWithoutManifestFailsInXmlFallback() throws Exception {
+    File exportFile = temporaryFolder.newFile("json-player-without-manifest.a3w");
+    try (ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(exportFile))) {
+      writeZipEntry(zipOutputStream, ProjectIo.VERSION_ENTRY_NAME, ProjectVersion.getCurrentVersion().toString());
+      writeZipEntry(zipOutputStream, "src/Program.twe", "class Program {}");
+    }
+
+    IOException thrown = assertThrows(IOException.class, () -> IoUtilities.readProject(exportFile));
+
+    assertTrue(thrown.getMessage().contains("programType.xml"));
+  }
+
+  @Test
   public void jsonPlayerExportUsesSafeDistinctResourceEntries() throws Exception {
     ImageResource first = imageResource("image.png", 0xFFFF0000);
     ImageResource duplicate = imageResource("image.png", 0xFF00FF00);
