@@ -147,6 +147,50 @@ public class ModelResourceInfoTest {
     assertEquals(manifest.models.get(0).textureSet, manifest.models.get(1).textureSet);
   }
 
+  @Test
+  public void subResourcePlaceOnGroundFalseOverridesTrueParent() throws Exception {
+    ModelResourceInfo info = new ModelResourceInfo(parseXml("""
+        <AliceModel name="Prop" placeOnGround="true">
+          <Resource resourceName="FLOATING" modelName="PropModel" placeOnGround="false"/>
+        </AliceModel>
+        """));
+
+    ModelResourceInfo variant = info.getSubResource("FLOATING");
+
+    assertTrue(info.getPlaceOnGround());
+    assertFalse(variant.getPlaceOnGround());
+  }
+
+  @Test
+  public void subResourceMissingPlaceOnGroundInheritsFromParent() throws Exception {
+    ModelResourceInfo info = new ModelResourceInfo(parseXml("""
+        <AliceModel name="Prop" placeOnGround="true">
+          <Resource resourceName="DEFAULT" modelName="PropModel"/>
+        </AliceModel>
+        """));
+
+    ModelResourceInfo variant = info.getSubResource("DEFAULT");
+
+    assertTrue(variant.getPlaceOnGround());
+  }
+
+  @Test
+  public void manifestUsesModelNameWhenTextureNameIsMissing() throws Exception {
+    ModelResourceInfo info = new ModelResourceInfo(parseXml("""
+        <AliceModel name="Chair">
+          <Resource resourceName="GENERIC" modelName="ChairModel"/>
+        </AliceModel>
+        """));
+
+    ModelManifest manifest = info.createModelManifest();
+
+    assertNotNull(manifest.getStructure("ChairModel"));
+    assertNotNull(manifest.getTextureSet("ChairModel"));
+    assertNull(manifest.getStructure("ChairModel_null"));
+    assertEquals("ChairModel", manifest.models.get(0).structure);
+    assertEquals("ChairModel", manifest.models.get(0).textureSet);
+  }
+
   private static Document parseXml(String xml) throws Exception {
     DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
     return factory.newDocumentBuilder().parse(new InputSource(new StringReader(xml)));

@@ -72,7 +72,7 @@ public class ModelResourceInfo {
   private final String modelName;
   private final String textureName;
   private final boolean isDeprecated;
-  private final boolean placeOnGround;
+  private final Boolean placeOnGround;
   private ModelResourceInfo parentInfo = null;
   private final List<ModelResourceInfo> subResources = new LinkedList<ModelResourceInfo>();
 
@@ -136,7 +136,7 @@ public class ModelResourceInfo {
         } catch (Exception e) {
         }
       }
-      boolean placeOnGround = false;
+      Boolean placeOnGround = null;
       if (resourceElement.hasAttribute("placeOnGround")) {
         try {
           placeOnGround = Boolean.parseBoolean(resourceElement.getAttribute("placeOnGround"));
@@ -173,6 +173,10 @@ public class ModelResourceInfo {
   }
 
   public ModelResourceInfo(ModelResourceInfo parent, String resourceName, String creator, int creationYear, AxisAlignedBox boundingBox, String[] tags, String[] groupTags, String[] themeTags, String modelName, String textureName, boolean isDeprecated, boolean placeOnGround) {
+    this(parent, resourceName, creator, creationYear, boundingBox, tags, groupTags, themeTags, modelName, textureName, isDeprecated, Boolean.valueOf(placeOnGround));
+  }
+
+  private ModelResourceInfo(ModelResourceInfo parent, String resourceName, String creator, int creationYear, AxisAlignedBox boundingBox, String[] tags, String[] groupTags, String[] themeTags, String modelName, String textureName, boolean isDeprecated, Boolean placeOnGround) {
     this.parentInfo = parent;
     this.resourceName = resourceName;
     this.creator = creator;
@@ -328,10 +332,10 @@ public class ModelResourceInfo {
   }
 
   public boolean getPlaceOnGround() {
-    if ((this.placeOnGround == false) && (parentInfo != null)) {
-      return this.parentInfo.placeOnGround;
+    if ((this.placeOnGround == null) && (parentInfo != null)) {
+      return this.parentInfo.getPlaceOnGround();
     }
-    return this.placeOnGround;
+    return Boolean.TRUE.equals(this.placeOnGround);
   }
 
   public String[] getTags() {
@@ -501,7 +505,8 @@ public class ModelResourceInfo {
 
   private String getTextureReferenceName() {
     //Textures sets are model specific, so must prepend the model name
-    return getModelName() + "_" + getTextureName();
+    String texture = getTextureName();
+    return ((texture == null) || texture.isBlank()) ? getModelName() : getModelName() + "_" + texture;
   }
 
 }
