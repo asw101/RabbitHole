@@ -1,0 +1,33 @@
+name: Alice Test CI
+
+on:
+  push:
+    branches: [develop]
+  pull_request:
+    branches: [develop]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+          submodules: recursive
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Set up Maven 3.9.9
+        uses: s4u/setup-maven-action@v1.7.0
+        with:
+          java-version: '21'
+          maven-version: 3.9.9
+
+      - name: Run no-Sims test baseline
+        run: mvn -DincludeSims=false -Dinstall4j.skip clean test
