@@ -62,7 +62,6 @@ import org.lgna.project.reflect.ClassInfoManager;
 
 import javax.swing.*;
 import java.awt.Frame;
-import java.io.File;
 import java.util.Locale;
 
 /**
@@ -119,65 +118,28 @@ public class EntryPoint extends Application {
 
       ConsistentMouseDragEventQueue.pushIfAppropriate();
 
-      final int DEFAULT_WIDTH = 1000;
-      final int DEFAULT_HEIGHT = 740;
-      int xLocation = 0;
-      int yLocation = 0;
-      int width = DEFAULT_WIDTH;
-      int height = DEFAULT_HEIGHT;
-      boolean isMaximizationDesired = true;
-      File file = null;
-      String localeString = null;
-      int index = 0;
-      if (args.length > 0) {
-        if ("-l".equalsIgnoreCase(args[0])) {
-          index = 1;
-          if (args.length > 1) {
-            localeString = args[1];
-            index = 2;
-          }
-        }
-        if (args.length > index) {
-          file = new File(args[index]);
-        }
-        if (args.length > (index + 2)) {
-          try {
-            xLocation = Integer.parseInt(args[index + 1]);
-            yLocation = Integer.parseInt(args[index + 2]);
-            if (args.length > (index + 4)) {
-              width = Integer.parseInt(args[index + 3]);
-              height = Integer.parseInt(args[index + 4]);
-            }
-            isMaximizationDesired = false;
-          } catch (NumberFormatException nfe) {
-            xLocation = 0;
-            yLocation = 0;
-            width = DEFAULT_WIDTH;
-            height = DEFAULT_HEIGHT;
-          }
-        }
-      }
+      LaunchConfiguration launchConfiguration = LaunchConfiguration.parse(args);
 
       JFrame rootFrame = WindowStack.getRootFrame();
-      rootFrame.setLocation(xLocation, yLocation);
-      rootFrame.setSize(width, height);
+      rootFrame.setLocation(launchConfiguration.getXLocation(), launchConfiguration.getYLocation());
+      rootFrame.setSize(launchConfiguration.getWidth(), launchConfiguration.getHeight());
 
-      if (isMaximizationDesired) {
+      if (launchConfiguration.isMaximizationDesired()) {
         rootFrame.setExtendedState(rootFrame.getExtendedState() | Frame.MAXIMIZED_BOTH);
       }
-      if (localeString != null) {
-        System.setProperty("org.alice.ide.locale", localeString);
+      if (launchConfiguration.getLocaleString() != null) {
+        System.setProperty("org.alice.ide.locale", launchConfiguration.getLocaleString());
         String localeTest = System.getProperty("org.alice.ide.locale");
         System.out.println(localeTest);
       }
 
       loadClassInfos();
       StageIDE ide = new StageIDE(crashDetector);
-      if (file != null) {
-        if (file.exists()) {
-          ide.setProjectFileToLoadOnWindowOpened(file);
+      if (launchConfiguration.getProjectFile() != null) {
+        if (launchConfiguration.getProjectFile().exists()) {
+          ide.setProjectFileToLoadOnWindowOpened(launchConfiguration.getProjectFile());
         } else {
-          Logger.warning("file does not exist:", file);
+          Logger.warning("file does not exist:", launchConfiguration.getProjectFile());
         }
       }
       ide.initialize(args);
