@@ -76,12 +76,15 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -328,6 +331,8 @@ import java.util.zip.ZipInputStream;
           if ("nbproject/project.xml".equals(entry.getName())) {
             // Special handling for setting name of Ant-based projects; customize as needed:
             filterProjectXML(fo, str, projectRoot.getName());
+          } else if ("nbproject/project.properties".equals(entry.getName())) {
+            filterProjectProperties(fo, str, projectRoot.getName());
           } else {
             writeFile(str, fo);
           }
@@ -376,6 +381,25 @@ import java.util.zip.ZipInputStream;
       writeFile(str, fo);
     }
 
+  }
+
+  private static void filterProjectProperties(FileObject fo, ZipInputStream str, String name) throws IOException {
+    String properties = new String(str.readAllBytes(), StandardCharsets.UTF_8);
+    String renamed = renameProjectProperties(properties, name);
+    try (OutputStream out = fo.getOutputStream()) {
+      out.write(renamed.getBytes(StandardCharsets.UTF_8));
+    }
+  }
+
+  static String renameProjectProperties(String properties, String name) {
+    String renamed = replaceProperty(properties, "application.title", name);
+    return replaceProperty(renamed, "dist.jar", "${dist.dir}/" + name + ".jar");
+  }
+
+  private static String replaceProperty(String properties, String key, String value) {
+    Pattern pattern = Pattern.compile("(?m)^(\\s*" + Pattern.quote(key) + "\\s*=).*$");
+    Matcher matcher = pattern.matcher(properties);
+    return matcher.replaceFirst("$1 " + Matcher.quoteReplacement(value));
   }
 
   private int index;
