@@ -5,6 +5,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.lgna.common.Resource;
 import org.lgna.project.Project;
+import org.lgna.project.ast.AstUtilities;
 import org.lgna.project.ast.BlockStatement;
 import org.lgna.project.ast.Comment;
 import org.lgna.project.ast.JavaType;
@@ -12,6 +13,7 @@ import org.lgna.project.ast.LocalDeclarationStatement;
 import org.lgna.project.ast.NamedUserType;
 import org.lgna.project.ast.ParameterAccess;
 import org.lgna.project.ast.StringLiteral;
+import org.lgna.project.ast.ThisExpression;
 import org.lgna.project.ast.UserLocal;
 import org.lgna.project.ast.UserMethod;
 import org.lgna.project.ast.UserParameter;
@@ -192,6 +194,26 @@ public class ProjectCodeGeneratorTest {
   }
 
   @Test
+  public void generatedSyntheticUserMethodInvocationSourceCompiles() throws Exception {
+    File aliceProject = temporaryFolder.newFile("synthetic-method-invocation.a3p");
+    IoUtilities.writeProject(
+        aliceProject,
+        new Project(programTypeWithMethodInvocation(), Project.SceneCameraType.WindowCamera));
+    File sourceDirectory = temporaryFolder.newFolder("generated-method-invocation-src");
+    ProjectCodeGenerator.generateCode(aliceProject, sourceDirectory, null, false);
+
+    Path programPath = sourceDirectory.toPath().resolve("Program.java");
+    String programSource = Files.readString(programPath);
+    assertTrue(programSource.contains("void sayHello()"));
+    assertTrue(programSource.contains("void callSayHello()"));
+    assertTrue(programSource, programSource.contains("this.sayHello();"));
+    compileJavaSources(
+        temporaryFolder.newFolder("generated-method-invocation-classes").toPath(),
+        programPath,
+        sourceDirectory.toPath().resolve("AliceJavaFXLauncher.java"));
+  }
+
+  @Test
   public void generatedSyntheticResourceProjectSourcesCompile() throws Exception {
     Project project = new Project(programType("Program"), Project.SceneCameraType.WindowCamera);
     project.addResource(new TestResource("note.txt", "text/plain", "hello alice".getBytes(StandardCharsets.UTF_8)));
@@ -335,6 +357,23 @@ public class ProjectCodeGeneratorTest {
         new UserParameter[] {message},
         new BlockStatement(new LocalDeclarationStatement(copy, new ParameterAccess(message))));
     type.methods.add(userMethod);
+    return type;
+  }
+
+  private static NamedUserType programTypeWithMethodInvocation() {
+    NamedUserType type = programType("Program");
+    UserMethod sayHello = new UserMethod(
+        "sayHello",
+        Void.TYPE,
+        new UserParameter[0],
+        new BlockStatement(new Comment("hello alice")));
+    UserMethod callSayHello = new UserMethod(
+        "callSayHello",
+        Void.TYPE,
+        new UserParameter[0],
+        new BlockStatement(AstUtilities.createMethodInvocationStatement(new ThisExpression(), sayHello)));
+    type.methods.add(sayHello);
+    type.methods.add(callSayHello);
     return type;
   }
 
