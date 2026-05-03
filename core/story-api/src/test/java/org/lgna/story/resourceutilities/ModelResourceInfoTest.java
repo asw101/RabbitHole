@@ -109,6 +109,44 @@ public class ModelResourceInfoTest {
     assertEquals("DEFAULT.png", manifest.models.get(0).icon);
   }
 
+  @Test
+  public void subResourceLookupPrefersExactModelAndTextureBeforeModelFallback() throws Exception {
+    ModelResourceInfo info = new ModelResourceInfo(parseXml("""
+        <AliceModel name="Chair">
+          <Resource resourceName="GENERIC" modelName="ChairModel"/>
+          <Resource resourceName="RED" modelName="ChairModel" textureName="Red"/>
+          <Resource resourceName="BLUE" modelName="ChairModel" textureName="Blue"/>
+        </AliceModel>
+        """));
+
+    assertEquals("RED", info.getSubResource("ChairModel", "Red").getResourceName());
+    assertEquals("BLUE", info.getSubResource("ChairModel", "Blue").getResourceName());
+    assertEquals("GENERIC", info.getSubResource("ChairModel", "Green").getResourceName());
+    assertNull(info.getSubResource("TableModel", "Red"));
+  }
+
+  @Test
+  public void manifestDeduplicatesSharedStructureAndTextureSets() throws Exception {
+    ModelResourceInfo info = new ModelResourceInfo(parseXml("""
+        <AliceModel name="Chair">
+          <Resource resourceName="DEFAULT" modelName="ChairModel" textureName="Wood"/>
+          <Resource resourceName="COPY" modelName="ChairModel" textureName="Wood"/>
+        </AliceModel>
+        """));
+
+    ModelManifest manifest = info.createModelManifest();
+
+    assertEquals(1, manifest.resources.size());
+    assertEquals(1, manifest.textureSets.size());
+    assertEquals(2, manifest.models.size());
+    assertEquals("ChairModel_Wood", manifest.resources.get(0).name);
+    assertEquals("ChairModel_Wood", manifest.textureSets.get(0).name);
+    assertEquals("DEFAULT", manifest.models.get(0).name);
+    assertEquals("COPY", manifest.models.get(1).name);
+    assertEquals(manifest.models.get(0).structure, manifest.models.get(1).structure);
+    assertEquals(manifest.models.get(0).textureSet, manifest.models.get(1).textureSet);
+  }
+
   private static Document parseXml(String xml) throws Exception {
     DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
     return factory.newDocumentBuilder().parse(new InputSource(new StringReader(xml)));
