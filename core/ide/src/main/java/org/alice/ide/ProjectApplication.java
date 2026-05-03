@@ -103,6 +103,7 @@ public abstract class ProjectApplication extends PerspectiveApplication<ProjectD
   }
 
   private final BackupProjectOperation backupProjectOperation = new BackupProjectOperation();
+  private final ProjectBackupSelector projectBackupSelector = new ProjectBackupSelector();
 
   private UserActivity projectActivity;
   private HistoryListener projectHistoryListener;
@@ -603,26 +604,7 @@ public abstract class ProjectApplication extends PerspectiveApplication<ProjectD
     String typeFilter = isMainProjectCorrupted ? "" : BACKUP_AUTO;
     File[] backups = getSortedBackups(typeFilter, backupDir);
 
-    for (File backup : backups) {
-      if (!unloadableFiles.contains(backup.getName())) {
-        // if the main project is corrupted, return the latest backup
-        if (isMainProjectCorrupted || modifiedTime == null || modifiedTime == LocalDateTime.MIN) {
-          return backup;
-        }
-
-        // otherwise, return the latest backup, as long as it is newer than the main project
-
-        LocalDateTime backupCreatedTime = FileUtilities.getCreatedDateTime(backup);
-
-        if (backupCreatedTime.isAfter(modifiedTime)) {
-          return backup;
-        } else { // don't bother checking any backups older than the original project
-          return null;
-        }
-      }
-    }
-
-    return null;
+    return projectBackupSelector.getNextBackup(modifiedTime, backups, isMainProjectCorrupted, unloadableFiles);
   }
 
   protected File[] getSortedBackups(final String type, File backupDir) {
