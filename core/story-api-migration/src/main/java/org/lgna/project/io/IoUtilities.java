@@ -44,6 +44,9 @@ package org.lgna.project.io;
 
 import edu.cmu.cs.dennisc.java.io.FileUtilities;
 import edu.cmu.cs.dennisc.java.util.zip.DataSource;
+import org.alice.tweedle.file.Manifest;
+import org.alice.tweedle.file.ManifestEncoderDecoder;
+import org.alice.tweedle.file.ProjectManifest;
 import org.lgna.project.Project;
 import org.lgna.project.VersionNotSupportedException;
 import org.lgna.project.ast.NamedUserType;
@@ -51,7 +54,9 @@ import org.lgna.project.ast.NamedUserType;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.zip.ZipFile;
 
 /**
@@ -118,9 +123,22 @@ public abstract class IoUtilities {
   }
 
   private static ProjectIo.ProjectReader readerForContainer(ZipEntryContainer container) throws IOException {
-    // TODO read manifest to identify file type and use JsonProjectIo for a3w files
-    // Old format a3p files
+    Manifest manifest = readManifest(container);
+    if ((manifest != null) && EXPORT_EXTENSION.equals(manifest.metadata.fileType)) {
+      return JsonProjectIo.reader(container);
+    }
     return XmlProjectIo.reader(container);
+  }
+
+  private static Manifest readManifest(ZipEntryContainer container) throws IOException {
+    InputStream is = container.getInputStream(ProjectIo.MANIFEST_ENTRY_NAME);
+    if (is == null) {
+      return null;
+    }
+    try (InputStream manifestStream = is) {
+      byte[] manifestBytes = manifestStream.readAllBytes();
+      return ManifestEncoderDecoder.fromJson(new String(manifestBytes, StandardCharsets.UTF_8), ProjectManifest.class);
+    }
   }
 
   private static ProjectIo.ProjectWriter latestReadbleWriter() {

@@ -46,6 +46,7 @@ import edu.cmu.cs.dennisc.java.util.zip.ByteArrayDataSource;
 import edu.cmu.cs.dennisc.java.util.zip.DataSource;
 import edu.cmu.cs.dennisc.pattern.IsInstanceCrawler;
 import edu.cmu.cs.dennisc.print.PrintUtilities;
+import edu.cmu.cs.dennisc.java.io.InputStreamUtilities;
 import org.alice.serialization.tweedle.TweedleEncoderDecoder;
 import org.alice.tweedle.file.*;
 import org.lgna.common.Resource;
@@ -60,7 +61,9 @@ import org.lgna.story.resources.JointedModelResource;
 import org.lgna.story.resourceutilities.ResourceTypeHelper;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -78,7 +81,10 @@ public class JsonProjectIo extends DataSourceIo implements ProjectIo {
   }
 
   private static class JsonProjectReader implements ProjectReader {
+    private final ZipEntryContainer container;
+
     JsonProjectReader(ZipEntryContainer container) {
+      this.container = container;
     }
 
     @Override
@@ -107,36 +113,66 @@ public class JsonProjectIo extends DataSourceIo implements ProjectIo {
       // Ignored for now
     }
 
-    private ProjectManifest readManifest() {
-      return null;
+    private ProjectManifest readManifest() throws IOException {
+      InputStream is = container.getInputStream(MANIFEST_ENTRY_NAME);
+      if (is == null) {
+        return null;
+      }
+      try (InputStream manifestStream = is) {
+        byte[] manifestBytes = InputStreamUtilities.getBytes(manifestStream);
+        return ManifestEncoderDecoder.fromJson(new String(manifestBytes, StandardCharsets.UTF_8), ProjectManifest.class);
+      }
     }
 
     // On XML side this reads the resources.xml and files in the referenced files in the resource directory.
     // It relies on further XML decoding inside Resource class as well.
-    private static Set<Resource> readResources(Manifest manifest) throws IOException {
+    private Set<Resource> readResources(Manifest manifest) throws IOException {
       Set<Resource> resources = new HashSet<>();
-      for (ResourceReference resource : manifest.resources) {
-        resources.add(readResource(resource));
+      if (manifest == null) {
+        return resources;
+      }
+      for (ResourceReference resourceReference : manifest.resources) {
+        Resource resource = readResource(resourceReference);
+        if (resource != null) {
+          resources.add(resource);
+        }
       }
       return resources;
     }
 
-    private static Resource readResource(ResourceReference resourceReference) {
-      String contentType = resourceReference.getContentType();
-      String id = resourceReference.name;
+    private Resource readResource(ResourceReference resourceReference) throws IOException {
       String entry = resourceReference.file;
-      if ((contentType != null) && (id != null) && (entry != null)) {
-        // TODO Read all entries
-        //      byte[] data = InputStreamUtilities.getBytes( container.getInputStream( entryName ) );
-        //      if( data != null ) {
-        // TODO translate contentType to Resource subclass and fill in data
-        Resource resource = null;
-        return resource;
-        //      } else {
-        //        PrintUtilities.println( "WARNING: no data for resource:", entryName );
-        //      }
+      if (entry == null) {
+        return null;
+      }
+      InputStream is = container.getInputStream(entry);
+      if (is == null) {
+        PrintUtilities.println("WARNING: no data for resource:", entry);
+        return null;
+      }
+      try (InputStream resourceStream = is) {
+        byte[] data = InputStreamUtilities.getBytes(resourceStream);
+        if (resourceReference instanceof ImageReference imageReference) {
+          ImageResource resource = ImageResource.valueOf(imageReference.uuid.toString());
+          applyResourceReference(resource, imageReference, data);
+          resource.setWidth((int) imageReference.width);
+          resource.setHeight((int) imageReference.height);
+          return resource;
+        }
+        if (resourceReference instanceof AudioReference audioReference) {
+          AudioResource resource = AudioResource.valueOf(audioReference.uuid.toString());
+          applyResourceReference(resource, audioReference, data);
+          resource.setDuration(audioReference.duration);
+          return resource;
+        }
       }
       return null;
+    }
+
+    private static void applyResourceReference(Resource resource, ResourceReference resourceReference, byte[] data) {
+      resource.setName(resourceReference.name);
+      resource.setOriginalFileName(resourceReference.name);
+      resource.setContent(resourceReference.format, data);
     }
   }
 

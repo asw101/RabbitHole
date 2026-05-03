@@ -160,7 +160,7 @@ public class ProjectFileUtilitiesTest {
   }
 
   @Test
-  public void exportCopyWritesReferencedImageResourceButIsNotEditorReadable() throws Exception {
+  public void exportCopyWritesReferencedImageResourceReadableThroughJsonIo() throws Exception {
     ImageResource imageResource = new ImageResource(
         new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB),
         "picture.png",
@@ -188,7 +188,16 @@ public class ProjectFileUtilitiesTest {
           StandardCharsets.UTF_8);
       assertTrue(manifest, manifest.contains("\"file\":\"resources/picture.png\""));
     }
-    assertThrows(IllegalArgumentException.class, () -> IoUtilities.readProject(exportFile));
+    Project readProject = IoUtilities.readProject(exportFile);
+    assertNull("Tweedle decoding is still not implemented for player archives", readProject.getProgramType());
+    assertEquals(1, readProject.getResources().size());
+    Resource readResource = readProject.getResources().iterator().next();
+    assertEquals(ImageResource.class, readResource.getClass());
+    assertEquals(imageResource.getId(), readResource.getId());
+    assertEquals("picture.png", readResource.getOriginalFileName());
+    assertEquals("picture.png", readResource.getName());
+    assertEquals("png", readResource.getContentType());
+    assertArrayEquals(imageResource.getData(), readResource.getData());
   }
 
   @Test

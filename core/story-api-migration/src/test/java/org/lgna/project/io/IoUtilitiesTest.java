@@ -4,11 +4,18 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.lgna.common.Resource;
+import org.lgna.common.resources.ImageResource;
 import org.lgna.project.Project;
+import org.lgna.project.ast.BlockStatement;
 import org.lgna.project.ast.JavaType;
 import org.lgna.project.ast.NamedUserType;
+import org.lgna.project.ast.LocalDeclarationStatement;
+import org.lgna.project.ast.ResourceExpression;
+import org.lgna.project.ast.UserLocal;
+import org.lgna.project.ast.UserMethod;
 import org.lgna.story.SProgram;
 
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
@@ -72,10 +79,46 @@ public class IoUtilitiesTest {
     }
   }
 
+  @Test
+  public void readsExportedPlayerArchiveImageResource() throws Exception {
+    ImageResource imageResource = new ImageResource(
+        new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB),
+        "picture.png",
+        "png");
+    Project project = new Project(programTypeReferencingImageResource("Program", imageResource), Project.SceneCameraType.WindowCamera);
+    project.addResource(imageResource);
+    File exportFile = temporaryFolder.newFile("exported-image.a3w");
+
+    IoUtilities.exportProject(exportFile, project);
+
+    Project readProject = IoUtilities.readProject(exportFile);
+    assertNull("Tweedle decoding is still not implemented for player archives", readProject.getProgramType());
+    assertEquals(1, readProject.getResources().size());
+    Resource readResource = readProject.getResources().iterator().next();
+    assertEquals(ImageResource.class, readResource.getClass());
+    assertEquals(imageResource.getId(), readResource.getId());
+    assertEquals("picture.png", readResource.getOriginalFileName());
+    assertEquals("picture.png", readResource.getName());
+    assertEquals("png", readResource.getContentType());
+    assertArrayEquals(imageResource.getData(), readResource.getData());
+  }
+
   private static NamedUserType programType(String name) {
     NamedUserType type = new NamedUserType();
     type.name.setValue(name);
     type.superType.setValue(JavaType.getInstance(SProgram.class));
+    return type;
+  }
+
+  private static NamedUserType programTypeReferencingImageResource(String name, ImageResource imageResource) {
+    NamedUserType type = programType(name);
+    UserLocal image = new UserLocal("image", ImageResource.class, true);
+    UserMethod userMethod = new UserMethod(
+        "rememberImage",
+        Void.TYPE,
+        new org.lgna.project.ast.UserParameter[0],
+        new BlockStatement(new LocalDeclarationStatement(image, new ResourceExpression(ImageResource.class, imageResource))));
+    type.methods.add(userMethod);
     return type;
   }
 
