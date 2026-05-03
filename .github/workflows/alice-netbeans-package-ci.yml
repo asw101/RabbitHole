@@ -1,0 +1,33 @@
+name: Alice NetBeans Package CI
+
+on:
+  push:
+    branches: [develop]
+  pull_request:
+    branches: [develop]
+
+jobs:
+  package-netbeans:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          lfs: false
+          submodules: recursive
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Set up Maven 3.9.9
+        uses: s4u/setup-maven-action@v1.7.0
+        with:
+          java-version: '21'
+          maven-version: 3.9.9
+
+      - name: Build NetBeans package without Sims assets
+        run: mvn -DincludeSims=false -Dinstall4j.skip -pl netbeans -am package -DskipTests
