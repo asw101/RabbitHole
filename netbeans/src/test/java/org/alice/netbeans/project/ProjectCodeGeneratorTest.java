@@ -214,6 +214,26 @@ public class ProjectCodeGeneratorTest {
   }
 
   @Test
+  public void generatedSyntheticUserMethodInvocationWithArgumentSourceCompiles() throws Exception {
+    File aliceProject = temporaryFolder.newFile("synthetic-method-invocation-argument.a3p");
+    IoUtilities.writeProject(
+        aliceProject,
+        new Project(programTypeWithMethodInvocationArgument(), Project.SceneCameraType.WindowCamera));
+    File sourceDirectory = temporaryFolder.newFolder("generated-method-invocation-argument-src");
+    ProjectCodeGenerator.generateCode(aliceProject, sourceDirectory, null, false);
+
+    Path programPath = sourceDirectory.toPath().resolve("Program.java");
+    String programSource = Files.readString(programPath);
+    assertTrue(programSource.contains("void remember(String message)"));
+    assertTrue(programSource.contains("void callRemember()"));
+    assertTrue(programSource, programSource.contains("this.remember(\"hello alice\");"));
+    compileJavaSources(
+        temporaryFolder.newFolder("generated-method-invocation-argument-classes").toPath(),
+        programPath,
+        sourceDirectory.toPath().resolve("AliceJavaFXLauncher.java"));
+  }
+
+  @Test
   public void generatedSyntheticResourceProjectSourcesCompile() throws Exception {
     Project project = new Project(programType("Program"), Project.SceneCameraType.WindowCamera);
     project.addResource(new TestResource("note.txt", "text/plain", "hello alice".getBytes(StandardCharsets.UTF_8)));
@@ -374,6 +394,28 @@ public class ProjectCodeGeneratorTest {
         new BlockStatement(AstUtilities.createMethodInvocationStatement(new ThisExpression(), sayHello)));
     type.methods.add(sayHello);
     type.methods.add(callSayHello);
+    return type;
+  }
+
+  private static NamedUserType programTypeWithMethodInvocationArgument() {
+    NamedUserType type = programType("Program");
+    UserParameter message = new UserParameter("message", String.class);
+    UserLocal copy = new UserLocal("copy", String.class, true);
+    UserMethod remember = new UserMethod(
+        "remember",
+        Void.TYPE,
+        new UserParameter[] {message},
+        new BlockStatement(new LocalDeclarationStatement(copy, new ParameterAccess(message))));
+    UserMethod callRemember = new UserMethod(
+        "callRemember",
+        Void.TYPE,
+        new UserParameter[0],
+        new BlockStatement(AstUtilities.createMethodInvocationStatement(
+            new ThisExpression(),
+            remember,
+            new StringLiteral("hello alice"))));
+    type.methods.add(remember);
+    type.methods.add(callRemember);
     return type;
   }
 
