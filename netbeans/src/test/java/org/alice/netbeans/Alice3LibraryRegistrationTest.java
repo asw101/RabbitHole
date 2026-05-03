@@ -38,4 +38,17 @@ public class Alice3LibraryRegistrationTest {
     assertTrue(library.contains("<type>javadoc</type>"));
     assertTrue(library.contains("nbinst:/doc/aliceDocs.zip"));
   }
+
+  @Test
+  public void pomPackagesAliceLibrarySourceAndJavadocVolumes() throws Exception {
+    String pom = Files.readString(Path.of("pom.xml"), StandardCharsets.UTF_8);
+
+    assertTrue(pom.contains("<id>javadoc</id>"));
+    assertTrue(pom.contains("<descriptor>src/main/resources/assemblies/rename-javadoc.xml</descriptor>"));
+    assertTrue(pom.contains("<id>story-src</id>"));
+    assertTrue(pom.contains("<descriptor>src/main/resources/assemblies/story-src.xml</descriptor>"));
+    assertTrue(pom.contains("<finalName>nbm/clusters/extra/src/aliceSource</finalName>"));
+    assertTrue(pom.contains("<id>final-name</id>"));
+    assertTrue(pom.contains("<descriptor>src/main/resources/assemblies/rename-nbm.xml</descriptor>"));
+  }
 }
