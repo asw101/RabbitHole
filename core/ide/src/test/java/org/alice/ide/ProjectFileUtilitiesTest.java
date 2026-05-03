@@ -69,6 +69,36 @@ public class ProjectFileUtilitiesTest {
   }
 
   @Test
+  public void copyDefaultBackupDirectoryMovesAutoProjectBackupsToNamedBackupDirectory() throws IOException {
+    Path defaultBackupDirectory = temporaryFolder.newFolder(".defaultbak").toPath();
+    Path firstBackup = defaultBackupDirectory.resolve("auto20240102_120000.a3p");
+    Path secondBackup = defaultBackupDirectory.resolve("auto20240102_130000.a3p");
+    Path savedBackup = defaultBackupDirectory.resolve("save20240102_130000.a3p");
+    Path nonProjectBackup = defaultBackupDirectory.resolve("auto20240102_140000.txt");
+    Files.writeString(firstBackup, "first", StandardCharsets.UTF_8);
+    Files.writeString(secondBackup, "second", StandardCharsets.UTF_8);
+    Files.writeString(savedBackup, "saved", StandardCharsets.UTF_8);
+    Files.writeString(nonProjectBackup, "text", StandardCharsets.UTF_8);
+    ProjectFileUtilities backupUtilities = new ProjectFileUtilities(null) {
+      @Override
+      public Path defaultBackupDirectory() {
+        return defaultBackupDirectory;
+      }
+    };
+    File savedProject = new File(temporaryFolder.getRoot(), "world.a3p");
+
+    backupUtilities.copyDefaultBackupDirectory(savedProject);
+
+    Path namedBackupDirectory = temporaryFolder.getRoot().toPath().resolve("world.bak");
+    assertFalse(Files.exists(firstBackup));
+    assertFalse(Files.exists(secondBackup));
+    assertEquals("first", Files.readString(namedBackupDirectory.resolve(firstBackup.getFileName()), StandardCharsets.UTF_8));
+    assertEquals("second", Files.readString(namedBackupDirectory.resolve(secondBackup.getFileName()), StandardCharsets.UTF_8));
+    assertEquals("saved", Files.readString(savedBackup, StandardCharsets.UTF_8));
+    assertEquals("text", Files.readString(nonProjectBackup, StandardCharsets.UTF_8));
+  }
+
+  @Test
   public void exportCopyWritesPlayerArchiveWithThumbnailAndManifest() throws IOException {
     Project project = new Project(programType("Program"), Project.SceneCameraType.WindowCamera);
     ProjectFileUtilities exportUtilities = new ProjectFileUtilities(null) {
@@ -96,6 +126,30 @@ public class ProjectFileUtilitiesTest {
           StandardCharsets.UTF_8);
       assertTrue(manifest, manifest.contains("\"name\":\"Program\""));
       assertTrue(manifest, manifest.contains("\"icon\":\"thumbnail.png\""));
+    }
+  }
+
+  @Test
+  public void exportCopyUsesForcedUpToDateProjectSnapshot() throws IOException {
+    Project forcedProject = new Project(programType("ForcedProgram"), Project.SceneCameraType.WindowCamera);
+    ProjectFileUtilities exportUtilities = new ProjectFileUtilities(null) {
+      @Override
+      Project getForcedUpToDateProject() {
+        return forcedProject;
+      }
+
+      @Override
+      Project getUpToDateProject() {
+        fail("Export should use the forced up-to-date project snapshot");
+        return null;
+      }
+    };
+    File exportFile = temporaryFolder.newFile("forced-export.a3p");
+
+    exportUtilities.exportCopyOfProjectTo(exportFile);
+
+    try (ZipFile zipFile = new ZipFile(exportFile)) {
+      assertNotNull(zipFile.getEntry("src/ForcedProgram.twe"));
     }
   }
 
@@ -145,6 +199,29 @@ public class ProjectFileUtilitiesTest {
     assertEquals("note.txt", readResource.getName());
     assertEquals("text/plain", readResource.getContentType());
     assertArrayEquals(data, readResource.getData());
+  }
+
+  @Test
+  public void saveCopyUsesUpToDateProjectSnapshot() throws Exception {
+    Project project = new Project(programType("SavedProgram"), Project.SceneCameraType.WindowCamera);
+    ProjectFileUtilities saveUtilities = new ProjectFileUtilities(null) {
+      @Override
+      Project getUpToDateProject() {
+        return project;
+      }
+
+      @Override
+      Project getForcedUpToDateProject() {
+        fail("Save copy should use the normal up-to-date project snapshot");
+        return null;
+      }
+    };
+    File saveFile = temporaryFolder.newFile("snapshot-save.a3p");
+
+    saveUtilities.saveCopyOfProjectTo(saveFile);
+
+    Project readProject = IoUtilities.readProject(saveFile);
+    assertEquals("SavedProgram", readProject.getProgramType().getName());
   }
 
   private static NamedUserType programType(String name) {
