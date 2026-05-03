@@ -53,6 +53,32 @@
 
   <build>
     <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>require-tweedle-lang-submodule</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <requireFilesExist>
+                  <message>Missing Tweedle grammar submodule. Run 'git submodule update --init tweedle-lang' from the repository root, then rerun Maven.</message>
+                  <files>
+                    <file>${maven.multiModuleProjectDirectory}/tweedle-lang/Grammar/TweedleLexer.g4</file>
+                    <file>${maven.multiModuleProjectDirectory}/tweedle-lang/Grammar/TweedleParser.g4</file>
+                  </files>
+                </requireFilesExist>
+              </rules>
+              <fail>true</fail>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
       <!-- Plugin to compile the g4 files ahead of the java files
            See https://github.com/antlr/antlr4/blob/master/antlr4-maven-plugin/src/site/apt/examples/simple.apt.vm
            Except that the grammar does not need to contain the package declaration as stated in the documentation (I do not know why)

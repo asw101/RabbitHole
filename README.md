@@ -18,16 +18,29 @@ Download and install the following build tools
 
 ---
 
-Clone the Alice 3 repository into a local directory, `${alice3}`
+Clone this Alice 3 modernization repository into a local directory, `${alice3}`
 
     cd ${alice3}
-    git clone --recurse-submodules https://github.com/TheAliceProject/alice3.git
+    git clone --recurse-submodules https://github.com/rysweet/alice3-modernization.git
     
 Alice 3 uses a submodule for the Tweedle language, the internal representation of Alice code.
 If you do not use the `--recurse-submodules` flag above it can be pulled in explicitly.
 
     git submodule init
     git submodule update
+
+Quick diagnostic for worktrees or checkouts that were cloned without submodules:
+
+    git submodule status tweedle-lang
+    test -d tweedle-lang/Grammar && echo "tweedle grammar present"
+
+If the grammar directory is missing, run:
+
+    git submodule update --init tweedle-lang
+
+Maven builds that reach `core/tweedle` require `tweedle-lang/Grammar/TweedleLexer.g4` and
+`tweedle-lang/Grammar/TweedleParser.g4`. Missing generated Tweedle parser classes usually
+mean the submodule was not initialized in the current checkout or worktree.
 
 To ensure the lfs files are available locally:
 
