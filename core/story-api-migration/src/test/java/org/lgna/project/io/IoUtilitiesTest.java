@@ -1,6 +1,7 @@
 package org.lgna.project.io;
 
 import edu.cmu.cs.dennisc.java.util.zip.DataSource;
+import edu.cmu.cs.dennisc.pattern.IsInstanceCrawler;
 import org.alice.tweedle.file.Manifest;
 import org.alice.tweedle.file.ManifestEncoderDecoder;
 import org.alice.tweedle.file.AudioReference;
@@ -20,9 +21,10 @@ import org.lgna.project.Project;
 import org.lgna.project.ProjectVersion;
 import org.lgna.project.Version;
 import org.lgna.project.ast.BlockStatement;
+import org.lgna.project.ast.CrawlPolicy;
 import org.lgna.project.ast.JavaType;
-import org.lgna.project.ast.NamedUserType;
 import org.lgna.project.ast.LocalDeclarationStatement;
+import org.lgna.project.ast.NamedUserType;
 import org.lgna.project.ast.ResourceExpression;
 import org.lgna.project.ast.UserLocal;
 import org.lgna.project.ast.UserMethod;
@@ -355,6 +357,92 @@ public class IoUtilitiesTest {
     assertEquals(2.0, secondRead.getDuration(), 0.0);
   }
 
+  @Test
+  public void xmlProjectImageReadsWithSameUuidDoNotMutateEarlierRead() throws Exception {
+    UUID sharedId = UUID.randomUUID();
+    byte[] firstData = new byte[] {1, 2, 3};
+    byte[] secondData = new byte[] {4, 5, 6};
+    File firstArchive = temporaryFolder.newFile("first-image.a3p");
+    File secondArchive = temporaryFolder.newFile("second-image.a3p");
+    ImageResource first = imageResource(sharedId, "first.png", firstData);
+    ImageResource second = imageResource(sharedId, "second.png", secondData);
+    IoUtilities.writeProject(firstArchive, projectReferencingResource("Program", ImageResource.class, first));
+    IoUtilities.writeProject(secondArchive, projectReferencingResource("Program", ImageResource.class, second));
+
+    Project firstProject = IoUtilities.readProject(firstArchive);
+    ImageResource firstRead = (ImageResource) onlyResource(firstProject);
+    Project secondProject = IoUtilities.readProject(secondArchive);
+    ImageResource secondRead = (ImageResource) onlyResource(secondProject);
+
+    assertNotSame(firstRead, secondRead);
+    assertSame(firstRead, firstResourceExpressionResource(firstProject));
+    assertSame(secondRead, firstResourceExpressionResource(secondProject));
+    assertEquals(sharedId, firstRead.getId());
+    assertEquals(sharedId, secondRead.getId());
+    assertEquals("first.png", firstRead.getName());
+    assertArrayEquals(firstData, firstRead.getData());
+    assertEquals("second.png", secondRead.getName());
+    assertArrayEquals(secondData, secondRead.getData());
+  }
+
+  @Test
+  public void xmlProjectAudioReadsWithSameUuidDoNotMutateEarlierRead() throws Exception {
+    UUID sharedId = UUID.randomUUID();
+    byte[] firstData = new byte[] {1, 2, 3};
+    byte[] secondData = new byte[] {4, 5, 6};
+    File firstArchive = temporaryFolder.newFile("first-audio.a3p");
+    File secondArchive = temporaryFolder.newFile("second-audio.a3p");
+    AudioResource first = audioResource(sharedId, "first.wav", firstData, 1.0);
+    AudioResource second = audioResource(sharedId, "second.wav", secondData, 2.0);
+    IoUtilities.writeProject(firstArchive, projectReferencingResource("Program", AudioResource.class, first));
+    IoUtilities.writeProject(secondArchive, projectReferencingResource("Program", AudioResource.class, second));
+
+    Project firstProject = IoUtilities.readProject(firstArchive);
+    AudioResource firstRead = (AudioResource) onlyResource(firstProject);
+    Project secondProject = IoUtilities.readProject(secondArchive);
+    AudioResource secondRead = (AudioResource) onlyResource(secondProject);
+
+    assertNotSame(firstRead, secondRead);
+    assertSame(firstRead, firstResourceExpressionResource(firstProject));
+    assertSame(secondRead, firstResourceExpressionResource(secondProject));
+    assertEquals(sharedId, firstRead.getId());
+    assertEquals(sharedId, secondRead.getId());
+    assertEquals("first.wav", firstRead.getName());
+    assertArrayEquals(firstData, firstRead.getData());
+    assertEquals(1.0, firstRead.getDuration(), 0.0);
+    assertEquals("second.wav", secondRead.getName());
+    assertArrayEquals(secondData, secondRead.getData());
+    assertEquals(2.0, secondRead.getDuration(), 0.0);
+  }
+
+  @Test
+  public void xmlProjectTestResourceReadsWithSameUuidDoNotMutateEarlierRead() throws Exception {
+    UUID sharedId = UUID.randomUUID();
+    byte[] firstData = "first".getBytes(StandardCharsets.UTF_8);
+    byte[] secondData = "second".getBytes(StandardCharsets.UTF_8);
+    File firstArchive = temporaryFolder.newFile("first-test-resource.a3p");
+    File secondArchive = temporaryFolder.newFile("second-test-resource.a3p");
+    TestResource first = testResource(sharedId, "first.txt", "text/plain", firstData);
+    TestResource second = testResource(sharedId, "second.txt", "text/plain", secondData);
+    IoUtilities.writeProject(firstArchive, projectReferencingResource("Program", TestResource.class, first));
+    IoUtilities.writeProject(secondArchive, projectReferencingResource("Program", TestResource.class, second));
+
+    Project firstProject = IoUtilities.readProject(firstArchive);
+    TestResource firstRead = (TestResource) onlyResource(firstProject);
+    Project secondProject = IoUtilities.readProject(secondArchive);
+    TestResource secondRead = (TestResource) onlyResource(secondProject);
+
+    assertNotSame(firstRead, secondRead);
+    assertSame(firstRead, firstResourceExpressionResource(firstProject));
+    assertSame(secondRead, firstResourceExpressionResource(secondProject));
+    assertEquals(sharedId, firstRead.getId());
+    assertEquals(sharedId, secondRead.getId());
+    assertEquals("first.txt", firstRead.getName());
+    assertArrayEquals(firstData, firstRead.getData());
+    assertEquals("second.txt", secondRead.getName());
+    assertArrayEquals(secondData, secondRead.getData());
+  }
+
   private static NamedUserType programType(String name) {
     NamedUserType type = new NamedUserType();
     type.name.setValue(name);
@@ -388,6 +476,39 @@ public class IoUtilitiesTest {
     return new ImageResource(image, fileName, "png");
   }
 
+  private static ImageResource imageResource(UUID uuid, String fileName, byte[] data) {
+    ImageResource resource = new ImageResource(uuid);
+    resource.setOriginalFileName(fileName);
+    resource.setName(fileName);
+    resource.setContent("png", data);
+    resource.setWidth(1);
+    resource.setHeight(1);
+    return resource;
+  }
+
+  private static AudioResource audioResource(UUID uuid, String fileName, byte[] data, double duration) {
+    AudioResource resource = new AudioResource(uuid);
+    resource.setOriginalFileName(fileName);
+    resource.setName(fileName);
+    resource.setContent("audio.x_wav", data);
+    resource.setDuration(duration);
+    return resource;
+  }
+
+  private static TestResource testResource(UUID uuid, String fileName, String contentType, byte[] data) {
+    TestResource resource = new TestResource(uuid);
+    resource.setOriginalFileName(fileName);
+    resource.setName(fileName);
+    resource.setContent(contentType, data);
+    return resource;
+  }
+
+  private static <T extends Resource> Project projectReferencingResource(String name, Class<T> resourceClass, T resource) {
+    Project project = new Project(programTypeReferencingResource(name, resourceClass, resource), Project.SceneCameraType.WindowCamera);
+    project.addResource(resource);
+    return project;
+  }
+
   private static Map<UUID, Resource> resourcesById(Project project) {
     Map<UUID, Resource> resources = new HashMap<>();
     for (Resource resource : project.getResources()) {
@@ -399,6 +520,18 @@ public class IoUtilitiesTest {
   private static Resource onlyResource(Project project) {
     assertEquals(1, project.getResources().size());
     return project.getResources().iterator().next();
+  }
+
+  private static Resource firstResourceExpressionResource(Project project) {
+    IsInstanceCrawler<ResourceExpression> crawler = new IsInstanceCrawler<ResourceExpression>(ResourceExpression.class) {
+      @Override
+      protected boolean isAcceptable(ResourceExpression resourceExpression) {
+        return true;
+      }
+    };
+    project.getProgramType().crawl(crawler, CrawlPolicy.COMPLETE);
+    assertFalse(crawler.getList().isEmpty());
+    return crawler.getList().get(0).resource.getValue();
   }
 
   private static ImageReference imageReference(UUID uuid, String name, String format) {
@@ -476,8 +609,11 @@ public class IoUtilitiesTest {
   }
 
   public static class TestResource extends Resource {
+    private static final Map<UUID, TestResource> uuidToResourceMap = new HashMap<>();
+
     public TestResource(String fileName, String contentType, byte[] data) {
       super(fileName, contentType, data);
+      uuidToResourceMap.put(this.getId(), this);
     }
 
     private TestResource(UUID uuid) {
@@ -485,7 +621,13 @@ public class IoUtilitiesTest {
     }
 
     public static TestResource valueOf(String uuidText) {
-      return new TestResource(UUID.fromString(uuidText));
+      UUID uuid = UUID.fromString(uuidText);
+      TestResource resource = uuidToResourceMap.get(uuid);
+      if (resource == null) {
+        resource = new TestResource(uuid);
+        uuidToResourceMap.put(uuid, resource);
+      }
+      return resource;
     }
   }
 }

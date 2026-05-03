@@ -45,7 +45,6 @@ package org.lgna.project.io;
 import edu.cmu.cs.dennisc.java.io.InputStreamUtilities;
 import edu.cmu.cs.dennisc.java.io.TextFileUtilities;
 import edu.cmu.cs.dennisc.java.lang.ClassUtilities;
-import edu.cmu.cs.dennisc.java.lang.reflect.ReflectionUtilities;
 import edu.cmu.cs.dennisc.java.util.zip.ByteArrayDataSource;
 import edu.cmu.cs.dennisc.java.util.zip.DataSource;
 import edu.cmu.cs.dennisc.java.util.zip.ZipUtilities;
@@ -117,6 +116,7 @@ public class XmlProjectIo implements ProjectIo {
         cameraType = Project.SceneCameraType.VRHeadset;
       }
       Set<Resource> resources = readResources();
+      bindResourceExpressions(type, resources);
       Set<NamedUserType> namedUserTypes = Collections.emptySet();
       return new Project(type, namedUserTypes, resources, cameraType);
     }
@@ -133,6 +133,7 @@ public class XmlProjectIo implements ProjectIo {
     public TypeResourcesPair readType() throws IOException, VersionNotSupportedException {
       NamedUserType type = readType(TYPE_ENTRY_NAME);
       Set<Resource> resources = readResources();
+      bindResourceExpressions(type, resources);
       return new TypeResourcesPair(type, resources);
     }
 
@@ -221,7 +222,7 @@ public class XmlProjectIo implements ProjectIo {
             if (data != null) {
               try {
                 Class<? extends Resource> resourceCls = (Class<? extends Resource>) ClassUtilities.forName(className);
-                Resource resource = ReflectionUtilities.valueOf(resourceCls, uuidText);
+                Resource resource = createResource(resourceCls, uuidText);
                 resource.decodeAttributes(xmlElement, data);
                 resources.add(resource);
               } catch (ClassNotFoundException cnfe) {
@@ -234,6 +235,48 @@ public class XmlProjectIo implements ProjectIo {
         }
       }
       return resources;
+    }
+
+    private static Resource createResource(Class<? extends Resource> resourceCls, String uuidText) throws IOException {
+      UUID uuid;
+      try {
+        uuid = UUID.fromString(uuidText);
+      } catch (IllegalArgumentException iae) {
+        throw new IOException("Invalid resource UUID " + uuidText, iae);
+      }
+      try {
+        java.lang.reflect.Constructor<? extends Resource> constructor = resourceCls.getDeclaredConstructor(UUID.class);
+        constructor.setAccessible(true);
+        return constructor.newInstance(uuid);
+      } catch (ReflectiveOperationException | SecurityException e) {
+        throw new IOException("Unable to create resource " + resourceCls.getName() + " with UUID " + uuidText, e);
+      }
+    }
+
+    private static void bindResourceExpressions(NamedUserType type, Set<Resource> resources) {
+      if ((type == null) || resources.isEmpty()) {
+        return;
+      }
+      Map<UUID, Resource> resourcesById = new HashMap<>();
+      for (Resource resource : resources) {
+        resourcesById.put(resource.getId(), resource);
+      }
+      IsInstanceCrawler<ResourceExpression> crawler = new IsInstanceCrawler<ResourceExpression>(ResourceExpression.class) {
+        @Override
+        protected boolean isAcceptable(ResourceExpression resourceExpression) {
+          return true;
+        }
+      };
+      type.crawl(crawler, CrawlPolicy.COMPLETE);
+      for (ResourceExpression resourceExpression : crawler.getList()) {
+        Resource expressionResource = resourceExpression.resource.getValue();
+        if (expressionResource != null) {
+          Resource decodedResource = resourcesById.get(expressionResource.getId());
+          if (decodedResource != null) {
+            resourceExpression.resource.setValue(decodedResource);
+          }
+        }
+      }
     }
 
     private ResourceTypeHelper typeHelper;
