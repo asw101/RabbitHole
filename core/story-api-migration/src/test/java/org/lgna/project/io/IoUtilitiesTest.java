@@ -26,6 +26,7 @@ import org.lgna.story.SProgram;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.HashMap;
@@ -63,6 +64,7 @@ public class IoUtilitiesTest {
 
     try (ZipFile zipFile = new ZipFile(projectFile)) {
       assertNotNull(zipFile.getEntry(ProjectIo.VERSION_ENTRY_NAME));
+      assertNull(zipFile.getEntry(ProjectIo.MANIFEST_ENTRY_NAME));
       assertNotNull(zipFile.getEntry("programType.xml"));
       assertNull(zipFile.getEntry("resources.xml"));
     }
@@ -151,6 +153,34 @@ public class IoUtilitiesTest {
     Version version = IoUtilities.projectReader(exportFile).checkForFutureVersion();
 
     assertEquals(futureVersion, version.toString());
+  }
+
+  @Test
+  public void jsonPlayerReaderReportsMissingVersion() throws Exception {
+    File exportFile = temporaryFolder.newFile("missing-version-export.a3w");
+    Project project = new Project(programType("Program"), Project.SceneCameraType.WindowCamera);
+    String manifestJson = ManifestEncoderDecoder.toJson(project.createExportManifest());
+    writeArchive(exportFile, ProjectIo.MANIFEST_ENTRY_NAME, manifestJson);
+
+    IOException thrown = assertThrows(
+        IOException.class,
+        () -> IoUtilities.projectReader(exportFile).checkForFutureVersion());
+
+    assertTrue(thrown.getMessage().contains(ProjectIo.VERSION_ENTRY_NAME));
+  }
+
+  @Test
+  public void corruptManifestDoesNotFallBackToXmlReader() throws Exception {
+    File exportFile = temporaryFolder.newFile("corrupt-manifest-export.a3w");
+    try (ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(exportFile))) {
+      String currentVersion = ProjectVersion.getCurrentVersion().toString();
+      writeZipEntry(zipOutputStream, ProjectIo.VERSION_ENTRY_NAME, currentVersion);
+      writeZipEntry(zipOutputStream, ProjectIo.MANIFEST_ENTRY_NAME, "{not-json");
+    }
+
+    IOException thrown = assertThrows(IOException.class, () -> IoUtilities.projectReader(exportFile));
+
+    assertTrue(thrown.getMessage().contains(ProjectIo.MANIFEST_ENTRY_NAME));
   }
 
   @Test
@@ -307,6 +337,12 @@ public class IoUtilitiesTest {
       writeZipEntry(zipOutputStream, ProjectIo.VERSION_ENTRY_NAME, ProjectVersion.getCurrentVersion().toString());
       writeZipEntry(zipOutputStream, ProjectIo.MANIFEST_ENTRY_NAME, ManifestEncoderDecoder.toJson(manifest));
       writeZipEntry(zipOutputStream, resourceReference.file, data);
+    }
+  }
+
+  private static void writeArchive(File file, String entryName, String content) throws Exception {
+    try (ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(file))) {
+      writeZipEntry(zipOutputStream, entryName, content);
     }
   }
 
