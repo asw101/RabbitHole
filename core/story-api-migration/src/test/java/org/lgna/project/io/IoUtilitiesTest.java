@@ -8,6 +8,7 @@ import org.alice.tweedle.file.ImageReference;
 import org.alice.tweedle.file.ModelReference;
 import org.alice.tweedle.file.ProjectManifest;
 import org.alice.tweedle.file.ResourceReference;
+import org.alice.tweedle.file.TypeManifest;
 import org.alice.tweedle.file.TypeReference;
 import org.junit.Rule;
 import org.junit.Test;
@@ -210,6 +211,41 @@ public class IoUtilitiesTest {
   }
 
   @Test
+  public void jsonTypeReaderReportsFutureVersion() throws Exception {
+    String futureVersion = "999.0.0.0";
+    File typeFile = temporaryFolder.newFile("future-type.a3c");
+    writeTypeArchive(typeFile, futureVersion);
+
+    Version version = IoUtilities.projectReader(typeFile).checkForFutureVersion();
+
+    assertEquals(futureVersion, version.toString());
+  }
+
+  @Test
+  public void jsonTypeReaderReportsMissingVersion() throws Exception {
+    File typeFile = temporaryFolder.newFile("missing-version-type.a3c");
+    writeArchive(typeFile, ProjectIo.MANIFEST_ENTRY_NAME, ManifestEncoderDecoder.toJson(typeManifest()));
+
+    IOException thrown = assertThrows(
+        IOException.class,
+        () -> IoUtilities.projectReader(typeFile).checkForFutureVersion());
+
+    assertTrue(thrown.getMessage().contains(ProjectIo.VERSION_ENTRY_NAME));
+  }
+
+  @Test
+  public void jsonTypeReaderMatchesPlayerReaderForCorruptVersion() throws Exception {
+    String corruptVersion = "not-a-version";
+    File typeFile = temporaryFolder.newFile("corrupt-version-type.a3c");
+    File exportFile = temporaryFolder.newFile("corrupt-version-export.a3w");
+    writeTypeArchive(typeFile, corruptVersion);
+    writePlayerArchive(exportFile, corruptVersion);
+
+    assertNull(IoUtilities.projectReader(typeFile).checkForFutureVersion());
+    assertNull(IoUtilities.projectReader(exportFile).checkForFutureVersion());
+  }
+
+  @Test
   public void jsonPlayerReaderReportsFutureVersion() throws Exception {
     String futureVersion = "999.0.0.0";
     File exportFile = temporaryFolder.newFile("future-export.a3w");
@@ -392,6 +428,22 @@ public class IoUtilitiesTest {
       writeZipEntry(zipOutputStream, ProjectIo.VERSION_ENTRY_NAME, version);
       writeZipEntry(zipOutputStream, ProjectIo.MANIFEST_ENTRY_NAME, ManifestEncoderDecoder.toJson(project.createExportManifest()));
     }
+  }
+
+  private static void writeTypeArchive(File file, String version) throws Exception {
+    try (ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(file))) {
+      writeZipEntry(zipOutputStream, ProjectIo.VERSION_ENTRY_NAME, version);
+      writeZipEntry(zipOutputStream, ProjectIo.MANIFEST_ENTRY_NAME, ManifestEncoderDecoder.toJson(typeManifest()));
+    }
+  }
+
+  private static TypeManifest typeManifest() {
+    TypeManifest manifest = new TypeManifest();
+    manifest.description.name = "SyntheticType";
+    manifest.metadata.fileType = IoUtilities.TYPE_EXTENSION;
+    manifest.metadata.identifier.name = "SyntheticType";
+    manifest.metadata.identifier.type = Manifest.ProjectType.Library;
+    return manifest;
   }
 
   private static void writePlayerArchive(File file, ResourceReference resourceReference, byte[] data) throws Exception {
