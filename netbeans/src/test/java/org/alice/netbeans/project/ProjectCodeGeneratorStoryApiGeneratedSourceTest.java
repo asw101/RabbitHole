@@ -10,10 +10,12 @@ import org.lgna.project.ast.DoubleLiteral;
 import org.lgna.project.ast.JavaMethod;
 import org.lgna.project.ast.JavaType;
 import org.lgna.project.ast.NamedUserType;
+import org.lgna.project.ast.NullLiteral;
 import org.lgna.project.ast.ThisExpression;
 import org.lgna.project.ast.UserMethod;
 import org.lgna.project.ast.UserParameter;
 import org.lgna.project.io.IoUtilities;
+import org.lgna.story.SScene;
 import org.lgna.story.SProgram;
 
 import java.io.File;
@@ -47,6 +49,20 @@ public class ProjectCodeGeneratorStoryApiGeneratedSourceTest {
     assertTrue(programSource.contains("void configureStory()"));
     assertTrue(programSource, programSource.contains("this.setSimulationSpeedFactor(1.5);"));
     compileProgramAndLauncher("generated-story-api-call-classes", programPath, sourceDirectory);
+  }
+
+  @Test
+  public void generatedSyntheticSceneActivationCallSourceCompiles() throws Exception {
+    Path sourceDirectory = generateProgramSource(
+        "synthetic-scene-activation-call.a3p",
+        programTypeWithSceneActivationCall(),
+        "generated-scene-activation-call-src");
+
+    Path programPath = sourceDirectory.resolve("Program.java");
+    String programSource = Files.readString(programPath);
+    assertTrue(programSource.contains("void clearScene()"));
+    assertTrue(programSource, programSource.contains("this.setActiveScene(null);"));
+    compileProgramAndLauncher("generated-scene-activation-call-classes", programPath, sourceDirectory);
   }
 
   private Path generateProgramSource(String projectFileName, NamedUserType programType, String sourceDirectoryName)
@@ -87,6 +103,21 @@ public class ProjectCodeGeneratorStoryApiGeneratedSourceTest {
             setSimulationSpeedFactor,
             new DoubleLiteral(1.5))));
     type.methods.add(configureStory);
+    return type;
+  }
+
+  private static NamedUserType programTypeWithSceneActivationCall() {
+    NamedUserType type = programType("Program");
+    JavaMethod setActiveScene = AstUtilities.lookupMethod(SProgram.class, "setActiveScene", SScene.class);
+    UserMethod clearScene = new UserMethod(
+        "clearScene",
+        Void.TYPE,
+        new UserParameter[0],
+        new BlockStatement(AstUtilities.createMethodInvocationStatement(
+            new ThisExpression(),
+            setActiveScene,
+            new NullLiteral())));
+    type.methods.add(clearScene);
     return type;
   }
 
