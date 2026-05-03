@@ -83,6 +83,74 @@ public class ProjectCodeGeneratorTest {
   }
 
   @Test
+  public void generatedLauncherPassesStartingArgsToProgramMain() throws Exception {
+    Path sourceDirectory = temporaryFolder.newFolder("launcher-runtime-src").toPath();
+    ProjectCodeGenerator.generateLauncher(sourceDirectory.toFile());
+    writeJavaSource(
+        sourceDirectory.resolve("Program.java"),
+        """
+        public class Program {
+          public static volatile String[] receivedArgs;
+
+          public static void main(String[] args) {
+            receivedArgs = args;
+          }
+        }
+        """);
+    writeJavaSource(
+        sourceDirectory.resolve("javafx/application/Application.java"),
+        """
+        package javafx.application;
+
+        public abstract class Application {
+          public abstract void start(javafx.stage.Stage stage) throws Exception;
+
+          public static void launch(String[] args) {
+            try {
+              String callerClassName = StackWalker
+                  .getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE)
+                  .walk(frames -> frames.skip(1).findFirst().orElseThrow().getDeclaringClass().getName());
+              Application application = (Application) Class
+                  .forName(callerClassName)
+                  .getDeclaredConstructor()
+                  .newInstance();
+              application.start(new javafx.stage.Stage());
+            } catch (Exception e) {
+              throw new RuntimeException(e);
+            }
+          }
+        }
+        """);
+    writeJavaSource(
+        sourceDirectory.resolve("javafx/stage/Stage.java"),
+        """
+        package javafx.stage;
+
+        public class Stage {
+        }
+        """);
+    Path classesDirectory = temporaryFolder.newFolder("launcher-runtime-classes").toPath();
+    compileJavaSources(
+        classesDirectory,
+        sourceDirectory.resolve("AliceJavaFXLauncher.java"),
+        sourceDirectory.resolve("Program.java"),
+        sourceDirectory.resolve("javafx/application/Application.java"),
+        sourceDirectory.resolve("javafx/stage/Stage.java"));
+
+    try (URLClassLoader classLoader = new URLClassLoader(
+        new URL[] {classesDirectory.toUri().toURL()},
+        ClassLoader.getPlatformClassLoader())) {
+      Class<?> launcherClass = Class.forName("AliceJavaFXLauncher", true, classLoader);
+      Class<?> programClass = Class.forName("Program", true, classLoader);
+      String[] args = {"alpha", "beta"};
+
+      launcherClass.getMethod("main", String[].class).invoke(null, (Object) args);
+
+      assertArrayEquals(args, waitForStringArray(programClass.getField("receivedArgs")));
+    }
+  }
+
+  @Test
   public void generatesProgramAndLauncherFromSyntheticAliceProject() throws Exception {
     File aliceProject = temporaryFolder.newFile("synthetic.a3p");
     IoUtilities.writeProject(
@@ -525,6 +593,22 @@ public class ProjectCodeGeneratorTest {
           compilationUnits).call();
       assertTrue(compilerOutput.toString(), result);
     }
+  }
+
+  private static void writeJavaSource(Path sourcePath, String source) throws Exception {
+    Files.createDirectories(sourcePath.getParent());
+    Files.writeString(sourcePath, source);
+  }
+
+  private static String[] waitForStringArray(Field field) throws Exception {
+    for (int attempt = 0; attempt < 100; attempt++) {
+      String[] value = (String[]) field.get(null);
+      if (value != null) {
+        return value;
+      }
+      Thread.sleep(10L);
+    }
+    return (String[]) field.get(null);
   }
 
   private void assertGeneratedResourceLoads(Path sourceDirectory, byte[] expectedData) throws Exception {
