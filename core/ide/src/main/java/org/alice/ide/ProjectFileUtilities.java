@@ -12,6 +12,7 @@ import org.lgna.project.Project;
 import org.lgna.project.io.IoUtilities;
 import org.lgna.project.io.ProjectIo;
 
+import java.awt.GraphicsEnvironment;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -48,7 +49,7 @@ public class ProjectFileUtilities {
   private ScheduledFuture<?> saveFuture;
   private boolean prevBackupFailed = false;
 
-  ProjectFileUtilities(ProjectApplication app) {
+  ProjectFileUtilities(final ProjectApplication app) {
     projectApp = app;
     savingService = Executors.newSingleThreadScheduledExecutor();
   }
@@ -264,21 +265,49 @@ public class ProjectFileUtilities {
     }
   }
 
-  private Path createAndGetBackupDirectory(Path backupDir) {
-    if (Files.notExists(backupDir)) {
-      if (prevBackupFailed) {
-        return null;
-      }
+  private Path createAndGetBackupDirectory(final Path backupDir) {
+    if (Files.isDirectory(backupDir)) {
+      return backupDir;
+    }
 
-      try {
-        Files.createDirectory(backupDir);
-      } catch (IOException e) {
-        prevBackupFailed = true;
-        Dialogs.showWarning("Unable to Save Backups", "Backup directory `" + backupDir + "` could not be created.");
-        return null;
-      }
+    if (prevBackupFailed) {
+      return null;
+    }
+
+    if (Files.exists(backupDir)) {
+      warnBackupDirectoryUnavailable(
+          backupDir,
+          "That path already exists and is not a directory.");
+      return null;
+    }
+
+    try {
+      Files.createDirectory(backupDir);
+    } catch (final IOException e) {
+      warnBackupDirectoryUnavailable(
+          backupDir,
+          "The directory could not be created.");
+      return null;
     }
     return backupDir;
+  }
+
+  private void warnBackupDirectoryUnavailable(
+      final Path backupDir,
+      final String reason) {
+    prevBackupFailed = true;
+    String message = "Backup directory `" + backupDir
+        + "` could not be used. " + reason;
+    showBackupWarning(message);
+  }
+
+  private static void showBackupWarning(final String message) {
+    Logger.warning(message);
+    if (!GraphicsEnvironment.isHeadless()) {
+      Dialogs.showWarning(
+          "Unable to Save Backups",
+          message);
+    }
   }
 
   private File backupFile(String type, Path backupDir) {

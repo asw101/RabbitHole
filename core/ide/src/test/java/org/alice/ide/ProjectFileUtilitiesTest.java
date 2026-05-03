@@ -75,6 +75,37 @@ public class ProjectFileUtilitiesTest {
   }
 
   @Test
+  public void namedBackupPathFileReturnsNull() throws IOException {
+    File project = temporaryFolder.newFile("world.a3p");
+    Path collidingBackupPath = temporaryFolder.getRoot().toPath()
+        .resolve("world.bak");
+    Files.writeString(
+        collidingBackupPath,
+        "not a directory",
+        StandardCharsets.UTF_8);
+
+    Path backupDirectory = utilities.backupDirectory(project, false);
+
+    assertNull(backupDirectory);
+    assertTrue(Files.isRegularFile(collidingBackupPath));
+    assertEquals(
+        "not a directory",
+        Files.readString(collidingBackupPath, StandardCharsets.UTF_8));
+  }
+
+  @Test
+  public void missingParentBackupDirectoryReturnsNull() {
+    File project = temporaryFolder.getRoot().toPath()
+        .resolve("missing-parent/world.a3p")
+        .toFile();
+
+    Path backupDirectory = utilities.backupDirectory(project, false);
+
+    assertNull(backupDirectory);
+    assertFalse(Files.exists(project.toPath().getParent()));
+  }
+
+  @Test
   public void copyDefaultBackupDirectoryMovesAutoProjectBackupsToNamedBackupDirectory() throws IOException {
     Path defaultBackupDirectory = temporaryFolder.newFolder(".defaultbak").toPath();
     Path firstBackup = defaultBackupDirectory.resolve("auto20240102_120000.a3p");
@@ -109,6 +140,34 @@ public class ProjectFileUtilitiesTest {
 
     assertFalse(Files.exists(defaultBackupDirectory));
     assertFalse(Files.exists(temporaryFolder.getRoot().toPath().resolve("world.bak")));
+  }
+
+  @Test
+  public void defaultBackupCopyPreservesPathCollision() throws IOException {
+    Path defaultBackupDirectory = temporaryFolder.newFolder(".defaultbak")
+        .toPath();
+    Path defaultBackup = defaultBackupDirectory
+        .resolve("auto20240102_120000.a3p");
+    Files.writeString(defaultBackup, "backup", StandardCharsets.UTF_8);
+    Path collidingBackupPath = temporaryFolder.getRoot().toPath()
+        .resolve("world.bak");
+    Files.writeString(collidingBackupPath, "collision", StandardCharsets.UTF_8);
+    ProjectFileUtilities backupUtilities =
+        defaultBackupDirectoryUtilities(defaultBackupDirectory);
+    File savedProject = new File(temporaryFolder.getRoot(), "world.a3p");
+
+    IOException thrown = assertThrows(
+        IOException.class,
+        () -> backupUtilities.copyDefaultBackupDirectory(savedProject));
+
+    assertTrue(
+        thrown.getMessage().contains("Unable to create backup directory"));
+    assertEquals(
+        "backup",
+        Files.readString(defaultBackup, StandardCharsets.UTF_8));
+    assertEquals(
+        "collision",
+        Files.readString(collidingBackupPath, StandardCharsets.UTF_8));
   }
 
   @Test
