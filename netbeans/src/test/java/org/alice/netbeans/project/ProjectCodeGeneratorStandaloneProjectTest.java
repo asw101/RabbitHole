@@ -21,7 +21,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Properties;
 import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
@@ -62,6 +65,34 @@ public class ProjectCodeGeneratorStandaloneProjectTest {
       assertArrayEquals(args, (String[]) applicationClass.getField("launchedArgs").get(null));
       assertTrue((Boolean) applicationClass.getField("startInvoked").get(null));
     }
+  }
+
+  @Test
+  public void generatedTemplateProjectSourcesCompileWithAliceLibraryClasspathSurrogate() throws Exception {
+    File aliceProject = temporaryFolder.newFile("template-smoke.a3p");
+    IoUtilities.writeProject(
+        aliceProject,
+        new Project(programType("Program"), Project.SceneCameraType.WindowCamera));
+    Path projectDirectory = temporaryFolder.newFolder("template-project").toPath();
+    extractProjectTemplate(projectDirectory);
+    Path sourceDirectory = projectDirectory.resolve("src");
+    Files.createDirectories(sourceDirectory);
+
+    ProjectCodeGenerator.generateCode(aliceProject, sourceDirectory.toFile(), null, false);
+    writeJavaFxStubs(sourceDirectory);
+
+    Properties properties = loadProperties(projectDirectory.resolve("nbproject").resolve("project.properties"));
+    assertEquals("src", properties.getProperty("src.dir"));
+    assertEquals("AliceJavaFXLauncher", properties.getProperty("main.class"));
+    assertEquals("${libs.Alice3Library.classpath}", properties.getProperty("javac.classpath").trim());
+    assertTrue(Files.exists(projectDirectory.resolve("build.xml")));
+    assertTrue(Files.exists(projectDirectory.resolve("nbproject").resolve("build-impl.xml")));
+
+    Path classesDirectory = projectDirectory.resolve("build").resolve("classes");
+    compileJavaSources(classesDirectory, javaSourcesUnder(sourceDirectory));
+
+    assertTrue(Files.exists(classesDirectory.resolve("Program.class")));
+    assertTrue(Files.exists(classesDirectory.resolve("AliceJavaFXLauncher.class")));
   }
 
   private static NamedUserType programType(String name) {
@@ -155,6 +186,32 @@ public class ProjectCodeGeneratorStandaloneProjectTest {
           .filter(path -> path.getFileName().toString().endsWith(".java"))
           .toArray(Path[]::new);
     }
+  }
+
+  private static void extractProjectTemplate(Path projectDirectory) throws Exception {
+    Path archive = Path.of("target/classes/org/alice/netbeans/ProjectTemplate.zip");
+    assertTrue("ProjectTemplate.zip must be built as a test resource", Files.exists(archive));
+    try (ZipInputStream zipInputStream = new ZipInputStream(Files.newInputStream(archive))) {
+      ZipEntry entry;
+      while ((entry = zipInputStream.getNextEntry()) != null) {
+        Path entryPath = projectDirectory.resolve(entry.getName()).normalize();
+        assertTrue(entry.getName(), entryPath.startsWith(projectDirectory));
+        if (entry.isDirectory()) {
+          Files.createDirectories(entryPath);
+        } else {
+          Files.createDirectories(entryPath.getParent());
+          Files.copy(zipInputStream, entryPath);
+        }
+      }
+    }
+  }
+
+  private static Properties loadProperties(Path propertiesPath) throws Exception {
+    Properties properties = new Properties();
+    try (java.io.Reader reader = Files.newBufferedReader(propertiesPath)) {
+      properties.load(reader);
+    }
+    return properties;
   }
 
   private static void writeJavaSource(Path sourcePath, String source) throws Exception {
