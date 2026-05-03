@@ -1,7 +1,9 @@
 package org.alice.ide.uricontent;
 
 import org.lgna.project.Project;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.IOException;
@@ -10,6 +12,8 @@ import java.net.URI;
 import static org.junit.Assert.*;
 
 public class FileProjectLoaderTest {
+  @Rule
+  public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
   @Test
   public void loadDelegatesIoFailureToHookAndReturnsNull() throws IOException {
@@ -60,9 +64,73 @@ public class FileProjectLoaderTest {
     assertFalse(loader.shouldBeSaved());
   }
 
+  @Test
+  public void normalProjectFileIsNotBackupAndIsItsOwnMainProjectFile() throws IOException {
+    File project = temporaryFolder.newFile("world.a3p");
+    FileProjectLoader loader = new FileProjectLoader(project);
+
+    assertFalse(loader.isBackup());
+    assertFalse(loader.isDefaultBackup());
+    assertEquals(project, loader.getMainProjectFile());
+  }
+
+  @Test
+  public void namedBackupFileDerivesMainProjectFileFromBackupDirectoryName() throws IOException {
+    File backupDirectory = temporaryFolder.newFolder("world.bak");
+    File backup = new File(backupDirectory, "auto20240102_120000.a3p");
+    assertTrue(backup.createNewFile());
+    FileProjectLoader loader = new FileProjectLoader(backup);
+
+    assertTrue(loader.isBackup());
+    assertFalse(loader.isDefaultBackup());
+    assertEquals(new File(temporaryFolder.getRoot(), "world.a3p"), loader.getMainProjectFile());
+  }
+
+  @Test
+  public void defaultBackupFileIsBackupWithoutMainProjectFile() throws IOException {
+    File defaultBackupDirectory = temporaryFolder.newFolder(".defaultbak");
+    File defaultBackup = new File(defaultBackupDirectory, "auto20240102_120000.a3p");
+    assertTrue(defaultBackup.createNewFile());
+    FileProjectLoader loader = new FileProjectLoader(defaultBackup);
+
+    assertTrue(loader.isBackup());
+    assertTrue(loader.isDefaultBackup());
+    assertNull(loader.getMainProjectFile());
+  }
+
+  @Test
+  public void newProjectLoaderIsNotBackupAndHasNoMainProjectFile() {
+    UriProjectLoader loader = new NewProjectLoader();
+
+    assertFalse(loader.isBackup());
+    assertFalse(loader.isDefaultBackup());
+    assertNull(loader.getMainProjectFile());
+  }
+
   private static File vrProjectFor(File project) {
     String source = project.getAbsolutePath();
     return new File(source.substring(0, source.length() - 4) + " VR" + source.substring(source.length() - 4));
+  }
+
+  private static class NewProjectLoader extends UriProjectLoader {
+    NewProjectLoader() {
+      super(false);
+    }
+
+    @Override
+    public URI getUri() {
+      return URI.create("blank://project");
+    }
+
+    @Override
+    public boolean isNewProject() {
+      return true;
+    }
+
+    @Override
+    protected Project load() {
+      throw new AssertionError("load is outside UriProjectLoader path classification");
+    }
   }
 
   private static class CapturingFileProjectLoader extends AbstractFileProjectLoader {
