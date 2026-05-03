@@ -482,39 +482,44 @@ public abstract class ProjectApplication extends PerspectiveApplication<ProjectD
     ProjectLoadFailurePlan plan = ProjectLoadFailurePlan.choose(
         isBackup, isLoadingBackups, isMainProjectCorrupted, isDefaultBackup, backup, projectFile);
 
-    switch (plan.getAction()) {
+    ProjectLoadFailurePlan.Action failureAction = plan.getAction();
+    boolean accepted = false;
+    switch (failureAction) {
       case SHOW_BACKUP_LOAD_ERROR -> backupProjectOperation.showBackupLoadErrorDialog();
       case PROMPT_LOAD_BACKUP -> {
-        if (backupProjectOperation.showProjectLoadErrorAndLoadBackupDialog(
-            mainProject.getName(), plan.getFailedBackupName(), isBackup)) {
-          loadProject(
-              newProjectActivity(),
-              new FileProjectLoader(plan.getBackupToLoad(), makeVrReady),
-              true,
-              isMainProjectCorrupted,
-              unloadableFiles);
-        } else {
-          showNewProjectOperation();
-        }
+        accepted = backupProjectOperation.showProjectLoadErrorAndLoadBackupDialog(
+            mainProject.getName(), plan.getFailedBackupName(), isBackup);
       }
       case SHOW_UNSAVED_BACKUPS_LOAD_ERROR -> {
         backupProjectOperation.showUnsavedBackupsLoadErrorDialog();
-        showNewProjectOperation();
       }
       case SHOW_PROJECT_AND_ALL_BACKUPS_LOAD_ERROR -> {
         backupProjectOperation.showProjectAndAllBackupsLoadErrorDialog(mainProject.getName());
-        showNewProjectOperation();
       }
       case PROMPT_LOAD_MAIN_PROJECT -> {
-        if (backupProjectOperation.showProjectLoadRecentBackupsErrorAndLoadMainDialog(projectFile.getName())) {
-          loadProject(
-              newProjectActivity(),
-              new FileProjectLoader(mainProject, makeVrReady),
-              false,
-              isMainProjectCorrupted,
-              unloadableFiles);
-        }
+        accepted = backupProjectOperation.showProjectLoadRecentBackupsErrorAndLoadMainDialog(projectFile.getName());
       }
+    }
+
+    ProjectLoadFailureDispatchPlan dispatch = ProjectLoadFailureDispatchPlan.afterUserChoice(failureAction, accepted);
+    if (dispatch.getLoadTarget() == ProjectLoadFailureDispatchPlan.LoadTarget.BACKUP) {
+      loadProject(
+          newProjectActivity(),
+          new FileProjectLoader(plan.getBackupToLoad(), makeVrReady),
+          true,
+          isMainProjectCorrupted,
+          unloadableFiles);
+    } else if (dispatch.getLoadTarget() == ProjectLoadFailureDispatchPlan.LoadTarget.MAIN_PROJECT) {
+      loadProject(
+          newProjectActivity(),
+          new FileProjectLoader(mainProject, makeVrReady),
+          false,
+          isMainProjectCorrupted,
+          unloadableFiles);
+    }
+
+    if (dispatch.shouldShowNewProject()) {
+      showNewProjectOperation();
     }
   }
 
