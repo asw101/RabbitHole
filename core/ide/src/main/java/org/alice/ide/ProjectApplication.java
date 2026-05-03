@@ -479,34 +479,40 @@ public abstract class ProjectApplication extends PerspectiveApplication<ProjectD
     uriProjectLoader = null;
     activity.cancel();
 
-    // A corrupted backup was manually loaded
-    if (isBackup && !isLoadingBackups) {
-      backupProjectOperation.showBackupLoadErrorDialog();
+    ProjectLoadFailurePlan plan = ProjectLoadFailurePlan.choose(
+        isBackup, isLoadingBackups, isMainProjectCorrupted, isDefaultBackup, backup, projectFile);
 
-      return;
-    }
-
-    if (backup != null) {
-      String backupName = isBackup
-              ? projectFile.getName()
-              : null;
-
-      if (backupProjectOperation.showProjectLoadErrorAndLoadBackupDialog(mainProject.getName(), backupName, isBackup)) {
-        loadProject(newProjectActivity(), new FileProjectLoader(backup, makeVrReady), true, isMainProjectCorrupted, unloadableFiles);
-      } else {
+    switch (plan.getAction()) {
+      case SHOW_BACKUP_LOAD_ERROR -> backupProjectOperation.showBackupLoadErrorDialog();
+      case PROMPT_LOAD_BACKUP -> {
+        if (backupProjectOperation.showProjectLoadErrorAndLoadBackupDialog(
+            mainProject.getName(), plan.getFailedBackupName(), isBackup)) {
+          loadProject(
+              newProjectActivity(),
+              new FileProjectLoader(plan.getBackupToLoad(), makeVrReady),
+              true,
+              isMainProjectCorrupted,
+              unloadableFiles);
+        } else {
+          showNewProjectOperation();
+        }
+      }
+      case SHOW_UNSAVED_BACKUPS_LOAD_ERROR -> {
+        backupProjectOperation.showUnsavedBackupsLoadErrorDialog();
         showNewProjectOperation();
       }
-    } else {
-      if (isMainProjectCorrupted) {
-        if (isDefaultBackup) {
-          backupProjectOperation.showUnsavedBackupsLoadErrorDialog();
-        } else {
-          backupProjectOperation.showProjectAndAllBackupsLoadErrorDialog(mainProject.getName());
-        }
+      case SHOW_PROJECT_AND_ALL_BACKUPS_LOAD_ERROR -> {
+        backupProjectOperation.showProjectAndAllBackupsLoadErrorDialog(mainProject.getName());
         showNewProjectOperation();
-      } else {
+      }
+      case PROMPT_LOAD_MAIN_PROJECT -> {
         if (backupProjectOperation.showProjectLoadRecentBackupsErrorAndLoadMainDialog(projectFile.getName())) {
-          loadProject(newProjectActivity(), new FileProjectLoader(mainProject, makeVrReady), false, isMainProjectCorrupted, unloadableFiles);
+          loadProject(
+              newProjectActivity(),
+              new FileProjectLoader(mainProject, makeVrReady),
+              false,
+              isMainProjectCorrupted,
+              unloadableFiles);
         }
       }
     }
