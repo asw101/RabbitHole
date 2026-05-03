@@ -40,87 +40,33 @@
  * THE USE OF OR OTHER DEALINGS WITH THE SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************/
-package org.alice.ide.croquet.models.projecturi;
+package edu.cmu.cs.dennisc.jira.rest;
 
-import edu.cmu.cs.dennisc.java.net.UriUtilities;
-import edu.cmu.cs.dennisc.javax.swing.option.Dialogs;
-import org.alice.ide.ProjectApplication;
-import org.alice.stageide.StageIDE;
-import org.lgna.croquet.history.UserActivity;
+import edu.cmu.cs.dennisc.issue.IssueSubmissionService;
+import edu.cmu.cs.dennisc.issue.SubmittedIssue;
+import edu.cmu.cs.dennisc.jira.JIRAReport;
+import net.rcarz.jiraclient.Issue;
 
 import java.io.File;
-import java.io.IOException;
-import java.util.UUID;
+import java.net.URI;
 
-/**
- * @author Dennis Cosgrove
- */
-public abstract class AbstractSaveOperation extends UriActionOperation {
-  AbstractSaveOperation(UUID id) {
-    super(id);
+public final class JiraIssueSubmissionService implements IssueSubmissionService {
+  @Override
+  public SubmittedIssue createIssue(URI reportSubmission, JIRAReport jiraReport) {
+    Issue issue = RestUtilities.createIssue(reportSubmission, jiraReport);
+    return new JiraSubmittedIssue(issue);
   }
 
-  protected abstract boolean isPromptNecessary(File file);
+  private static final class JiraSubmittedIssue implements SubmittedIssue {
+    private final Issue issue;
 
-  protected abstract File getDefaultDirectory(StageIDE application);
+    private JiraSubmittedIssue(Issue issue) {
+      this.issue = issue;
+    }
 
-  protected abstract String getExtension();
-
-  protected abstract void save(ProjectApplication application, File file) throws IOException;
-
-  @Override
-  protected void perform(UserActivity activity) {
-    StageIDE application = StageIDE.getActiveInstance();
-    SaveOperationFlow.run(new SaveOperationFlow.Context() {
-      @Override
-      public File getCurrentFile() {
-        return UriUtilities.getFile(application.getUri());
-      }
-
-      @Override
-      public boolean isBackup() {
-        return application.isBackup();
-      }
-
-      @Override
-      public File getMainProjectFile() {
-        return application.getMainProjectFile();
-      }
-
-      @Override
-      public File getDefaultDirectory() {
-        return AbstractSaveOperation.this.getDefaultDirectory(application);
-      }
-
-      @Override
-      public File showSaveFileDialog(File directory, String filename, String extension) {
-        return application.getDocumentFrame().showSaveFileDialog(directory, filename, extension);
-      }
-
-      @Override
-      public void showWaitCursor() {
-        application.showWaitCursor();
-      }
-
-      @Override
-      public void hideWaitCursor() {
-        application.hideWaitCursor();
-      }
-
-      @Override
-      public void showError(String title, String message) {
-        Dialogs.showError(title, message);
-      }
-
-      @Override
-      public void finish() {
-        activity.finish();
-      }
-
-      @Override
-      public void cancel() {
-        activity.cancel();
-      }
-    }, this::isPromptNecessary, this.getExtension(), file -> this.save(application, file));
+    @Override
+    public void addAttachment(File file) throws Exception {
+      this.issue.addAttachment(file);
+    }
   }
 }

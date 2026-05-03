@@ -45,8 +45,7 @@ package edu.cmu.cs.dennisc.issue;
 
 import edu.cmu.cs.dennisc.java.util.Lists;
 import edu.cmu.cs.dennisc.jira.JIRAReport;
-import edu.cmu.cs.dennisc.jira.rest.RestUtilities;
-import net.rcarz.jiraclient.Issue;
+import edu.cmu.cs.dennisc.jira.rest.JiraIssueSubmissionService;
 
 import javax.swing.SwingWorker;
 import java.io.File;
@@ -61,12 +60,20 @@ public final class IssueReportWorker extends SwingWorker<Boolean, String> {
   private final WorkerListener workerListener;
   private final JIRAReport jiraReport;
   private final URI reportSubmission;
+  private final IssueSubmissionService issueSubmissionService;
+  private final IssueSubmissionRetryPolicy retryPolicy;
 
   public IssueReportWorker(WorkerListener workerListener, JIRAReport report, URI reportSubmission) {
+    this(workerListener, report, reportSubmission, new JiraIssueSubmissionService(), IssueSubmissionRetryPolicy.DEFAULT);
+  }
+
+  IssueReportWorker(WorkerListener workerListener, JIRAReport report, URI reportSubmission, IssueSubmissionService issueSubmissionService, IssueSubmissionRetryPolicy retryPolicy) {
     assert workerListener != null;
     this.workerListener = workerListener;
     this.jiraReport = report;
     this.reportSubmission = reportSubmission;
+    this.issueSubmissionService = issueSubmissionService;
+    this.retryPolicy = retryPolicy;
   }
 
   @Override
@@ -80,9 +87,9 @@ public final class IssueReportWorker extends SwingWorker<Boolean, String> {
 
   private void uploadToJiraViaRest() throws Exception {
     if (jiraReport == null) {
-      throw new Exception("pass");
+      throw new IllegalArgumentException("jiraReport must not be null");
     }
-    Issue issue = RestUtilities.createIssue(reportSubmission, jiraReport);
+    SubmittedIssue issue = this.issueSubmissionService.createIssue(reportSubmission, jiraReport);
     List<Attachment> attachments = jiraReport.getAttachments();
     if (attachments != null && !attachments.isEmpty()) {
       this.process("\n");
@@ -98,16 +105,35 @@ public final class IssueReportWorker extends SwingWorker<Boolean, String> {
   protected Boolean doInBackground() {
     this.process("attempting to submit bug report...\n");
 
-    this.process("* uploading directly to database via REST... ");
-    try {
-      uploadToJiraViaRest();
-      this.process("SUCCEEDED.\n");
-      return true;
-    } catch (Exception e) {
-      e.printStackTrace();
-      this.process("FAILED.\n");
-      return false;
+    Exception lastFailure = null;
+    for (int attempt = 1; attempt <= this.retryPolicy.getMaxAttempts(); attempt++) {
+      if (attempt == 1) {
+        this.process("* uploading directly to database via REST... ");
+      } else {
+        this.process("* retrying REST upload (" + attempt + " of " + this.retryPolicy.getMaxAttempts() + ")... ");
+      }
+      try {
+        uploadToJiraViaRest();
+        this.process("SUCCEEDED.\n");
+        return true;
+      } catch (Exception e) {
+        lastFailure = e;
+        this.process("FAILED.\n");
+        if (this.retryPolicy.shouldRetry(attempt, e) == false) {
+          break;
+        }
+        try {
+          this.retryPolicy.pauseBeforeRetry();
+        } catch (InterruptedException ie) {
+          Thread.currentThread().interrupt();
+          return false;
+        }
+      }
     }
+    if (lastFailure != null) {
+      this.process("submission failed: " + lastFailure.getClass().getSimpleName() + ": " + lastFailure.getMessage() + "\n");
+    }
+    return false;
   }
 
   @Override

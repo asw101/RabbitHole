@@ -70,6 +70,10 @@ Run unit tests
     cd ${alice3}
     mvn test
 
+## Documentation
+
+Developer documentation for modernization work lives in [docs](docs/index.md).
+
 ## Installing Git Hooks
 
 The hooks directory contains Git hooks, that should be placed in .git/hooks
