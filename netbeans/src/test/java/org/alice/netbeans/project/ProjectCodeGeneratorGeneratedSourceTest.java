@@ -12,14 +12,19 @@ import org.lgna.project.ast.Comment;
 import org.lgna.project.ast.ConditionalStatement;
 import org.lgna.project.ast.CountLoop;
 import org.lgna.project.ast.ForEachInArrayLoop;
+import org.lgna.project.ast.ForEachInIterableLoop;
 import org.lgna.project.ast.IntegerLiteral;
+import org.lgna.project.ast.JavaMethod;
 import org.lgna.project.ast.JavaType;
 import org.lgna.project.ast.LocalAccess;
 import org.lgna.project.ast.LocalDeclarationStatement;
+import org.lgna.project.ast.MethodInvocation;
 import org.lgna.project.ast.NamedUserType;
 import org.lgna.project.ast.ParameterAccess;
+import org.lgna.project.ast.SimpleArgument;
 import org.lgna.project.ast.StringLiteral;
 import org.lgna.project.ast.ThisExpression;
+import org.lgna.project.ast.TypeExpression;
 import org.lgna.project.ast.UserLocal;
 import org.lgna.project.ast.UserMethod;
 import org.lgna.project.ast.UserParameter;
@@ -200,6 +205,21 @@ public class ProjectCodeGeneratorGeneratedSourceTest {
     assertTrue(programSource, programSource.contains("for(String item : new String[]{\"red\", \"blue\"})"));
     assertTrue(programSource, programSource.contains("final String copy=item;"));
     compileProgramAndLauncher("generated-named-for-each-loop-item-access-classes", programPath, sourceDirectory);
+  }
+
+  @Test
+  public void generatedSyntheticForEachIterableSourceCompiles() throws Exception {
+    Path sourceDirectory = generateProgramSource(
+        "synthetic-for-each-iterable.a3p",
+        programTypeWithForEachIterableMethod(),
+        "generated-for-each-iterable-src");
+
+    Path programPath = sourceDirectory.resolve("Program.java");
+    String programSource = Files.readString(programPath);
+    assertTrue(programSource.contains("void visitIterable()"));
+    assertTrue(programSource, programSource.contains("for(String item : Arrays.asList(\"red\",\"blue\"))"));
+    assertTrue(programSource, programSource.contains("final String copy=item;"));
+    compileProgramAndLauncher("generated-for-each-iterable-classes", programPath, sourceDirectory);
   }
 
   private Path generateProgramSource(String projectFileName, NamedUserType programType, String sourceDirectoryName)
@@ -393,6 +413,33 @@ public class ProjectCodeGeneratorGeneratedSourceTest {
         new UserParameter[0],
         new BlockStatement(loop));
     type.methods.add(copyNamedItem);
+    return type;
+  }
+
+  private static NamedUserType programTypeWithForEachIterableMethod() {
+    NamedUserType type = programType("Program");
+    JavaMethod asList = AstUtilities.lookupMethod(Arrays.class, "asList", Object[].class);
+    MethodInvocation iterable = new MethodInvocation(
+        new TypeExpression(asList.getDeclaringType()),
+        asList,
+        new SimpleArgument[0],
+        new SimpleArgument[] {
+            new SimpleArgument(asList.getVariableLengthParameter(), new StringLiteral("red")),
+            new SimpleArgument(asList.getVariableLengthParameter(), new StringLiteral("blue"))
+        },
+        null);
+    ForEachInIterableLoop loop = new ForEachInIterableLoop(
+        new UserLocal("item", String.class, true),
+        iterable,
+        new BlockStatement());
+    UserLocal copy = new UserLocal("copy", String.class, true);
+    loop.body.getValue().statements.add(new LocalDeclarationStatement(copy, new LocalAccess(loop.item.getValue())));
+    UserMethod visitIterable = new UserMethod(
+        "visitIterable",
+        Void.TYPE,
+        new UserParameter[0],
+        new BlockStatement(loop));
+    type.methods.add(visitIterable);
     return type;
   }
 
