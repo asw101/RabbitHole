@@ -109,14 +109,13 @@ public class ProjectCodeGenerator {
       namedUserTypes.add(resourcesTypeWrapper.getType());
 
       FileObject javaSrcDirectoryFileObject = (FileUtil.toFileObject(javaSrcDirectory));
-      FileObject resourcesDirectory = javaSrcDirectoryFileObject.createFolder("resources");
       for (org.lgna.common.Resource resource : resources) {
-        final String dstPath = resource.getOriginalFileName();
+        final String dstPath = resourcesTypeWrapper.getResourcePathForResource(resource);
         FileObject f;
         try {
-          f = resourcesDirectory.createData(dstPath);
+          f = FileUtil.createData(javaSrcDirectoryFileObject, dstPath);
         } catch (Exception e) {
-          f = resourcesDirectory.getFileObject(dstPath);
+          f = javaSrcDirectoryFileObject.getFileObject(dstPath);
         }
 
         FileLock lock;

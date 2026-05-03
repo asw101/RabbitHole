@@ -39,6 +39,17 @@ public class ResourcesTypeWrapperTest {
     assertEquals("image_png_duplicate_0", duplicateField.getName());
   }
 
+  @Test
+  public void mapsDuplicateOriginalFileNamesToDistinctResourcePaths() {
+    TestResource first = new TestResource("image.png");
+    TestResource duplicate = new TestResource("image.png");
+    duplicate.setName("renamed image");
+    ResourcesTypeWrapper wrapper = new ResourcesTypeWrapper(resources(first, duplicate));
+
+    assertEquals("resources/image.png", wrapper.getResourcePathForResource(first));
+    assertEquals("resources2/image.png", wrapper.getResourcePathForResource(duplicate));
+  }
+
   private static Set<Resource> resources(Resource... resources) {
     Set<Resource> resourceSet = new LinkedHashSet<>();
     for (Resource resource : resources) {

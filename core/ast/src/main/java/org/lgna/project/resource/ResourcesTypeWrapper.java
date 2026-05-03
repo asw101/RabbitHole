@@ -55,6 +55,7 @@ import org.lgna.project.ast.StringLiteral;
 import org.lgna.project.ast.TypeLiteral;
 import org.lgna.project.ast.UserField;
 
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -98,12 +99,35 @@ public class ResourcesTypeWrapper {
     return fixNameIfNecessary(resource.getName());
   }
 
+  private static String createResourcePath(Resource resource, Set<String> usedResourcePaths) {
+    final String directoryName = "resources";
+    int i = 1;
+    while (true) {
+      StringBuilder sb = new StringBuilder();
+      sb.append(directoryName);
+      if (i > 1) {
+        sb.append(i);
+      }
+      sb.append("/");
+      sb.append(resource.getOriginalFileName());
+      String path = sb.toString();
+      if (usedResourcePaths.contains(path)) {
+        i += 1;
+      } else {
+        usedResourcePaths.add(path);
+        return path;
+      }
+    }
+  }
+
   public ResourcesTypeWrapper(Set<Resource> resources) {
     if (resources != null && !resources.isEmpty()) {
       this.type = new NamedUserType();
       this.type.name.setValue(getTypeName());
       this.type.superType.setValue(JavaType.OBJECT_TYPE);
       this.mapResourceToField = Maps.newHashMap();
+      this.mapResourceToPath = Maps.newHashMap();
+      Set<String> usedResourcePaths = new HashSet<>();
       int unnamedCount = 0;
       int duplicateCount = 0;
       for (Resource resource : resources) {
@@ -127,15 +151,18 @@ public class ResourcesTypeWrapper {
         }
 
         field.name.setValue(name);
-        field.initializer.setValue(AstUtilities.createInstanceCreation(resource.getClass(), new Class<?>[] {Class.class, String.class, String.class}, new Expression[] {new TypeLiteral(this.type), new StringLiteral("resources/" + resource.getOriginalFileName()), new StringLiteral(resource.getContentType())}));
+        String resourcePath = createResourcePath(resource, usedResourcePaths);
+        field.initializer.setValue(AstUtilities.createInstanceCreation(resource.getClass(), new Class<?>[] {Class.class, String.class, String.class}, new Expression[] {new TypeLiteral(this.type), new StringLiteral(resourcePath), new StringLiteral(resource.getContentType())}));
 
         Logger.outln(field);
         this.type.fields.add(field);
         this.mapResourceToField.put(resource, field);
+        this.mapResourceToPath.put(resource, resourcePath);
       }
     } else {
       this.type = null;
       this.mapResourceToField = null;
+      this.mapResourceToPath = null;
     }
   }
 
@@ -151,6 +178,15 @@ public class ResourcesTypeWrapper {
     }
   }
 
+  public String getResourcePathForResource(Resource resource) {
+    if (this.mapResourceToPath != null) {
+      return this.mapResourceToPath.get(resource);
+    } else {
+      return null;
+    }
+  }
+
   private final NamedUserType type;
   private final Map<Resource, UserField> mapResourceToField;
+  private final Map<Resource, String> mapResourceToPath;
 }
