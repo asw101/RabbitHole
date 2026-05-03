@@ -191,6 +191,33 @@ public class ModelResourceInfoTest {
     assertEquals("ChairModel", manifest.models.get(0).textureSet);
   }
 
+  @Test
+  public void subResourceTagsIgnoreNestedUnrelatedTagElements() throws Exception {
+    ModelResourceInfo info = new ModelResourceInfo(parseXml("""
+        <AliceModel name="Tree">
+          <Tags><Tag>parent</Tag></Tags>
+          <GroupTags><GroupTag>parentGroup</GroupTag></GroupTags>
+          <ThemeTags><ThemeTag>parentTheme</ThemeTag></ThemeTags>
+          <Resource resourceName="DEFAULT" modelName="TreeModel">
+            <Tags><Tag>variant</Tag></Tags>
+            <GroupTags><GroupTag>prop</GroupTag></GroupTags>
+            <ThemeTags><ThemeTag>forest</ThemeTag></ThemeTags>
+            <Nested>
+              <Tag>ignored</Tag>
+              <GroupTag>ignoredGroup</GroupTag>
+              <ThemeTag>ignoredTheme</ThemeTag>
+            </Nested>
+          </Resource>
+        </AliceModel>
+        """));
+
+    ModelResourceInfo variant = info.getSubResource("DEFAULT");
+
+    assertArrayEquals(new String[] {"parent", "variant"}, variant.getTags());
+    assertArrayEquals(new String[] {"parentGroup", "prop"}, variant.getGroupTags());
+    assertArrayEquals(new String[] {"parentTheme", "forest"}, variant.getThemeTags());
+  }
+
   private static Document parseXml(String xml) throws Exception {
     DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
     return factory.newDocumentBuilder().parse(new InputSource(new StringReader(xml)));

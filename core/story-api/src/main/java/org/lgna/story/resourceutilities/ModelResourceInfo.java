@@ -144,32 +144,30 @@ public class ModelResourceInfo {
         }
       }
       int creationYear = creationYearTemp;
-      LinkedList<String> tagList = new LinkedList<String>();
-      NodeList tagNodeList = resourceElement.getElementsByTagName("Tag");
-      for (int i = 0; i < tagNodeList.getLength(); i++) {
-        tagList.add(tagNodeList.item(i).getTextContent());
-      }
-      String[] tags = tagList.toArray(new String[tagList.size()]);
-
-      LinkedList<String> groupTagList = new LinkedList<String>();
-      NodeList groupTagNodeList = resourceElement.getElementsByTagName("GroupTag");
-      for (int i = 0; i < groupTagNodeList.getLength(); i++) {
-        groupTagList.add(groupTagNodeList.item(i).getTextContent());
-      }
-      String[] groupTags = groupTagList.toArray(new String[groupTagList.size()]);
-
-      LinkedList<String> themeTagList = new LinkedList<String>();
-      NodeList themeTagNodeList = resourceElement.getElementsByTagName("ThemeTag");
-      for (int i = 0; i < themeTagNodeList.getLength(); i++) {
-        themeTagList.add(themeTagNodeList.item(i).getTextContent());
-      }
-      String[] themeTags = themeTagList.toArray(new String[themeTagList.size()]);
+      String[] tags = getResourceTags(resourceElement, "Tags", "Tag");
+      String[] groupTags = getResourceTags(resourceElement, "GroupTags", "GroupTag");
+      String[] themeTags = getResourceTags(resourceElement, "ThemeTags", "ThemeTag");
 
       ModelResourceInfo resource = new ModelResourceInfo(parent, resourceName, creatorName, creationYear, bbox, tags, groupTags, themeTags, modelName, textureName, isDeprecated, placeOnGround);
       return resource;
     }
 
     return null;
+  }
+
+  private static String[] getResourceTags(Element resourceElement, String containerTagName, String tagName) {
+    LinkedList<String> tagList = new LinkedList<String>();
+    addImmediateChildTextContent(resourceElement, tagName, tagList);
+    for (Element container : getImmediateChildElementsByTagName(resourceElement, containerTagName)) {
+      addImmediateChildTextContent(container, tagName, tagList);
+    }
+    return tagList.toArray(new String[tagList.size()]);
+  }
+
+  private static void addImmediateChildTextContent(Element parent, String tagName, LinkedList<String> textContent) {
+    for (Element child : getImmediateChildElementsByTagName(parent, tagName)) {
+      textContent.add(child.getTextContent());
+    }
   }
 
   public ModelResourceInfo(ModelResourceInfo parent, String resourceName, String creator, int creationYear, AxisAlignedBox boundingBox, String[] tags, String[] groupTags, String[] themeTags, String modelName, String textureName, boolean isDeprecated, boolean placeOnGround) {
