@@ -669,21 +669,19 @@ public abstract class ProjectApplication extends PerspectiveApplication<ProjectD
   protected abstract BufferedImage createThumbnail() throws Throwable;
 
   public final void saveProjectTo(File file) throws IOException {
-    FileProjectLoader nextLoader = new FileProjectLoader(file);
-    boolean savingNewProject = uriProjectLoader.isNewProject()
-            || (uriProjectLoader.isDefaultBackup() && !nextLoader.isDefaultBackup());
+    ProjectSaveTargetPlan saveTargetPlan = ProjectSaveTargetPlan.choose(uriProjectLoader, file);
 
-    if (savingNewProject) {
+    if (saveTargetPlan.shouldCopyDefaultBackupDirectory()) {
       projectFileUtilities.copyDefaultBackupDirectory(file);
     }
 
-    uriProjectLoader = nextLoader;
+    uriProjectLoader = saveTargetPlan.getNextLoader();
 
     //    long startTime = System.currentTimeMillis();
 
-    projectFileUtilities.saveProjectTo(file, uriProjectLoader.isBackup());
+    projectFileUtilities.saveProjectTo(file, saveTargetPlan.isBackupSave());
 
-    if (savingNewProject) {
+    if (saveTargetPlan.shouldCopyDefaultBackupDirectory()) {
       updateInterface();
     }
 
