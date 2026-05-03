@@ -2,6 +2,8 @@ package org.alice.tweedle.file;
 
 import org.junit.Test;
 
+import java.io.IOException;
+
 import static org.junit.Assert.*;
 
 public class ManifestEncoderTest {
@@ -401,6 +403,26 @@ public class ManifestEncoderTest {
     ModelManifest model = ManifestEncoderDecoder.fromJson(SAMPLE_MODEL_WITH_3_RESOURCES, ModelManifest.class);
 
     assertEquals("The model.resources should have 3 resources in it.", 3, model.resources.size());
+  }
+
+  @Test
+  public void invalidManifestJsonReturnsNullForLegacyDecoder() {
+    Manifest manifest =
+        ManifestEncoderDecoder.fromJson("{not-json", Manifest.class);
+
+    assertNull(
+        "Legacy manifest decoder should preserve null-on-error compatibility.",
+        manifest);
+  }
+
+  @Test
+  public void invalidManifestJsonThrowsForExplicitDecoder() {
+    try {
+      ManifestEncoderDecoder.fromJsonOrThrow("{not-json", Manifest.class);
+      fail("Explicit manifest decoder should throw for invalid JSON.");
+    } catch (IOException e) {
+      assertTrue(e.getMessage().contains("Unable to read manifest"));
+    }
   }
 
   private LibraryManifest getSimpleLibraryManifest() {

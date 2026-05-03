@@ -29,15 +29,47 @@ public class ManifestEncoderDecoder {
 
   public static <T extends Manifest> T fromJson(String string, Class<T> manifestClass) {
     try {
-      ObjectMapper mapper = new ObjectMapper();
-      SimpleModule module = new SimpleModule();
-      module.addDeserializer(Temporal.class, new ProgressiveTemporalDeserializer());
-      mapper.registerModule(module);
-      return mapper.readValue(string, manifestClass);
+      return readJson(string, manifestClass);
     } catch (Throwable e) {
       Logger.warning("Skipping over error: Unable to read manifest from save file due to \"" + e.getMessage() + "\"\n" + e.getStackTrace());
       return null;
     }
+  }
+
+  /**
+   * Decode manifest JSON for callers that must treat malformed manifests as
+   * errors.
+   *
+   * @param <T> decoded manifest type
+   * @param string JSON content
+   * @param manifestClass manifest type
+   * @return decoded manifest
+   * @throws IOException when JSON cannot be decoded into a manifest
+   */
+  public static <T extends Manifest> T fromJsonOrThrow(
+      final String string,
+      final Class<T> manifestClass) throws IOException {
+    try {
+      T manifest = readJson(string, manifestClass);
+      if (manifest == null) {
+        throw new IOException("Decoder returned null manifest");
+      }
+      return manifest;
+    } catch (IOException | RuntimeException e) {
+      throw new IOException("Unable to read manifest from save file", e);
+    }
+  }
+
+  private static <T extends Manifest> T readJson(
+      final String string,
+      final Class<T> manifestClass) throws IOException {
+    ObjectMapper mapper = new ObjectMapper();
+    SimpleModule module = new SimpleModule();
+    module.addDeserializer(
+        Temporal.class,
+        new ProgressiveTemporalDeserializer());
+    mapper.registerModule(module);
+    return mapper.readValue(string, manifestClass);
   }
 
   private static class ProgressiveTemporalSerializer extends JsonSerializer<Temporal> {
