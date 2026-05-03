@@ -187,6 +187,21 @@ public class ProjectCodeGeneratorGeneratedSourceTest {
     compileProgramAndLauncher("generated-for-each-loop-item-access-classes", programPath, sourceDirectory);
   }
 
+  @Test
+  public void generatedSyntheticNamedForEachLoopItemAccessSourceCompiles() throws Exception {
+    Path sourceDirectory = generateProgramSource(
+        "synthetic-named-for-each-loop-item-access.a3p",
+        programTypeWithNamedForEachLoopItemAccessMethod(),
+        "generated-named-for-each-loop-item-access-src");
+
+    Path programPath = sourceDirectory.resolve("Program.java");
+    String programSource = Files.readString(programPath);
+    assertTrue(programSource.contains("void copyNamedItem()"));
+    assertTrue(programSource, programSource.contains("for(String item : new String[]{\"red\", \"blue\"})"));
+    assertTrue(programSource, programSource.contains("final String copy=item;"));
+    compileProgramAndLauncher("generated-named-for-each-loop-item-access-classes", programPath, sourceDirectory);
+  }
+
   private Path generateProgramSource(String projectFileName, NamedUserType programType, String sourceDirectoryName)
       throws Exception {
     File aliceProject = temporaryFolder.newFile(projectFileName);
@@ -358,6 +373,26 @@ public class ProjectCodeGeneratorGeneratedSourceTest {
         new UserParameter[0],
         new BlockStatement(loop));
     type.methods.add(copyEach);
+    return type;
+  }
+
+  private static NamedUserType programTypeWithNamedForEachLoopItemAccessMethod() {
+    NamedUserType type = programType("Program");
+    ForEachInArrayLoop loop = new ForEachInArrayLoop(
+        new UserLocal("item", String.class, true),
+        AstUtilities.createArrayInstanceCreation(
+            String[].class,
+            new StringLiteral("red"),
+            new StringLiteral("blue")),
+        new BlockStatement());
+    UserLocal copy = new UserLocal("copy", String.class, true);
+    loop.body.getValue().statements.add(new LocalDeclarationStatement(copy, new LocalAccess(loop.item.getValue())));
+    UserMethod copyNamedItem = new UserMethod(
+        "copyNamedItem",
+        Void.TYPE,
+        new UserParameter[0],
+        new BlockStatement(loop));
+    type.methods.add(copyNamedItem);
     return type;
   }
 
