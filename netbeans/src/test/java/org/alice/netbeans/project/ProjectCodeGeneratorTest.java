@@ -8,7 +8,10 @@ import org.lgna.project.Project;
 import org.lgna.project.ast.BlockStatement;
 import org.lgna.project.ast.Comment;
 import org.lgna.project.ast.JavaType;
+import org.lgna.project.ast.LocalDeclarationStatement;
 import org.lgna.project.ast.NamedUserType;
+import org.lgna.project.ast.StringLiteral;
+import org.lgna.project.ast.UserLocal;
 import org.lgna.project.ast.UserMethod;
 import org.lgna.project.ast.UserParameter;
 import org.lgna.project.io.IoUtilities;
@@ -150,6 +153,25 @@ public class ProjectCodeGeneratorTest {
   }
 
   @Test
+  public void generatedSyntheticUserMethodLocalDeclarationSourceCompiles() throws Exception {
+    File aliceProject = temporaryFolder.newFile("synthetic-local-declaration.a3p");
+    IoUtilities.writeProject(
+        aliceProject,
+        new Project(programTypeWithLocalDeclarationMethod(), Project.SceneCameraType.WindowCamera));
+    File sourceDirectory = temporaryFolder.newFolder("generated-local-declaration-src");
+    ProjectCodeGenerator.generateCode(aliceProject, sourceDirectory, null, false);
+
+    Path programPath = sourceDirectory.toPath().resolve("Program.java");
+    String programSource = Files.readString(programPath);
+    assertTrue(programSource.contains("void sayHello()"));
+    assertTrue(programSource, programSource.contains("final String greeting=\"hello alice\";"));
+    compileJavaSources(
+        temporaryFolder.newFolder("generated-local-declaration-classes").toPath(),
+        programPath,
+        sourceDirectory.toPath().resolve("AliceJavaFXLauncher.java"));
+  }
+
+  @Test
   public void generatedSyntheticResourceProjectSourcesCompile() throws Exception {
     Project project = new Project(programType("Program"), Project.SceneCameraType.WindowCamera);
     project.addResource(new TestResource("note.txt", "text/plain", "hello alice".getBytes(StandardCharsets.UTF_8)));
@@ -267,6 +289,18 @@ public class ProjectCodeGeneratorTest {
         Void.TYPE,
         new UserParameter[0],
         new BlockStatement(new Comment("hello alice")));
+    type.methods.add(userMethod);
+    return type;
+  }
+
+  private static NamedUserType programTypeWithLocalDeclarationMethod() {
+    NamedUserType type = programType("Program");
+    UserLocal greeting = new UserLocal("greeting", String.class, true);
+    UserMethod userMethod = new UserMethod(
+        "sayHello",
+        Void.TYPE,
+        new UserParameter[0],
+        new BlockStatement(new LocalDeclarationStatement(greeting, new StringLiteral("hello alice"))));
     type.methods.add(userMethod);
     return type;
   }
