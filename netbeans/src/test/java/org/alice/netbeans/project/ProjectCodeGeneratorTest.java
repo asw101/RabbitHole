@@ -151,30 +151,25 @@ public class ProjectCodeGeneratorTest {
     IoUtilities.writeProject(aliceProject, project);
     File sourceDirectory = temporaryFolder.newFolder("runtime-resource-source-src");
     ProjectCodeGenerator.generateCode(aliceProject, sourceDirectory, null, false);
-    Path classesDirectory = temporaryFolder.newFolder("runtime-resource-classes").toPath();
-    compileJavaSources(
-        classesDirectory,
-        sourceDirectory.toPath().resolve("Program.java"),
-        sourceDirectory.toPath().resolve("AliceJavaFXLauncher.java"),
-        sourceDirectory.toPath().resolve("Resources.java"));
-    Path generatedResourcePath = sourceDirectory.toPath().resolve("resources").resolve("note.txt");
-    Path classpathResourcePath = classesDirectory.resolve("resources").resolve("note.txt");
-    Files.createDirectories(classpathResourcePath.getParent());
-    Files.copy(generatedResourcePath, classpathResourcePath, StandardCopyOption.REPLACE_EXISTING);
 
-    try (URLClassLoader classLoader = new URLClassLoader(
-        new URL[] {classesDirectory.toUri().toURL()},
-        ProjectCodeGeneratorTest.class.getClassLoader())) {
-      Class<?> resourcesClass = Class.forName("Resources", true, classLoader);
-      Field resourceField = Arrays.stream(resourcesClass.getFields())
-          .filter(field -> TestResource.class.isAssignableFrom(field.getType()))
-          .findFirst()
-          .orElseThrow(AssertionError::new);
-      resourceField.setAccessible(true);
-      Resource generatedResource = (Resource) resourceField.get(null);
-      assertEquals("text/plain", generatedResource.getContentType());
-      assertArrayEquals(data, generatedResource.getData());
-    }
+    assertGeneratedResourceLoads(sourceDirectory.toPath(), data);
+  }
+
+  @Test
+  public void generatedSyntheticResourcesLoadOriginalFileNameWhenDisplayNameDiffers() throws Exception {
+    byte[] data = "hello alice".getBytes(StandardCharsets.UTF_8);
+    TestResource resource = new TestResource("note.txt", "text/plain", data);
+    resource.setName("friendly note");
+    Project project = new Project(programType("Program"), Project.SceneCameraType.WindowCamera);
+    project.addResource(resource);
+    File aliceProject = temporaryFolder.newFile("synthetic-resource-original-name.a3p");
+    IoUtilities.writeProject(aliceProject, project);
+    File sourceDirectory = temporaryFolder.newFolder("runtime-original-name-src");
+    ProjectCodeGenerator.generateCode(aliceProject, sourceDirectory, null, false);
+
+    assertTrue(Files.exists(sourceDirectory.toPath().resolve("resources").resolve("note.txt")));
+    assertFalse(Files.exists(sourceDirectory.toPath().resolve("resources").resolve("friendly note")));
+    assertGeneratedResourceLoads(sourceDirectory.toPath(), data);
   }
 
   private static NamedUserType programType(String name) {
@@ -218,6 +213,33 @@ public class ProjectCodeGeneratorTest {
           null,
           compilationUnits).call();
       assertTrue(compilerOutput.toString(), result);
+    }
+  }
+
+  private void assertGeneratedResourceLoads(Path sourceDirectory, byte[] expectedData) throws Exception {
+    Path classesDirectory = temporaryFolder.newFolder("generated-resource-classes").toPath();
+    compileJavaSources(
+        classesDirectory,
+        sourceDirectory.resolve("Program.java"),
+        sourceDirectory.resolve("AliceJavaFXLauncher.java"),
+        sourceDirectory.resolve("Resources.java"));
+    Path generatedResourcePath = sourceDirectory.resolve("resources").resolve("note.txt");
+    Path classpathResourcePath = classesDirectory.resolve("resources").resolve("note.txt");
+    Files.createDirectories(classpathResourcePath.getParent());
+    Files.copy(generatedResourcePath, classpathResourcePath, StandardCopyOption.REPLACE_EXISTING);
+
+    try (URLClassLoader classLoader = new URLClassLoader(
+        new URL[] {classesDirectory.toUri().toURL()},
+        ProjectCodeGeneratorTest.class.getClassLoader())) {
+      Class<?> resourcesClass = Class.forName("Resources", true, classLoader);
+      Field resourceField = Arrays.stream(resourcesClass.getFields())
+          .filter(field -> TestResource.class.isAssignableFrom(field.getType()))
+          .findFirst()
+          .orElseThrow(AssertionError::new);
+      resourceField.setAccessible(true);
+      Resource generatedResource = (Resource) resourceField.get(null);
+      assertEquals("text/plain", generatedResource.getContentType());
+      assertArrayEquals(expectedData, generatedResource.getData());
     }
   }
 

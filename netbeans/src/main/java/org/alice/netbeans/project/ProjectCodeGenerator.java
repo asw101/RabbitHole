@@ -111,7 +111,7 @@ public class ProjectCodeGenerator {
       FileObject javaSrcDirectoryFileObject = (FileUtil.toFileObject(javaSrcDirectory));
       FileObject resourcesDirectory = javaSrcDirectoryFileObject.createFolder("resources");
       for (org.lgna.common.Resource resource : resources) {
-        final String dstPath = resource.getName();
+        final String dstPath = resource.getOriginalFileName();
         FileObject f;
         try {
           f = resourcesDirectory.createData(dstPath);
