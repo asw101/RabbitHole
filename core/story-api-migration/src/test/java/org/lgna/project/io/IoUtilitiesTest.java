@@ -4,7 +4,10 @@ import org.alice.tweedle.file.Manifest;
 import org.alice.tweedle.file.ManifestEncoderDecoder;
 import org.alice.tweedle.file.AudioReference;
 import org.alice.tweedle.file.ImageReference;
+import org.alice.tweedle.file.ModelReference;
+import org.alice.tweedle.file.ProjectManifest;
 import org.alice.tweedle.file.ResourceReference;
+import org.alice.tweedle.file.TypeReference;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -142,6 +145,45 @@ public class IoUtilitiesTest {
     assertEquals("audio.x_wav", readResource.getContentType());
     assertArrayEquals(audioBytes, readResource.getData());
     assertEquals(0.0, ((AudioResource) readResource).getDuration(), 0.0);
+  }
+
+  @Test
+  public void readsExportedPlayerArchiveModelAndGeneratedTypeReferencesWithoutBinaryResources() throws Exception {
+    ProjectManifest manifest = new ProjectManifest();
+    manifest.metadata.fileType = IoUtilities.EXPORT_EXTENSION;
+    manifest.projectStructure.sceneCameraType = Project.SceneCameraType.WindowCamera;
+    ModelReference modelReference = new ModelReference();
+    modelReference.name = "SyntheticDynamicProp";
+    modelReference.format = "json";
+    modelReference.file = "models/SyntheticDynamicProp/SyntheticDynamicProp.json";
+    manifest.resources.add(modelReference);
+    manifest.resources.add(new TypeReference("SyntheticDynamicPropResource", "src/SyntheticDynamicPropResource.twe", "tweedle"));
+    File exportFile = temporaryFolder.newFile("exported-model-references.a3w");
+
+    try (ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(exportFile))) {
+      writeZipEntry(zipOutputStream, ProjectIo.VERSION_ENTRY_NAME, ProjectVersion.getCurrentVersion().toString());
+      writeZipEntry(zipOutputStream, ProjectIo.MANIFEST_ENTRY_NAME, ManifestEncoderDecoder.toJson(manifest));
+      writeZipEntry(zipOutputStream, "models/SyntheticDynamicProp/SyntheticDynamicProp.json", "{}");
+      writeZipEntry(zipOutputStream, "src/SyntheticDynamicPropResource.twe", "class SyntheticDynamicPropResource {}");
+    }
+
+    try (ZipFile zipFile = new ZipFile(exportFile)) {
+      assertNotNull(zipFile.getEntry("models/SyntheticDynamicProp/SyntheticDynamicProp.json"));
+      assertNotNull(zipFile.getEntry("src/SyntheticDynamicPropResource.twe"));
+      ProjectManifest archiveManifest = ManifestEncoderDecoder.fromJson(
+          new String(zipFile.getInputStream(zipFile.getEntry(ProjectIo.MANIFEST_ENTRY_NAME)).readAllBytes(), StandardCharsets.UTF_8),
+          ProjectManifest.class);
+      assertEquals(2, archiveManifest.resources.size());
+      assertTrue(archiveManifest.resources.get(0) instanceof ModelReference);
+      assertTrue(archiveManifest.resources.get(1) instanceof TypeReference);
+    }
+
+    Project readProject = IoUtilities.readProject(exportFile);
+    assertNotNull(readProject);
+    assertNull("Tweedle decoding is still not implemented for player archives", readProject.getProgramType());
+    assertTrue(
+        "Model and generated type references are manifest entries, not binary Resources",
+        readProject.getResources().isEmpty());
   }
 
   @Test
