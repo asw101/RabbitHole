@@ -5,20 +5,31 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.lgna.common.Resource;
 import org.lgna.project.Project;
+import org.lgna.project.ast.BlockStatement;
 import org.lgna.project.ast.JavaType;
 import org.lgna.project.ast.NamedUserType;
+import org.lgna.project.ast.UserMethod;
+import org.lgna.project.ast.UserParameter;
 import org.lgna.project.io.IoUtilities;
 import org.lgna.story.SProgram;
 import org.openide.filesystems.FileObject;
 
 import java.io.File;
 import java.io.Reader;
+import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
+
+import javax.tools.JavaCompiler;
+import javax.tools.JavaFileObject;
+import javax.tools.StandardJavaFileManager;
+import javax.tools.ToolProvider;
 
 import static org.junit.Assert.*;
 
@@ -96,11 +107,63 @@ public class ProjectCodeGeneratorTest {
     assertTrue(resourcesSource.contains("note.txt"));
   }
 
+  @Test
+  public void generatedSyntheticAliceProjectSourcesCompile() throws Exception {
+    File aliceProject = temporaryFolder.newFile("synthetic-compile.a3p");
+    IoUtilities.writeProject(
+        aliceProject,
+        new Project(programType("Program"), Project.SceneCameraType.WindowCamera));
+    File sourceDirectory = temporaryFolder.newFolder("compiled-source-src");
+    ProjectCodeGenerator.generateCode(aliceProject, sourceDirectory, null, false);
+
+    compileJavaSources(
+        temporaryFolder.newFolder("compiled-classes").toPath(),
+        sourceDirectory.toPath().resolve("Program.java"),
+        sourceDirectory.toPath().resolve("AliceJavaFXLauncher.java"));
+  }
+
   private static NamedUserType programType(String name) {
     NamedUserType type = new NamedUserType();
     type.name.setValue(name);
     type.superType.setValue(JavaType.getInstance(SProgram.class));
+    type.methods.add(mainMethod());
     return type;
+  }
+
+  private static UserMethod mainMethod() {
+    UserParameter argsParameter = new UserParameter("args", String[].class);
+    UserMethod mainMethod = new UserMethod(
+        "main",
+        Void.TYPE,
+        new UserParameter[] {argsParameter},
+        new BlockStatement());
+    mainMethod.isStatic.setValue(true);
+    mainMethod.isSignatureLocked.setValue(true);
+    return mainMethod;
+  }
+
+  private static void compileJavaSources(Path outputDirectory, Path... sources) throws Exception {
+    JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+    assertNotNull("Tests must run on a JDK with the Java compiler available", compiler);
+    StringWriter compilerOutput = new StringWriter();
+    try (StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, null)) {
+      List<String> options = Arrays.asList(
+          "-classpath",
+          System.getProperty("java.class.path"),
+          "-proc:none",
+          "-d",
+          outputDirectory.toString());
+      Iterable<? extends JavaFileObject> compilationUnits = fileManager.getJavaFileObjectsFromFiles(
+          Arrays.stream(sources).map(Path::toFile).toList());
+      Boolean result = compiler.getTask(
+          compilerOutput,
+          fileManager,
+          null,
+          options,
+          null,
+          compilationUnits).call();
+      assertTrue(compilerOutput.toString(), result);
+    }
   }
 
   public static class TestResource extends Resource {
