@@ -322,13 +322,31 @@ public class XmlProjectIo implements ProjectIo {
       }
     }
 
-    private static String getValidName(String name) {
-      //todo
-      return name;
+    private static String getValidFileName(Resource resource) {
+      String originalFileName = resource.getOriginalFileName();
+      if ((originalFileName != null) && !originalFileName.trim().isEmpty()) {
+        String sanitizedFileName = sanitizeFileName(originalFileName);
+        if (!sanitizedFileName.isEmpty()) {
+          return sanitizedFileName;
+        }
+      }
+      String sanitizedResourceName = sanitizeFileName(resource.getName());
+      return sanitizedResourceName.isEmpty() ? resource.getId().toString() : sanitizedResourceName;
+    }
+
+    private static String sanitizeFileName(String fileName) {
+      if (fileName == null) {
+        return "";
+      }
+      String sanitized = fileName.replace('/', '_').replace('\\', '_').trim();
+      if (sanitized.equals(".") || sanitized.equals("..")) {
+        return "";
+      }
+      return sanitized;
     }
 
     private static String generateEntryName(Resource resource, Set<String> usedEntryNames) {
-      String validFilename = getValidName(resource.getOriginalFileName());
+      String validFilename = getValidFileName(resource);
       final String DESIRED_DIRECTORY_NAME = "resources";
       int i = 1;
       while (true) {
