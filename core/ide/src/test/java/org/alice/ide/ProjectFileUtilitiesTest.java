@@ -240,6 +240,43 @@ public class ProjectFileUtilitiesTest {
   }
 
   @Test
+  public void saveCopyReopensAstReferencedImageResource() throws Exception {
+    ImageResource imageResource = new ImageResource(
+        new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB),
+        "picture.png",
+        "png");
+    Project project = new Project(programTypeReferencingImageResource("Program", imageResource), Project.SceneCameraType.WindowCamera);
+    project.addResource(imageResource);
+    ProjectFileUtilities saveUtilities = new ProjectFileUtilities(null) {
+      @Override
+      Project getUpToDateProject() {
+        return project;
+      }
+    };
+    File saveFile = temporaryFolder.newFile("saved-image-resource.a3p");
+
+    saveUtilities.saveCopyOfProjectTo(saveFile);
+
+    try (ZipFile zipFile = new ZipFile(saveFile)) {
+      assertNotNull(zipFile.getEntry("programType.xml"));
+      assertNotNull(zipFile.getEntry("resources.xml"));
+      assertNotNull(zipFile.getEntry("resources/picture.png"));
+      assertArrayEquals(imageResource.getData(), zipFile.getInputStream(zipFile.getEntry("resources/picture.png")).readAllBytes());
+    }
+    Project readProject = IoUtilities.readProject(saveFile);
+    assertEquals("Program", readProject.getProgramType().getName());
+    assertEquals(Project.SceneCameraType.WindowCamera, readProject.createSaveManifest().projectStructure.sceneCameraType);
+    assertEquals(1, readProject.getResources().size());
+    Resource readResource = readProject.getResources().iterator().next();
+    assertEquals(ImageResource.class, readResource.getClass());
+    assertEquals(imageResource.getId(), readResource.getId());
+    assertEquals("picture.png", readResource.getOriginalFileName());
+    assertEquals("picture.png", readResource.getName());
+    assertEquals("png", readResource.getContentType());
+    assertArrayEquals(imageResource.getData(), readResource.getData());
+  }
+
+  @Test
   public void saveCopyUsesUpToDateProjectSnapshot() throws Exception {
     Project project = new Project(programType("SavedProgram"), Project.SceneCameraType.WindowCamera);
     ProjectFileUtilities saveUtilities = new ProjectFileUtilities(null) {
