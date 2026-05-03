@@ -15,6 +15,7 @@ import org.lgna.project.ast.CountLoop;
 import org.lgna.project.ast.ForEachInArrayLoop;
 import org.lgna.project.ast.IntegerLiteral;
 import org.lgna.project.ast.JavaType;
+import org.lgna.project.ast.LocalAccess;
 import org.lgna.project.ast.LocalDeclarationStatement;
 import org.lgna.project.ast.NamedUserType;
 import org.lgna.project.ast.ParameterAccess;
@@ -386,6 +387,26 @@ public class ProjectCodeGeneratorTest {
   }
 
   @Test
+  public void generatedSyntheticForEachLoopItemAccessSourceCompiles() throws Exception {
+    File aliceProject = temporaryFolder.newFile("synthetic-for-each-loop-item-access.a3p");
+    IoUtilities.writeProject(
+        aliceProject,
+        new Project(programTypeWithForEachLoopItemAccessMethod(), Project.SceneCameraType.WindowCamera));
+    File sourceDirectory = temporaryFolder.newFolder("generated-for-each-loop-item-access-src");
+    ProjectCodeGenerator.generateCode(aliceProject, sourceDirectory, null, false);
+
+    Path programPath = sourceDirectory.toPath().resolve("Program.java");
+    String programSource = Files.readString(programPath);
+    assertTrue(programSource.contains("void copyEach()"));
+    assertTrue(programSource, programSource.contains("for(String COUNT__ : new String[]{\"red\", \"blue\"})"));
+    assertTrue(programSource, programSource.contains("final String copy=COUNT__;"));
+    compileJavaSources(
+        temporaryFolder.newFolder("generated-for-each-loop-item-access-classes").toPath(),
+        programPath,
+        sourceDirectory.toPath().resolve("AliceJavaFXLauncher.java"));
+  }
+
+  @Test
   public void generatedSyntheticResourceProjectSourcesCompile() throws Exception {
     Project project = new Project(programType("Program"), Project.SceneCameraType.WindowCamera);
     project.addResource(new TestResource("note.txt", "text/plain", "hello alice".getBytes(StandardCharsets.UTF_8)));
@@ -625,6 +646,23 @@ public class ProjectCodeGeneratorTest {
         new UserParameter[0],
         new BlockStatement(loop));
     type.methods.add(visitAll);
+    return type;
+  }
+
+  private static NamedUserType programTypeWithForEachLoopItemAccessMethod() {
+    NamedUserType type = programType("Program");
+    ForEachInArrayLoop loop = AstUtilities.createForEachInArrayLoop(AstUtilities.createArrayInstanceCreation(
+        String[].class,
+        new StringLiteral("red"),
+        new StringLiteral("blue")));
+    UserLocal copy = new UserLocal("copy", String.class, true);
+    loop.body.getValue().statements.add(new LocalDeclarationStatement(copy, new LocalAccess(loop.item.getValue())));
+    UserMethod copyEach = new UserMethod(
+        "copyEach",
+        Void.TYPE,
+        new UserParameter[0],
+        new BlockStatement(loop));
+    type.methods.add(copyEach);
     return type;
   }
 
