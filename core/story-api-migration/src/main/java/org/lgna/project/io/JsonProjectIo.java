@@ -364,7 +364,7 @@ public class JsonProjectIo extends DataSourceIo implements ProjectIo {
     }
 
     private static String generateEntryName(Resource resource, Set<String> usedEntryNames) {
-      String fileName = resource.getOriginalFileName();
+      String fileName = getValidFileName(resource);
       String entryName = potentialEntryName(fileName, "");
       int i = 1;
       while (usedEntryNames.contains(entryName)) {
@@ -372,6 +372,25 @@ public class JsonProjectIo extends DataSourceIo implements ProjectIo {
         entryName = potentialEntryName(fileName, String.valueOf(i));
       }
       return entryName;
+    }
+
+    private static String getValidFileName(Resource resource) {
+      String originalFileName = resource.getOriginalFileName();
+      if ((originalFileName != null) && !originalFileName.trim().isEmpty()) {
+        String sanitizedFileName = sanitizeFileName(originalFileName);
+        if (!sanitizedFileName.isEmpty()) {
+          return sanitizedFileName;
+        }
+      }
+      return sanitizeFileName(resource.getName());
+    }
+
+    private static String sanitizeFileName(String fileName) {
+      String sanitized = fileName.replace('/', '_').replace('\\', '_').trim();
+      if (sanitized.equals(".") || sanitized.equals("..")) {
+        return "";
+      }
+      return sanitized;
     }
 
     private static String potentialEntryName(String validFilename, String i) {

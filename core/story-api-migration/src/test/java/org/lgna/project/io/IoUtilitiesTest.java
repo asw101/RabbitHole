@@ -21,6 +21,8 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -119,6 +121,31 @@ public class IoUtilitiesTest {
     assertEquals(futureVersion, version.toString());
   }
 
+  @Test
+  public void jsonPlayerExportUsesSafeDistinctResourceEntries() throws Exception {
+    ImageResource first = imageResource("image.png", 0xFFFF0000);
+    ImageResource duplicate = imageResource("image.png", 0xFF00FF00);
+    ImageResource pathLike = imageResource("../folder/picture.png", 0xFF0000FF);
+    Project project = new Project(
+        programTypeReferencingImageResources("Program", first, duplicate, pathLike),
+        Project.SceneCameraType.WindowCamera);
+    File exportFile = temporaryFolder.newFile("safe-resource-entries.a3w");
+
+    IoUtilities.exportProject(exportFile, project);
+
+    try (ZipFile zipFile = new ZipFile(exportFile)) {
+      assertNotNull(zipFile.getEntry("resources/image.png"));
+      assertNotNull(zipFile.getEntry("resources2/image.png"));
+      assertNotNull(zipFile.getEntry("resources/.._folder_picture.png"));
+      assertNull(zipFile.getEntry("resources/../folder/picture.png"));
+    }
+    Project readProject = IoUtilities.readProject(exportFile);
+    Map<UUID, Resource> resourcesById = resourcesById(readProject);
+    assertArrayEquals(first.getData(), resourcesById.get(first.getId()).getData());
+    assertArrayEquals(duplicate.getData(), resourcesById.get(duplicate.getId()).getData());
+    assertArrayEquals(pathLike.getData(), resourcesById.get(pathLike.getId()).getData());
+  }
+
   private static NamedUserType programType(String name) {
     NamedUserType type = new NamedUserType();
     type.name.setValue(name);
@@ -127,15 +154,33 @@ public class IoUtilitiesTest {
   }
 
   private static NamedUserType programTypeReferencingImageResource(String name, ImageResource imageResource) {
+    return programTypeReferencingImageResources(name, imageResource);
+  }
+
+  private static NamedUserType programTypeReferencingImageResources(String name, ImageResource... imageResources) {
     NamedUserType type = programType(name);
-    UserLocal image = new UserLocal("image", ImageResource.class, true);
-    UserMethod userMethod = new UserMethod(
-        "rememberImage",
-        Void.TYPE,
-        new org.lgna.project.ast.UserParameter[0],
-        new BlockStatement(new LocalDeclarationStatement(image, new ResourceExpression(ImageResource.class, imageResource))));
+    BlockStatement body = new BlockStatement();
+    for (int i = 0; i < imageResources.length; i++) {
+      UserLocal image = new UserLocal("image" + i, ImageResource.class, true);
+      body.statements.add(new LocalDeclarationStatement(image, new ResourceExpression(ImageResource.class, imageResources[i])));
+    }
+    UserMethod userMethod = new UserMethod("rememberImages", Void.TYPE, new org.lgna.project.ast.UserParameter[0], body);
     type.methods.add(userMethod);
     return type;
+  }
+
+  private static ImageResource imageResource(String fileName, int rgb) throws Exception {
+    BufferedImage image = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
+    image.setRGB(0, 0, rgb);
+    return new ImageResource(image, fileName, "png");
+  }
+
+  private static Map<UUID, Resource> resourcesById(Project project) {
+    Map<UUID, Resource> resources = new HashMap<>();
+    for (Resource resource : project.getResources()) {
+      resources.put(resource.getId(), resource);
+    }
+    return resources;
   }
 
   private static void writePlayerArchive(File file, String version) throws Exception {
