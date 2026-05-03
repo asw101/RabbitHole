@@ -6,6 +6,7 @@ import org.junit.rules.TemporaryFolder;
 import org.lgna.common.Resource;
 import org.lgna.project.Project;
 import org.lgna.project.ast.BlockStatement;
+import org.lgna.project.ast.Comment;
 import org.lgna.project.ast.JavaType;
 import org.lgna.project.ast.NamedUserType;
 import org.lgna.project.ast.UserMethod;
@@ -130,6 +131,25 @@ public class ProjectCodeGeneratorTest {
   }
 
   @Test
+  public void generatedSyntheticUserMethodSourceCompiles() throws Exception {
+    File aliceProject = temporaryFolder.newFile("synthetic-method.a3p");
+    IoUtilities.writeProject(
+        aliceProject,
+        new Project(programTypeWithUserMethod(), Project.SceneCameraType.WindowCamera));
+    File sourceDirectory = temporaryFolder.newFolder("generated-method-src");
+    ProjectCodeGenerator.generateCode(aliceProject, sourceDirectory, null, false);
+
+    Path programPath = sourceDirectory.toPath().resolve("Program.java");
+    String programSource = Files.readString(programPath);
+    assertTrue(programSource.contains("void sayHello()"));
+    assertTrue(programSource.contains("hello alice"));
+    compileJavaSources(
+        temporaryFolder.newFolder("generated-method-classes").toPath(),
+        programPath,
+        sourceDirectory.toPath().resolve("AliceJavaFXLauncher.java"));
+  }
+
+  @Test
   public void generatedSyntheticResourceProjectSourcesCompile() throws Exception {
     Project project = new Project(programType("Program"), Project.SceneCameraType.WindowCamera);
     project.addResource(new TestResource("note.txt", "text/plain", "hello alice".getBytes(StandardCharsets.UTF_8)));
@@ -237,6 +257,17 @@ public class ProjectCodeGeneratorTest {
     type.name.setValue(name);
     type.superType.setValue(JavaType.getInstance(SProgram.class));
     type.methods.add(mainMethod());
+    return type;
+  }
+
+  private static NamedUserType programTypeWithUserMethod() {
+    NamedUserType type = programType("Program");
+    UserMethod userMethod = new UserMethod(
+        "sayHello",
+        Void.TYPE,
+        new UserParameter[0],
+        new BlockStatement(new Comment("hello alice")));
+    type.methods.add(userMethod);
     return type;
   }
 
