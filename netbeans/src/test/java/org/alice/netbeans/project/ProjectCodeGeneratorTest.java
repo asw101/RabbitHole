@@ -10,6 +10,7 @@ import org.lgna.project.ast.Comment;
 import org.lgna.project.ast.JavaType;
 import org.lgna.project.ast.LocalDeclarationStatement;
 import org.lgna.project.ast.NamedUserType;
+import org.lgna.project.ast.ParameterAccess;
 import org.lgna.project.ast.StringLiteral;
 import org.lgna.project.ast.UserLocal;
 import org.lgna.project.ast.UserMethod;
@@ -172,6 +173,25 @@ public class ProjectCodeGeneratorTest {
   }
 
   @Test
+  public void generatedSyntheticUserMethodParameterSourceCompiles() throws Exception {
+    File aliceProject = temporaryFolder.newFile("synthetic-parameter.a3p");
+    IoUtilities.writeProject(
+        aliceProject,
+        new Project(programTypeWithParameterMethod(), Project.SceneCameraType.WindowCamera));
+    File sourceDirectory = temporaryFolder.newFolder("generated-parameter-src");
+    ProjectCodeGenerator.generateCode(aliceProject, sourceDirectory, null, false);
+
+    Path programPath = sourceDirectory.toPath().resolve("Program.java");
+    String programSource = Files.readString(programPath);
+    assertTrue(programSource.contains("void remember(String message)"));
+    assertTrue(programSource, programSource.contains("final String copy=message;"));
+    compileJavaSources(
+        temporaryFolder.newFolder("generated-parameter-classes").toPath(),
+        programPath,
+        sourceDirectory.toPath().resolve("AliceJavaFXLauncher.java"));
+  }
+
+  @Test
   public void generatedSyntheticResourceProjectSourcesCompile() throws Exception {
     Project project = new Project(programType("Program"), Project.SceneCameraType.WindowCamera);
     project.addResource(new TestResource("note.txt", "text/plain", "hello alice".getBytes(StandardCharsets.UTF_8)));
@@ -301,6 +321,19 @@ public class ProjectCodeGeneratorTest {
         Void.TYPE,
         new UserParameter[0],
         new BlockStatement(new LocalDeclarationStatement(greeting, new StringLiteral("hello alice"))));
+    type.methods.add(userMethod);
+    return type;
+  }
+
+  private static NamedUserType programTypeWithParameterMethod() {
+    NamedUserType type = programType("Program");
+    UserParameter message = new UserParameter("message", String.class);
+    UserLocal copy = new UserLocal("copy", String.class, true);
+    UserMethod userMethod = new UserMethod(
+        "remember",
+        Void.TYPE,
+        new UserParameter[] {message},
+        new BlockStatement(new LocalDeclarationStatement(copy, new ParameterAccess(message))));
     type.methods.add(userMethod);
     return type;
   }
