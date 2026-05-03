@@ -327,6 +327,48 @@ public class ProjectFileUtilitiesTest {
     assertEquals("SavedProgram", readProject.getProgramType().getName());
   }
 
+  @Test
+  public void saveCopyPropagatesTargetWriteFailure() throws Exception {
+    Project project = new Project(programType("SavedProgram"), Project.SceneCameraType.WindowCamera);
+    ProjectFileUtilities saveUtilities = new ProjectFileUtilities(null) {
+      @Override
+      Project getUpToDateProject() {
+        return project;
+      }
+    };
+    File targetDirectory = temporaryFolder.newFolder("save-copy-target-directory");
+
+    assertThrows(IOException.class, () -> saveUtilities.saveCopyOfProjectTo(targetDirectory));
+  }
+
+  @Test
+  public void saveProjectToPropagatesSaveCopyFailure() throws Exception {
+    Project project = new Project(programType("SavedProgram"), Project.SceneCameraType.WindowCamera);
+    ProjectFileUtilities saveUtilities = new ProjectFileUtilities(null) {
+      @Override
+      Project getUpToDateProject() {
+        return project;
+      }
+    };
+    File targetDirectory = temporaryFolder.newFolder("save-project-target-directory");
+
+    assertThrows(IOException.class, () -> saveUtilities.saveProjectTo(targetDirectory, true));
+  }
+
+  @Test
+  public void exportCopyPropagatesTargetWriteFailure() throws Exception {
+    Project project = new Project(programType("ExportedProgram"), Project.SceneCameraType.WindowCamera);
+    ProjectFileUtilities exportUtilities = new ProjectFileUtilities(null) {
+      @Override
+      Project getForcedUpToDateProject() {
+        return project;
+      }
+    };
+    File targetDirectory = temporaryFolder.newFolder("export-copy-target-directory");
+
+    assertThrows(IOException.class, () -> exportUtilities.exportCopyOfProjectTo(targetDirectory));
+  }
+
   private static NamedUserType programType(String name) {
     NamedUserType type = new NamedUserType();
     type.name.setValue(name);
