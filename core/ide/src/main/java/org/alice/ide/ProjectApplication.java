@@ -525,9 +525,14 @@ public abstract class ProjectApplication extends PerspectiveApplication<ProjectD
 
     updateInterface(project);
 
-    if (isBackup && !isLoadingBackups) {
-      // User manually opened a backup, don't do anything special
-    } else if (unloadableFiles.isEmpty() && !uriProjectLoader.isNewProject()) {
+    ProjectLoadSuccessPlan plan = ProjectLoadSuccessPlan.choose(
+        isBackup,
+        isLoadingBackups,
+        isDefaultBackup,
+        uriProjectLoader.isNewProject(),
+        !unloadableFiles.isEmpty());
+
+    if (plan.shouldCheckForMoreRecentBackups()) {
       // check for backups newer than the project
 
       Path backupPath = projectFileUtilities.appropriateBackupDirectory(projectFile);
@@ -548,7 +553,7 @@ public abstract class ProjectApplication extends PerspectiveApplication<ProjectD
     }
 
     // If a backup of a saved project was successfully loaded, prompt the user for what to do next
-    if (isLoadingBackups && !isDefaultBackup) {
+    if (plan.shouldCreateProjectFromBackup()) {
       createProjectFromBackup(projectFile, uriProjectLoader.getMainProjectFile(), isMainProjectCorrupted);
     }
   }
