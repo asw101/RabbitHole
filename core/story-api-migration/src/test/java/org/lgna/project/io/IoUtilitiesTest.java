@@ -388,6 +388,43 @@ public class IoUtilitiesTest {
   }
 
   @Test
+  public void xmlProjectUsesSafeDistinctResourceEntries() throws Exception {
+    ImageResource first = imageResource("image.png", 0xFFFF0000);
+    ImageResource duplicate = imageResource("image.png", 0xFF00FF00);
+    ImageResource slashPath = imageResource("../folder/picture.png", 0xFF0000FF);
+    ImageResource backslashPath = imageResource("folder\\sound.png", 0xFFFFFF00);
+    ImageResource dot = imageResource(".", 0xFFFF00FF);
+    ImageResource dotdot = imageResource("..", 0xFF00FFFF);
+    Project project = new Project(
+        programTypeReferencingImageResources("Program", first, duplicate, slashPath, backslashPath, dot, dotdot),
+        Project.SceneCameraType.WindowCamera);
+    File projectFile = temporaryFolder.newFile("safe-xml-resource-entries.a3p");
+
+    IoUtilities.writeProject(projectFile, project);
+
+    try (ZipFile zipFile = new ZipFile(projectFile)) {
+      assertNotNull(zipFile.getEntry("resources/image.png"));
+      assertNotNull(zipFile.getEntry("resources2/image.png"));
+      assertNotNull(zipFile.getEntry("resources/.._folder_picture.png"));
+      assertNotNull(zipFile.getEntry("resources/folder_sound.png"));
+      assertNotNull(zipFile.getEntry("resources/" + dot.getId()));
+      assertNotNull(zipFile.getEntry("resources/" + dotdot.getId()));
+      assertNull(zipFile.getEntry("resources/../folder/picture.png"));
+      assertNull(zipFile.getEntry("resources/folder\\sound.png"));
+      assertNull(zipFile.getEntry("resources/."));
+      assertNull(zipFile.getEntry("resources/.."));
+    }
+    Project readProject = IoUtilities.readProject(projectFile);
+    Map<UUID, Resource> resourcesById = resourcesById(readProject);
+    assertArrayEquals(first.getData(), resourcesById.get(first.getId()).getData());
+    assertArrayEquals(duplicate.getData(), resourcesById.get(duplicate.getId()).getData());
+    assertArrayEquals(slashPath.getData(), resourcesById.get(slashPath.getId()).getData());
+    assertArrayEquals(backslashPath.getData(), resourcesById.get(backslashPath.getId()).getData());
+    assertArrayEquals(dot.getData(), resourcesById.get(dot.getId()).getData());
+    assertArrayEquals(dotdot.getData(), resourcesById.get(dotdot.getId()).getData());
+  }
+
+  @Test
   public void jsonPlayerImageReadsWithSameUuidDoNotMutateEarlierRead() throws Exception {
     UUID sharedId = UUID.randomUUID();
     byte[] firstData = new byte[] {1, 2, 3};
