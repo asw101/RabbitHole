@@ -31,3 +31,22 @@ jobs:
 
       - name: Build NetBeans package without Sims assets
         run: mvn -DincludeSims=false -Dinstall4j.skip -pl netbeans -am package -DskipTests
+
+      - name: Verify NetBeans package artifacts
+        run: |
+          set -euo pipefail
+
+          NBM_COUNT=$(find netbeans/target -maxdepth 1 -name 'netbeans-*.nbm' | wc -l | tr -d ' ')
+          test "${NBM_COUNT}" = "1"
+          test -f netbeans/target/nbm/clusters/extra/modules/org-alice-netbeans.jar
+          test -f netbeans/target/nbm/clusters/extra/src/aliceSource.jar
+          test -f netbeans/target/nbm/clusters/extra/doc/aliceDocs.zip
+
+          jar tf netbeans/target/nbm/clusters/extra/modules/org-alice-netbeans.jar \
+            | grep -F org/alice/netbeans/Alice3Library.xml
+          jar tf netbeans/target/nbm/clusters/extra/modules/org-alice-netbeans.jar \
+            | grep -F org/alice/netbeans/layer.xml
+          jar tf netbeans/target/nbm/clusters/extra/src/aliceSource.jar \
+            | grep -F SProgram.java
+          unzip -l netbeans/target/nbm/clusters/extra/doc/aliceDocs.zip \
+            | grep -F overview-summary.html
