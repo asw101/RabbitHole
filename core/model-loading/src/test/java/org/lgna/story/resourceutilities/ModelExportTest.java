@@ -1,162 +1,103 @@
 package org.lgna.story.resourceutilities;
 
-import edu.cmu.cs.dennisc.scenegraph.SkeletonVisual;
-import org.lgna.story.implementation.alice.AliceResourceUtilities;
-import org.lgna.story.resources.ImplementationAndVisualType;
-import org.lgna.story.resources.JointedModelResource;
+import org.alice.math.immutable.AxisAlignedBox;
+import org.junit.Test;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.xml.sax.InputSource;
 
-import java.util.HashMap;
-import java.util.Map;
+import javax.tools.JavaCompiler;
+import javax.tools.ToolProvider;
+import java.io.ByteArrayOutputStream;
+import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class ModelExportTest {
 
-  private static Map<JointedModelResource, SkeletonVisual> resourceToVisualMap = new HashMap<>();
-  private static Map<JointedModelResource, ModelResourceInfo> resourceToInfoMap = new HashMap<>();
+  @Test
+  public void modelExporterCreatesXmlForClassAndDefaultResource() throws Exception {
+    ModelResourceExporter exporter = createSyntheticPropExporter();
 
-  private static SkeletonVisual getVisualForResource(JointedModelResource resource) {
-    if (resourceToVisualMap.containsKey(resource)) {
-      return resourceToVisualMap.get(resource);
-    }
-    SkeletonVisual sv = (SkeletonVisual) ImplementationAndVisualType.ALICE.getFactory(resource).createVisualData().getSgVisuals()[0];
-    resourceToVisualMap.put(resource, sv);
-    return sv;
+    Document xml = parseXml(exporter.createXMLString());
+
+    Element root = xml.getDocumentElement();
+    assertEquals("AliceModel", root.getNodeName());
+    assertEquals("TestProp", root.getAttribute("name"));
+    assertEquals("Alice Test", root.getAttribute("creator"));
+    assertEquals("2026", root.getAttribute("creationYear"));
+    assertEquals("TRUE", root.getAttribute("placeOnGround"));
+    assertEquals("class-tag", root.getElementsByTagName("Tag").item(0).getTextContent());
+    assertEquals("class-group", root.getElementsByTagName("GroupTag").item(0).getTextContent());
+    assertEquals("class-theme", root.getElementsByTagName("ThemeTag").item(0).getTextContent());
+
+    Element resource = (Element) root.getElementsByTagName("Resource").item(0);
+    assertNotNull(resource);
+    assertEquals("DEFAULT", resource.getAttribute("resourceName"));
+    assertEquals("TestProp", resource.getAttribute("modelName"));
+    assertEquals("DEFAULT", resource.getAttribute("textureName"));
+    assertEquals("Resource Artist", resource.getAttribute("creator"));
+    assertEquals("2025", resource.getAttribute("creationYear"));
   }
 
-  private static ModelResourceInfo getModelInfoForResource(JointedModelResource resource) {
-    if (resourceToInfoMap.containsKey(resource)) {
-      return resourceToInfoMap.get(resource);
-    }
-    ModelResourceInfo modelInfo = AliceResourceUtilities.getModelResourceInfo(resource.getClass(), resource.toString());
-    resourceToInfoMap.put(resource, modelInfo);
-    return modelInfo;
+  @Test
+  public void modelExporterCreatesCompilableResourceJavaCode() throws Exception {
+    ModelResourceExporter exporter = createSyntheticPropExporter();
+
+    String javaCode = exporter.createJavaCode();
+
+    assertTrue(javaCode.contains("package org.lgna.story.resources.prop;"));
+    assertTrue(javaCode.contains("public enum TestPropResource implements org.lgna.story.resources.PropResource"));
+    assertTrue(javaCode.contains("DEFAULT;"));
+    assertTrue(javaCode.contains("createImplementation"));
+    assertCompiles("org/lgna/story/resources/prop/TestPropResource.java", javaCode);
   }
 
-  //    private static final SkeletonVisual ALIEN_VISUAL = (SkeletonVisual)ImplementationAndVisualType.ALICE.getFactory(AlienResource.DEFAULT).createVisualData().getSgVisuals()[ 0 ];
-  //    private static final ModelResourceInfo ALIEN_MODEL_INFO = AliceResourceUtilities.getModelResourceInfo( AlienResource.class, AlienResource.DEFAULT.toString() );
-  //
-  //    private static final SkeletonVisual PIRATE_SHIP_VISUAL = (SkeletonVisual)ImplementationAndVisualType.ALICE.getFactory(PirateShipResource.DEFAULT).createVisualData().getSgVisuals()[ 0 ];
-  //    private static final ModelResourceInfo PIRATE_SHIP_INFO = AliceResourceUtilities.getModelResourceInfo( PirateShipResource.class, PirateShipResource.DEFAULT.toString() );
-  //
-  //    private static final SkeletonVisual ALICE_WONDERLAND_VISUAL = (SkeletonVisual)ImplementationAndVisualType.ALICE.getFactory(AliceResource.WONDERLAND).createVisualData().getSgVisuals()[ 0 ];
-  //    private static final ModelResourceInfo ALICE_WONDERLAND_INFO = AliceResourceUtilities.getModelResourceInfo( AliceResource.class, AliceResource.WONDERLAND.toString() );
-  //
-  //    private static final SkeletonVisual ALICE_CARNEGIE_VISUAL = (SkeletonVisual)ImplementationAndVisualType.ALICE.getFactory(AliceResource.CARNEGIE_MELLON).createVisualData().getSgVisuals()[ 0 ];
-  //    private static final ModelResourceInfo ALICE_CARNEGIE_INFO = AliceResourceUtilities.getModelResourceInfo( AliceResource.class, AliceResource.CARNEGIE_MELLON.toString() );
-  //
-  //    private static final SkeletonVisual DRAGON_DEFAULT_BLUE_VISUAL = (SkeletonVisual)ImplementationAndVisualType.ALICE.getFactory(DragonResource.DEFAULT_BLUE).createVisualData().getSgVisuals()[ 0 ];
-  //    private static final ModelResourceInfo DRAGON_DEFAULT_BLUE_MODEL_INFO = AliceResourceUtilities.getModelResourceInfo( DragonResource.class, DragonResource.DEFAULT_BLUE.toString() );
-  //
-  //    private static final SkeletonVisual DRAGON_DEFAULT_GREEN_VISUAL = (SkeletonVisual)ImplementationAndVisualType.ALICE.getFactory(DragonResource.DEFAULT_GREEN).createVisualData().getSgVisuals()[ 0 ];
-  //    private static final ModelResourceInfo DRAGON_DEFAULT_GREEN_MODEL_INFO = AliceResourceUtilities.getModelResourceInfo( DragonResource.class, DragonResource.DEFAULT_GREEN.toString() );
-  //
-  //    private static final SkeletonVisual DRAGON_TUTU_GREEN_VISUAL = (SkeletonVisual)ImplementationAndVisualType.ALICE.getFactory(DragonResource.TUTU_GREEN).createVisualData().getSgVisuals()[ 0 ];
-  //    private static final ModelResourceInfo DRAGON_TUTU_GREEN_MODEL_INFO = AliceResourceUtilities.getModelResourceInfo( DragonResource.class, DragonResource.TUTU_GREEN.toString() );
+  private static ModelResourceExporter createSyntheticPropExporter() {
+    ModelResourceExporter exporter = new ModelResourceExporter("TestProp", ModelClassData.PROP_CLASS_DATA);
+    exporter.addAttribution("Alice Test", "2026");
+    exporter.setPlaceOnGround(true);
+    exporter.addTags("class-tag");
+    exporter.addGroupTags("class-group");
+    exporter.addThemeTags("class-theme");
+    exporter.setBoundingBox("TestProp", AxisAlignedBox.createAxisAlignedBox(-1.0, 0.0, -2.0, 1.0, 3.0, 2.0));
+    exporter.addResource("TestProp", "Default", "ALICE", "Resource Artist", "2025");
+    return exporter;
+  }
 
-    /*
-        //Create the collada model data source
-        DataSource structureDataSource = exporter.createColladaDataSource(resourcePath);
-        //Link manifest entries to the files created by the exporter
-        StructureReference structureReference = getStructureReference(manifest, modelInfo);
-        //Strip the base and model path from the name to make it relative to the manifest
-        structureReference.file = structureDataSource.getName().substring(resourcePath.length() + 1);
-        structureReference.format = ExportFormat.COLLADA.modelExtension;
-        //Only add new model files to the list to be written
-        if (!dataSources.contains(structureDataSource)) {
-            dataSources.add(structureDataSource);
-        }
+  private static Document parseXml(String xml) throws Exception {
+    return javax.xml.parsers.DocumentBuilderFactory.newInstance()
+        .newDocumentBuilder()
+        .parse(new InputSource(new StringReader(xml)));
+  }
 
-        //Get the existing texture set defined by the modelInfo.
-        ModelManifest.TextureSet textureSet = getTextureSet(manifest, modelInfo);
-        //Now that we have a model and exporter, use this to get the name to image map
-        textureSet.idToResourceMap = exporter.createTextureIdToImageMap();
-        //Get all the textures from the model as data sources
-        List<DataSource> imageDataSources = exporter.createImageDataSources(resourcePath);
-        for (DataSource imageDataSource : imageDataSources) {
-            String imageFileName = imageDataSource.getName();
-            //For each new image, create a new image reference and add it to the manifest
-            if (!dataSources.contains(imageDataSource)) {
-                Integer imageId = exporter.getTextureIdForName(imageFileName);
-                String imageName = textureSet.idToResourceMap.get(imageId);
-                ImageReference imageReference = new ImageReference(exporter.createImageResourceForTexture(imageId));
-                //ResourceReference have their name initialized to the filename of the resource.
-                //We need it to be the imageName from the idToResourceMap
-                imageReference.name = imageName;
-                manifest.images.add(imageReference);
-                dataSources.add(imageDataSource);
-            }
-        }
-     */
+  private static void assertCompiles(String sourcePath, String source) throws Exception {
+    JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+    assertNotNull("Tests must run on a JDK, not a JRE", compiler);
 
-  //    private void aJointedModelColladaExporterShouldBeCreatedFromASkeletonVisualAndAModelResourceInfo(JointedModelResource resource) {
-  //        JointedModelColladaExporter exporter = new JointedModelColladaExporter(getVisualForResource(resource), getModelInfoForResource(resource));
-  //        assertNotNull("The JointedModelColladaExporter should have returned something being constructed from "+resource.getClass()+"."+resource, exporter );
-  //    }
-  //
-  //
-  //    @Test
-  //    public void aJointedModelColladaExporterShouldBeCreatedFromASkeletonVisualAndAModelResourceInfo() {
-  //        aJointedModelColladaExporterShouldBeCreatedFromASkeletonVisualAndAModelResourceInfo(AlienResource.DEFAULT);
-  //    }
-  //
-  //    @Test
-  //    public void aJointedModelColladaExporterShouldBeCreatedFromASkeletonVisualAndAString() {
-  //        JointedModelColladaExporter exporter = new JointedModelColladaExporter(ALIEN_VISUAL, "Alien");
-  //        assertNotNull("The JointedModelColladaExporter should have returned something being constructed from Alien.DEFAULT.", exporter );
-  //    }
-  //
-  //    @Test
-  //    public void colladaDataShouldBeCreatedFromASkeletonVisualAndAString() {
-  //        JointedModelColladaExporter exporter = new JointedModelColladaExporter(ALIEN_VISUAL, ALIEN_MODEL_INFO);
-  //        COLLADA collada = exporter.createCollada();
-  //        assertNotNull("createCollada() should have returned something being constructed from Alien and 'Alien'.", collada );
-  //    }
-  //
-  //
-  //    @Test
-  //    public void aDataSourceForTheColladaFileShouldBeCreatedForAnEmptyPath() {
-  //        JointedModelColladaExporter exporter = new JointedModelColladaExporter(ALIEN_VISUAL, ALIEN_MODEL_INFO);
-  //        String exportPath = "";
-  //        DataSource structureDataSource = exporter.createColladaDataSource(exportPath);
-  //        assertNotNull("A DataSource for the Collada file should have been created for the export path '"+exportPath+"'", structureDataSource );
-  //    }
-  //
-  //    @Test
-  //    public void dataSourceForTheColladaFileShouldHaveANameWhenCreatedForAnEmptyPath() {
-  //        JointedModelColladaExporter exporter = new JointedModelColladaExporter(ALIEN_VISUAL, ALIEN_MODEL_INFO);
-  //        String exportPath = "";
-  //        DataSource structureDataSource = exporter.createColladaDataSource(exportPath);
-  //        assertNotNull("DataSource for the Collada file should have a name when created with the export path '"+exportPath+"'", structureDataSource.getName() );
-  //    }
-  //
-  //    @Test
-  //    public void dataSourceForTheColladaFileShouldHaveNonZeroLengthNameWhenCreatedForAnEmptyPath() {
-  //        JointedModelColladaExporter exporter = new JointedModelColladaExporter(ALIEN_VISUAL, ALIEN_MODEL_INFO);
-  //        String exportPath = "";
-  //        DataSource structureDataSource = exporter.createColladaDataSource(exportPath);
-  //        assertNotEquals("DataSource for the Collada file should have a name of non-zero length when created with the export path '"+exportPath+"'", structureDataSource.getName().length(), 0 );
-  //    }
-  //
-  //    @Test
-  //    public void dataSourceForTheColladaFileShouldHaveAValidFileNameWhenCreatedForAnEmptyPath() {
-  //        JointedModelColladaExporter exporter = new JointedModelColladaExporter(ALIEN_VISUAL, ALIEN_MODEL_INFO);
-  //        String exportPath = "";
-  //        DataSource structureDataSource = exporter.createColladaDataSource(exportPath);
-  //        assertTrue("DataSource for the Collada file should have a valid file name when created with the export path '"+exportPath+"'", FileUtilities.isValidPath(structureDataSource.getName()) );
-  //    }
-  //
-  //    @Test
-  //    public void dataSourcesForTheTextureFilesShouldBeCreatedForAnEmptyPath() {
-  //        JointedModelColladaExporter exporter = new JointedModelColladaExporter(ALIEN_VISUAL, ALIEN_MODEL_INFO);
-  //        String exportPath = "";
-  //        List<DataSource> textureDataSources = exporter.createImageDataSources(exportPath);
-  //        assertNotNull("DataSources for the texture files should have been created for the export path '"+exportPath+"'", textureDataSources );
-  //    }
-  //
-  //    @Test
-  //    public void idToImageMapShouldBeCreated() {
-  //        JointedModelColladaExporter exporter = new JointedModelColladaExporter(ALIEN_VISUAL, ALIEN_MODEL_INFO);
-  //        Map<Integer, String> idToResourceMap = exporter.createTextureIdToImageMap();
-  //        assertNotNull("idToResourceMap should have been created", idToResourceMap );
-  //    }
+    Path sourceRoot = Files.createTempDirectory("alice-model-export-source");
+    Path classRoot = Files.createTempDirectory("alice-model-export-classes");
+    Path sourceFile = sourceRoot.resolve(sourcePath);
+    Files.createDirectories(sourceFile.getParent());
+    Files.writeString(sourceFile, source, StandardCharsets.UTF_8);
+
+    ByteArrayOutputStream compilerOutput = new ByteArrayOutputStream();
+    int result = compiler.run(
+        null,
+        compilerOutput,
+        compilerOutput,
+        "-classpath",
+        System.getProperty("java.class.path"),
+        "-d",
+        classRoot.toString(),
+        sourceFile.toString()
+    );
+
+    assertEquals(compilerOutput.toString(StandardCharsets.UTF_8), 0, result);
+  }
 }

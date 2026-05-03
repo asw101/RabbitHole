@@ -1521,7 +1521,7 @@ public class ModelResourceExporter {
     return javaFile;
   }
 
-  private String createXMLString() {
+  String createXMLString() {
     Document doc = this.createXMLDocument();
     if (doc != null) {
       try {
