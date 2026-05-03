@@ -103,6 +103,7 @@ public class ResourcesTypeWrapper {
       this.type = new NamedUserType();
       this.type.name.setValue(getTypeName());
       this.type.superType.setValue(JavaType.OBJECT_TYPE);
+      this.mapResourceToField = Maps.newHashMap();
       int unnamedCount = 0;
       int duplicateCount = 0;
       for (Resource resource : resources) {
@@ -130,8 +131,8 @@ public class ResourcesTypeWrapper {
 
         Logger.outln(field);
         this.type.fields.add(field);
+        this.mapResourceToField.put(resource, field);
       }
-      this.mapResourceToField = Maps.newHashMap();
     } else {
       this.type = null;
       this.mapResourceToField = null;
