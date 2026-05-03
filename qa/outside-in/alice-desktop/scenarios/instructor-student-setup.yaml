@@ -26,6 +26,7 @@ evidence:
     - Student launch or open log.
     - Screenshot of the loaded starter project.
     - Saved student copy a3p project file.
+    - review-notes.txt summarizing reviewed artifacts and the acceptance decision.
 fallback:
   mode: manual-evidence-required
   notes:
@@ -33,4 +34,3 @@ fallback:
     - Manual notes must identify where the starter and student copy files were saved.
 supportingEvidence:
   - alice-desktop-launch
-

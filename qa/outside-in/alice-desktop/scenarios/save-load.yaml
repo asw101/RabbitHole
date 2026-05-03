@@ -25,6 +25,7 @@ evidence:
     - Screenshot before saving.
     - Screenshot after reopening.
     - Notes comparing the saved and loaded state.
+    - review-notes.txt summarizing reviewed artifacts and the acceptance decision.
 fallback:
   mode: manual-evidence-required
   notes:
@@ -32,4 +33,3 @@ fallback:
     - Manual evidence remains required until stable full GUI save and open automation exists.
 supportingEvidence:
   - alice-desktop-launch
-

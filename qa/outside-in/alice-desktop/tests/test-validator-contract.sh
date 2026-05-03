@@ -15,6 +15,22 @@ trap 'rm -rf "$tmp_root"' EXIT
 status=$?
 assert_success "$status" "current scenario catalog validates"
 
+"$VALIDATOR" --dump-json >"$tmp_root/catalog.json" 2>"$tmp_root/catalog.err"
+status=$?
+assert_success "$status" "validator dumps normalized scenario catalog JSON"
+python3 - "$tmp_root/catalog.json" >"$tmp_root/catalog-check.out" 2>"$tmp_root/catalog-check.err" <<'PY'
+import json
+import sys
+
+catalog = json.load(open(sys.argv[1], encoding="utf-8"))
+if len(catalog) != 6:
+    raise AssertionError(f"expected 6 scenarios, found {len(catalog)}")
+if not all("id" in scenario for scenario in catalog):
+    raise AssertionError("every dumped scenario must include an id")
+PY
+status=$?
+assert_success "$status" "catalog JSON contains all scenarios"
+
 missing_dir="$tmp_root/missing-workflow"
 mkdir -p "$missing_dir"
 cp "$BASE_DIR"/scenarios/*.yaml "$missing_dir"/
@@ -41,5 +57,26 @@ ALICE_QA_SCENARIO_DIR="$missing_ref_dir" "$VALIDATOR" >"$tmp_root/ref.out" 2>"$t
 status=$?
 assert_failure "$status" "validator rejects missing supportingEvidence references"
 assert_contains "$tmp_root/ref.err" 'supportingEvidence|does-not-exist' "missing supportingEvidence error names reference"
+
+manual_automation_dir="$tmp_root/manual-automation"
+mkdir -p "$manual_automation_dir"
+cp "$BASE_DIR"/scenarios/*.yaml "$manual_automation_dir"/
+cat >> "$manual_automation_dir/save-load.yaml" <<'YAML'
+automation:
+  command: mvn exec:java -Dalice-ide
+YAML
+ALICE_QA_SCENARIO_DIR="$manual_automation_dir" "$VALIDATOR" >"$tmp_root/manual-automation.out" 2>"$tmp_root/manual-automation.err"
+status=$?
+assert_failure "$status" "validator enforces strict automation object parity when present"
+assert_contains "$tmp_root/manual-automation.err" 'automation must include cwd|automation must include timeoutSeconds|automation must include readyWaitSeconds' "strict automation error names missing fields"
+
+unknown_automation_dir="$tmp_root/unknown-automation"
+mkdir -p "$unknown_automation_dir"
+cp "$BASE_DIR"/scenarios/*.yaml "$unknown_automation_dir"/
+perl -0pi -e 's/(  readyWaitSeconds: 45\n)/$1  extraField: not-supported\n/' "$unknown_automation_dir/launch.yaml"
+ALICE_QA_SCENARIO_DIR="$unknown_automation_dir" "$VALIDATOR" >"$tmp_root/unknown-automation.out" 2>"$tmp_root/unknown-automation.err"
+status=$?
+assert_failure "$status" "validator rejects unknown automation fields"
+assert_contains "$tmp_root/unknown-automation.err" 'automation has unknown field.*extraField' "unknown automation error names field"
 
 finish

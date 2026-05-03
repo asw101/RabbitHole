@@ -24,6 +24,7 @@ evidence:
     - Screenshot after export completion.
     - Exported artifact.
     - File listing or checksum for the exported artifact.
+    - review-notes.txt summarizing reviewed artifacts and the acceptance decision.
 fallback:
   mode: manual-evidence-required
   notes:
@@ -31,4 +32,3 @@ fallback:
     - Link lower-level model or project export characterization evidence when available.
 supportingEvidence:
   - alice-desktop-launch
-

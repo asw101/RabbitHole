@@ -23,6 +23,7 @@ evidence:
     - Screenshot after the scene or object appears.
     - Saved a3p project containing the scene.
     - Notes identifying the selected template or object.
+    - review-notes.txt summarizing reviewed artifacts and the acceptance decision.
 fallback:
   mode: manual-evidence-required
   notes:
@@ -30,4 +31,3 @@ fallback:
     - Use the launch scenario as supporting evidence for desktop startup.
 supportingEvidence:
   - alice-desktop-launch
-

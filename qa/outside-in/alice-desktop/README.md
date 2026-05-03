@@ -38,6 +38,8 @@ Allowed `automationMode` values are:
 
 Do not use Playwright here unless Alice later exposes a browser/web UI.
 
+Scenario YAML intentionally uses a strict subset: simple mappings, nested mappings, scalar values, and scalar lists. Do not use anchors, aliases, tags, multiline scalars, flow-style collections, or tabs for indentation. The JSON Schema is the published contract; the dependency-free validator must stay in parity with it.
+
 ## Commands
 
 Run all commands from the repository root.
@@ -60,7 +62,7 @@ cd alice-ide
 mvn exec:java -Dalice-ide
 ```
 
-The runner records evidence under `qa/outside-in/alice-desktop/evidence/<scenario-id>/<timestamp>/`. For Xvfb runs it captures an environment summary, Xvfb log, Alice launch log, screenshot (`screenshot.png` or `screenshot.xwd`), and status file. For manual scenarios it creates a status file and structured checklist so the workflow is repeatable and reviewable; the scenario is complete only after a human performs the workflow and adds the required evidence artifacts.
+The runner records evidence under `qa/outside-in/alice-desktop/evidence/<scenario-id>/<timestamp>/`. Successful Xvfb launch evidence includes an environment summary, Xvfb log, Alice launch log, screenshot (`screenshot.png` or `screenshot.xwd`), and status file. Early Xvfb fallback directories may contain only the diagnostics available before launch plus a manual fallback checklist. For manual scenarios, the runner creates a status file and structured checklist so the workflow is repeatable and reviewable; the scenario is complete only after a human performs the workflow and adds the required evidence artifacts plus `review-notes.txt`.
 
 ## Configuration
 
@@ -80,8 +82,9 @@ Before adding or changing a scenario:
 2. Use one of the supported workflows: `launch`, `instructor-student-setup`, `scene-creation`, `run-debug`, `save-load`, or `export`.
 3. Use `xvfb-real-alice` only when the runner can execute the real Alice command and collect logs/screenshots.
 4. Use `manual-evidence-required` when human Swing interaction is required.
-5. Name concrete required artifacts in `evidence.required`.
-6. Run `qa/outside-in/alice-desktop/runners/validate-scenarios.sh`.
+5. Name concrete required artifacts in `evidence.required`; manual workflows also require `review-notes.txt` for acceptance.
+6. Keep YAML to the supported simple mapping/list subset.
+7. Run `qa/outside-in/alice-desktop/runners/validate-scenarios.sh`.
 
 ## Baseline preconditions
 

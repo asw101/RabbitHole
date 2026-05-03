@@ -39,9 +39,7 @@
       "type": "string",
       "enum": [
         "xvfb-real-alice",
-        "command-wrapper",
-        "manual-evidence-required",
-        "unit-evidence-linked"
+        "manual-evidence-required"
       ]
     },
     "preconditions": {
@@ -105,9 +103,7 @@
           "type": "string",
           "enum": [
             "xvfb-real-alice",
-            "command-wrapper",
-            "manual-evidence-required",
-            "unit-evidence-linked"
+            "manual-evidence-required"
           ]
         },
         "notes": {

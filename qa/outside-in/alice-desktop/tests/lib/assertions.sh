@@ -32,6 +32,17 @@ assert_failure() {
   fi
 }
 
+assert_exit_code() {
+  local actual=$1
+  local expected=$2
+  local label=$3
+  if [ "$actual" -eq "$expected" ]; then
+    pass "$label"
+  else
+    fail "$label (expected exit $expected, got $actual)"
+  fi
+}
+
 assert_file_exists() {
   local path=$1
   local label=$2
@@ -46,7 +57,7 @@ assert_contains() {
   local path=$1
   local pattern=$2
   local label=$3
-  if [ -f "$path" ] && grep -Eq "$pattern" "$path"; then
+  if [ -f "$path" ] && grep -Eq -- "$pattern" "$path"; then
     pass "$label"
   else
     fail "$label (pattern not found: $pattern)"
@@ -57,7 +68,7 @@ assert_not_contains() {
   local path=$1
   local pattern=$2
   local label=$3
-  if [ -f "$path" ] && ! grep -Eq "$pattern" "$path"; then
+  if [ -f "$path" ] && ! grep -Eq -- "$pattern" "$path"; then
     pass "$label"
   else
     fail "$label (unexpected pattern found: $pattern)"

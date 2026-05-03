@@ -81,6 +81,8 @@ screenshot.png or screenshot.xwd
 
 The screenshot captures the observed desktop state. The launch log and status file explain how the runner started Alice, whether it detected a visible window, and whether the process stayed alive through evidence capture. Review these artifacts before accepting the launch evidence.
 
+If the command exits before producing this full set, keep the generated fallback checklist and diagnostics. A fallback checklist is useful for manual follow-up, but it is not accepted launch evidence by itself.
+
 ## Step 4: Generate a save/load checklist
 
 Run:
@@ -115,12 +117,12 @@ Add these files to the same timestamped run directory:
 before-save.png
 after-reopen.png
 saved-project.a3p
-save-load-notes.txt
+review-notes.txt
 ```
 
-`save-load-notes.txt` should identify the visible object, template, or program state you used to compare the saved and loaded project.
+`review-notes.txt` should identify the visible object, template, or program state you used to compare the saved and loaded project. It should also list the evidence files reviewed, note any deviations from the checklist, and end with `decision: accept` or `decision: reject`.
 
-The save/load scenario is complete only after the workflow has been performed in Alice and the required evidence has been added to the run directory.
+The save/load scenario is complete only after the workflow has been performed in Alice and the required evidence, including `review-notes.txt`, has been added to the run directory.
 
 ## Step 6: Keep evidence out of commits
 

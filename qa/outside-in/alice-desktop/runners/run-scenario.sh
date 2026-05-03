@@ -11,9 +11,10 @@ usage() {
 usage:
   run-scenario.sh list
   run-scenario.sh validate
-  run-scenario.sh run <scenario-id> [--evidence-dir <dir>] [--timeout-seconds <seconds>]
+  run-scenario.sh run <scenario-id-or-path> [--evidence-dir <dir>] [--timeout-seconds <seconds>]
 
 Environment:
+  ALICE_QA_SCENARIO_DIR  Override the directory containing scenario YAML files.
   ALICE_QA_DISPLAY       Reuse a specific X display, for example :99.
   ALICE_QA_SCREEN        Xvfb screen geometry, default 1280x900x24.
   ALICE_QA_READY_WAIT_SECONDS
@@ -21,19 +22,75 @@ Environment:
 EOF
 }
 
-json_field() {
+json_fields() {
   local scenario_json=$1
-  local field=$2
-  SCENARIO_JSON="$scenario_json" python3 - "$field" <<'PY'
+  shift
+  SCENARIO_JSON="$scenario_json" python3 - "$@" <<'PY'
 import json
 import os
 import sys
 
-value = json.loads(os.environ["SCENARIO_JSON"])
-for part in sys.argv[1].split("."):
-    value = value[part]
-print(value)
+scenario = json.loads(os.environ["SCENARIO_JSON"])
+for field in sys.argv[1:]:
+    value = scenario
+    for part in field.split("."):
+        value = value[part]
+    print(value)
 PY
+}
+
+resolve_scenario_id() {
+  local request=$1
+  local scenario_dir=${ALICE_QA_SCENARIO_DIR:-$BASE_DIR/scenarios}
+
+  if [ -f "$request" ]; then
+    python3 - "$request" "$scenario_dir" <<'PY'
+import re
+import sys
+from pathlib import Path
+
+scenario_path = Path(sys.argv[1]).resolve()
+scenario_dir = Path(sys.argv[2]).resolve()
+
+try:
+    scenario_path.relative_to(scenario_dir)
+except ValueError:
+    print(
+        f"scenario path must be inside active scenario directory: {scenario_dir}",
+        file=sys.stderr,
+    )
+    sys.exit(2)
+
+if scenario_path.parent != scenario_dir:
+    print(
+        f"scenario path must be directly inside active scenario directory: {scenario_dir}",
+        file=sys.stderr,
+    )
+    sys.exit(2)
+
+if scenario_path.suffix != ".yaml":
+    print(f"scenario path must be a .yaml file: {scenario_path}", file=sys.stderr)
+    sys.exit(2)
+
+last_line_number = 0
+for line_number, line in enumerate(scenario_path.read_text(encoding="utf-8").splitlines(), 1):
+    last_line_number = line_number
+    if not line.strip() or line.lstrip().startswith("#"):
+        continue
+    match = re.fullmatch(r"id:\s*['\"]?([^'\"]+)['\"]?", line.strip())
+    if match:
+        print(match.group(1))
+        sys.exit(0)
+
+print(f"{scenario_path}:{last_line_number}: missing top-level id field", file=sys.stderr)
+sys.exit(1)
+PY
+  elif [[ "$request" == */* || "$request" == *.yaml ]]; then
+    printf 'scenario path not found: %s\n' "$request" >&2
+    return 2
+  else
+    printf '%s\n' "$request"
+  fi
 }
 
 write_checklist() {
@@ -82,13 +139,14 @@ PY
 }
 
 write_manual_status() {
-  local scenario_json=$1
-  local run_dir=$2
-  local checklist_path=$3
+  local run_dir=$1
+  local checklist_path=$2
+  local scenario_id=$3
+  local automation_mode=$4
 
   {
-    printf 'scenario=%s\n' "$(json_field "$scenario_json" "id")"
-    printf 'automationMode=%s\n' "$(json_field "$scenario_json" "automationMode")"
+    printf 'scenario=%s\n' "$scenario_id"
+    printf 'automationMode=%s\n' "$automation_mode"
     printf 'outcome=manual-evidence-required\n'
     printf 'checklist=%s\n' "$(basename "$checklist_path")"
   } > "$run_dir/status.txt"
@@ -105,16 +163,17 @@ validate_positive_integer() {
 
 write_environment() {
   local run_dir=$1
+  local display=${2:-${DISPLAY:-}}
   {
     printf 'timestamp_utc=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
     printf 'repo_root=%s\n' "$REPO_ROOT"
-    printf 'display=%s\n' "${DISPLAY:-}"
+    printf 'display=%s\n' "$display"
     printf '\n[java]\n'
-    java -version 2>&1 || true
+    java -version 2>&1
     printf '\n[maven]\n'
-    mvn -version 2>&1 || true
+    mvn -version 2>&1
     printf '\n[uname]\n'
-    uname -a 2>&1 || true
+    uname -a 2>&1
   } > "$run_dir/environment.txt"
 }
 
@@ -125,7 +184,7 @@ select_display() {
   fi
 
   local number
-  for number in $(seq 90 120); do
+  for number in {90..120}; do
     if [ ! -e "/tmp/.X${number}-lock" ]; then
       printf ':%s\n' "$number"
       return 0
@@ -153,22 +212,27 @@ run_xvfb_real_alice() {
   local run_dir=$2
   local timeout_override=$3
 
-  local command cwd configured_timeout ready_wait run_timeout display
-  command=$(json_field "$scenario_json" "automation.command")
-  cwd=$(json_field "$scenario_json" "automation.cwd")
-  configured_timeout=$(json_field "$scenario_json" "automation.timeoutSeconds")
-  ready_wait="${ALICE_QA_READY_WAIT_SECONDS:-$(json_field "$scenario_json" "automation.readyWaitSeconds")}"
+  local automation_fields command cwd configured_timeout ready_wait run_timeout display scenario_id automation_mode
+  mapfile -t automation_fields < <(json_fields "$scenario_json" "automation.command" "automation.cwd" "automation.timeoutSeconds" "automation.readyWaitSeconds" "id" "automationMode")
+  command=${automation_fields[0]}
+  cwd=${automation_fields[1]}
+  configured_timeout=${automation_fields[2]}
+  ready_wait="${ALICE_QA_READY_WAIT_SECONDS:-${automation_fields[3]}}"
+  scenario_id=${automation_fields[4]}
+  automation_mode=${automation_fields[5]}
   run_timeout="${timeout_override:-$configured_timeout}"
   xvfb_pid=
   alice_pid=
 
   if ! command -v Xvfb >/dev/null 2>&1; then
+    write_environment "$run_dir"
     write_checklist "$scenario_json" "$run_dir" >/dev/null
     printf 'Xvfb is not available; wrote manual fallback checklist to %s\n' "$run_dir" >&2
     return 2
   fi
 
   if ! display=$(select_display); then
+    write_environment "$run_dir"
     write_checklist "$scenario_json" "$run_dir" >/dev/null
     printf 'No free X display found; wrote manual fallback checklist to %s\n' "$run_dir" >&2
     return 2
@@ -180,12 +244,20 @@ run_xvfb_real_alice() {
 
   cleanup() {
     if [ -n "${alice_pid:-}" ] && kill -0 "$alice_pid" >/dev/null 2>&1; then
-      kill "$alice_pid" >/dev/null 2>&1 || true
-      wait "$alice_pid" >/dev/null 2>&1 || true
+      if ! kill "$alice_pid" >/dev/null 2>&1; then
+        printf 'warning: failed to stop Alice launch process %s\n' "$alice_pid" >&2
+      fi
+      if ! wait "$alice_pid" >/dev/null 2>&1; then
+        :
+      fi
     fi
     if kill -0 "$xvfb_pid" >/dev/null 2>&1; then
-      kill "$xvfb_pid" >/dev/null 2>&1 || true
-      wait "$xvfb_pid" >/dev/null 2>&1 || true
+      if ! kill "$xvfb_pid" >/dev/null 2>&1; then
+        printf 'warning: failed to stop Xvfb process %s\n' "$xvfb_pid" >&2
+      fi
+      if ! wait "$xvfb_pid" >/dev/null 2>&1; then
+        :
+      fi
     fi
   }
   trap cleanup EXIT
@@ -198,7 +270,7 @@ run_xvfb_real_alice() {
   fi
 
   export DISPLAY=$display
-  write_environment "$run_dir"
+  write_environment "$run_dir" "$display"
 
   (
     cd "$REPO_ROOT/$cwd"
@@ -242,8 +314,8 @@ run_xvfb_real_alice() {
   fi
 
   {
-    printf 'scenario=%s\n' "$(json_field "$scenario_json" "id")"
-    printf 'automationMode=%s\n' "$(json_field "$scenario_json" "automationMode")"
+    printf 'scenario=%s\n' "$scenario_id"
+    printf 'automationMode=%s\n' "$automation_mode"
     printf 'display=%s\n' "$display"
     printf 'readyStatus=%s\n' "$ready_status"
     printf 'processStatus=%s\n' "$process_status"
@@ -281,8 +353,8 @@ case "$command_name" in
     ;;
   run)
     shift
-    scenario_id=${1:-}
-    if [ -z "$scenario_id" ]; then
+    scenario_request=${1:-}
+    if [ -z "$scenario_request" ]; then
       usage >&2
       exit 2
     fi
@@ -293,11 +365,19 @@ case "$command_name" in
     while [ "$#" -gt 0 ]; do
       case "$1" in
         --evidence-dir)
-          evidence_base=${2:?--evidence-dir requires a value}
+          if [ "$#" -lt 2 ]; then
+            printf '%s\n' '--evidence-dir requires a value' >&2
+            exit 2
+          fi
+          evidence_base=$2
           shift 2
           ;;
         --timeout-seconds)
-          timeout_override=${2:?--timeout-seconds requires a value}
+          if [ "$#" -lt 2 ]; then
+            printf '%s\n' '--timeout-seconds requires a value' >&2
+            exit 2
+          fi
+          timeout_override=$2
           validate_positive_integer "$timeout_override" "timeout"
           shift 2
           ;;
@@ -306,24 +386,25 @@ case "$command_name" in
           usage >&2
           exit 2
           ;;
-      esac
+        esac
     done
 
+    scenario_id=$(resolve_scenario_id "$scenario_request")
     scenario_json=$("$VALIDATOR" --dump-json "$scenario_id")
     timestamp=$(date -u +%Y%m%dT%H%M%SZ)
     run_dir="$evidence_base/$scenario_id/$timestamp"
     mkdir -p "$run_dir"
-    write_environment "$run_dir"
 
-    automation_mode=$(json_field "$scenario_json" "automationMode")
+    automation_mode=$(json_fields "$scenario_json" "automationMode")
     case "$automation_mode" in
       xvfb-real-alice)
         run_xvfb_real_alice "$scenario_json" "$run_dir" "$timeout_override"
         ;;
-      command-wrapper|manual-evidence-required|unit-evidence-linked)
+      manual-evidence-required)
+        write_environment "$run_dir"
         checklist=$(write_checklist "$scenario_json" "$run_dir")
-        write_manual_status "$scenario_json" "$run_dir" "$checklist"
-        printf 'Manual or supporting-evidence scenario prepared: %s\n' "$checklist"
+        write_manual_status "$run_dir" "$checklist" "$scenario_id" "$automation_mode"
+        printf 'Manual scenario prepared: %s\n' "$checklist"
         ;;
       *)
         printf 'unsupported automationMode: %s\n' "$automation_mode" >&2

@@ -25,6 +25,7 @@ evidence:
     - Notes naming the run and debug-like controls exercised.
     - Launch or run log.
     - Saved a3p project used for the run.
+    - review-notes.txt summarizing reviewed artifacts and the acceptance decision.
 fallback:
   mode: manual-evidence-required
   notes:
@@ -32,4 +33,3 @@ fallback:
     - Treat fast-forward or statement execution as debug-like coverage only when it is visible in the baseline UI.
 supportingEvidence:
   - alice-desktop-launch
-

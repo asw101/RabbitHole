@@ -103,7 +103,9 @@ The runner writes evidence to:
 qa/outside-in/alice-desktop/evidence/alice-desktop-launch/<timestamp>/
 ```
 
-A completed launch evidence run includes an environment summary, Xvfb log, Alice launch log, status file, and screenshot. The runner checks process, window-readiness, and screenshot-capture status; it does not deeply classify every line in `launch.log` as a semantic pass/fail oracle. Review `status.txt`, `launch.log`, and the screenshot before treating the launch evidence as accepted.
+A successful launch evidence capture includes an environment summary, Xvfb log, Alice launch log, status file, and screenshot. The runner checks process, window-readiness, and screenshot-capture status; it does not deeply classify every line in `launch.log` as a semantic pass/fail oracle. Review `status.txt`, `launch.log`, and the screenshot before treating the launch evidence as accepted.
+
+If Xvfb is unavailable, no display can be selected, or Xvfb exits before Alice starts, the runner exits non-zero and writes a manual fallback checklist with whichever early diagnostics are available. These early fallback directories may not contain `status.txt` because the launch did not reach the evidence-capture phase.
 
 If launch evidence is collected in CI or another disposable workspace, pass an explicit evidence directory:
 
@@ -131,9 +133,24 @@ qa/outside-in/alice-desktop/evidence/alice-desktop-save-load/<timestamp>/environ
 qa/outside-in/alice-desktop/evidence/alice-desktop-save-load/<timestamp>/status.txt
 ```
 
-Follow the checklist while using Alice, then place the required screenshots, project files, logs, or exported artifacts in the same run directory. Generating `manual-evidence-checklist.txt` only prepares the scenario; the manual scenario is complete only after a human performs the workflow and adds the required evidence artifacts.
+Follow the checklist while using Alice, then place the required screenshots, project files, logs, or exported artifacts in the same run directory. Generating `manual-evidence-checklist.txt` only prepares the scenario; the manual scenario is complete only after a human performs the workflow and adds the required evidence artifacts plus `review-notes.txt`.
 
-For example, a save/load evidence directory should contain the generated checklist plus the saved project, before/after screenshots, and notes comparing the reopened project with the saved state.
+For example, a save/load evidence directory should contain the generated checklist plus the saved project, before/after screenshots, and `review-notes.txt` comparing the reopened project with the saved state.
+
+Use this review note shape for manual acceptance:
+
+```text
+scenario: alice-desktop-save-load
+runDirectory: /tmp/alice-qa-evidence/alice-desktop-save-load/<timestamp>
+reviewedEvidence:
+  - manual-evidence-checklist.txt
+  - before-save.png
+  - after-reopen.png
+  - saved-project.a3p
+observedResult: The reopened project matched the saved scene and program state.
+deviations: None.
+decision: accept
+```
 
 ## Choose a custom evidence directory
 
@@ -194,10 +211,11 @@ Every run directory is timestamped and self-contained. Review these files first:
 | `xvfb.log` | Xvfb startup and display output. |
 | `screenshot.png` or `screenshot.xwd` | Captured desktop state. |
 | `manual-evidence-checklist.txt` | Repeatable checklist for manual scenarios. |
+| `review-notes.txt` | Human acceptance notes for manual scenarios, including reviewed artifacts, observed result, deviations, and accept/reject decision. |
 
 Generated evidence is ignored by Git. Commit scenario definitions, schema changes, runner changes, and documentation; do not commit local evidence artifacts.
 
-Accept a run only when the generated status file agrees with the expected automation mode and the listed evidence artifacts are present. For manual scenarios, `status.txt` records checklist generation; it is not a pass result until a human adds the required artifacts.
+Accept a run only when the generated artifacts agree with the expected automation mode and the listed evidence artifacts are present. For successful Xvfb launch runs, check `status.txt`. For early Xvfb fallback directories, review the fallback checklist and available diagnostics instead of expecting the full launch artifact set. For manual scenarios, `status.txt` records checklist generation; it is not a pass result until a human adds the required artifacts and `review-notes.txt`.
 
 ## Troubleshooting
 
@@ -213,7 +231,7 @@ git submodule update --init tweedle-lang
 
 ### Xvfb is unavailable
 
-Install Xvfb for the local environment, or keep the generated manual fallback checklist and collect launch evidence from a supported desktop environment.
+Install Xvfb for the local environment, or keep the generated manual fallback checklist and collect launch evidence from a supported desktop environment. Early Xvfb fallback directories may include only `environment.txt` and `manual-evidence-checklist.txt`; that is a failed automated launch attempt, not accepted launch evidence.
 
 ### No Alice window is detected
 

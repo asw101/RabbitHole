@@ -16,27 +16,18 @@ trap 'rm -rf "$tmp_root"' EXIT
 status=$?
 assert_success "$status" "runner lists scenario catalog"
 
+"$VALIDATOR" --dump-json >"$tmp_root/catalog.json" 2>"$tmp_root/catalog.err"
+status=$?
+assert_success "$status" "validator dumps scenario catalog for workflow checks"
+
 for workflow in instructor-student-setup launch scene-creation run-debug save-load export; do
-  count=$(python3 - "$VALIDATOR" "$workflow" <<'PY'
+  count=$(python3 - "$tmp_root/catalog.json" "$workflow" <<'PY'
 import json
-import subprocess
 import sys
 
-validator, workflow = sys.argv[1:]
-scenario_ids = [
-    "alice-desktop-instructor-student-setup",
-    "alice-desktop-launch",
-    "alice-desktop-scene-creation",
-    "alice-desktop-run-debug",
-    "alice-desktop-save-load",
-    "alice-desktop-export",
-]
-matches = 0
-for scenario_id in scenario_ids:
-    scenario = json.loads(subprocess.check_output([validator, "--dump-json", scenario_id], text=True))
-    if scenario["workflow"] == workflow:
-        matches += 1
-print(matches)
+catalog_path, workflow = sys.argv[1:]
+catalog = json.load(open(catalog_path, encoding="utf-8"))
+print(sum(1 for scenario in catalog if scenario["workflow"] == workflow))
 PY
 )
   if [ "$count" -eq 1 ]; then
@@ -46,12 +37,14 @@ PY
   fi
 done
 
-python3 - "$VALIDATOR" >"$tmp_root/workflow-contract.out" 2>"$tmp_root/workflow-contract.err" <<'PY'
+python3 - "$tmp_root/catalog.json" >"$tmp_root/workflow-contract.out" 2>"$tmp_root/workflow-contract.err" <<'PY'
 import json
-import subprocess
 import sys
 
-validator = sys.argv[1]
+catalog = {
+    scenario["id"]: scenario
+    for scenario in json.load(open(sys.argv[1], encoding="utf-8"))
+}
 manual_scenarios = [
     "alice-desktop-instructor-student-setup",
     "alice-desktop-scene-creation",
@@ -62,7 +55,7 @@ manual_scenarios = [
 errors = []
 
 for scenario_id in manual_scenarios:
-    scenario = json.loads(subprocess.check_output([validator, "--dump-json", scenario_id], text=True))
+    scenario = catalog[scenario_id]
     if scenario["automationMode"] != "manual-evidence-required":
         errors.append(f"{scenario_id} must remain manual-evidence-required until GUI automation exists")
     supporting = scenario.get("supportingEvidence", [])
@@ -73,6 +66,8 @@ for scenario_id in manual_scenarios:
         errors.append(f"{scenario_id} must require screenshot evidence")
     if not any(token in evidence_text for token in ("a3p", "artifact", "log", "notes")):
         errors.append(f"{scenario_id} must require a durable artifact, log, or notes")
+    if "review-notes.txt" not in evidence_text:
+        errors.append(f"{scenario_id} must require review-notes.txt for manual acceptance")
 
 if errors:
     raise AssertionError("\n".join(errors))

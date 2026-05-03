@@ -21,7 +21,7 @@ This reference describes the Alice desktop outside-in QA lane: file layout, runn
 | --- | --- |
 | `qa/outside-in/alice-desktop/README.md` | Local entry point for the QA lane. |
 | `qa/outside-in/alice-desktop/scenarios/` | User-like acceptance scenario YAML files. |
-| `qa/outside-in/alice-desktop/schema/scenario.schema.json` | JSON Schema for the scenario model. |
+| `qa/outside-in/alice-desktop/schema/scenario.schema.json` | Published JSON Schema contract for the scenario model. |
 | `qa/outside-in/alice-desktop/runners/validate-scenarios.sh` | Catalog validator and scenario JSON dumper. |
 | `qa/outside-in/alice-desktop/runners/run-scenario.sh` | Scenario listing, validation, real launch execution, and manual checklist generation. |
 | `qa/outside-in/alice-desktop/evidence/` | Local generated evidence. Contents are ignored by Git except `.gitignore`. |
@@ -131,6 +131,10 @@ qa/outside-in/alice-desktop/runners/run-scenario.sh run alice-desktop-launch
 
 Each scenario is a YAML file whose file name matches its ID without the `alice-desktop-` prefix.
 
+The JSON Schema is the published scenario contract. The validator uses a small built-in parser so this lane has no extra runtime dependency, and it must stay in parity with the schema's required fields, allowed values, and cross-field rules. When the schema changes, update the validator and its contract tests in the same change.
+
+Scenario YAML must use the supported subset: simple mappings, nested mappings, and lists of scalar values. Do not use anchors, aliases, tags, multiline scalars, flow-style collections, tabs for indentation, or other advanced YAML features.
+
 Example:
 
 ```yaml
@@ -159,7 +163,7 @@ evidence:
     - Saved a3p project file.
     - Screenshot before saving.
     - Screenshot after reopening.
-    - Notes comparing the saved and loaded state.
+    - review-notes.txt comparing the saved and loaded state.
 fallback:
   mode: manual-evidence-required
   notes:
@@ -212,12 +216,12 @@ export
 
 | Mode | Runner behavior |
 | --- | --- |
-| `xvfb-real-alice` | Starts Xvfb, launches Alice through the scenario command, waits for readiness, captures environment data, logs, status, and screenshot. This is a launch evidence check, not a full semantic oracle for every startup log condition. |
+| `xvfb-real-alice` | Starts Xvfb, launches Alice through the scenario command, waits for readiness, and captures environment data, logs, status, and screenshot when the launch reaches evidence capture. This is a launch evidence check, not a full semantic oracle for every startup log condition. |
 | `manual-evidence-required` | Writes a structured checklist for human execution and evidence collection. Checklist generation does not complete the scenario. |
 
 ## Evidence contract
 
-Every run creates:
+Every run creates a timestamped directory before scenario execution begins:
 
 ```text
 <evidence-dir>/<scenario-id>/<timestamp>/
@@ -229,16 +233,21 @@ The default evidence directory is:
 qa/outside-in/alice-desktop/evidence/
 ```
 
-All runs include:
+The artifact set depends on the automation mode and how far execution gets.
+
+Manual scenario preparation includes:
 
 | Artifact | Description |
 | --- | --- |
 | `environment.txt` | UTC timestamp, repository root, display, Java version, Maven version, and OS details. |
+| `status.txt` | Scenario ID, automation mode, generated checklist name, and `manual-evidence-required` outcome. |
+| `manual-evidence-checklist.txt` | Scenario preconditions, actions, outcomes, required evidence, and fallback notes. This file prepares the work; it is not proof that the workflow has been executed. |
 
-`xvfb-real-alice` runs also include:
+Successful `xvfb-real-alice` evidence capture includes:
 
 | Artifact | Description |
 | --- | --- |
+| `environment.txt` | UTC timestamp, repository root, display, Java version, Maven version, and OS details. |
 | `launch.log` | Alice Maven launch output. |
 | `xvfb.log` | Xvfb output. |
 | `status.txt` | Scenario ID, automation mode, display, readiness status, process status, screenshot status, and timeout. |
@@ -247,25 +256,20 @@ All runs include:
 
 For launch runs, `status.txt` records whether the process stayed alive, whether a visible window was detected when a detector is available, and whether screenshot capture succeeded. Acceptance still requires reviewing the generated evidence, especially `launch.log`; the runner does not currently scan the log for every possible uncaught application exception.
 
-Manual runs include:
+Early `xvfb-real-alice` fallback attempts may not produce the full launch artifact set. If Xvfb is missing or no display is available, the runner writes `environment.txt` plus `manual-evidence-checklist.txt` and exits non-zero. If Xvfb starts but exits before Alice launch, the run directory contains `xvfb.log` plus `manual-evidence-checklist.txt`. In these early fallback cases, `status.txt` is not written because the launch did not reach the evidence-capture phase.
 
-| Artifact | Description |
-| --- | --- |
-| `status.txt` | Scenario ID, automation mode, generated checklist name, and `manual-evidence-required` outcome. |
-| `manual-evidence-checklist.txt` | Scenario preconditions, actions, outcomes, required evidence, and fallback notes. This file prepares the work; it is not proof that the workflow has been executed. |
-
-Manual scenarios are complete only after a human performs the workflow and places the required artifacts in the same timestamped run directory.
+Manual scenarios are complete only after a human performs the workflow and places the required artifacts in the same timestamped run directory. Every accepted manual run must include `review-notes.txt` with the scenario ID, run directory, evidence files reviewed, observed result, deviations from the checklist, and an explicit accept or reject decision.
 
 ## Workflow evidence requirements
 
 | Workflow | Required evidence |
 | --- | --- |
 | Launch | Launch log, desktop screenshot, exit/status/timeout record, Java/Maven/display environment summary. |
-| Instructor/student setup | Instructor launch log, starter project screenshot, starter `.a3p`, student launch or open log, loaded project screenshot, student copy `.a3p`. |
-| Scene creation | Screenshot before scene creation, screenshot after object or scene appears, saved `.a3p`, notes identifying the selected template or object. |
-| Run/debug | Screenshot before run, screenshot or screen capture during execution, notes naming run/debug-like controls, launch or run log, saved `.a3p`. |
-| Save/load | Save log or notes, saved `.a3p`, screenshot before saving, screenshot after reopening, comparison notes. |
-| Export | Export log or notes, screenshot before export, screenshot after export completion, exported artifact, file listing or checksum. |
+| Instructor/student setup | Instructor launch log, starter project screenshot, starter `.a3p`, student launch or open log, loaded project screenshot, student copy `.a3p`, `review-notes.txt`. |
+| Scene creation | Screenshot before scene creation, screenshot after object or scene appears, saved `.a3p`, notes identifying the selected template or object in `review-notes.txt`. |
+| Run/debug | Screenshot before run, screenshot or screen capture during execution, notes naming run/debug-like controls in `review-notes.txt`, launch or run log, saved `.a3p`. |
+| Save/load | Save log or notes, saved `.a3p`, screenshot before saving, screenshot after reopening, comparison notes in `review-notes.txt`. |
+| Export | Export log or notes, screenshot before export, screenshot after export completion, exported artifact, file listing or checksum, `review-notes.txt`. |
 
 ## Scenario authoring rules
 
@@ -277,7 +281,9 @@ Scenario files are the public acceptance contract for this lane. A valid scenari
 4. Uses `xvfb-real-alice` only for workflows the runner can execute through the real Alice desktop command.
 5. Uses `manual-evidence-required` for Swing GUI workflows that still require human interaction.
 6. Lists any dependent scenario evidence in `supportingEvidence`, such as using launch evidence to support save/load or export evidence.
-7. Avoids implementation details such as Java class names, internal package names, or assumptions about private UI objects.
+7. Requires `review-notes.txt` for manual workflow acceptance.
+8. Uses only the supported YAML subset: mappings, nested mappings, scalar values, and scalar lists with spaces for indentation.
+9. Avoids implementation details such as Java class names, internal package names, or assumptions about private UI objects.
 
 ## Extension rules
 

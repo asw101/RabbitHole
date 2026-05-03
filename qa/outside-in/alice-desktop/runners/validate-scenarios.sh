@@ -38,14 +38,12 @@ workflow_values = {
 }
 mode_values = {
     "xvfb-real-alice",
-    "command-wrapper",
     "manual-evidence-required",
-    "unit-evidence-linked",
 }
 
 
 class ScenarioError(Exception):
-    pass
+    """Raised for invalid scenario catalogs."""
 
 
 def parse_scalar(value):
@@ -187,23 +185,25 @@ def validate(path, scenario):
     automation = scenario.get("automation")
     if automation is not None and not isinstance(automation, dict):
         errors.append("automation must be a mapping")
-    if automation_mode == "xvfb-real-alice":
-        if not isinstance(automation, dict):
-            errors.append("xvfb-real-alice scenarios must include automation")
-        else:
-            for field in ("cwd", "command", "timeoutSeconds", "readyWaitSeconds"):
-                if field not in automation:
-                    errors.append(f"xvfb-real-alice automation must include {field}")
-            if not isinstance(automation.get("cwd"), str) or not automation.get("cwd", "").strip():
-                errors.append("automation.cwd must be a non-empty string")
-            if not isinstance(automation.get("command"), str) or not automation.get("command", "").strip():
-                errors.append("automation.command must be a non-empty string")
-            if not isinstance(automation.get("timeoutSeconds"), int) or automation.get("timeoutSeconds", 0) < 1:
-                errors.append("automation.timeoutSeconds must be a positive integer")
-            if "readyWaitSeconds" in automation and (
-                not isinstance(automation.get("readyWaitSeconds"), int) or automation.get("readyWaitSeconds", 0) < 1
-            ):
-                errors.append("automation.readyWaitSeconds must be a positive integer")
+    elif isinstance(automation, dict):
+        unknown_automation = sorted(
+            set(automation) - {"cwd", "command", "timeoutSeconds", "readyWaitSeconds"}
+        )
+        if unknown_automation:
+            errors.append(f"automation has unknown field(s): {', '.join(unknown_automation)}")
+        for field in ("cwd", "command", "timeoutSeconds", "readyWaitSeconds"):
+            if field not in automation:
+                errors.append(f"automation must include {field} when present")
+        if not isinstance(automation.get("cwd"), str) or not automation.get("cwd", "").strip():
+            errors.append("automation.cwd must be a non-empty string")
+        if not isinstance(automation.get("command"), str) or not automation.get("command", "").strip():
+            errors.append("automation.command must be a non-empty string")
+        if not isinstance(automation.get("timeoutSeconds"), int) or automation.get("timeoutSeconds", 0) < 1:
+            errors.append("automation.timeoutSeconds must be a positive integer")
+        if not isinstance(automation.get("readyWaitSeconds"), int) or automation.get("readyWaitSeconds", 0) < 1:
+            errors.append("automation.readyWaitSeconds must be a positive integer")
+    if automation_mode == "xvfb-real-alice" and not isinstance(automation, dict):
+        errors.append("xvfb-real-alice scenarios must include automation")
 
     if "supportingEvidence" in scenario:
         require_string_list(errors, path, "supportingEvidence", scenario.get("supportingEvidence"))
@@ -277,19 +277,22 @@ if args[:1] == ["--list"]:
     for _, scenario in scenarios:
         print(f"{scenario['id']:<{width}}  {scenario['automationMode']:<24}  {scenario['title']}")
 elif args[:1] == ["--dump-json"]:
-    if len(args) != 2:
-        print("usage: validate-scenarios.sh --dump-json <scenario-id>", file=sys.stderr)
-        sys.exit(2)
-    requested_id = args[1]
-    for _, scenario in scenarios:
-        if scenario["id"] == requested_id:
-            print(json.dumps(scenario, indent=2, sort_keys=True))
-            break
+    if len(args) == 1:
+        print(json.dumps([scenario for _, scenario in scenarios], indent=2, sort_keys=True))
+    elif len(args) == 2:
+        requested_id = args[1]
+        for _, scenario in scenarios:
+            if scenario["id"] == requested_id:
+                print(json.dumps(scenario, indent=2, sort_keys=True))
+                break
+        else:
+            print(f"unknown scenario id: {requested_id}", file=sys.stderr)
+            sys.exit(1)
     else:
-        print(f"unknown scenario id: {requested_id}", file=sys.stderr)
-        sys.exit(1)
+        print("usage: validate-scenarios.sh --dump-json [scenario-id]", file=sys.stderr)
+        sys.exit(2)
 elif args:
-    print("usage: validate-scenarios.sh [--list|--dump-json <scenario-id>]", file=sys.stderr)
+    print("usage: validate-scenarios.sh [--list|--dump-json [scenario-id]]", file=sys.stderr)
     sys.exit(2)
 else:
     print(f"Validated {len(scenarios)} scenario(s) in {scenario_dir}")

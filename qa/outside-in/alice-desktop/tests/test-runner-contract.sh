@@ -28,6 +28,21 @@ checklist="$run_dir/manual-evidence-checklist.txt"
 assert_file_exists "$checklist" "manual scenario run writes checklist"
 assert_contains "$checklist" '^Completion status$' "checklist includes completion status section"
 assert_contains "$checklist" 'not complete until required evidence is attached' "checklist states manual run is not complete"
+assert_contains "$checklist" 'review-notes\.txt' "checklist names the required manual acceptance review notes artifact"
+
+path_evidence_dir="$tmp_root/path-evidence"
+"$RUNNER" run "$BASE_DIR/scenarios/save-load.yaml" --evidence-dir "$path_evidence_dir" >"$tmp_root/path.out" 2>"$tmp_root/path.err"
+status=$?
+assert_success "$status" "runner accepts a scenario YAML path"
+path_run_dir=$(find "$path_evidence_dir/alice-desktop-save-load" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort | tail -1)
+assert_file_exists "$path_run_dir/status.txt" "path-based run writes evidence under the scenario id"
+
+outside_path="$tmp_root/outside.yaml"
+printf 'id: alice-desktop-save-load\n' > "$outside_path"
+"$RUNNER" run "$outside_path" --evidence-dir "$tmp_root/outside-evidence" >"$tmp_root/outside.out" 2>"$tmp_root/outside.err"
+status=$?
+assert_failure "$status" "runner rejects scenario paths outside the active catalog"
+assert_contains "$tmp_root/outside.err" 'inside active scenario directory' "outside path error names catalog boundary"
 
 bad_timeout_evidence="$tmp_root/bad-timeout-evidence"
 "$RUNNER" run alice-desktop-scene-creation --evidence-dir "$bad_timeout_evidence" --timeout-seconds not-a-number >"$tmp_root/bad-timeout.out" 2>"$tmp_root/bad-timeout.err"
