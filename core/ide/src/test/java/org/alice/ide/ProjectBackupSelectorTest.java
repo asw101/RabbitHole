@@ -63,6 +63,42 @@ public class ProjectBackupSelectorTest {
   }
 
   @Test
+  public void recentBackupProbeSkipsUnloadableNewestAndUsesNextOnlyWhenNewerThanProject() {
+    File unloadableNewest = backup("auto20240102_140000.a3p");
+    File next = backup("auto20240102_130000.a3p");
+    ProjectBackupSelector selector = new ProjectBackupSelector(file -> {
+      assertEquals(next.getName(), file.getName());
+      return PROJECT_MODIFIED_TIME.plusMinutes(10);
+    });
+
+    File backup = selector.getNextBackup(
+        PROJECT_MODIFIED_TIME,
+        new File[] {unloadableNewest, next},
+        false,
+        Set.of(unloadableNewest.getName()));
+
+    assertEquals(next, backup);
+  }
+
+  @Test
+  public void recentBackupProbeSkipsUnloadableNewestAndStopsWhenNextIsNotNewerThanProject() {
+    File unloadableNewest = backup("auto20240102_140000.a3p");
+    File older = backup("auto20240102_110000.a3p");
+    ProjectBackupSelector selector = new ProjectBackupSelector(file -> {
+      assertEquals(older.getName(), file.getName());
+      return PROJECT_MODIFIED_TIME.minusMinutes(10);
+    });
+
+    File backup = selector.getNextBackup(
+        PROJECT_MODIFIED_TIME,
+        new File[] {unloadableNewest, older},
+        false,
+        Set.of(unloadableNewest.getName()));
+
+    assertNull(backup);
+  }
+
+  @Test
   public void missingMainProjectTimestampUsesLatestAvailableBackup() {
     File newest = backup("auto20240102_130000.a3p");
     ProjectBackupSelector selector = new ProjectBackupSelector(file -> {
