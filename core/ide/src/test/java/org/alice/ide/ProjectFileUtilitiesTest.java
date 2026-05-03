@@ -5,9 +5,15 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import org.lgna.common.Resource;
+import org.lgna.common.resources.ImageResource;
 import org.lgna.project.Project;
+import org.lgna.project.ast.BlockStatement;
 import org.lgna.project.ast.JavaType;
+import org.lgna.project.ast.LocalDeclarationStatement;
 import org.lgna.project.ast.NamedUserType;
+import org.lgna.project.ast.ResourceExpression;
+import org.lgna.project.ast.UserLocal;
+import org.lgna.project.ast.UserMethod;
 import org.lgna.project.io.IoUtilities;
 import org.lgna.project.io.ProjectIo;
 import org.lgna.story.SProgram;
@@ -154,6 +160,38 @@ public class ProjectFileUtilitiesTest {
   }
 
   @Test
+  public void exportCopyWritesReferencedImageResourceButIsNotEditorReadable() throws Exception {
+    ImageResource imageResource = new ImageResource(
+        new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB),
+        "picture.png",
+        "png");
+    Project project = new Project(programTypeReferencingImageResource("Program", imageResource), Project.SceneCameraType.WindowCamera);
+    project.addResource(imageResource);
+    ProjectFileUtilities exportUtilities = new ProjectFileUtilities(null) {
+      @Override
+      Project getForcedUpToDateProject() {
+        return project;
+      }
+    };
+    File exportFile = temporaryFolder.newFile("exported-resource.a3p");
+
+    exportUtilities.exportCopyOfProjectTo(exportFile);
+
+    try (ZipFile zipFile = new ZipFile(exportFile)) {
+      assertNotNull(zipFile.getEntry(ProjectIo.VERSION_ENTRY_NAME));
+      assertNotNull(zipFile.getEntry(ProjectIo.MANIFEST_ENTRY_NAME));
+      assertNotNull(zipFile.getEntry("src/Program.twe"));
+      assertNotNull(zipFile.getEntry("resources/picture.png"));
+      assertArrayEquals(imageResource.getData(), zipFile.getInputStream(zipFile.getEntry("resources/picture.png")).readAllBytes());
+      String manifest = new String(
+          zipFile.getInputStream(zipFile.getEntry(ProjectIo.MANIFEST_ENTRY_NAME)).readAllBytes(),
+          StandardCharsets.UTF_8);
+      assertTrue(manifest, manifest.contains("\"file\":\"resources/picture.png\""));
+    }
+    assertThrows(IllegalArgumentException.class, () -> IoUtilities.readProject(exportFile));
+  }
+
+  @Test
   public void saveCopyWritesReadableEditorArchiveWithResourceManifestAndThumbnail() throws Exception {
     byte[] data = "hello alice".getBytes(StandardCharsets.UTF_8);
     Project project = new Project(programType("Program"), Project.SceneCameraType.WindowCamera);
@@ -228,6 +266,18 @@ public class ProjectFileUtilitiesTest {
     NamedUserType type = new NamedUserType();
     type.name.setValue(name);
     type.superType.setValue(JavaType.getInstance(SProgram.class));
+    return type;
+  }
+
+  private static NamedUserType programTypeReferencingImageResource(String name, ImageResource imageResource) {
+    NamedUserType type = programType(name);
+    UserLocal image = new UserLocal("image", ImageResource.class, true);
+    UserMethod userMethod = new UserMethod(
+        "rememberImage",
+        Void.TYPE,
+        new org.lgna.project.ast.UserParameter[0],
+        new BlockStatement(new LocalDeclarationStatement(image, new ResourceExpression(ImageResource.class, imageResource))));
+    type.methods.add(userMethod);
     return type;
   }
 
