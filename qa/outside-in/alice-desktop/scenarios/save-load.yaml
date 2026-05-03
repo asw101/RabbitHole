@@ -1,0 +1,35 @@
+id: alice-desktop-save-load
+title: Save and load an Alice project
+workflow: save-load
+automationMode: manual-evidence-required
+preconditions:
+  - Java 21 is available.
+  - Maven dependencies are available.
+  - The tweedle-lang submodule is initialized.
+  - Alice can create or open a small project.
+userActions:
+  - Launch Alice.
+  - Create or open a small project.
+  - Save the project as an a3p file in a known evidence location.
+  - Close the project or restart Alice.
+  - Open the saved a3p file.
+  - Verify the loaded project matches the saved state.
+expectedOutcomes:
+  - Alice writes a usable a3p project file.
+  - Alice opens the saved a3p project without uncaught application errors.
+  - The visible scene or program state after loading matches the saved project.
+evidence:
+  required:
+    - Save operation log or manual notes.
+    - Saved a3p project file.
+    - Screenshot before saving.
+    - Screenshot after reopening.
+    - Notes comparing the saved and loaded state.
+fallback:
+  mode: manual-evidence-required
+  notes:
+    - Link lower-level Maven or JUnit characterization evidence for project loading when available.
+    - Manual evidence remains required until stable full GUI save and open automation exists.
+supportingEvidence:
+  - alice-desktop-launch
+

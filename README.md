@@ -70,6 +70,11 @@ Run unit tests
     cd ${alice3}
     mvn test
 
+Outside-in desktop acceptance scenarios live in `qa/outside-in/alice-desktop/`. See the [documentation index](docs/index.md), the [Alice desktop outside-in QA guide](docs/howto/alice-desktop-outside-in-qa.md), and the [QA reference](docs/reference/alice-desktop-outside-in-qa.md) for usage, scenario schema, evidence expectations, and configuration.
+
+    qa/outside-in/alice-desktop/runners/validate-scenarios.sh
+    qa/outside-in/alice-desktop/runners/run-scenario.sh list
+
 ## Installing Git Hooks
 
 The hooks directory contains Git hooks, that should be placed in .git/hooks

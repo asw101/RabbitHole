@@ -1,0 +1,31 @@
+id: alice-desktop-launch
+title: Launch Alice desktop
+workflow: launch
+automationMode: xvfb-real-alice
+preconditions:
+  - Java 21 is available.
+  - Maven dependencies are available.
+  - The tweedle-lang submodule is initialized.
+userActions:
+  - Start Alice using the documented Maven launch path.
+  - Wait for the main desktop window to become visible.
+expectedOutcomes:
+  - Alice starts without uncaught startup exceptions.
+  - The desktop shell is visible and ready for project interaction.
+automation:
+  cwd: alice-ide
+  command: mvn exec:java -Dalice-ide
+  timeoutSeconds: 120
+  readyWaitSeconds: 45
+evidence:
+  required:
+    - Launch log containing Alice startup output.
+    - Screenshot of the Alice desktop window.
+    - Exit, status, or timeout record.
+    - Environment summary with Java version, Maven version, and DISPLAY value.
+fallback:
+  mode: manual-evidence-required
+  notes:
+    - If Xvfb or renderer initialization fails in the current environment, preserve the failure log.
+    - Provide a manual launch screenshot from a supported desktop environment when automated launch evidence cannot be collected.
+

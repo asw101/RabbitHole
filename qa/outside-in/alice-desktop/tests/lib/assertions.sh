@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+# qa/outside-in/alice-desktop/tests/lib/assertions.sh
+
+failures=0
+
+fail() {
+  printf 'not ok - %s\n' "$1" >&2
+  failures=$((failures + 1))
+}
+
+pass() {
+  printf 'ok - %s\n' "$1"
+}
+
+assert_success() {
+  local status=$1
+  local label=$2
+  if [ "$status" -eq 0 ]; then
+    pass "$label"
+  else
+    fail "$label (exit $status)"
+  fi
+}
+
+assert_failure() {
+  local status=$1
+  local label=$2
+  if [ "$status" -ne 0 ]; then
+    pass "$label"
+  else
+    fail "$label (expected failure)"
+  fi
+}
+
+assert_file_exists() {
+  local path=$1
+  local label=$2
+  if [ -f "$path" ]; then
+    pass "$label"
+  else
+    fail "$label (missing $path)"
+  fi
+}
+
+assert_contains() {
+  local path=$1
+  local pattern=$2
+  local label=$3
+  if [ -f "$path" ] && grep -Eq "$pattern" "$path"; then
+    pass "$label"
+  else
+    fail "$label (pattern not found: $pattern)"
+  fi
+}
+
+assert_not_contains() {
+  local path=$1
+  local pattern=$2
+  local label=$3
+  if [ -f "$path" ] && ! grep -Eq "$pattern" "$path"; then
+    pass "$label"
+  else
+    fail "$label (unexpected pattern found: $pattern)"
+  fi
+}
+
+finish() {
+  if [ "$failures" -eq 0 ]; then
+    exit 0
+  fi
+  printf '%s assertion(s) failed\n' "$failures" >&2
+  exit 1
+}

@@ -1,0 +1,33 @@
+id: alice-desktop-scene-creation
+title: Create a starter scene
+workflow: scene-creation
+automationMode: manual-evidence-required
+preconditions:
+  - Java 21 is available.
+  - Maven dependencies are available.
+  - The tweedle-lang submodule is initialized.
+  - Alice can be launched through the documented Maven path.
+userActions:
+  - Launch Alice.
+  - Start a new project.
+  - Enter or confirm the scene setup perspective.
+  - Add or select a basic gallery object or starter scene element where practical.
+  - Confirm the scene is visible.
+expectedOutcomes:
+  - The user can reach the scene setup flow.
+  - The selected starter scene or object is visible in Alice.
+  - The scene can be saved as an a3p project.
+evidence:
+  required:
+    - Screenshot before scene creation.
+    - Screenshot after the scene or object appears.
+    - Saved a3p project containing the scene.
+    - Notes identifying the selected template or object.
+fallback:
+  mode: manual-evidence-required
+  notes:
+    - Keep this workflow manual until stable UI interaction primitives exist for Alice Swing controls.
+    - Use the launch scenario as supporting evidence for desktop startup.
+supportingEvidence:
+  - alice-desktop-launch
+
