@@ -2,6 +2,7 @@ package org.lgna.project.io;
 
 import edu.cmu.cs.dennisc.java.util.zip.DataSource;
 import edu.cmu.cs.dennisc.pattern.IsInstanceCrawler;
+import org.alice.tweedle.file.AliceTextureReference;
 import org.alice.tweedle.file.Manifest;
 import org.alice.tweedle.file.ManifestEncoderDecoder;
 import org.alice.tweedle.file.AudioReference;
@@ -9,6 +10,7 @@ import org.alice.tweedle.file.ImageReference;
 import org.alice.tweedle.file.ModelReference;
 import org.alice.tweedle.file.ProjectManifest;
 import org.alice.tweedle.file.ResourceReference;
+import org.alice.tweedle.file.StructureReference;
 import org.alice.tweedle.file.TypeManifest;
 import org.alice.tweedle.file.TypeReference;
 import org.junit.Rule;
@@ -209,6 +211,38 @@ public class IoUtilitiesTest {
     assertNull("Tweedle decoding is still not implemented for player archives", readProject.getProgramType());
     assertTrue(
         "Model and generated type references are manifest entries, not binary Resources",
+        readProject.getResources().isEmpty());
+  }
+
+  @Test
+  public void ignoresUnsupportedJsonResourceReferencesWithoutCrashing() throws Exception {
+    ProjectManifest manifest = new ProjectManifest();
+    manifest.metadata.fileType = IoUtilities.EXPORT_EXTENSION;
+    manifest.projectStructure.sceneCameraType = Project.SceneCameraType.WindowCamera;
+    AliceTextureReference textureReference = new AliceTextureReference();
+    textureReference.name = "SyntheticTexture";
+    textureReference.format = "png";
+    textureReference.file = "models/SyntheticProp/SyntheticTexture.png";
+    StructureReference structureReference = new StructureReference();
+    structureReference.name = "SyntheticStructure";
+    structureReference.format = "glb";
+    structureReference.file = "models/SyntheticProp/SyntheticStructure.glb";
+    manifest.resources.add(textureReference);
+    manifest.resources.add(structureReference);
+    File exportFile = temporaryFolder.newFile("exported-unsupported-references.a3w");
+
+    try (ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(exportFile))) {
+      writeZipEntry(zipOutputStream, ProjectIo.VERSION_ENTRY_NAME, ProjectVersion.getCurrentVersion().toString());
+      writeZipEntry(zipOutputStream, ProjectIo.MANIFEST_ENTRY_NAME, ManifestEncoderDecoder.toJson(manifest));
+      writeZipEntry(zipOutputStream, textureReference.file, new byte[] {1, 2, 3});
+      writeZipEntry(zipOutputStream, structureReference.file, new byte[] {4, 5, 6});
+    }
+
+    Project readProject = IoUtilities.readProject(exportFile);
+    assertNotNull(readProject);
+    assertNull("Tweedle decoding is still not implemented for player archives", readProject.getProgramType());
+    assertTrue(
+        "Unsupported manifest references are not binary Project Resources",
         readProject.getResources().isEmpty());
   }
 
