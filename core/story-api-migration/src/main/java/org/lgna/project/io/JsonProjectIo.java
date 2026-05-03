@@ -211,6 +211,7 @@ public class JsonProjectIo extends DataSourceIo implements ProjectIo {
       final TypeManifest manifest = new TypeManifest();
       manifest.description.name = type.getName();
       manifest.provenance.aliceVersion = ProjectVersion.getCurrentVersion().toString();
+      manifest.metadata.fileType = IoUtilities.TYPE_EXTENSION;
       manifest.metadata.identifier.name = type.getId().toString();
       manifest.metadata.identifier.type = Manifest.ProjectType.Library;
       return manifest;

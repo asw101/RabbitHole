@@ -124,10 +124,18 @@ public abstract class IoUtilities {
 
   private static ProjectIo.ProjectReader readerForContainer(ZipEntryContainer container) throws IOException {
     Manifest manifest = readManifest(container);
-    if ((manifest != null) && EXPORT_EXTENSION.equals(manifest.metadata.fileType)) {
+    if (isReadableJsonArchive(manifest)) {
       return JsonProjectIo.reader(container);
     }
     return XmlProjectIo.reader(container);
+  }
+
+  private static boolean isReadableJsonArchive(Manifest manifest) {
+    if ((manifest == null) || (manifest.metadata == null)) {
+      return false;
+    }
+    String fileType = manifest.metadata.fileType;
+    return EXPORT_EXTENSION.equals(fileType) || TYPE_EXTENSION.equals(fileType);
   }
 
   private static Manifest readManifest(ZipEntryContainer container) throws IOException {

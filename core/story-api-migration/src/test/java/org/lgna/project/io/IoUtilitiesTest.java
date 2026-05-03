@@ -1,5 +1,6 @@
 package org.lgna.project.io;
 
+import edu.cmu.cs.dennisc.java.util.zip.DataSource;
 import org.alice.tweedle.file.Manifest;
 import org.alice.tweedle.file.ManifestEncoderDecoder;
 import org.alice.tweedle.file.AudioReference;
@@ -184,6 +185,28 @@ public class IoUtilitiesTest {
     assertTrue(
         "Model and generated type references are manifest entries, not binary Resources",
         readProject.getResources().isEmpty());
+  }
+
+  @Test
+  public void readsJsonTypeArchiveResourcesWithoutTweedleDecoding() throws Exception {
+    ImageResource imageResource = imageResource("type-picture.png", 0xFFFF0000);
+    NamedUserType type = programTypeReferencingImageResource("Prop", imageResource);
+    File typeFile = temporaryFolder.newFile("json-type.a3c");
+
+    try (FileOutputStream outputStream = new FileOutputStream(typeFile)) {
+      ((ProjectIo.ProjectWriter) JsonProjectIo.writer()).writeType(outputStream, type, new DataSource[0]);
+    }
+
+    TypeResourcesPair readType = IoUtilities.readType(typeFile);
+    assertNull("Tweedle decoding is still not implemented for JSON type archives", readType.getType());
+    assertEquals(1, readType.getResources().size());
+    Resource readResource = readType.getResources().iterator().next();
+    assertEquals(ImageResource.class, readResource.getClass());
+    assertEquals(imageResource.getId(), readResource.getId());
+    assertEquals("type-picture.png", readResource.getOriginalFileName());
+    assertEquals("type-picture.png", readResource.getName());
+    assertEquals("png", readResource.getContentType());
+    assertArrayEquals(imageResource.getData(), readResource.getData());
   }
 
   @Test
