@@ -20,6 +20,7 @@ import java.util.stream.IntStream;
 import javax.xml.parsers.DocumentBuilderFactory;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class Alice3LibraryRegistrationTest {
@@ -27,6 +28,9 @@ public class Alice3LibraryRegistrationTest {
   private static final String MANIFEST_PATH = "target/classes/META-INF/MANIFEST.MF";
   private static final String MODULE_EXTENSION_ROOT = "nbinst:/modules/ext/org.alice.netbeans/";
   private static final String MODULE_EXTENSION_MANIFEST_ROOT = "ext/org.alice.netbeans/";
+  private static final Set<String> SIMS_ONLY_CLASSPATH_RESOURCES = Set.of(
+      MODULE_EXTENSION_ROOT + "org-alice-nonfree/models-nonfree.jar",
+      MODULE_EXTENSION_ROOT + "org-alice-nonfree/story-api-nonfree.jar");
 
   @Test
   public void layerRegistersAlice3LibraryDefinition() throws Exception {
@@ -84,6 +88,12 @@ public class Alice3LibraryRegistrationTest {
 
     for (String resource : resourcesForVolume("classpath")) {
       String moduleEntry = toModuleClassPathEntry(resource);
+      if (!includeSims() && SIMS_ONLY_CLASSPATH_RESOURCES.contains(resource)) {
+        assertFalse(
+            "no-Sims module should not package Sims-only resource " + resource,
+            moduleClassPathEntries.contains(moduleEntry));
+        continue;
+      }
       assertTrue(resource, moduleClassPathEntries.contains(moduleEntry));
     }
   }
@@ -135,5 +145,9 @@ public class Alice3LibraryRegistrationTest {
   private static String toModuleClassPathEntry(String resource) {
     assertTrue(resource, resource.startsWith(MODULE_EXTENSION_ROOT));
     return MODULE_EXTENSION_MANIFEST_ROOT + resource.substring(MODULE_EXTENSION_ROOT.length());
+  }
+
+  private static boolean includeSims() {
+    return !"false".equals(System.getProperty("includeSims"));
   }
 }
