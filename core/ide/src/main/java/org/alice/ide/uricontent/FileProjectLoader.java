@@ -67,6 +67,7 @@ public class FileProjectLoader extends AbstractFileProjectLoader {
 
   @Override
   protected void handleLoadException(File file, Exception e) {
+    // ProjectApplication handles null project loads with backup recovery UI.
   }
 
   private File getSaveFile() {

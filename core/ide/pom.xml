@@ -105,6 +105,13 @@
       <artifactId>models</artifactId>
     </dependency>
 
+    <!-- Test -->
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+
     <!-- External -->
     <dependency>
       <groupId>de.java2html</groupId>
