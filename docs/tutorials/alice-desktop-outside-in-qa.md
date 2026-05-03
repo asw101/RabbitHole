@@ -7,9 +7,10 @@ This tutorial walks through an outside-in QA evidence pass: validate the catalog
 You will:
 
 1. Validate the scenario catalog.
-2. Run Alice under Xvfb for the launch workflow.
-3. Generate a save/load evidence checklist.
-4. Add user-visible evidence to the generated run directory.
+2. List the executable scenario catalog.
+3. Run Alice under Xvfb for the launch workflow.
+4. Generate a save/load evidence checklist.
+5. Add user-visible evidence to the generated run directory.
 
 ## Before you start
 
@@ -51,12 +52,21 @@ alice-desktop-save-load
 alice-desktop-export
 ```
 
+You can run scenarios by ID or by direct YAML path. In later steps, use the ID form shown in the commands. When reviewing a scenario file, replace the ID with the direct path:
+
+```bash
+qa/outside-in/alice-desktop/runners/run-scenario.sh run \
+  qa/outside-in/alice-desktop/scenarios/save-load.yaml \
+  --evidence-dir /tmp/alice-qa-tutorial-evidence
+```
+
 ## Step 3: Run Alice under Xvfb
 
 Run the launch scenario:
 
 ```bash
-qa/outside-in/alice-desktop/runners/run-scenario.sh run alice-desktop-launch
+qa/outside-in/alice-desktop/runners/run-scenario.sh run alice-desktop-launch \
+  --evidence-dir /tmp/alice-qa-tutorial-evidence
 ```
 
 When the launch is successful, the runner prints the evidence directory. Open that directory and review:
@@ -76,7 +86,8 @@ The screenshot captures the observed desktop state. The launch log and status fi
 Run:
 
 ```bash
-qa/outside-in/alice-desktop/runners/run-scenario.sh run alice-desktop-save-load
+qa/outside-in/alice-desktop/runners/run-scenario.sh run alice-desktop-save-load \
+  --evidence-dir /tmp/alice-qa-tutorial-evidence
 ```
 
 The runner creates a manual evidence checklist because save/load uses real Swing interactions that are not automated by this lane. Checklist generation is preparation, not completion.
@@ -84,7 +95,7 @@ The runner creates a manual evidence checklist because save/load uses real Swing
 Open:
 
 ```text
-qa/outside-in/alice-desktop/evidence/alice-desktop-save-load/<timestamp>/manual-evidence-checklist.txt
+/tmp/alice-qa-tutorial-evidence/alice-desktop-save-load/<timestamp>/manual-evidence-checklist.txt
 ```
 
 ## Step 5: Perform the save/load workflow
@@ -116,3 +127,5 @@ The save/load scenario is complete only after the workflow has been performed in
 Evidence files are local run artifacts. Keep them for review or attach them to the relevant review record, but do not commit them.
 
 Commit only documentation, scenario YAML, schema changes, and runner changes.
+
+Remove `/tmp/alice-qa-tutorial-evidence` when you no longer need the tutorial artifacts.

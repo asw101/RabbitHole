@@ -13,7 +13,7 @@ For user-facing instructions, see [Run Alice desktop outside-in QA](../../../doc
 | `runners/` | Thin wrappers around existing Maven/Alice commands | New build systems, hidden dependencies, or product behavior changes |
 | `evidence/` | Local run artifacts produced by the runner | Source-controlled product assets |
 
-Generated evidence is ignored by Git. Commit only scenario definitions, schema changes, runner changes, and the placeholder files that keep the directory structure visible.
+Generated evidence is ignored by Git. Commit only scenario definitions, schema changes, runner changes, and the evidence `.gitignore`.
 
 ## Scenario model
 
@@ -34,9 +34,7 @@ Allowed `automationMode` values are:
 | Mode | Meaning |
 | --- | --- |
 | `xvfb-real-alice` | Attempts to run the real Alice desktop under Xvfb and captures logs/screenshots. |
-| `command-wrapper` | Reserved for future terminal-only workflow wrappers. The current runner prepares evidence structure and a checklist instead of executing command-wrapper steps. |
 | `manual-evidence-required` | Produces an executable checklist with required evidence, but does not automate GUI interaction or mark the scenario complete. |
-| `unit-evidence-linked` | References lower-level Maven/JUnit characterization evidence as supporting evidence only. |
 
 Do not use Playwright here unless Alice later exposes a browser/web UI.
 
@@ -46,9 +44,14 @@ Run all commands from the repository root.
 
 ```bash
 qa/outside-in/alice-desktop/runners/validate-scenarios.sh
+qa/outside-in/alice-desktop/runners/validate-scenarios.sh --list
+qa/outside-in/alice-desktop/runners/validate-scenarios.sh --dump-json
 qa/outside-in/alice-desktop/runners/run-scenario.sh list
 qa/outside-in/alice-desktop/runners/run-scenario.sh run alice-desktop-launch
+qa/outside-in/alice-desktop/runners/run-scenario.sh run qa/outside-in/alice-desktop/scenarios/launch.yaml
 ```
+
+`run-scenario.sh run` accepts either a scenario ID or a direct `.yaml` file inside the active scenario catalog. Use `--evidence-dir <dir>` to write evidence outside the repository, and use `--timeout-seconds <seconds>` to override command-backed launch timeout.
 
 The launch scenario uses the documented Alice desktop path:
 
@@ -58,6 +61,27 @@ mvn exec:java -Dalice-ide
 ```
 
 The runner records evidence under `qa/outside-in/alice-desktop/evidence/<scenario-id>/<timestamp>/`. For Xvfb runs it captures an environment summary, Xvfb log, Alice launch log, screenshot (`screenshot.png` or `screenshot.xwd`), and status file. For manual scenarios it creates a status file and structured checklist so the workflow is repeatable and reviewable; the scenario is complete only after a human performs the workflow and adds the required evidence artifacts.
+
+## Configuration
+
+| Variable | Purpose |
+| --- | --- |
+| `ALICE_QA_SCENARIO_DIR` | Override the active scenario catalog. |
+| `ALICE_QA_DISPLAY` | Reuse a specific X display for Xvfb runs. |
+| `ALICE_QA_SCREEN` | Set Xvfb screen geometry. Defaults to `1280x900x24`. |
+| `ALICE_QA_READY_WAIT_SECONDS` | Override launch readiness wait before screenshot capture. |
+| `NODE_OPTIONS` | Optional for surrounding Node-based orchestrators. Use `--max-old-space-size=32768` when needed; this lane itself does not require Node. |
+
+## Scenario authoring checklist
+
+Before adding or changing a scenario:
+
+1. Keep actions and outcomes observable from the user-visible Alice desktop.
+2. Use one of the supported workflows: `launch`, `instructor-student-setup`, `scene-creation`, `run-debug`, `save-load`, or `export`.
+3. Use `xvfb-real-alice` only when the runner can execute the real Alice command and collect logs/screenshots.
+4. Use `manual-evidence-required` when human Swing interaction is required.
+5. Name concrete required artifacts in `evidence.required`.
+6. Run `qa/outside-in/alice-desktop/runners/validate-scenarios.sh`.
 
 ## Baseline preconditions
 

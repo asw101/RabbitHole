@@ -12,6 +12,7 @@ This reference describes the Alice desktop outside-in QA lane: file layout, runn
 - [Automation modes](#automation-modes)
 - [Evidence contract](#evidence-contract)
 - [Workflow evidence requirements](#workflow-evidence-requirements)
+- [Scenario authoring rules](#scenario-authoring-rules)
 - [Extension rules](#extension-rules)
 
 ## Directory layout
@@ -23,7 +24,7 @@ This reference describes the Alice desktop outside-in QA lane: file layout, runn
 | `qa/outside-in/alice-desktop/schema/scenario.schema.json` | JSON Schema for the scenario model. |
 | `qa/outside-in/alice-desktop/runners/validate-scenarios.sh` | Catalog validator and scenario JSON dumper. |
 | `qa/outside-in/alice-desktop/runners/run-scenario.sh` | Scenario listing, validation, real launch execution, and manual checklist generation. |
-| `qa/outside-in/alice-desktop/evidence/` | Local generated evidence. Contents are ignored by Git except placeholder files. |
+| `qa/outside-in/alice-desktop/evidence/` | Local generated evidence. Contents are ignored by Git except `.gitignore`. |
 
 ## Scenario catalog
 
@@ -39,6 +40,16 @@ This reference describes the Alice desktop outside-in QA lane: file layout, runn
 ## Runner commands
 
 Run commands from the repository root.
+
+| Command | Purpose | Output contract |
+| --- | --- | --- |
+| `validate-scenarios.sh` | Validate the active scenario catalog. | Prints the number of valid scenarios and the active catalog directory. |
+| `validate-scenarios.sh --list` | List normalized scenario records. | Prints scenario ID, automation mode, and title. |
+| `validate-scenarios.sh --dump-json` | Dump the full normalized catalog. | Prints a JSON array sorted by scenario file path. |
+| `validate-scenarios.sh --dump-json <scenario-id>` | Dump one normalized scenario. | Prints a JSON object for the requested scenario ID. |
+| `run-scenario.sh list` | List runnable scenarios. | Prints the same user-facing list as the validator. |
+| `run-scenario.sh validate` | Validate the active catalog through the runner. | Delegates to `validate-scenarios.sh`. |
+| `run-scenario.sh run <scenario-id-or-path>` | Create evidence for one scenario. | Prints the created run directory and writes artifacts under the evidence directory. |
 
 ### Validate all scenarios
 
@@ -56,14 +67,26 @@ qa/outside-in/alice-desktop/runners/run-scenario.sh list
 ### Dump a scenario as JSON
 
 ```bash
+qa/outside-in/alice-desktop/runners/validate-scenarios.sh --dump-json
 qa/outside-in/alice-desktop/runners/validate-scenarios.sh --dump-json alice-desktop-launch
 ```
+
+Without an argument, `--dump-json` prints the full catalog as an array. With a scenario ID, it prints exactly one scenario object. Unknown scenario IDs fail with a non-zero exit status.
 
 ### Run a scenario
 
 ```bash
-qa/outside-in/alice-desktop/runners/run-scenario.sh run <scenario-id>
+qa/outside-in/alice-desktop/runners/run-scenario.sh run <scenario-id-or-path>
 ```
+
+The runner accepts either a scenario ID or a `.yaml` file path. Scenario paths must be direct files inside the active scenario directory; nested paths and paths outside the active catalog are rejected.
+
+```bash
+qa/outside-in/alice-desktop/runners/run-scenario.sh run \
+  qa/outside-in/alice-desktop/scenarios/launch.yaml
+```
+
+This path form resolves the top-level `id` in the YAML file, validates that ID through the active catalog, and then runs the normalized scenario.
 
 ### Run with a custom evidence directory
 
@@ -79,17 +102,21 @@ qa/outside-in/alice-desktop/runners/run-scenario.sh run alice-desktop-launch \
   --timeout-seconds 180
 ```
 
-`--timeout-seconds` applies to `xvfb-real-alice` execution. Manual and supporting-evidence scenarios write checklists immediately.
+`--timeout-seconds` applies to `xvfb-real-alice` execution. Manual scenarios write checklists immediately.
+
+### Exit behavior
+
+Runner and validator commands return a non-zero exit status when the catalog is invalid, a requested scenario is unknown, a scenario path is outside the active catalog, a timeout value is invalid, an automation mode is unsupported, or a required launch/evidence capture step fails.
 
 ## Environment variables
 
-| Variable | Applies to | Description |
-| --- | --- | --- |
-| `ALICE_QA_SCENARIO_DIR` | Validator | Overrides the directory containing scenario YAML files. |
-| `ALICE_QA_DISPLAY` | Xvfb runs | Reuses a specific X display instead of selecting one automatically. |
-| `ALICE_QA_SCREEN` | Xvfb runs | Sets Xvfb screen geometry. Default: `1280x900x24`. |
-| `ALICE_QA_READY_WAIT_SECONDS` | Xvfb runs | Overrides the scenario readiness wait before screenshot capture. |
-| `NODE_OPTIONS` | Surrounding Node tooling | Use `--max-old-space-size=32768` when a larger QA orchestrator invokes Node-based helpers around this lane. The lane itself does not require Node. |
+| Variable | Applies to | Default | Description |
+| --- | --- | --- | --- |
+| `ALICE_QA_SCENARIO_DIR` | Validator and runner | `qa/outside-in/alice-desktop/scenarios` | Overrides the directory containing scenario YAML files. Scenario path arguments are resolved against this active catalog. |
+| `ALICE_QA_DISPLAY` | Xvfb runs | First free display from `:90` through `:120` | Reuses a specific X display instead of selecting one automatically. |
+| `ALICE_QA_SCREEN` | Xvfb runs | `1280x900x24` | Sets Xvfb screen geometry. |
+| `ALICE_QA_READY_WAIT_SECONDS` | Xvfb runs | Scenario `automation.readyWaitSeconds` | Overrides the scenario readiness wait before screenshot capture. |
+| `NODE_OPTIONS` | Surrounding Node tooling | unset | Use `--max-old-space-size=32768` when a larger QA orchestrator invokes Node-based helpers around this lane. The lane itself does not require Node. |
 
 Example:
 
@@ -168,6 +195,8 @@ supportingEvidence:
 | `supportingEvidence` | string list | Scenario IDs or evidence sources that support this scenario. |
 | `tags` | string list | Additional scenario labels. |
 
+`automation` is required when `automationMode` is `xvfb-real-alice`. Manual scenarios do not need an `automation` block because the runner generates a checklist instead of driving Swing interactions.
+
 ### Workflow values
 
 ```text
@@ -184,9 +213,7 @@ export
 | Mode | Runner behavior |
 | --- | --- |
 | `xvfb-real-alice` | Starts Xvfb, launches Alice through the scenario command, waits for readiness, captures environment data, logs, status, and screenshot. This is a launch evidence check, not a full semantic oracle for every startup log condition. |
-| `command-wrapper` | Reserved for future terminal-only workflows. The current runner prepares the scenario evidence structure and checklist instead of executing terminal wrapper steps. |
 | `manual-evidence-required` | Writes a structured checklist for human execution and evidence collection. Checklist generation does not complete the scenario. |
-| `unit-evidence-linked` | Writes a checklist that links lower-level characterization evidence to the outside-in scenario. |
 
 ## Evidence contract
 
@@ -220,14 +247,14 @@ All runs include:
 
 For launch runs, `status.txt` records whether the process stayed alive, whether a visible window was detected when a detector is available, and whether screenshot capture succeeded. Acceptance still requires reviewing the generated evidence, especially `launch.log`; the runner does not currently scan the log for every possible uncaught application exception.
 
-Manual and supporting-evidence runs include:
+Manual runs include:
 
 | Artifact | Description |
 | --- | --- |
 | `status.txt` | Scenario ID, automation mode, generated checklist name, and `manual-evidence-required` outcome. |
 | `manual-evidence-checklist.txt` | Scenario preconditions, actions, outcomes, required evidence, and fallback notes. This file prepares the work; it is not proof that the workflow has been executed. |
 
-Manual and supporting-evidence scenarios are complete only after a human performs the workflow or links the supporting characterization evidence and places the required artifacts in the same timestamped run directory.
+Manual scenarios are complete only after a human performs the workflow and places the required artifacts in the same timestamped run directory.
 
 ## Workflow evidence requirements
 
@@ -239,6 +266,18 @@ Manual and supporting-evidence scenarios are complete only after a human perform
 | Run/debug | Screenshot before run, screenshot or screen capture during execution, notes naming run/debug-like controls, launch or run log, saved `.a3p`. |
 | Save/load | Save log or notes, saved `.a3p`, screenshot before saving, screenshot after reopening, comparison notes. |
 | Export | Export log or notes, screenshot before export, screenshot after export completion, exported artifact, file listing or checksum. |
+
+## Scenario authoring rules
+
+Scenario files are the public acceptance contract for this lane. A valid scenario:
+
+1. Uses an ID in the `alice-desktop-<workflow>` family.
+2. Keeps `userActions` and `expectedOutcomes` observable from the desktop user's point of view.
+3. Names evidence that a reviewer can inspect without reconstructing hidden local state.
+4. Uses `xvfb-real-alice` only for workflows the runner can execute through the real Alice desktop command.
+5. Uses `manual-evidence-required` for Swing GUI workflows that still require human interaction.
+6. Lists any dependent scenario evidence in `supportingEvidence`, such as using launch evidence to support save/load or export evidence.
+7. Avoids implementation details such as Java class names, internal package names, or assumptions about private UI objects.
 
 ## Extension rules
 
