@@ -22,6 +22,7 @@ import org.lgna.project.ast.ThisExpression;
 import org.lgna.project.ast.UserLocal;
 import org.lgna.project.ast.UserMethod;
 import org.lgna.project.ast.UserParameter;
+import org.lgna.project.ast.WhileLoop;
 import org.lgna.project.io.IoUtilities;
 import org.lgna.story.SProgram;
 import org.openide.filesystems.FileObject;
@@ -346,6 +347,25 @@ public class ProjectCodeGeneratorTest {
   }
 
   @Test
+  public void generatedSyntheticUserMethodWhileLoopSourceCompiles() throws Exception {
+    File aliceProject = temporaryFolder.newFile("synthetic-while-loop.a3p");
+    IoUtilities.writeProject(
+        aliceProject,
+        new Project(programTypeWithWhileLoopMethod(), Project.SceneCameraType.WindowCamera));
+    File sourceDirectory = temporaryFolder.newFolder("generated-while-loop-src");
+    ProjectCodeGenerator.generateCode(aliceProject, sourceDirectory, null, false);
+
+    Path programPath = sourceDirectory.toPath().resolve("Program.java");
+    String programSource = Files.readString(programPath);
+    assertTrue(programSource.contains("void spin()"));
+    assertTrue(programSource, programSource.contains("while (true)"));
+    compileJavaSources(
+        temporaryFolder.newFolder("generated-while-loop-classes").toPath(),
+        programPath,
+        sourceDirectory.toPath().resolve("AliceJavaFXLauncher.java"));
+  }
+
+  @Test
   public void generatedSyntheticResourceProjectSourcesCompile() throws Exception {
     Project project = new Project(programType("Program"), Project.SceneCameraType.WindowCamera);
     project.addResource(new TestResource("note.txt", "text/plain", "hello alice".getBytes(StandardCharsets.UTF_8)));
@@ -556,6 +576,19 @@ public class ProjectCodeGeneratorTest {
         new UserParameter[0],
         new BlockStatement(loop));
     type.methods.add(repeat);
+    return type;
+  }
+
+  private static NamedUserType programTypeWithWhileLoopMethod() {
+    NamedUserType type = programType("Program");
+    WhileLoop loop = AstUtilities.createWhileLoop(new BooleanLiteral(true));
+    loop.body.getValue().statements.add(new Comment("loop body"));
+    UserMethod spin = new UserMethod(
+        "spin",
+        Void.TYPE,
+        new UserParameter[0],
+        new BlockStatement(loop));
+    type.methods.add(spin);
     return type;
   }
 
