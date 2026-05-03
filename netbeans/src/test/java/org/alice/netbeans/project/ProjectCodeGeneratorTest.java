@@ -198,6 +198,23 @@ public class ProjectCodeGeneratorTest {
     assertEquals(Set.of("first", "second"), generatedResourceText);
   }
 
+  @Test
+  public void generatedSyntheticResourcesLoadBlankOriginalFileName() throws Exception {
+    byte[] data = "hello alice".getBytes(StandardCharsets.UTF_8);
+    TestResource resource = new TestResource("note.txt", "text/plain", data);
+    resource.setOriginalFileName("");
+    resource.setName("friendly note");
+    Project project = new Project(programType("Program"), Project.SceneCameraType.WindowCamera);
+    project.addResource(resource);
+    File aliceProject = temporaryFolder.newFile("synthetic-resource-blank-original-name.a3p");
+    IoUtilities.writeProject(aliceProject, project);
+    File sourceDirectory = temporaryFolder.newFolder("runtime-blank-original-name-src");
+    ProjectCodeGenerator.generateCode(aliceProject, sourceDirectory, null, false);
+
+    assertTrue(Files.exists(sourceDirectory.toPath().resolve("resources").resolve("friendly_note")));
+    assertGeneratedResourceLoads(sourceDirectory.toPath(), data);
+  }
+
   private static NamedUserType programType(String name) {
     NamedUserType type = new NamedUserType();
     type.name.setValue(name);

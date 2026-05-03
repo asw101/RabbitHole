@@ -99,8 +99,17 @@ public class ResourcesTypeWrapper {
     return fixNameIfNecessary(resource.getName());
   }
 
+  private static String getResourceFileName(Resource resource) {
+    String originalFileName = resource.getOriginalFileName();
+    if (originalFileName != null && !originalFileName.trim().isEmpty()) {
+      return originalFileName;
+    }
+    return getFixedName(resource);
+  }
+
   private static String createResourcePath(Resource resource, Set<String> usedResourcePaths) {
     final String directoryName = "resources";
+    String fileName = getResourceFileName(resource);
     int i = 1;
     while (true) {
       StringBuilder sb = new StringBuilder();
@@ -109,7 +118,7 @@ public class ResourcesTypeWrapper {
         sb.append(i);
       }
       sb.append("/");
-      sb.append(resource.getOriginalFileName());
+      sb.append(fileName);
       String path = sb.toString();
       if (usedResourcePaths.contains(path)) {
         i += 1;
