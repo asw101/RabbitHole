@@ -12,6 +12,7 @@ import org.lgna.project.ast.BooleanLiteral;
 import org.lgna.project.ast.Comment;
 import org.lgna.project.ast.ConditionalStatement;
 import org.lgna.project.ast.CountLoop;
+import org.lgna.project.ast.ForEachInArrayLoop;
 import org.lgna.project.ast.IntegerLiteral;
 import org.lgna.project.ast.JavaType;
 import org.lgna.project.ast.LocalDeclarationStatement;
@@ -366,6 +367,25 @@ public class ProjectCodeGeneratorTest {
   }
 
   @Test
+  public void generatedSyntheticUserMethodForEachLoopSourceCompiles() throws Exception {
+    File aliceProject = temporaryFolder.newFile("synthetic-for-each-loop.a3p");
+    IoUtilities.writeProject(
+        aliceProject,
+        new Project(programTypeWithForEachLoopMethod(), Project.SceneCameraType.WindowCamera));
+    File sourceDirectory = temporaryFolder.newFolder("generated-for-each-loop-src");
+    ProjectCodeGenerator.generateCode(aliceProject, sourceDirectory, null, false);
+
+    Path programPath = sourceDirectory.toPath().resolve("Program.java");
+    String programSource = Files.readString(programPath);
+    assertTrue(programSource.contains("void visitAll()"));
+    assertTrue(programSource, programSource.contains("for(String COUNT__ : new String[]{\"red\", \"blue\"})"));
+    compileJavaSources(
+        temporaryFolder.newFolder("generated-for-each-loop-classes").toPath(),
+        programPath,
+        sourceDirectory.toPath().resolve("AliceJavaFXLauncher.java"));
+  }
+
+  @Test
   public void generatedSyntheticResourceProjectSourcesCompile() throws Exception {
     Project project = new Project(programType("Program"), Project.SceneCameraType.WindowCamera);
     project.addResource(new TestResource("note.txt", "text/plain", "hello alice".getBytes(StandardCharsets.UTF_8)));
@@ -589,6 +609,22 @@ public class ProjectCodeGeneratorTest {
         new UserParameter[0],
         new BlockStatement(loop));
     type.methods.add(spin);
+    return type;
+  }
+
+  private static NamedUserType programTypeWithForEachLoopMethod() {
+    NamedUserType type = programType("Program");
+    ForEachInArrayLoop loop = AstUtilities.createForEachInArrayLoop(AstUtilities.createArrayInstanceCreation(
+        String[].class,
+        new StringLiteral("red"),
+        new StringLiteral("blue")));
+    loop.body.getValue().statements.add(new Comment("loop body"));
+    UserMethod visitAll = new UserMethod(
+        "visitAll",
+        Void.TYPE,
+        new UserParameter[0],
+        new BlockStatement(loop));
+    type.methods.add(visitAll);
     return type;
   }
 
