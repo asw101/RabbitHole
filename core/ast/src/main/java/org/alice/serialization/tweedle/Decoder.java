@@ -1,6 +1,7 @@
 package org.alice.serialization.tweedle;
 
 import org.alice.tweedle.TweedleClass;
+import org.alice.tweedle.TweedleLinkException;
 import org.alice.tweedle.TweedleType;
 import org.alice.tweedle.unlinked.TweedleUnlinkedParser;
 import org.lgna.project.ast.AbstractDeclaration;
@@ -30,11 +31,18 @@ public class Decoder {
   }
 
   public AbstractNode decode(String document) {
-    TweedleType tweedleType = new TweedleUnlinkedParser().parseType(document);
+    TweedleType tweedleType;
+    try {
+      tweedleType = new TweedleUnlinkedParser().parseType(document);
+    } catch (TweedleLinkException e) {
+      throw new UnsupportedTweedleDecodeException(
+          "Tweedle type uses linked members that the AST decoder does not support.",
+          e);
+    }
     if (tweedleType instanceof TweedleClass tweedleClass) {
       return decodeClass(tweedleClass);
     }
-    throw new UnsupportedOperationException("Only Tweedle class declarations can be decoded to AST nodes.");
+    throw new UnsupportedTweedleDecodeException("Only Tweedle class declarations can be decoded to AST nodes.");
   }
 
   public AbstractNode copy(String document) {
@@ -45,7 +53,7 @@ public class Decoder {
     if (!tweedleClass.getProperties().isEmpty()
         || !tweedleClass.getMethods().isEmpty()
         || !tweedleClass.getConstructors().isEmpty()) {
-      throw new UnsupportedOperationException("Tweedle class members are not yet supported by the AST decoder.");
+      throw new UnsupportedTweedleDecodeException("Tweedle class members are not yet supported by the AST decoder.");
     }
 
     NamedUserType type = new NamedUserType();
@@ -64,6 +72,6 @@ public class Decoder {
       } catch (ClassNotFoundException ignored) {
       }
     }
-    throw new UnsupportedOperationException("Unsupported Tweedle superclass: " + superclassName);
+    throw new UnsupportedTweedleDecodeException("Unsupported Tweedle superclass: " + superclassName);
   }
 }

@@ -458,6 +458,16 @@ public class IoUtilitiesTest {
   }
 
   @Test
+  public void unsupportedJsonTypeTweedleSuperclassRemainsUndecoded() throws Exception {
+    File typeFile = temporaryFolder.newFile("json-unsupported-super-type.a3c");
+    writeJsonTypeArchive(typeFile, "SyntheticType", "class SyntheticType extends MissingSuper {}");
+
+    TypeResourcesPair readType = IoUtilities.readType(typeFile);
+
+    assertNull("Unsupported Tweedle superclasses remain documented null behavior for now.", readType.getType());
+  }
+
+  @Test
   public void readsJsonTypeArchiveResourcesWhenUnsupportedTweedleRemainsUndecoded() throws Exception {
     ImageResource imageResource = imageResource("type-picture.png", 0xFFFF0000);
     NamedUserType type = programTypeReferencingImageResource("Prop", imageResource);

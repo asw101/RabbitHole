@@ -48,6 +48,7 @@ import edu.cmu.cs.dennisc.pattern.IsInstanceCrawler;
 import edu.cmu.cs.dennisc.print.PrintUtilities;
 import edu.cmu.cs.dennisc.java.io.InputStreamUtilities;
 import org.alice.serialization.tweedle.TweedleEncoderDecoder;
+import org.alice.serialization.tweedle.UnsupportedTweedleDecodeException;
 import org.alice.tweedle.file.*;
 import org.lgna.common.Resource;
 import org.lgna.common.resources.AudioResource;
@@ -239,16 +240,17 @@ public class JsonProjectIo extends DataSourceIo implements ProjectIo {
         byte[] typeBytes = InputStreamUtilities.getBytes(typeStream);
         AbstractNode decoded = coder.decode(new String(typeBytes, StandardCharsets.UTF_8));
         if (decoded == null) {
-          return null;
+          throw new IOException("Tweedle type entry " + typeReference.file + " decoded to null");
         }
         if (decoded instanceof NamedUserType namedUserType) {
           return namedUserType;
         }
         throw new IOException("Tweedle type entry " + typeReference.file + " did not decode to a user type");
-      } catch (RuntimeException e) {
-        // The Tweedle AST decoder currently supports only empty class declarations.
-        // Unsupported members stay as the existing null type behavior for JSON archives.
+      } catch (UnsupportedTweedleDecodeException e) {
+        // Unsupported Tweedle AST features stay as the existing null type behavior.
         return null;
+      } catch (RuntimeException e) {
+        throw new IOException("Unable to decode Tweedle type entry " + typeReference.file, e);
       } catch (VersionNotSupportedException e) {
         throw new IOException("Unable to decode Tweedle type entry " + typeReference.file, e);
       }
