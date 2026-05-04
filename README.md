@@ -87,7 +87,7 @@ progress and leaves the application running instead of crashing.
 
 ## Documentation
 
-Developer documentation for modernization work lives in [docs](docs/index.md).
+Repository documentation starts at [docs/index.md](docs/index.md).
 
 ## Installing Git Hooks
 

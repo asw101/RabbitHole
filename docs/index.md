@@ -1,9 +1,28 @@
 # Alice Modernization Documentation
 
-Developer documentation for the Alice 3 modernization fork.
+Alice modernization documentation describes durable behavior, repo-owned
+contracts, contributor workflows, and compatibility characterization for this
+repository.
 
-## Contents
+## Project save and export characterization
 
 - [Project Save and Export Operations](./reference/project-save-export-operations.md) - Reference for the `core/ide` Save, Save As, and Export operation behavior and planned characterization scope.
 - [Characterize Project Save and Export Operations](./howto/characterize-project-save-export-operations.md) - How to build the first compatibility-test layer for the save/export operations.
 - [Tutorial: Add a Save Operation Characterization Test](./tutorials/save-operation-characterization-test.md) - A guided example for the first direct Save operation characterization test.
+
+## Formal specification lane
+
+The formal-spec lane documents Alice project archive and backup-recovery
+behavior as acceptance contracts, a small TLA+ recovery model, and focused JUnit
+characterization tests.
+
+- [Formal spec lane concepts](./concepts/formal-spec-lane.md) - Why the lane
+  exists and how the artifacts fit together.
+- [Use the formal spec artifacts](./howto/use-formal-spec-artifacts.md) - How to
+  apply the Gherkin and TLA+ contracts while changing save, load, export, or
+  backup recovery behavior.
+- [Formal spec contracts reference](./reference/formal-spec-contracts.md) -
+  Artifact inventory, archive contracts, recovery model details, configuration,
+  and executable validation boundaries.
+- [Trace save, load, export, and recovery behavior](./tutorials/trace-save-load-recovery.md) -
+  A guided walkthrough from acceptance scenario to model rule to focused test.
