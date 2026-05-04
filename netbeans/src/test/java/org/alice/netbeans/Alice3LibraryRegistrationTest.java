@@ -1,11 +1,13 @@
 package org.alice.netbeans;
 
+import org.junit.Assume;
 import org.junit.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
+import java.io.File;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -31,6 +33,12 @@ public class Alice3LibraryRegistrationTest {
   private static final Set<String> SIMS_ONLY_CLASSPATH_RESOURCES = Set.of(
       MODULE_EXTENSION_ROOT + "org-alice-nonfree/models-nonfree.jar",
       MODULE_EXTENSION_ROOT + "org-alice-nonfree/story-api-nonfree.jar");
+  private static final Set<String> NONFREE_ARTIFACT_MARKERS = Set.of(
+      "models-nonfree",
+      "story-api-nonfree",
+      "ide-nonfree",
+      "resources-nonfree",
+      "org-alice-nonfree");
 
   @Test
   public void layerRegistersAlice3LibraryDefinition() throws Exception {
@@ -99,6 +107,42 @@ public class Alice3LibraryRegistrationTest {
   }
 
   @Test
+  public void noSimsLibraryAndManifestOmitNonfreeArtifacts() throws Exception {
+    Assume.assumeFalse("no-Sims guard only applies with -DincludeSims=false", includeSims());
+
+    assertNoNonfreeMarkers("Alice3Library classpath", resourcesForVolume("classpath"));
+    assertNoNonfreeMarkers("NetBeans module manifest classpath", moduleManifestClassPathEntries());
+  }
+
+  @Test
+  public void noSimsRuntimeClasspathOmitsNonfreeJars() {
+    Assume.assumeFalse("no-Sims guard only applies with -DincludeSims=false", includeSims());
+
+    List<String> jarNames = Arrays.stream(System.getProperty(
+            "surefire.test.class.path",
+            System.getProperty("java.class.path", "")).split(File.pathSeparator))
+        .filter(entry -> entry.endsWith(".jar"))
+        .map(entry -> Path.of(entry).getFileName().toString())
+        .toList();
+
+    assertNoNonfreeMarkers("Surefire runtime jar classpath", jarNames);
+  }
+
+  @Test
+  public void noSimsResourceDistributionOmitsSimsAssets() throws Exception {
+    Assume.assumeFalse("no-Sims guard only applies with -DincludeSims=false", includeSims());
+
+    Path applicationResources = Path.of("../core/resources/target/distribution/application");
+    assertTrue("resource distribution should be built before NetBeans tests", Files.exists(applicationResources));
+    assertFalse(
+        "no-Sims resource distribution must not contain Sims assets",
+        Files.exists(applicationResources.resolve("gallery/assets/sims")));
+    assertFalse(
+        "no-Sims resource distribution must not contain Sims EULA",
+        Files.exists(applicationResources.resolve("EULA_TheSimsTM2ArtAsset.txt")));
+  }
+
+  @Test
   public void pomPackagesAliceLibrarySourceAndJavadocVolumes() throws Exception {
     String pom = Files.readString(Path.of("pom.xml"), StandardCharsets.UTF_8);
 
@@ -145,6 +189,16 @@ public class Alice3LibraryRegistrationTest {
   private static String toModuleClassPathEntry(String resource) {
     assertTrue(resource, resource.startsWith(MODULE_EXTENSION_ROOT));
     return MODULE_EXTENSION_MANIFEST_ROOT + resource.substring(MODULE_EXTENSION_ROOT.length());
+  }
+
+  private static void assertNoNonfreeMarkers(String source, Iterable<String> values) {
+    for (String value : values) {
+      for (String marker : NONFREE_ARTIFACT_MARKERS) {
+        assertFalse(
+            source + " should not contain " + marker + ": " + value,
+            value.contains(marker));
+      }
+    }
   }
 
   private static boolean includeSims() {
