@@ -8,19 +8,25 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
+import javax.imageio.ImageIO;
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
+import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
 import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
@@ -78,6 +84,19 @@ public class ModelExportTest {
   }
 
   @Test
+  public void modelExporterHonorsForcedEnumNamesWithoutTrailingComma() throws Exception {
+    ModelResourceExporter exporter = createSyntheticPropExporter();
+    exporter.addResource("VariantProp", "Default", "SIMS2", null, null);
+    exporter.addForcedEnumNames(null, Collections.singletonList("DEFAULT"));
+
+    String javaCode = exporter.createJavaCode();
+
+    assertTrue(javaCode.contains("\tDEFAULT;"));
+    assertFalse(javaCode.contains("VARIANT_PROP"));
+    assertCompiles("org/lgna/story/resources/prop/TestPropResource.java", javaCode);
+  }
+
+  @Test
   public void modelExporterOnlyWritesSubResourceTagsUniqueFromParent() throws Exception {
     ModelResourceExporter exporter = new ModelResourceExporter("TestProp", ModelClassData.PROP_CLASS_DATA);
     exporter.addTags("shared-tag");
@@ -96,6 +115,19 @@ public class ModelExportTest {
     assertOnlyChildText(resource, "Tag", "variant-tag");
     assertOnlyChildText(resource, "GroupTag", "variant-group");
     assertOnlyChildText(resource, "ThemeTag", "variant-theme");
+  }
+
+  @Test
+  public void createXmlFileWritesPackageResourcePathAndGeneratedXml() throws Exception {
+    ModelResourceExporter exporter = createSyntheticPropExporter();
+    Path root = newTestWorkDir("xml-file");
+
+    File xmlFile = exporter.createXMLFile(root.toString(), true);
+
+    assertEquals(root.resolve("org/lgna/story/resources/prop/TestProp.xml"), xmlFile.toPath());
+    Document xml = parseXml(Files.readString(xmlFile.toPath(), StandardCharsets.UTF_8));
+    assertEquals("TestProp", xml.getDocumentElement().getAttribute("name"));
+    assertEquals("DEFAULT", ((Element) xml.getDocumentElement().getElementsByTagName("Resource").item(0)).getAttribute("resourceName"));
   }
 
   @Test
@@ -123,6 +155,31 @@ public class ModelExportTest {
 
     assertTrue(error.getMessage().contains("Failed to create class thumbnail"));
     assertTrue("Bad thumbnail should be preserved for diagnosis", Files.exists(thumbnailPath));
+  }
+
+  @Test
+  public void saveThumbnailsCreatesClassThumbnailFromFirstResourceThumbnail() throws Exception {
+    ModelResourceExporter exporter = createSyntheticPropExporter();
+    Path root = newTestWorkDir("valid-thumbnail");
+    String thumbnailName = AliceResourceUtilities.getThumbnailResourceFileName("TestProp", "Default");
+    Path thumbnailPath = Path.of(exporter.getThumbnailPath(root.toString(), thumbnailName));
+    Files.createDirectories(thumbnailPath.getParent());
+    BufferedImage thumbnail = new BufferedImage(3, 2, BufferedImage.TYPE_INT_ARGB);
+    thumbnail.setRGB(0, 0, 0xFFFF0000);
+    ImageIO.write(thumbnail, "png", thumbnailPath.toFile());
+    exporter.addExistingThumbnail(thumbnailName, thumbnailPath.toFile());
+
+    List<File> savedThumbnails = exporter.saveThumbnailsToDir(root.toString());
+
+    String classThumbnailName = AliceResourceUtilities.getThumbnailResourceFileName("TestProp", null);
+    Path classThumbnailPath = Path.of(exporter.getThumbnailPath(root.toString(), classThumbnailName));
+    assertEquals(2, savedThumbnails.size());
+    assertTrue(savedThumbnails.contains(thumbnailPath.toFile()));
+    assertTrue(savedThumbnails.contains(classThumbnailPath.toFile()));
+    BufferedImage classThumbnail = ImageIO.read(classThumbnailPath.toFile());
+    assertNotNull(classThumbnail);
+    assertEquals(3, classThumbnail.getWidth());
+    assertEquals(2, classThumbnail.getHeight());
   }
 
   private static ModelResourceExporter createSyntheticPropExporter() {

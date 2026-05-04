@@ -1082,23 +1082,12 @@ public class JointedModelColladaExporter implements JointedModelExporter {
   @Override
   public DataSource createStructureDataSource() {
     final String name = resourcePath + "/" + getColladaFileName();
-    return new DataSource() {
-      @Override
-      public String getName() {
-        return name;
-      }
-
-      @Override
-      public void write(OutputStream os) throws IOException {
-        writeCollada(os);
-      }
-    };
+    return ModelExportDataSources.create(name, this::writeCollada);
   }
 
   @Override
   public String getStructureFileName(DataSource structureDataSource) {
-    //Strip the base and model path from the name to make it relative to the manifest
-    return structureDataSource.getName().substring(resourcePath.length() + 1);
+    return ModelExportDataSources.structureFileNameRelativeTo(resourcePath, structureDataSource);
   }
 
   @Override
@@ -1136,17 +1125,7 @@ public class JointedModelColladaExporter implements JointedModelExporter {
       if (texture.diffuseColorTexture.getValue() != null) {
         Integer materialIndex = texture.textureId.getValue();
         final String textureName = resourcePath + "/" + getImageFileNameForIndex(materialIndex);
-        DataSource dataSource = new DataSource() {
-          @Override
-          public String getName() {
-            return textureName;
-          }
-
-          @Override
-          public void write(OutputStream os) throws IOException {
-            writeTexture(texture, os);
-          }
-        };
+        DataSource dataSource = ModelExportDataSources.create(textureName, os -> writeTexture(texture, os));
         dataSources.add(dataSource);
       }
     }
