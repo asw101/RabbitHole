@@ -91,7 +91,7 @@ public class JsonProjectIo extends DataSourceIo implements ProjectIo {
 
     @Override
     public Project readProject(boolean makeVrReady) throws IOException {
-      ProjectManifest manifest = readManifest();
+      ProjectManifest manifest = readManifest(ProjectManifest.class);
       Set<Resource> resources = readResources(manifest);
       Set<NamedUserType> decodedTypes = readTypes(manifest);
       NamedUserType programType = findTypeByName(decodedTypes, manifestName(manifest));
@@ -102,7 +102,7 @@ public class JsonProjectIo extends DataSourceIo implements ProjectIo {
 
     @Override
     public TypeResourcesPair readType() throws IOException {
-      Manifest manifest = readManifest();
+      TypeManifest manifest = readManifest(TypeManifest.class);
       Set<Resource> resources = readResources(manifest);
       Set<NamedUserType> decodedTypes = readTypes(manifest);
       NamedUserType type = findTypeByName(decodedTypes, manifestName(manifest));
@@ -126,7 +126,7 @@ public class JsonProjectIo extends DataSourceIo implements ProjectIo {
       // Ignored for now
     }
 
-    private ProjectManifest readManifest() throws IOException {
+    private <M extends Manifest> M readManifest(Class<M> manifestClass) throws IOException {
       InputStream is = container.getInputStream(MANIFEST_ENTRY_NAME);
       if (is == null) {
         return null;
@@ -136,7 +136,7 @@ public class JsonProjectIo extends DataSourceIo implements ProjectIo {
         try {
           return ManifestEncoderDecoder.fromJsonOrThrow(
               new String(manifestBytes, StandardCharsets.UTF_8),
-              ProjectManifest.class);
+              manifestClass);
         } catch (IOException e) {
           throw new IOException("Unable to read " + MANIFEST_ENTRY_NAME, e);
         }
