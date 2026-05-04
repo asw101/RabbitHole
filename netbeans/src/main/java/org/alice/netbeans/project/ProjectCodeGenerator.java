@@ -59,7 +59,6 @@ import org.lgna.story.ast.JavaCodeUtilities;
 import org.netbeans.api.progress.ProgressHandle;
 import org.netbeans.modules.editor.indent.api.Reformat;
 import org.openide.cookies.EditorCookie;
-import org.openide.filesystems.FileAlreadyLockedException;
 import org.openide.filesystems.FileLock;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileUtil;
@@ -108,27 +107,22 @@ public class ProjectCodeGenerator {
       ResourcesTypeWrapper resourcesTypeWrapper = new ResourcesTypeWrapper(aliceProject.getResources());
       namedUserTypes.add(resourcesTypeWrapper.getType());
 
-      FileObject javaSrcDirectoryFileObject = (FileUtil.toFileObject(javaSrcDirectory));
+      FileObject javaSrcDirectoryFileObject = FileUtil.toFileObject(javaSrcDirectory);
+      if (javaSrcDirectoryFileObject == null || !javaSrcDirectoryFileObject.isFolder()) {
+        throw new IOException("Java source directory is not available: " + javaSrcDirectory);
+      }
       for (org.lgna.common.Resource resource : resources) {
         final String dstPath = resourcesTypeWrapper.getResourcePathForResource(resource);
-        FileObject f;
-        try {
-          f = FileUtil.createData(javaSrcDirectoryFileObject, dstPath);
-        } catch (Exception e) {
-          f = javaSrcDirectoryFileObject.getFileObject(dstPath);
+        FileObject f = FileUtil.createData(javaSrcDirectoryFileObject, dstPath);
+        if (f == null) {
+          throw new IOException("Unable to create resource file: " + dstPath);
         }
 
-        FileLock lock;
+        FileLock lock = f.lock();
         try {
-          lock = f.lock();
-        } catch (FileAlreadyLockedException fale) {
-          throw new RuntimeException(fale);
-        }
-        try {
-          OutputStream os = f.getOutputStream(lock);
-          os.write(resource.getData());
-          os.flush();
-          os.close();
+          try (OutputStream os = f.getOutputStream(lock)) {
+            os.write(resource.getData());
+          }
         } finally {
           lock.releaseLock();
         }

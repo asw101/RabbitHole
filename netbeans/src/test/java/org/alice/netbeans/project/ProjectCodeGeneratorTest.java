@@ -316,6 +316,23 @@ public class ProjectCodeGeneratorTest {
     assertGeneratedResourceLoads(sourceDirectory.toPath(), data);
   }
 
+  @Test
+  public void resourceGenerationFailsWhenSourceDirectoryIsNotAFolder() throws Exception {
+    byte[] data = "hello alice".getBytes(StandardCharsets.UTF_8);
+    Project project = new Project(programType("Program"), Project.SceneCameraType.WindowCamera);
+    project.addResource(new TestResource("note.txt", "text/plain", data));
+    File aliceProject = temporaryFolder.newFile("synthetic-resource-invalid-source.a3p");
+    IoUtilities.writeProject(aliceProject, project);
+    File sourceDirectory = temporaryFolder.newFile("not-a-source-directory");
+
+    try {
+      ProjectCodeGenerator.generateCode(aliceProject, sourceDirectory, null, false);
+      fail("Expected IOException");
+    } catch (java.io.IOException expected) {
+      assertTrue(expected.getMessage().contains("Java source directory is not available"));
+    }
+  }
+
   private static NamedUserType programType(String name) {
     NamedUserType type = new NamedUserType();
     type.name.setValue(name);

@@ -44,7 +44,6 @@
 package org.alice.netbeans;
 
 import edu.cmu.cs.dennisc.java.io.FileUtilities;
-import edu.cmu.cs.dennisc.java.util.logging.Logger;
 import edu.cmu.cs.dennisc.javax.swing.event.UnifiedDocumentListener;
 import org.netbeans.spi.project.ui.support.ProjectChooser;
 import org.openide.WizardDescriptor;
@@ -53,7 +52,6 @@ import org.openide.filesystems.FileUtil;
 
 import javax.swing.JFileChooser;
 import javax.swing.JPanel;
-import javax.swing.SwingUtilities;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.Document;
@@ -62,7 +60,6 @@ import java.util.Objects;
 
 public class Alice3ProjectTemplatePanelVisual extends JPanel {
 
-  private static final boolean IS_AUTOMATIC_FILL_IN_ALICE_PROJECT_DESIRED = "C:\\Users\\dennisc".contentEquals(System.getProperty("user.home"));
   public static final String PROP_PROJECT_NAME = "projectName";
   public static final String browseCommand = "BROWSE";
 
@@ -86,27 +83,17 @@ public class Alice3ProjectTemplatePanelVisual extends JPanel {
     return projectFolder + File.separatorChar + projectName;
   }
 
-  private String getAvailableProjectName(String baseProjectName) {
-    try {
-      String projectFolder = projectLocationTextField.getText();
-      String candidateProjectName;
-      for (int i = 1; i < 100; i++) {
-        if (i > 1) {
-          candidateProjectName = baseProjectName + i;
-        } else {
-          candidateProjectName = baseProjectName;
-        }
-        String createdFolderPath = this.getCreatedFolderPath(projectFolder, candidateProjectName);
-        File file = new File(createdFolderPath);
-        if (!file.exists()) {
-          return candidateProjectName;
-        }
+  String getAvailableProjectName(String baseProjectName) {
+    String projectFolder = projectLocationTextField.getText();
+    for (int suffix = 1; suffix < Integer.MAX_VALUE; suffix++) {
+      String candidateProjectName = suffix > 1 ? baseProjectName + suffix : baseProjectName;
+      String createdFolderPath = this.getCreatedFolderPath(projectFolder, candidateProjectName);
+      File file = new File(createdFolderPath);
+      if (!file.exists()) {
+        return candidateProjectName;
       }
-      return baseProjectName;
-    } catch (Throwable t) { // should not happen
-      Logger.throwable(t, baseProjectName);
-      return baseProjectName;
     }
+    throw new IllegalStateException("Unable to find an available project name for " + baseProjectName);
   }
 
   /**
@@ -259,20 +246,6 @@ public class Alice3ProjectTemplatePanelVisual extends JPanel {
   @Override
   public void addNotify() {
     super.addNotify();
-    if (IS_AUTOMATIC_FILL_IN_ALICE_PROJECT_DESIRED) {
-      final File file = new File(FileUtilities.getDefaultDirectory(), "Alice3/MyProjects/a.a3p");
-      if (file.exists()) {
-        SwingUtilities.invokeLater(new Runnable() {
-          @Override
-          public void run() {
-            aliceWorldLocationTextField.setText(file.getAbsolutePath());
-            String projectName = getProjectNameForFile(file.getName());
-            String availableProjectName = getAvailableProjectName(projectName);
-            projectNameTextField.setText(availableProjectName);
-          }
-        });
-      }
-    }
     //same problem as in 31086, initial focus on Cancel button
     projectNameTextField.requestFocus();
     projectNameTextField.selectAll();

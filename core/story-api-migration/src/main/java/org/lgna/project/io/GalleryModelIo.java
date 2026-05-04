@@ -58,30 +58,20 @@ public class GalleryModelIo extends DataSourceIo {
     return modelManifest;
   }
 
-  public static void main(String[] args) {
+  public static void main(String[] args) throws ModelLoadingException, IOException {
     File colladaFile = new File("C:\\Users\\dculyba\\Documents\\Alice3\\MyProjects\\alienExport\\models\\Alien\\Alien_Alien.dae");
     Logger modelLogger = Logger.getLogger("org.lgna.story.resourceutilities.AliceColladaModelLoader");
     JointedModelColladaImporter colladaImporter = new JointedModelColladaImporter(colladaFile, modelLogger);
 
-    SkeletonVisual sv = null;
-    try {
-      sv = colladaImporter.loadSkeletonVisual();
-    } catch (ModelLoadingException e) {
-      e.printStackTrace();
-      System.exit(1);
-    }
+    SkeletonVisual sv = colladaImporter.loadSkeletonVisual();
 
     BufferedImage thumbnail = AdaptiveRecenteringThumbnailMaker.getInstance(160, 120).createThumbnail(sv);
 
     ModelManifest modelManifest = createSimpleManifest(sv.getName(), "Dave");
 
     GalleryModelIo modelIo = new GalleryModelIo(sv, thumbnail, modelManifest);
-    try {
-      modelIo.writeModel(new File("/Users/dculyba/Alice3/MyGallery"));
-      //            modelIo.writeModel(new File("C:\\Users\\dculyba\\Documents\\Alice3\\MyGallery"));
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
+    modelIo.writeModel(new File("/Users/dculyba/Alice3/MyGallery"));
+    //            modelIo.writeModel(new File("C:\\Users\\dculyba\\Documents\\Alice3\\MyGallery"));
 
   }
 }

@@ -132,7 +132,7 @@ public class JsonModelIo extends DataSourceIo {
   //Build a new ModelResourceInfo that includes only the resources in the modelResources list
   private static ModelManifest createModelManifestFromEnums(Set<JointedModelResource> modelResources) {
     if (modelResources == null || modelResources.isEmpty()) {
-      return null;
+      throw new IllegalArgumentException("At least one model resource is required to create a model manifest");
     }
     //Get the ModelResourceInfo from the first resource found.
     //Then get the parent info for this ModelResourceInfo. This will be the ModelResourceInfo that represents the model class.
@@ -177,12 +177,7 @@ public class JsonModelIo extends DataSourceIo {
   private static ModelManifest.Pose createPose(Field poseField, JointedModelResource modelResource) {
     ModelManifest.Pose newPose = new ModelManifest.Pose();
     newPose.name = poseField.getName();
-    JointedModelPose modelPose = null;
-    try {
-      modelPose = (JointedModelPose) poseField.get(modelResource);
-    } catch (IllegalAccessException e) {
-      return null;
-    }
+    JointedModelPose modelPose = (JointedModelPose) getRequiredFieldValue(poseField, modelResource);
     for (JointIdTransformationPair jointData : modelPose.getJointIdTransformationPairs()) {
       ModelManifest.JointTransform jointTransform = new ModelManifest.JointTransform();
       jointTransform.jointName = jointData.getJointId().toString();
@@ -200,12 +195,7 @@ public class JsonModelIo extends DataSourceIo {
       FieldTemplate propertyFieldTemplate = jointField.getAnnotation(FieldTemplate.class);
       newJoint.visibility = propertyFieldTemplate.visibility();
     }
-    JointId jointId = null;
-    try {
-      jointId = (JointId) jointField.get(modelResource);
-    } catch (IllegalAccessException e) {
-      return null;
-    }
+    JointId jointId = (JointId) getRequiredFieldValue(jointField, modelResource);
     JointId parent = jointId.getParent();
     newJoint.parent = parent != null ? parent.toString() : null;
 
@@ -219,12 +209,7 @@ public class JsonModelIo extends DataSourceIo {
       FieldTemplate propertyFieldTemplate = jointArrayField.getAnnotation(FieldTemplate.class);
       newJointArray.visibility = propertyFieldTemplate.visibility();
     }
-    JointId[] jointIds = null;
-    try {
-      jointIds = (JointId[]) jointArrayField.get(modelResource);
-    } catch (IllegalAccessException e) {
-      return null;
-    }
+    JointId[] jointIds = (JointId[]) getRequiredFieldValue(jointArrayField, modelResource);
     for (JointId id : jointIds) {
       newJointArray.jointIds.add(id.toString());
     }
@@ -239,16 +224,21 @@ public class JsonModelIo extends DataSourceIo {
       FieldTemplate propertyFieldTemplate = jointArrayIdField.getAnnotation(FieldTemplate.class);
       newJointArrayId.visibility = propertyFieldTemplate.visibility();
     }
-    JointArrayId jointArrayId = null;
-    try {
-      jointArrayId = (JointArrayId) jointArrayIdField.get(modelResource);
-    } catch (IllegalAccessException e) {
-      return null;
-    }
+    JointArrayId jointArrayId = (JointArrayId) getRequiredFieldValue(jointArrayIdField, modelResource);
     newJointArrayId.patternId = jointArrayId.getElementNamePattern();
     newJointArrayId.rootJoint = jointArrayId.getRoot().toString();
 
     return newJointArrayId;
+  }
+
+  private static Object getRequiredFieldValue(Field field, JointedModelResource modelResource) {
+    try {
+      return field.get(modelResource);
+    } catch (IllegalAccessException e) {
+      throw new IllegalStateException(
+          "Unable to read model resource field " + field.getName() + " from " + modelResource.getClass().getName(),
+          e);
+    }
   }
 
   private static void addRootJoints(ModelManifest manifest, JointedModelResource modelResource) {
@@ -260,8 +250,10 @@ public class JsonModelIo extends DataSourceIo {
       for (JointId jointId : rootJointIds) {
         manifest.rootJoints.add(jointId.toString());
       }
-    } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
+    } catch (NoSuchMethodException e) {
       Logger.info("No getRootJointIds found on model " + manifest.description.name);
+    } catch (InvocationTargetException | IllegalAccessException e) {
+      throw new IllegalStateException("Unable to read root joints for model " + manifest.description.name, e);
     }
   }
 
@@ -386,8 +378,8 @@ public class JsonModelIo extends DataSourceIo {
     } else {
       try {
         return ImageIO.read(resourceURL);
-      } catch (Throwable t) {
-        t.printStackTrace();
+      } catch (IOException e) {
+        Logger.throwable(e, "Cannot load thumbnail for", modelResource, modelVariant);
       }
     }
     return null;
@@ -450,7 +442,7 @@ public class JsonModelIo extends DataSourceIo {
     for (ModelManifest.ModelVariant modelVariant : modelManifest.models) {
       SkeletonVisual sv = getVisualForModelVariant(modelVariant);
       if (sv == null) {
-        break;
+        throw new IOException("Unable to create visual for model variant " + modelVariant.name + " in " + getModelName());
       }
       addModelVariantDataSources(dataToWrite, sv, modelVariant, resourcePath);
       //Add DataSources for the thumbnails if possible
