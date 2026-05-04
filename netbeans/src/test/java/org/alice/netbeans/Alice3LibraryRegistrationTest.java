@@ -107,6 +107,15 @@ public class Alice3LibraryRegistrationTest {
   }
 
   @Test
+  public void includeSimsLibraryDefinitionIncludesNonfreeClasspathEntries() throws Exception {
+    Assume.assumeTrue("includeSims guard only applies with -DincludeSims=true", includeSims());
+
+    assertTrue(
+        "includeSims library definition should include Sims-only classpath resources",
+        resourcesForVolume("classpath").containsAll(SIMS_ONLY_CLASSPATH_RESOURCES));
+  }
+
+  @Test
   public void noSimsLibraryAndManifestOmitNonfreeArtifacts() throws Exception {
     Assume.assumeFalse("no-Sims guard only applies with -DincludeSims=false", includeSims());
 
