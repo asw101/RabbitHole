@@ -80,6 +80,7 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -336,24 +337,45 @@ import java.util.zip.ZipInputStream;
   public final void removeChangeListener(ChangeListener l) {
   }
 
-  private static void unZipFile(InputStream source, FileObject projectRoot) throws IOException {
+  static void unZipFile(InputStream source, FileObject projectRoot) throws IOException {
+    List<ProjectTemplateEntry> entries = readProjectTemplateEntries(source);
+    ensureProjectTemplateEntriesDoNotConflict(entries, projectRoot);
+    for (ProjectTemplateEntry entry : entries) {
+      if (entry.directory) {
+        FileUtil.createFolder(projectRoot, entry.name);
+      } else {
+        FileObject fo = FileUtil.createData(projectRoot, entry.name);
+        try (InputStream entryInput = new ByteArrayInputStream(entry.content)) {
+          if ("nbproject/project.xml".equals(entry.name)) {
+            // Special handling for setting name of Ant-based projects; customize as needed:
+            filterProjectXML(fo, entryInput, projectRoot.getName());
+          } else if ("nbproject/project.properties".equals(entry.name)) {
+            filterProjectProperties(fo, entryInput, projectRoot.getName());
+          } else {
+            writeFile(entryInput, fo);
+          }
+        }
+      }
+    }
+  }
+
+  private static List<ProjectTemplateEntry> readProjectTemplateEntries(InputStream source) throws IOException {
+    List<ProjectTemplateEntry> entries = new ArrayList<>();
     try (ZipInputStream str = new ZipInputStream(source)) {
       ZipEntry entry;
       while ((entry = str.getNextEntry()) != null) {
         String entryName = projectTemplateEntryName(entry);
-        if (entry.isDirectory()) {
-          FileUtil.createFolder(projectRoot, entryName);
-        } else {
-          FileObject fo = FileUtil.createData(projectRoot, entryName);
-          if ("nbproject/project.xml".equals(entryName)) {
-            // Special handling for setting name of Ant-based projects; customize as needed:
-            filterProjectXML(fo, str, projectRoot.getName());
-          } else if ("nbproject/project.properties".equals(entryName)) {
-            filterProjectProperties(fo, str, projectRoot.getName());
-          } else {
-            writeFile(str, fo);
-          }
-        }
+        entries.add(new ProjectTemplateEntry(entryName, entry.isDirectory(), entry.isDirectory() ? new byte[0] : str.readAllBytes()));
+      }
+    }
+    return entries;
+  }
+
+  private static void ensureProjectTemplateEntriesDoNotConflict(List<ProjectTemplateEntry> entries, FileObject projectRoot) throws IOException {
+    for (ProjectTemplateEntry entry : entries) {
+      FileObject existing = projectRoot.getFileObject(entry.name);
+      if (existing != null && (!entry.directory || !existing.isFolder())) {
+        throw new IOException("Project template destination already exists: " + entry.name);
       }
     }
   }
@@ -370,13 +392,13 @@ import java.util.zip.ZipInputStream;
     return normalized.toString().replace('\\', '/');
   }
 
-  private static void writeFile(ZipInputStream str, FileObject fo) throws IOException {
+  private static void writeFile(InputStream str, FileObject fo) throws IOException {
     try (OutputStream out = fo.getOutputStream()) {
       FileUtil.copy(str, out);
     }
   }
 
-  private static void filterProjectXML(FileObject fo, ZipInputStream str, String name) throws IOException {
+  private static void filterProjectXML(FileObject fo, InputStream str, String name) throws IOException {
     try {
       ByteArrayOutputStream baos = new ByteArrayOutputStream();
       FileUtil.copy(str, baos);
@@ -406,7 +428,7 @@ import java.util.zip.ZipInputStream;
 
   }
 
-  private static void filterProjectProperties(FileObject fo, ZipInputStream str, String name) throws IOException {
+  private static void filterProjectProperties(FileObject fo, InputStream str, String name) throws IOException {
     String properties = new String(str.readAllBytes(), StandardCharsets.UTF_8);
     String renamed = renameProjectProperties(properties, name);
     try (OutputStream out = fo.getOutputStream()) {
@@ -428,4 +450,7 @@ import java.util.zip.ZipInputStream;
   private int index;
   private WizardDescriptor.Panel[] panels;
   private WizardDescriptor wizardDescriptor;
+
+  private record ProjectTemplateEntry(String name, boolean directory, byte[] content) {
+  }
 }
