@@ -92,7 +92,7 @@ public class JsonProjectIo extends DataSourceIo implements ProjectIo {
       ProjectManifest manifest = readManifest();
       Set<Resource> resources = readResources(manifest);
       //TODO Read manifest and content for program type
-      return new Project(null, Collections.emptySet(), resources, manifest == null ? Project.SceneCameraType.WindowCamera : manifest.projectStructure.sceneCameraType);
+      return new Project(null, Collections.emptySet(), resources, sceneCameraType(manifest));
     }
 
     @Override
@@ -131,6 +131,13 @@ public class JsonProjectIo extends DataSourceIo implements ProjectIo {
           throw new IOException("Unable to read " + MANIFEST_ENTRY_NAME, e);
         }
       }
+    }
+
+    private static Project.SceneCameraType sceneCameraType(ProjectManifest manifest) {
+      if ((manifest == null) || (manifest.projectStructure == null) || (manifest.projectStructure.sceneCameraType == null)) {
+        return Project.SceneCameraType.WindowCamera;
+      }
+      return manifest.projectStructure.sceneCameraType;
     }
 
     private Version readSourceProgramVersion() throws IOException {
