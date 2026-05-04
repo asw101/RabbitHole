@@ -1,6 +1,7 @@
 package org.lgna.story.resourceutilities;
 
 import org.alice.math.immutable.AxisAlignedBox;
+import org.lgna.story.implementation.alice.AliceResourceUtilities;
 import org.junit.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -10,13 +11,18 @@ import org.xml.sax.InputSource;
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.StringReader;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Comparator;
+import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 public class ModelExportTest {
@@ -92,6 +98,33 @@ public class ModelExportTest {
     assertOnlyChildText(resource, "ThemeTag", "variant-theme");
   }
 
+  @Test
+  public void createXmlFileSurfacesOutputFailures() throws Exception {
+    ModelResourceExporter exporter = createSyntheticPropExporter();
+    Path rootFile = newTestWorkDir("xml-output-failure").resolve("not-a-directory");
+    Files.writeString(rootFile, "blocks child paths", StandardCharsets.UTF_8);
+
+    assertThrows(IOException.class, () -> exporter.createXMLFile(rootFile.toString(), true));
+
+    assertTrue(Files.isRegularFile(rootFile));
+  }
+
+  @Test
+  public void saveThumbnailsSurfacesBadThumbnailWithoutDeletingIt() throws Exception {
+    ModelResourceExporter exporter = createSyntheticPropExporter();
+    Path root = newTestWorkDir("bad-thumbnail");
+    String thumbnailName = AliceResourceUtilities.getThumbnailResourceFileName("TestProp", "Default");
+    Path thumbnailPath = Path.of(exporter.getThumbnailPath(root.toString(), thumbnailName));
+    Files.createDirectories(thumbnailPath.getParent());
+    Files.writeString(thumbnailPath, "not an image", StandardCharsets.UTF_8);
+    exporter.addExistingThumbnail(thumbnailName, thumbnailPath.toFile());
+
+    IOException error = assertThrows(IOException.class, () -> exporter.saveThumbnailsToDir(root.toString()));
+
+    assertTrue(error.getMessage().contains("Failed to create class thumbnail"));
+    assertTrue("Bad thumbnail should be preserved for diagnosis", Files.exists(thumbnailPath));
+  }
+
   private static ModelResourceExporter createSyntheticPropExporter() {
     ModelResourceExporter exporter = new ModelResourceExporter("TestProp", ModelClassData.PROP_CLASS_DATA);
     exporter.addAttribution("Alice Test", "2026");
@@ -120,9 +153,9 @@ public class ModelExportTest {
     JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
     assertNotNull("Tests must run on a JDK, not a JRE", compiler);
 
-    Path testRoot = Path.of("target", "model-export-test", Long.toString(System.nanoTime()));
-    Path sourceRoot = testRoot.resolve("source");
-    Path classRoot = testRoot.resolve("classes");
+    Path workRoot = newTestWorkDir("compiler");
+    Path sourceRoot = workRoot.resolve("source");
+    Path classRoot = workRoot.resolve("classes");
     Path sourceFile = sourceRoot.resolve(sourcePath);
     Files.createDirectories(sourceFile.getParent());
     Files.createDirectories(classRoot);
@@ -141,5 +174,31 @@ public class ModelExportTest {
     );
 
     assertEquals(compilerOutput.toString(StandardCharsets.UTF_8), 0, result);
+  }
+
+  private static Path newTestWorkDir(String name) throws IOException {
+    Path workRoot = Path.of("target", "test-work", ModelExportTest.class.getSimpleName(), name).toAbsolutePath();
+    deleteRecursively(workRoot);
+    Files.createDirectories(workRoot);
+    return workRoot;
+  }
+
+  private static void deleteRecursively(Path path) throws IOException {
+    if (Files.notExists(path)) {
+      return;
+    }
+    try (Stream<Path> paths = Files.walk(path)) {
+      paths.sorted(Comparator.reverseOrder()).forEach(ModelExportTest::deleteIfExists);
+    } catch (UncheckedIOException e) {
+      throw e.getCause();
+    }
+  }
+
+  private static void deleteIfExists(Path path) {
+    try {
+      Files.deleteIfExists(path);
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
   }
 }
