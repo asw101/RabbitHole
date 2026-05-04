@@ -53,7 +53,7 @@ qa/outside-in/alice-desktop/runners/run-scenario.sh run alice-desktop-launch
 qa/outside-in/alice-desktop/runners/run-scenario.sh run qa/outside-in/alice-desktop/scenarios/launch.yaml
 ```
 
-`run-scenario.sh run` accepts either a scenario ID or a direct `.yaml` file inside the active scenario catalog. Use `--evidence-dir <dir>` to write evidence outside the repository, and use `--timeout-seconds <seconds>` to override command-backed launch timeout.
+`run-scenario.sh run` accepts either a scenario ID or a direct `.yaml` file inside the active scenario catalog. Use `--evidence-dir <dir>` to write evidence outside the repository, and use `--timeout-seconds <seconds>` to override argv-backed launch timeout.
 
 For branch-installable outside-in checks, run the thin `amplihack` wrapper from a checkout of the branch:
 
@@ -70,6 +70,8 @@ The launch scenario uses the documented Alice desktop path:
 cd alice-ide
 mvn exec:java -Dalice-ide
 ```
+
+Scenario automation stores this launch as an argv list, not a shell command string. The validator and runner allow only this Alice launch argv for `xvfb-real-alice`, including custom catalogs selected with `ALICE_QA_SCENARIO_DIR`.
 
 The runner records evidence under `qa/outside-in/alice-desktop/evidence/<scenario-id>/<timestamp>/`. Successful Xvfb launch evidence includes an environment summary, Xvfb log, Alice launch log, screenshot (`screenshot.png` or `screenshot.xwd`), and status file. Early Xvfb fallback directories may contain only the diagnostics available before launch plus a manual fallback checklist. For manual scenarios, the runner creates a status file and structured checklist so the workflow is repeatable and reviewable; the scenario is complete only after a human performs the workflow and adds the required evidence artifacts plus `review-notes.txt`.
 

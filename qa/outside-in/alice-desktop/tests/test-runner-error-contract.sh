@@ -35,4 +35,20 @@ status=$?
 assert_exit_code "$status" 2 "nested scenario YAML paths are rejected as catalog boundary errors"
 assert_contains "$tmp_root/nested-path.err" 'directly inside active scenario directory' "nested path error explains the direct catalog file requirement"
 
+unsafe_catalog="$tmp_root/unsafe-catalog"
+mkdir -p "$unsafe_catalog"
+cp "$BASE_DIR"/scenarios/*.yaml "$unsafe_catalog"/
+python3 - "$unsafe_catalog/launch.yaml" <<'PY'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+text = path.read_text(encoding="utf-8").replace("    - mvn\n", "    - bash\n", 1)
+path.write_text(text, encoding="utf-8")
+PY
+ALICE_QA_SCENARIO_DIR="$unsafe_catalog" "$RUNNER" run alice-desktop-launch --evidence-dir "$tmp_root/unsafe-evidence" >"$tmp_root/unsafe.out" 2>"$tmp_root/unsafe.err"
+status=$?
+assert_failure "$status" "runner rejects unapproved automation argv before launch"
+assert_contains "$tmp_root/unsafe.err" 'automation\.argv is restricted' "runner surfaces automation allowlist failures"
+
 finish

@@ -37,13 +37,24 @@ if missing:
 
 automation = schema["properties"]["automation"]
 required_automation = set(automation.get("required", []))
-expected_automation = {"cwd", "command", "timeoutSeconds", "readyWaitSeconds"}
+expected_automation = {"cwd", "argv", "timeoutSeconds", "readyWaitSeconds"}
 missing_automation = sorted(expected_automation - required_automation)
 if missing_automation:
     raise AssertionError(
         "automation object must require all command fields when present: "
         f"{missing_automation}"
     )
+
+if "command" in automation.get("properties", {}):
+    raise AssertionError("automation.command must not be part of the schema")
+
+argv_schema = automation["properties"]["argv"]
+allowed_argv = [
+    item.get("const")
+    for item in argv_schema.get("prefixItems", [])
+]
+if allowed_argv != ["mvn", "exec:java", "-Dalice-ide"] or argv_schema.get("maxItems") != 3:
+    raise AssertionError("automation.argv must be restricted to the allowed Alice launch argv")
 
 def has_xvfb_condition(node):
     if isinstance(node, dict):

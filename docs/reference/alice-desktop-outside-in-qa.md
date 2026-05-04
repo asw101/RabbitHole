@@ -206,14 +206,14 @@ supportingEvidence:
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `automation.cwd` | string | Working directory for command-backed automation. Required for `xvfb-real-alice`. |
-| `automation.command` | string | Command executed by the runner. Required for `xvfb-real-alice`. |
-| `automation.timeoutSeconds` | positive integer | Default timeout for command-backed automation. Required for `xvfb-real-alice`. |
+| `automation.cwd` | string | Working directory for argv-backed automation. Required for `xvfb-real-alice`; currently restricted to `alice-ide`. |
+| `automation.argv` | string list | Argument vector executed directly by the runner without shell interpretation. Required for `xvfb-real-alice`; currently restricted to `mvn`, `exec:java`, `-Dalice-ide`. |
+| `automation.timeoutSeconds` | positive integer | Default timeout for argv-backed automation. Required for `xvfb-real-alice`. |
 | `automation.readyWaitSeconds` | positive integer | Wait before screenshot capture. Required for `xvfb-real-alice`. |
 | `supportingEvidence` | string list | Scenario IDs or evidence sources that support this scenario. |
 | `tags` | string list | Additional scenario labels. |
 
-`automation` is required when `automationMode` is `xvfb-real-alice`. Manual scenarios do not need an `automation` block because the runner generates a checklist instead of driving Swing interactions.
+`automation` is required when `automationMode` is `xvfb-real-alice`. Manual scenarios do not need an `automation` block because the runner generates a checklist instead of driving Swing interactions. Automation must be represented as `argv`; shell command strings are not accepted, including in custom catalogs selected with `ALICE_QA_SCENARIO_DIR`.
 
 ### Workflow values
 
@@ -230,7 +230,7 @@ export
 
 | Mode | Runner behavior |
 | --- | --- |
-| `xvfb-real-alice` | Starts Xvfb, launches Alice through the scenario command, waits for readiness, and captures environment data, logs, status, and screenshot when the launch reaches evidence capture. This is a launch evidence check, not a full semantic oracle for every startup log condition. |
+| `xvfb-real-alice` | Starts Xvfb, launches Alice through the allowed scenario argv, waits for readiness, and captures environment data, logs, status, and screenshot when the launch reaches evidence capture. This is a launch evidence check, not a full semantic oracle for every startup log condition. |
 | `manual-evidence-required` | Writes a structured checklist for human execution and evidence collection. Checklist generation does not complete the scenario. |
 
 ## Evidence contract
@@ -297,7 +297,8 @@ Scenario files are the public acceptance contract for this lane. A valid scenari
 6. Lists any dependent scenario evidence in `supportingEvidence`, such as using launch evidence to support save/load or export evidence.
 7. Requires `review-notes.txt` for manual workflow acceptance.
 8. Uses only the supported YAML subset: mappings, nested mappings, scalar values, and scalar lists with spaces for indentation.
-9. Avoids implementation details such as Java class names, internal package names, or assumptions about private UI objects.
+9. Uses `automation.argv` rather than a shell command string; only the allowlisted Alice launch argv is accepted.
+10. Avoids implementation details such as Java class names, internal package names, or assumptions about private UI objects.
 
 ## Extension rules
 

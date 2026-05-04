@@ -56,18 +56,31 @@
       "additionalProperties": false,
       "required": [
         "cwd",
-        "command",
+        "argv",
         "timeoutSeconds",
         "readyWaitSeconds"
       ],
       "properties": {
         "cwd": {
           "type": "string",
-          "minLength": 1
+          "const": "alice-ide"
         },
-        "command": {
-          "type": "string",
-          "minLength": 1
+        "argv": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "const": "mvn"
+            },
+            {
+              "const": "exec:java"
+            },
+            {
+              "const": "-Dalice-ide"
+            }
+          ],
+          "items": false,
+          "minItems": 3,
+          "maxItems": 3
         },
         "timeoutSeconds": {
           "type": "integer",

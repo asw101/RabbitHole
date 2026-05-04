@@ -14,7 +14,10 @@ expectedOutcomes:
   - The desktop shell is visible and ready for project interaction.
 automation:
   cwd: alice-ide
-  command: mvn exec:java -Dalice-ide
+  argv:
+    - mvn
+    - exec:java
+    - -Dalice-ide
   timeoutSeconds: 120
   readyWaitSeconds: 45
 evidence:

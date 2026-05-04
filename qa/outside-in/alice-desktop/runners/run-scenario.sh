@@ -39,6 +39,38 @@ for field in sys.argv[1:]:
 PY
 }
 
+json_list_nul() {
+  local scenario_json=$1
+  local field=$2
+  SCENARIO_JSON="$scenario_json" python3 - "$field" <<'PY'
+import json
+import os
+import sys
+
+value = json.loads(os.environ["SCENARIO_JSON"])
+for part in sys.argv[1].split("."):
+    value = value[part]
+for item in value:
+    sys.stdout.buffer.write(item.encode("utf-8") + b"\0")
+PY
+}
+
+validate_launch_automation() {
+  local cwd=$1
+  shift
+
+  if [ "$cwd" = alice-ide ] &&
+    [ "$#" -eq 3 ] &&
+    [ "$1" = mvn ] &&
+    [ "$2" = exec:java ] &&
+    [ "$3" = -Dalice-ide ]; then
+    return 0
+  fi
+
+  printf '%s\n' 'automation.argv is restricted to the allowed Alice launch command: cwd alice-ide, argv [mvn, exec:java, -Dalice-ide]' >&2
+  return 2
+}
+
 resolve_scenario_id() {
   local request=$1
   local scenario_dir=${ALICE_QA_SCENARIO_DIR:-$BASE_DIR/scenarios}
@@ -212,17 +244,20 @@ run_xvfb_real_alice() {
   local run_dir=$2
   local timeout_override=$3
 
-  local automation_fields command cwd configured_timeout ready_wait run_timeout display scenario_id automation_mode
-  mapfile -t automation_fields < <(json_fields "$scenario_json" "automation.command" "automation.cwd" "automation.timeoutSeconds" "automation.readyWaitSeconds" "id" "automationMode")
-  command=${automation_fields[0]}
-  cwd=${automation_fields[1]}
-  configured_timeout=${automation_fields[2]}
-  ready_wait="${ALICE_QA_READY_WAIT_SECONDS:-${automation_fields[3]}}"
-  scenario_id=${automation_fields[4]}
-  automation_mode=${automation_fields[5]}
+  local automation_fields cwd configured_timeout ready_wait run_timeout display scenario_id automation_mode
+  local -a argv
+  mapfile -t automation_fields < <(json_fields "$scenario_json" "automation.cwd" "automation.timeoutSeconds" "automation.readyWaitSeconds" "id" "automationMode")
+  cwd=${automation_fields[0]}
+  configured_timeout=${automation_fields[1]}
+  ready_wait="${ALICE_QA_READY_WAIT_SECONDS:-${automation_fields[2]}}"
+  scenario_id=${automation_fields[3]}
+  automation_mode=${automation_fields[4]}
+  mapfile -d '' -t argv < <(json_list_nul "$scenario_json" "automation.argv")
   run_timeout="${timeout_override:-$configured_timeout}"
   xvfb_pid=
   alice_pid=
+
+  validate_launch_automation "$cwd" "${argv[@]}"
 
   if ! command -v Xvfb >/dev/null 2>&1; then
     write_environment "$run_dir"
@@ -274,7 +309,7 @@ run_xvfb_real_alice() {
 
   (
     cd "$REPO_ROOT/$cwd"
-    timeout -k 10s "${run_timeout}s" bash -lc "$command"
+    timeout -k 10s "${run_timeout}s" "${argv[@]}"
   ) > "$run_dir/launch.log" 2>&1 &
   alice_pid=$!
 

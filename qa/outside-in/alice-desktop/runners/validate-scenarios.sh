@@ -40,6 +40,9 @@ mode_values = {
     "xvfb-real-alice",
     "manual-evidence-required",
 }
+allowed_automation = {
+    ("alice-ide", ("mvn", "exec:java", "-Dalice-ide")),
+}
 
 
 class ScenarioError(Exception):
@@ -187,21 +190,29 @@ def validate(path, scenario):
         errors.append("automation must be a mapping")
     elif isinstance(automation, dict):
         unknown_automation = sorted(
-            set(automation) - {"cwd", "command", "timeoutSeconds", "readyWaitSeconds"}
+            set(automation) - {"cwd", "argv", "timeoutSeconds", "readyWaitSeconds"}
         )
         if unknown_automation:
             errors.append(f"automation has unknown field(s): {', '.join(unknown_automation)}")
-        for field in ("cwd", "command", "timeoutSeconds", "readyWaitSeconds"):
+        for field in ("cwd", "argv", "timeoutSeconds", "readyWaitSeconds"):
             if field not in automation:
                 errors.append(f"automation must include {field} when present")
         if not isinstance(automation.get("cwd"), str) or not automation.get("cwd", "").strip():
             errors.append("automation.cwd must be a non-empty string")
-        if not isinstance(automation.get("command"), str) or not automation.get("command", "").strip():
-            errors.append("automation.command must be a non-empty string")
+        require_string_list(errors, path, "automation.argv", automation.get("argv"))
         if not isinstance(automation.get("timeoutSeconds"), int) or automation.get("timeoutSeconds", 0) < 1:
             errors.append("automation.timeoutSeconds must be a positive integer")
         if not isinstance(automation.get("readyWaitSeconds"), int) or automation.get("readyWaitSeconds", 0) < 1:
             errors.append("automation.readyWaitSeconds must be a positive integer")
+        cwd = automation.get("cwd")
+        argv = automation.get("argv")
+        if isinstance(cwd, str) and isinstance(argv, list) and all(isinstance(arg, str) for arg in argv):
+            key = (cwd, tuple(argv))
+            if key not in allowed_automation:
+                errors.append(
+                    "automation.argv is restricted to the allowed Alice launch command: "
+                    "cwd alice-ide, argv [mvn, exec:java, -Dalice-ide]"
+                )
     if automation_mode == "xvfb-real-alice" and not isinstance(automation, dict):
         errors.append("xvfb-real-alice scenarios must include automation")
 
