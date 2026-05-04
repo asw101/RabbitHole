@@ -23,7 +23,7 @@ final class ProjectBackupSelector {
     for (File backup : newestFirstBackups) {
       if (isAvailableBackupCandidate(backup) && !unloadableFiles.contains(backup.getName())) {
         // If the main project is corrupted, return the latest backup.
-        if (isMainProjectCorrupted || modifiedTime == null || modifiedTime == LocalDateTime.MIN) {
+        if (isMainProjectCorrupted || modifiedTime == null || LocalDateTime.MIN.equals(modifiedTime)) {
           return backup;
         }
 

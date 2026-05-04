@@ -9,7 +9,9 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.Map;
 import java.util.Set;
 
@@ -191,6 +193,22 @@ public class ProjectBackupSelectorTest {
 
     File backup = selector.getNextBackup(
         LocalDateTime.MIN,
+        new File[] {newest},
+        false,
+        Set.of());
+
+    assertEquals(newest, backup);
+  }
+
+  @Test
+  public void minimumMainProjectTimestampValueUsesLatestAvailableBackup() throws IOException {
+    File newest = backup("auto20240102_130000.a3p");
+    ProjectBackupSelector selector = new ProjectBackupSelector(file -> {
+      throw new AssertionError("minimum main project timestamp should not compare backup times");
+    });
+
+    File backup = selector.getNextBackup(
+        LocalDateTime.of(LocalDate.MIN, LocalTime.MIN),
         new File[] {newest},
         false,
         Set.of());
