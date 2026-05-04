@@ -31,19 +31,82 @@ required_top = [
 ]
 allowed_top = set(required_top) | {"automation", "supportingEvidence", "tags"}
 workflow_values = {
+    "exported-project-smoke",
+    "failure-path-smoke",
+    "future-ui-smoke",
     "instructor-student-setup",
     "launch",
+    "netbeans-package-smoke",
+    "project-io-smoke",
     "scene-creation",
     "run-debug",
     "save-load",
     "export",
 }
 mode_values = {
+    "gated-command-smoke",
     "xvfb-real-alice",
     "manual-evidence-required",
 }
 allowed_automation = {
     ("alice-ide", ("mvn", "exec:java", "-Dalice-ide")),
+    (
+        ".",
+        (
+            "mvn",
+            "-DincludeSims=false",
+            "-Dinstall4j.skip",
+            "-pl",
+            "netbeans",
+            "-am",
+            "-Dtest=org.alice.netbeans.project.ProjectCodeGeneratorStandaloneProjectTest",
+            "test",
+        ),
+    ),
+    (
+        ".",
+        (
+            "mvn",
+            "-DincludeSims=false",
+            "-Dinstall4j.skip",
+            "-pl",
+            "core/ide",
+            "-am",
+            "-Dtest=org.alice.ide.ProjectSaveTargetPlanTest",
+            "test",
+        ),
+    ),
+    (
+        ".",
+        (
+            "mvn",
+            "-DincludeSims=false",
+            "-Dinstall4j.skip",
+            "-pl",
+            "core/ide",
+            "-am",
+            "-Dtest=org.alice.ide.ProjectLoadFailureDispatchPlanTest",
+            "test",
+        ),
+    ),
+    (
+        ".",
+        (
+            "qa/outside-in/alice-desktop/runners/netbeans-package-smoke.sh",
+        ),
+    ),
+    (
+        ".",
+        (
+            "qa/outside-in/alice-desktop/runners/run-scenario.sh",
+            "run",
+            "alice-desktop-launch",
+            "--timeout-seconds",
+            "30",
+            "--evidence-dir",
+            "qa/outside-in/alice-desktop/evidence/future-ui-launch",
+        ),
+    ),
 }
 
 
@@ -240,11 +303,10 @@ def validate(path, scenario):
             key = (cwd, tuple(argv))
             if key not in allowed_automation:
                 errors.append(
-                    "automation.argv is restricted to the allowed Alice launch command: "
-                    "cwd alice-ide, argv [mvn, exec:java, -Dalice-ide]"
+                    "automation.argv is restricted to the allowed Alice QA command set"
                 )
-    if automation_mode == "xvfb-real-alice" and not isinstance(automation, dict):
-        errors.append("xvfb-real-alice scenarios must include automation")
+    if automation_mode in {"xvfb-real-alice", "gated-command-smoke"} and not isinstance(automation, dict):
+        errors.append(f"{automation_mode} scenarios must include automation")
 
     if "supportingEvidence" in scenario:
         require_string_list(errors, path, "supportingEvidence", scenario.get("supportingEvidence"))

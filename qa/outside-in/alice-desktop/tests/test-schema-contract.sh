@@ -46,19 +46,66 @@ if missing_automation:
     )
 
 if "command" in automation.get("properties", {}):
-    raise AssertionError("automation.command must not be part of the schema")
+    raise AssertionError("legacy command field must not be part of the schema")
 
 argv_schema = automation["properties"]["argv"]
-allowed_argv = [
-    item.get("const")
-    for item in argv_schema.get("prefixItems", [])
-]
-if allowed_argv != ["mvn", "exec:java", "-Dalice-ide"] or argv_schema.get("maxItems") != 3:
-    raise AssertionError("automation.argv must be restricted to the allowed Alice launch argv")
+allowed_argv = {
+    tuple(item.get("const") for item in option.get("prefixItems", []))
+    for option in argv_schema.get("oneOf", [])
+}
+expected_argv = {
+    ("mvn", "exec:java", "-Dalice-ide"),
+    (
+        "mvn",
+        "-DincludeSims=false",
+        "-Dinstall4j.skip",
+        "-pl",
+        "netbeans",
+        "-am",
+        "-Dtest=org.alice.netbeans.project.ProjectCodeGeneratorStandaloneProjectTest",
+        "test",
+    ),
+    (
+        "mvn",
+        "-DincludeSims=false",
+        "-Dinstall4j.skip",
+        "-pl",
+        "core/ide",
+        "-am",
+        "-Dtest=org.alice.ide.ProjectSaveTargetPlanTest",
+        "test",
+    ),
+    (
+        "mvn",
+        "-DincludeSims=false",
+        "-Dinstall4j.skip",
+        "-pl",
+        "core/ide",
+        "-am",
+        "-Dtest=org.alice.ide.ProjectLoadFailureDispatchPlanTest",
+        "test",
+    ),
+    ("qa/outside-in/alice-desktop/runners/netbeans-package-smoke.sh",),
+    (
+        "qa/outside-in/alice-desktop/runners/run-scenario.sh",
+        "run",
+        "alice-desktop-launch",
+        "--timeout-seconds",
+        "30",
+        "--evidence-dir",
+        "qa/outside-in/alice-desktop/evidence/future-ui-launch",
+    ),
+}
+if allowed_argv != expected_argv:
+    raise AssertionError("automation.argv must be restricted to the allowed Alice QA argv set")
+for option in argv_schema.get("oneOf", []):
+    size = len(option.get("prefixItems", []))
+    if option.get("minItems") != size or option.get("maxItems") != size or option.get("items") is not False:
+        raise AssertionError("each automation.argv schema option must be exact length")
 
 cwd_schema = automation["properties"]["cwd"]
-if cwd_schema.get("const") != "alice-ide":
-    raise AssertionError("automation.cwd must keep the legitimate Alice launch cwd")
+if "const" in cwd_schema:
+    raise AssertionError("automation.cwd must not rely on a single cwd const; validator enforces allowed cwd/argv pairs")
 cwd_pattern = cwd_schema.get("pattern", "")
 if "(?!/)" not in cwd_pattern or "\\.\\." not in cwd_pattern:
     raise AssertionError("automation.cwd schema must reject absolute paths and parent traversal")

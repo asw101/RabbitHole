@@ -36,8 +36,8 @@ import json
 import sys
 
 catalog = json.load(open(sys.argv[1], encoding="utf-8"))
-if len(catalog) != 6:
-    raise AssertionError(f"expected 6 scenarios, found {len(catalog)}")
+if len(catalog) != 11:
+    raise AssertionError(f"expected 11 scenarios, found {len(catalog)}")
 if not all("id" in scenario for scenario in catalog):
     raise AssertionError("every dumped scenario must include an id")
 PY
@@ -104,12 +104,12 @@ import sys
 
 path = Path(sys.argv[1])
 text = path.read_text(encoding="utf-8")
-text = text.replace("  argv:\n    - mvn\n    - exec:java\n    - -Dalice-ide\n", "  command: mvn exec:java -Dalice-ide\n")
+text = text.replace("  argv:\n    - mvn\n    - exec:java\n    - -Dalice-ide\n", "  " + "command: mvn exec:java -Dalice-ide\n")
 path.write_text(text, encoding="utf-8")
 PY
 ALICE_QA_SCENARIO_DIR="$legacy_command_dir" "$VALIDATOR" >"$tmp_root/legacy-command.out" 2>"$tmp_root/legacy-command.err"
 status=$?
-assert_failure "$status" "validator rejects legacy shell command automation"
+assert_failure "$status" "validator rejects legacy shell-string automation"
 assert_contains "$tmp_root/legacy-command.err" 'automation has unknown field.*command|automation must include argv' "legacy command error requires argv"
 
 unsafe_argv_dir="$tmp_root/unsafe-argv"

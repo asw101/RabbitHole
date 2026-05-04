@@ -1,0 +1,47 @@
+id: alice-desktop-exported-project-smoke
+title: Exported Java project smoke
+workflow: exported-project-smoke
+automationMode: gated-command-smoke
+preconditions:
+  - Java 21 is available.
+  - Maven dependencies are available.
+  - The tweedle-lang submodule is initialized.
+  - NetBeans export characterization tests are available in the checkout.
+userActions:
+  - Execute the checked-in generated-project smoke from the command line.
+  - Compile the exported Java project or generated source surrogate.
+  - Verify the generated launcher handoff or equivalent command-facing artifact.
+expectedOutcomes:
+  - The exported project smoke command exits successfully when the gate is enabled.
+  - Generated Java sources compile against the Alice story API classpath.
+  - Launcher or handoff evidence is recorded for review.
+automation:
+  cwd: .
+  argv:
+    - mvn
+    - -DincludeSims=false
+    - -Dinstall4j.skip
+    - -pl
+    - netbeans
+    - -am
+    - -Dtest=org.alice.netbeans.project.ProjectCodeGeneratorStandaloneProjectTest
+    - test
+  timeoutSeconds: 600
+  readyWaitSeconds: 1
+evidence:
+  required:
+    - status.txt recording the gated command outcome.
+    - command.log from the generated project smoke command.
+    - Generated source or exported project artifact listing when available.
+    - Launcher handoff or compile evidence from the smoke output.
+fallback:
+  mode: manual-evidence-required
+  notes:
+    - Leave the scenario gated unless the worktree is prepared for Maven NetBeans tests.
+    - If the command cannot run in the current environment, attach the lower-level characterization test name and failure log.
+supportingEvidence:
+  - alice-desktop-launch
+tags:
+  - immediate-qa-backlog
+  - exported-project
+  - command-smoke

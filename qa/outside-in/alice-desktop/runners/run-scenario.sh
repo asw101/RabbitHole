@@ -19,6 +19,9 @@ Environment:
   ALICE_QA_SCREEN        Xvfb screen geometry, default 1280x900x24.
   ALICE_QA_READY_WAIT_SECONDS
                          Override GUI readiness wait before screenshot capture.
+  ALICE_QA_RUN_GATED_SMOKES=1
+                         Execute gated command smoke scenarios. By default they
+                         only write status and checklist evidence.
 EOF
 }
 
@@ -55,7 +58,7 @@ for item in value:
 PY
 }
 
-validate_launch_automation() {
+validate_allowed_automation() {
   local cwd=$1
   shift
 
@@ -67,10 +70,58 @@ validate_launch_automation() {
     return 0
   fi
 
-  printf '%s\n' 'automation.argv is restricted to the allowed Alice launch command: cwd alice-ide, argv [mvn, exec:java, -Dalice-ide]' >&2
+  if [ "$cwd" = . ] &&
+    [ "$#" -eq 8 ] &&
+    [ "$1" = mvn ] &&
+    [ "$2" = -DincludeSims=false ] &&
+    [ "$3" = -Dinstall4j.skip ] &&
+    [ "$4" = -pl ] &&
+    [ "$5" = netbeans ] &&
+    [ "$6" = -am ] &&
+    [ "$7" = -Dtest=org.alice.netbeans.project.ProjectCodeGeneratorStandaloneProjectTest ] &&
+    [ "$8" = test ]; then
+    return 0
+  fi
+
+  if [ "$cwd" = . ] &&
+    [ "$#" -eq 8 ] &&
+    [ "$1" = mvn ] &&
+    [ "$2" = -DincludeSims=false ] &&
+    [ "$3" = -Dinstall4j.skip ] &&
+    [ "$4" = -pl ] &&
+    [ "$5" = core/ide ] &&
+    [ "$6" = -am ] &&
+    { [ "$7" = -Dtest=org.alice.ide.ProjectSaveTargetPlanTest ] || [ "$7" = -Dtest=org.alice.ide.ProjectLoadFailureDispatchPlanTest ]; } &&
+    [ "$8" = test ]; then
+    return 0
+  fi
+
+  if [ "$cwd" = . ] &&
+    [ "$#" -eq 1 ] &&
+    [ "$1" = qa/outside-in/alice-desktop/runners/netbeans-package-smoke.sh ]; then
+    return 0
+  fi
+
+  if [ "$cwd" = . ] &&
+    [ "$#" -eq 7 ] &&
+    [ "$1" = qa/outside-in/alice-desktop/runners/run-scenario.sh ] &&
+    [ "$2" = run ] &&
+    [ "$3" = alice-desktop-launch ] &&
+    [ "$4" = --timeout-seconds ] &&
+    [ "$5" = 30 ] &&
+    [ "$6" = --evidence-dir ] &&
+    [ "$7" = qa/outside-in/alice-desktop/evidence/future-ui-launch ]; then
+    return 0
+  fi
+
+  printf '%s\n' 'automation.argv is restricted to the allowed Alice QA command set' >&2
   return 2
 }
 
+format_argv() {
+  local IFS=' '
+  printf '%s' "$*"
+}
 resolve_automation_cwd() {
   local cwd=$1
   python3 - "$REPO_ROOT" "$cwd" <<'PY'
@@ -319,7 +370,7 @@ run_xvfb_real_alice() {
   xvfb_pid=
   alice_pid=
 
-  validate_launch_automation "$cwd" "${argv[@]}"
+  validate_allowed_automation "$cwd" "${argv[@]}"
   resolved_cwd=$(resolve_automation_cwd "$cwd")
 
   if ! command -v Xvfb >/dev/null 2>&1; then
@@ -441,6 +492,72 @@ run_xvfb_real_alice() {
   printf 'Evidence written to %s\n' "$run_dir"
 }
 
+run_gated_command_smoke() {
+  local scenario_json=$1
+  local run_dir=$2
+  local timeout_override=$3
+
+  local automation_fields cwd configured_timeout scenario_id automation_mode run_timeout checklist exit_code outcome resolved_cwd
+  local -a argv
+  mapfile -t automation_fields < <(json_fields "$scenario_json" "automation.cwd" "automation.timeoutSeconds" "id" "automationMode")
+  cwd=${automation_fields[0]}
+  configured_timeout=${automation_fields[1]}
+  scenario_id=${automation_fields[2]}
+  automation_mode=${automation_fields[3]}
+  mapfile -d '' -t argv < <(json_list_nul "$scenario_json" "automation.argv")
+  run_timeout="${timeout_override:-$configured_timeout}"
+
+  validate_allowed_automation "$cwd" "${argv[@]}"
+  resolved_cwd=$(resolve_automation_cwd "$cwd")
+  write_environment "$run_dir"
+
+  if [ "${ALICE_QA_RUN_GATED_SMOKES:-}" != "1" ]; then
+    checklist=$(write_checklist "$scenario_json" "$run_dir")
+    {
+      printf 'scenario=%s\n' "$scenario_id"
+      printf 'automationMode=%s\n' "$automation_mode"
+      printf 'outcome=gated-not-run\n'
+      printf 'gate=ALICE_QA_RUN_GATED_SMOKES\n'
+      printf 'checklist=%s\n' "$(basename "$checklist")"
+      printf 'argv=%s\n' "$(format_argv "${argv[@]}")"
+      printf 'cwd=%s\n' "$cwd"
+      printf 'timeoutSeconds=%s\n' "$run_timeout"
+    } > "$run_dir/status.txt"
+    printf 'Gated command scenario prepared: set ALICE_QA_RUN_GATED_SMOKES=1 to execute %s\n' "$scenario_id"
+    return 0
+  fi
+
+  set +e
+  (
+    cd "$resolved_cwd"
+    timeout -k 10s "${run_timeout}s" "${argv[@]}"
+  ) > "$run_dir/command.log" 2>&1
+  exit_code=$?
+  set -e
+
+  outcome=failed
+  if [ "$exit_code" -eq 0 ]; then
+    outcome=passed
+  fi
+
+  {
+    printf 'scenario=%s\n' "$scenario_id"
+    printf 'automationMode=%s\n' "$automation_mode"
+    printf 'outcome=%s\n' "$outcome"
+    printf 'exitCode=%s\n' "$exit_code"
+    printf 'commandLog=command.log\n'
+    printf 'argv=%s\n' "$(format_argv "${argv[@]}")"
+    printf 'cwd=%s\n' "$cwd"
+    printf 'timeoutSeconds=%s\n' "$run_timeout"
+  } > "$run_dir/status.txt"
+
+  if [ "$exit_code" -ne 0 ]; then
+    printf 'Gated command scenario failed; see %s/command.log\n' "$run_dir" >&2
+    return "$exit_code"
+  fi
+
+  printf 'Evidence written to %s\n' "$run_dir"
+}
 command_name=${1:-}
 case "$command_name" in
   list)
@@ -498,6 +615,9 @@ case "$command_name" in
     case "$automation_mode" in
       xvfb-real-alice)
         run_xvfb_real_alice "$scenario_json" "$run_dir" "$timeout_override"
+        ;;
+      gated-command-smoke)
+        run_gated_command_smoke "$scenario_json" "$run_dir" "$timeout_override"
         ;;
       manual-evidence-required)
         write_environment "$run_dir"

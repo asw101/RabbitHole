@@ -35,6 +35,7 @@ Allowed `automationMode` values are:
 | --- | --- |
 | `xvfb-real-alice` | Attempts to run the real Alice desktop under Xvfb and captures logs/screenshots. |
 | `manual-evidence-required` | Produces an executable checklist with required evidence, but does not automate GUI interaction or mark the scenario complete. |
+| `gated-command-smoke` | Produces status/checklist evidence by default; executes the configured CLI smoke only when `ALICE_QA_RUN_GATED_SMOKES=1`. |
 
 Do not use Playwright here unless Alice later exposes a browser/web UI.
 
@@ -71,9 +72,9 @@ cd alice-ide
 mvn exec:java -Dalice-ide
 ```
 
-Scenario automation stores this launch as an argv list, not a shell command string. The validator and runner allow only this Alice launch argv for `xvfb-real-alice`, including custom catalogs selected with `ALICE_QA_SCENARIO_DIR`.
+Scenario automation stores executable steps as argv lists, not shell command strings. The validator and runner allow only the checked-in Alice QA argv set, including custom catalogs selected with `ALICE_QA_SCENARIO_DIR`.
 
-The runner records evidence under `qa/outside-in/alice-desktop/evidence/<scenario-id>/<timestamp>/`. Successful Xvfb launch evidence includes an environment summary, Xvfb log, Alice launch log, screenshot (`screenshot.png` or `screenshot.xwd`), and status file. Early Xvfb fallback directories may contain only the diagnostics available before launch plus a manual fallback checklist. For manual scenarios, the runner creates a status file and structured checklist so the workflow is repeatable and reviewable; the scenario is complete only after a human performs the workflow and adds the required evidence artifacts plus `review-notes.txt`.
+The runner records evidence under `qa/outside-in/alice-desktop/evidence/<scenario-id>/<timestamp>/`. Successful Xvfb launch evidence includes an environment summary, Xvfb log, Alice launch log, screenshot (`screenshot.png` or `screenshot.xwd`), and status file. Early Xvfb fallback directories may contain only the diagnostics available before launch plus a manual fallback checklist. For manual scenarios, the runner creates a status file and structured checklist so the workflow is repeatable and reviewable; the scenario is complete only after a human performs the workflow and adds the required evidence artifacts plus `review-notes.txt`. For gated command smokes, the default run records `outcome=gated-not-run`; set `ALICE_QA_RUN_GATED_SMOKES=1` only in a worktree prepared for the configured Maven or display-backed argv.
 
 ## Configuration
 
@@ -83,6 +84,7 @@ The runner records evidence under `qa/outside-in/alice-desktop/evidence/<scenari
 | `ALICE_QA_DISPLAY` | Reuse a specific X display for Xvfb runs. |
 | `ALICE_QA_SCREEN` | Set Xvfb screen geometry. Defaults to `1280x900x24`. |
 | `ALICE_QA_READY_WAIT_SECONDS` | Override launch readiness wait before screenshot capture. |
+| `ALICE_QA_RUN_GATED_SMOKES` | Execute gated command smoke scenarios when set to `1`; otherwise they only write status/checklist evidence. |
 | `NODE_OPTIONS` | Optional for surrounding Node-based orchestrators. Use `--max-old-space-size=32768` when needed; this lane itself does not require Node. |
 
 ## Scenario authoring checklist
@@ -90,7 +92,7 @@ The runner records evidence under `qa/outside-in/alice-desktop/evidence/<scenari
 Before adding or changing a scenario:
 
 1. Keep actions and outcomes observable from the user-visible Alice desktop.
-2. Use one of the supported workflows: `launch`, `instructor-student-setup`, `scene-creation`, `run-debug`, `save-load`, or `export`.
+2. Use one of the supported workflows: `launch`, `instructor-student-setup`, `scene-creation`, `run-debug`, `save-load`, `export`, `exported-project-smoke`, `netbeans-package-smoke`, `project-io-smoke`, `failure-path-smoke`, or `future-ui-smoke`.
 3. Use `xvfb-real-alice` only when the runner can execute the real Alice command and collect logs/screenshots.
 4. Use `manual-evidence-required` when human Swing interaction is required.
 5. Name concrete required artifacts in `evidence.required`; manual workflows also require `review-notes.txt` for acceptance.
