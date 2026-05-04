@@ -8,6 +8,7 @@ Use the Alice desktop outside-in QA lane to validate the scenario catalog and co
 - [Validate the scenario catalog](#validate-the-scenario-catalog)
 - [Validate a custom scenario catalog](#validate-a-custom-scenario-catalog)
 - [List available scenarios](#list-available-scenarios)
+- [Run branch-installable checks with uvx](#run-branch-installable-checks-with-uvx)
 - [Run the real Alice launch scenario](#run-the-real-alice-launch-scenario)
 - [Prepare evidence for manual workflows](#prepare-evidence-for-manual-workflows)
 - [Choose a custom evidence directory](#choose-a-custom-evidence-directory)
@@ -81,6 +82,20 @@ You can also run a scenario by its checked-in YAML path. The path must point dir
 qa/outside-in/alice-desktop/runners/run-scenario.sh run \
   qa/outside-in/alice-desktop/scenarios/save-load.yaml
 ```
+
+## Run branch-installable checks with uvx
+
+The repository exposes a small `amplihack alice-qa` command so reviewers can install the command wrapper from a PR branch and execute the checked-out QA lane:
+
+```bash
+uvx --from git+https://github.com/rysweet/alice3-modernization.git@feat/alice-qa-outside-in \
+  amplihack alice-qa list
+
+uvx --from git+https://github.com/rysweet/alice3-modernization.git@feat/alice-qa-outside-in \
+  amplihack alice-qa run alice-desktop-save-load --evidence-dir /tmp/alice-qa-evidence
+```
+
+Run these commands from the root of a checkout of the same branch. The installed wrapper delegates to `qa/outside-in/alice-desktop/runners/` in that checkout so the output and evidence contract match direct runner usage.
 
 ## Run the real Alice launch scenario
 

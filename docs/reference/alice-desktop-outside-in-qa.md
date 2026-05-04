@@ -50,6 +50,8 @@ Run commands from the repository root.
 | `run-scenario.sh list` | List runnable scenarios. | Prints the same user-facing list as the validator. |
 | `run-scenario.sh validate` | Validate the active catalog through the runner. | Delegates to `validate-scenarios.sh`. |
 | `run-scenario.sh run <scenario-id-or-path>` | Create evidence for one scenario. | Prints the created run directory and writes artifacts under the evidence directory. |
+| `uvx --from git+<repo>@<branch> amplihack alice-qa list` | Install the QA wrapper from a branch and list scenarios in the current checkout. | Prints the same user-facing list as the runner. |
+| `uvx --from git+<repo>@<branch> amplihack alice-qa run <scenario-id-or-path>` | Install the QA wrapper from a branch and create evidence in the current checkout. | Delegates to `run-scenario.sh run`. |
 
 ### Validate all scenarios
 
@@ -87,6 +89,18 @@ qa/outside-in/alice-desktop/runners/run-scenario.sh run \
 ```
 
 This path form resolves the top-level `id` in the YAML file, validates that ID through the active catalog, and then runs the normalized scenario.
+
+### Run through the branch-installable wrapper
+
+```bash
+uvx --from git+https://github.com/rysweet/alice3-modernization.git@feat/alice-qa-outside-in \
+  amplihack alice-qa list
+
+uvx --from git+https://github.com/rysweet/alice3-modernization.git@feat/alice-qa-outside-in \
+  amplihack alice-qa run alice-desktop-save-load --evidence-dir /tmp/alice-qa-evidence
+```
+
+The `amplihack alice-qa` wrapper is intentionally thin. It must be run from an Alice checkout, locates the repository root from the current working directory, and delegates to the checked-out shell runners.
 
 ### Run with a custom evidence directory
 

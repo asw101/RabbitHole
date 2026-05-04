@@ -55,6 +55,15 @@ qa/outside-in/alice-desktop/runners/run-scenario.sh run qa/outside-in/alice-desk
 
 `run-scenario.sh run` accepts either a scenario ID or a direct `.yaml` file inside the active scenario catalog. Use `--evidence-dir <dir>` to write evidence outside the repository, and use `--timeout-seconds <seconds>` to override command-backed launch timeout.
 
+For branch-installable outside-in checks, run the thin `amplihack` wrapper from a checkout of the branch:
+
+```bash
+uvx --from git+https://github.com/rysweet/alice3-modernization.git@feat/alice-qa-outside-in amplihack alice-qa list
+uvx --from git+https://github.com/rysweet/alice3-modernization.git@feat/alice-qa-outside-in amplihack alice-qa run alice-desktop-save-load --evidence-dir /tmp/alice-qa-evidence
+```
+
+The wrapper delegates to the same repo-owned runners and intentionally requires an Alice checkout as the current working tree.
+
 The launch scenario uses the documented Alice desktop path:
 
 ```bash
