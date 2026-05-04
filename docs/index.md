@@ -19,6 +19,7 @@ repository.
 - [Characterize headless-safe desktop actions](./howto/characterize-headless-safe-desktop-actions.md) - how to add or review desktop action characterization without display-dependent tests.
 - [Tutorial: Trace a Desktop Action Journey](./tutorials/desktop-action-journey-characterization.md) - guided walkthrough from outside-in menu/action smoke evidence to headless-safe Save action tests.
 - [Coverage reporting reference](./reference/coverage-reporting.md) - aggregate JaCoCo reporting, CI ratchet gate, and path from the current low baseline toward 70% line coverage.
+- [Decode coverage characterization](./reference/decode-coverage-characterization.md) - build contract, API behavior, examples, and tutorial guidance for Tweedle, player/type archive, and resource decode tests.
 
 ## Formal specification lane
 
