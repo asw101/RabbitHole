@@ -42,40 +42,8 @@
  *******************************************************************************/
 package edu.cmu.cs.dennisc.issue;
 
-final class IssueSubmissionRetryPolicy {
-  static final IssueSubmissionRetryPolicy DEFAULT = new IssueSubmissionRetryPolicy(3, 500);
-
-  private final int maxAttempts;
-  private final long delayMillis;
-
-  IssueSubmissionRetryPolicy(int maxAttempts, long delayMillis) {
-    if (maxAttempts < 1) {
-      throw new IllegalArgumentException("maxAttempts must be at least 1");
-    }
-    if (delayMillis < 0) {
-      throw new IllegalArgumentException("delayMillis must not be negative");
-    }
-    this.maxAttempts = maxAttempts;
-    this.delayMillis = delayMillis;
-  }
-
-  int getMaxAttempts() {
-    return this.maxAttempts;
-  }
-
-  boolean shouldRetry(int attempt, Exception exception) {
-    return (attempt < this.maxAttempts) && isRetryable(exception);
-  }
-
-  private boolean isRetryable(Exception exception) {
-    return ((exception instanceof IssueSubmissionConfigurationException)
-        || (exception instanceof IllegalArgumentException)
-        || (exception instanceof IllegalStateException)) == false;
-  }
-
-  void pauseBeforeRetry() throws InterruptedException {
-    if (this.delayMillis > 0) {
-      Thread.sleep(this.delayMillis);
-    }
+public final class IssueSubmissionConfigurationException extends Exception {
+  public IssueSubmissionConfigurationException(String message) {
+    super(message);
   }
 }

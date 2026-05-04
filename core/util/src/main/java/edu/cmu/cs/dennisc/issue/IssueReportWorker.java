@@ -131,9 +131,16 @@ public final class IssueReportWorker extends SwingWorker<Boolean, String> {
       }
     }
     if (lastFailure != null) {
-      this.process("submission failed: " + lastFailure.getClass().getSimpleName() + ": " + lastFailure.getMessage() + "\n");
+      this.process("submission failed: " + describeFailure(lastFailure) + "\n");
     }
     return false;
+  }
+
+  private static String describeFailure(Exception failure) {
+    if (failure instanceof IssueSubmissionConfigurationException) {
+      return failure.getMessage();
+    }
+    return failure.getClass().getSimpleName() + ": " + failure.getMessage();
   }
 
   @Override

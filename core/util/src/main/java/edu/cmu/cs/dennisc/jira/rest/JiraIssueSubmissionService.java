@@ -52,7 +52,7 @@ import java.net.URI;
 
 public final class JiraIssueSubmissionService implements IssueSubmissionService {
   @Override
-  public SubmittedIssue createIssue(URI reportSubmission, JIRAReport jiraReport) {
+  public SubmittedIssue createIssue(URI reportSubmission, JIRAReport jiraReport) throws Exception {
     Issue issue = RestUtilities.createIssue(reportSubmission, jiraReport);
     return new JiraSubmittedIssue(issue);
   }

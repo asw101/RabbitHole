@@ -1,5 +1,6 @@
 package edu.cmu.cs.dennisc.jira.rest;
 
+import edu.cmu.cs.dennisc.issue.IssueSubmissionConfigurationException;
 import edu.cmu.cs.dennisc.jira.JIRAReport;
 import net.rcarz.jiraclient.*;
 
@@ -16,17 +17,17 @@ public class RestUtilities {
   private static final String EXCEPTION_FIELD_ID = "customfield_10001";
   private static final String ENVIRONMENT_FIELD_ID = "environment";
 
-  static BasicCredentials createConfiguredCredentials() {
+  static BasicCredentials createConfiguredCredentials() throws IssueSubmissionConfigurationException {
     return createCredentials(
         firstConfiguredValue(JIRA_USERNAME_PROPERTY, JIRA_USERNAME_ENV),
         firstConfiguredValue(JIRA_PASSWORD_PROPERTY, JIRA_PASSWORD_ENV));
   }
 
-  static BasicCredentials createCredentials(String username, String password) {
+  static BasicCredentials createCredentials(String username, String password) throws IssueSubmissionConfigurationException {
     if (isBlank(username) || isBlank(password)) {
-      throw new IllegalStateException("JIRA REST credentials must be configured with system properties "
+      throw new IssueSubmissionConfigurationException("JIRA issue reporting is not configured. Set system properties "
           + JIRA_USERNAME_PROPERTY + "/" + JIRA_PASSWORD_PROPERTY + " or environment variables "
-          + JIRA_USERNAME_ENV + "/" + JIRA_PASSWORD_ENV + ".");
+          + JIRA_USERNAME_ENV + "/" + JIRA_PASSWORD_ENV + " to enable direct issue submission.");
     }
     return new BasicCredentials(username, password);
   }
@@ -43,7 +44,7 @@ public class RestUtilities {
     return (value == null) || value.trim().isEmpty();
   }
 
-  public static Issue createIssue(URI jiraServer, JIRAReport jiraReport) {
+  public static Issue createIssue(URI jiraServer, JIRAReport jiraReport) throws IssueSubmissionConfigurationException {
     BasicCredentials creds = createConfiguredCredentials();
     JiraClient jira = new JiraClient(jiraServer.toString(), creds);
 

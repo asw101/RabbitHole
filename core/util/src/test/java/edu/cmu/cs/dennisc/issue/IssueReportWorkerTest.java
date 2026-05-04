@@ -51,16 +51,23 @@ public class IssueReportWorkerTest {
 
   @Test
   public void configurationFailureIsNotRetried() {
-    RecordingIssueSubmissionService service = new RecordingIssueSubmissionService(new IllegalStateException("missing configuration"));
+    String message = "JIRA issue reporting is not configured. Set ALICE_JIRA_USERNAME/ALICE_JIRA_PASSWORD.";
+    RecordingIssueSubmissionService service = new RecordingIssueSubmissionService(new IssueSubmissionConfigurationException(message));
+    RecordingWorkerListener listener = new RecordingWorkerListener();
 
-    Boolean result = createWorker(service, createReport(), 3).doInBackground();
+    Boolean result = createWorker(listener, service, createReport(), 3).doInBackground();
 
     assertFalse(result);
     assertEquals(1, service.attempts);
+    assertTrue(listener.messages(), listener.messages().contains("submission failed: " + message));
   }
 
   private static IssueReportWorker createWorker(RecordingIssueSubmissionService service, JIRAReport report, int maxAttempts) {
-    return new IssueReportWorker(new RecordingWorkerListener(), report, REPORT_SUBMISSION, service, new IssueSubmissionRetryPolicy(maxAttempts, 0));
+    return createWorker(new RecordingWorkerListener(), service, report, maxAttempts);
+  }
+
+  private static IssueReportWorker createWorker(RecordingWorkerListener listener, RecordingIssueSubmissionService service, JIRAReport report, int maxAttempts) {
+    return new IssueReportWorker(listener, report, REPORT_SUBMISSION, service, new IssueSubmissionRetryPolicy(maxAttempts, 0));
   }
 
   private static JIRAReport createReport() {
@@ -112,8 +119,15 @@ public class IssueReportWorkerTest {
   }
 
   private static final class RecordingWorkerListener implements WorkerListener {
+    private final List<String> chunks = new ArrayList<>();
+
     @Override
     public void process(List<String> chunks) {
+      this.chunks.addAll(chunks);
+    }
+
+    private String messages() {
+      return String.join("", this.chunks);
     }
 
     @Override
