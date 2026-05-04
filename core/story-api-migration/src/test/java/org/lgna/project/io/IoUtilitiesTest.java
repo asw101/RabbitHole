@@ -41,6 +41,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.HashMap;
@@ -191,6 +192,19 @@ public class IoUtilitiesTest {
     assertEquals("audio.x_wav", readResource.getContentType());
     assertArrayEquals(audioBytes, readResource.getData());
     assertEquals(0.0, ((AudioResource) readResource).getDuration(), 0.0);
+  }
+
+  @Test
+  public void jsonPlayerReaderPreservesSceneCameraTypeFromManifestWithoutTweedleDecoding() throws Exception {
+    Project project = new Project(programType("VrProgram"), Project.SceneCameraType.VRHeadset);
+    File exportFile = temporaryFolder.newFile("exported-vr.a3w");
+
+    IoUtilities.exportProject(exportFile, project);
+
+    Project readProject = IoUtilities.readProject(exportFile);
+    assertNull("Tweedle decoding is still not implemented for player archives", readProject.getProgramType());
+    assertEquals(Project.SceneCameraType.VRHeadset, sceneCameraType(readProject));
+    assertTrue(readProject.getResources().isEmpty());
   }
 
   @Test
@@ -794,6 +808,12 @@ public class IoUtilitiesTest {
     project.getProgramType().crawl(crawler, CrawlPolicy.COMPLETE);
     assertFalse(crawler.getList().isEmpty());
     return crawler.getList().get(0).resource.getValue();
+  }
+
+  private static Project.SceneCameraType sceneCameraType(Project project) throws Exception {
+    Field field = Project.class.getDeclaredField("sceneCameraType");
+    field.setAccessible(true);
+    return (Project.SceneCameraType) field.get(project);
   }
 
   private static ImageReference imageReference(UUID uuid, String name, String format) {
