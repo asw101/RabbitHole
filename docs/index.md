@@ -10,6 +10,12 @@ repository.
 - [Characterize Project Save and Export Operations](./howto/characterize-project-save-export-operations.md) - How to build the first compatibility-test layer for the save/export operations.
 - [Tutorial: Add a Save Operation Characterization Test](./tutorials/save-operation-characterization-test.md) - A guided example for the first direct Save operation characterization test.
 
+## QA and acceptance testing
+
+- [Run Alice desktop outside-in QA](./howto/alice-desktop-outside-in-qa.md) - validate, list, and collect reviewable evidence for user-like desktop acceptance scenarios.
+- [Alice desktop outside-in QA tutorial](./tutorials/alice-desktop-outside-in-qa.md) - collect launch evidence and complete a manual workflow evidence checklist.
+- [Alice desktop outside-in QA reference](./reference/alice-desktop-outside-in-qa.md) - scenario schema, runner commands, configuration, and evidence artifacts.
+
 ## Formal specification lane
 
 The formal-spec lane documents Alice project archive and backup-recovery

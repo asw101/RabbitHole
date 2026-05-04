@@ -1,0 +1,165 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/rysweet/alice3-modernization/qa/outside-in/alice-desktop/schema/scenario.schema.json",
+  "title": "Alice desktop outside-in scenario",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "title",
+    "workflow",
+    "automationMode",
+    "preconditions",
+    "userActions",
+    "expectedOutcomes",
+    "evidence",
+    "fallback"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^alice-desktop-[a-z0-9-]+$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "workflow": {
+      "type": "string",
+      "enum": [
+        "instructor-student-setup",
+        "launch",
+        "scene-creation",
+        "run-debug",
+        "save-load",
+        "export"
+      ]
+    },
+    "automationMode": {
+      "type": "string",
+      "enum": [
+        "xvfb-real-alice",
+        "manual-evidence-required"
+      ]
+    },
+    "preconditions": {
+      "$ref": "#/$defs/nonEmptyStringList"
+    },
+    "userActions": {
+      "$ref": "#/$defs/nonEmptyStringList"
+    },
+    "expectedOutcomes": {
+      "$ref": "#/$defs/nonEmptyStringList"
+    },
+    "automation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "cwd",
+        "argv",
+        "timeoutSeconds",
+        "readyWaitSeconds"
+      ],
+      "properties": {
+        "cwd": {
+          "type": "string",
+          "const": "alice-ide",
+          "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*$",
+          "description": "Repository-relative automation working directory; runner validates the realpath remains inside REPO_ROOT."
+        },
+        "argv": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "const": "mvn"
+            },
+            {
+              "const": "exec:java"
+            },
+            {
+              "const": "-Dalice-ide"
+            }
+          ],
+          "items": false,
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "timeoutSeconds": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "readyWaitSeconds": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "required"
+      ],
+      "properties": {
+        "required": {
+          "$ref": "#/$defs/nonEmptyStringList"
+        }
+      }
+    },
+    "fallback": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "notes"
+      ],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "xvfb-real-alice",
+            "manual-evidence-required"
+          ]
+        },
+        "notes": {
+          "$ref": "#/$defs/nonEmptyStringList"
+        }
+      }
+    },
+    "supportingEvidence": {
+      "$ref": "#/$defs/nonEmptyStringList"
+    },
+    "tags": {
+      "$ref": "#/$defs/nonEmptyStringList"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "automationMode": {
+            "const": "xvfb-real-alice"
+          }
+        },
+        "required": [
+          "automationMode"
+        ]
+      },
+      "then": {
+        "required": [
+          "automation"
+        ]
+      }
+    }
+  ],
+  "$defs": {
+    "nonEmptyStringList": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  }
+}
