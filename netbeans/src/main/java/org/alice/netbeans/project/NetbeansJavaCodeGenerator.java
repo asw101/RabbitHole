@@ -76,7 +76,7 @@ class NetbeansJavaCodeGenerator extends JavaCodeGenerator {
     if (Alice3OptionsPanelController.isImportCollapsingDesired()) {
       return "// <editor-fold defaultstate=\"collapsed\" desc=\"" + IMPORT_TEXT + "\">\n";
     } else {
-      return super.getImportsPrefix();
+      return super.getImportsPostfix();
     }
   }
 
