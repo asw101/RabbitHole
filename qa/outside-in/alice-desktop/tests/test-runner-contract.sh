@@ -16,7 +16,9 @@ evidence_dir="$tmp_root/evidence"
 status=$?
 assert_success "$status" "manual scenario run prepares evidence directory"
 
-run_dir=$(find "$evidence_dir/alice-desktop-scene-creation" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort | tail -1)
+run_dir=$(single_child_dir "$evidence_dir/alice-desktop-scene-creation")
+status=$?
+assert_success "$status" "manual scenario run creates one evidence directory"
 status_file="$run_dir/status.txt"
 assert_file_exists "$status_file" "manual scenario run writes status.txt"
 assert_contains "$status_file" '^scenario=alice-desktop-scene-creation$' "manual status records scenario id"
@@ -34,7 +36,9 @@ path_evidence_dir="$tmp_root/path-evidence"
 "$RUNNER" run "$BASE_DIR/scenarios/save-load.yaml" --evidence-dir "$path_evidence_dir" >"$tmp_root/path.out" 2>"$tmp_root/path.err"
 status=$?
 assert_success "$status" "runner accepts a scenario YAML path"
-path_run_dir=$(find "$path_evidence_dir/alice-desktop-save-load" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort | tail -1)
+path_run_dir=$(single_child_dir "$path_evidence_dir/alice-desktop-save-load")
+status=$?
+assert_success "$status" "path-based run creates one evidence directory"
 assert_file_exists "$path_run_dir/status.txt" "path-based run writes evidence under the scenario id"
 
 outside_path="$tmp_root/outside.yaml"

@@ -75,6 +75,25 @@ assert_not_contains() {
   fi
 }
 
+single_child_dir() {
+  local parent=$1
+  local found=
+  local candidate
+
+  for candidate in "$parent"/*; do
+    [ -d "$candidate" ] || continue
+    if [ -n "$found" ]; then
+      return 1
+    fi
+    found=$candidate
+  done
+
+  if [ -z "$found" ]; then
+    return 1
+  fi
+  printf '%s\n' "$found"
+}
+
 finish() {
   if [ "$failures" -eq 0 ]; then
     exit 0
