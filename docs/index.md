@@ -15,6 +15,7 @@ repository.
 - [Run Alice desktop outside-in QA](./howto/alice-desktop-outside-in-qa.md) - validate, list, and collect reviewable evidence for user-like desktop acceptance scenarios.
 - [Alice desktop outside-in QA tutorial](./tutorials/alice-desktop-outside-in-qa.md) - collect launch evidence and complete a manual workflow evidence checklist.
 - [Alice desktop outside-in QA reference](./reference/alice-desktop-outside-in-qa.md) - scenario schema, runner commands, configuration, and evidence artifacts.
+- [Coverage reporting reference](./reference/coverage-reporting.md) - aggregate JaCoCo reporting, CI ratchet gate, and path from the current low baseline toward 70% line coverage.
 
 ## Formal specification lane
 

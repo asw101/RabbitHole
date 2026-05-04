@@ -70,16 +70,18 @@ Run unit tests
     cd ${alice3}
     mvn test
 
-Generate no-Sims aggregate and per-module coverage reports without enforcing a minimum threshold:
+Generate no-Sims aggregate and per-module coverage reports:
 
     cd ${alice3}
     mvn -DincludeSims=false -Dinstall4j.skip -Pcoverage verify
-    python3 scripts/summarize-jacoco-coverage.py --output coverage-summary.md
+    python3 scripts/summarize-jacoco-coverage.py --output coverage-summary.md --min-aggregate-line-percent 8.0
 
 The aggregate HTML report is written to `coverage-report/target/site/jacoco-aggregate/index.html`.
 Per-module HTML reports are written under each module's `target/site/jacoco/index.html` when JaCoCo
 produces module-level data. CI uploads those reports plus `coverage-summary.md` as the
-`coverage-no-sims-reports` artifact for pull requests. No coverage threshold is enforced yet.
+`coverage-no-sims-reports` artifact for pull requests. CI enforces an 8.0% aggregate no-Sims line
+coverage floor as an honest ratchet from the current low baseline; raise it as characterization
+coverage grows toward the 70% mission target. See the [coverage reporting reference](docs/reference/coverage-reporting.md).
 
 Outside-in desktop acceptance scenarios live in `qa/outside-in/alice-desktop/`. See the [documentation index](docs/index.md), the [Alice desktop outside-in QA guide](docs/howto/alice-desktop-outside-in-qa.md), and the [QA reference](docs/reference/alice-desktop-outside-in-qa.md) for usage, scenario schema, evidence expectations, and configuration.
 
