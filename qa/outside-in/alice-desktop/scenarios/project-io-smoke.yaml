@@ -17,7 +17,15 @@ expectedOutcomes:
   - Observable project metadata or resource identity survives the round trip.
 automation:
   cwd: .
-  command: mvn -DincludeSims=false -Dinstall4j.skip -pl core/ide -am -Dtest=org.alice.ide.ProjectSaveTargetPlanTest test
+  argv:
+    - mvn
+    - -DincludeSims=false
+    - -Dinstall4j.skip
+    - -pl
+    - core/ide
+    - -am
+    - -Dtest=org.alice.ide.ProjectSaveTargetPlanTest
+    - test
   timeoutSeconds: 600
   readyWaitSeconds: 1
 evidence:

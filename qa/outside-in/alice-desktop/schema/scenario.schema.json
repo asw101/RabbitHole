@@ -62,18 +62,167 @@
       "additionalProperties": false,
       "required": [
         "cwd",
-        "command",
+        "argv",
         "timeoutSeconds",
         "readyWaitSeconds"
       ],
       "properties": {
         "cwd": {
           "type": "string",
-          "minLength": 1
+          "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*$",
+          "description": "Repository-relative automation working directory; runner validates the realpath remains inside REPO_ROOT."
         },
-        "command": {
-          "type": "string",
-          "minLength": 1
+        "argv": {
+          "type": "array",
+          "oneOf": [
+            {
+              "prefixItems": [
+                {
+                  "const": "mvn"
+                },
+                {
+                  "const": "exec:java"
+                },
+                {
+                  "const": "-Dalice-ide"
+                }
+              ],
+              "items": false,
+              "minItems": 3,
+              "maxItems": 3
+            },
+            {
+              "prefixItems": [
+                {
+                  "const": "mvn"
+                },
+                {
+                  "const": "-DincludeSims=false"
+                },
+                {
+                  "const": "-Dinstall4j.skip"
+                },
+                {
+                  "const": "-pl"
+                },
+                {
+                  "const": "netbeans"
+                },
+                {
+                  "const": "-am"
+                },
+                {
+                  "const": "-Dtest=org.alice.netbeans.project.ProjectCodeGeneratorStandaloneProjectTest"
+                },
+                {
+                  "const": "test"
+                }
+              ],
+              "items": false,
+              "minItems": 8,
+              "maxItems": 8
+            },
+            {
+              "prefixItems": [
+                {
+                  "const": "mvn"
+                },
+                {
+                  "const": "-DincludeSims=false"
+                },
+                {
+                  "const": "-Dinstall4j.skip"
+                },
+                {
+                  "const": "-pl"
+                },
+                {
+                  "const": "core/ide"
+                },
+                {
+                  "const": "-am"
+                },
+                {
+                  "const": "-Dtest=org.alice.ide.ProjectSaveTargetPlanTest"
+                },
+                {
+                  "const": "test"
+                }
+              ],
+              "items": false,
+              "minItems": 8,
+              "maxItems": 8
+            },
+            {
+              "prefixItems": [
+                {
+                  "const": "mvn"
+                },
+                {
+                  "const": "-DincludeSims=false"
+                },
+                {
+                  "const": "-Dinstall4j.skip"
+                },
+                {
+                  "const": "-pl"
+                },
+                {
+                  "const": "core/ide"
+                },
+                {
+                  "const": "-am"
+                },
+                {
+                  "const": "-Dtest=org.alice.ide.ProjectLoadFailureDispatchPlanTest"
+                },
+                {
+                  "const": "test"
+                }
+              ],
+              "items": false,
+              "minItems": 8,
+              "maxItems": 8
+            },
+            {
+              "prefixItems": [
+                {
+                  "const": "qa/outside-in/alice-desktop/runners/netbeans-package-smoke.sh"
+                }
+              ],
+              "items": false,
+              "minItems": 1,
+              "maxItems": 1
+            },
+            {
+              "prefixItems": [
+                {
+                  "const": "qa/outside-in/alice-desktop/runners/run-scenario.sh"
+                },
+                {
+                  "const": "run"
+                },
+                {
+                  "const": "alice-desktop-launch"
+                },
+                {
+                  "const": "--timeout-seconds"
+                },
+                {
+                  "const": "30"
+                },
+                {
+                  "const": "--evidence-dir"
+                },
+                {
+                  "const": "qa/outside-in/alice-desktop/evidence/future-ui-launch"
+                }
+              ],
+              "items": false,
+              "minItems": 7,
+              "maxItems": 7
+            }
+          ]
         },
         "timeoutSeconds": {
           "type": "integer",

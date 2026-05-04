@@ -17,7 +17,15 @@ expectedOutcomes:
   - The smoke records that the application does not silently treat corrupt input as a successful load.
 automation:
   cwd: .
-  command: mvn -DincludeSims=false -Dinstall4j.skip -pl core/ide -am -Dtest=org.alice.ide.ProjectLoadFailureDispatchPlanTest test
+  argv:
+    - mvn
+    - -DincludeSims=false
+    - -Dinstall4j.skip
+    - -pl
+    - core/ide
+    - -am
+    - -Dtest=org.alice.ide.ProjectLoadFailureDispatchPlanTest
+    - test
   timeoutSeconds: 600
   readyWaitSeconds: 1
 evidence:

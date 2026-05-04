@@ -89,7 +89,7 @@ for scenario_id in gated_scenarios:
     if scenario["automationMode"] != "gated-command-smoke":
         errors.append(f"{scenario_id} must use gated-command-smoke to avoid mandatory heavy GUI/build work")
     automation = scenario.get("automation", {})
-    for field in ("cwd", "command", "timeoutSeconds", "readyWaitSeconds"):
+    for field in ("cwd", "argv", "timeoutSeconds", "readyWaitSeconds"):
         if field not in automation:
             errors.append(f"{scenario_id} automation must include {field}")
     if "immediate-qa-backlog" not in scenario.get("tags", []):

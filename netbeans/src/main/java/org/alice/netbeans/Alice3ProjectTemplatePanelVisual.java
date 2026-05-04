@@ -44,7 +44,6 @@
 package org.alice.netbeans;
 
 import edu.cmu.cs.dennisc.java.io.FileUtilities;
-import edu.cmu.cs.dennisc.java.util.logging.Logger;
 import edu.cmu.cs.dennisc.javax.swing.event.UnifiedDocumentListener;
 import org.netbeans.spi.project.ui.support.ProjectChooser;
 import org.openide.WizardDescriptor;
@@ -53,18 +52,18 @@ import org.openide.filesystems.FileUtil;
 
 import javax.swing.JFileChooser;
 import javax.swing.JPanel;
-import javax.swing.SwingUtilities;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.Document;
 import java.io.File;
 import java.util.Objects;
+import java.util.regex.Pattern;
 
 public class Alice3ProjectTemplatePanelVisual extends JPanel {
 
-  private static final boolean IS_AUTOMATIC_FILL_IN_ALICE_PROJECT_DESIRED = "C:\\Users\\dennisc".contentEquals(System.getProperty("user.home"));
   public static final String PROP_PROJECT_NAME = "projectName";
   public static final String browseCommand = "BROWSE";
+  private static final Pattern INVALID_PROJECT_FOLDER_NAME_CHARS = Pattern.compile("[\\\\/:*?\"<>|\\p{Cntrl}]");
 
   private Alice3ProjectTemplateWizardPanel panel;
 
@@ -86,27 +85,17 @@ public class Alice3ProjectTemplatePanelVisual extends JPanel {
     return projectFolder + File.separatorChar + projectName;
   }
 
-  private String getAvailableProjectName(String baseProjectName) {
-    try {
-      String projectFolder = projectLocationTextField.getText();
-      String candidateProjectName;
-      for (int i = 1; i < 100; i++) {
-        if (i > 1) {
-          candidateProjectName = baseProjectName + i;
-        } else {
-          candidateProjectName = baseProjectName;
-        }
-        String createdFolderPath = this.getCreatedFolderPath(projectFolder, candidateProjectName);
-        File file = new File(createdFolderPath);
-        if (!file.exists()) {
-          return candidateProjectName;
-        }
+  String getAvailableProjectName(String baseProjectName) {
+    String projectFolder = projectLocationTextField.getText();
+    for (int suffix = 1; suffix < Integer.MAX_VALUE; suffix++) {
+      String candidateProjectName = suffix > 1 ? baseProjectName + suffix : baseProjectName;
+      String createdFolderPath = this.getCreatedFolderPath(projectFolder, candidateProjectName);
+      File file = new File(createdFolderPath);
+      if (!file.exists()) {
+        return candidateProjectName;
       }
-      return baseProjectName;
-    } catch (Throwable t) { // should not happen
-      Logger.throwable(t, baseProjectName);
-      return baseProjectName;
     }
+    throw new IllegalStateException("Unable to find an available project name for " + baseProjectName);
   }
 
   /**
@@ -210,6 +199,19 @@ public class Alice3ProjectTemplatePanelVisual extends JPanel {
     return (extension != null && extension.equalsIgnoreCase(org.lgna.project.io.IoUtilities.PROJECT_EXTENSION));
   }
 
+  static boolean isValidProjectFolderName(String projectName) {
+    if (projectName == null) {
+      return false;
+    }
+    String trimmedProjectName = projectName.trim();
+    if (trimmedProjectName.isEmpty() || !trimmedProjectName.equals(projectName)) {
+      return false;
+    }
+    return !".".equals(trimmedProjectName)
+        && !"..".equals(trimmedProjectName)
+        && !INVALID_PROJECT_FOLDER_NAME_CHARS.matcher(trimmedProjectName).find();
+  }
+
   private void aliceWorldBrowseButtonActionPerformed(java.awt.event.ActionEvent evt) { //GEN-FIRST:event_aliceWorldBrowseButtonActionPerformed
     String command = evt.getActionCommand();
     if (browseCommand.equals(command)) {
@@ -259,20 +261,6 @@ public class Alice3ProjectTemplatePanelVisual extends JPanel {
   @Override
   public void addNotify() {
     super.addNotify();
-    if (IS_AUTOMATIC_FILL_IN_ALICE_PROJECT_DESIRED) {
-      final File file = new File(FileUtilities.getDefaultDirectory(), "Alice3/MyProjects/a.a3p");
-      if (file.exists()) {
-        SwingUtilities.invokeLater(new Runnable() {
-          @Override
-          public void run() {
-            aliceWorldLocationTextField.setText(file.getAbsolutePath());
-            String projectName = getProjectNameForFile(file.getName());
-            String availableProjectName = getAvailableProjectName(projectName);
-            projectNameTextField.setText(availableProjectName);
-          }
-        });
-      }
-    }
     //same problem as in 31086, initial focus on Cancel button
     projectNameTextField.requestFocus();
     projectNameTextField.selectAll();
@@ -286,15 +274,21 @@ public class Alice3ProjectTemplatePanelVisual extends JPanel {
       wizardDescriptor.putProperty("WizardPanel_errorMessage", "Alice Project Location is not set yet.");
       return false;
     }
-    File aliceWorldFile = new File(aliceFile);
+    File aliceWorldFile = FileUtil.normalizeFile(new File(aliceFile).getAbsoluteFile());
     if (!aliceWorldFile.exists()) {
       //this.aliceWorldLocationLabel.setForeground(Color.RED);
       // TODO I18n
       wizardDescriptor.putProperty("WizardPanel_errorMessage", "Alice Project " + aliceFile + " does not exist.");
       return false;
     }
+    if (!aliceWorldFile.isFile() || !isAliceFile(aliceWorldFile)) {
+      // TODO I18n
+      wizardDescriptor.putProperty("WizardPanel_errorMessage", "Alice Project must be a valid Alice project file.");
+      return false;
+    }
 
-    if (projectNameTextField.getText().isEmpty()) {
+    String projectName = projectNameTextField.getText().trim();
+    if (!isValidProjectFolderName(projectNameTextField.getText())) {
       // TODO if using org.openide.dialogs >= 7.8, can use WizardDescriptor.PROP_ERROR_MESSAGE:
       // TODO I18n
       wizardDescriptor.putProperty("WizardPanel_errorMessage", "Project Name is not a valid folder name.");
@@ -306,7 +300,7 @@ public class Alice3ProjectTemplatePanelVisual extends JPanel {
       wizardDescriptor.putProperty("WizardPanel_errorMessage", "Project Folder is not a valid path.");
       return false;
     }
-    final File destFolder = FileUtil.normalizeFile(new File(createdFolderTextField.getText()).getAbsoluteFile());
+    final File destFolder = FileUtil.normalizeFile(new File(f, projectName).getAbsoluteFile());
     // Only do these checks the first time through
     if (!Objects.equals(checkedDestinationFolder, destFolder)) {
       File projLoc = destFolder;
@@ -341,10 +335,11 @@ public class Alice3ProjectTemplatePanelVisual extends JPanel {
   void store(WizardDescriptor d) {
     String aliceFile = aliceWorldLocationTextField.getText().trim();
     String name = projectNameTextField.getText().trim();
-    String folder = createdFolderTextField.getText().trim();
+    File projectLocation = FileUtil.normalizeFile(new File(projectLocationTextField.getText().trim()).getAbsoluteFile());
+    File folder = FileUtil.normalizeFile(new File(projectLocation, name).getAbsoluteFile());
 
-    d.putProperty("aliceProjectFile", new File(aliceFile));
-    d.putProperty("projdir", new File(folder));
+    d.putProperty("aliceProjectFile", FileUtil.normalizeFile(new File(aliceFile).getAbsoluteFile()));
+    d.putProperty("projdir", folder);
     d.putProperty("name", name);
   }
 

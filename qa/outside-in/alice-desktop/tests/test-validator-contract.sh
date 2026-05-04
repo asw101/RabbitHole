@@ -4,12 +4,25 @@ set -u
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 BASE_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
+REPO_ROOT=$(CDPATH= cd -- "$BASE_DIR/../../.." && pwd)
 VALIDATOR="$BASE_DIR/runners/validate-scenarios.sh"
 # shellcheck source=qa/outside-in/alice-desktop/tests/lib/assertions.sh
 . "$SCRIPT_DIR/lib/assertions.sh"
 
 tmp_root=$(create_scratch_root "$SCRIPT_DIR") || exit 1
 trap 'rm -rf "$tmp_root"' EXIT
+
+set_launch_cwd() {
+  python3 - "$1" "$2" <<'PY'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+cwd = sys.argv[2]
+text = path.read_text(encoding="utf-8").replace("  cwd: alice-ide\n", f"  cwd: {cwd}\n", 1)
+path.write_text(text, encoding="utf-8")
+PY
+}
 
 "$VALIDATOR" >"$tmp_root/valid.out" 2>"$tmp_root/valid.err"
 status=$?
@@ -63,7 +76,10 @@ mkdir -p "$manual_automation_dir"
 cp "$BASE_DIR"/scenarios/*.yaml "$manual_automation_dir"/
 cat >> "$manual_automation_dir/save-load.yaml" <<'YAML'
 automation:
-  command: mvn exec:java -Dalice-ide
+  argv:
+    - mvn
+    - exec:java
+    - -Dalice-ide
 YAML
 ALICE_QA_SCENARIO_DIR="$manual_automation_dir" "$VALIDATOR" >"$tmp_root/manual-automation.out" 2>"$tmp_root/manual-automation.err"
 status=$?
@@ -78,5 +94,74 @@ ALICE_QA_SCENARIO_DIR="$unknown_automation_dir" "$VALIDATOR" >"$tmp_root/unknown
 status=$?
 assert_failure "$status" "validator rejects unknown automation fields"
 assert_contains "$tmp_root/unknown-automation.err" 'automation has unknown field.*extraField' "unknown automation error names field"
+
+legacy_command_dir="$tmp_root/legacy-command"
+mkdir -p "$legacy_command_dir"
+cp "$BASE_DIR"/scenarios/*.yaml "$legacy_command_dir"/
+python3 - "$legacy_command_dir/launch.yaml" <<'PY'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+text = path.read_text(encoding="utf-8")
+text = text.replace("  argv:\n    - mvn\n    - exec:java\n    - -Dalice-ide\n", "  " + "command: mvn exec:java -Dalice-ide\n")
+path.write_text(text, encoding="utf-8")
+PY
+ALICE_QA_SCENARIO_DIR="$legacy_command_dir" "$VALIDATOR" >"$tmp_root/legacy-command.out" 2>"$tmp_root/legacy-command.err"
+status=$?
+assert_failure "$status" "validator rejects legacy shell-string automation"
+assert_contains "$tmp_root/legacy-command.err" 'automation has unknown field.*command|automation must include argv' "legacy command error requires argv"
+
+unsafe_argv_dir="$tmp_root/unsafe-argv"
+mkdir -p "$unsafe_argv_dir"
+cp "$BASE_DIR"/scenarios/*.yaml "$unsafe_argv_dir"/
+python3 - "$unsafe_argv_dir/launch.yaml" <<'PY'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+text = path.read_text(encoding="utf-8").replace("    - mvn\n", "    - bash\n", 1)
+path.write_text(text, encoding="utf-8")
+PY
+ALICE_QA_SCENARIO_DIR="$unsafe_argv_dir" "$VALIDATOR" >"$tmp_root/unsafe-argv.out" 2>"$tmp_root/unsafe-argv.err"
+status=$?
+assert_failure "$status" "validator rejects unapproved automation argv"
+assert_contains "$tmp_root/unsafe-argv.err" 'automation\.argv is restricted' "unsafe argv error names allowlist"
+
+traversal_cwd_dir="$tmp_root/traversal-cwd"
+mkdir -p "$traversal_cwd_dir"
+cp "$BASE_DIR"/scenarios/*.yaml "$traversal_cwd_dir"/
+set_launch_cwd "$traversal_cwd_dir/launch.yaml" ".."
+ALICE_QA_SCENARIO_DIR="$traversal_cwd_dir" "$VALIDATOR" >"$tmp_root/traversal-cwd.out" 2>"$tmp_root/traversal-cwd.err"
+status=$?
+assert_failure "$status" "validator rejects automation cwd path traversal"
+assert_contains "$tmp_root/traversal-cwd.err" 'automation\.cwd.*\.\. path traversal' "cwd traversal error names path traversal"
+
+absolute_cwd_dir="$tmp_root/absolute-cwd"
+mkdir -p "$absolute_cwd_dir"
+cp "$BASE_DIR"/scenarios/*.yaml "$absolute_cwd_dir"/
+set_launch_cwd "$absolute_cwd_dir/launch.yaml" "/"
+ALICE_QA_SCENARIO_DIR="$absolute_cwd_dir" "$VALIDATOR" >"$tmp_root/absolute-cwd.out" 2>"$tmp_root/absolute-cwd.err"
+status=$?
+assert_failure "$status" "validator rejects absolute automation cwd"
+assert_contains "$tmp_root/absolute-cwd.err" 'automation\.cwd.*repository-relative.*absolute' "absolute cwd error names repository-relative requirement"
+
+symlink_cwd_dir="$tmp_root/symlink-cwd"
+mkdir -p "$symlink_cwd_dir"
+cp "$BASE_DIR"/scenarios/*.yaml "$symlink_cwd_dir"/
+escape_link="$tmp_root/escape-link"
+ln -s "$REPO_ROOT/.." "$escape_link"
+escape_cwd=$(python3 - "$REPO_ROOT" "$escape_link" <<'PY'
+import os
+import sys
+
+print(os.path.relpath(sys.argv[2], sys.argv[1]))
+PY
+)
+set_launch_cwd "$symlink_cwd_dir/launch.yaml" "$escape_cwd"
+ALICE_QA_SCENARIO_DIR="$symlink_cwd_dir" "$VALIDATOR" >"$tmp_root/symlink-cwd.out" 2>"$tmp_root/symlink-cwd.err"
+status=$?
+assert_failure "$status" "validator rejects automation cwd symlinks that resolve outside the repo"
+assert_contains "$tmp_root/symlink-cwd.err" 'automation\.cwd.*resolve inside repository root' "symlink cwd error names realpath repo boundary"
 
 finish

@@ -56,6 +56,8 @@ ALICE_QA_SCENARIO_DIR=qa/outside-in/alice-desktop/evidence/custom-scenarios \
 qa/outside-in/alice-desktop/runners/validate-scenarios.sh
 ```
 
+Custom catalogs cannot introduce arbitrary shell commands. `xvfb-real-alice` automation must use the schema's argv list for the allowed Alice launch command (`alice-ide`, `mvn exec:java -Dalice-ide`); the runner executes the argv directly without shell interpretation.
+
 List the same active catalog through either entry point:
 
 ```bash
@@ -111,6 +113,8 @@ The scenario runs:
 cd alice-ide
 mvn exec:java -Dalice-ide
 ```
+
+The scenario YAML represents that launch as `automation.argv`, not as a shell command string, and the validator rejects unapproved argv entries before the runner starts Xvfb or Alice.
 
 The runner writes evidence to:
 

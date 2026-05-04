@@ -42,6 +42,148 @@ for field in sys.argv[1:]:
 PY
 }
 
+json_list_nul() {
+  local scenario_json=$1
+  local field=$2
+  SCENARIO_JSON="$scenario_json" python3 - "$field" <<'PY'
+import json
+import os
+import sys
+
+value = json.loads(os.environ["SCENARIO_JSON"])
+for part in sys.argv[1].split("."):
+    value = value[part]
+for item in value:
+    sys.stdout.buffer.write(item.encode("utf-8") + b"\0")
+PY
+}
+
+validate_allowed_automation() {
+  local cwd=$1
+  shift
+
+  if [ "$cwd" = alice-ide ] &&
+    [ "$#" -eq 3 ] &&
+    [ "$1" = mvn ] &&
+    [ "$2" = exec:java ] &&
+    [ "$3" = -Dalice-ide ]; then
+    return 0
+  fi
+
+  if [ "$cwd" = . ] &&
+    [ "$#" -eq 8 ] &&
+    [ "$1" = mvn ] &&
+    [ "$2" = -DincludeSims=false ] &&
+    [ "$3" = -Dinstall4j.skip ] &&
+    [ "$4" = -pl ] &&
+    [ "$5" = netbeans ] &&
+    [ "$6" = -am ] &&
+    [ "$7" = -Dtest=org.alice.netbeans.project.ProjectCodeGeneratorStandaloneProjectTest ] &&
+    [ "$8" = test ]; then
+    return 0
+  fi
+
+  if [ "$cwd" = . ] &&
+    [ "$#" -eq 8 ] &&
+    [ "$1" = mvn ] &&
+    [ "$2" = -DincludeSims=false ] &&
+    [ "$3" = -Dinstall4j.skip ] &&
+    [ "$4" = -pl ] &&
+    [ "$5" = core/ide ] &&
+    [ "$6" = -am ] &&
+    { [ "$7" = -Dtest=org.alice.ide.ProjectSaveTargetPlanTest ] || [ "$7" = -Dtest=org.alice.ide.ProjectLoadFailureDispatchPlanTest ]; } &&
+    [ "$8" = test ]; then
+    return 0
+  fi
+
+  if [ "$cwd" = . ] &&
+    [ "$#" -eq 1 ] &&
+    [ "$1" = qa/outside-in/alice-desktop/runners/netbeans-package-smoke.sh ]; then
+    return 0
+  fi
+
+  if [ "$cwd" = . ] &&
+    [ "$#" -eq 7 ] &&
+    [ "$1" = qa/outside-in/alice-desktop/runners/run-scenario.sh ] &&
+    [ "$2" = run ] &&
+    [ "$3" = alice-desktop-launch ] &&
+    [ "$4" = --timeout-seconds ] &&
+    [ "$5" = 30 ] &&
+    [ "$6" = --evidence-dir ] &&
+    [ "$7" = qa/outside-in/alice-desktop/evidence/future-ui-launch ]; then
+    return 0
+  fi
+
+  printf '%s\n' 'automation.argv is restricted to the allowed Alice QA command set' >&2
+  return 2
+}
+
+format_argv() {
+  local IFS=' '
+  printf '%s' "$*"
+}
+resolve_automation_cwd() {
+  local cwd=$1
+  python3 - "$REPO_ROOT" "$cwd" <<'PY'
+import sys
+from pathlib import Path
+
+repo_root = Path(sys.argv[1]).resolve(strict=True)
+cwd = sys.argv[2]
+cwd_path = Path(cwd)
+
+if cwd_path.is_absolute():
+    print("automation.cwd must be repository-relative, not absolute", file=sys.stderr)
+    sys.exit(2)
+if any(part == ".." for part in cwd_path.parts):
+    print("automation.cwd must not contain .. path traversal", file=sys.stderr)
+    sys.exit(2)
+
+try:
+    resolved = (repo_root / cwd_path).resolve(strict=True)
+except FileNotFoundError:
+    print("automation.cwd must be an existing directory inside repository root", file=sys.stderr)
+    sys.exit(2)
+
+if not resolved.is_dir():
+    print("automation.cwd must be an existing directory inside repository root", file=sys.stderr)
+    sys.exit(2)
+
+try:
+    resolved.relative_to(repo_root)
+except ValueError:
+    print("automation.cwd must resolve inside repository root", file=sys.stderr)
+    sys.exit(2)
+
+print(resolved)
+PY
+}
+
+validate_scenario_automation_cwd() {
+  local scenario_json=$1
+  local cwd
+
+  cwd=$(SCENARIO_JSON="$scenario_json" python3 - <<'PY'
+import json
+import os
+import sys
+
+scenario = json.loads(os.environ["SCENARIO_JSON"])
+automation = scenario.get("automation")
+if not isinstance(automation, dict):
+    sys.exit(0)
+
+cwd = automation.get("cwd")
+if not isinstance(cwd, str) or not cwd.strip():
+    print("automation.cwd must be a non-empty string", file=sys.stderr)
+    sys.exit(2)
+
+print(cwd)
+PY
+  )
+  [ -z "$cwd" ] || resolve_automation_cwd "$cwd" >/dev/null
+}
+
 resolve_scenario_id() {
   local request=$1
   local scenario_dir=${ALICE_QA_SCENARIO_DIR:-$BASE_DIR/scenarios}
@@ -215,17 +357,21 @@ run_xvfb_real_alice() {
   local run_dir=$2
   local timeout_override=$3
 
-  local automation_fields command cwd configured_timeout ready_wait run_timeout display scenario_id automation_mode
-  mapfile -t automation_fields < <(json_fields "$scenario_json" "automation.command" "automation.cwd" "automation.timeoutSeconds" "automation.readyWaitSeconds" "id" "automationMode")
-  command=${automation_fields[0]}
-  cwd=${automation_fields[1]}
-  configured_timeout=${automation_fields[2]}
-  ready_wait="${ALICE_QA_READY_WAIT_SECONDS:-${automation_fields[3]}}"
-  scenario_id=${automation_fields[4]}
-  automation_mode=${automation_fields[5]}
+  local automation_fields cwd configured_timeout ready_wait run_timeout display scenario_id automation_mode resolved_cwd
+  local -a argv
+  mapfile -t automation_fields < <(json_fields "$scenario_json" "automation.cwd" "automation.timeoutSeconds" "automation.readyWaitSeconds" "id" "automationMode")
+  cwd=${automation_fields[0]}
+  configured_timeout=${automation_fields[1]}
+  ready_wait="${ALICE_QA_READY_WAIT_SECONDS:-${automation_fields[2]}}"
+  scenario_id=${automation_fields[3]}
+  automation_mode=${automation_fields[4]}
+  mapfile -d '' -t argv < <(json_list_nul "$scenario_json" "automation.argv")
   run_timeout="${timeout_override:-$configured_timeout}"
   xvfb_pid=
   alice_pid=
+
+  validate_allowed_automation "$cwd" "${argv[@]}"
+  resolved_cwd=$(resolve_automation_cwd "$cwd")
 
   if ! command -v Xvfb >/dev/null 2>&1; then
     write_environment "$run_dir"
@@ -276,8 +422,8 @@ run_xvfb_real_alice() {
   write_environment "$run_dir" "$display"
 
   (
-    cd "$REPO_ROOT/$cwd"
-    timeout -k 10s "${run_timeout}s" bash -lc "$command"
+    cd "$resolved_cwd"
+    timeout -k 10s "${run_timeout}s" "${argv[@]}"
   ) > "$run_dir/launch.log" 2>&1 &
   alice_pid=$!
 
@@ -351,15 +497,18 @@ run_gated_command_smoke() {
   local run_dir=$2
   local timeout_override=$3
 
-  local automation_fields command cwd configured_timeout scenario_id automation_mode run_timeout checklist exit_code outcome
-  mapfile -t automation_fields < <(json_fields "$scenario_json" "automation.command" "automation.cwd" "automation.timeoutSeconds" "id" "automationMode")
-  command=${automation_fields[0]}
-  cwd=${automation_fields[1]}
-  configured_timeout=${automation_fields[2]}
-  scenario_id=${automation_fields[3]}
-  automation_mode=${automation_fields[4]}
+  local automation_fields cwd configured_timeout scenario_id automation_mode run_timeout checklist exit_code outcome resolved_cwd
+  local -a argv
+  mapfile -t automation_fields < <(json_fields "$scenario_json" "automation.cwd" "automation.timeoutSeconds" "id" "automationMode")
+  cwd=${automation_fields[0]}
+  configured_timeout=${automation_fields[1]}
+  scenario_id=${automation_fields[2]}
+  automation_mode=${automation_fields[3]}
+  mapfile -d '' -t argv < <(json_list_nul "$scenario_json" "automation.argv")
   run_timeout="${timeout_override:-$configured_timeout}"
 
+  validate_allowed_automation "$cwd" "${argv[@]}"
+  resolved_cwd=$(resolve_automation_cwd "$cwd")
   write_environment "$run_dir"
 
   if [ "${ALICE_QA_RUN_GATED_SMOKES:-}" != "1" ]; then
@@ -370,7 +519,7 @@ run_gated_command_smoke() {
       printf 'outcome=gated-not-run\n'
       printf 'gate=ALICE_QA_RUN_GATED_SMOKES\n'
       printf 'checklist=%s\n' "$(basename "$checklist")"
-      printf 'command=%s\n' "$command"
+      printf 'argv=%s\n' "$(format_argv "${argv[@]}")"
       printf 'cwd=%s\n' "$cwd"
       printf 'timeoutSeconds=%s\n' "$run_timeout"
     } > "$run_dir/status.txt"
@@ -380,8 +529,8 @@ run_gated_command_smoke() {
 
   set +e
   (
-    cd "$REPO_ROOT/$cwd"
-    timeout -k 10s "${run_timeout}s" bash -lc "$command"
+    cd "$resolved_cwd"
+    timeout -k 10s "${run_timeout}s" "${argv[@]}"
   ) > "$run_dir/command.log" 2>&1
   exit_code=$?
   set -e
@@ -397,7 +546,7 @@ run_gated_command_smoke() {
     printf 'outcome=%s\n' "$outcome"
     printf 'exitCode=%s\n' "$exit_code"
     printf 'commandLog=command.log\n'
-    printf 'command=%s\n' "$command"
+    printf 'argv=%s\n' "$(format_argv "${argv[@]}")"
     printf 'cwd=%s\n' "$cwd"
     printf 'timeoutSeconds=%s\n' "$run_timeout"
   } > "$run_dir/status.txt"
@@ -409,7 +558,6 @@ run_gated_command_smoke() {
 
   printf 'Evidence written to %s\n' "$run_dir"
 }
-
 command_name=${1:-}
 case "$command_name" in
   list)
@@ -458,6 +606,7 @@ case "$command_name" in
 
     scenario_id=$(resolve_scenario_id "$scenario_request")
     scenario_json=$("$VALIDATOR" --dump-json "$scenario_id")
+    validate_scenario_automation_cwd "$scenario_json"
     timestamp=$(date -u +%Y%m%dT%H%M%SZ)
     run_dir="$evidence_base/$scenario_id/$timestamp"
     mkdir -p "$run_dir"

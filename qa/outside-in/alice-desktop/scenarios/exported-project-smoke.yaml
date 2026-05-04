@@ -17,7 +17,15 @@ expectedOutcomes:
   - Launcher or handoff evidence is recorded for review.
 automation:
   cwd: .
-  command: mvn -DincludeSims=false -Dinstall4j.skip -pl netbeans -am -Dtest=org.alice.netbeans.project.ProjectCodeGeneratorStandaloneProjectTest test
+  argv:
+    - mvn
+    - -DincludeSims=false
+    - -Dinstall4j.skip
+    - -pl
+    - netbeans
+    - -am
+    - -Dtest=org.alice.netbeans.project.ProjectCodeGeneratorStandaloneProjectTest
+    - test
   timeoutSeconds: 600
   readyWaitSeconds: 1
 evidence:

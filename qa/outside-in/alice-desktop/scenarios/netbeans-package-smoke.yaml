@@ -18,7 +18,8 @@ expectedOutcomes:
   - Source and documentation support archives are present.
 automation:
   cwd: .
-  command: mvn -DincludeSims=false -Dinstall4j.skip -pl netbeans -am package -DskipTests && test "$(find netbeans/target -maxdepth 1 -name 'netbeans-*.nbm' | wc -l | tr -d ' ')" = 1 && test -f netbeans/target/nbm/clusters/extra/modules/org-alice-netbeans.jar && test -f netbeans/target/nbm/clusters/extra/src/aliceSource.jar && test -f netbeans/target/nbm/clusters/extra/doc/aliceDocs.zip && jar tf netbeans/target/nbm/clusters/extra/modules/org-alice-netbeans.jar | grep -F org/alice/netbeans/Alice3Library.xml && jar tf netbeans/target/nbm/clusters/extra/modules/org-alice-netbeans.jar | grep -F org/alice/netbeans/layer.xml
+  argv:
+    - qa/outside-in/alice-desktop/runners/netbeans-package-smoke.sh
   timeoutSeconds: 900
   readyWaitSeconds: 1
 evidence:

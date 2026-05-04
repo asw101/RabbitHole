@@ -17,7 +17,14 @@ expectedOutcomes:
   - Future Swing automation can replace this placeholder without changing the scenario catalog boundary.
 automation:
   cwd: .
-  command: qa/outside-in/alice-desktop/runners/run-scenario.sh run alice-desktop-launch --timeout-seconds 30 --evidence-dir qa/outside-in/alice-desktop/evidence/future-ui-launch
+  argv:
+    - qa/outside-in/alice-desktop/runners/run-scenario.sh
+    - run
+    - alice-desktop-launch
+    - --timeout-seconds
+    - "30"
+    - --evidence-dir
+    - qa/outside-in/alice-desktop/evidence/future-ui-launch
   timeoutSeconds: 180
   readyWaitSeconds: 1
 evidence:

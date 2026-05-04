@@ -75,6 +75,25 @@ Outside-in desktop acceptance scenarios live in `qa/outside-in/alice-desktop/`. 
     qa/outside-in/alice-desktop/runners/validate-scenarios.sh
     qa/outside-in/alice-desktop/runners/run-scenario.sh list
 
+### Runtime issue reporting credentials
+
+Direct JIRA issue submission does not embed credentials in source. Configure deployment or
+local runtime with either VM properties:
+
+    -Dalice.jira.username=<username> -Dalice.jira.password=<password>
+
+or environment variables:
+
+    ALICE_JIRA_USERNAME=<username>
+    ALICE_JIRA_PASSWORD=<password>
+
+If credentials are absent, Alice reports the configuration problem in the issue submission
+progress and leaves the application running instead of crashing.
+
+## Documentation
+
+Repository documentation starts at [docs/index.md](docs/index.md).
+
 ## Installing Git Hooks
 
 The hooks directory contains Git hooks, that should be placed in .git/hooks

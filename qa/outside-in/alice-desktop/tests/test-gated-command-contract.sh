@@ -24,17 +24,21 @@ assert_contains "$run_dir/status.txt" '^automationMode=gated-command-smoke$' "ga
 assert_contains "$run_dir/status.txt" '^outcome=gated-not-run$' "gated status records skipped command outcome"
 assert_contains "$run_dir/status.txt" '^gate=ALICE_QA_RUN_GATED_SMOKES$' "gated status names enabling variable"
 
-catalog="$tmp_root/catalog"
-mkdir -p "$catalog"
-cp "$BASE_DIR"/scenarios/*.yaml "$catalog"/
-perl -0pi -e 's#command: .*#command: printf gated-command-ran#' "$catalog/netbeans-package-smoke.yaml"
+fake_bin="$tmp_root/bin"
+mkdir -p "$fake_bin"
+cat > "$fake_bin/mvn" <<'SH'
+#!/usr/bin/env bash
+printf 'gated-command-ran\n'
+printf 'argv=%s\n' "$*"
+SH
+chmod +x "$fake_bin/mvn"
 
 enabled_evidence="$tmp_root/enabled-evidence"
-ALICE_QA_SCENARIO_DIR="$catalog" ALICE_QA_RUN_GATED_SMOKES=1 \
-  "$RUNNER" run alice-desktop-netbeans-package-smoke --evidence-dir "$enabled_evidence" >"$tmp_root/enabled.out" 2>"$tmp_root/enabled.err"
+PATH="$fake_bin:$PATH" ALICE_QA_RUN_GATED_SMOKES=1 \
+  "$RUNNER" run alice-desktop-project-io-smoke --evidence-dir "$enabled_evidence" >"$tmp_root/enabled.out" 2>"$tmp_root/enabled.err"
 status=$?
-assert_success "$status" "enabled gated command scenario executes command"
-enabled_run_dir=$(single_child_dir "$enabled_evidence/alice-desktop-netbeans-package-smoke")
+assert_success "$status" "enabled gated command scenario executes argv directly"
+enabled_run_dir=$(single_child_dir "$enabled_evidence/alice-desktop-project-io-smoke")
 status=$?
 assert_success "$status" "enabled gated command scenario creates one evidence directory"
 assert_file_exists "$enabled_run_dir/command.log" "enabled gated command scenario writes command.log"

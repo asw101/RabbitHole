@@ -212,14 +212,14 @@ supportingEvidence:
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `automation.cwd` | string | Working directory for command-backed automation. Required for `xvfb-real-alice` and `gated-command-smoke`. |
-| `automation.command` | string | Command executed by the runner. Required for `xvfb-real-alice` and `gated-command-smoke`. |
-| `automation.timeoutSeconds` | positive integer | Default timeout for command-backed automation. Required for `xvfb-real-alice` and `gated-command-smoke`. |
+| `automation.cwd` | string | Repository-relative working directory for argv-backed automation. Required for `xvfb-real-alice` and `gated-command-smoke`; absolute paths, `..`, and realpath escapes outside the repository are rejected. |
+| `automation.argv` | string list | Argument vector executed directly by the runner without shell interpretation. Required for `xvfb-real-alice` and `gated-command-smoke`; only the checked-in Alice QA argv allowlist is accepted. |
+| `automation.timeoutSeconds` | positive integer | Default timeout for argv-backed automation. Required for `xvfb-real-alice` and `gated-command-smoke`. |
 | `automation.readyWaitSeconds` | positive integer | Wait before screenshot capture for UI automation; use `1` for command smokes. Required for `xvfb-real-alice` and `gated-command-smoke`. |
 | `supportingEvidence` | string list | Scenario IDs or evidence sources that support this scenario. |
 | `tags` | string list | Additional scenario labels. |
 
-`automation` is required when `automationMode` is `xvfb-real-alice` or `gated-command-smoke`. Manual scenarios do not need an `automation` block because the runner generates a checklist instead of driving Swing interactions.
+`automation` is required when `automationMode` is `xvfb-real-alice` or `gated-command-smoke`. Manual scenarios do not need an `automation` block because the runner generates a checklist instead of driving Swing interactions. Automation must be represented as `argv`; shell command strings are not accepted, including in custom catalogs selected with `ALICE_QA_SCENARIO_DIR`.
 
 ### Workflow values
 
@@ -241,7 +241,7 @@ export
 
 | Mode | Runner behavior |
 | --- | --- |
-| `xvfb-real-alice` | Starts Xvfb, launches Alice through the scenario command, waits for readiness, and captures environment data, logs, status, and screenshot when the launch reaches evidence capture. This is a launch evidence check, not a full semantic oracle for every startup log condition. |
+| `xvfb-real-alice` | Starts Xvfb, launches Alice through the allowed scenario argv, waits for readiness, and captures environment data, logs, status, and screenshot when the launch reaches evidence capture. This is a launch evidence check, not a full semantic oracle for every startup log condition. |
 | `manual-evidence-required` | Writes a structured checklist for human execution and evidence collection. Checklist generation does not complete the scenario. |
 | `gated-command-smoke` | Writes environment, status, and checklist evidence by default without running heavy commands. When `ALICE_QA_RUN_GATED_SMOKES=1`, runs the configured command under `timeout`, captures `command.log`, and records pass/fail status. |
 
@@ -330,7 +330,8 @@ Scenario files are the public acceptance contract for this lane. A valid scenari
 7. Lists any dependent scenario evidence in `supportingEvidence`, such as using launch evidence to support save/load or export evidence.
 8. Requires `review-notes.txt` for manual workflow acceptance.
 9. Uses only the supported YAML subset: mappings, nested mappings, scalar values, and scalar lists with spaces for indentation.
-10. Avoids implementation details such as Java class names, internal package names, or assumptions about private UI objects.
+10. Uses `automation.argv` rather than a shell command string; only the allowlisted Alice QA argv set is accepted.
+11. Avoids implementation details such as Java class names, internal package names, or assumptions about private UI objects.
 
 ## Extension rules
 
