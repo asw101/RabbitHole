@@ -4,6 +4,9 @@
 .*.swp
 hs_*.log
 
+# Local agent runtime state
+.claude/runtime/
+
 # m2eclipse
 /.classpath
 /.project

@@ -2,6 +2,8 @@
 
 Date: 2026-05-03
 
+Resumption update: 2026-05-04
+
 This document specifies the feature to build: a documentation-first, skeptical review lane for Alice modernization. The lane turns parallel branch activity, refactor proposals, class-size pressure, coverage claims, and test strategy into a local, evidence-backed gate artifact before any source-changing workstream is treated as ready for merge discussion.
 
 The implemented increment is this `drinkme/` artifact contract plus a small `core/util` review-helper model for evidence collection, workstream classification, and gate evaluation. It does not change Alice runtime behavior, CI workflow, database schema, hooks, merge authority, remote state, upstream issues, or pull requests.
@@ -61,7 +63,7 @@ The feature is an artifact-first review/gating layer, not an application feature
 | Surface | Status for this feature |
 |---|---|
 | Durable output | Markdown review artifacts under `drinkme/`. |
-| Current implementation | This branch documents the artifact contract and adds focused `org.alice.crustyproxy` review-helper classes under `core/util`. |
+| Current implementation | This branch documents the artifact contract, adds focused `org.alice.crustyproxy` review-helper classes under `core/util`, and keeps local agent runtime state out of the merge set. |
 | Future implementation boundary | Automation may collect evidence and update artifacts, but must not change Alice runtime behavior as part of this lane. |
 | Runtime source changes | No Alice runtime behavior changes. Source-changing modernization branches are reviewed by this lane, not approved by it. |
 | Build or CI changes | None introduced by this branch. Existing Maven and GitHub Actions gates are referenced as evidence and validation targets. |
@@ -140,12 +142,12 @@ Current local evidence in this worktree:
 | Fact | Evidence |
 |---|---|
 | Current branch is `feat/alice-crusty-proxy-review`. | Local branch query. |
-| Current dirty state contains untracked `.claude/`, `core/util/src/main/java/org/alice/crustyproxy/`, `core/util/src/test/java/org/alice/crustyproxy/`, and `drinkme/`; only the review helper, its tests, and the `drinkme/` artifact belong to this lane. | Local `git --no-pager status --short --`. |
-| Active local feature worktrees are `feat/alice-code-atlas-bughunt`, `feat/alice-crusty-proxy-review`, `feat/alice-formal-specs`, `feat/alice-qa-outside-in`, and `feat/alice-source-tests-refactor`; each is at `cb8973df0f17f5a02a0700a58b0f951693083ab3`. | Local `git worktree list --porcelain`. |
-| Local branch refs include `develop`, `feat/alice-*`, `loop62-*`, `loop63-*`, and `loop64-*`; same-name `origin/loop64-*` refs are not uniformly identical to local refs. | Local `git for-each-ref` over `refs/heads` and `refs/remotes`. |
-| The current worktree has `tweedle-lang` as an uninitialized gitlink and `tweedle-lang/Grammar` is missing. | Local `git submodule status tweedle-lang` and `test -d tweedle-lang/Grammar`. |
-| The local Git common hooks directory contains active `post-checkout`, `post-commit`, `post-merge`, and `pre-push` hooks; executable sample hooks are present but should not be mistaken for active policy. | Local `git rev-parse --git-common-dir` and hook inventory. |
-| Tracked Java inventory is 5,003 Java files: 4,966 main Java files, 37 test Java files, 487,993 main LOC, 7,198 test LOC, 52 tracked main files over 500 lines, and 12 tracked main files over 1,000 lines. | Local tracked Java metrics from `git ls-files '*.java' ':!:tweedle-lang/**'`. |
+| Current dirty state at resumption contained only modified `.claude/runtime/` launcher/session files. Those runtime files are local agent state and are excluded from the merge set; the lane-owned merge files are the review helper, its tests, `.gitignore`, and this `drinkme/` artifact. | Local `git --no-pager status --short --` and `git diff --name-status develop...HEAD`. |
+| Active local Alice feature worktrees are `feat/alice-code-atlas-bughunt` (`3bca54c271`), `feat/alice-crusty-proxy-review` (`a98ba6a94c` before this completion update), `feat/alice-formal-specs` (`348b850c1d`), `feat/alice-qa-outside-in` (`e4562ddb26`), `feat/alice-source-tests-refactor` (`bf6f195131`), and `feat/alice-quality-audit-netbeans-story-io` (`c04b29907c`). | Local `git worktree list --porcelain`. |
+| Current `feat/alice-*` local and remote refs match for the inspected branches, but multiple `origin/loop64-*` refs still differ from same-name local `loop64-*` refs and require explicit classification before reuse. | Local `git for-each-ref` over `refs/heads` and `refs/remotes`. |
+| The current worktree has `tweedle-lang` as an uninitialized gitlink at `f6fc9e5ac116fc42924f46bf6de76a6bc037fa98` and `tweedle-lang/Grammar` is missing. | Local `git submodule status tweedle-lang` and `test -d tweedle-lang/Grammar`. |
+| The local Git common hooks directory contains active `post-checkout`, `post-commit`, `post-merge`, `pre-commit`, and `pre-push` hooks; executable sample hooks are present but should not be mistaken for active policy. | Local `git rev-parse --git-common-dir` and hook inventory. |
+| Tracked Java inventory is 5,008 Java files: 4,967 main-like Java files, 41 test-like Java files, 488,966 main-like LOC, 7,628 test-like LOC, 53 tracked main-like files over 500 lines, and 12 tracked main-like files over 1,000 lines. | Local tracked Java metrics from `git ls-files '*.java' ':!:tweedle-lang/**'`. |
 | Largest tracked Java file is `core/story-api-migration/src/main/java/org/lgna/project/migration/ProjectMigrationManager.java` at 5,914 lines. | Local tracked Java metrics. |
 | The review-helper implementation has 13 focused tests covering evidence snapshot, workstream classification, gate evaluation, and no-merge/no-remote side effects. | `core/util/src/test/java/org/alice/crustyproxy/*Test.java`; focused Maven run for those four test classes. |
 | Existing CI has no-Sims test, Checkstyle, and NetBeans package lanes. | `.github/workflows/alice-test-ci.yml`, `.github/workflows/alice-checkstyle-ci.yml`, `.github/workflows/alice-netbeans-package-ci.yml`. |
@@ -169,10 +171,11 @@ Current classification:
 | Workstream | Classification | Reason |
 |---|---|---|
 | `feat/alice-crusty-proxy-review` | Active review/documentation lane | Current worktree; purpose is the skeptical review and gate artifact. |
-| `feat/alice-code-atlas-bughunt` | Active investigation lane | Active local worktree at the same baseline commit; findings are evidence, not merge pressure by themselves. |
-| `feat/alice-formal-specs` | Active documentation/spec lane | Active local worktree at the same baseline commit; formal claims should feed gates, not bypass them. |
-| `feat/alice-qa-outside-in` | Active QA/test-design lane | Active local worktree at the same baseline commit; should produce outside-in test scenarios and acceptance gates. |
-| `feat/alice-source-tests-refactor` | Active implementation/test lane | Active local worktree at the same baseline commit; source changes need characterization tests and scoped diffs. |
+| `feat/alice-code-atlas-bughunt` | Active investigation lane | Active local worktree at `3bca54c271`; findings are evidence, not merge pressure by themselves. |
+| `feat/alice-formal-specs` | Active documentation/spec lane | Active local worktree at `348b850c1d`; formal claims should feed gates, not bypass them. |
+| `feat/alice-qa-outside-in` | Active QA/test-design lane | Active local worktree at `e4562ddb26`; should produce outside-in test scenarios and acceptance gates. |
+| `feat/alice-source-tests-refactor` | Active implementation/test lane | Active local worktree at `bf6f195131`; source changes need characterization tests and scoped diffs. |
+| `feat/alice-quality-audit-netbeans-story-io` | Active source/audit lane | Active local worktree at `c04b29907c`; source changes require focused tests and quality-audit evidence before merge discussion. |
 | `loop62-*`, `loop63-*`, `loop64-*` | Candidate, stale, or superseded until proven otherwise | Many refs have overlapping themes; branch names alone do not prove current work. |
 | `origin/loop64-*` vs local `loop64-*` | Remote-only delta risk | Same-name local and remote refs can differ and must be compared before use. |
 
@@ -182,7 +185,7 @@ Ambition is allowed; ambiguity is not. These are the current skepticism points t
 
 | Risk or overreach | Why it matters | Required response | Evidence |
 |---|---|---|---|
-| Treating same-baseline feature worktrees as completed work | Five active feature worktrees currently point at the same baseline commit, so branch presence is not proof of implementation progress. | Require branch-diff evidence and gate results before calling any lane ready. | Local `git worktree list --porcelain`. |
+| Treating feature worktrees as completed work | Active feature worktrees now point at different lane commits, but branch presence and commit count are still not proof of readiness. | Require branch-diff evidence, focused validation, artifact hygiene, and gate results before calling any lane ready. | Local `git worktree list --porcelain` and `git rev-list --left-right --count develop...BRANCH`. |
 | Letting branch noise drive the roadmap | `loop62-*`, `loop63-*`, and `loop64-*` refs overlap by theme and same-name local/remote refs can differ. | Classify each branch as active, candidate, stale, superseded, remote-only delta, or merge-ready before using it as evidence. | Local `git for-each-ref` over local and remote refs. |
 | Running broad Maven validation before Tweedle readiness | Missing grammar files can produce parser-generation failures that look like source regressions. | Initialize `tweedle-lang`, verify `tweedle-lang/Grammar`, then run broad validation. | `git submodule status tweedle-lang`; `core/tweedle/pom.xml:61-78`. |
 | Refactoring large classes for vanity LOC wins | `ProjectMigrationManager.java` is enormous, but it protects serialized project compatibility; blind splitting is a regression factory. | Add characterization tests around named behavior seams before extraction. | Local tracked Java metrics; `ProjectMigrationManager.java` at 5,914 lines. |
@@ -224,7 +227,7 @@ The lane uses this sequence:
 4. Gate changed modules against no regression from their baseline.
 5. Introduce numeric floors only after stable CI data exists.
 
-Do not set a single global repository percentage. With 487,993 tracked main LOC and 7,198 tracked test LOC, a global percentage mostly punishes legacy mass instead of improving the next risky seam.
+Do not set a single global repository percentage. With 488,966 tracked main-like LOC and 7,628 tracked test-like LOC, a global percentage mostly punishes legacy mass instead of improving the next risky seam.
 
 ## Class-size policy
 
@@ -403,7 +406,7 @@ The proxy lane is local documentation and review infrastructure, so its security
 | Module | `tweedle-lang` / root Maven reactor |
 | First action | Run `git submodule update --init tweedle-lang`, then verify `tweedle-lang/Grammar`. |
 | Gate | Do not treat Maven failures as source regressions until this passes. |
-| Evidence | Current worktree has an uninitialized `tweedle-lang` gitlink and missing `tweedle-lang/Grammar`; `core/tweedle/pom.xml:61-78` requires grammar files. |
+| Evidence | Current worktree has an uninitialized `tweedle-lang` gitlink at `f6fc9e5ac116fc42924f46bf6de76a6bc037fa98` and missing `tweedle-lang/Grammar`; `core/tweedle/pom.xml:61-78` requires grammar files. |
 
 ### P1: Workstream classification report
 
@@ -412,7 +415,7 @@ The proxy lane is local documentation and review infrastructure, so its security
 | Module | `drinkme/` |
 | First action | Add a workstream map comparing active `feat/alice-*` worktrees, local `loop62-*`, `loop63-*`, and `loop64-*` refs, and remote `origin/loop64-*` deltas. |
 | Gate | Every candidate merge branch has active, candidate, stale, superseded, remote-only, or merge-ready status. |
-| Evidence | Active local feature worktrees exist at the same baseline commit; many loop refs require classification before conclusions. |
+| Evidence | Active local feature worktrees now carry independent lane commits; many loop refs still require classification before conclusions. |
 
 ### P2: Coverage tooling proposal and reporting-only baseline
 
@@ -479,10 +482,10 @@ The proxy lane is local documentation and review infrastructure, so its security
 | `core/tweedle/pom.xml:89-107` | ANTLR generates Tweedle parser sources from `../../tweedle-lang/Grammar`. |
 | `core/util/src/main/java/org/alice/crustyproxy/CrustyProxyLane.java` | Internal review-helper implementation for evidence snapshots, workstream classification, and pass/fail gate reports. |
 | `core/util/src/test/java/org/alice/crustyproxy/*Test.java` | Focused tests lock the proxy lane's no-merge/no-remote behavior, fail-closed input handling, Tweedle gating, coverage policy, class-size policy, and approval blocking. |
-| Local `git worktree list --porcelain` | Current active feature worktrees and shared baseline commit. |
-| Local `git --no-pager status --short --` | Current dirty state and artifact hygiene boundary for this lane. |
-| Local `git for-each-ref` over `refs/heads` and `refs/remotes` | Branch/ref noise, same-baseline feature refs, and local/remote branch deltas that require classification. |
+| Local `git worktree list --porcelain` | Current active feature worktrees and their lane-specific commits. |
+| Local `git --no-pager status --short --` plus `.gitignore` | Current dirty state and artifact hygiene boundary for this lane, including exclusion of `.claude/runtime/` local agent state. |
+| Local `git for-each-ref` over `refs/heads` and `refs/remotes` | Branch/ref noise, active feature refs, and local/remote `loop64-*` branch deltas that require classification. |
 | Local Git common hook inventory | Local validation may be affected by active hooks and should not be mistaken for clean CI behavior without inspection. |
 | Local `git submodule status tweedle-lang` plus `test -d tweedle-lang/Grammar` | Current worktree is missing Tweedle grammar, blocking broad Maven validation. |
-| Local tracked Java metrics | Current class-size and test-volume risk profile: 5,003 tracked Java files, 37 tracked test files, 52 tracked main files over 500 lines, and 12 tracked main files over 1,000 lines. |
+| Local tracked Java metrics | Current class-size and test-volume risk profile: 5,008 tracked Java files, 41 tracked test-like files, 53 tracked main-like files over 500 lines, and 12 tracked main-like files over 1,000 lines. |
 | Focused `core/util` Maven test run | The review-helper test slice passes 13 tests without broad reactor validation. |
