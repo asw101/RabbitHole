@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+# qa/outside-in/alice-desktop/tests/test-runner-contract.sh
+set -u
+
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+BASE_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
+RUNNER="$BASE_DIR/runners/run-scenario.sh"
+# shellcheck source=qa/outside-in/alice-desktop/tests/lib/assertions.sh
+. "$SCRIPT_DIR/lib/assertions.sh"
+
+tmp_root=$(create_scratch_root "$SCRIPT_DIR") || exit 1
+trap 'rm -rf "$tmp_root"' EXIT
+
+evidence_dir="$tmp_root/evidence"
+"$RUNNER" run alice-desktop-scene-creation --evidence-dir "$evidence_dir" >"$tmp_root/manual.out" 2>"$tmp_root/manual.err"
+status=$?
+assert_success "$status" "manual scenario run prepares evidence directory"
+
+run_dir=$(single_child_dir "$evidence_dir/alice-desktop-scene-creation")
+status=$?
+assert_success "$status" "manual scenario run creates one evidence directory"
+status_file="$run_dir/status.txt"
+assert_file_exists "$status_file" "manual scenario run writes status.txt"
+assert_contains "$status_file" '^scenario=alice-desktop-scene-creation$' "manual status records scenario id"
+assert_contains "$status_file" '^automationMode=manual-evidence-required$' "manual status records automation mode"
+assert_contains "$status_file" '^outcome=manual-evidence-required$' "manual status records that evidence still needs human execution"
+assert_contains "$status_file" '^checklist=manual-evidence-checklist.txt$' "manual status points to generated checklist"
+
+checklist="$run_dir/manual-evidence-checklist.txt"
+assert_file_exists "$checklist" "manual scenario run writes checklist"
+assert_contains "$checklist" '^Completion status$' "checklist includes completion status section"
+assert_contains "$checklist" 'not complete until required evidence is attached' "checklist states manual run is not complete"
+assert_contains "$checklist" 'review-notes\.txt' "checklist names the required manual acceptance review notes artifact"
+
+path_evidence_dir="$tmp_root/path-evidence"
+"$RUNNER" run "$BASE_DIR/scenarios/save-load.yaml" --evidence-dir "$path_evidence_dir" >"$tmp_root/path.out" 2>"$tmp_root/path.err"
+status=$?
+assert_success "$status" "runner accepts a scenario YAML path"
+path_run_dir=$(single_child_dir "$path_evidence_dir/alice-desktop-save-load")
+status=$?
+assert_success "$status" "path-based run creates one evidence directory"
+assert_file_exists "$path_run_dir/status.txt" "path-based run writes evidence under the scenario id"
+
+outside_path="$tmp_root/outside.yaml"
+printf 'id: alice-desktop-save-load\n' > "$outside_path"
+"$RUNNER" run "$outside_path" --evidence-dir "$tmp_root/outside-evidence" >"$tmp_root/outside.out" 2>"$tmp_root/outside.err"
+status=$?
+assert_failure "$status" "runner rejects scenario paths outside the active catalog"
+assert_contains "$tmp_root/outside.err" 'inside active scenario directory' "outside path error names catalog boundary"
+
+bad_timeout_evidence="$tmp_root/bad-timeout-evidence"
+"$RUNNER" run alice-desktop-scene-creation --evidence-dir "$bad_timeout_evidence" --timeout-seconds not-a-number >"$tmp_root/bad-timeout.out" 2>"$tmp_root/bad-timeout.err"
+status=$?
+assert_failure "$status" "runner rejects non-integer timeout values for every mode"
+assert_contains "$tmp_root/bad-timeout.err" 'timeout.*positive integer|invalid timeout' "invalid timeout error is actionable"
+
+"$RUNNER" run alice-desktop-not-a-scenario --evidence-dir "$tmp_root/unknown-evidence" >"$tmp_root/unknown.out" 2>"$tmp_root/unknown.err"
+status=$?
+assert_failure "$status" "runner rejects unknown scenario ids"
+assert_contains "$tmp_root/unknown.err" 'not found|unknown scenario|alice-desktop-not-a-scenario' "unknown scenario error names requested id"
+
+finish

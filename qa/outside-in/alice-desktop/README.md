@@ -1,0 +1,115 @@
+# Alice desktop outside-in QA
+
+This lane defines executable acceptance coverage for Alice desktop workflows without changing product modules. It keeps scenario intent, execution wrappers, and evidence requirements in one repo-owned QA area.
+
+For user-facing instructions, see [Run Alice desktop outside-in QA](../../../docs/howto/alice-desktop-outside-in-qa.md). For the complete scenario schema and runner interface, see the [Alice desktop outside-in QA reference](../../../docs/reference/alice-desktop-outside-in-qa.md).
+
+## What belongs here
+
+| Area | Owns | Does not own |
+| --- | --- | --- |
+| `scenarios/` | User-like workflows, expected outcomes, evidence requirements, automation mode | Java implementation details or brittle internal UI assumptions |
+| `schema/` | Scenario structure and allowed field values | Business logic |
+| `runners/` | Thin wrappers around existing Maven/Alice commands | New build systems, hidden dependencies, or product behavior changes |
+| `evidence/` | Local run artifacts produced by the runner | Source-controlled product assets |
+
+Generated evidence is ignored by Git. Commit only scenario definitions, schema changes, runner changes, and the evidence `.gitignore`.
+
+## Scenario model
+
+Each scenario uses the same fields:
+
+- `id`
+- `title`
+- `workflow`
+- `automationMode`
+- `preconditions`
+- `userActions`
+- `expectedOutcomes`
+- `evidence.required`
+- `fallback`
+
+Allowed `automationMode` values are:
+
+| Mode | Meaning |
+| --- | --- |
+| `xvfb-real-alice` | Attempts to run the real Alice desktop under Xvfb and captures logs/screenshots. |
+| `manual-evidence-required` | Produces an executable checklist with required evidence, but does not automate GUI interaction or mark the scenario complete. |
+
+Do not use Playwright here unless Alice later exposes a browser/web UI.
+
+Scenario YAML intentionally uses a strict subset: simple mappings, nested mappings, scalar values, and scalar lists. Do not use anchors, aliases, tags, multiline scalars, flow-style collections, or tabs for indentation. The JSON Schema is the published contract; the dependency-free validator must stay in parity with it.
+
+## Commands
+
+Run all commands from the repository root.
+
+```bash
+qa/outside-in/alice-desktop/runners/validate-scenarios.sh
+qa/outside-in/alice-desktop/runners/validate-scenarios.sh --list
+qa/outside-in/alice-desktop/runners/validate-scenarios.sh --dump-json
+qa/outside-in/alice-desktop/runners/run-scenario.sh list
+qa/outside-in/alice-desktop/runners/run-scenario.sh run alice-desktop-launch
+qa/outside-in/alice-desktop/runners/run-scenario.sh run qa/outside-in/alice-desktop/scenarios/launch.yaml
+```
+
+`run-scenario.sh run` accepts either a scenario ID or a direct `.yaml` file inside the active scenario catalog. Use `--evidence-dir <dir>` to write evidence outside the repository, and use `--timeout-seconds <seconds>` to override argv-backed launch timeout.
+
+For branch-installable outside-in checks, run the thin `amplihack` wrapper from a checkout of the branch:
+
+```bash
+uvx --from git+https://github.com/rysweet/alice3-modernization.git@feat/alice-qa-outside-in amplihack alice-qa list
+uvx --from git+https://github.com/rysweet/alice3-modernization.git@feat/alice-qa-outside-in amplihack alice-qa run alice-desktop-save-load --evidence-dir qa/outside-in/alice-desktop/evidence/manual-runs
+```
+
+The wrapper delegates to the same repo-owned runners and intentionally requires an Alice checkout as the current working tree.
+
+The launch scenario uses the documented Alice desktop path:
+
+```bash
+cd alice-ide
+mvn exec:java -Dalice-ide
+```
+
+Scenario automation stores this launch as an argv list, not a shell command string. The validator and runner allow only this Alice launch argv for `xvfb-real-alice`, including custom catalogs selected with `ALICE_QA_SCENARIO_DIR`.
+
+The runner records evidence under `qa/outside-in/alice-desktop/evidence/<scenario-id>/<timestamp>/`. Successful Xvfb launch evidence includes an environment summary, Xvfb log, Alice launch log, screenshot (`screenshot.png` or `screenshot.xwd`), and status file. Early Xvfb fallback directories may contain only the diagnostics available before launch plus a manual fallback checklist. For manual scenarios, the runner creates a status file and structured checklist so the workflow is repeatable and reviewable; the scenario is complete only after a human performs the workflow and adds the required evidence artifacts plus `review-notes.txt`.
+
+## Configuration
+
+| Variable | Purpose |
+| --- | --- |
+| `ALICE_QA_SCENARIO_DIR` | Override the active scenario catalog. |
+| `ALICE_QA_DISPLAY` | Reuse a specific X display for Xvfb runs. |
+| `ALICE_QA_SCREEN` | Set Xvfb screen geometry. Defaults to `1280x900x24`. |
+| `ALICE_QA_READY_WAIT_SECONDS` | Override launch readiness wait before screenshot capture. |
+| `NODE_OPTIONS` | Optional for surrounding Node-based orchestrators. Use `--max-old-space-size=32768` when needed; this lane itself does not require Node. |
+
+## Scenario authoring checklist
+
+Before adding or changing a scenario:
+
+1. Keep actions and outcomes observable from the user-visible Alice desktop.
+2. Use one of the supported workflows: `launch`, `instructor-student-setup`, `scene-creation`, `run-debug`, `save-load`, or `export`.
+3. Use `xvfb-real-alice` only when the runner can execute the real Alice command and collect logs/screenshots.
+4. Use `manual-evidence-required` when human Swing interaction is required.
+5. Name concrete required artifacts in `evidence.required`; manual workflows also require `review-notes.txt` for acceptance.
+6. Keep YAML to the supported simple mapping/list subset.
+7. Run `qa/outside-in/alice-desktop/runners/validate-scenarios.sh`.
+
+## Baseline preconditions
+
+- Java 21 is available.
+- Maven 3.9.9 or later is available.
+- The Tweedle grammar submodule is initialized:
+
+```bash
+git submodule update --init tweedle-lang
+```
+
+If Maven reports missing generated Tweedle parser classes, first check:
+
+```bash
+git submodule status tweedle-lang
+test -d tweedle-lang/Grammar
+```

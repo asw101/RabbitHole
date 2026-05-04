@@ -1,0 +1,34 @@
+id: alice-desktop-export
+title: Export Alice project output
+workflow: export
+automationMode: manual-evidence-required
+preconditions:
+  - Java 21 is available.
+  - Maven dependencies are available.
+  - The tweedle-lang submodule is initialized.
+  - A small Alice project suitable for export is available or can be created.
+userActions:
+  - Launch Alice.
+  - Open or create a small project suitable for export.
+  - Run the available export flow from the current Alice UI.
+  - Save the exported artifact to a known evidence location.
+  - Open or inspect the exported artifact enough to confirm it was produced.
+expectedOutcomes:
+  - The export flow completes without uncaught application errors.
+  - The expected export artifact is created.
+  - The exported artifact is non-empty and corresponds to the selected project.
+evidence:
+  required:
+    - Export operation log or manual notes.
+    - Screenshot before export.
+    - Screenshot after export completion.
+    - Exported artifact.
+    - File listing or checksum for the exported artifact.
+    - review-notes.txt summarizing reviewed artifacts and the acceptance decision.
+fallback:
+  mode: manual-evidence-required
+  notes:
+    - Record the exact export option used because export surfaces can vary by Alice baseline.
+    - Link lower-level model or project export characterization evidence when available.
+supportingEvidence:
+  - alice-desktop-launch
