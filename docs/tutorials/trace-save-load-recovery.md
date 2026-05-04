@@ -67,7 +67,7 @@ These tests characterize the same rules:
 Run the focused validation:
 
 ```shell
-mvn -pl core/ide -am -Dtest=ProjectBackupSelectorTest test
+mvn -pl core/ide -am -Dtest=ProjectBackupSelectorTest -Dsurefire.failIfNoSpecifiedTests=false test
 ```
 
 ## Trace archive behavior
@@ -101,7 +101,7 @@ The acceptance scenarios describe the observable archive contract:
 Run the focused validation:
 
 ```shell
-mvn -pl core/story-api-migration -am -Dtest=IoUtilitiesTest test
+mvn -pl core/story-api-migration -am -Dtest=IoUtilitiesTest -Dsurefire.failIfNoSpecifiedTests=false test
 ```
 
 ## Check the complete recovery model
