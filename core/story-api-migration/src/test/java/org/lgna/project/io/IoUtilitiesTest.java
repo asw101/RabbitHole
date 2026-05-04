@@ -186,7 +186,7 @@ public class IoUtilitiesTest {
     IoUtilities.exportProject(exportFile, project);
 
     Project readProject = IoUtilities.readProject(exportFile);
-    assertNull("Tweedle decoding is still not implemented for player archives", readProject.getProgramType());
+    assertNull("Archives with unsupported Tweedle members remain undecoded.", readProject.getProgramType());
     assertEquals(1, readProject.getResources().size());
     Resource readResource = readProject.getResources().iterator().next();
     assertEquals(ImageResource.class, readResource.getClass());
@@ -210,7 +210,7 @@ public class IoUtilitiesTest {
     IoUtilities.exportProject(exportFile, project);
 
     Project readProject = IoUtilities.readProject(exportFile);
-    assertNull("Tweedle decoding is still not implemented for player archives", readProject.getProgramType());
+    assertNull("Archives with unsupported Tweedle members remain undecoded.", readProject.getProgramType());
     assertEquals(1, readProject.getResources().size());
     Resource readResource = readProject.getResources().iterator().next();
     assertEquals(AudioResource.class, readResource.getClass());
@@ -223,14 +223,15 @@ public class IoUtilitiesTest {
   }
 
   @Test
-  public void jsonPlayerReaderPreservesSceneCameraTypeFromManifestWithoutTweedleDecoding() throws Exception {
+  public void jsonPlayerReaderPreservesSceneCameraTypeFromManifestWithSimpleTweedleDecoding() throws Exception {
     Project project = new Project(programType("VrProgram"), Project.SceneCameraType.VRHeadset);
     File exportFile = temporaryFolder.newFile("exported-vr.a3w");
 
     IoUtilities.exportProject(exportFile, project);
 
     Project readProject = IoUtilities.readProject(exportFile);
-    assertNull("Tweedle decoding is still not implemented for player archives", readProject.getProgramType());
+    assertNotNull(readProject.getProgramType());
+    assertEquals("VrProgram", readProject.getProgramType().getName());
     assertEquals(Project.SceneCameraType.VRHeadset, sceneCameraType(readProject));
     assertTrue(readProject.getResources().isEmpty());
   }
@@ -314,14 +315,14 @@ public class IoUtilitiesTest {
 
     Project readProject = IoUtilities.readProject(exportFile);
     assertNotNull(readProject);
-    assertNull("Tweedle decoding is still not implemented for player archives", readProject.getProgramType());
+    assertNull("Generated type references are not treated as the program without a manifest name.", readProject.getProgramType());
     assertTrue(
         "Model and generated type references are manifest entries, not binary Resources",
         readProject.getResources().isEmpty());
   }
 
   @Test
-  public void jsonPlayerReaderLeavesProgramTypeUndecodedEvenWhenManifestReferencesTweedleSource() throws Exception {
+  public void jsonPlayerReaderDecodesProgramTypeWhenManifestReferencesSimpleTweedleSource() throws Exception {
     ProjectManifest manifest = new ProjectManifest();
     manifest.description.name = "ProgramFromManifest";
     manifest.metadata.fileType = IoUtilities.EXPORT_EXTENSION;
@@ -339,7 +340,8 @@ public class IoUtilitiesTest {
 
     Project readProject = IoUtilities.readProject(exportFile);
     assertNotNull(readProject);
-    assertNull("Tweedle decoding is still not implemented for player archives", readProject.getProgramType());
+    assertNotNull(readProject.getProgramType());
+    assertEquals("ProgramFromManifest", readProject.getProgramType().getName());
     assertEquals(Project.SceneCameraType.VRHeadset, sceneCameraType(readProject));
     assertTrue(readProject.getResources().isEmpty());
   }
@@ -361,7 +363,7 @@ public class IoUtilitiesTest {
 
     Project readProject = IoUtilities.readProject(exportFile);
     assertNotNull(readProject);
-    assertNull("Tweedle decoding is still not implemented for player archives", readProject.getProgramType());
+    assertNull("Archives without Tweedle type references still have no decoded program type.", readProject.getProgramType());
     assertEquals(Project.SceneCameraType.WindowCamera, sceneCameraType(readProject));
   }
 
@@ -417,14 +419,46 @@ public class IoUtilitiesTest {
 
     Project readProject = IoUtilities.readProject(exportFile);
     assertNotNull(readProject);
-    assertNull("Tweedle decoding is still not implemented for player archives", readProject.getProgramType());
+    assertNull("Archives without Tweedle type references still have no decoded program type.", readProject.getProgramType());
     assertTrue(
         "Unsupported manifest references are not binary Project Resources",
         readProject.getResources().isEmpty());
   }
 
   @Test
-  public void readsJsonTypeArchiveResourcesWithoutTweedleDecoding() throws Exception {
+  public void readsSimpleJsonTypeArchiveTweedleClass() throws Exception {
+    File typeFile = temporaryFolder.newFile("json-simple-type.a3c");
+    writeJsonTypeArchive(typeFile, "SyntheticType", "class SyntheticType {}");
+
+    TypeResourcesPair readType = IoUtilities.readType(typeFile);
+
+    assertNotNull("Simple Tweedle type archives should decode a NamedUserType.", readType.getType());
+    assertEquals("SyntheticType", readType.getType().getName());
+  }
+
+  @Test
+  public void readsSimpleJsonPlayerArchiveTweedleProgram() throws Exception {
+    File exportFile = temporaryFolder.newFile("json-simple-program.a3w");
+    writeJsonPlayerArchive(exportFile, "Program", "class Program extends SProgram models Program {}");
+
+    Project readProject = IoUtilities.readProject(exportFile);
+
+    assertNotNull("Simple Tweedle player archives should decode a program type.", readProject.getProgramType());
+    assertEquals("Program", readProject.getProgramType().getName());
+  }
+
+  @Test
+  public void unsupportedJsonTypeTweedleConstructsRemainUndecoded() throws Exception {
+    File typeFile = temporaryFolder.newFile("json-unsupported-type.a3c");
+    writeJsonTypeArchive(typeFile, "SyntheticType", "class SyntheticType { WholeNumber count; }");
+
+    TypeResourcesPair readType = IoUtilities.readType(typeFile);
+
+    assertNull("Unsupported Tweedle members remain documented null behavior for now.", readType.getType());
+  }
+
+  @Test
+  public void readsJsonTypeArchiveResourcesWhenUnsupportedTweedleRemainsUndecoded() throws Exception {
     ImageResource imageResource = imageResource("type-picture.png", 0xFFFF0000);
     NamedUserType type = programTypeReferencingImageResource("Prop", imageResource);
     File typeFile = temporaryFolder.newFile("json-type.a3c");
@@ -434,7 +468,7 @@ public class IoUtilitiesTest {
     }
 
     TypeResourcesPair readType = IoUtilities.readType(typeFile);
-    assertNull("Tweedle decoding is still not implemented for JSON type archives", readType.getType());
+    assertNull("Archives with unsupported Tweedle members remain undecoded.", readType.getType());
     assertEquals(1, readType.getResources().size());
     Resource readResource = readType.getResources().iterator().next();
     assertEquals(ImageResource.class, readResource.getClass());
@@ -952,12 +986,39 @@ public class IoUtilitiesTest {
   }
 
   private static TypeManifest typeManifest() {
+    return typeManifest("SyntheticType");
+  }
+
+  private static TypeManifest typeManifest(String name) {
     TypeManifest manifest = new TypeManifest();
-    manifest.description.name = "SyntheticType";
+    manifest.description.name = name;
     manifest.metadata.fileType = IoUtilities.TYPE_EXTENSION;
-    manifest.metadata.identifier.name = "SyntheticType";
+    manifest.metadata.identifier.name = name;
     manifest.metadata.identifier.type = Manifest.ProjectType.Library;
     return manifest;
+  }
+
+  private static void writeJsonTypeArchive(File file, String typeName, String tweedleSource) throws Exception {
+    TypeManifest manifest = typeManifest(typeName);
+    TypeReference typeReference = new TypeReference(typeName, "src/" + typeName + ".twe", "tweedle");
+    manifest.resources.add(typeReference);
+    try (ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(file))) {
+      writeZipEntry(zipOutputStream, ProjectIo.VERSION_ENTRY_NAME, ProjectVersion.getCurrentVersion().toString());
+      writeZipEntry(zipOutputStream, ProjectIo.MANIFEST_ENTRY_NAME, ManifestEncoderDecoder.toJson(manifest));
+      writeZipEntry(zipOutputStream, typeReference.file, tweedleSource);
+    }
+  }
+
+  private static void writeJsonPlayerArchive(File file, String programName, String tweedleSource) throws Exception {
+    Project project = new Project(programType(programName), Project.SceneCameraType.WindowCamera);
+    Manifest manifest = project.createExportManifest();
+    TypeReference typeReference = new TypeReference(programName, "src/" + programName + ".twe", "tweedle");
+    manifest.resources.add(typeReference);
+    try (ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(file))) {
+      writeZipEntry(zipOutputStream, ProjectIo.VERSION_ENTRY_NAME, ProjectVersion.getCurrentVersion().toString());
+      writeZipEntry(zipOutputStream, ProjectIo.MANIFEST_ENTRY_NAME, ManifestEncoderDecoder.toJson(manifest));
+      writeZipEntry(zipOutputStream, typeReference.file, tweedleSource);
+    }
   }
 
   private static void writePlayerArchive(File file, ResourceReference resourceReference, byte[] data) throws Exception {
