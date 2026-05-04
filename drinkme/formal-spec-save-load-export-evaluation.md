@@ -217,7 +217,7 @@ java -cp /path/to/tla2tools.jar tlc2.TLC \
   eatme/formal/backup-load-recovery/BackupLoadRecovery.tla
 ```
 
-The repository does not vendor TLC and does not run TLC as part of the normal Maven build. The model documents the recovery policy and is used when recovery ordering, final outcome behavior, or asynchronous load completion semantics change.
+The repository does not vendor TLC and does not run TLC as part of the normal Maven build. During this handoff, no local `tla2tools` command or `tla2tools.jar` was available, so the model check was not run in this checkout. The model documents the recovery policy and is used when recovery ordering, final outcome behavior, or asynchronous load completion semantics change.
 
 The model proves these contract properties for the supplied configuration:
 
