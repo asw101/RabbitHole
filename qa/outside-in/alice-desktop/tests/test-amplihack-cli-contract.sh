@@ -16,7 +16,7 @@ assert_contains "$REPO_ROOT/pyproject.toml" '^py-modules = \["alice_qa_amplihack
 
 (
   cd "$REPO_ROOT" &&
-    python3 -m alice_qa_amplihack alice-qa list
+    PYTHONDONTWRITEBYTECODE=1 python3 -m alice_qa_amplihack alice-qa list
 ) >"$tmp_root/list.out" 2>"$tmp_root/list.err"
 status=$?
 assert_success "$status" "amplihack wrapper lists Alice QA scenarios"
@@ -25,7 +25,7 @@ assert_contains "$tmp_root/list.out" 'alice-desktop-save-load[[:space:]]+manual-
 
 (
   cd "$REPO_ROOT" &&
-    python3 -m alice_qa_amplihack alice-qa run alice-desktop-save-load --evidence-dir "$tmp_root/evidence"
+    PYTHONDONTWRITEBYTECODE=1 python3 -m alice_qa_amplihack alice-qa run alice-desktop-save-load --evidence-dir "$tmp_root/evidence"
 ) >"$tmp_root/run.out" 2>"$tmp_root/run.err"
 status=$?
 assert_success "$status" "amplihack wrapper prepares manual evidence"
@@ -37,7 +37,7 @@ assert_file_exists "$run_dir/status.txt" "amplihack wrapper writes manual status
 
 (
   cd "$REPO_ROOT" &&
-    python3 -m alice_qa_amplihack alice-qa validate unexpected
+    PYTHONDONTWRITEBYTECODE=1 python3 -m alice_qa_amplihack alice-qa validate unexpected
 ) >"$tmp_root/bad.out" 2>"$tmp_root/bad.err"
 status=$?
 assert_exit_code "$status" 2 "amplihack wrapper rejects invalid validate arguments"

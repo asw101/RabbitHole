@@ -12,11 +12,12 @@ userActions:
   - Open or create a small project suitable for export.
   - Run the available export flow from the current Alice UI.
   - Save the exported artifact to a known evidence location.
-  - Open or inspect the exported artifact enough to confirm it was produced.
+  - Open, compile, or inspect the exported artifact enough to confirm it was produced for the selected project.
 expectedOutcomes:
   - The export flow completes without uncaught application errors.
   - The expected export artifact is created.
   - The exported artifact is non-empty and corresponds to the selected project.
+  - Review notes identify the export type used and the observable verification performed.
 evidence:
   required:
     - Export operation log or manual notes.
@@ -32,3 +33,4 @@ fallback:
     - Link lower-level model or project export characterization evidence when available.
 supportingEvidence:
   - alice-desktop-launch
+  - alice-desktop-exported-project-smoke

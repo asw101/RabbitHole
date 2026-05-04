@@ -9,23 +9,26 @@ preconditions:
 userActions:
   - Start Alice using the documented Maven launch path.
   - Wait for the main desktop window to become visible.
+  - Confirm the first visible shell is ready for creating or opening a project.
 expectedOutcomes:
   - Alice starts without uncaught startup exceptions.
   - The desktop shell is visible and ready for project interaction.
+  - The captured evidence is sufficient to distinguish a usable desktop from a splash-only or crashed startup.
 automation:
   cwd: alice-ide
   argv:
     - mvn
     - exec:java
     - -Dalice-ide
-  timeoutSeconds: 120
-  readyWaitSeconds: 45
+  timeoutSeconds: 180
+  readyWaitSeconds: 60
 evidence:
   required:
     - Launch log containing Alice startup output.
-    - Screenshot of the Alice desktop window.
+    - Screenshot of the Alice desktop window or first ready project shell.
     - Exit, status, or timeout record.
     - Environment summary with Java version, Maven version, and DISPLAY value.
+    - Notes identifying whether the screenshot shows a ready desktop, project chooser, or fallback failure state.
 fallback:
   mode: manual-evidence-required
   notes:
