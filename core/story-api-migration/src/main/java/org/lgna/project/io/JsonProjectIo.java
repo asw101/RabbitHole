@@ -298,7 +298,58 @@ public class JsonProjectIo extends DataSourceIo implements ProjectIo {
     }
 
     private String serializedClass(NamedUserType userType) {
-      return coder.encode(userType);
+      Map<Resource, ResourceNames> originalNames = temporarilySanitizeResourceNames(userType);
+      try {
+        return coder.encode(userType);
+      } finally {
+        restoreResourceNames(originalNames);
+      }
+    }
+
+    private Map<Resource, ResourceNames> temporarilySanitizeResourceNames(NamedUserType userType) {
+      IsInstanceCrawler<ResourceExpression> crawler = new IsInstanceCrawler<>(ResourceExpression.class) {
+        @Override
+        protected boolean isAcceptable(ResourceExpression resourceExpression) {
+          return true;
+        }
+      };
+      userType.crawl(crawler, CrawlPolicy.COMPLETE);
+      Map<Resource, ResourceNames> originalNames = new IdentityHashMap<>();
+      for (ResourceExpression resourceExpression : crawler.getList()) {
+        Resource resource = resourceExpression.resource.getValue();
+        if ((resource == null) || originalNames.containsKey(resource)) {
+          continue;
+        }
+        String fallbackName = ResourceExportNames.entryFileName(resource);
+        String safeName = ResourceExportNames.metadataName(resource.getName(), fallbackName);
+        String safeOriginalFileName = ResourceExportNames.metadataOriginalFileName(resource.getOriginalFileName(), fallbackName);
+        if (!Objects.equals(resource.getName(), safeName)
+            || !Objects.equals(resource.getOriginalFileName(), safeOriginalFileName)) {
+          originalNames.put(resource, new ResourceNames(resource.getName(), resource.getOriginalFileName()));
+          resource.setName(safeName);
+          resource.setOriginalFileName(safeOriginalFileName);
+        }
+      }
+      return originalNames;
+    }
+
+    private void restoreResourceNames(Map<Resource, ResourceNames> originalNames) {
+      for (Map.Entry<Resource, ResourceNames> entry : originalNames.entrySet()) {
+        Resource resource = entry.getKey();
+        ResourceNames names = entry.getValue();
+        resource.setName(names.name);
+        resource.setOriginalFileName(names.originalFileName);
+      }
+    }
+
+    private static class ResourceNames {
+      private final String name;
+      private final String originalFileName;
+
+      private ResourceNames(String name, String originalFileName) {
+        this.name = name;
+        this.originalFileName = originalFileName;
+      }
     }
 
     private Collection<? extends DataSource> createEntriesForResourceTypes(Manifest manifest, Set<JointedModelResource> resources) {
@@ -379,6 +430,9 @@ public class JsonProjectIo extends DataSourceIo implements ProjectIo {
 
     private static void addResourceReference(Manifest manifest, Resource resource, String entryName) {
       final ResourceReference resourceReference = resourceReference(resource);
+      resourceReference.name = ResourceExportNames.metadataName(
+          resourceReference.name,
+          ResourceExportNames.fileNameFromEntry(entryName));
       resourceReference.file = entryName;
       manifest.resources.add(resourceReference);
     }
@@ -394,7 +448,7 @@ public class JsonProjectIo extends DataSourceIo implements ProjectIo {
     }
 
     private static String generateEntryName(Resource resource, Set<String> usedEntryNames) {
-      String fileName = getValidFileName(resource);
+      String fileName = ResourceExportNames.entryFileName(resource);
       String entryName = potentialEntryName(fileName, "");
       int i = 1;
       while (usedEntryNames.contains(entryName)) {
@@ -402,25 +456,6 @@ public class JsonProjectIo extends DataSourceIo implements ProjectIo {
         entryName = potentialEntryName(fileName, String.valueOf(i));
       }
       return entryName;
-    }
-
-    private static String getValidFileName(Resource resource) {
-      String originalFileName = resource.getOriginalFileName();
-      if ((originalFileName != null) && !originalFileName.trim().isEmpty()) {
-        String sanitizedFileName = sanitizeFileName(originalFileName);
-        if (!sanitizedFileName.isEmpty()) {
-          return sanitizedFileName;
-        }
-      }
-      return sanitizeFileName(resource.getName());
-    }
-
-    private static String sanitizeFileName(String fileName) {
-      String sanitized = fileName.replace('/', '_').replace('\\', '_').trim();
-      if (sanitized.equals(".") || sanitized.equals("..")) {
-        return "";
-      }
-      return sanitized;
     }
 
     private static String potentialEntryName(String validFilename, String i) {
