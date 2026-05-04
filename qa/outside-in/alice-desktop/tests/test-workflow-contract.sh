@@ -25,7 +25,8 @@ from collections import Counter
 import json
 import sys
 
-catalog_list = json.load(open(sys.argv[1], encoding="utf-8"))
+with open(sys.argv[1], encoding="utf-8") as catalog_file:
+    catalog_list = json.load(catalog_file)
 catalog = {scenario["id"]: scenario for scenario in catalog_list}
 workflow_counts = Counter(scenario["workflow"] for scenario in catalog_list)
 required_workflows = [
@@ -51,7 +52,10 @@ for workflow in required_workflows:
         errors.append(f"catalog must contain exactly one {workflow} workflow scenario, found {count}")
 
 for scenario_id in manual_scenarios:
-    scenario = catalog[scenario_id]
+    scenario = catalog.get(scenario_id)
+    if scenario is None:
+        errors.append(f"catalog must contain {scenario_id}")
+        continue
     if scenario["automationMode"] != "manual-evidence-required":
         errors.append(f"{scenario_id} must remain manual-evidence-required until GUI automation exists")
     supporting = scenario.get("supportingEvidence", [])

@@ -80,15 +80,22 @@ single_child_dir() {
   local found=
   local candidate
 
+  if [ ! -d "$parent" ]; then
+    printf 'missing directory: %s\n' "$parent" >&2
+    return 1
+  fi
+
   for candidate in "$parent"/*; do
     [ -d "$candidate" ] || continue
     if [ -n "$found" ]; then
+      printf 'multiple child directories under %s\n' "$parent" >&2
       return 1
     fi
     found=$candidate
   done
 
   if [ -z "$found" ]; then
+    printf 'no child directories under %s\n' "$parent" >&2
     return 1
   fi
   printf '%s\n' "$found"
