@@ -22,19 +22,29 @@ class ZipEntryContainer {
     if ((name == null) || name.isEmpty()) {
       throw new IOException("Unsafe archive entry " + name);
     }
-    if (name.startsWith("/") || name.startsWith("\\") || name.contains("\\") || hasWindowsDrivePrefix(name)) {
+    if ((name.charAt(0) == '/') || (name.charAt(0) == '\\') || hasWindowsDrivePrefix(name)) {
       throw new IOException("Unsafe archive entry " + name);
     }
+    int segmentStart = 0;
     for (int i = 0; i < name.length(); i++) {
       char ch = name.charAt(i);
-      if ((ch == '\0') || Character.isISOControl(ch)) {
+      if ((ch == '\0') || Character.isISOControl(ch) || (ch == '\\')) {
         throw new IOException("Unsafe archive entry " + name);
+      }
+      if (ch == '/') {
+        validateSafeSegment(name, segmentStart, i);
+        segmentStart = i + 1;
       }
     }
-    for (String segment : name.split("/", -1)) {
-      if (segment.isEmpty() || segment.equals(".") || segment.equals("..")) {
-        throw new IOException("Unsafe archive entry " + name);
-      }
+    validateSafeSegment(name, segmentStart, name.length());
+  }
+
+  private static void validateSafeSegment(String name, int start, int end) throws IOException {
+    int length = end - start;
+    if ((length == 0)
+        || ((length == 1) && (name.charAt(start) == '.'))
+        || ((length == 2) && (name.charAt(start) == '.') && (name.charAt(start + 1) == '.'))) {
+      throw new IOException("Unsafe archive entry " + name);
     }
   }
 

@@ -21,7 +21,9 @@ final class ProjectBackupSelector {
   File getNextBackup(LocalDateTime modifiedTime, File[] newestFirstBackups,
                      boolean isMainProjectCorrupted, Set<String> unloadableFiles) {
     for (File backup : newestFirstBackups) {
-      if (isAvailableBackupCandidate(backup) && !unloadableFiles.contains(backup.getName())) {
+      if ((backup != null)
+          && !unloadableFiles.contains(backup.getName())
+          && isAvailableBackupCandidate(backup)) {
         // If the main project is corrupted, return the latest backup.
         if (isMainProjectCorrupted || modifiedTime == null || LocalDateTime.MIN.equals(modifiedTime)) {
           return backup;
