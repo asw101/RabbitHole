@@ -87,6 +87,8 @@ public class XmlProjectIo implements ProjectIo {
   private static final String XML_RESOURCE_CLASSNAME_ATTRIBUTE = "className";
   private static final String XML_RESOURCE_UUID_ATTRIBUTE = "uuid";
   private static final String XML_RESOURCE_ENTRY_NAME_ATTRIBUTE = "entryName";
+  private static final String XML_RESOURCE_NAME_ATTRIBUTE = "name";
+  private static final String XML_RESOURCE_ORIGINAL_FILE_NAME_ATTRIBUTE = "originalFileName";
 
   private static OptionalMigrationManager CAMERA_TO_VR = new OptionalMigrationManager(new ReplaceCameraWithVR());
 
@@ -339,26 +341,7 @@ public class XmlProjectIo implements ProjectIo {
     }
 
     private static String getValidFileName(Resource resource) {
-      String originalFileName = resource.getOriginalFileName();
-      if ((originalFileName != null) && !originalFileName.trim().isEmpty()) {
-        String sanitizedFileName = sanitizeFileName(originalFileName);
-        if (!sanitizedFileName.isEmpty()) {
-          return sanitizedFileName;
-        }
-      }
-      String sanitizedResourceName = sanitizeFileName(resource.getName());
-      return sanitizedResourceName.isEmpty() ? resource.getId().toString() : sanitizedResourceName;
-    }
-
-    private static String sanitizeFileName(String fileName) {
-      if (fileName == null) {
-        return "";
-      }
-      String sanitized = fileName.replace('/', '_').replace('\\', '_').trim();
-      if (sanitized.equals(".") || sanitized.equals("..")) {
-        return "";
-      }
-      return sanitized;
+      return ResourceExportNames.entryFileName(resource);
     }
 
     private static String generateEntryName(Resource resource, Set<String> usedEntryNames) {
@@ -404,6 +387,13 @@ public class XmlProjectIo implements ProjectIo {
           String entryName = generateEntryName(resource, usedEntryNames);
           usedEntryNames.add(entryName);
           resourceDataSources.add(new ByteArrayDataSource(entryName, resource.getData()));
+          String fallbackName = ResourceExportNames.fileNameFromEntry(entryName);
+          xmlElement.setAttribute(
+              XML_RESOURCE_NAME_ATTRIBUTE,
+              ResourceExportNames.metadataName(resource.getName(), fallbackName));
+          xmlElement.setAttribute(
+              XML_RESOURCE_ORIGINAL_FILE_NAME_ATTRIBUTE,
+              ResourceExportNames.metadataName(resource.getOriginalFileName(), fallbackName));
           xmlElement.setAttribute(XML_RESOURCE_ENTRY_NAME_ATTRIBUTE, entryName);
           xmlRootElement.appendChild(xmlElement);
         }

@@ -571,6 +571,34 @@ public class IoUtilitiesTest {
   }
 
   @Test
+  public void jsonPlayerExportDoesNotLeakAbsoluteResourcePaths() throws Exception {
+    ImageResource unixPath = imageResource("/Users/alice-secret/private-model-assets/unix-picture.png", 0xFFFF0000);
+    ImageResource windowsPath = imageResource("C:\\Users\\alice-secret\\private-model-assets\\windows-picture.png", 0xFF00FF00);
+    Project project = new Project(
+        programTypeReferencingImageResources("Program", unixPath, windowsPath),
+        Project.SceneCameraType.WindowCamera);
+    File exportFile = temporaryFolder.newFile("absolute-path-resource-entries.a3w");
+
+    IoUtilities.exportProject(exportFile, project);
+
+    try (ZipFile zipFile = new ZipFile(exportFile)) {
+      assertNotNull(zipFile.getEntry("resources/unix-picture.png"));
+      assertNotNull(zipFile.getEntry("resources/windows-picture.png"));
+      assertZipEntryNamesDoNotLeakLocalPaths(zipFile);
+      assertNoLocalPathLeak(readZipEntryText(zipFile, ProjectIo.MANIFEST_ENTRY_NAME));
+      assertNoLocalPathLeak(readZipEntryText(zipFile, "src/Program.twe"));
+
+      ProjectManifest manifest = readProjectManifest(zipFile);
+      assertImageReference(manifest, unixPath.getId(), "unix-picture.png", "resources/unix-picture.png");
+      assertImageReference(manifest, windowsPath.getId(), "windows-picture.png", "resources/windows-picture.png");
+    }
+    Project readProject = IoUtilities.readProject(exportFile);
+    Map<UUID, Resource> resourcesById = resourcesById(readProject);
+    assertSafeReadbackResource(resourcesById.get(unixPath.getId()), "unix-picture.png", unixPath.getData());
+    assertSafeReadbackResource(resourcesById.get(windowsPath.getId()), "windows-picture.png", windowsPath.getData());
+  }
+
+  @Test
   public void xmlProjectUsesSafeDistinctResourceEntries() throws Exception {
     ImageResource first = imageResource("image.png", 0xFFFF0000);
     ImageResource duplicate = imageResource("image.png", 0xFF00FF00);
@@ -605,6 +633,31 @@ public class IoUtilitiesTest {
     assertArrayEquals(backslashPath.getData(), resourcesById.get(backslashPath.getId()).getData());
     assertArrayEquals(dot.getData(), resourcesById.get(dot.getId()).getData());
     assertArrayEquals(dotdot.getData(), resourcesById.get(dotdot.getId()).getData());
+  }
+
+  @Test
+  public void xmlProjectExportDoesNotLeakAbsoluteResourcePaths() throws Exception {
+    ImageResource unixPath = imageResource("/Users/alice-secret/private-model-assets/unix-picture.png", 0xFFFF0000);
+    ImageResource windowsPath = imageResource("C:\\Users\\alice-secret\\private-model-assets\\windows-picture.png", 0xFF00FF00);
+    Project project = new Project(
+        programTypeReferencingImageResources("Program", unixPath, windowsPath),
+        Project.SceneCameraType.WindowCamera);
+    File projectFile = temporaryFolder.newFile("absolute-path-resource-entries.a3p");
+
+    IoUtilities.writeProject(projectFile, project);
+
+    try (ZipFile zipFile = new ZipFile(projectFile)) {
+      assertNotNull(zipFile.getEntry("resources/unix-picture.png"));
+      assertNotNull(zipFile.getEntry("resources/windows-picture.png"));
+      assertZipEntryNamesDoNotLeakLocalPaths(zipFile);
+      assertNoLocalPathLeak(readZipEntryText(zipFile, ProjectIo.MANIFEST_ENTRY_NAME));
+      assertNoLocalPathLeak(readZipEntryText(zipFile, "programType.xml"));
+      assertNoLocalPathLeak(readZipEntryText(zipFile, "resources.xml"));
+    }
+    Project readProject = IoUtilities.readProject(projectFile);
+    Map<UUID, Resource> resourcesById = resourcesById(readProject);
+    assertSafeReadbackResource(resourcesById.get(unixPath.getId()), "unix-picture.png", unixPath.getData());
+    assertSafeReadbackResource(resourcesById.get(windowsPath.getId()), "windows-picture.png", windowsPath.getData());
   }
 
   @Test
@@ -856,6 +909,45 @@ public class IoUtilitiesTest {
     return ManifestEncoderDecoder.fromJson(
         new String(zipFile.getInputStream(manifestEntry).readAllBytes(), StandardCharsets.UTF_8),
         ProjectManifest.class);
+  }
+
+  private static void assertImageReference(ProjectManifest manifest, UUID uuid, String name, String file) {
+    for (ResourceReference resourceReference : manifest.resources) {
+      if ((resourceReference instanceof ImageReference imageReference) && uuid.equals(imageReference.uuid)) {
+        assertEquals(name, imageReference.name);
+        assertEquals(file, imageReference.file);
+        assertNoLocalPathLeak(imageReference.name);
+        assertNoLocalPathLeak(imageReference.file);
+        return;
+      }
+    }
+    fail("Missing image reference for " + uuid);
+  }
+
+  private static void assertSafeReadbackResource(Resource resource, String expectedName, byte[] expectedData) {
+    assertNotNull(resource);
+    assertEquals(expectedName, resource.getName());
+    assertEquals(expectedName, resource.getOriginalFileName());
+    assertNoLocalPathLeak(resource.getName());
+    assertNoLocalPathLeak(resource.getOriginalFileName());
+    assertArrayEquals(expectedData, resource.getData());
+  }
+
+  private static void assertZipEntryNamesDoNotLeakLocalPaths(ZipFile zipFile) {
+    zipFile.stream().forEach(entry -> assertNoLocalPathLeak(entry.getName()));
+  }
+
+  private static String readZipEntryText(ZipFile zipFile, String entryName) throws IOException {
+    ZipEntry entry = zipFile.getEntry(entryName);
+    assertNotNull(entry);
+    return new String(zipFile.getInputStream(entry).readAllBytes(), StandardCharsets.UTF_8);
+  }
+
+  private static void assertNoLocalPathLeak(String value) {
+    assertFalse("Local Unix path leaked in " + value, value.contains("/Users/"));
+    assertFalse("Local Windows drive leaked in " + value, value.contains("C:"));
+    assertFalse("Local path owner leaked in " + value, value.contains("alice-secret"));
+    assertFalse("Local path directory leaked in " + value, value.contains("private-model-assets"));
   }
 
   private static byte[] thumbnailPng() throws IOException {
