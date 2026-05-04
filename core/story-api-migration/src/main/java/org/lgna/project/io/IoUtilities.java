@@ -146,14 +146,10 @@ public abstract class IoUtilities {
     try (InputStream manifestStream = is) {
       byte[] manifestBytes = manifestStream.readAllBytes();
       try {
-        Manifest manifest = ManifestEncoderDecoder.fromJson(
+        return ManifestEncoderDecoder.fromJsonOrThrow(
             new String(manifestBytes, StandardCharsets.UTF_8),
             ProjectManifest.class);
-        if (manifest == null) {
-          throw new IOException("Unable to decode " + ProjectIo.MANIFEST_ENTRY_NAME);
-        }
-        return manifest;
-      } catch (RuntimeException e) {
+      } catch (IOException e) {
         throw new IOException(
             "Unable to read " + ProjectIo.MANIFEST_ENTRY_NAME, e);
       }
