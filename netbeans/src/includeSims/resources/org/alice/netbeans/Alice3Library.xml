@@ -25,6 +25,8 @@
     <resource>nbinst:/modules/ext/org.alice.netbeans/org-alice/tweedle.jar</resource>
 
     <resource>nbinst:/modules/ext/org.alice.netbeans/org-alice/models.jar</resource>
+    <resource>nbinst:/modules/ext/org.alice.netbeans/org-alice-nonfree/models-nonfree.jar</resource>
+    <resource>nbinst:/modules/ext/org.alice.netbeans/org-alice-nonfree/story-api-nonfree.jar</resource>
 
     <resource>nbinst:/modules/ext/org.alice.netbeans/org-openjfx/javafx-base.jar</resource>
     <resource>nbinst:/modules/ext/org.alice.netbeans/org-openjfx/javafx-graphics.jar</resource>
