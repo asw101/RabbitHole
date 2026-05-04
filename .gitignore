@@ -28,3 +28,5 @@ bin/*
 *.iml
 out/*
 *.dae
+# Agent runtime/session artifacts
+.claude/runtime/

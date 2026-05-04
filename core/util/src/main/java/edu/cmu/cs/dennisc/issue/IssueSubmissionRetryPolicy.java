@@ -40,87 +40,42 @@
  * THE USE OF OR OTHER DEALINGS WITH THE SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************/
-package org.alice.ide.croquet.models.projecturi;
+package edu.cmu.cs.dennisc.issue;
 
-import edu.cmu.cs.dennisc.java.net.UriUtilities;
-import edu.cmu.cs.dennisc.javax.swing.option.Dialogs;
-import org.alice.ide.ProjectApplication;
-import org.alice.stageide.StageIDE;
-import org.lgna.croquet.history.UserActivity;
+final class IssueSubmissionRetryPolicy {
+  static final IssueSubmissionRetryPolicy DEFAULT = new IssueSubmissionRetryPolicy(3, 500);
 
-import java.io.File;
-import java.io.IOException;
-import java.util.UUID;
+  private final int maxAttempts;
+  private final long delayMillis;
 
-/**
- * @author Dennis Cosgrove
- */
-public abstract class AbstractSaveOperation extends UriActionOperation {
-  AbstractSaveOperation(UUID id) {
-    super(id);
+  IssueSubmissionRetryPolicy(int maxAttempts, long delayMillis) {
+    if (maxAttempts < 1) {
+      throw new IllegalArgumentException("maxAttempts must be at least 1");
+    }
+    if (delayMillis < 0) {
+      throw new IllegalArgumentException("delayMillis must not be negative");
+    }
+    this.maxAttempts = maxAttempts;
+    this.delayMillis = delayMillis;
   }
 
-  protected abstract boolean isPromptNecessary(File file);
+  int getMaxAttempts() {
+    return this.maxAttempts;
+  }
 
-  protected abstract File getDefaultDirectory(StageIDE application);
+  boolean shouldRetry(int attempt, Exception exception) {
+    return (attempt < this.maxAttempts) && isRetryable(exception);
+  }
 
-  protected abstract String getExtension();
+  private boolean isRetryable(Exception exception) {
+    return ((exception instanceof IssueSubmissionConfigurationException)
+        || (exception instanceof IllegalArgumentException)
+        || (exception instanceof IllegalStateException)) == false;
+  }
 
-  protected abstract void save(ProjectApplication application, File file) throws IOException;
-
-  @Override
-  protected void perform(UserActivity activity) {
-    StageIDE application = StageIDE.getActiveInstance();
-    SaveOperationFlow.run(new SaveOperationFlow.Context() {
-      @Override
-      public File getCurrentFile() {
-        return UriUtilities.getFile(application.getUri());
-      }
-
-      @Override
-      public boolean isBackup() {
-        return application.isBackup();
-      }
-
-      @Override
-      public File getMainProjectFile() {
-        return application.getMainProjectFile();
-      }
-
-      @Override
-      public File getDefaultDirectory() {
-        return AbstractSaveOperation.this.getDefaultDirectory(application);
-      }
-
-      @Override
-      public File showSaveFileDialog(File directory, String filename, String extension) {
-        return application.getDocumentFrame().showSaveFileDialog(directory, filename, extension);
-      }
-
-      @Override
-      public void showWaitCursor() {
-        application.showWaitCursor();
-      }
-
-      @Override
-      public void hideWaitCursor() {
-        application.hideWaitCursor();
-      }
-
-      @Override
-      public void showError(String title, String message) {
-        Dialogs.showError(title, message);
-      }
-
-      @Override
-      public void finish() {
-        activity.finish();
-      }
-
-      @Override
-      public void cancel() {
-        activity.cancel();
-      }
-    }, this::isPromptNecessary, this.getExtension(), file -> this.save(application, file));
+  void pauseBeforeRetry() throws InterruptedException {
+    if (this.delayMillis > 0) {
+      Thread.sleep(this.delayMillis);
+    }
   }
 }
