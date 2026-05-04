@@ -97,7 +97,7 @@ uvx --from git+https://github.com/rysweet/alice3-modernization.git@feat/alice-qa
   amplihack alice-qa list
 
 uvx --from git+https://github.com/rysweet/alice3-modernization.git@feat/alice-qa-outside-in \
-  amplihack alice-qa run alice-desktop-save-load --evidence-dir /tmp/alice-qa-evidence
+  amplihack alice-qa run alice-desktop-save-load --evidence-dir qa/outside-in/alice-desktop/evidence/manual-runs
 ```
 
 The `amplihack alice-qa` wrapper is intentionally thin. It must be run from an Alice checkout, locates the repository root from the current working directory, and delegates to the checked-out shell runners.
@@ -106,7 +106,7 @@ The `amplihack alice-qa` wrapper is intentionally thin. It must be run from an A
 
 ```bash
 qa/outside-in/alice-desktop/runners/run-scenario.sh run <scenario-id> \
-  --evidence-dir /tmp/alice-qa-evidence
+  --evidence-dir qa/outside-in/alice-desktop/evidence/manual-runs
 ```
 
 ### Run with a custom timeout

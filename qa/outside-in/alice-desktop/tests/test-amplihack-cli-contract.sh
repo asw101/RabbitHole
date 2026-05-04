@@ -8,8 +8,11 @@ REPO_ROOT=$(CDPATH= cd -- "$BASE_DIR/../../.." && pwd)
 # shellcheck source=qa/outside-in/alice-desktop/tests/lib/assertions.sh
 . "$SCRIPT_DIR/lib/assertions.sh"
 
-tmp_root=$(mktemp -d)
+tmp_root=$(create_scratch_root "$SCRIPT_DIR") || exit 1
 trap 'rm -rf "$tmp_root"' EXIT
+
+assert_contains "$REPO_ROOT/pyproject.toml" '^amplihack = "alice_qa_amplihack:main"$' "pyproject exposes the amplihack console script"
+assert_contains "$REPO_ROOT/pyproject.toml" '^py-modules = \["alice_qa_amplihack"\]$' "pyproject includes the wrapper module"
 
 (
   cd "$REPO_ROOT" &&

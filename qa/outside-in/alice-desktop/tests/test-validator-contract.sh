@@ -8,7 +8,7 @@ VALIDATOR="$BASE_DIR/runners/validate-scenarios.sh"
 # shellcheck source=qa/outside-in/alice-desktop/tests/lib/assertions.sh
 . "$SCRIPT_DIR/lib/assertions.sh"
 
-tmp_root=$(mktemp -d)
+tmp_root=$(create_scratch_root "$SCRIPT_DIR") || exit 1
 trap 'rm -rf "$tmp_root"' EXIT
 
 "$VALIDATOR" >"$tmp_root/valid.out" 2>"$tmp_root/valid.err"

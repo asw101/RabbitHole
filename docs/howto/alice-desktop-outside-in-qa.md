@@ -52,17 +52,17 @@ Validated 6 scenario(s) in .../qa/outside-in/alice-desktop/scenarios
 Use `ALICE_QA_SCENARIO_DIR` when testing a local catalog before moving it into the checked-in `scenarios/` directory:
 
 ```bash
-ALICE_QA_SCENARIO_DIR=/tmp/alice-scenarios \
+ALICE_QA_SCENARIO_DIR=qa/outside-in/alice-desktop/evidence/custom-scenarios \
 qa/outside-in/alice-desktop/runners/validate-scenarios.sh
 ```
 
 List the same active catalog through either entry point:
 
 ```bash
-ALICE_QA_SCENARIO_DIR=/tmp/alice-scenarios \
+ALICE_QA_SCENARIO_DIR=qa/outside-in/alice-desktop/evidence/custom-scenarios \
 qa/outside-in/alice-desktop/runners/validate-scenarios.sh --list
 
-ALICE_QA_SCENARIO_DIR=/tmp/alice-scenarios \
+ALICE_QA_SCENARIO_DIR=qa/outside-in/alice-desktop/evidence/custom-scenarios \
 qa/outside-in/alice-desktop/runners/run-scenario.sh list
 ```
 
@@ -92,7 +92,7 @@ uvx --from git+https://github.com/rysweet/alice3-modernization.git@feat/alice-qa
   amplihack alice-qa list
 
 uvx --from git+https://github.com/rysweet/alice3-modernization.git@feat/alice-qa-outside-in \
-  amplihack alice-qa run alice-desktop-save-load --evidence-dir /tmp/alice-qa-evidence
+  amplihack alice-qa run alice-desktop-save-load --evidence-dir qa/outside-in/alice-desktop/evidence/manual-runs
 ```
 
 Run these commands from the root of a checkout of the same branch. The installed wrapper delegates to `qa/outside-in/alice-desktop/runners/` in that checkout so the output and evidence contract match direct runner usage.
@@ -126,7 +126,7 @@ If launch evidence is collected in CI or another disposable workspace, pass an e
 
 ```bash
 qa/outside-in/alice-desktop/runners/run-scenario.sh run alice-desktop-launch \
-  --evidence-dir /tmp/alice-qa-evidence \
+  --evidence-dir qa/outside-in/alice-desktop/evidence/manual-runs \
   --timeout-seconds 180
 ```
 
@@ -156,7 +156,7 @@ Use this review note shape for manual acceptance:
 
 ```text
 scenario: alice-desktop-save-load
-runDirectory: /tmp/alice-qa-evidence/alice-desktop-save-load/<timestamp>
+runDirectory: qa/outside-in/alice-desktop/evidence/manual-runs/alice-desktop-save-load/<timestamp>
 reviewedEvidence:
   - manual-evidence-checklist.txt
   - before-save.png
@@ -169,17 +169,17 @@ decision: accept
 
 ## Choose a custom evidence directory
 
-Use `--evidence-dir` when evidence should live outside the repository, such as a session artifact directory or CI workspace:
+Use `--evidence-dir` when evidence should live in a workspace-owned ignored directory, such as the QA lane evidence area or a CI artifact workspace:
 
 ```bash
 qa/outside-in/alice-desktop/runners/run-scenario.sh run alice-desktop-scene-creation \
-  --evidence-dir /tmp/alice-qa-evidence
+  --evidence-dir qa/outside-in/alice-desktop/evidence/manual-runs
 ```
 
 This creates:
 
 ```text
-/tmp/alice-qa-evidence/alice-desktop-scene-creation/<timestamp>/
+qa/outside-in/alice-desktop/evidence/manual-runs/alice-desktop-scene-creation/<timestamp>/
 ```
 
 ## Configure scenario and Xvfb runs
@@ -188,7 +188,7 @@ The runner accepts these environment variables:
 
 | Variable | Purpose | Example |
 | --- | --- | --- |
-| `ALICE_QA_SCENARIO_DIR` | Override the checked-in scenario catalog directory. | `ALICE_QA_SCENARIO_DIR=/tmp/scenarios` |
+| `ALICE_QA_SCENARIO_DIR` | Override the checked-in scenario catalog directory. | `ALICE_QA_SCENARIO_DIR=qa/outside-in/alice-desktop/evidence/custom-scenarios` |
 | `ALICE_QA_DISPLAY` | Reuse a specific X display instead of selecting a free display from `:90` through `:120`. | `ALICE_QA_DISPLAY=:99` |
 | `ALICE_QA_SCREEN` | Set Xvfb screen geometry. Defaults to `1280x900x24`. | `ALICE_QA_SCREEN=1600x1000x24` |
 | `ALICE_QA_READY_WAIT_SECONDS` | Override the scenario readiness wait before screenshot capture. | `ALICE_QA_READY_WAIT_SECONDS=60` |

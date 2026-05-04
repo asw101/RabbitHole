@@ -59,7 +59,7 @@ For branch-installable outside-in checks, run the thin `amplihack` wrapper from 
 
 ```bash
 uvx --from git+https://github.com/rysweet/alice3-modernization.git@feat/alice-qa-outside-in amplihack alice-qa list
-uvx --from git+https://github.com/rysweet/alice3-modernization.git@feat/alice-qa-outside-in amplihack alice-qa run alice-desktop-save-load --evidence-dir /tmp/alice-qa-evidence
+uvx --from git+https://github.com/rysweet/alice3-modernization.git@feat/alice-qa-outside-in amplihack alice-qa run alice-desktop-save-load --evidence-dir qa/outside-in/alice-desktop/evidence/manual-runs
 ```
 
 The wrapper delegates to the same repo-owned runners and intentionally requires an Alice checkout as the current working tree.

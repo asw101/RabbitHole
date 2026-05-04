@@ -8,7 +8,7 @@ RUNNER="$BASE_DIR/runners/run-scenario.sh"
 # shellcheck source=qa/outside-in/alice-desktop/tests/lib/assertions.sh
 . "$SCRIPT_DIR/lib/assertions.sh"
 
-tmp_root=$(mktemp -d)
+tmp_root=$(create_scratch_root "$SCRIPT_DIR") || exit 1
 trap 'rm -rf "$tmp_root"' EXIT
 
 evidence_dir="$tmp_root/evidence"

@@ -3,6 +3,25 @@
 
 failures=0
 
+create_scratch_root() {
+  local base_dir=$1
+  local scratch_base=${ALICE_QA_TEST_SCRATCH_DIR:-$base_dir/.test-scratch}
+  local attempt path run_name
+
+  mkdir -p "$scratch_base" || return 1
+  for attempt in 1 2 3 4 5 6 7 8 9 10; do
+    run_name=$(date -u +%Y%m%dT%H%M%S%NZ)-$$-${RANDOM:-0}-$attempt
+    path="$scratch_base/$run_name"
+    if mkdir "$path"; then
+      printf '%s\n' "$path"
+      return 0
+    fi
+  done
+
+  printf 'failed to create unique scratch directory under %s\n' "$scratch_base" >&2
+  return 1
+}
+
 fail() {
   printf 'not ok - %s\n' "$1" >&2
   failures=$((failures + 1))

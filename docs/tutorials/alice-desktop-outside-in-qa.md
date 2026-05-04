@@ -57,7 +57,7 @@ You can run scenarios by ID or by direct YAML path. In later steps, use the ID f
 ```bash
 qa/outside-in/alice-desktop/runners/run-scenario.sh run \
   qa/outside-in/alice-desktop/scenarios/save-load.yaml \
-  --evidence-dir /tmp/alice-qa-tutorial-evidence
+  --evidence-dir qa/outside-in/alice-desktop/evidence/tutorial-runs
 ```
 
 ## Step 3: Run Alice under Xvfb
@@ -66,7 +66,7 @@ Run the launch scenario:
 
 ```bash
 qa/outside-in/alice-desktop/runners/run-scenario.sh run alice-desktop-launch \
-  --evidence-dir /tmp/alice-qa-tutorial-evidence
+  --evidence-dir qa/outside-in/alice-desktop/evidence/tutorial-runs
 ```
 
 When the launch is successful, the runner prints the evidence directory. Open that directory and review:
@@ -89,7 +89,7 @@ Run:
 
 ```bash
 qa/outside-in/alice-desktop/runners/run-scenario.sh run alice-desktop-save-load \
-  --evidence-dir /tmp/alice-qa-tutorial-evidence
+  --evidence-dir qa/outside-in/alice-desktop/evidence/tutorial-runs
 ```
 
 The runner creates a manual evidence checklist because save/load uses real Swing interactions that are not automated by this lane. Checklist generation is preparation, not completion.
@@ -97,7 +97,7 @@ The runner creates a manual evidence checklist because save/load uses real Swing
 Open:
 
 ```text
-/tmp/alice-qa-tutorial-evidence/alice-desktop-save-load/<timestamp>/manual-evidence-checklist.txt
+qa/outside-in/alice-desktop/evidence/tutorial-runs/alice-desktop-save-load/<timestamp>/manual-evidence-checklist.txt
 ```
 
 ## Step 5: Perform the save/load workflow
@@ -128,6 +128,4 @@ The save/load scenario is complete only after the workflow has been performed in
 
 Evidence files are local run artifacts. Keep them for review or attach them to the relevant review record, but do not commit them.
 
-Commit only documentation, scenario YAML, schema changes, and runner changes.
-
-Remove `/tmp/alice-qa-tutorial-evidence` when you no longer need the tutorial artifacts.
+Commit only documentation, scenario YAML, schema changes, and runner changes. Remove `qa/outside-in/alice-desktop/evidence/tutorial-runs` when you no longer need the tutorial artifacts.

@@ -7,9 +7,12 @@ BASE_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
 # shellcheck source=qa/outside-in/alice-desktop/tests/lib/assertions.sh
 . "$SCRIPT_DIR/lib/assertions.sh"
 
+tmp_root=$(create_scratch_root "$SCRIPT_DIR") || exit 1
+trap 'rm -rf "$tmp_root"' EXIT
+
 SCHEMA="$BASE_DIR/schema/scenario.schema.json"
 
-python3 - "$SCHEMA" >"$SCRIPT_DIR/.schema-contract.out" 2>"$SCRIPT_DIR/.schema-contract.err" <<'PY'
+python3 - "$SCHEMA" >"$tmp_root/schema-contract.out" 2>"$tmp_root/schema-contract.err" <<'PY'
 import json
 import sys
 
@@ -62,6 +65,5 @@ print("schema contract satisfied")
 PY
 schema_status=$?
 assert_success "$schema_status" "schema encodes top-level and xvfb automation requirements"
-rm -f "$SCRIPT_DIR/.schema-contract.out" "$SCRIPT_DIR/.schema-contract.err"
 
 finish
