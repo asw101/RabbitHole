@@ -48,8 +48,11 @@ import edu.cmu.cs.dennisc.java.util.Lists;
 import edu.cmu.cs.dennisc.java.util.logging.Logger;
 import org.lgna.project.Project;
 import org.lgna.project.VersionNotSupportedException;
+import org.lgna.project.ast.AbstractDeclaration;
+import org.lgna.project.ast.AbstractPackage;
 import org.lgna.project.ast.JavaCodeGenerator;
 import org.lgna.project.ast.ManagementLevel;
+import org.lgna.project.ast.NamedUserType;
 import org.lgna.project.ast.UserMethod;
 import org.lgna.project.io.IoUtilities;
 import org.lgna.project.resource.ResourcesTypeWrapper;
@@ -59,7 +62,6 @@ import org.lgna.story.ast.JavaCodeUtilities;
 import org.netbeans.api.progress.ProgressHandle;
 import org.netbeans.modules.editor.indent.api.Reformat;
 import org.openide.cookies.EditorCookie;
-import org.openide.filesystems.FileAlreadyLockedException;
 import org.openide.filesystems.FileLock;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileUtil;
@@ -68,11 +70,14 @@ import org.openide.text.NbDocument;
 
 import javax.swing.text.BadLocationException;
 import javax.swing.text.StyledDocument;
+import javax.lang.model.SourceVersion;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author Dennis Cosgrove
@@ -102,33 +107,28 @@ public class ProjectCodeGenerator {
 
     List<FileObject> filesToOpen = Lists.newLinkedList();
     List<FileObject> fileObjectsToFormat = Lists.newLinkedList();
-    java.util.Set<org.lgna.project.ast.NamedUserType> namedUserTypes = aliceProject.getNamedUserTypes();
-    final java.util.Set<org.lgna.common.Resource> resources = aliceProject.getResources();
+    Set<NamedUserType> namedUserTypes = aliceProject.getNamedUserTypes();
+    final Set<org.lgna.common.Resource> resources = aliceProject.getResources();
     if (!resources.isEmpty()) {
       ResourcesTypeWrapper resourcesTypeWrapper = new ResourcesTypeWrapper(aliceProject.getResources());
       namedUserTypes.add(resourcesTypeWrapper.getType());
 
-      FileObject javaSrcDirectoryFileObject = (FileUtil.toFileObject(javaSrcDirectory));
+      FileObject javaSrcDirectoryFileObject = FileUtil.toFileObject(javaSrcDirectory);
+      if (javaSrcDirectoryFileObject == null || !javaSrcDirectoryFileObject.isFolder()) {
+        throw new IOException("Java source directory is not available: " + javaSrcDirectory);
+      }
       for (org.lgna.common.Resource resource : resources) {
         final String dstPath = resourcesTypeWrapper.getResourcePathForResource(resource);
-        FileObject f;
-        try {
-          f = FileUtil.createData(javaSrcDirectoryFileObject, dstPath);
-        } catch (Exception e) {
-          f = javaSrcDirectoryFileObject.getFileObject(dstPath);
+        FileObject f = FileUtil.createData(javaSrcDirectoryFileObject, dstPath);
+        if (f == null) {
+          throw new IOException("Unable to create resource file: " + dstPath);
         }
 
-        FileLock lock;
+        FileLock lock = f.lock();
         try {
-          lock = f.lock();
-        } catch (FileAlreadyLockedException fale) {
-          throw new RuntimeException(fale);
-        }
-        try {
-          OutputStream os = f.getOutputStream(lock);
-          os.write(resource.getData());
-          os.flush();
-          os.close();
+          try (OutputStream os = f.getOutputStream(lock)) {
+            os.write(resource.getData());
+          }
         } finally {
           lock.releaseLock();
         }
@@ -139,12 +139,17 @@ public class ProjectCodeGenerator {
       progressHandle.switchToDeterminate(namedUserTypes.size());
     }
     int createWorkUnit = 0;
-    for (org.lgna.project.ast.NamedUserType type : namedUserTypes) {
-      String path = type.getName() + ".java";
+    Set<String> generatedSourceNames = new HashSet<>();
+    generatedSourceNames.add(LAUNCHER_FILE_NAME);
+    for (NamedUserType type : namedUserTypes) {
+      File file = getJavaSourceFileForType(javaSrcDirectory, type);
+      if (!generatedSourceNames.add(file.getName())) {
+        throw new IOException("Duplicate generated Java source file: " + file.getName());
+      }
+      validateUserAuthoredJavaIdentifiers(type);
       final NetbeansJavaCodeGenerator generator = new NetbeansJavaCodeGenerator(javaCodeGeneratorBuilder);
       type.process(generator);
       String code = generator.getText();
-      File file = new File(javaSrcDirectory, path);
       boolean isMarkedForOpen = false;
       if (!type.isAssignableTo(SProgram.class)) {
         if (type.isAssignableTo(SScene.class)) {
@@ -178,6 +183,37 @@ public class ProjectCodeGenerator {
       formatGeneratedFiles(fileObjectsToFormat, progressHandle);
     }
     return filesToOpen;
+  }
+
+  private static void validateUserAuthoredJavaIdentifiers(NamedUserType type) throws IOException {
+    for (AbstractDeclaration declaration : type.createDeclarationSet()) {
+      if (declaration.isUserAuthored()
+          && !(declaration instanceof AbstractPackage)
+          && (declaration.getNamePropertyIfItExists() != null)
+          && (declaration.getName() != null)) {
+        validateJavaIdentifier(
+            declaration.getName(),
+            "Unsafe Alice declaration name for Java source generation");
+      }
+    }
+  }
+
+  private static File getJavaSourceFileForType(File javaSrcDirectory, NamedUserType type) throws IOException {
+    String typeName = type.getName();
+    validateJavaIdentifier(typeName, "Unsafe Alice type name for Java source generation");
+
+    File sourceRoot = javaSrcDirectory.getCanonicalFile();
+    File file = new File(sourceRoot, typeName + ".java").getCanonicalFile();
+    if (!file.toPath().startsWith(sourceRoot.toPath())) {
+      throw new IOException("Generated Java source path escapes source directory: " + file);
+    }
+    return file;
+  }
+
+  private static void validateJavaIdentifier(String identifier, String description) throws IOException {
+    if ((identifier == null) || !SourceVersion.isIdentifier(identifier) || SourceVersion.isKeyword(identifier)) {
+      throw new IOException(description + ": " + identifier);
+    }
   }
 
   private static void formatGeneratedFiles(List<FileObject> fileObjectsToFormat, ProgressHandle progressHandle) {

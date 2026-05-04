@@ -7,7 +7,11 @@ import org.lgna.common.Resource;
 import org.lgna.project.Project;
 import org.lgna.project.ast.BlockStatement;
 import org.lgna.project.ast.JavaType;
+import org.lgna.project.ast.LocalDeclarationStatement;
 import org.lgna.project.ast.NamedUserType;
+import org.lgna.project.ast.StringLiteral;
+import org.lgna.project.ast.UserField;
+import org.lgna.project.ast.UserLocal;
 import org.lgna.project.ast.UserMethod;
 import org.lgna.project.ast.UserParameter;
 import org.lgna.project.io.IoUtilities;
@@ -316,11 +320,141 @@ public class ProjectCodeGeneratorTest {
     assertGeneratedResourceLoads(sourceDirectory.toPath(), data);
   }
 
+  @Test
+  public void rejectsUnsafeAliceTypeNamesBeforeWritingGeneratedSources() throws Exception {
+    String absolutePathName = temporaryFolder.getRoot().toPath().resolve("absolute").toAbsolutePath().toString();
+    for (String typeName : List.of("../Outside", "nested/Outside", "nested\\Outside", absolutePathName, "World Name", "class", "")) {
+      File aliceProject = temporaryFolder.newFile("unsafe-type-" + Math.abs(typeName.hashCode()) + ".a3p");
+      IoUtilities.writeProject(
+          aliceProject,
+          new Project(programType(typeName), Project.SceneCameraType.WindowCamera));
+      File sourceDirectory = temporaryFolder.newFolder("unsafe-type-src-" + Math.abs(typeName.hashCode()));
+
+      try {
+        ProjectCodeGenerator.generateCode(aliceProject, sourceDirectory, null, false);
+        fail("Expected IOException for unsafe type name: " + typeName);
+      } catch (java.io.IOException expected) {
+        assertTrue(expected.getMessage(), expected.getMessage().contains("Unsafe Alice type name"));
+      }
+    }
+  }
+
+  @Test
+  public void rejectedTraversingAliceTypeNameDoesNotWriteOutsideSourceDirectory() throws Exception {
+    File aliceProject = temporaryFolder.newFile("unsafe-traversal-type.a3p");
+    IoUtilities.writeProject(
+        aliceProject,
+        new Project(programType("../Outside"), Project.SceneCameraType.WindowCamera));
+    File sourceDirectory = temporaryFolder.newFolder("unsafe-traversal-type-src");
+    Path outsidePath = sourceDirectory.toPath().getParent().resolve("Outside.java");
+
+    try {
+      ProjectCodeGenerator.generateCode(aliceProject, sourceDirectory, null, false);
+      fail("Expected IOException");
+    } catch (java.io.IOException expected) {
+      assertTrue(expected.getMessage(), expected.getMessage().contains("Unsafe Alice type name"));
+    }
+
+    assertFalse(Files.exists(outsidePath));
+  }
+
+  @Test
+  public void rejectsUnsafeAliceDeclarationNamesBeforeWritingGeneratedSources() throws Exception {
+    for (NamedUserType type : List.of(
+        programTypeWithMethodName("bad(){}"),
+        programTypeWithFieldName("bad;"),
+        programTypeWithParameterName("bad-name"),
+        programTypeWithLocalName("bad name"))) {
+      File aliceProject = temporaryFolder.newFile("unsafe-declaration-" + Math.abs(type.getName().hashCode()) + UUID.randomUUID() + ".a3p");
+      IoUtilities.writeProject(
+          aliceProject,
+          new Project(type, Project.SceneCameraType.WindowCamera));
+      File sourceDirectory = temporaryFolder.newFolder("unsafe-declaration-src-" + UUID.randomUUID());
+
+      try {
+        ProjectCodeGenerator.generateCode(aliceProject, sourceDirectory, null, false);
+        fail("Expected IOException for unsafe declaration in type: " + type.getName());
+      } catch (java.io.IOException expected) {
+        assertTrue(expected.getMessage(), expected.getMessage().contains("Unsafe Alice declaration name"));
+      }
+
+      assertFalse(Files.exists(sourceDirectory.toPath().resolve("Program.java")));
+    }
+  }
+
+  @Test
+  public void rejectsGeneratedTypeNameThatCollidesWithLauncherSource() throws Exception {
+    File aliceProject = temporaryFolder.newFile("launcher-collision-type.a3p");
+    IoUtilities.writeProject(
+        aliceProject,
+        new Project(programType("AliceJavaFXLauncher"), Project.SceneCameraType.WindowCamera));
+    File sourceDirectory = temporaryFolder.newFolder("launcher-collision-type-src");
+
+    try {
+      ProjectCodeGenerator.generateCode(aliceProject, sourceDirectory, null, false);
+      fail("Expected IOException");
+    } catch (java.io.IOException expected) {
+      assertTrue(expected.getMessage(), expected.getMessage().contains("Duplicate generated Java source file"));
+    }
+
+    assertFalse(Files.exists(sourceDirectory.toPath().resolve("AliceJavaFXLauncher.java")));
+  }
+
+  @Test
+  public void resourceGenerationFailsWhenSourceDirectoryIsNotAFolder() throws Exception {
+    byte[] data = "hello alice".getBytes(StandardCharsets.UTF_8);
+    Project project = new Project(programType("Program"), Project.SceneCameraType.WindowCamera);
+    project.addResource(new TestResource("note.txt", "text/plain", data));
+    File aliceProject = temporaryFolder.newFile("synthetic-resource-invalid-source.a3p");
+    IoUtilities.writeProject(aliceProject, project);
+    File sourceDirectory = temporaryFolder.newFile("not-a-source-directory");
+
+    try {
+      ProjectCodeGenerator.generateCode(aliceProject, sourceDirectory, null, false);
+      fail("Expected IOException");
+    } catch (java.io.IOException expected) {
+      assertTrue(expected.getMessage().contains("Java source directory is not available"));
+    }
+  }
+
   private static NamedUserType programType(String name) {
     NamedUserType type = new NamedUserType();
     type.name.setValue(name);
     type.superType.setValue(JavaType.getInstance(SProgram.class));
     type.methods.add(mainMethod());
+    return type;
+  }
+
+  private static NamedUserType programTypeWithMethodName(String methodName) {
+    NamedUserType type = programType("Program");
+    type.methods.add(new UserMethod(methodName, Void.TYPE, new UserParameter[0], new BlockStatement()));
+    return type;
+  }
+
+  private static NamedUserType programTypeWithFieldName(String fieldName) {
+    NamedUserType type = programType("Program");
+    type.fields.add(new UserField(fieldName, String.class, new StringLiteral("hello alice")));
+    return type;
+  }
+
+  private static NamedUserType programTypeWithParameterName(String parameterName) {
+    NamedUserType type = programType("Program");
+    type.methods.add(new UserMethod(
+        "remember",
+        Void.TYPE,
+        new UserParameter[] {new UserParameter(parameterName, String.class)},
+        new BlockStatement()));
+    return type;
+  }
+
+  private static NamedUserType programTypeWithLocalName(String localName) {
+    NamedUserType type = programType("Program");
+    UserLocal local = new UserLocal(localName, String.class, true);
+    type.methods.add(new UserMethod(
+        "remember",
+        Void.TYPE,
+        new UserParameter[0],
+        new BlockStatement(new LocalDeclarationStatement(local, new StringLiteral("hello alice")))));
     return type;
   }
 

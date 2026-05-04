@@ -44,6 +44,7 @@ public class ProjectBackupRecoveryIoTest {
     Project mainProject = new TestFileProjectLoader(corruptMainProject).loadNow();
     File backup = selector.getNextBackup(
         LocalDateTime.MIN,
+        backupDirectory,
         new File[] {corruptNewestBackup, validBackup},
         true,
         Set.of(corruptNewestBackup.getName()));
