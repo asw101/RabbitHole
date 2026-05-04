@@ -4,6 +4,7 @@ import org.alice.math.immutable.AxisAlignedBox;
 import org.junit.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
 import javax.tools.JavaCompiler;
@@ -58,6 +59,27 @@ public class ModelExportTest {
     assertCompiles("org/lgna/story/resources/prop/TestPropResource.java", javaCode);
   }
 
+  @Test
+  public void modelExporterOnlyWritesSubResourceTagsUniqueFromParent() throws Exception {
+    ModelResourceExporter exporter = new ModelResourceExporter("TestProp", ModelClassData.PROP_CLASS_DATA);
+    exporter.addTags("shared-tag");
+    exporter.addGroupTags("shared-group");
+    exporter.addThemeTags("shared-theme");
+    exporter.setBoundingBox("TestProp", AxisAlignedBox.createAxisAlignedBox(-1.0, 0.0, -2.0, 1.0, 3.0, 2.0));
+    exporter.addResource("VariantProp", "Default", "ALICE", null, null);
+    exporter.setBoundingBox("VariantProp", AxisAlignedBox.createAxisAlignedBox(-0.5, 0.0, -0.5, 0.5, 1.0, 0.5));
+    exporter.addSubResourceTags("VariantProp", "Default", "shared-tag", "variant-tag");
+    exporter.addSubResourceGroupTags("VariantProp", "Default", "shared-group", "variant-group");
+    exporter.addSubResourceThemeTags("VariantProp", "Default", "shared-theme", "variant-theme");
+
+    Document xml = parseXml(exporter.createXMLString());
+
+    Element resource = (Element) xml.getDocumentElement().getElementsByTagName("Resource").item(0);
+    assertOnlyChildText(resource, "Tag", "variant-tag");
+    assertOnlyChildText(resource, "GroupTag", "variant-group");
+    assertOnlyChildText(resource, "ThemeTag", "variant-theme");
+  }
+
   private static ModelResourceExporter createSyntheticPropExporter() {
     ModelResourceExporter exporter = new ModelResourceExporter("TestProp", ModelClassData.PROP_CLASS_DATA);
     exporter.addAttribution("Alice Test", "2026");
@@ -74,6 +96,12 @@ public class ModelExportTest {
     return javax.xml.parsers.DocumentBuilderFactory.newInstance()
         .newDocumentBuilder()
         .parse(new InputSource(new StringReader(xml)));
+  }
+
+  private static void assertOnlyChildText(Element parent, String childTag, String expectedText) {
+    NodeList nodes = parent.getElementsByTagName(childTag);
+    assertEquals(1, nodes.getLength());
+    assertEquals(expectedText, nodes.item(0).getTextContent());
   }
 
   private static void assertCompiles(String sourcePath, String source) throws Exception {
