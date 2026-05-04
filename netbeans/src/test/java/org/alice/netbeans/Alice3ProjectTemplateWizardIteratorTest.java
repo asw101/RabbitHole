@@ -14,6 +14,7 @@ import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Set;
+import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import static org.junit.Assert.*;
@@ -132,6 +133,66 @@ public class Alice3ProjectTemplateWizardIteratorTest {
     }
   }
 
+  @Test
+  public void projectPanelRejectsUnsafeProjectFolderNames() throws Exception {
+    File projectLocation = temporaryFolder.newFolder("projects");
+    File aliceProject = temporaryFolder.newFile("world.a3p");
+    String[] unsafeProjectNames = {"../Outside", "Nested/Outside", "Nested\\Outside", "World:", ".", "..", " World", "World "};
+
+    for (String unsafeProjectName : unsafeProjectNames) {
+      Alice3ProjectTemplatePanelVisual visual = panelWithImport(aliceProject, projectLocation, unsafeProjectName);
+      WizardDescriptor settings = new WizardDescriptor(new WizardDescriptor.Panel[0]);
+
+      assertFalse(unsafeProjectName, visual.valid(settings));
+      assertEquals("Project Name is not a valid folder name.", settings.getProperty("WizardPanel_errorMessage"));
+    }
+  }
+
+  @Test
+  public void projectFolderNameValidationRejectsControlCharacters() {
+    assertFalse(Alice3ProjectTemplatePanelVisual.isValidProjectFolderName("World\nName"));
+  }
+
+  @Test
+  public void projectPanelRejectsNonAliceProjectFile() throws Exception {
+    Alice3ProjectTemplatePanelVisual visual = panelWithImport(
+        temporaryFolder.newFile("notes.txt"),
+        temporaryFolder.newFolder("projects"),
+        "World");
+    WizardDescriptor settings = new WizardDescriptor(new WizardDescriptor.Panel[0]);
+
+    assertFalse(visual.valid(settings));
+    assertEquals("Alice Project must be a valid Alice project file.", settings.getProperty("WizardPanel_errorMessage"));
+  }
+
+  @Test
+  public void storeDerivesProjectDirectoryFromLocationAndProjectName() throws Exception {
+    File projectLocation = temporaryFolder.newFolder("projects");
+    Alice3ProjectTemplatePanelVisual visual = panelWithImport(temporaryFolder.newFile("world.a3p"), projectLocation, "World");
+    textField(visual, "createdFolderTextField").setText(new File(projectLocation, "../Outside").getAbsolutePath());
+    WizardDescriptor settings = new WizardDescriptor(new WizardDescriptor.Panel[0]);
+
+    visual.store(settings);
+
+    assertEquals(new File(projectLocation, "World").getCanonicalFile(), ((File) settings.getProperty("projdir")).getCanonicalFile());
+  }
+
+  @Test
+  public void projectTemplateEntryNameAcceptsRelativeTemplatePaths() throws Exception {
+    assertEquals(
+        "nbproject/project.xml",
+        Alice3ProjectTemplateWizardIterator.projectTemplateEntryName(new ZipEntry("nbproject/project.xml")));
+  }
+
+  @Test
+  public void projectTemplateEntryNameRejectsUnsafePaths() {
+    assertTemplateEntryRejected("../outside.txt");
+    assertTemplateEntryRejected("nbproject/../../outside.txt");
+    assertTemplateEntryRejected("/absolute.txt");
+    assertTemplateEntryRejected("C:/absolute.txt");
+    assertTemplateEntryRejected("nbproject\\project.xml");
+  }
+
   private static File setDefaultDirectory(File directory) throws Exception {
     Field field = FileUtilities.class.getDeclaredField("s_defaultDirectory");
     field.setAccessible(true);
@@ -151,5 +212,22 @@ public class Alice3ProjectTemplateWizardIteratorTest {
     settings.putProperty("projdir", new File(projectLocation, "World"));
     settings.putProperty("name", "World");
     visual.read(settings);
+  }
+
+  private static Alice3ProjectTemplatePanelVisual panelWithImport(File aliceProject, File projectLocation, String projectName) throws Exception {
+    Alice3ProjectTemplatePanelVisual visual = new Alice3ProjectTemplatePanelVisual(new Alice3ProjectTemplateWizardPanel());
+    textField(visual, "aliceWorldLocationTextField").setText(aliceProject.getAbsolutePath());
+    textField(visual, "projectLocationTextField").setText(projectLocation.getAbsolutePath());
+    textField(visual, "projectNameTextField").setText(projectName);
+    return visual;
+  }
+
+  private static void assertTemplateEntryRejected(String name) {
+    try {
+      Alice3ProjectTemplateWizardIterator.projectTemplateEntryName(new ZipEntry(name));
+      fail("Expected unsafe template entry to be rejected: " + name);
+    } catch (IOException expected) {
+      assertTrue(expected.getMessage().contains("unsafe zip entry"));
+    }
   }
 }

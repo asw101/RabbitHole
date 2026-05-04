@@ -78,6 +78,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.LinkedHashSet;
@@ -339,14 +340,15 @@ import java.util.zip.ZipInputStream;
     try (ZipInputStream str = new ZipInputStream(source)) {
       ZipEntry entry;
       while ((entry = str.getNextEntry()) != null) {
+        String entryName = projectTemplateEntryName(entry);
         if (entry.isDirectory()) {
-          FileUtil.createFolder(projectRoot, entry.getName());
+          FileUtil.createFolder(projectRoot, entryName);
         } else {
-          FileObject fo = FileUtil.createData(projectRoot, entry.getName());
-          if ("nbproject/project.xml".equals(entry.getName())) {
+          FileObject fo = FileUtil.createData(projectRoot, entryName);
+          if ("nbproject/project.xml".equals(entryName)) {
             // Special handling for setting name of Ant-based projects; customize as needed:
             filterProjectXML(fo, str, projectRoot.getName());
-          } else if ("nbproject/project.properties".equals(entry.getName())) {
+          } else if ("nbproject/project.properties".equals(entryName)) {
             filterProjectProperties(fo, str, projectRoot.getName());
           } else {
             writeFile(str, fo);
@@ -356,12 +358,21 @@ import java.util.zip.ZipInputStream;
     }
   }
 
+  static String projectTemplateEntryName(ZipEntry entry) throws IOException {
+    String name = entry.getName();
+    if (name == null || name.isBlank() || name.contains("\\") || name.contains(":")) {
+      throw new IOException("Project template contains an unsafe zip entry: " + name);
+    }
+    Path normalized = Path.of(name).normalize();
+    if (normalized.isAbsolute() || normalized.startsWith("..") || normalized.toString().isEmpty() || ".".equals(normalized.toString())) {
+      throw new IOException("Project template contains an unsafe zip entry: " + name);
+    }
+    return normalized.toString().replace('\\', '/');
+  }
+
   private static void writeFile(ZipInputStream str, FileObject fo) throws IOException {
-    OutputStream out = fo.getOutputStream();
-    try {
+    try (OutputStream out = fo.getOutputStream()) {
       FileUtil.copy(str, out);
-    } finally {
-      out.close();
     }
   }
 

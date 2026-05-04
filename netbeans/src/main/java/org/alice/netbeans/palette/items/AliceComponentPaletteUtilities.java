@@ -50,7 +50,6 @@ import org.netbeans.api.java.source.Task;
 import org.netbeans.api.java.source.TreeMaker;
 import org.netbeans.api.java.source.WorkingCopy;
 import org.openide.text.IndentEngine;
-import org.openide.util.Exceptions;
 
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Caret;
@@ -66,6 +65,9 @@ public class AliceComponentPaletteUtilities {
 
   public static void insert(final String s, final String[] imports, final JTextComponent target) throws BadLocationException {
     JavaSource src = JavaSource.forDocument(target.getDocument());
+    if (src == null) {
+      throw new BadLocationException("No Java source is associated with the target document", target.getCaretPosition());
+    }
     Task<WorkingCopy> task = new Task<WorkingCopy>() {
       @Override
       public void run(WorkingCopy workingCopy) throws IOException, BadLocationException {
@@ -79,7 +81,9 @@ public class AliceComponentPaletteUtilities {
     try {
       src.runModificationTask(task).commit();
     } catch (IOException ex) {
-      Exceptions.printStackTrace(ex);
+      BadLocationException ble = new BadLocationException("Unable to modify Java source", target.getCaretPosition());
+      ble.initCause(ex);
+      throw ble;
     }
   }
 
@@ -114,33 +118,31 @@ public class AliceComponentPaletteUtilities {
 
     int start = -1;
 
+    //Find the location in the editor,
+    //and if it is a selection, remove it,
+    //to be replaced by the dropped item:
+    Caret caret = target.getCaret();
+    int p0 = Math.min(caret.getDot(), caret.getMark());
+    int p1 = Math.max(caret.getDot(), caret.getMark());
+    doc.remove(p0, p1 - p0);
+
+    start = caret.getDot();
+
+    //Insert the string in the document,
+    //using the indentation engine
+    //to create the correct indentation:
+    IndentEngine engine = IndentEngine.find(doc);
+    StringWriter textWriter = new StringWriter();
     try {
-
-      //Find the location in the editor,
-      //and if it is a selection, remove it,
-      //to be replaced by the dropped item:
-      Caret caret = target.getCaret();
-      int p0 = Math.min(caret.getDot(), caret.getMark());
-      int p1 = Math.max(caret.getDot(), caret.getMark());
-      doc.remove(p0, p1 - p0);
-
-      start = caret.getDot();
-
-      //Insert the string in the document,
-      //using the indentation engine
-      //to create the correct indentation:
-      IndentEngine engine = IndentEngine.find(doc);
-      StringWriter textWriter = new StringWriter();
       Writer indentWriter = engine.createWriter(doc, start, textWriter);
       indentWriter.write(s);
       indentWriter.close();
-      doc.insertString(start, textWriter.toString(), null);
-
     } catch (IOException ex) {
-      Exceptions.printStackTrace(ex);
-    } catch (BadLocationException ble) {
-      Exceptions.printStackTrace(ble);
+      BadLocationException ble = new BadLocationException("Unable to format inserted text", start);
+      ble.initCause(ex);
+      throw ble;
     }
+    doc.insertString(start, textWriter.toString(), null);
 
     return start;
   }
