@@ -216,6 +216,30 @@ public class IoUtilitiesTest {
   }
 
   @Test
+  public void jsonPlayerReaderReportsMissingImageResourceUuid() throws Exception {
+    ImageReference imageReference = imageReference(null, "missing-id.png", "png");
+    File exportFile = temporaryFolder.newFile("missing-image-id.a3w");
+    writePlayerArchive(exportFile, imageReference, new byte[] {1, 2, 3});
+
+    IOException thrown = assertThrows(IOException.class, () -> IoUtilities.readProject(exportFile));
+
+    assertTrue(thrown.getMessage().contains(imageReference.name));
+    assertTrue(thrown.getMessage().contains("UUID"));
+  }
+
+  @Test
+  public void jsonPlayerReaderReportsMissingAudioResourceUuid() throws Exception {
+    AudioReference audioReference = audioReference(null, "missing-id.wav", 1.0);
+    File exportFile = temporaryFolder.newFile("missing-audio-id.a3w");
+    writePlayerArchive(exportFile, audioReference, new byte[] {0, 1, 2, 3});
+
+    IOException thrown = assertThrows(IOException.class, () -> IoUtilities.readProject(exportFile));
+
+    assertTrue(thrown.getMessage().contains(audioReference.name));
+    assertTrue(thrown.getMessage().contains("UUID"));
+  }
+
+  @Test
   public void readsExportedPlayerArchiveModelAndGeneratedTypeReferencesWithoutBinaryResources() throws Exception {
     ProjectManifest manifest = new ProjectManifest();
     manifest.metadata.fileType = IoUtilities.EXPORT_EXTENSION;
