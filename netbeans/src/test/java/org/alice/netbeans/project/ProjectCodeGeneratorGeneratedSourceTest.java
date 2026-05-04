@@ -174,7 +174,8 @@ public class ProjectCodeGeneratorGeneratedSourceTest {
     Path programPath = sourceDirectory.resolve("Program.java");
     String programSource = Files.readString(programPath);
     assertTrue(programSource.contains("void visitAll()"));
-    assertTrue(programSource, programSource.contains("for(String COUNT__ : new String[]{\"red\", \"blue\"})"));
+    assertFalse(programSource, programSource.contains("COUNT__"));
+    assertTrue(programSource, programSource.contains("for(String itemA : new String[]{\"red\", \"blue\"})"));
     compileProgramAndLauncher("generated-for-each-loop-classes", programPath, sourceDirectory);
   }
 
@@ -188,8 +189,9 @@ public class ProjectCodeGeneratorGeneratedSourceTest {
     Path programPath = sourceDirectory.resolve("Program.java");
     String programSource = Files.readString(programPath);
     assertTrue(programSource.contains("void copyEach()"));
-    assertTrue(programSource, programSource.contains("for(String COUNT__ : new String[]{\"red\", \"blue\"})"));
-    assertTrue(programSource, programSource.contains("final String copy=COUNT__;"));
+    assertFalse(programSource, programSource.contains("COUNT__"));
+    assertTrue(programSource, programSource.contains("for(String itemA : new String[]{\"red\", \"blue\"})"));
+    assertTrue(programSource, programSource.contains("final String copy=itemA;"));
     compileProgramAndLauncher("generated-for-each-loop-item-access-classes", programPath, sourceDirectory);
   }
 
