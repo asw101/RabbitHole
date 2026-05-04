@@ -183,6 +183,58 @@ public class ProjectCodeGeneratorTest {
   }
 
   @Test
+  public void generateCodePreservesUnrelatedDestinationJavaFile() throws Exception {
+    File aliceProject = temporaryFolder.newFile("synthetic-preserve-destination.a3p");
+    IoUtilities.writeProject(
+        aliceProject,
+        new Project(programType("Program"), Project.SceneCameraType.WindowCamera));
+    File sourceDirectory = temporaryFolder.newFolder("non-empty-generated-src");
+    Path notesPath = sourceDirectory.toPath().resolve("Notes.java");
+    String notesSource = """
+        public class Notes {
+          String authorNote = "keep me";
+        }
+        """;
+    Files.writeString(notesPath, notesSource);
+
+    ProjectCodeGenerator.generateCode(aliceProject, sourceDirectory, null, false);
+
+    assertEquals(notesSource, Files.readString(notesPath));
+    assertTrue(Files.exists(sourceDirectory.toPath().resolve("Program.java")));
+    assertTrue(Files.exists(sourceDirectory.toPath().resolve("AliceJavaFXLauncher.java")));
+  }
+
+  @Test
+  public void generateCodeRejectsGeneratedSourceConflictWithoutOverwritingDestination() throws Exception {
+    File aliceProject = temporaryFolder.newFile("synthetic-conflicting-destination.a3p");
+    IoUtilities.writeProject(
+        aliceProject,
+        new Project(programType("Program"), Project.SceneCameraType.WindowCamera));
+    File sourceDirectory = temporaryFolder.newFolder("conflicting-generated-src");
+    Path programPath = sourceDirectory.toPath().resolve("Program.java");
+    Path notesPath = sourceDirectory.toPath().resolve("Notes.java");
+    String handAuthoredProgram = """
+        public class Program {
+          String owner = "student";
+        }
+        """;
+    String notesSource = "class Notes {}\n";
+    Files.writeString(programPath, handAuthoredProgram);
+    Files.writeString(notesPath, notesSource);
+
+    try {
+      ProjectCodeGenerator.generateCode(aliceProject, sourceDirectory, null, false);
+      fail("Expected IOException for existing generated destination");
+    } catch (java.io.IOException expected) {
+      assertTrue(expected.getMessage(), expected.getMessage().contains("Generated destination already exists"));
+    }
+
+    assertEquals(handAuthoredProgram, Files.readString(programPath));
+    assertEquals(notesSource, Files.readString(notesPath));
+    assertFalse(Files.exists(sourceDirectory.toPath().resolve("AliceJavaFXLauncher.java")));
+  }
+
+  @Test
   public void generatesResourceFileAndResourcesTypeFromSyntheticAliceProject() throws Exception {
     byte[] data = "hello alice".getBytes(StandardCharsets.UTF_8);
     Project project = new Project(programType("Program"), Project.SceneCameraType.WindowCamera);

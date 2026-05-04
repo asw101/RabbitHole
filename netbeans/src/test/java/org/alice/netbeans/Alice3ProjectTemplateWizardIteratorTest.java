@@ -5,17 +5,23 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.openide.WizardDescriptor;
+import org.openide.filesystems.FileObject;
+import org.openide.filesystems.FileUtil;
 
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import java.util.zip.ZipOutputStream;
 
 import static org.junit.Assert.*;
 
@@ -193,6 +199,43 @@ public class Alice3ProjectTemplateWizardIteratorTest {
     assertTemplateEntryRejected("nbproject\\project.xml");
   }
 
+  @Test
+  public void projectTemplateExtractionPreservesUnrelatedDestinationFile() throws Exception {
+    File projectDirectory = temporaryFolder.newFolder("existing-template-project");
+    Path notesPath = projectDirectory.toPath().resolve("Notes.java");
+    String notesSource = "class Notes {}\n";
+    Files.writeString(notesPath, notesSource);
+
+    Alice3ProjectTemplateWizardIterator.unZipFile(
+        templateArchive("build.xml", "<project name=\"Generated\"/>\n"),
+        projectRoot(projectDirectory));
+
+    assertEquals(notesSource, Files.readString(notesPath));
+    assertEquals("<project name=\"Generated\"/>\n", Files.readString(projectDirectory.toPath().resolve("build.xml")));
+  }
+
+  @Test
+  public void projectTemplateExtractionRejectsConflictWithoutOverwritingDestination() throws Exception {
+    File projectDirectory = temporaryFolder.newFolder("conflicting-template-project");
+    Path buildPath = projectDirectory.toPath().resolve("build.xml");
+    String handAuthoredBuild = "<project name=\"HandAuthored\"/>\n";
+    Files.writeString(buildPath, handAuthoredBuild);
+
+    try {
+      Alice3ProjectTemplateWizardIterator.unZipFile(
+          templateArchive(
+              "build.xml", "<project name=\"Generated\"/>\n",
+              "manifest.mf", "Manifest-Version: 1.0\n"),
+          projectRoot(projectDirectory));
+      fail("Expected IOException for existing template destination");
+    } catch (IOException expected) {
+      assertTrue(expected.getMessage(), expected.getMessage().contains("Project template destination already exists"));
+    }
+
+    assertEquals(handAuthoredBuild, Files.readString(buildPath));
+    assertFalse(Files.exists(projectDirectory.toPath().resolve("manifest.mf")));
+  }
+
   private static File setDefaultDirectory(File directory) throws Exception {
     Field field = FileUtilities.class.getDeclaredField("s_defaultDirectory");
     field.setAccessible(true);
@@ -229,5 +272,23 @@ public class Alice3ProjectTemplateWizardIteratorTest {
     } catch (IOException expected) {
       assertTrue(expected.getMessage().contains("unsafe zip entry"));
     }
+  }
+
+  private static FileObject projectRoot(File projectDirectory) {
+    FileObject projectRoot = FileUtil.toFileObject(projectDirectory);
+    assertNotNull(projectDirectory.getAbsolutePath(), projectRoot);
+    return projectRoot;
+  }
+
+  private static ByteArrayInputStream templateArchive(String... namesAndContents) throws IOException {
+    ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+    try (ZipOutputStream zipOutputStream = new ZipOutputStream(bytes)) {
+      for (int i = 0; i < namesAndContents.length; i += 2) {
+        zipOutputStream.putNextEntry(new ZipEntry(namesAndContents[i]));
+        zipOutputStream.write(namesAndContents[i + 1].getBytes(StandardCharsets.UTF_8));
+        zipOutputStream.closeEntry();
+      }
+    }
+    return new ByteArrayInputStream(bytes.toByteArray());
   }
 }
