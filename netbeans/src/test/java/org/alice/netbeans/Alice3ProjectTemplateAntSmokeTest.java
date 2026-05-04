@@ -1,7 +1,16 @@
 package org.alice.netbeans;
 
+import org.alice.netbeans.project.ProjectCodeGenerator;
 import org.apache.tools.ant.launch.Launcher;
 import org.junit.Test;
+import org.lgna.project.Project;
+import org.lgna.project.ast.BlockStatement;
+import org.lgna.project.ast.JavaType;
+import org.lgna.project.ast.NamedUserType;
+import org.lgna.project.ast.UserMethod;
+import org.lgna.project.ast.UserParameter;
+import org.lgna.project.io.IoUtilities;
+import org.lgna.story.SProgram;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -9,6 +18,7 @@ import org.xml.sax.InputSource;
 
 import java.io.File;
 import java.io.StringReader;
+import java.lang.reflect.Method;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -22,12 +32,15 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.jar.JarFile;
+import java.util.jar.Manifest;
 import java.util.stream.IntStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class Alice3ProjectTemplateAntSmokeTest {
@@ -37,23 +50,19 @@ public class Alice3ProjectTemplateAntSmokeTest {
   private static final Map<String, Path> MODULE_OUTPUTS = moduleOutputs();
 
   @Test
-  public void packagedProjectTemplateBuildsJarWithAlice3LibraryClasspath() throws Exception {
+  public void packagedProjectTemplateBuildsGeneratedAliceProjectJarWithAlice3LibraryClasspath() throws Exception {
     Path smokeRoot = TARGET.resolve("ant-smoke");
     Path projectDirectory = smokeRoot.resolve("project");
     deleteRecursively(smokeRoot);
 
     unzip(TARGET.resolve("classes/org/alice/netbeans/ProjectTemplate.zip"), projectDirectory);
-    Files.createDirectories(projectDirectory.resolve("src"));
-    Files.writeString(
-        projectDirectory.resolve("src/Alice3AntSmoke.java"),
-        """
-        import org.lgna.story.SProgram;
-
-        public class Alice3AntSmoke {
-          private SProgram program;
-        }
-        """,
-        StandardCharsets.UTF_8);
+    Path sourceDirectory = projectDirectory.resolve("src");
+    Files.createDirectories(sourceDirectory);
+    Path aliceProject = smokeRoot.resolve("synthetic-ant-smoke.a3p");
+    IoUtilities.writeProject(
+        aliceProject.toFile(),
+        new Project(programType("Program"), Project.SceneCameraType.WindowCamera));
+    generateProjectCodeWithoutFormatting(aliceProject, sourceDirectory);
 
     Path antScratch = smokeRoot.resolve("ant-scratch");
     Files.createDirectories(antScratch);
@@ -62,8 +71,57 @@ public class Alice3ProjectTemplateAntSmokeTest {
 
     String antLog = executeAntJarTarget(projectDirectory, userProperties, antScratch);
 
-    assertTrue(antLog, Files.exists(projectDirectory.resolve("build/classes/Alice3AntSmoke.class")));
-    assertTrue(antLog, Files.exists(projectDirectory.resolve("dist/Alice3JavaApplication.jar")));
+    Path jarPath = projectDirectory.resolve("dist/Alice3JavaApplication.jar");
+    assertTrue(antLog, Files.exists(projectDirectory.resolve("build/classes/Program.class")));
+    assertTrue(antLog, Files.exists(projectDirectory.resolve("build/classes/AliceJavaFXLauncher.class")));
+    assertTrue(antLog, Files.exists(jarPath));
+    assertJarContainsGeneratedProject(jarPath);
+  }
+
+  private static void generateProjectCodeWithoutFormatting(Path aliceProject, Path sourceDirectory) throws Exception {
+    Method generateCode = ProjectCodeGenerator.class.getDeclaredMethod(
+        "generateCode",
+        File.class,
+        File.class,
+        org.netbeans.api.progress.ProgressHandle.class,
+        boolean.class);
+    generateCode.setAccessible(true);
+    generateCode.invoke(
+        null,
+        aliceProject.toAbsolutePath().normalize().toFile(),
+        sourceDirectory.toAbsolutePath().normalize().toFile(),
+        null,
+        false);
+  }
+
+  private static NamedUserType programType(String name) {
+    NamedUserType type = new NamedUserType();
+    type.name.setValue(name);
+    type.superType.setValue(JavaType.getInstance(SProgram.class));
+    type.methods.add(mainMethod());
+    return type;
+  }
+
+  private static UserMethod mainMethod() {
+    UserParameter argsParameter = new UserParameter("args", String[].class);
+    UserMethod mainMethod = new UserMethod(
+        "main",
+        Void.TYPE,
+        new UserParameter[] {argsParameter},
+        new BlockStatement());
+    mainMethod.isStatic.setValue(true);
+    mainMethod.isSignatureLocked.setValue(true);
+    return mainMethod;
+  }
+
+  private static void assertJarContainsGeneratedProject(Path jarPath) throws Exception {
+    try (JarFile jarFile = new JarFile(jarPath.toFile())) {
+      assertTrue(jarPath.toString(), jarFile.getEntry("Program.class") != null);
+      assertTrue(jarPath.toString(), jarFile.getEntry("AliceJavaFXLauncher.class") != null);
+      Manifest manifest = jarFile.getManifest();
+      assertTrue("Jar manifest should be present", manifest != null);
+      assertEquals("AliceJavaFXLauncher", manifest.getMainAttributes().getValue("Main-Class"));
+    }
   }
 
   private static String executeAntJarTarget(Path projectDirectory, Path userProperties, Path antScratch) {
@@ -142,9 +200,22 @@ public class Alice3ProjectTemplateAntSmokeTest {
     if ((moduleOutput != null) && Files.exists(moduleOutput)) {
       return Optional.of(moduleOutput);
     }
-    return testClasspathEntries().stream()
+    List<Path> matchingJars = testClasspathEntries().stream()
         .filter(path -> isJarForArtifact(path, artifactId))
-        .findFirst();
+        .toList();
+    Optional<Path> jarWithClasses = matchingJars.stream()
+        .filter(Alice3ProjectTemplateAntSmokeTest::containsClassEntry)
+        .findFirst()
+        .or(() -> matchingJars.stream().findFirst());
+    return jarWithClasses;
+  }
+
+  private static boolean containsClassEntry(Path jarPath) {
+    try (JarFile jarFile = new JarFile(jarPath.toFile())) {
+      return jarFile.stream().anyMatch(entry -> !entry.isDirectory() && entry.getName().endsWith(".class"));
+    } catch (Exception e) {
+      return false;
+    }
   }
 
   private static boolean isJarForArtifact(Path path, String artifactId) {
