@@ -127,6 +127,8 @@ final class ModelManifestResourceData {
   }
 
   private static void addRootJoints(ModelManifest manifest, JointedModelResource modelResource) {
+    // This handles only BasicResource (Props) where getRootJointIds is defined
+    // TODO Add JOINT_ID_ROOTS, add a common access pattern on JointedModelResource, or replace resources and revisit this code
     try {
       Method rootJointsMethod = modelResource.getClass().getMethod("getRootJointIds");
       JointId[] rootJointIds = (JointId[]) rootJointsMethod.invoke(modelResource);
