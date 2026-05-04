@@ -322,6 +322,24 @@ public class XmlProjectIo implements ProjectIo {
       }
     }
 
+    private static void writeManifest(Project project, ZipOutputStream zos, DataSource... dataSources) throws IOException {
+      if (!hasDataSource(ProjectIo.MANIFEST_ENTRY_NAME, dataSources)) {
+        ProjectManifest manifest = project.createSaveManifest();
+        ZipUtilities.write(zos, new ByteArrayDataSource(
+            ProjectIo.MANIFEST_ENTRY_NAME,
+            ManifestEncoderDecoder.toJson(manifest)));
+      }
+    }
+
+    private static boolean hasDataSource(String name, DataSource... dataSources) {
+      for (DataSource dataSource : dataSources) {
+        if (name.equals(dataSource.getName())) {
+          return true;
+        }
+      }
+      return false;
+    }
+
     private static String getValidFileName(Resource resource) {
       String originalFileName = resource.getOriginalFileName();
       if ((originalFileName != null) && !originalFileName.trim().isEmpty()) {
@@ -405,6 +423,7 @@ public class XmlProjectIo implements ProjectIo {
     public void writeProject(OutputStream os, final Project project, DataSource... dataSources) throws IOException {
       ZipOutputStream zos = new ZipOutputStream(os);
       writeVersion(zos);
+      writeManifest(project, zos, dataSources);
       NamedUserType programType = project.getProgramType();
       writeType(programType, zos, PROGRAM_TYPE_ENTRY_NAME);
       writeDataSources(zos, dataSources);
