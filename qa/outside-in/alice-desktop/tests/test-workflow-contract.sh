@@ -32,6 +32,7 @@ workflow_counts = Counter(scenario["workflow"] for scenario in catalog_list)
 required_workflows = [
     "instructor-student-setup",
     "launch",
+    "menu-action-smoke",
     "scene-creation",
     "run-debug",
     "save-load",
@@ -60,6 +61,7 @@ gated_scenarios = [
     "alice-desktop-project-io-smoke",
     "alice-desktop-failure-path-smoke",
     "alice-desktop-future-ui-smoke",
+    "alice-desktop-menu-action-smoke",
     "alice-desktop-wizard-palette-completion-smoke",
 ]
 errors = []

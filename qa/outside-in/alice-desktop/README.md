@@ -35,7 +35,7 @@ Allowed `automationMode` values are:
 | --- | --- |
 | `xvfb-real-alice` | Attempts to run the real Alice desktop under Xvfb and captures logs/screenshots. |
 | `manual-evidence-required` | Produces an executable checklist with required evidence, but does not automate GUI interaction or mark the scenario complete. |
-| `gated-command-smoke` | Produces status/checklist evidence by default; executes the configured CLI smoke only when `ALICE_QA_RUN_GATED_SMOKES=1`. |
+| `gated-command-smoke` | Produces status/checklist evidence by default; executes the configured CLI smoke only when `ALICE_QA_RUN_GATED_SMOKES=1`, including focused launch-adjacent menu/action plumbing tests. |
 
 Do not use Playwright here unless Alice later exposes a browser/web UI.
 
@@ -92,7 +92,7 @@ The runner records evidence under `qa/outside-in/alice-desktop/evidence/<scenari
 Before adding or changing a scenario:
 
 1. Keep actions and outcomes observable from the user-visible Alice desktop.
-2. Use one of the supported workflows: `launch`, `instructor-student-setup`, `scene-creation`, `run-debug`, `save-load`, `open-load-save`, `export`, `exported-project-smoke`, `netbeans-package-smoke`, `package-install-smoke`, `project-io-smoke`, `failure-path-smoke`, `future-ui-smoke`, or `wizard-palette-completion-smoke`.
+2. Use one of the supported workflows: `launch`, `instructor-student-setup`, `scene-creation`, `run-debug`, `save-load`, `open-load-save`, `export`, `exported-project-smoke`, `netbeans-package-smoke`, `package-install-smoke`, `project-io-smoke`, `failure-path-smoke`, `future-ui-smoke`, `menu-action-smoke`, or `wizard-palette-completion-smoke`.
 3. Use `xvfb-real-alice` only when the runner can execute the real Alice command and collect logs/screenshots.
 4. Use `manual-evidence-required` when human Swing interaction is required.
 5. Name concrete required artifacts in `evidence.required`; manual workflows also require `review-notes.txt` for acceptance.

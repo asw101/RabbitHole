@@ -36,8 +36,8 @@ import json
 import sys
 
 catalog = json.load(open(sys.argv[1], encoding="utf-8"))
-if len(catalog) != 14:
-    raise AssertionError(f"expected 14 scenarios, found {len(catalog)}")
+if len(catalog) != 15:
+    raise AssertionError(f"expected 15 scenarios, found {len(catalog)}")
 if not all("id" in scenario for scenario in catalog):
     raise AssertionError("every dumped scenario must include an id")
 PY

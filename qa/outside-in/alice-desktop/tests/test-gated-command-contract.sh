@@ -86,6 +86,17 @@ assert_success "$status" "enabled package/install scenario creates one evidence 
 assert_contains "$package_enabled_run_dir/command.log" 'installer/target.*qa-package-install-smoke-marker.txt' "package/install smoke lists package artifacts"
 assert_contains "$package_enabled_run_dir/status.txt" '^outcome=passed$' "package/install smoke records pass outcome"
 
+menu_action_evidence="$tmp_root/menu-action-evidence"
+PATH="$fake_bin:$PATH" ALICE_QA_RUN_GATED_SMOKES=1 \
+  "$RUNNER" run alice-desktop-menu-action-smoke --evidence-dir "$menu_action_evidence" >"$tmp_root/menu-action.out" 2>"$tmp_root/menu-action.err"
+status=$?
+assert_success "$status" "enabled menu/action smoke executes argv directly"
+menu_action_run_dir=$(single_child_dir "$menu_action_evidence/alice-desktop-menu-action-smoke")
+status=$?
+assert_success "$status" "enabled menu/action scenario creates one evidence directory"
+assert_contains "$menu_action_run_dir/command.log" 'AliceMenuBarContractTest' "menu/action smoke passes focused test selector as argv"
+assert_contains "$menu_action_run_dir/status.txt" '^outcome=passed$' "menu/action smoke records pass outcome"
+
 wizard_evidence="$tmp_root/wizard-evidence"
 PATH="$fake_bin:$PATH" ALICE_QA_RUN_GATED_SMOKES=1 \
   "$RUNNER" run alice-desktop-wizard-palette-completion-smoke --evidence-dir "$wizard_evidence" >"$tmp_root/wizard.out" 2>"$tmp_root/wizard.err"

@@ -32,6 +32,7 @@
         "future-ui-smoke",
         "instructor-student-setup",
         "launch",
+        "menu-action-smoke",
         "netbeans-package-smoke",
         "project-io-smoke",
         "scene-creation",
@@ -186,6 +187,40 @@
               "items": false,
               "minItems": 8,
               "maxItems": 8
+            },
+            {
+              "prefixItems": [
+                {
+                  "const": "mvn"
+                },
+                {
+                  "const": "-DincludeSims=false"
+                },
+                {
+                  "const": "-Dinstall4j.skip"
+                },
+                {
+                  "const": "-Dsurefire.failIfNoSpecifiedTests=false"
+                },
+                {
+                  "const": "-pl"
+                },
+                {
+                  "const": "core/ide"
+                },
+                {
+                  "const": "-am"
+                },
+                {
+                  "const": "-Dtest=org.alice.ide.croquet.models.AliceMenuBarContractTest"
+                },
+                {
+                  "const": "test"
+                }
+              ],
+              "items": false,
+              "minItems": 9,
+              "maxItems": 9
             },
             {
               "prefixItems": [
