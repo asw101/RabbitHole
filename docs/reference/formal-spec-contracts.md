@@ -1,9 +1,8 @@
 # Formal Spec Contracts Reference
 
-This reference defines the target formal-spec lane for Alice project archives
-and backup recovery. The target contract is the behavior this feature will
-build; implementation status notes call out where current characterization still
-reflects legacy behavior.
+This reference defines the formal-spec lane for Alice project archives and
+backup recovery. The contract describes durable behavior enforced by the
+Gherkin, TLA+, and JUnit artifacts listed here.
 
 ## Artifact inventory
 
@@ -12,7 +11,8 @@ reflects legacy behavior.
 | Gherkin feature | [`../../eatme/specs/save-load-export/project-archive.feature`](../../eatme/specs/save-load-export/project-archive.feature) | Acceptance contract for save, load, export, resource safety, and backup recovery scenarios. |
 | TLA+ module | [`../../eatme/formal/backup-load-recovery/BackupLoadRecovery.tla`](../../eatme/formal/backup-load-recovery/BackupLoadRecovery.tla) | Formal state machine for corrupt primary load and backup recovery. |
 | TLA+ config | [`../../eatme/formal/backup-load-recovery/BackupLoadRecovery.cfg`](../../eatme/formal/backup-load-recovery/BackupLoadRecovery.cfg) | Example model constants, invariants, and liveness property for TLC. |
-| Archive tests | `core/story-api-migration/src/test/java/org/lgna/project/io/IoUtilitiesTest.java` | Characterization tests for archive reading, writing, export, resource safety, and reader failure modes. |
+| Archive I/O tests | `core/story-api-migration/src/test/java/org/lgna/project/io/IoUtilitiesTest.java` | Characterization tests for low-level archive reading, writing, export, resource safety, and reader failure modes. |
+| IDE archive-flow tests | `core/ide/src/test/java/org/alice/ide/ProjectFileUtilitiesTest.java` | Characterization tests for IDE save-copy and export-copy archive flows. |
 | Backup selector tests | `core/ide/src/test/java/org/alice/ide/ProjectBackupSelectorTest.java` | Characterization tests for backup ordering and unloadable candidate skipping. |
 | Failure plan tests | `core/ide/src/test/java/org/alice/ide/ProjectLoadFailurePlanTest.java` | Characterization tests for choosing the next recovery action. |
 | Dispatch plan tests | `core/ide/src/test/java/org/alice/ide/ProjectLoadFailureDispatchPlanTest.java` | Characterization tests for user-choice outcomes. |
@@ -25,19 +25,19 @@ The archive contracts are implemented through the existing `IoUtilities` API:
 | --- | --- |
 | `IoUtilities.readProject(File file)` | Reads editable `.a3p` projects and player `.a3w` archives through the selected project reader. Unsupported versions, missing metadata, malformed JSON manifests, and unsafe resource entries fail explicitly. |
 | `IoUtilities.readProject(String path)` | Delegates to `readProject(File)` for path-based callers. |
-| `IoUtilities.writeProject(File file, Project project, DataSource... dataSources)` | Writes an editable `.a3p` project archive and creates parent directories when needed. The target editor archive includes manifest metadata and optional thumbnail metadata. |
-| `IoUtilities.writeProject(OutputStream os, Project project, DataSource... dataSources)` | Writes an editable project archive to an output stream with the same target archive shape as the file overload. |
+| `IoUtilities.writeProject(File file, Project project, DataSource... dataSources)` | Writes an editable `.a3p` project archive and creates parent directories when needed. The editor archive contract includes manifest metadata and optional thumbnail metadata. |
+| `IoUtilities.writeProject(OutputStream os, Project project, DataSource... dataSources)` | Writes an editable project archive to an output stream with the same archive shape as the file overload. |
 | `IoUtilities.exportProject(File file, Project project, DataSource... dataSources)` | Writes a player `.a3w` archive with JSON manifest metadata, Tweedle source entries, and safe resource references. |
 
 `ProjectBackupSelector`, `ProjectLoadFailurePlan`, and
 `ProjectLoadFailureDispatchPlan` are package-private IDE implementation
 boundaries. They are documented by their tests rather than exposed as public API.
 
-## Editable project archive target
+## Editable project archive contract
 
 Editable `.a3p` archives preserve the project for the Alice editor.
 
-Target behavior:
+Required behavior:
 
 - Include `version.txt`.
 - Include `manifest.json` that names the project.
@@ -51,10 +51,12 @@ Target behavior:
   scene camera type, resource identity, resource name, content type, and bytes.
 - Reject traversal resource entries instead of reading outside the archive.
 
-Current implementation status:
+Implemented coverage:
 
 - `IoUtilitiesTest.writtenProjectContainsVersionManifestAndProgramTypeEntries`
-  validates that saved editor archives include manifest metadata.
+  validates that low-level saved editor archives include manifest metadata.
+- `ProjectFileUtilitiesTest.saveCopyWritesReadableEditorArchiveWithResourceManifestAndThumbnail`
+  validates the IDE save-copy archive shape.
 - `IoUtilitiesTest.writeProjectIncludesProvidedThumbnailAndManifestIcon` and
   `IoUtilitiesTest.writeProjectRemainsReadableWithoutThumbnailEntry` validate
   thumbnail success and unavailable-thumbnail behavior.
@@ -146,6 +148,7 @@ Run commands from the repository root.
 
 ```shell
 mvn -pl core/story-api-migration -am -Dtest=IoUtilitiesTest -Dsurefire.failIfNoSpecifiedTests=false test
+mvn -pl core/ide -am -Dtest=ProjectFileUtilitiesTest -Dsurefire.failIfNoSpecifiedTests=false test
 mvn -pl core/ide -am -Dtest=ProjectBackupSelectorTest -Dsurefire.failIfNoSpecifiedTests=false test
 mvn -pl core/ide -am -Dtest=ProjectLoadFailurePlanTest,ProjectLoadFailureDispatchPlanTest -Dsurefire.failIfNoSpecifiedTests=false test
 ```
@@ -164,7 +167,7 @@ java -cp /path/to/tla2tools.jar tlc2.TLC BackupLoadRecovery.cfg
 
 | Contract area | Source artifact | Executable boundary |
 | --- | --- | --- |
-| Editable project archive writes and reads required entries | Gherkin `@save @editor-archive` scenarios | `IoUtilitiesTest` coverage for manifest-bearing editor archives. |
+| Editable project archive writes and reads required entries | Gherkin `@save @editor-archive` scenarios | `ProjectFileUtilitiesTest` coverage for IDE save-copy archives and `IoUtilitiesTest` coverage for low-level manifest-bearing editor archives. |
 | Optional thumbnail handling | Gherkin `@thumbnail` scenarios | `IoUtilitiesTest` coverage for thumbnail success and unavailable-thumbnail fallback. |
 | Player archive export with Tweedle source | Gherkin `@export @player-archive` scenarios | `IoUtilitiesTest` |
 | Resource preservation and safe entries | Gherkin `@export @resources` and `@security` scenarios | `IoUtilitiesTest` |
@@ -175,8 +178,8 @@ java -cp /path/to/tla2tools.jar tlc2.TLC BackupLoadRecovery.cfg
 
 ## Implemented coverage
 
-| Target behavior | Validation |
+| Behavior | Validation |
 | --- | --- |
-| Saved `.a3p` archives include `manifest.json`. | `IoUtilitiesTest.writtenProjectContainsVersionManifestAndProgramTypeEntries` |
+| Saved `.a3p` archives include `manifest.json`. | `IoUtilitiesTest.writtenProjectContainsVersionManifestAndProgramTypeEntries`; `ProjectFileUtilitiesTest.saveCopyWritesReadableEditorArchiveWithResourceManifestAndThumbnail` |
 | Saved `.a3p` thumbnail behavior is characterized. | `IoUtilitiesTest.writeProjectIncludesProvidedThumbnailAndManifestIcon` and `IoUtilitiesTest.writeProjectRemainsReadableWithoutThumbnailEntry` |
-| Backup recovery rejects traversal or out-of-directory candidates. | `ProjectBackupSelectorTest.corruptedMainProjectSkipsBackupSymlinkEscapingBackupDirectory` |
+| Backup recovery rejects traversal or out-of-directory candidates. | `ProjectBackupSelectorTest.corruptedMainProjectSkipsBackupSymlinkEscapingBackupDirectory`; `ProjectBackupSelectorTest.corruptedMainProjectSkipsBackupSymlinkEvenWhenTargetStaysInBackupDirectory`; `ProjectBackupSelectorTest.corruptedMainProjectSkipsCandidatesFromSymlinkedBackupDirectory` |

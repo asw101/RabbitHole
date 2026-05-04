@@ -10,7 +10,8 @@ backup recovery behavior.
 2. For backup recovery behavior, read the TLA+ model in
    [`../../eatme/formal/backup-load-recovery/BackupLoadRecovery.tla`](../../eatme/formal/backup-load-recovery/BackupLoadRecovery.tla).
 3. Find the executable boundary:
-   - Archive I/O behavior: `core/story-api-migration/src/test/java/org/lgna/project/io/IoUtilitiesTest.java`
+   - Low-level archive I/O behavior: `core/story-api-migration/src/test/java/org/lgna/project/io/IoUtilitiesTest.java`
+   - IDE save/export copy behavior: `core/ide/src/test/java/org/alice/ide/ProjectFileUtilitiesTest.java`
    - Backup candidate selection: `core/ide/src/test/java/org/alice/ide/ProjectBackupSelectorTest.java`
    - Backup failure decisions: `core/ide/src/test/java/org/alice/ide/ProjectLoadFailurePlanTest.java`
    - User-choice dispatch decisions: `core/ide/src/test/java/org/alice/ide/ProjectLoadFailureDispatchPlanTest.java`
@@ -24,17 +25,19 @@ Use this workflow for `.a3p` editable project archives and `.a3w` player export
 archives.
 
 1. Update the scenario in `project-archive.feature`.
-2. Add or update a focused `IoUtilitiesTest` case that proves the same behavior.
+2. Add or update a focused Java test that proves the same behavior:
+   `IoUtilitiesTest` for low-level archive I/O, or `ProjectFileUtilitiesTest`
+   for IDE save/export copy flows.
 3. Keep the test at the archive boundary. Prefer synthetic projects and
    generated archives over binary fixtures.
 4. Preserve reader failure behavior. Malformed JSON manifests, missing
    `version.txt`, unsupported versions, and unsafe resource paths must fail
    explicitly.
 
-For the target editable `.a3p` feature, do not preserve the legacy
-no-`manifest.json` writer expectation as the final behavior. Replace it with
-characterization that saved editor archives include manifest metadata, while
-making any legacy no-manifest read compatibility explicit.
+For editable `.a3p` archives, do not preserve the legacy no-`manifest.json`
+writer expectation as the final behavior. Characterize saved editor archives
+with manifest metadata, while making any legacy no-manifest read compatibility
+explicit.
 
 ### Example: safe resource export
 

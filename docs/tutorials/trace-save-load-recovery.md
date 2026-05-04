@@ -84,6 +84,7 @@ Then open the archive tests:
 
 ```shell
 sed -n '57,132p' core/story-api-migration/src/test/java/org/lgna/project/io/IoUtilitiesTest.java
+sed -n '281,327p' core/ide/src/test/java/org/alice/ide/ProjectFileUtilitiesTest.java
 ```
 
 The acceptance scenarios describe the observable archive contract:
@@ -92,8 +93,10 @@ The acceptance scenarios describe the observable archive contract:
 - Saved `.a3p` archives include `version.txt`, `manifest.json`,
   `programType.xml`, optional `resources.xml`, safe resource entries, and
   thumbnail metadata when a thumbnail is available.
-- `IoUtilitiesTest` coverage confirms manifest metadata, thumbnail behavior,
-  XML entries, safe resource entries, and reopen behavior.
+- `IoUtilitiesTest` coverage confirms low-level manifest metadata, thumbnail
+  behavior, XML entries, safe resource entries, and reopen behavior.
+- `ProjectFileUtilitiesTest` coverage confirms the IDE save-copy flow writes the
+  same user-visible editor archive shape.
 - Exported `.a3w` archives contain manifest metadata and Tweedle source.
 - Resources are preserved by identity and content.
 - Unsafe resource paths are rejected.
@@ -102,6 +105,7 @@ Run the focused validation:
 
 ```shell
 mvn -pl core/story-api-migration -am -Dtest=IoUtilitiesTest -Dsurefire.failIfNoSpecifiedTests=false test
+mvn -pl core/ide -am -Dtest=ProjectFileUtilitiesTest -Dsurefire.failIfNoSpecifiedTests=false test
 ```
 
 ## Check the complete recovery model
@@ -122,7 +126,7 @@ For each behavior change, keep the trace complete:
 
 | If you change | Then update |
 | --- | --- |
-| User-visible save, load, or export behavior | Gherkin scenario and `IoUtilitiesTest` |
+| User-visible save, load, or export behavior | Gherkin scenario and the matching archive test (`IoUtilitiesTest` or `ProjectFileUtilitiesTest`) |
 | Backup ordering or recovery state | Gherkin scenario, TLA+ model/config, and `core/ide` tests |
 | Reader error handling | Gherkin failure scenario and `IoUtilitiesTest` |
 | Internal structure only | Java tests as needed; leave the formal artifacts unchanged if the contract is unchanged |

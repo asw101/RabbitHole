@@ -12,7 +12,9 @@ import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.Arrays;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import static org.junit.Assert.*;
@@ -31,7 +33,7 @@ public class ProjectBackupSelectorTest {
       throw new AssertionError("corrupted main project should not compare backup times");
     });
 
-    File backup = selector.getNextBackup(
+    File backup = getNextBackup(selector,
         PROJECT_MODIFIED_TIME,
         new File[] {newest, older},
         true,
@@ -48,7 +50,7 @@ public class ProjectBackupSelectorTest {
       throw new AssertionError("corrupted main project should not compare backup times");
     });
 
-    File backup = selector.getNextBackup(
+    File backup = getNextBackup(selector,
         PROJECT_MODIFIED_TIME,
         new File[] {newest, older},
         true,
@@ -65,7 +67,7 @@ public class ProjectBackupSelectorTest {
       throw new AssertionError("corrupted main project should not compare backup times");
     });
 
-    File backup = selector.getNextBackup(
+    File backup = getNextBackup(selector,
         PROJECT_MODIFIED_TIME,
         new File[] {missingNewest, older},
         true,
@@ -87,13 +89,55 @@ public class ProjectBackupSelectorTest {
       throw new AssertionError("corrupted main project should not compare backup times");
     });
 
-    File backup = selector.getNextBackup(
+    File backup = getNextBackup(selector,
         PROJECT_MODIFIED_TIME,
         new File[] {escapingBackup.toFile(), safeBackup},
         true,
         Set.of());
 
     assertEquals(safeBackup, backup);
+  }
+
+  @Test
+  public void corruptedMainProjectSkipsBackupSymlinkEvenWhenTargetStaysInBackupDirectory() throws IOException {
+    Path backupDirectory = temporaryFolder.newFolder("world.bak").toPath();
+    Path symlinkTarget = backupDirectory.resolve("auto20240102_140000-target.a3p");
+    Files.writeString(symlinkTarget, "symlink target backup", StandardCharsets.UTF_8);
+    Path symlinkBackup = backupDirectory.resolve("auto20240102_140000.a3p");
+    Files.createSymbolicLink(symlinkBackup, symlinkTarget);
+    File safeBackup = backupDirectory.resolve("auto20240102_130000.a3p").toFile();
+    Files.writeString(safeBackup.toPath(), "safe backup", StandardCharsets.UTF_8);
+    ProjectBackupSelector selector = new ProjectBackupSelector(file -> {
+      throw new AssertionError("corrupted main project should not compare backup times");
+    });
+
+    File backup = getNextBackup(selector,
+        PROJECT_MODIFIED_TIME,
+        new File[] {symlinkBackup.toFile(), safeBackup},
+        true,
+        Set.of());
+
+    assertEquals(safeBackup, backup);
+  }
+
+  @Test
+  public void corruptedMainProjectSkipsCandidatesFromSymlinkedBackupDirectory() throws IOException {
+    Path outsideDirectory = temporaryFolder.newFolder("outside-backups").toPath();
+    Path outsideBackup = outsideDirectory.resolve("auto20240102_140000.a3p");
+    Files.writeString(outsideBackup, "outside backup", StandardCharsets.UTF_8);
+    Path symlinkedBackupDirectory = temporaryFolder.getRoot().toPath().resolve("world.bak");
+    Files.createSymbolicLink(symlinkedBackupDirectory, outsideDirectory);
+    ProjectBackupSelector selector = new ProjectBackupSelector(file -> {
+      throw new AssertionError("corrupted main project should not compare backup times");
+    });
+
+    File backup = getNextBackup(selector,
+        PROJECT_MODIFIED_TIME,
+        new File[] {symlinkedBackupDirectory.resolve(outsideBackup.getFileName()).toFile()},
+        true,
+        Set.of());
+
+    assertNull(backup);
   }
 
   @Test
@@ -105,7 +149,7 @@ public class ProjectBackupSelectorTest {
       throw new AssertionError("corrupted main project should not compare backup times");
     });
 
-    File backup = selector.getNextBackup(
+    File backup = getNextBackup(selector,
         PROJECT_MODIFIED_TIME,
         new File[] {parentlessCandidate, safeBackup},
         true,
@@ -120,7 +164,7 @@ public class ProjectBackupSelectorTest {
     ProjectBackupSelector selector = new ProjectBackupSelector(
         timeSource(Map.of(newest.getName(), PROJECT_MODIFIED_TIME.plusMinutes(10))));
 
-    File backup = selector.getNextBackup(
+    File backup = getNextBackup(selector,
         PROJECT_MODIFIED_TIME,
         new File[] {newest},
         false,
@@ -138,7 +182,7 @@ public class ProjectBackupSelectorTest {
       return PROJECT_MODIFIED_TIME.minusMinutes(10);
     });
 
-    File backup = selector.getNextBackup(
+    File backup = getNextBackup(selector,
         PROJECT_MODIFIED_TIME,
         new File[] {newest, older},
         false,
@@ -156,7 +200,7 @@ public class ProjectBackupSelectorTest {
       return PROJECT_MODIFIED_TIME.plusMinutes(10);
     });
 
-    File backup = selector.getNextBackup(
+    File backup = getNextBackup(selector,
         PROJECT_MODIFIED_TIME,
         new File[] {unloadableNewest, next},
         false,
@@ -175,7 +219,7 @@ public class ProjectBackupSelectorTest {
       return PROJECT_MODIFIED_TIME.minusMinutes(10);
     });
 
-    File backup = selector.getNextBackup(
+    File backup = getNextBackup(selector,
         PROJECT_MODIFIED_TIME,
         new File[] {unloadableNewest, older},
         false,
@@ -191,7 +235,7 @@ public class ProjectBackupSelectorTest {
       throw new AssertionError("missing main project timestamp should not compare backup times");
     });
 
-    File backup = selector.getNextBackup(
+    File backup = getNextBackup(selector,
         LocalDateTime.MIN,
         new File[] {newest},
         false,
@@ -207,7 +251,7 @@ public class ProjectBackupSelectorTest {
       throw new AssertionError("minimum main project timestamp should not compare backup times");
     });
 
-    File backup = selector.getNextBackup(
+    File backup = getNextBackup(selector,
         LocalDateTime.of(LocalDate.MIN, LocalTime.MIN),
         new File[] {newest},
         false,
@@ -222,13 +266,32 @@ public class ProjectBackupSelectorTest {
     ProjectBackupSelector selector = new ProjectBackupSelector(
         timeSource(Map.of(newest.getName(), PROJECT_MODIFIED_TIME.plusMinutes(10))));
 
-    File backup = selector.getNextBackup(
+    File backup = getNextBackup(selector,
         PROJECT_MODIFIED_TIME,
         new File[] {newest},
         false,
         Set.of(newest.getName()));
 
     assertNull(backup);
+  }
+
+  private File getNextBackup(ProjectBackupSelector selector, LocalDateTime modifiedTime, File[] backups,
+                             boolean isMainProjectCorrupted, Set<String> unloadableFiles) {
+    return selector.getNextBackup(
+        modifiedTime,
+        backupDirectory(backups),
+        backups,
+        isMainProjectCorrupted,
+        unloadableFiles);
+  }
+
+  private File backupDirectory(File[] backups) {
+    return Arrays.stream(backups)
+        .filter(Objects::nonNull)
+        .map(File::getParentFile)
+        .filter(Objects::nonNull)
+        .findFirst()
+        .orElse(temporaryFolder.getRoot());
   }
 
   private File backup(String name) throws IOException {

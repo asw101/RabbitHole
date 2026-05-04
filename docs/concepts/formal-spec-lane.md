@@ -34,11 +34,10 @@ three forms:
 2. A recovery rule or invariant in the TLA+ model.
 3. A focused JUnit test in the module that owns the behavior.
 
-## Target feature contract
+## Feature contract
 
-The lane defines the behavior the modernization work will build and preserve.
-The currently implemented target items are tied to focused JUnit
-characterization so future modernization can detect drift.
+The lane defines the behavior the modernization work preserves. Each item is
+tied to focused JUnit characterization so future modernization can detect drift.
 
 - Saving an editable project writes a readable `.a3p` archive with `version.txt`,
   `manifest.json`, `programType.xml`, required resource metadata, and safe
@@ -58,16 +57,16 @@ characterization so future modernization can detect drift.
   unloadable candidates, never escapes the backup directory, offers the newest
   readable backup, and reaches one terminal result.
 
-## Coverage added from review
+## Implemented coverage
 
-The architect review identified places where the intended contract needed
-focused implementation and characterization:
+The implemented contract is covered at the Java boundary that owns each
+behavior:
 
-| Target behavior | Implementation/characterization |
+| Behavior | Implementation/characterization |
 | --- | --- |
-| Editable `.a3p` archives include `manifest.json`. | XML project writing now emits save manifest metadata when callers do not supply it; `IoUtilitiesTest` validates the archive entry and manifest contents. |
+| Editable `.a3p` archives include `manifest.json`. | XML project writing emits save manifest metadata when callers do not supply it; `IoUtilitiesTest` validates the low-level archive entry and `ProjectFileUtilitiesTest` validates IDE save-copy output. |
 | Editable `.a3p` archives include thumbnail metadata when thumbnail creation succeeds. | Thumbnail data sources are preserved and the saved archive remains readable without a thumbnail entry; `IoUtilitiesTest` validates both cases. |
-| Backup recovery cannot follow traversal or out-of-directory backup candidates. | `ProjectBackupSelector` skips missing and escaping candidates; `ProjectBackupSelectorTest` validates symlink escape rejection. |
+| Backup recovery cannot follow traversal or out-of-directory backup candidates. | `ProjectBackupSelector` skips missing and symlink candidates; `ProjectBackupSelectorTest` validates candidate and backup-directory symlink rejection. |
 
 ## What remains outside the lane
 
@@ -88,5 +87,5 @@ When behavior changes, update the smallest complete set of artifacts:
 | --- | --- |
 | User-visible archive behavior changes | Update the Gherkin scenario and the matching JUnit test. |
 | Backup recovery policy changes | Update the Gherkin scenario, TLA+ model/config, and `core/ide` JUnit tests. |
-| Archive entry, manifest, version, or resource safety changes | Update the Gherkin scenario and `IoUtilitiesTest`. |
+| Archive entry, manifest, version, or resource safety changes | Update the Gherkin scenario and the matching archive test (`IoUtilitiesTest` for low-level I/O, `ProjectFileUtilitiesTest` for IDE save/export copy flows). |
 | Only implementation structure changes | Keep specs stable and update or add characterization tests only if the observable contract is affected. |
