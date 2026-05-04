@@ -43,6 +43,7 @@
 
 package org.lgna.project.ast;
 
+import edu.cmu.cs.dennisc.pattern.IsInstanceCrawler;
 import org.lgna.project.ast.localizer.AstLocalizer;
 
 /**
@@ -61,6 +62,14 @@ public abstract class AbstractForEachLoop extends AbstractLoop implements EachIn
   @Override
   public DeclarationProperty<UserLocal> getItemProperty() {
     return this.item;
+  }
+
+  @Override
+  public String generateLocalName(UserLocal local) {
+    if (local == this.item.getValue()) {
+      return "item" + getForEachDepthSuffix();
+    }
+    return super.generateLocalName(local);
   }
 
   protected abstract ExpressionProperty getArrayOrIterableProperty();
@@ -83,4 +92,19 @@ public abstract class AbstractForEachLoop extends AbstractLoop implements EachIn
       return false;
     }
   };
+
+  private int getForEachInstanceDepth() {
+    UserCode code = getFirstAncestorAssignableTo(UserCode.class);
+    if (code == null) {
+      return -1;
+    }
+    IsInstanceCrawler<AbstractForEachLoop> crawler = IsInstanceCrawler.createInstance(AbstractForEachLoop.class);
+    code.crawl(crawler, CrawlPolicy.EXCLUDE_REFERENCES_ENTIRELY, null);
+    return crawler.getList().indexOf(this);
+  }
+
+  private char getForEachDepthSuffix() {
+    int index = getForEachInstanceDepth();
+    return index != -1 ? (char) (((int) 'A') + index) : '_';
+  }
 }

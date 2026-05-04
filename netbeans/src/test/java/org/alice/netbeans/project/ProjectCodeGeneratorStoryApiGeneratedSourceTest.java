@@ -7,16 +7,31 @@ import org.lgna.project.Project;
 import org.lgna.project.ast.AstUtilities;
 import org.lgna.project.ast.BlockStatement;
 import org.lgna.project.ast.DoubleLiteral;
+import org.lgna.project.ast.FieldAccess;
+import org.lgna.project.ast.IntegerLiteral;
 import org.lgna.project.ast.JavaMethod;
 import org.lgna.project.ast.JavaType;
 import org.lgna.project.ast.NamedUserType;
 import org.lgna.project.ast.NullLiteral;
 import org.lgna.project.ast.ThisExpression;
+import org.lgna.project.ast.UserField;
 import org.lgna.project.ast.UserMethod;
 import org.lgna.project.ast.UserParameter;
 import org.lgna.project.io.IoUtilities;
+import org.lgna.story.AddTimeListener;
+import org.lgna.story.Color;
+import org.lgna.story.Paint;
+import org.lgna.story.SBox;
+import org.lgna.story.SModel;
 import org.lgna.story.SScene;
 import org.lgna.story.SProgram;
+import org.lgna.story.Say;
+import org.lgna.story.SetAtmosphereColor;
+import org.lgna.story.SetFogDensity;
+import org.lgna.story.SetOpacity;
+import org.lgna.story.SetPaint;
+import org.lgna.story.event.SceneActivationListener;
+import org.lgna.story.event.TimeListener;
 
 import java.io.File;
 import java.io.StringWriter;
@@ -63,6 +78,28 @@ public class ProjectCodeGeneratorStoryApiGeneratedSourceTest {
     assertTrue(programSource.contains("void clearScene()"));
     assertTrue(programSource, programSource.contains("this.setActiveScene(null);"));
     compileProgramAndLauncher("generated-scene-activation-call-classes", programPath, sourceDirectory);
+  }
+
+  @Test
+  public void generatedSyntheticSceneModelEventAndRenderingAdjacentSourcesCompile() throws Exception {
+    Path sourceDirectory = generateProgramSource(
+        "synthetic-scene-model-event-rendering-call.a3p",
+        programTypeWithSceneModelEventAndRenderingCalls(),
+        "generated-scene-model-event-rendering-call-src");
+
+    Path programPath = sourceDirectory.resolve("Program.java");
+    Path scenePath = sourceDirectory.resolve("Scene.java");
+    String programSource = Files.readString(programPath);
+    String sceneSource = Files.readString(scenePath);
+    assertTrue(programSource, programSource.contains("this.setActiveScene(this.scene);"));
+    assertTrue(programSource, programSource.contains("this.box.setPaint(Color.RED);"));
+    assertTrue(programSource, programSource.contains("this.box.setOpacity(0.5);"));
+    assertTrue(programSource, programSource.contains("this.box.say(\"hello box\");"));
+    assertTrue(sceneSource, sceneSource.contains("this.setAtmosphereColor(Color.BLUE);"));
+    assertTrue(sceneSource, sceneSource.contains("this.setFogDensity(0.25);"));
+    assertTrue(sceneSource, sceneSource.contains("this.addTimeListener(null,1);"));
+    assertTrue(sceneSource, sceneSource.contains("this.addSceneActivationListener(null);"));
+    compileAllGeneratedSources("generated-scene-model-event-rendering-call-classes", sourceDirectory);
   }
 
   private Path generateProgramSource(String projectFileName, NamedUserType programType, String sourceDirectoryName)
@@ -121,6 +158,94 @@ public class ProjectCodeGeneratorStoryApiGeneratedSourceTest {
     return type;
   }
 
+  private static NamedUserType programTypeWithSceneModelEventAndRenderingCalls() {
+    NamedUserType type = programType("Program");
+    NamedUserType sceneType = sceneTypeWithEventAndRenderingCalls();
+    UserField scene = new UserField("scene", sceneType);
+    UserField box = new UserField("box", SBox.class);
+    type.fields.add(scene);
+    type.fields.add(box);
+
+    JavaMethod setActiveScene = AstUtilities.lookupMethod(SProgram.class, "setActiveScene", SScene.class);
+    JavaMethod setPaint = AstUtilities.lookupMethod(SModel.class, "setPaint", Paint.class, SetPaint.Detail[].class);
+    JavaMethod setOpacity = AstUtilities.lookupMethod(SModel.class, "setOpacity", Number.class, SetOpacity.Detail[].class);
+    JavaMethod say = AstUtilities.lookupMethod(SModel.class, "say", String.class, Say.Detail[].class);
+    UserMethod configureWorld = new UserMethod(
+        "configureWorld",
+        Void.TYPE,
+        new UserParameter[0],
+        new BlockStatement(
+            AstUtilities.createMethodInvocationStatement(
+                new ThisExpression(),
+                setActiveScene,
+                new FieldAccess(new ThisExpression(), scene)),
+            AstUtilities.createMethodInvocationStatement(
+                new FieldAccess(new ThisExpression(), box),
+                setPaint,
+                AstUtilities.createStaticFieldAccess(Color.class, "RED")),
+            AstUtilities.createMethodInvocationStatement(
+                new FieldAccess(new ThisExpression(), box),
+                setOpacity,
+                new DoubleLiteral(0.5)),
+            AstUtilities.createMethodInvocationStatement(
+                new FieldAccess(new ThisExpression(), box),
+                say,
+                new org.lgna.project.ast.StringLiteral("hello box"))));
+    type.methods.add(configureWorld);
+    return type;
+  }
+
+  private static NamedUserType sceneTypeWithEventAndRenderingCalls() {
+    NamedUserType type = AstUtilities.createType("Scene", JavaType.getInstance(SScene.class));
+    JavaMethod setAtmosphereColor = AstUtilities.lookupMethod(
+        SScene.class,
+        "setAtmosphereColor",
+        Color.class,
+        SetAtmosphereColor.Detail[].class);
+    JavaMethod setFogDensity = AstUtilities.lookupMethod(
+        SScene.class,
+        "setFogDensity",
+        Number.class,
+        SetFogDensity.Detail[].class);
+    JavaMethod addTimeListener = AstUtilities.lookupMethod(
+        SScene.class,
+        "addTimeListener",
+        TimeListener.class,
+        Number.class,
+        AddTimeListener.Detail[].class);
+    JavaMethod addSceneActivationListener = AstUtilities.lookupMethod(
+        SScene.class,
+        "addSceneActivationListener",
+        SceneActivationListener.class);
+    UserMethod handleActiveChanged = new UserMethod(
+        "handleActiveChanged",
+        Void.TYPE,
+        new UserParameter[] {
+            new UserParameter("isActive", Boolean.class),
+            new UserParameter("activationCount", Integer.class)
+        },
+        new BlockStatement(
+            AstUtilities.createMethodInvocationStatement(
+                new ThisExpression(),
+                setAtmosphereColor,
+                AstUtilities.createStaticFieldAccess(Color.class, "BLUE")),
+            AstUtilities.createMethodInvocationStatement(
+                new ThisExpression(),
+                setFogDensity,
+                new DoubleLiteral(0.25)),
+            AstUtilities.createMethodInvocationStatement(
+                new ThisExpression(),
+                addTimeListener,
+                new NullLiteral(),
+                new IntegerLiteral(1)),
+            AstUtilities.createMethodInvocationStatement(
+                new ThisExpression(),
+                addSceneActivationListener,
+                new NullLiteral())));
+    type.methods.add(handleActiveChanged);
+    return type;
+  }
+
   private static UserMethod mainMethod() {
     UserParameter argsParameter = new UserParameter("args", String[].class);
     UserMethod mainMethod = new UserMethod(
@@ -155,5 +280,16 @@ public class ProjectCodeGeneratorStoryApiGeneratedSourceTest {
           compilationUnits).call();
       assertTrue(compilerOutput.toString(), result);
     }
+  }
+
+  private void compileAllGeneratedSources(String classesDirectoryName, Path sourceDirectory) throws Exception {
+    List<Path> sources;
+    try (var stream = Files.list(sourceDirectory)) {
+      sources = stream
+          .filter(path -> path.getFileName().toString().endsWith(".java"))
+          .sorted()
+          .toList();
+    }
+    compileJavaSources(temporaryFolder.newFolder(classesDirectoryName).toPath(), sources.toArray(Path[]::new));
   }
 }
