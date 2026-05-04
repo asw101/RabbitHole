@@ -19,8 +19,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.zip.ZipEntry;
@@ -190,6 +192,27 @@ public class StarterProjectXmlFallbackReadabilityTest {
   }
 
   @Test
+  public void representativeStarterProjectFixturesRoundTripAfterMigration() throws Exception {
+    for (StarterProjectExpectation expectation : REPRESENTATIVE_LEGACY_PROJECT_ARCHIVES) {
+      Project migratedProject = IoUtilities.readProject(starterProjectsDirectory().resolve(expectation.archiveName).toFile());
+      assertReadableStarterProjectState(expectation, migratedProject, "migrated legacy read");
+
+      Path savedArchive = temporaryFolder.newFile(expectation.archiveName.replace(".a3p", "-roundtrip.a3p")).toPath();
+      IoUtilities.writeProject(savedArchive.toFile(), migratedProject);
+
+      assertTrue(expectation.archiveName + " should save a non-empty migrated project copy",
+          Files.size(savedArchive) > 0);
+
+      Project reopenedProject = IoUtilities.readProject(savedArchive.toFile());
+      assertReadableStarterProjectState(expectation, reopenedProject, "reopened migrated copy");
+      assertEquals(expectation.archiveName + " should preserve resource count after save/reopen",
+          migratedProject.getResources().size(), reopenedProject.getResources().size());
+      assertEquals(expectation.archiveName + " should preserve resource identities after save/reopen",
+          sortedResourceSignatures(migratedProject.getResources()), sortedResourceSignatures(reopenedProject.getResources()));
+    }
+  }
+
+  @Test
   public void representativeStarterProjectFixtureVersionsEnterMigrationManagerPath() throws Exception {
     for (StarterProjectExpectation expectation : REPRESENTATIVE_LEGACY_PROJECT_ARCHIVES) {
       Path archive = starterProjectsDirectory().resolve(expectation.archiveName);
@@ -302,6 +325,52 @@ public class StarterProjectXmlFallbackReadabilityTest {
     assertTrue(archiveName + " should decode myScene as a named user type",
         sceneField.getValueType() instanceof NamedUserType);
     return (NamedUserType) sceneField.getValueType();
+  }
+
+  private static void assertReadableStarterProjectState(
+      StarterProjectExpectation expectation, Project project, String readStage) {
+    assertNotNull(expectation.archiveName + " should produce a project during " + readStage, project);
+    NamedUserType programType = project.getProgramType();
+    assertNotNull(expectation.archiveName + " should decode a program type during " + readStage, programType);
+    assertEquals(expectation.archiveName + " should decode the committed program type during " + readStage,
+        "Program", programType.getName());
+    assertEquals(expectation.archiveName + " should decode a modern program superclass during " + readStage,
+        "SProgram", programType.getSuperType().getName());
+    assertEquals(expectation.archiveName + " should keep the program-to-scene field boundary during " + readStage,
+        1, programType.fields.size());
+    assertTrue(expectation.archiveName + " should decode the program entry point during " + readStage,
+        hasMethodNamed(programType, "main"));
+
+    NamedUserType sceneType = sceneTypeFor(expectation.archiveName, programType);
+    assertEquals(expectation.archiveName + " should decode the committed scene type during " + readStage,
+        "Scene", sceneType.getName());
+    assertEquals(expectation.archiveName + " should decode a modern scene superclass during " + readStage,
+        "SScene", sceneType.getSuperType().getName());
+    assertEquals(expectation.archiveName + " should preserve its committed scene field count during " + readStage,
+        expectation.sceneFieldCount, sceneType.fields.size());
+    assertTrue(expectation.archiveName + " should decode ground during " + readStage,
+        hasFieldNamed(sceneType, "ground"));
+    assertTrue(expectation.archiveName + " should decode camera during " + readStage,
+        hasFieldNamed(sceneType, "camera"));
+    for (String fieldName : expectation.representativeSceneFields) {
+      assertTrue(expectation.archiveName + " should decode scene field " + fieldName + " during " + readStage,
+          hasFieldNamed(sceneType, fieldName));
+    }
+    assertTrue(expectation.archiveName + " should decode generated setup during " + readStage,
+        hasMethodNamed(sceneType, "performGeneratedSetUp"));
+    assertTrue(expectation.archiveName + " should decode user-authored entry behavior during " + readStage,
+        hasMethodNamed(sceneType, "myFirstMethod"));
+    assertTrue(expectation.archiveName + " should decode event-listener setup during " + readStage,
+        hasMethodNamed(sceneType, "initializeEventListeners"));
+  }
+
+  private static List<String> sortedResourceSignatures(Collection<Resource> resources) {
+    List<String> signatures = new ArrayList<>();
+    for (Resource resource : resources) {
+      signatures.add(resource.getName() + "|" + resource.getContentType() + "|" + resource.getData().length);
+    }
+    Collections.sort(signatures);
+    return signatures;
   }
 
   private static boolean hasFieldNamed(NamedUserType type, String fieldName) {
