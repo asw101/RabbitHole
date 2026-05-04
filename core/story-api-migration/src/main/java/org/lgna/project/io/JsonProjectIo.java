@@ -322,7 +322,7 @@ public class JsonProjectIo extends DataSourceIo implements ProjectIo {
         }
         String fallbackName = ResourceExportNames.entryFileName(resource);
         String safeName = ResourceExportNames.metadataName(resource.getName(), fallbackName);
-        String safeOriginalFileName = ResourceExportNames.metadataName(resource.getOriginalFileName(), fallbackName);
+        String safeOriginalFileName = ResourceExportNames.metadataOriginalFileName(resource.getOriginalFileName(), fallbackName);
         if (!Objects.equals(resource.getName(), safeName)
             || !Objects.equals(resource.getOriginalFileName(), safeOriginalFileName)) {
           originalNames.put(resource, new ResourceNames(resource.getName(), resource.getOriginalFileName()));

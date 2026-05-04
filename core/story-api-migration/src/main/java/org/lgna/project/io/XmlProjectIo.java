@@ -393,7 +393,7 @@ public class XmlProjectIo implements ProjectIo {
               ResourceExportNames.metadataName(resource.getName(), fallbackName));
           xmlElement.setAttribute(
               XML_RESOURCE_ORIGINAL_FILE_NAME_ATTRIBUTE,
-              ResourceExportNames.metadataName(resource.getOriginalFileName(), fallbackName));
+              ResourceExportNames.metadataOriginalFileName(resource.getOriginalFileName(), fallbackName));
           xmlElement.setAttribute(XML_RESOURCE_ENTRY_NAME_ATTRIBUTE, entryName);
           xmlRootElement.appendChild(xmlElement);
         }

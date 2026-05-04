@@ -26,6 +26,20 @@ final class ResourceExportNames {
     return sanitizedName.isEmpty() ? fallback : sanitizedName;
   }
 
+  static String metadataOriginalFileName(String originalFileName, String fallback) {
+    if (originalFileName == null) {
+      return fallback;
+    }
+    if (originalFileName.trim().isEmpty()) {
+      return "";
+    }
+    if (!isAbsolutePath(originalFileName.trim())) {
+      return originalFileName;
+    }
+    String sanitizedName = sanitizeFileName(originalFileName);
+    return sanitizedName.isEmpty() ? fallback : sanitizedName;
+  }
+
   static String fileNameFromEntry(String entryName) {
     int slash = entryName.lastIndexOf('/');
     return (slash < 0) ? entryName : entryName.substring(slash + 1);

@@ -113,6 +113,24 @@ public class IoUtilitiesTest {
   }
 
   @Test
+  public void writeProjectPreservesBlankResourceOriginalFileName() throws Exception {
+    Project project = new Project(programType("Program"), Project.SceneCameraType.WindowCamera);
+    TestResource resource = new TestResource("note.txt", "text/plain", "hello alice".getBytes(StandardCharsets.UTF_8));
+    resource.setOriginalFileName("");
+    resource.setName("friendly note");
+    project.addResource(resource);
+    File projectFile = temporaryFolder.newFile("blank-original-resource.a3p");
+
+    IoUtilities.writeProject(projectFile, project);
+
+    Project readProject = IoUtilities.readProject(projectFile);
+    Resource readResource = onlyResource(readProject);
+    assertEquals("friendly note", readResource.getName());
+    assertEquals("", readResource.getOriginalFileName());
+    assertArrayEquals(resource.getData(), readResource.getData());
+  }
+
+  @Test
   public void writeProjectIncludesProvidedThumbnailAndManifestIcon() throws Exception {
     Project project = new Project(programType("Program"), Project.SceneCameraType.WindowCamera);
     File projectFile = temporaryFolder.newFile("synthetic-thumbnail.a3p");
