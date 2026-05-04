@@ -28,4 +28,3 @@ fallback:
   notes:
     - If Xvfb or renderer initialization fails in the current environment, preserve the failure log.
     - Provide a manual launch screenshot from a supported desktop environment when automated launch evidence cannot be collected.
-
