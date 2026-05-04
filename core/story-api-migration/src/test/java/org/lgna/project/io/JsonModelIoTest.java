@@ -22,6 +22,8 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -79,7 +81,21 @@ public class JsonModelIoTest {
     new SyntheticJsonModelIo(JsonModelIo.ExportFormat.ALICE).writeModel(os, Collections.singletonList(resource));
 
     assertNotEquals(0, os.size());
-    assertZipContains(os.toByteArray(), "models/SyntheticModel/SyntheticModel.json");
+    assertEquals(Collections.singletonList("models/SyntheticModel/SyntheticModel.json"), zipEntryNames(os.toByteArray()));
+  }
+
+  @Test
+  public void writeModelFromResourceListPreservesExporterArchiveEntryNames() throws Exception {
+    ExportableResource resource = ExportableResource.DEFAULT;
+    registerModelResourceMetadata(resource, "SyntheticModel", "DEFAULT");
+    ByteArrayOutputStream os = new ByteArrayOutputStream();
+
+    new MultiEntryJsonModelIo(JsonModelIo.ExportFormat.ALICE).writeModel(os, Collections.singletonList(resource));
+
+    assertEquals(Arrays.asList(
+        "models/SyntheticModel/SyntheticModel.a3r",
+        "models/SyntheticModel/SyntheticModel.png",
+        "models/SyntheticModel/SyntheticModel.json"), zipEntryNames(os.toByteArray()));
   }
 
   @Test
@@ -115,16 +131,15 @@ public class JsonModelIoTest {
     assertEquals(expectedStructureName, exporter.createStructureDataSource().getName());
   }
 
-  private void assertZipContains(byte[] archive, String expectedEntryName) throws Exception {
+  private List<String> zipEntryNames(byte[] archive) throws Exception {
+    List<String> names = new ArrayList<>();
     try (ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(archive))) {
       ZipEntry entry;
       while ((entry = zis.getNextEntry()) != null) {
-        if (expectedEntryName.equals(entry.getName())) {
-          return;
-        }
+        names.add(entry.getName());
       }
     }
-    throw new AssertionError("Missing zip entry " + expectedEntryName);
+    return names;
   }
 
   @SuppressWarnings("unchecked")
@@ -216,6 +231,21 @@ public class JsonModelIoTest {
     public List<DataSource> createDataSources(String baseModelPath) {
       String modelPath = baseModelPath + "/" + modelManifest.getName() + "/" + modelManifest.getName() + ".json";
       return Collections.singletonList(new ByteArrayDataSource(modelPath, "{}"));
+    }
+  }
+
+  private static class MultiEntryJsonModelIo extends JsonModelIo {
+    MultiEntryJsonModelIo(ExportFormat exportFormat) {
+      super(exportFormat);
+    }
+
+    @Override
+    public List<DataSource> createDataSources(String baseModelPath) {
+      String modelPath = baseModelPath + "/" + modelManifest.getName();
+      return Arrays.asList(
+          new ByteArrayDataSource(modelPath + "/" + modelManifest.getName() + ".a3r", "structure"),
+          new ByteArrayDataSource(modelPath + "/" + modelManifest.getName() + ".png", "thumbnail"),
+          new ByteArrayDataSource(modelPath + "/" + modelManifest.getName() + ".json", "{}"));
     }
   }
 }

@@ -118,25 +118,16 @@ public class JointedModelGltfExporter implements JointedModelExporter {
   @Override
   public DataSource createStructureDataSource() {
     final String name = resourcePath + "/" + fullResourceName + "." + MODEL_EXTENSION;
-    return new DataSource() {
-      @Override
-      public String getName() {
-        return name;
-      }
-
-      @Override
-      public void write(OutputStream os) throws IOException {
-        GltfModelWriter writer = new GltfModelWriter();
-        final GltfModel model = createModel();
-        writer.writeBinary(model, os);
-      }
-    };
+    return ModelExportDataSources.create(name, os -> {
+      GltfModelWriter writer = new GltfModelWriter();
+      final GltfModel model = createModel();
+      writer.writeBinary(model, os);
+    });
   }
 
   @Override
   public String getStructureFileName(DataSource structureDataSource) {
-    //Strip the base and model path from the name to make it relative to the manifest
-    return structureDataSource.getName().substring(resourcePath.length() + 1);
+    return ModelExportDataSources.structureFileNameRelativeTo(resourcePath, structureDataSource);
   }
 
   @Override

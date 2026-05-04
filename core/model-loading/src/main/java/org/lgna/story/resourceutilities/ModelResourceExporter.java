@@ -43,7 +43,6 @@
 
 package org.lgna.story.resourceutilities;
 
-import edu.cmu.cs.dennisc.image.ImageUtilities;
 import edu.cmu.cs.dennisc.java.io.FileUtilities;
 import edu.cmu.cs.dennisc.java.io.TextFileUtilities;
 import edu.cmu.cs.dennisc.java.lang.reflect.ReflectionUtilities;
@@ -1416,100 +1415,23 @@ public class ModelResourceExporter {
     }
   }
 
-  private File saveImageToFile(String fileName, Image image) throws IOException {
-    if (image == null) {
-      throw new IOException("Cannot write thumbnail " + fileName + " because the image is null");
-    }
-    int width;
-    int height;
-    try {
-      width = image.getWidth(null);
-      height = image.getHeight(null);
-    } catch (RuntimeException e) {
-      throw new IOException("Cannot read thumbnail dimensions for " + fileName, e);
-    }
-    if ((width <= 0) || (height <= 0)) {
-      throw new IOException("Cannot write thumbnail " + fileName + " with invalid dimensions " + width + "x" + height);
-    }
-    File outputFile = new File(fileName);
-    try {
-      ensureOutputFile(outputFile, "thumbnail");
-      ImageUtilities.write(outputFile, image);
-      return outputFile;
-    } catch (IOException e) {
-      throw new IOException("Failed to write thumbnail " + outputFile, e);
-    } catch (RuntimeException e) {
-      throw new IOException("Failed to write thumbnail " + outputFile, e);
-    }
-  }
-
   public String getThumbnailPath(String rootPath, String thumbnailName) {
-    if (!rootPath.endsWith("/") && !rootPath.endsWith("\\")) {
-      rootPath += "/";
-    }
-    String resourceDirectory = rootPath + JavaCodeUtilities.getDirectoryStringForPackage(this.classData.packageString) + ModelResourceIoUtilities.getResourceSubDirWithSeparator(this.className);
-    return resourceDirectory + thumbnailName;
+    return ModelResourceThumbnailWriter.getThumbnailPath(rootPath, this.classData.packageString, this.className, thumbnailName);
   }
 
   public static BufferedImage createClassThumb(BufferedImage imgSrc) {
-    //    ColorConvertOp colorConvert =
-    //        new ColorConvertOp( ColorSpace.getInstance( ColorSpace.CS_GRAY ), null );
-    //    if( imgSrc == null ) {
-    //      System.out.println( "NULL!" );
-    //    }
-    //    try {
-    //      colorConvert.filter( imgSrc, imgSrc );
-    //    } catch( NullPointerException e ) {
-    //      e.printStackTrace();
-    //      throw e;
-    //    }
-    return imgSrc;
+    return ModelResourceThumbnailWriter.createClassThumb(imgSrc);
   }
 
   List<File> saveThumbnailsToDir(String root) throws IOException {
-    List<File> thumbnailFiles = new LinkedList<File>();
-    List<String> thumbnailsCreated = new LinkedList<String>();
-    if ((this.existingThumbnails != null) && !this.existingThumbnails.isEmpty()) {
-      for (Entry<String, File> entry : this.existingThumbnails.entrySet()) {
-        if (entry.getValue().exists()) {
-          thumbnailFiles.add(entry.getValue());
-          thumbnailsCreated.add(entry.getKey());
-        } else {
-          throw new FileNotFoundException("Missing thumbnail file '" + entry.getValue() + "'");
-        }
-      }
-    }
-    for (Entry<ModelSubResourceExporter, Image> entry : this.thumbnails.entrySet()) {
-      String thumbnailName = AliceResourceUtilities.getThumbnailResourceFileName(entry.getKey().getModelName(), entry.getKey().getTextureName());
-      if (!thumbnailsCreated.contains(thumbnailName)) {
-        File f = saveImageToFile(getThumbnailPath(root, thumbnailName), entry.getValue());
-        thumbnailsCreated.add(thumbnailName);
-        thumbnailFiles.add(f);
-      }
-    }
-    if (this.subResources.isEmpty()) {
-      throw new IOException("Cannot create thumbnails for " + this.resourceName + " because no sub resources were registered");
-    }
-    ModelSubResourceExporter firstSubResource = this.subResources.getFirst();
-    String firstThumbName = AliceResourceUtilities.getThumbnailResourceFileName(firstSubResource.getModelName(), firstSubResource.getTextureName());
-    String classThumbName = AliceResourceUtilities.getThumbnailResourceFileName(this.getClassName(), null);
-    File firstThumbFile = new File(getThumbnailPath(root, firstThumbName));
-    File classThumbFile = new File(getThumbnailPath(root, classThumbName));
-
-    try {
-      BufferedImage classThumb = createClassThumb(ImageUtilities.read(firstThumbFile));
-      if (classThumb == null) {
-        throw new IOException("Thumbnail image is unreadable: " + firstThumbFile);
-      }
-      ImageUtilities.write(classThumbFile, classThumb);
-      thumbnailFiles.add(classThumbFile);
-    } catch (IOException ioe) {
-      throw new IOException("Failed to create class thumbnail " + classThumbFile + " from " + firstThumbFile, ioe);
-    } catch (RuntimeException e) {
-      throw new IOException("Failed to create class thumbnail " + classThumbFile + " from " + firstThumbFile, e);
-    }
-
-    return thumbnailFiles;
+    return ModelResourceThumbnailWriter.saveThumbnailsToDir(
+        root,
+        this.classData.packageString,
+        this.className,
+        this.resourceName,
+        this.existingThumbnails,
+        this.thumbnails,
+        this.subResources);
   }
 
   public boolean isValidEnumName(String modelName, String enumName) {
