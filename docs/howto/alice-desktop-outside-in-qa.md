@@ -1,6 +1,6 @@
 # Run Alice desktop outside-in QA
 
-Use the Alice desktop outside-in QA lane to validate the scenario catalog and collect reviewable evidence for user-like workflows: launch, instructor/student setup, scene creation, run/debug-like behavior, save/load, export, exported-project smoke, NetBeans package smoke, project IO smoke, failure-path smoke, and future UI smoke.
+Use the Alice desktop outside-in QA lane to validate the scenario catalog and collect reviewable evidence for user-like workflows: launch, instructor/student setup, scene creation, run/debug-like behavior, save/load, open/load/save, export, exported-project smoke, NetBeans package smoke, package/install smoke, project IO smoke, failure-path smoke, future UI smoke, and wizard/palette/completion smoke.
 
 ## Contents
 
@@ -44,7 +44,7 @@ qa/outside-in/alice-desktop/runners/validate-scenarios.sh
 Expected output:
 
 ```text
-Validated 11 scenario(s) in .../qa/outside-in/alice-desktop/scenarios
+Validated 14 scenario(s) in .../qa/outside-in/alice-desktop/scenarios
 ```
 
 ## Validate a custom scenario catalog
@@ -56,7 +56,7 @@ ALICE_QA_SCENARIO_DIR=qa/outside-in/alice-desktop/evidence/custom-scenarios \
 qa/outside-in/alice-desktop/runners/validate-scenarios.sh
 ```
 
-Custom catalogs cannot introduce arbitrary shell commands. `xvfb-real-alice` automation must use the schema's argv list for the allowed Alice launch command (`alice-ide`, `mvn exec:java -Dalice-ide`); the runner executes the argv directly without shell interpretation.
+Custom catalogs cannot introduce arbitrary shell commands. `xvfb-real-alice` and `gated-command-smoke` automation must use one of the schema's allowed argv lists; the runner executes argv directly without shell interpretation and validates cwd realpaths stay inside the repository.
 
 List the same active catalog through either entry point:
 
@@ -213,7 +213,7 @@ qa/outside-in/alice-desktop/runners/run-scenario.sh run alice-desktop-launch \
   --timeout-seconds 180
 ```
 
-Gated command smokes cover exported-project, NetBeans package, project IO, failure path, and future UI startup paths. Without `ALICE_QA_RUN_GATED_SMOKES=1`, those scenarios exit successfully after writing `status.txt` with `outcome=gated-not-run` and a checklist. Enable the gate only in a worktree prepared for the configured Maven or display-backed command.
+Gated command smokes cover exported-project, NetBeans package, package/install, project IO, failure path, future UI startup, and wizard/palette/completion paths. Without `ALICE_QA_RUN_GATED_SMOKES=1`, those scenarios exit successfully after writing `status.txt` with `outcome=gated-not-run` and a checklist. Enable the gate only in a worktree prepared for the configured Maven, packaging, or display-backed command.
 
 The QA lane itself does not require Node.js. If a surrounding QA orchestrator invokes Node-based tooling around this lane, use:
 

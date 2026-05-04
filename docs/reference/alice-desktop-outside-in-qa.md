@@ -35,12 +35,15 @@ This reference describes the Alice desktop outside-in QA lane: file layout, runn
 | `alice-desktop-scene-creation` | `scene-creation` | `manual-evidence-required` | Covers creating or selecting a starter scene and saving it as an Alice project. |
 | `alice-desktop-run-debug` | `run-debug` | `manual-evidence-required` | Covers program run controls plus the closest baseline debug-like control, such as fast-forward or statement execution. |
 | `alice-desktop-save-load` | `save-load` | `manual-evidence-required` | Covers saving an `.a3p` project, reopening it, and checking persistence. |
+| `alice-desktop-open-load-save` | `open-load-save` | `manual-evidence-required` | Covers opening an existing `.a3p`, saving a copy, reopening it, and comparing visible state. |
 | `alice-desktop-export` | `export` | `manual-evidence-required` | Covers the current Alice export path and verification of the exported artifact. |
 | `alice-desktop-exported-project-smoke` | `exported-project-smoke` | `gated-command-smoke` | Covers generated Java project compile/launcher handoff evidence without running by default. |
 | `alice-desktop-netbeans-package-smoke` | `netbeans-package-smoke` | `gated-command-smoke` | Covers NetBeans package command and representative NBM/support artifact checks. |
+| `alice-desktop-package-install-smoke` | `package-install-smoke` | `gated-command-smoke` | Covers package build artifact inspection plus disposable install/launch evidence when artifacts are available. |
 | `alice-desktop-project-io-smoke` | `project-io-smoke` | `gated-command-smoke` | Covers synthetic project save/reload evidence at the command seam. |
 | `alice-desktop-failure-path-smoke` | `failure-path-smoke` | `gated-command-smoke` | Covers corrupt project input failure handling evidence. |
 | `alice-desktop-future-ui-smoke` | `future-ui-smoke` | `gated-command-smoke` | Placeholder for controlled-display UI startup evidence; no-op unless gated on. |
+| `alice-desktop-wizard-palette-completion-smoke` | `wizard-palette-completion-smoke` | `gated-command-smoke` | Covers focused wizard, palette, and completion affordance checks where current NetBeans tests can observe them. |
 
 ## Runner commands
 
@@ -230,11 +233,14 @@ exported-project-smoke
 failure-path-smoke
 future-ui-smoke
 netbeans-package-smoke
+open-load-save
+package-install-smoke
 project-io-smoke
 scene-creation
 run-debug
 save-load
 export
+wizard-palette-completion-smoke
 ```
 
 ## Automation modes
@@ -310,12 +316,15 @@ Manual scenarios are complete only after a human performs the workflow and place
 | Scene creation | Screenshot before scene creation, screenshot after object or scene appears, saved `.a3p`, notes identifying the selected template or object in `review-notes.txt`. |
 | Run/debug | Screenshot before run, screenshot or screen capture during execution, notes naming run/debug-like controls in `review-notes.txt`, launch or run log, saved `.a3p`. |
 | Save/load | Save log or notes, saved `.a3p`, screenshot before saving, screenshot after reopening, comparison notes in `review-notes.txt`. |
+| Open/load/save | Open log or notes identifying the source `.a3p`, screenshot after first open, saved copy `.a3p`, screenshot after reopening the copy, comparison decision in `review-notes.txt`. |
 | Export | Export log or notes, screenshot before export, screenshot after export completion, exported artifact, file listing or checksum, `review-notes.txt`. |
 | Exported project smoke | `status.txt`, `command.log`, generated source or exported project listing, launcher handoff or compile evidence. |
 | NetBeans package smoke | `status.txt`, `command.log`, NetBeans target artifact listing or CI artifact link, representative jar/zip content listing. |
+| Package/install smoke | `status.txt`, `command.log`, package or installer artifact listing, disposable install log or explicit not-produced note. |
 | Project IO smoke | `status.txt`, `command.log`, saved/synthetic project artifact reference, metadata or resource survival notes. |
 | Failure path smoke | `status.txt`, `command.log`, failure classification or dispatch-plan output, corrupt input fixture name or generated fixture notes. |
 | Future UI smoke | `status.txt`, `command.log` when gated, startup screenshot or first-window signal when collected, manual fallback notes otherwise. |
+| Wizard/palette/completion smoke | `status.txt`, `command.log`, focused test output for wizard validation, palette wiring, and completion resources; manual screenshot notes when desktop evidence is added. |
 
 ## Scenario authoring rules
 

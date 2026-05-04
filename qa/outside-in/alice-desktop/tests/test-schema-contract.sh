@@ -86,6 +86,17 @@ expected_argv = {
         "test",
     ),
     ("qa/outside-in/alice-desktop/runners/netbeans-package-smoke.sh",),
+    ("qa/outside-in/alice-desktop/runners/package-install-smoke.sh",),
+    (
+        "mvn",
+        "-DincludeSims=false",
+        "-Dinstall4j.skip",
+        "-pl",
+        "netbeans",
+        "-am",
+        "-Dtest=org.alice.netbeans.Alice3ProjectTemplateWizardIteratorTest,org.alice.netbeans.palette.Alice3PaletteFactoryTest,org.alice.netbeans.palette.items.AliceComponentPaletteUtilitiesTest,org.alice.netbeans.palette.items.resources.PaletteBundleLocalizationTest,org.alice.netbeans.completion.Alice3CompletionItemTest",
+        "test",
+    ),
     (
         "qa/outside-in/alice-desktop/runners/run-scenario.sh",
         "run",

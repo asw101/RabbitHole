@@ -35,26 +35,32 @@ required_workflows = [
     "scene-creation",
     "run-debug",
     "save-load",
+    "open-load-save",
     "export",
     "exported-project-smoke",
     "netbeans-package-smoke",
+    "package-install-smoke",
     "project-io-smoke",
     "failure-path-smoke",
     "future-ui-smoke",
+    "wizard-palette-completion-smoke",
 ]
 manual_scenarios = [
     "alice-desktop-instructor-student-setup",
     "alice-desktop-scene-creation",
     "alice-desktop-run-debug",
     "alice-desktop-save-load",
+    "alice-desktop-open-load-save",
     "alice-desktop-export",
 ]
 gated_scenarios = [
     "alice-desktop-exported-project-smoke",
     "alice-desktop-netbeans-package-smoke",
+    "alice-desktop-package-install-smoke",
     "alice-desktop-project-io-smoke",
     "alice-desktop-failure-path-smoke",
     "alice-desktop-future-ui-smoke",
+    "alice-desktop-wizard-palette-completion-smoke",
 ]
 errors = []
 

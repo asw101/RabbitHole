@@ -1,0 +1,48 @@
+id: alice-desktop-wizard-palette-completion-smoke
+title: Wizard, palette, and completion smoke
+workflow: wizard-palette-completion-smoke
+automationMode: gated-command-smoke
+preconditions:
+  - Java 21 is available.
+  - Maven dependencies are available.
+  - The tweedle-lang submodule is initialized.
+  - NetBeans module characterization tests are available in the checkout.
+userActions:
+  - Enable gated smokes in a workspace prepared for NetBeans module tests.
+  - Run the focused wizard, palette, and completion command smoke.
+  - Review the command output for project wizard validation, palette wiring, and completion resources.
+expectedOutcomes:
+  - By default the scenario records a gated-not-run status instead of running NetBeans module tests.
+  - When the gate is enabled, focused wizard, palette, and completion checks exit successfully.
+  - Command evidence covers the user-visible create-project wizard, palette availability, and code completion affordances where current tests can observe them.
+automation:
+  cwd: .
+  argv:
+    - mvn
+    - -DincludeSims=false
+    - -Dinstall4j.skip
+    - -pl
+    - netbeans
+    - -am
+    - -Dtest=org.alice.netbeans.Alice3ProjectTemplateWizardIteratorTest,org.alice.netbeans.palette.Alice3PaletteFactoryTest,org.alice.netbeans.palette.items.AliceComponentPaletteUtilitiesTest,org.alice.netbeans.palette.items.resources.PaletteBundleLocalizationTest,org.alice.netbeans.completion.Alice3CompletionItemTest
+    - test
+  timeoutSeconds: 600
+  readyWaitSeconds: 1
+evidence:
+  required:
+    - status.txt recording the gated command outcome.
+    - command.log from the focused wizard, palette, and completion smoke command.
+    - Test output naming wizard validation, palette wiring, and completion resource checks.
+    - Manual screenshot notes if a later desktop pass exercises the same UI affordances directly.
+fallback:
+  mode: manual-evidence-required
+  notes:
+    - If focused NetBeans tests are unavailable, attach the nearest module smoke output and record the missing affordance.
+    - Manual GUI evidence should be added when stable desktop automation can drive these affordances directly.
+supportingEvidence:
+  - alice-desktop-launch
+  - alice-desktop-netbeans-package-smoke
+tags:
+  - immediate-qa-backlog
+  - wizard-palette-completion
+  - command-smoke
