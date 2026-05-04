@@ -44,6 +44,7 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -452,6 +453,86 @@ public class IoUtilitiesTest {
 
     assertNotNull("Simple Tweedle type archives should decode a NamedUserType.", readType.getType());
     assertEquals("SyntheticType", readType.getType().getName());
+  }
+
+  @Test
+  public void xmlTypeRoundTripPreservesResourceDataAndExpressionBinding() throws Exception {
+    TestResource resource = new TestResource("type-note.txt", "text/plain", "hello type".getBytes(StandardCharsets.UTF_8));
+    NamedUserType type = programTypeReferencingResource("Prop", TestResource.class, resource);
+    File typeFile = temporaryFolder.newFile("xml-type-resource.a3c");
+
+    IoUtilities.writeType(typeFile, type);
+
+    TypeResourcesPair readType = IoUtilities.readType(typeFile);
+    assertNotNull(readType.getType());
+    assertEquals("Prop", readType.getType().getName());
+    Resource readResource = onlyResource(readType.getResources());
+    assertEquals(TestResource.class, readResource.getClass());
+    assertEquals(resource.getId(), readResource.getId());
+    assertEquals("type-note.txt", readResource.getName());
+    assertEquals("text/plain", readResource.getContentType());
+    assertArrayEquals(resource.getData(), readResource.getData());
+    assertSame(readResource, firstResourceExpressionResource(readType.getType()));
+  }
+
+  @Test
+  public void jsonTypeReaderReportsManifestNameMismatchInsteadOfFallback() throws Exception {
+    TypeManifest manifest = typeManifest("ExpectedType");
+    TypeReference typeReference = new TypeReference("OtherType", "src/OtherType.twe", "tweedle");
+    manifest.resources.add(typeReference);
+    File typeFile = temporaryFolder.newFile("json-type-name-mismatch.a3c");
+
+    try (ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(typeFile))) {
+      writeZipEntry(zipOutputStream, ProjectIo.VERSION_ENTRY_NAME, ProjectVersion.getCurrentVersion().toString());
+      writeZipEntry(zipOutputStream, ProjectIo.MANIFEST_ENTRY_NAME, ManifestEncoderDecoder.toJson(manifest));
+      writeZipEntry(zipOutputStream, typeReference.file, "class OtherType {}");
+    }
+
+    IOException thrown = assertThrows(IOException.class, () -> IoUtilities.readType(typeFile));
+
+    assertTrue(thrown.getMessage().contains("ExpectedType"));
+    assertTrue(thrown.getMessage().contains("OtherType"));
+  }
+
+  @Test
+  public void jsonTypeReaderReportsMissingTypeReferenceInsteadOfReturningNull() throws Exception {
+    File typeFile = temporaryFolder.newFile("json-type-without-type-reference.a3c");
+    TypeManifest manifest = typeManifest("SyntheticType");
+
+    try (ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(typeFile))) {
+      writeZipEntry(zipOutputStream, ProjectIo.VERSION_ENTRY_NAME, ProjectVersion.getCurrentVersion().toString());
+      writeZipEntry(zipOutputStream, ProjectIo.MANIFEST_ENTRY_NAME, ManifestEncoderDecoder.toJson(manifest));
+    }
+
+    IOException thrown = assertThrows(IOException.class, () -> IoUtilities.readType(typeFile));
+
+    assertTrue(thrown.getMessage().contains("SyntheticType"));
+    assertTrue(thrown.getMessage().contains("type reference"));
+  }
+
+  @Test
+  public void jsonProjectReaderReportsUnsupportedTypeReferenceFormat() throws Exception {
+    ProjectManifest manifest = new ProjectManifest();
+    manifest.description.name = "Program";
+    manifest.metadata.fileType = IoUtilities.EXPORT_EXTENSION;
+    manifest.metadata.identifier.name = UUID.randomUUID().toString();
+    manifest.metadata.identifier.type = Manifest.ProjectType.World;
+    manifest.projectStructure.sceneCameraType = Project.SceneCameraType.WindowCamera;
+    TypeReference typeReference = new TypeReference("Program", "src/Program.xml", "xml");
+    manifest.resources.add(typeReference);
+    File exportFile = temporaryFolder.newFile("unsupported-type-reference-format.a3w");
+
+    try (ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(exportFile))) {
+      writeZipEntry(zipOutputStream, ProjectIo.VERSION_ENTRY_NAME, ProjectVersion.getCurrentVersion().toString());
+      writeZipEntry(zipOutputStream, ProjectIo.MANIFEST_ENTRY_NAME, ManifestEncoderDecoder.toJson(manifest));
+      writeZipEntry(zipOutputStream, typeReference.file, "<type/>");
+    }
+
+    IOException thrown = assertThrows(IOException.class, () -> IoUtilities.readProject(exportFile));
+
+    assertTrue(thrown.getMessage().contains("Program"));
+    assertTrue(thrown.getMessage().contains("xml"));
+    assertTrue(thrown.getMessage().contains(typeReference.file));
   }
 
   @Test
@@ -1047,18 +1128,26 @@ public class IoUtilitiesTest {
   }
 
   private static Resource onlyResource(Project project) {
-    assertEquals(1, project.getResources().size());
-    return project.getResources().iterator().next();
+    return onlyResource(project.getResources());
+  }
+
+  private static Resource onlyResource(Collection<Resource> resources) {
+    assertEquals(1, resources.size());
+    return resources.iterator().next();
   }
 
   private static Resource firstResourceExpressionResource(Project project) {
+    return firstResourceExpressionResource(project.getProgramType());
+  }
+
+  private static Resource firstResourceExpressionResource(NamedUserType type) {
     IsInstanceCrawler<ResourceExpression> crawler = new IsInstanceCrawler<ResourceExpression>(ResourceExpression.class) {
       @Override
       protected boolean isAcceptable(ResourceExpression resourceExpression) {
         return true;
       }
     };
-    project.getProgramType().crawl(crawler, CrawlPolicy.COMPLETE);
+    type.crawl(crawler, CrawlPolicy.COMPLETE);
     assertFalse(crawler.getList().isEmpty());
     return crawler.getList().get(0).resource.getValue();
   }

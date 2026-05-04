@@ -107,8 +107,11 @@ public class JsonProjectIo extends DataSourceIo implements ProjectIo {
       Set<Resource> resources = readResources(manifest);
       Set<NamedUserType> decodedTypes = readTypes(manifest);
       NamedUserType type = findTypeByName(decodedTypes, manifestName(manifest));
-      if ((type == null) && !decodedTypes.isEmpty()) {
-        type = decodedTypes.iterator().next();
+      if (type == null) {
+        type = fallbackTypeForUnnamedManifest(manifest, decodedTypes);
+      }
+      if (type == null) {
+        verifyTypeArchiveHasExpectedType(manifest, decodedTypes);
       }
       return new TypeResourcesPair(type, resources);
     }
@@ -227,7 +230,8 @@ public class JsonProjectIo extends DataSourceIo implements ProjectIo {
 
     private NamedUserType readTweedleType(TypeReference typeReference) throws IOException {
       if (!TWEEDLE_FORMAT.equals(typeReference.format)) {
-        return null;
+        throw new IOException(
+            "Unsupported type reference format '" + typeReference.format + "' for " + typeReferenceContext(typeReference));
       }
       if (typeReference.file == null) {
         throw new IOException("Type " + typeReference.name + " does not specify archive entry");
@@ -254,6 +258,53 @@ public class JsonProjectIo extends DataSourceIo implements ProjectIo {
       } catch (VersionNotSupportedException e) {
         throw new IOException("Unable to decode Tweedle type entry " + typeReference.file, e);
       }
+    }
+
+
+    private static NamedUserType fallbackTypeForUnnamedManifest(Manifest manifest, Set<NamedUserType> decodedTypes) {
+      if (((manifestName(manifest) == null) || manifestName(manifest).isEmpty()) && !decodedTypes.isEmpty()) {
+        return decodedTypes.iterator().next();
+      }
+      return null;
+    }
+
+    private static void verifyTypeArchiveHasExpectedType(Manifest manifest, Set<NamedUserType> decodedTypes) throws IOException {
+      String expectedName = manifestName(manifest);
+      if ((manifest != null) && hasTypeReferences(manifest)) {
+        if (decodedTypes.isEmpty()) {
+          return;
+        }
+        throw new IOException(
+            "Type archive manifest names '" + expectedName + "' but decoded type names are " + decodedTypeNames(decodedTypes));
+      }
+      throw new IOException("Type archive manifest for '" + expectedName + "' does not contain a type reference");
+    }
+
+    private static boolean hasTypeReferences(Manifest manifest) {
+      for (ResourceReference resourceReference : manifest.resources) {
+        if (resourceReference instanceof TypeReference) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    private static String decodedTypeNames(Set<NamedUserType> decodedTypes) {
+      return decodedTypes.stream()
+          .map(NamedUserType::getName)
+          .sorted()
+          .collect(Collectors.joining(", ", "[", "]"));
+    }
+
+    private static String typeReferenceContext(TypeReference typeReference) {
+      StringBuilder sb = new StringBuilder("type reference");
+      if ((typeReference.name != null) && !typeReference.name.isEmpty()) {
+        sb.append(" '").append(typeReference.name).append("'");
+      }
+      if ((typeReference.file != null) && !typeReference.file.isEmpty()) {
+        sb.append(" at archive entry '").append(typeReference.file).append("'");
+      }
+      return sb.toString();
     }
 
     private static NamedUserType findTypeByName(Set<NamedUserType> types, String name) {
