@@ -104,6 +104,28 @@ public class SaveOperationFlowTest {
     assertFalse(context.canceled);
   }
 
+  @Test
+  public void ioExceptionThenPromptCancelCancelsActivityAfterReportingFailure() throws Exception {
+    File currentProject = temporaryFolder.newFile("world.a3p");
+    FakeContext context = new FakeContext(temporaryFolder.getRoot());
+    context.currentFile = currentProject;
+    context.promptFiles.add(null);
+    List<File> savedFiles = new ArrayList<>();
+
+    SaveOperationFlow.run(context, file -> false, PROJECT_EXTENSION, file -> {
+      savedFiles.add(file);
+      throw new IOException("permission denied");
+    });
+
+    assertEquals(Arrays.asList(currentProject), savedFiles);
+    assertEquals(1, context.dialogRequests.size());
+    assertEquals(new DialogRequest(temporaryFolder.getRoot(), "world", PROJECT_EXTENSION), context.dialogRequests.get(0));
+    assertEquals(Arrays.asList(new ErrorMessage("Unable to save file", "permission denied")), context.errorMessages);
+    assertEquals(Arrays.asList("showWaitCursor", "hideWaitCursor", "cancel"), context.events);
+    assertFalse(context.finished);
+    assertTrue(context.canceled);
+  }
+
   private static final class FakeContext implements SaveOperationFlow.Context {
     private final File defaultDirectory;
     private final Queue<File> promptFiles = new LinkedList<>();
