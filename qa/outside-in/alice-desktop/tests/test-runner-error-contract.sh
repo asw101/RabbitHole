@@ -4,12 +4,25 @@ set -u
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 BASE_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
+REPO_ROOT=$(CDPATH= cd -- "$BASE_DIR/../../.." && pwd)
 RUNNER="$BASE_DIR/runners/run-scenario.sh"
 # shellcheck source=qa/outside-in/alice-desktop/tests/lib/assertions.sh
 . "$SCRIPT_DIR/lib/assertions.sh"
 
 tmp_root=$(create_scratch_root "$SCRIPT_DIR") || exit 1
 trap 'rm -rf "$tmp_root"' EXIT
+
+set_launch_cwd() {
+  python3 - "$1" "$2" <<'PY'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+cwd = sys.argv[2]
+text = path.read_text(encoding="utf-8").replace("  cwd: alice-ide\n", f"  cwd: {cwd}\n", 1)
+path.write_text(text, encoding="utf-8")
+PY
+}
 
 "$RUNNER" run alice-desktop-scene-creation --evidence-dir >"$tmp_root/missing-evidence-dir.out" 2>"$tmp_root/missing-evidence-dir.err"
 status=$?
@@ -50,5 +63,41 @@ ALICE_QA_SCENARIO_DIR="$unsafe_catalog" "$RUNNER" run alice-desktop-launch --evi
 status=$?
 assert_failure "$status" "runner rejects unapproved automation argv before launch"
 assert_contains "$tmp_root/unsafe.err" 'automation\.argv is restricted' "runner surfaces automation allowlist failures"
+
+traversal_cwd_catalog="$tmp_root/traversal-cwd-catalog"
+mkdir -p "$traversal_cwd_catalog"
+cp "$BASE_DIR"/scenarios/*.yaml "$traversal_cwd_catalog"/
+set_launch_cwd "$traversal_cwd_catalog/launch.yaml" ".."
+ALICE_QA_SCENARIO_DIR="$traversal_cwd_catalog" "$RUNNER" run alice-desktop-launch --evidence-dir "$tmp_root/traversal-cwd-evidence" >"$tmp_root/traversal-cwd.out" 2>"$tmp_root/traversal-cwd.err"
+status=$?
+assert_failure "$status" "runner rejects automation cwd path traversal before launch"
+assert_contains "$tmp_root/traversal-cwd.err" 'automation\.cwd.*\.\. path traversal' "runner traversal cwd error names path traversal"
+
+absolute_cwd_catalog="$tmp_root/absolute-cwd-catalog"
+mkdir -p "$absolute_cwd_catalog"
+cp "$BASE_DIR"/scenarios/*.yaml "$absolute_cwd_catalog"/
+set_launch_cwd "$absolute_cwd_catalog/launch.yaml" "/"
+ALICE_QA_SCENARIO_DIR="$absolute_cwd_catalog" "$RUNNER" run alice-desktop-launch --evidence-dir "$tmp_root/absolute-cwd-evidence" >"$tmp_root/absolute-cwd.out" 2>"$tmp_root/absolute-cwd.err"
+status=$?
+assert_failure "$status" "runner rejects absolute automation cwd before launch"
+assert_contains "$tmp_root/absolute-cwd.err" 'automation\.cwd.*repository-relative.*absolute' "runner absolute cwd error names repository-relative requirement"
+
+symlink_cwd_catalog="$tmp_root/symlink-cwd-catalog"
+mkdir -p "$symlink_cwd_catalog"
+cp "$BASE_DIR"/scenarios/*.yaml "$symlink_cwd_catalog"/
+escape_link="$tmp_root/escape-link"
+ln -s "$REPO_ROOT/.." "$escape_link"
+escape_cwd=$(python3 - "$REPO_ROOT" "$escape_link" <<'PY'
+import os
+import sys
+
+print(os.path.relpath(sys.argv[2], sys.argv[1]))
+PY
+)
+set_launch_cwd "$symlink_cwd_catalog/launch.yaml" "$escape_cwd"
+ALICE_QA_SCENARIO_DIR="$symlink_cwd_catalog" "$RUNNER" run alice-desktop-launch --evidence-dir "$tmp_root/symlink-cwd-evidence" >"$tmp_root/symlink-cwd.out" 2>"$tmp_root/symlink-cwd.err"
+status=$?
+assert_failure "$status" "runner rejects automation cwd symlinks that resolve outside the repo"
+assert_contains "$tmp_root/symlink-cwd.err" 'automation\.cwd.*resolve inside repository root' "runner symlink cwd error names realpath repo boundary"
 
 finish

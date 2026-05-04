@@ -63,7 +63,9 @@
       "properties": {
         "cwd": {
           "type": "string",
-          "const": "alice-ide"
+          "const": "alice-ide",
+          "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*$",
+          "description": "Repository-relative automation working directory; runner validates the realpath remains inside REPO_ROOT."
         },
         "argv": {
           "type": "array",

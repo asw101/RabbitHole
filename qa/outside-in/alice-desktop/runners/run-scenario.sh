@@ -71,6 +71,68 @@ validate_launch_automation() {
   return 2
 }
 
+resolve_automation_cwd() {
+  local cwd=$1
+  python3 - "$REPO_ROOT" "$cwd" <<'PY'
+import sys
+from pathlib import Path
+
+repo_root = Path(sys.argv[1]).resolve(strict=True)
+cwd = sys.argv[2]
+cwd_path = Path(cwd)
+
+if cwd_path.is_absolute():
+    print("automation.cwd must be repository-relative, not absolute", file=sys.stderr)
+    sys.exit(2)
+if any(part == ".." for part in cwd_path.parts):
+    print("automation.cwd must not contain .. path traversal", file=sys.stderr)
+    sys.exit(2)
+
+try:
+    resolved = (repo_root / cwd_path).resolve(strict=True)
+except FileNotFoundError:
+    print("automation.cwd must be an existing directory inside repository root", file=sys.stderr)
+    sys.exit(2)
+
+if not resolved.is_dir():
+    print("automation.cwd must be an existing directory inside repository root", file=sys.stderr)
+    sys.exit(2)
+
+try:
+    resolved.relative_to(repo_root)
+except ValueError:
+    print("automation.cwd must resolve inside repository root", file=sys.stderr)
+    sys.exit(2)
+
+print(resolved)
+PY
+}
+
+validate_scenario_automation_cwd() {
+  local scenario_json=$1
+  local cwd
+
+  cwd=$(SCENARIO_JSON="$scenario_json" python3 - <<'PY'
+import json
+import os
+import sys
+
+scenario = json.loads(os.environ["SCENARIO_JSON"])
+automation = scenario.get("automation")
+if not isinstance(automation, dict):
+    sys.exit(0)
+
+cwd = automation.get("cwd")
+if not isinstance(cwd, str) or not cwd.strip():
+    print("automation.cwd must be a non-empty string", file=sys.stderr)
+    sys.exit(2)
+
+print(cwd)
+PY
+  )
+  [ -z "$cwd" ] || resolve_automation_cwd "$cwd" >/dev/null
+}
+
 resolve_scenario_id() {
   local request=$1
   local scenario_dir=${ALICE_QA_SCENARIO_DIR:-$BASE_DIR/scenarios}
@@ -244,7 +306,7 @@ run_xvfb_real_alice() {
   local run_dir=$2
   local timeout_override=$3
 
-  local automation_fields cwd configured_timeout ready_wait run_timeout display scenario_id automation_mode
+  local automation_fields cwd configured_timeout ready_wait run_timeout display scenario_id automation_mode resolved_cwd
   local -a argv
   mapfile -t automation_fields < <(json_fields "$scenario_json" "automation.cwd" "automation.timeoutSeconds" "automation.readyWaitSeconds" "id" "automationMode")
   cwd=${automation_fields[0]}
@@ -258,6 +320,7 @@ run_xvfb_real_alice() {
   alice_pid=
 
   validate_launch_automation "$cwd" "${argv[@]}"
+  resolved_cwd=$(resolve_automation_cwd "$cwd")
 
   if ! command -v Xvfb >/dev/null 2>&1; then
     write_environment "$run_dir"
@@ -308,7 +371,7 @@ run_xvfb_real_alice() {
   write_environment "$run_dir" "$display"
 
   (
-    cd "$REPO_ROOT/$cwd"
+    cd "$resolved_cwd"
     timeout -k 10s "${run_timeout}s" "${argv[@]}"
   ) > "$run_dir/launch.log" 2>&1 &
   alice_pid=$!
@@ -426,6 +489,7 @@ case "$command_name" in
 
     scenario_id=$(resolve_scenario_id "$scenario_request")
     scenario_json=$("$VALIDATOR" --dump-json "$scenario_id")
+    validate_scenario_automation_cwd "$scenario_json"
     timestamp=$(date -u +%Y%m%dT%H%M%SZ)
     run_dir="$evidence_base/$scenario_id/$timestamp"
     mkdir -p "$run_dir"

@@ -56,6 +56,13 @@ allowed_argv = [
 if allowed_argv != ["mvn", "exec:java", "-Dalice-ide"] or argv_schema.get("maxItems") != 3:
     raise AssertionError("automation.argv must be restricted to the allowed Alice launch argv")
 
+cwd_schema = automation["properties"]["cwd"]
+if cwd_schema.get("const") != "alice-ide":
+    raise AssertionError("automation.cwd must keep the legitimate Alice launch cwd")
+cwd_pattern = cwd_schema.get("pattern", "")
+if "(?!/)" not in cwd_pattern or "\\.\\." not in cwd_pattern:
+    raise AssertionError("automation.cwd schema must reject absolute paths and parent traversal")
+
 def has_xvfb_condition(node):
     if isinstance(node, dict):
         if "if" in node and "then" in node:

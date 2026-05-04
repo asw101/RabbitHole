@@ -5,8 +5,9 @@ SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 BASE_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
 SCENARIO_DIR="${ALICE_QA_SCENARIO_DIR:-$BASE_DIR/scenarios}"
 SCHEMA_PATH="$BASE_DIR/schema/scenario.schema.json"
+REPO_ROOT=$(CDPATH= cd -- "$BASE_DIR/../../.." && pwd)
 
-python3 - "$SCENARIO_DIR" "$SCHEMA_PATH" "$@" <<'PY'
+python3 - "$SCENARIO_DIR" "$SCHEMA_PATH" "$REPO_ROOT" "$@" <<'PY'
 import json
 import re
 import sys
@@ -14,7 +15,8 @@ from pathlib import Path
 
 scenario_dir = Path(sys.argv[1])
 schema_path = Path(sys.argv[2])
-args = sys.argv[3:]
+repo_root = Path(sys.argv[3]).resolve(strict=True)
+args = sys.argv[4:]
 
 required_top = [
     "id",
@@ -134,6 +136,35 @@ def require_string_list(errors, path, name, value):
             errors.append(f"{name}[{index}] must be a non-empty string")
 
 
+def validate_automation_cwd(errors, cwd):
+    if not isinstance(cwd, str) or not cwd.strip():
+        errors.append("automation.cwd must be a non-empty string")
+        return
+
+    cwd_path = Path(cwd)
+    if cwd_path.is_absolute():
+        errors.append("automation.cwd must be repository-relative, not absolute")
+        return
+    if any(part == ".." for part in cwd_path.parts):
+        errors.append("automation.cwd must not contain .. path traversal")
+        return
+
+    try:
+        resolved = (repo_root / cwd_path).resolve(strict=True)
+    except FileNotFoundError:
+        errors.append("automation.cwd must be an existing directory inside repository root")
+        return
+
+    if not resolved.is_dir():
+        errors.append("automation.cwd must be an existing directory inside repository root")
+        return
+
+    try:
+        resolved.relative_to(repo_root)
+    except ValueError:
+        errors.append("automation.cwd must resolve inside repository root")
+
+
 def validate(path, scenario):
     errors = []
     missing = [field for field in required_top if field not in scenario]
@@ -197,8 +228,7 @@ def validate(path, scenario):
         for field in ("cwd", "argv", "timeoutSeconds", "readyWaitSeconds"):
             if field not in automation:
                 errors.append(f"automation must include {field} when present")
-        if not isinstance(automation.get("cwd"), str) or not automation.get("cwd", "").strip():
-            errors.append("automation.cwd must be a non-empty string")
+        validate_automation_cwd(errors, automation.get("cwd"))
         require_string_list(errors, path, "automation.argv", automation.get("argv"))
         if not isinstance(automation.get("timeoutSeconds"), int) or automation.get("timeoutSeconds", 0) < 1:
             errors.append("automation.timeoutSeconds must be a positive integer")
