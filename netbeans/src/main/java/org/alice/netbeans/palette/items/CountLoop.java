@@ -67,6 +67,6 @@ public class CountLoop extends AbstractActiveEditorDrop {
 
   @Override
   protected String epilogue(String source) {
-    return source.replaceAll(" i", " " + this.counterVariableName);
+    return source.replace(" i", " " + this.counterVariableName);
   }
 }
