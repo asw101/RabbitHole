@@ -166,21 +166,13 @@ public class XmlProjectIo implements ProjectIo {
     }
 
     private static String readContent(InputStream is) throws IOException {
-      ArrayList<Byte> buffer = new ArrayList<>(32);
-      while (true) {
-        int b = is.read();
-        if (b != -1) {
-          buffer.add((byte) b);
-        } else {
-          break;
-        }
+      ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+      byte[] chunk = new byte[8192];
+      int count;
+      while ((count = is.read(chunk)) != -1) {
+        buffer.write(chunk, 0, count);
       }
-      byte[] array = new byte[buffer.size()];
-      int i = 0;
-      for (Byte b : buffer) {
-        array[i++] = b;
-      }
-      return new String(array);
+      return new String(buffer.toByteArray(), StandardCharsets.UTF_8);
     }
 
     private static Document readXML(InputStream is, MigrationManager migrationManager, Version decodedVersion) {
@@ -322,6 +314,24 @@ public class XmlProjectIo implements ProjectIo {
       }
     }
 
+    private static void writeManifest(Project project, ZipOutputStream zos, DataSource... dataSources) throws IOException {
+      if (!hasDataSource(ProjectIo.MANIFEST_ENTRY_NAME, dataSources)) {
+        ProjectManifest manifest = project.createSaveManifest();
+        ZipUtilities.write(zos, new ByteArrayDataSource(
+            ProjectIo.MANIFEST_ENTRY_NAME,
+            ManifestEncoderDecoder.toJson(manifest)));
+      }
+    }
+
+    private static boolean hasDataSource(String name, DataSource... dataSources) {
+      for (DataSource dataSource : dataSources) {
+        if (name.equals(dataSource.getName())) {
+          return true;
+        }
+      }
+      return false;
+    }
+
     private static String getValidFileName(Resource resource) {
       String originalFileName = resource.getOriginalFileName();
       if ((originalFileName != null) && !originalFileName.trim().isEmpty()) {
@@ -373,6 +383,7 @@ public class XmlProjectIo implements ProjectIo {
       Document xmlDocument = XMLUtilities.createDocument();
       Element xmlRootElement = xmlDocument.createElement("root");
       xmlDocument.appendChild(xmlRootElement);
+      List<DataSource> resourceDataSources = new ArrayList<>();
       synchronized (resources) {
         Set<String> usedEntryNames = new HashSet<>();
         for (Resource resource : resources) {
@@ -386,18 +397,14 @@ public class XmlProjectIo implements ProjectIo {
 
           String entryName = generateEntryName(resource, usedEntryNames);
           usedEntryNames.add(entryName);
+          resourceDataSources.add(new ByteArrayDataSource(entryName, resource.getData()));
           xmlElement.setAttribute(XML_RESOURCE_ENTRY_NAME_ATTRIBUTE, entryName);
           xmlRootElement.appendChild(xmlElement);
         }
       }
       writeXML(xmlDocument, zos, RESOURCES_ENTRY_NAME);
-      synchronized (resources) {
-        Set<String> usedEntryNames = new HashSet<>();
-        for (Resource resource : resources) {
-          String entryName = generateEntryName(resource, usedEntryNames);
-          usedEntryNames.add(entryName);
-          ZipUtilities.write(zos, new ByteArrayDataSource(entryName, resource.getData()));
-        }
+      for (DataSource dataSource : resourceDataSources) {
+        ZipUtilities.write(zos, dataSource);
       }
     }
 
@@ -405,6 +412,7 @@ public class XmlProjectIo implements ProjectIo {
     public void writeProject(OutputStream os, final Project project, DataSource... dataSources) throws IOException {
       ZipOutputStream zos = new ZipOutputStream(os);
       writeVersion(zos);
+      writeManifest(project, zos, dataSources);
       NamedUserType programType = project.getProgramType();
       writeType(programType, zos, PROGRAM_TYPE_ENTRY_NAME);
       writeDataSources(zos, dataSources);

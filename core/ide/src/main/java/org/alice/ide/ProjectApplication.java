@@ -621,7 +621,7 @@ public abstract class ProjectApplication extends PerspectiveApplication<ProjectD
     String typeFilter = isMainProjectCorrupted ? "" : BACKUP_AUTO;
     File[] backups = getSortedBackups(typeFilter, backupDir);
 
-    return projectBackupSelector.getNextBackup(modifiedTime, backups, isMainProjectCorrupted, unloadableFiles);
+    return projectBackupSelector.getNextBackup(modifiedTime, backupDir, backups, isMainProjectCorrupted, unloadableFiles);
   }
 
   protected File[] getSortedBackups(final String type, File backupDir) {
