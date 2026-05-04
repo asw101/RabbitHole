@@ -48,6 +48,7 @@ import edu.cmu.cs.dennisc.pattern.IsInstanceCrawler;
 import edu.cmu.cs.dennisc.print.PrintUtilities;
 import edu.cmu.cs.dennisc.java.io.InputStreamUtilities;
 import org.alice.serialization.tweedle.TweedleEncoderDecoder;
+import org.alice.serialization.tweedle.UnsupportedTweedleDecodeException;
 import org.alice.tweedle.file.*;
 import org.lgna.common.Resource;
 import org.lgna.common.resources.AudioResource;
@@ -55,6 +56,7 @@ import org.lgna.common.resources.ImageResource;
 import org.lgna.project.Project;
 import org.lgna.project.ProjectVersion;
 import org.lgna.project.Version;
+import org.lgna.project.VersionNotSupportedException;
 import org.lgna.project.ast.*;
 import org.lgna.story.resources.DynamicResource;
 import org.lgna.story.resources.JointedModelResource;
@@ -82,6 +84,7 @@ public class JsonProjectIo extends DataSourceIo implements ProjectIo {
 
   private static class JsonProjectReader implements ProjectReader {
     private final ZipEntryContainer container;
+    private final TweedleEncoderDecoder coder = new TweedleEncoderDecoder();
 
     JsonProjectReader(ZipEntryContainer container) {
       this.container = container;
@@ -89,17 +92,25 @@ public class JsonProjectIo extends DataSourceIo implements ProjectIo {
 
     @Override
     public Project readProject(boolean makeVrReady) throws IOException {
-      ProjectManifest manifest = readManifest();
+      ProjectManifest manifest = readManifest(ProjectManifest.class);
       Set<Resource> resources = readResources(manifest);
-      //TODO Read manifest and content for program type
-      return new Project(null, Collections.emptySet(), resources, sceneCameraType(manifest));
+      Set<NamedUserType> decodedTypes = readTypes(manifest);
+      NamedUserType programType = findTypeByName(decodedTypes, manifestName(manifest));
+      Set<NamedUserType> namedUserTypes = new HashSet<>(decodedTypes);
+      namedUserTypes.remove(programType);
+      return new Project(programType, namedUserTypes, resources, sceneCameraType(manifest));
     }
 
     @Override
     public TypeResourcesPair readType() throws IOException {
-      Manifest manifest = readManifest();
+      TypeManifest manifest = readManifest(TypeManifest.class);
       Set<Resource> resources = readResources(manifest);
-      return new TypeResourcesPair(null, resources);
+      Set<NamedUserType> decodedTypes = readTypes(manifest);
+      NamedUserType type = findTypeByName(decodedTypes, manifestName(manifest));
+      if ((type == null) && !decodedTypes.isEmpty()) {
+        type = decodedTypes.iterator().next();
+      }
+      return new TypeResourcesPair(type, resources);
     }
 
     @Override
@@ -116,7 +127,7 @@ public class JsonProjectIo extends DataSourceIo implements ProjectIo {
       // Ignored for now
     }
 
-    private ProjectManifest readManifest() throws IOException {
+    private <M extends Manifest> M readManifest(Class<M> manifestClass) throws IOException {
       InputStream is = container.getInputStream(MANIFEST_ENTRY_NAME);
       if (is == null) {
         return null;
@@ -126,7 +137,7 @@ public class JsonProjectIo extends DataSourceIo implements ProjectIo {
         try {
           return ManifestEncoderDecoder.fromJsonOrThrow(
               new String(manifestBytes, StandardCharsets.UTF_8),
-              ProjectManifest.class);
+              manifestClass);
         } catch (IOException e) {
           throw new IOException("Unable to read " + MANIFEST_ENTRY_NAME, e);
         }
@@ -196,6 +207,69 @@ public class JsonProjectIo extends DataSourceIo implements ProjectIo {
         }
       }
       return null;
+    }
+
+    private Set<NamedUserType> readTypes(Manifest manifest) throws IOException {
+      Set<NamedUserType> types = new LinkedHashSet<>();
+      if (manifest == null) {
+        return types;
+      }
+      for (ResourceReference resourceReference : manifest.resources) {
+        if (resourceReference instanceof TypeReference typeReference) {
+          NamedUserType type = readTweedleType(typeReference);
+          if (type != null) {
+            types.add(type);
+          }
+        }
+      }
+      return types;
+    }
+
+    private NamedUserType readTweedleType(TypeReference typeReference) throws IOException {
+      if (!TWEEDLE_FORMAT.equals(typeReference.format)) {
+        return null;
+      }
+      if (typeReference.file == null) {
+        throw new IOException("Type " + typeReference.name + " does not specify archive entry");
+      }
+      InputStream is = container.getInputStream(typeReference.file);
+      if (is == null) {
+        throw new IOException("Archive does not contain type entry " + typeReference.file);
+      }
+      try (InputStream typeStream = is) {
+        byte[] typeBytes = InputStreamUtilities.getBytes(typeStream);
+        AbstractNode decoded = coder.decode(new String(typeBytes, StandardCharsets.UTF_8));
+        if (decoded == null) {
+          throw new IOException("Tweedle type entry " + typeReference.file + " decoded to null");
+        }
+        if (decoded instanceof NamedUserType namedUserType) {
+          return namedUserType;
+        }
+        throw new IOException("Tweedle type entry " + typeReference.file + " did not decode to a user type");
+      } catch (UnsupportedTweedleDecodeException e) {
+        // Unsupported Tweedle AST features stay as the existing null type behavior.
+        return null;
+      } catch (RuntimeException e) {
+        throw new IOException("Unable to decode Tweedle type entry " + typeReference.file, e);
+      } catch (VersionNotSupportedException e) {
+        throw new IOException("Unable to decode Tweedle type entry " + typeReference.file, e);
+      }
+    }
+
+    private static NamedUserType findTypeByName(Set<NamedUserType> types, String name) {
+      if (name == null) {
+        return null;
+      }
+      for (NamedUserType type : types) {
+        if (name.equals(type.getName())) {
+          return type;
+        }
+      }
+      return null;
+    }
+
+    private static String manifestName(Manifest manifest) {
+      return (manifest == null) ? null : manifest.getName();
     }
 
     private static UUID requireUuid(

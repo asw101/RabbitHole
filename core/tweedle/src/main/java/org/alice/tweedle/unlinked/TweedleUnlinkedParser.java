@@ -14,7 +14,7 @@ import static java.util.stream.Collectors.toList;
 
 public class TweedleUnlinkedParser {
 
-  TweedleType parseType(String sourceForType) {
+  public TweedleType parseType(String sourceForType) {
     return new TypeVisitor().visit(tweedleParserForSource(sourceForType).typeDeclaration());
   }
 
