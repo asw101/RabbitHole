@@ -4,12 +4,14 @@ set -u
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 BASE_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
+REPO_ROOT=$(CDPATH= cd -- "$BASE_DIR/../../.." && pwd)
 RUNNER="$BASE_DIR/runners/run-scenario.sh"
 # shellcheck source=qa/outside-in/alice-desktop/tests/lib/assertions.sh
 . "$SCRIPT_DIR/lib/assertions.sh"
 
 tmp_root=$(create_scratch_root "$SCRIPT_DIR") || exit 1
-trap 'rm -rf "$tmp_root"' EXIT
+package_marker="$REPO_ROOT/installer/target/qa-package-install-smoke-marker.txt"
+trap 'rm -rf "$tmp_root"; rm -f "$package_marker"' EXIT
 
 gated_evidence="$tmp_root/gated-evidence"
 "$RUNNER" run alice-desktop-netbeans-package-smoke --evidence-dir "$gated_evidence" >"$tmp_root/gated.out" 2>"$tmp_root/gated.err"
@@ -24,12 +26,25 @@ assert_contains "$run_dir/status.txt" '^automationMode=gated-command-smoke$' "ga
 assert_contains "$run_dir/status.txt" '^outcome=gated-not-run$' "gated status records skipped command outcome"
 assert_contains "$run_dir/status.txt" '^gate=ALICE_QA_RUN_GATED_SMOKES$' "gated status names enabling variable"
 
+package_evidence="$tmp_root/package-evidence"
+"$RUNNER" run alice-desktop-package-install-smoke --evidence-dir "$package_evidence" >"$tmp_root/package.out" 2>"$tmp_root/package.err"
+status=$?
+assert_success "$status" "package/install smoke is gated by default"
+package_run_dir=$(single_child_dir "$package_evidence/alice-desktop-package-install-smoke")
+status=$?
+assert_success "$status" "package/install gated scenario creates one evidence directory"
+assert_contains "$package_run_dir/status.txt" '^outcome=gated-not-run$' "package/install status records skipped command outcome"
+
 fake_bin="$tmp_root/bin"
 mkdir -p "$fake_bin"
 cat > "$fake_bin/mvn" <<'SH'
 #!/usr/bin/env bash
 printf 'gated-command-ran\n'
 printf 'argv=%s\n' "$*"
+if [ -n "${ALICE_QA_FAKE_PACKAGE_MARKER:-}" ]; then
+  mkdir -p "$(dirname -- "$ALICE_QA_FAKE_PACKAGE_MARKER")"
+  printf 'fake package artifact\n' > "$ALICE_QA_FAKE_PACKAGE_MARKER"
+fi
 SH
 chmod +x "$fake_bin/mvn"
 
@@ -45,5 +60,28 @@ assert_file_exists "$enabled_run_dir/command.log" "enabled gated command scenari
 assert_contains "$enabled_run_dir/command.log" 'gated-command-ran' "enabled gated command captures command output"
 assert_contains "$enabled_run_dir/status.txt" '^outcome=passed$' "enabled gated command records pass outcome"
 assert_contains "$enabled_run_dir/status.txt" '^exitCode=0$' "enabled gated command records exit code"
+
+package_enabled_evidence="$tmp_root/package-enabled-evidence"
+PATH="$fake_bin:$PATH" ALICE_QA_RUN_GATED_SMOKES=1 ALICE_QA_FAKE_PACKAGE_MARKER="$package_marker" \
+  "$RUNNER" run alice-desktop-package-install-smoke --evidence-dir "$package_enabled_evidence" >"$tmp_root/package-enabled.out" 2>"$tmp_root/package-enabled.err"
+status=$?
+assert_success "$status" "enabled package/install smoke runs package wrapper from repo root"
+package_enabled_run_dir=$(single_child_dir "$package_enabled_evidence/alice-desktop-package-install-smoke")
+status=$?
+assert_success "$status" "enabled package/install scenario creates one evidence directory"
+assert_contains "$package_enabled_run_dir/command.log" 'installer/target.*qa-package-install-smoke-marker.txt' "package/install smoke lists package artifacts"
+assert_contains "$package_enabled_run_dir/status.txt" '^outcome=passed$' "package/install smoke records pass outcome"
+
+wizard_evidence="$tmp_root/wizard-evidence"
+PATH="$fake_bin:$PATH" ALICE_QA_RUN_GATED_SMOKES=1 \
+  "$RUNNER" run alice-desktop-wizard-palette-completion-smoke --evidence-dir "$wizard_evidence" >"$tmp_root/wizard.out" 2>"$tmp_root/wizard.err"
+status=$?
+assert_success "$status" "enabled wizard/palette/completion smoke executes argv directly"
+wizard_run_dir=$(single_child_dir "$wizard_evidence/alice-desktop-wizard-palette-completion-smoke")
+status=$?
+assert_success "$status" "enabled wizard/palette/completion scenario creates one evidence directory"
+assert_contains "$wizard_run_dir/command.log" 'Alice3ProjectTemplateWizardIteratorTest' "wizard smoke passes focused test selector as argv"
+assert_contains "$wizard_run_dir/command.log" 'Alice3CompletionItemTest' "completion smoke passes focused test selector as argv"
+assert_contains "$wizard_run_dir/status.txt" '^outcome=passed$' "wizard smoke records pass outcome"
 
 finish

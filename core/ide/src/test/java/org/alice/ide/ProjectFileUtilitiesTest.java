@@ -387,6 +387,57 @@ public class ProjectFileUtilitiesTest {
   }
 
   @Test
+  public void saveProjectToNormalProjectWritesReadableSaveBackupBesideTarget() throws Exception {
+    Project project = new Project(programType("SavedProgram"), Project.SceneCameraType.WindowCamera);
+    File saveFile = new File(temporaryFolder.getRoot(), "world.a3p");
+    ProjectFileUtilities saveUtilities = new ProjectFileUtilities(null) {
+      @Override
+      Project getUpToDateProject() {
+        return project;
+      }
+
+      @Override
+      File savedProjectFile() {
+        return saveFile;
+      }
+    };
+
+    saveUtilities.saveProjectTo(saveFile, false);
+
+    assertEquals("SavedProgram", IoUtilities.readProject(saveFile).getProgramType().getName());
+    File[] backups = new File(temporaryFolder.getRoot(), "world.bak")
+        .listFiles(file -> file.isFile() && file.getName().startsWith("save") && file.getName().endsWith(".a3p"));
+    assertNotNull(backups);
+    assertEquals(1, backups.length);
+    assertEquals("SavedProgram", IoUtilities.readProject(backups[0]).getProgramType().getName());
+  }
+
+  @Test
+  public void saveProjectToBackupTargetDoesNotCreateSaveBackupDirectory() throws Exception {
+    Project project = new Project(programType("BackupProgram"), Project.SceneCameraType.WindowCamera);
+    File backupDirectory = temporaryFolder.newFolder("world.bak");
+    File backupFile = new File(backupDirectory, "auto20240102_120000.a3p");
+    ProjectFileUtilities saveUtilities = new ProjectFileUtilities(null) {
+      @Override
+      Project getUpToDateProject() {
+        return project;
+      }
+
+      @Override
+      File savedProjectFile() {
+        return backupFile;
+      }
+    };
+
+    saveUtilities.saveProjectTo(backupFile, true);
+
+    assertEquals("BackupProgram", IoUtilities.readProject(backupFile).getProgramType().getName());
+    File[] saveBackups = backupDirectory.listFiles(file -> file.isFile() && file.getName().startsWith("save"));
+    assertNotNull(saveBackups);
+    assertEquals(0, saveBackups.length);
+  }
+
+  @Test
   public void saveCopyPropagatesTargetWriteFailure() throws Exception {
     Project project = new Project(programType("SavedProgram"), Project.SceneCameraType.WindowCamera);
     ProjectFileUtilities saveUtilities = new ProjectFileUtilities(null) {

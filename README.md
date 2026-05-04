@@ -70,6 +70,15 @@ Run unit tests
     cd ${alice3}
     mvn test
 
+Generate a module-scoped coverage baseline without enforcing a minimum threshold:
+
+    cd ${alice3}
+    mvn -DincludeSims=false -Dinstall4j.skip -Pcoverage -pl core/util -am verify
+
+The HTML report is written to `core/util/target/site/jacoco/index.html`; XML and
+CSV baselines are written in the same directory. CI uploads those files as the
+`coverage-core-util-baseline` artifact for pull requests.
+
 Outside-in desktop acceptance scenarios live in `qa/outside-in/alice-desktop/`. See the [documentation index](docs/index.md), the [Alice desktop outside-in QA guide](docs/howto/alice-desktop-outside-in-qa.md), and the [QA reference](docs/reference/alice-desktop-outside-in-qa.md) for usage, scenario schema, evidence expectations, and configuration.
 
     qa/outside-in/alice-desktop/runners/validate-scenarios.sh

@@ -41,6 +41,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.HashMap;
@@ -194,6 +195,19 @@ public class IoUtilitiesTest {
   }
 
   @Test
+  public void jsonPlayerReaderPreservesSceneCameraTypeFromManifestWithoutTweedleDecoding() throws Exception {
+    Project project = new Project(programType("VrProgram"), Project.SceneCameraType.VRHeadset);
+    File exportFile = temporaryFolder.newFile("exported-vr.a3w");
+
+    IoUtilities.exportProject(exportFile, project);
+
+    Project readProject = IoUtilities.readProject(exportFile);
+    assertNull("Tweedle decoding is still not implemented for player archives", readProject.getProgramType());
+    assertEquals(Project.SceneCameraType.VRHeadset, sceneCameraType(readProject));
+    assertTrue(readProject.getResources().isEmpty());
+  }
+
+  @Test
   public void jsonPlayerReaderReportsMissingImageResourceData() throws Exception {
     ImageReference imageReference = imageReference(UUID.randomUUID(), "missing.png", "png");
     File exportFile = temporaryFolder.newFile("missing-image.a3w");
@@ -276,6 +290,77 @@ public class IoUtilitiesTest {
     assertTrue(
         "Model and generated type references are manifest entries, not binary Resources",
         readProject.getResources().isEmpty());
+  }
+
+  @Test
+  public void jsonPlayerReaderLeavesProgramTypeUndecodedEvenWhenManifestReferencesTweedleSource() throws Exception {
+    ProjectManifest manifest = new ProjectManifest();
+    manifest.description.name = "ProgramFromManifest";
+    manifest.metadata.fileType = IoUtilities.EXPORT_EXTENSION;
+    manifest.metadata.identifier.name = UUID.randomUUID().toString();
+    manifest.metadata.identifier.type = Manifest.ProjectType.World;
+    manifest.projectStructure.sceneCameraType = Project.SceneCameraType.VRHeadset;
+    manifest.resources.add(new TypeReference("ProgramFromManifest", "src/ProgramFromManifest.twe", "tweedle"));
+    File exportFile = temporaryFolder.newFile("manifest-program-boundary.a3w");
+
+    try (ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(exportFile))) {
+      writeZipEntry(zipOutputStream, ProjectIo.VERSION_ENTRY_NAME, ProjectVersion.getCurrentVersion().toString());
+      writeZipEntry(zipOutputStream, ProjectIo.MANIFEST_ENTRY_NAME, ManifestEncoderDecoder.toJson(manifest));
+      writeZipEntry(zipOutputStream, "src/ProgramFromManifest.twe", "class ProgramFromManifest {}");
+    }
+
+    Project readProject = IoUtilities.readProject(exportFile);
+    assertNotNull(readProject);
+    assertNull("Tweedle decoding is still not implemented for player archives", readProject.getProgramType());
+    assertEquals(Project.SceneCameraType.VRHeadset, sceneCameraType(readProject));
+    assertTrue(readProject.getResources().isEmpty());
+  }
+
+  @Test
+  public void jsonPlayerReaderDefaultsMissingProjectStructureToWindowCamera() throws Exception {
+    ProjectManifest manifest = new ProjectManifest();
+    manifest.description.name = "ProgramWithoutStructure";
+    manifest.metadata.fileType = IoUtilities.EXPORT_EXTENSION;
+    manifest.metadata.identifier.name = UUID.randomUUID().toString();
+    manifest.metadata.identifier.type = Manifest.ProjectType.World;
+    manifest.projectStructure = null;
+    File exportFile = temporaryFolder.newFile("missing-project-structure.a3w");
+
+    try (ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(exportFile))) {
+      writeZipEntry(zipOutputStream, ProjectIo.VERSION_ENTRY_NAME, ProjectVersion.getCurrentVersion().toString());
+      writeZipEntry(zipOutputStream, ProjectIo.MANIFEST_ENTRY_NAME, ManifestEncoderDecoder.toJson(manifest));
+    }
+
+    Project readProject = IoUtilities.readProject(exportFile);
+    assertNotNull(readProject);
+    assertNull("Tweedle decoding is still not implemented for player archives", readProject.getProgramType());
+    assertEquals(Project.SceneCameraType.WindowCamera, sceneCameraType(readProject));
+  }
+
+  @Test
+  public void xmlProjectReaderDefaultsMissingProjectStructureToWindowCamera() throws Exception {
+    File projectFile = temporaryFolder.newFile("xml-missing-project-structure.a3p");
+    String manifestJson = """
+        {
+          "description": {
+            "name": "ProgramWithoutStructure"
+          },
+          "metadata": {
+            "fileType": "a3p"
+          }
+        }
+        """;
+
+    try (ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(projectFile))) {
+      writeZipEntry(zipOutputStream, ProjectIo.VERSION_ENTRY_NAME, ProjectVersion.getCurrentVersion().toString());
+      writeZipEntry(zipOutputStream, ProjectIo.MANIFEST_ENTRY_NAME, manifestJson);
+      writeZipEntry(zipOutputStream, "programType.xml", encodedProgramTypeXml("ProgramWithoutStructure"));
+    }
+
+    Project readProject = IoUtilities.readProject(projectFile);
+
+    assertEquals("ProgramWithoutStructure", readProject.getProgramType().getName());
+    assertEquals(Project.SceneCameraType.WindowCamera, sceneCameraType(readProject));
   }
 
   @Test
@@ -794,6 +879,12 @@ public class IoUtilitiesTest {
     project.getProgramType().crawl(crawler, CrawlPolicy.COMPLETE);
     assertFalse(crawler.getList().isEmpty());
     return crawler.getList().get(0).resource.getValue();
+  }
+
+  private static Project.SceneCameraType sceneCameraType(Project project) throws Exception {
+    Field field = Project.class.getDeclaredField("sceneCameraType");
+    field.setAccessible(true);
+    return (Project.SceneCameraType) field.get(project);
   }
 
   private static ImageReference imageReference(UUID uuid, String name, String format) {

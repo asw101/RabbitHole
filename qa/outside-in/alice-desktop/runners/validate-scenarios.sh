@@ -37,11 +37,14 @@ workflow_values = {
     "instructor-student-setup",
     "launch",
     "netbeans-package-smoke",
+    "open-load-save",
+    "package-install-smoke",
     "project-io-smoke",
     "scene-creation",
     "run-debug",
     "save-load",
     "export",
+    "wizard-palette-completion-smoke",
 }
 mode_values = {
     "gated-command-smoke",
@@ -93,6 +96,25 @@ allowed_automation = {
         ".",
         (
             "qa/outside-in/alice-desktop/runners/netbeans-package-smoke.sh",
+        ),
+    ),
+    (
+        ".",
+        (
+            "qa/outside-in/alice-desktop/runners/package-install-smoke.sh",
+        ),
+    ),
+    (
+        ".",
+        (
+            "mvn",
+            "-DincludeSims=false",
+            "-Dinstall4j.skip",
+            "-pl",
+            "netbeans",
+            "-am",
+            "-Dtest=org.alice.netbeans.Alice3ProjectTemplateWizardIteratorTest,org.alice.netbeans.palette.Alice3PaletteFactoryTest,org.alice.netbeans.palette.items.AliceComponentPaletteUtilitiesTest,org.alice.netbeans.palette.items.resources.PaletteBundleLocalizationTest,org.alice.netbeans.completion.Alice3CompletionItemTest",
+            "test",
         ),
     ),
     (

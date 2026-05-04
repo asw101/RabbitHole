@@ -154,7 +154,7 @@ public class ProjectFileUtilities {
   }
 
   private void backupSavedProject() throws IOException {
-    File saved = UriUtilities.getFile(projectApp.getUri());
+    File saved = savedProjectFile();
     if (saved == null) {
       return;
     }
@@ -167,6 +167,10 @@ public class ProjectFileUtilities {
     copyFile(saved, backupFile);
 
     removeExtraBackups(BACKUP_SAVE, backupDir);
+  }
+
+  File savedProjectFile() {
+    return UriUtilities.getFile(projectApp.getUri());
   }
 
   private Runnable autosaveActiveProject() {

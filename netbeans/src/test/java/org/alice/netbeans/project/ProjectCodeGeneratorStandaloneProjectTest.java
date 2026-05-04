@@ -1,5 +1,6 @@
 package org.alice.netbeans.project;
 
+import org.alice.netbeans.Alice3LibraryClasspathTestSupport;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -68,7 +69,7 @@ public class ProjectCodeGeneratorStandaloneProjectTest {
   }
 
   @Test
-  public void generatedTemplateProjectSourcesCompileWithAliceLibraryClasspathSurrogate() throws Exception {
+  public void generatedTemplateProjectSourcesCompileWithAliceLibraryClasspath() throws Exception {
     File aliceProject = temporaryFolder.newFile("template-smoke.a3p");
     IoUtilities.writeProject(
         aliceProject,
@@ -79,7 +80,6 @@ public class ProjectCodeGeneratorStandaloneProjectTest {
     Files.createDirectories(sourceDirectory);
 
     ProjectCodeGenerator.generateCode(aliceProject, sourceDirectory.toFile(), null, false);
-    writeJavaFxStubs(sourceDirectory);
 
     Properties properties = loadProperties(projectDirectory.resolve("nbproject").resolve("project.properties"));
     assertEquals("src", properties.getProperty("src.dir"));
@@ -90,7 +90,7 @@ public class ProjectCodeGeneratorStandaloneProjectTest {
     assertTrue(Files.exists(projectDirectory.resolve("nbproject").resolve("build-impl.xml")));
 
     Path classesDirectory = resolveBuildClassesDirectory(projectDirectory, properties);
-    compileJavaSources(classesDirectory, javaSourcesUnder(sourceDirectory));
+    compileJavaSources(classesDirectory, Alice3LibraryClasspathTestSupport.aliceLibraryClasspath(), javaSourcesUnder(sourceDirectory));
 
     assertTrue(Files.exists(classesDirectory.resolve("Program.class")));
     assertTrue(Files.exists(classesDirectory.resolve("AliceJavaFXLauncher.class")));
@@ -157,6 +157,10 @@ public class ProjectCodeGeneratorStandaloneProjectTest {
   }
 
   private static void compileJavaSources(Path outputDirectory, Path... sources) throws Exception {
+    compileJavaSources(outputDirectory, System.getProperty("java.class.path"), sources);
+  }
+
+  private static void compileJavaSources(Path outputDirectory, String classpath, Path... sources) throws Exception {
     JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
     assertNotNull("Tests must run on a JDK with the Java compiler available", compiler);
     Files.createDirectories(outputDirectory);
@@ -164,7 +168,7 @@ public class ProjectCodeGeneratorStandaloneProjectTest {
     try (StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, null)) {
       List<String> options = Arrays.asList(
           "-classpath",
-          System.getProperty("java.class.path"),
+          classpath,
           "-proc:none",
           "-d",
           outputDirectory.toString());

@@ -67,7 +67,7 @@ public abstract class AbstractForEachLoop extends AbstractLoop implements EachIn
   @Override
   public String generateLocalName(UserLocal local) {
     if (isItem(local)) {
-      return "item" + getForEachDepthSuffix();
+      return "item" + getDepthSuffix();
     }
     return super.generateLocalName(local);
   }
@@ -85,6 +85,21 @@ public abstract class AbstractForEachLoop extends AbstractLoop implements EachIn
   }
 
   protected abstract ExpressionProperty getArrayOrIterableProperty();
+
+  private int getInstanceDepth() {
+    UserCode code = getFirstAncestorAssignableTo(UserCode.class);
+    if (code == null) {
+      return 0;
+    }
+    IsInstanceCrawler<AbstractForEachLoop> forEachLoopCrawler = IsInstanceCrawler.createInstance(AbstractForEachLoop.class);
+    code.crawl(forEachLoopCrawler, CrawlPolicy.EXCLUDE_REFERENCES_ENTIRELY, null);
+    return forEachLoopCrawler.getList().indexOf(this);
+  }
+
+  private char getDepthSuffix() {
+    int index = getInstanceDepth();
+    return index != -1 ? (char) (((int) 'A') + index) : 'A';
+  }
 
   @Override
   protected void appendRepr(AstLocalizer localizer) {
@@ -104,19 +119,4 @@ public abstract class AbstractForEachLoop extends AbstractLoop implements EachIn
       return false;
     }
   };
-
-  private int getForEachInstanceDepth() {
-    UserCode code = getFirstAncestorAssignableTo(UserCode.class);
-    if (code == null) {
-      return 0;
-    }
-    IsInstanceCrawler<AbstractForEachLoop> crawler = IsInstanceCrawler.createInstance(AbstractForEachLoop.class);
-    code.crawl(crawler, CrawlPolicy.EXCLUDE_REFERENCES_ENTIRELY, null);
-    return crawler.getList().indexOf(this);
-  }
-
-  private char getForEachDepthSuffix() {
-    int index = getForEachInstanceDepth();
-    return index != -1 ? (char) (((int) 'A') + index) : 'A';
-  }
 }

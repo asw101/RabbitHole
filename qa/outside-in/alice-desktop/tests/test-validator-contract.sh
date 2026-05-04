@@ -36,8 +36,8 @@ import json
 import sys
 
 catalog = json.load(open(sys.argv[1], encoding="utf-8"))
-if len(catalog) != 11:
-    raise AssertionError(f"expected 11 scenarios, found {len(catalog)}")
+if len(catalog) != 14:
+    raise AssertionError(f"expected 14 scenarios, found {len(catalog)}")
 if not all("id" in scenario for scenario in catalog):
     raise AssertionError("every dumped scenario must include an id")
 PY
@@ -89,7 +89,7 @@ assert_contains "$tmp_root/manual-automation.err" 'automation must include cwd|a
 unknown_automation_dir="$tmp_root/unknown-automation"
 mkdir -p "$unknown_automation_dir"
 cp "$BASE_DIR"/scenarios/*.yaml "$unknown_automation_dir"/
-perl -0pi -e 's/(  readyWaitSeconds: 45\n)/$1  extraField: not-supported\n/' "$unknown_automation_dir/launch.yaml"
+perl -0pi -e 's/(  readyWaitSeconds: [0-9]+\n)/$1  extraField: not-supported\n/' "$unknown_automation_dir/launch.yaml"
 ALICE_QA_SCENARIO_DIR="$unknown_automation_dir" "$VALIDATOR" >"$tmp_root/unknown-automation.out" 2>"$tmp_root/unknown-automation.err"
 status=$?
 assert_failure "$status" "validator rejects unknown automation fields"

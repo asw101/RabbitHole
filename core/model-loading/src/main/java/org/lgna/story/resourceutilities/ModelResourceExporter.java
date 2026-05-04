@@ -48,7 +48,6 @@ import edu.cmu.cs.dennisc.java.io.FileUtilities;
 import edu.cmu.cs.dennisc.java.io.TextFileUtilities;
 import edu.cmu.cs.dennisc.java.lang.reflect.ReflectionUtilities;
 import edu.cmu.cs.dennisc.pattern.Tuple2;
-import edu.cmu.cs.dennisc.xml.XMLUtilities;
 import org.alice.math.immutable.AffineMatrix4x4;
 import org.alice.math.immutable.AxisAlignedBox;
 import org.alice.math.immutable.Point3;
@@ -71,14 +70,7 @@ import org.lgna.story.implementation.alice.AliceResourceUtilities;
 import org.lgna.story.implementation.alice.JointImplementationAndVisualDataFactory;
 import org.lgna.story.implementation.alice.ModelResourceIoUtilities;
 import org.lgna.story.resources.*;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.*;
@@ -690,152 +682,40 @@ public class ModelResourceExporter {
     this.javaFile = javaFile;
   }
 
-  private static Element createBoundingBoxElement(Document doc, AxisAlignedBox bbox) {
-    Element bboxElement = doc.createElement("BoundingBox");
-    Element minElement = doc.createElement("Min");
-    minElement.setAttribute("x", Double.toString(bbox.getXMinimum()));
-    minElement.setAttribute("y", Double.toString(bbox.getYMinimum()));
-    minElement.setAttribute("z", Double.toString(bbox.getZMinimum()));
-    Element maxElement = doc.createElement("Max");
-    maxElement.setAttribute("x", Double.toString(bbox.getXMaximum()));
-    maxElement.setAttribute("y", Double.toString(bbox.getYMaximum()));
-    maxElement.setAttribute("z", Double.toString(bbox.getZMaximum()));
-
-    bboxElement.appendChild(minElement);
-    bboxElement.appendChild(maxElement);
-
-    return bboxElement;
+  String getAttributionName() {
+    return this.attributionName;
   }
 
-  private static Element createTagsElement(Document doc, List<String> tagList) {
-    Element tagsElement = doc.createElement("Tags");
-    for (String tag : tagList) {
-      Element tagElement = doc.createElement("Tag");
-      tagElement.setTextContent(tag);
-      tagsElement.appendChild(tagElement);
-    }
-    return tagsElement;
+  String getAttributionYear() {
+    return this.attributionYear;
   }
 
-  private static Element createGroupTagsElement(Document doc, List<String> tagList) {
-    Element tagsElement = doc.createElement("GroupTags");
-    for (String tag : tagList) {
-      Element tagElement = doc.createElement("GroupTag");
-      tagElement.setTextContent(tag);
-      tagsElement.appendChild(tagElement);
-    }
-    return tagsElement;
+  boolean isDeprecated() {
+    return this.isDeprecated;
   }
 
-  private static Element createThemeTagsElement(Document doc, List<String> tagList) {
-    Element tagsElement = doc.createElement("ThemeTags");
-    for (String tag : tagList) {
-      Element tagElement = doc.createElement("ThemeTag");
-      tagElement.setTextContent(tag);
-      tagsElement.appendChild(tagElement);
-    }
-    return tagsElement;
+  boolean isPlaceOnGround() {
+    return this.placeOnGround;
   }
 
-  private static Element createSubResourceElement(Document doc, ModelSubResourceExporter subResource, ModelResourceExporter parentMRE) {
-    Element resourceElement = doc.createElement("Resource");
-    resourceElement.setAttribute("textureName", AliceResourceUtilities.makeEnumName(subResource.getTextureName()));
-    resourceElement.setAttribute("resourceName", createResourceEnumName(parentMRE, subResource));
-    if (subResource.getModelName() != null) {
-      resourceElement.setAttribute("modelName", subResource.getModelName());
-    }
-    if (subResource.getAttributionName() != null) {
-      resourceElement.setAttribute("creator", subResource.getAttributionName());
-    }
-    if (subResource.getAttributionYear() != null) {
-      resourceElement.setAttribute("creationYear", subResource.getAttributionYear());
-    }
-    if (subResource.getModelName() != null) {
-      resourceElement.setAttribute("modelName", subResource.getModelName());
-    }
-    if (subResource.getBbox() != null) {
-      resourceElement.appendChild(createBoundingBoxElement(doc, subResource.getBbox()));
-    }
-    if (!subResource.getTags().isEmpty()) {
-      List<String> uniqueTags = new ArrayList<String>();
-      for (String t : subResource.getTags()) {
-        if ((parentMRE.tags == null) || !parentMRE.tags.contains(t)) {
-          uniqueTags.add(t);
-        }
-      }
-      if (!uniqueTags.isEmpty()) {
-        resourceElement.appendChild(createTagsElement(doc, uniqueTags));
-      }
-    }
-
-    if (!subResource.getGroupTags().isEmpty()) {
-      List<String> uniqueTags = new ArrayList<String>();
-      for (String t : subResource.getGroupTags()) {
-        if ((parentMRE.groupTags == null) || !parentMRE.groupTags.contains(t)) {
-          uniqueTags.add(t);
-        }
-      }
-      if (!uniqueTags.isEmpty()) {
-        resourceElement.appendChild(createGroupTagsElement(doc, uniqueTags));
-      }
-    }
-
-    if (!subResource.getThemeTags().isEmpty()) {
-      List<String> uniqueTags = new ArrayList<String>();
-      for (String t : subResource.getThemeTags()) {
-        if ((parentMRE.themeTags == null) || !parentMRE.themeTags.contains(t)) {
-          uniqueTags.add(t);
-        }
-      }
-      if (!uniqueTags.isEmpty()) {
-        resourceElement.appendChild(createThemeTagsElement(doc, uniqueTags));
-      }
-    }
-    return resourceElement;
+  Map<String, AxisAlignedBox> getBoundingBoxes() {
+    return this.boundingBoxes;
   }
 
-  private Document createXMLDocument() {
-    try {
-      Document doc = XMLUtilities.createDocument();
-      Element modelRoot = doc.createElement("AliceModel");
-      modelRoot.setAttribute("name", this.className);
-      if ((this.attributionName != null) && (this.attributionName.length() > 0)) {
-        modelRoot.setAttribute("creator", this.attributionName);
-      }
-      if ((this.attributionYear != null) && (this.attributionYear.length() > 0)) {
-        modelRoot.setAttribute("creationYear", this.attributionYear);
-      }
-      if (this.isDeprecated) {
-        modelRoot.setAttribute("deprecated", "TRUE");
-      }
-      if (this.placeOnGround) {
-        modelRoot.setAttribute("placeOnGround", "TRUE");
-      }
-      doc.appendChild(modelRoot);
-      if (this.boundingBoxes.get(this.className) == null) {
-        AxisAlignedBox superBox = AxisAlignedBox.NaN;
-        for (Entry<String, AxisAlignedBox> entry : this.boundingBoxes.entrySet()) {
-          superBox = superBox.union(entry.getValue());
-        }
-        this.boundingBoxes.put(this.className, superBox);
-      }
-      modelRoot.appendChild(createBoundingBoxElement(doc, this.boundingBoxes.get(this.className)));
-      modelRoot.appendChild(createTagsElement(doc, this.tags));
-      modelRoot.appendChild(createGroupTagsElement(doc, this.groupTags));
-      modelRoot.appendChild(createThemeTagsElement(doc, this.themeTags));
+  List<String> getTags() {
+    return this.tags;
+  }
 
-      for (ModelSubResourceExporter subResource : this.subResources) {
-        if (!subResource.getModelName().equalsIgnoreCase(this.className) && this.boundingBoxes.containsKey(subResource.getModelName())) {
-          subResource.setBbox(this.boundingBoxes.get(subResource.getModelName()));
-        }
-        modelRoot.appendChild(createSubResourceElement(doc, subResource, this));
-      }
+  List<String> getGroupTags() {
+    return this.groupTags;
+  }
 
-      return doc;
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
-    return null;
+  List<String> getThemeTags() {
+    return this.themeTags;
+  }
+
+  List<ModelSubResourceExporter> getSubResources() {
+    return this.subResources;
   }
 
   private static List<ModelClassData> POTENTIAL_MODEL_CLASS_DATA_OPTIONS = null;
@@ -985,7 +865,7 @@ public class ModelResourceExporter {
     }
   }
 
-  private static String createResourceEnumName(ModelResourceExporter parentExporter, ModelSubResourceExporter resource) {
+  static String createResourceEnumName(ModelResourceExporter parentExporter, ModelSubResourceExporter resource) {
     return createResourceEnumName(parentExporter, resource.getModelName(), resource.getTextureName());
   }
 
@@ -1522,28 +1402,7 @@ public class ModelResourceExporter {
   }
 
   String createXMLString() {
-    Document doc = this.createXMLDocument();
-    if (doc != null) {
-      try {
-        TransformerFactory transfac = TransformerFactory.newInstance();
-        transfac.setAttribute("indent-number", 4);
-        Transformer trans = transfac.newTransformer();
-        //                  trans.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
-        trans.setOutputProperty(OutputKeys.INDENT, "yes");
-
-        //create string from xml tree
-        StringWriter sw = new StringWriter();
-        StreamResult result = new StreamResult(sw);
-        DOMSource source = new DOMSource(doc);
-        trans.transform(source, result);
-        String xmlString = sw.toString();
-
-        return xmlString;
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
-    }
-    return null;
+    return ModelResourceXmlGenerator.createXMLString(this);
   }
 
   private File getXMLFile(String root) {

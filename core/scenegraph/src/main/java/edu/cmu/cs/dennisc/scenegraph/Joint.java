@@ -87,7 +87,7 @@ public class Joint extends Transformable implements ModelJoint {
     localTransformation.setValue(new AffineMatrix4x4(newTransform.orientation(), scaled));
     AxisAlignedBox bb = boundingBox.getValue();
     if (bb != null) {
-      bb = bb.scale(scale);
+      boundingBox.setValue(bb.scale(scale));
     }
     for (int i = 0; i < getComponentCount(); i++) {
       Component comp = getComponentAt(i);
@@ -143,8 +143,8 @@ public class Joint extends Transformable implements ModelJoint {
     if (c instanceof Joint j) {
       //We scale the local bounding box based on the scale of the SkeletonVisual base object
       //We can do this here (in the local space of the joint) because we restrict the scale to be a uniform scale
-      AxisAlignedBox scaledBBox = boundingBox.getValue();
-      SkeletonVisual sv = this.getParentVisual();
+      AxisAlignedBox scaledBBox = j.boundingBox.getValue();
+      SkeletonVisual sv = j.getParentVisual();
       if (sv != null) {
         scaledBBox = scaledBBox.scale(sv.scale.getValue());
       }

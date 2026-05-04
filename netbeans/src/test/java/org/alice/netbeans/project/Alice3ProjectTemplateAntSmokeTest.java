@@ -115,6 +115,7 @@ public class Alice3ProjectTemplateAntSmokeTest {
 
   private static String executeAntJarTarget(Path projectDirectory, Path userProperties, Path antScratch) {
     Path buildFile = projectDirectory.resolve("build.xml").toAbsolutePath().normalize();
+    Path outputFile = antScratch.resolve("ant-jar.log");
     try {
       Process process = new ProcessBuilder(
           Path.of(System.getProperty("java.home"), "bin", "java").toString(),
@@ -128,11 +129,17 @@ public class Alice3ProjectTemplateAntSmokeTest {
           "jar")
           .directory(projectDirectory.toFile())
           .redirectErrorStream(true)
+          .redirectOutput(outputFile.toFile())
           .start();
       boolean exited = process.waitFor(60, TimeUnit.SECONDS);
-      String output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
       if (!exited) {
         process.destroyForcibly();
+        if (!process.waitFor(10, TimeUnit.SECONDS)) {
+          throw new AssertionError("Ant smoke did not terminate after timeout");
+        }
+      }
+      String output = Files.readString(outputFile, StandardCharsets.UTF_8);
+      if (!exited) {
         throw new AssertionError("Ant smoke timed out\n" + output);
       }
       assertTrue(output, process.exitValue() == 0);

@@ -103,6 +103,25 @@ validate_allowed_automation() {
   fi
 
   if [ "$cwd" = . ] &&
+    [ "$#" -eq 1 ] &&
+    [ "$1" = qa/outside-in/alice-desktop/runners/package-install-smoke.sh ]; then
+    return 0
+  fi
+
+  if [ "$cwd" = . ] &&
+    [ "$#" -eq 8 ] &&
+    [ "$1" = mvn ] &&
+    [ "$2" = -DincludeSims=false ] &&
+    [ "$3" = -Dinstall4j.skip ] &&
+    [ "$4" = -pl ] &&
+    [ "$5" = netbeans ] &&
+    [ "$6" = -am ] &&
+    [ "$7" = -Dtest=org.alice.netbeans.Alice3ProjectTemplateWizardIteratorTest,org.alice.netbeans.palette.Alice3PaletteFactoryTest,org.alice.netbeans.palette.items.AliceComponentPaletteUtilitiesTest,org.alice.netbeans.palette.items.resources.PaletteBundleLocalizationTest,org.alice.netbeans.completion.Alice3CompletionItemTest ] &&
+    [ "$8" = test ]; then
+    return 0
+  fi
+
+  if [ "$cwd" = . ] &&
     [ "$#" -eq 7 ] &&
     [ "$1" = qa/outside-in/alice-desktop/runners/run-scenario.sh ] &&
     [ "$2" = run ] &&
