@@ -91,6 +91,11 @@ public class UserLocal extends AbstractTransient {
   public final String getValidName() {
     String currentName = getName();
     if (currentName != null) {
+      Node parent = getParent();
+      if (parent instanceof AbstractForEachLoop loop && loop.isStaleGeneratedItemName(this, currentName)) {
+        loop.repairStaleGeneratedItemName();
+        return getName();
+      }
       return currentName;
     }
     String defaultName =  generateName();

@@ -44,7 +44,6 @@
 package org.lgna.project.ast;
 
 import edu.cmu.cs.dennisc.pattern.IsInstanceCrawler;
-
 import org.lgna.project.ast.localizer.AstLocalizer;
 
 /**
@@ -65,12 +64,34 @@ public abstract class AbstractForEachLoop extends AbstractLoop implements EachIn
     return this.item;
   }
 
-  protected abstract ExpressionProperty getArrayOrIterableProperty();
-
   @Override
   public String generateLocalName(UserLocal local) {
-    return "item" + getDepthSuffix();
+    if (isItem(local)) {
+      return "item" + getDepthSuffix();
+    }
+    return super.generateLocalName(local);
   }
+
+  boolean isStaleGeneratedItemName(UserLocal local, String name) {
+    return isItem(local) && isGeneratedCountLoopName(name);
+  }
+
+  void repairStaleGeneratedItemName() {
+    UserLocal local = this.item.getValue();
+    if (local != null && isStaleGeneratedItemName(local, local.getName())) {
+      local.setName(generateLocalName(local));
+    }
+  }
+
+  private boolean isItem(UserLocal local) {
+    return local == this.item.getValue();
+  }
+
+  private static boolean isGeneratedCountLoopName(String name) {
+    return "COUNT__".equals(name);
+  }
+
+  protected abstract ExpressionProperty getArrayOrIterableProperty();
 
   private int getInstanceDepth() {
     UserCode code = getFirstAncestorAssignableTo(UserCode.class);

@@ -353,6 +353,7 @@ public abstract class SourceCodeGenerator implements AstProcessor {
   public void processForEach(AbstractForEachLoop loop) {
     appendCodeFlowStatement(loop, () -> {
       UserLocal itemValue = loop.item.getValue();
+      loop.repairStaleGeneratedItemName();
       final Expression items = loop.getArrayOrIterableProperty().getValue();
       appendForEachToken();
       appendEachItemsClause(itemValue, items);
