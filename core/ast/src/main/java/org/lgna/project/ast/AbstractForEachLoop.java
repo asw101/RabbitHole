@@ -76,6 +76,13 @@ public abstract class AbstractForEachLoop extends AbstractLoop implements EachIn
     return isItem(local) && isGeneratedCountLoopName(name);
   }
 
+  void repairStaleGeneratedItemName() {
+    UserLocal local = this.item.getValue();
+    if (local != null && isStaleGeneratedItemName(local, local.getName())) {
+      local.setName(generateLocalName(local));
+    }
+  }
+
   private boolean isItem(UserLocal local) {
     return local == this.item.getValue();
   }
