@@ -17,6 +17,10 @@ fail() {
 repo_root=""
 output_dir=""
 format="both"
+work_dir=""
+source_roots=(core alice-ide netbeans installer external core-nonfree)
+marker_roots=("${source_roots[@]}" README.md docs)
+staleness_marker_pattern='TODO|FIXME|HACK|XXX|@Deprecated|deprecated|unused|dead code|not used|stale|legacy'
 
 while [[ "$#" -gt 0 ]]; do
   case "$1" in
@@ -66,23 +70,32 @@ fi
 mkdir -p "${output_dir}"
 output_dir="$(cd "${output_dir}" && pwd)"
 
-rel() {
-  local path="$1"
-  path="${path#${repo_root}/}"
-  printf '%s\n' "${path}"
+cleanup_work_dir() {
+  case "${work_dir}" in
+    "${output_dir}"/.alice-code-atlas-work.*)
+      [[ -d "${work_dir}" ]] && rm -rf "${work_dir}"
+      ;;
+  esac
 }
 
-line_for() {
-  local file="$1"
-  local pattern="$2"
-  local line
-  line="$(grep -n -F "${pattern}" "${repo_root}/${file}" | head -1 | cut -d: -f1 || true)"
-  if [[ -n "${line}" ]]; then
-    printf '%s:%s' "${file}" "${line}"
-  else
-    printf '%s' "${file}"
-  fi
+make_work_dir() {
+  local attempt
+  local candidate
+
+  for attempt in {1..20}; do
+    candidate="${output_dir}/.alice-code-atlas-work.$$.$RANDOM.${attempt}"
+    if [[ ! -e "${candidate}" ]] && mkdir "${candidate}"; then
+      printf '%s\n' "${candidate}"
+      return
+    fi
+  done
+
+  fail "could not create atlas work directory under output directory: ${output_dir}"
 }
+
+work_dir="$(make_work_dir)"
+trap cleanup_work_dir EXIT
+java_loc_cache_file="${work_dir}/java-loc.tsv"
 
 extract_first_reactor_modules() {
   awk '
@@ -99,18 +112,18 @@ extract_first_reactor_modules() {
       line = $0
       sub(/^.*<module>/, "", line)
       sub(/<\/module>.*$/, "", line)
-      print line
+      print line "\t" FNR
     }
   ' "${repo_root}/pom.xml"
 }
 
 java_scan_roots() {
-  for root in core alice-ide netbeans installer external core-nonfree; do
+  for root in "${source_roots[@]}"; do
     [[ -d "${repo_root}/${root}" ]] && printf '%s\0' "${repo_root}/${root}"
   done
 }
 
-largest_java_files() {
+java_source_files() {
   local roots=()
   while IFS= read -r -d '' root; do
     roots+=("${root}")
@@ -122,32 +135,65 @@ largest_java_files() {
     -name '*.java' \
     -type f \
     -not -path '*/target/*' \
-    -print0 2>/dev/null \
+    -print0
+}
+
+build_java_loc_cache() {
+  [[ -f "${java_loc_cache_file}" ]] && return
+
+  java_source_files \
     | xargs -0 -r -n 100000 wc -l \
     | awk -v root="${repo_root}/" '$2 != "total" {
         path = $2
         sub(root, "", path)
         print $1 "\t" path
-      }' \
+      }' >"${java_loc_cache_file}"
+}
+
+java_loc_rows() {
+  build_java_loc_cache
+  cat "${java_loc_cache_file}"
+}
+
+largest_java_files() {
+  java_loc_rows \
     | sort -nr \
     | sed -n '1,25p'
 }
 
 module_java_loc_rows() {
-  for module in core/* alice-ide netbeans installer external/* core-nonfree/*; do
-    [[ -d "${repo_root}/${module}/src" ]] || continue
-    local loc
-    loc="$(
-      find "${repo_root}/${module}/src" \
-        -name '*.java' \
-        -type f \
-        -not -path '*/target/*' \
-        -print0 2>/dev/null \
-        | xargs -0 -r -n 100000 wc -l \
-        | awk '$2 != "total" {sum += $1} END {print sum + 0}'
-    )"
-    printf '%s\t%s\n' "${loc}" "${module}"
-  done | sort -nr
+  java_loc_rows \
+    | awk -F '\t' '{
+        module = $2
+        sub(/\/src\/.*/, "", module)
+        loc[module] += $1
+      }
+      END {
+        for (module in loc) {
+          print loc[module] "\t" module
+        }
+      }' \
+    | sort -nr
+}
+
+staleness_marker_count() {
+  local roots=()
+  local root
+  for root in "${marker_roots[@]}"; do
+    [[ -e "${repo_root}/${root}" ]] && roots+=("${repo_root}/${root}")
+  done
+
+  if [[ "${#roots[@]}" -eq 0 ]]; then
+    printf '0\n'
+    return
+  fi
+
+  find "${roots[@]}" \
+    -path '*/target/*' -prune -o \
+    -type f \( -name '*.java' -o -name '*.md' -o -name '*.xml' -o -name '*.properties' \) \
+    -print0 \
+    | xargs -0 -r awk -v pattern="${staleness_marker_pattern}" '$0 ~ pattern { count++ } END { print count + 0 }' \
+    | awk '{sum += $1} END {print sum + 0}'
 }
 
 write_module_graph_mmd() {
@@ -469,7 +515,7 @@ The default root reactor is defined in `pom.xml:101-126`.
 | --- | --- | --- |
 EOF
 
-    while IFS= read -r module; do
+    while IFS=$'\t' read -r module line; do
       case "${module}" in
         core) note="Parent/aggregator for core modules" ;;
         core/ast) note="AST, serialization, VM-related code" ;;
@@ -495,7 +541,7 @@ EOF
         netbeans) note="NetBeans plugin and project template" ;;
         *) note="Root reactor module" ;;
       esac
-      printf '| `%s` | `%s` | %s |\n' "${module}" "$(line_for pom.xml "<module>${module}</module>")" "${note}"
+      printf '| `%s` | `pom.xml:%s` | %s |\n' "${module}" "${line}" "${note}"
     done < <(extract_first_reactor_modules)
 
     cat <<'EOF'
@@ -689,15 +735,7 @@ EOF
 
 write_staleness_map() {
   local marker_count
-  marker_count="$(
-    grep -RInE 'TODO|FIXME|HACK|XXX|@Deprecated|deprecated|unused|dead code|not used|stale|legacy' \
-      "${repo_root}/core" "${repo_root}/alice-ide" "${repo_root}/netbeans" "${repo_root}/installer" \
-      "${repo_root}/external" "${repo_root}/core-nonfree" "${repo_root}/README.md" "${repo_root}/docs" \
-      --include='*.java' --include='*.md' --include='*.xml' --include='*.properties' \
-      --exclude-dir=target 2>/dev/null \
-      | wc -l \
-      | tr -d ' '
-  )"
+  marker_count="$(staleness_marker_count)"
 
   cat >"${output_dir}/alice-staleness-map.md" <<EOF
 # Alice Staleness Map
@@ -772,7 +810,7 @@ rg -n "TODO|FIXME|HACK|XXX|@Deprecated|deprecated|unused|dead code|not used|stal
   --glob '!**/target/**'
 \`\`\`
 
-Classify each result before reporting it. Template placeholders, localized example snippets, and logger level names are usually not bugs.
+Classify each result before reporting it. Template example text, localized example snippets, and logger level names are usually not bugs.
 EOF
 }
 
@@ -906,4 +944,4 @@ case "${format}" in
     ;;
 esac
 
-printf 'Generated Alice code-atlas artifacts in %s\n' "$(rel "${output_dir}")"
+printf 'Generated Alice code-atlas artifacts in %s\n' "${output_dir#${repo_root}/}"

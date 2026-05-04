@@ -15,6 +15,7 @@ ATLAS_EXPECTED_ARTIFACTS=(
   "alice-staleness-map.md"
   "alice-bughunt-findings.md"
 )
+ATLAS_SOURCE_ROOTS=(core alice-ide netbeans installer external core-nonfree)
 
 : "${ATLAS_COMMAND:=${ATLAS_REPO_ROOT}/drinkme/code-atlas/bin/build-alice-code-atlas}"
 
@@ -28,14 +29,27 @@ atlas_note() {
 }
 
 atlas_make_output_dir() {
-  mktemp -d "${TMPDIR:-/tmp}/alice-code-atlas-contract.XXXXXX"
+  local attempt
+  local candidate
+
+  for attempt in {1..20}; do
+    candidate="${ATLAS_REPO_ROOT}/drinkme/code-atlas/.atlas-contract.$$.$RANDOM.${attempt}"
+    if [[ ! -e "${candidate}" ]] && mkdir "${candidate}"; then
+      printf '%s\n' "${candidate}"
+      return
+    fi
+  done
+
+  atlas_fail "could not create atlas contract output directory under drinkme/code-atlas"
 }
 
 atlas_cleanup_dir() {
   local path="$1"
-  if [[ "${path}" == "${TMPDIR:-/tmp}"/alice-code-atlas-contract.* && -d "${path}" ]]; then
-    rm -rf "${path}"
-  fi
+  case "${path}" in
+    "${ATLAS_REPO_ROOT}"/drinkme/code-atlas/.atlas-contract.*)
+      [[ -d "${path}" ]] && rm -rf "${path}"
+      ;;
+  esac
 }
 
 atlas_require_generator_command() {
@@ -58,13 +72,6 @@ atlas_assert_file_exists() {
   local file_path="$1"
   if [[ ! -f "${file_path}" ]]; then
     atlas_fail "expected file to exist: ${file_path}"
-  fi
-}
-
-atlas_assert_executable_exists() {
-  local file_path="$1"
-  if [[ ! -x "${file_path}" ]]; then
-    atlas_fail "expected executable file to exist: ${file_path}"
   fi
 }
 
@@ -121,24 +128,30 @@ atlas_root_reactor_modules() {
 }
 
 atlas_largest_java_source_path() {
-  find "${ATLAS_REPO_ROOT}/core" \
-       "${ATLAS_REPO_ROOT}/alice-ide" \
-       "${ATLAS_REPO_ROOT}/netbeans" \
-       "${ATLAS_REPO_ROOT}/installer" \
-       "${ATLAS_REPO_ROOT}/external" \
-       "${ATLAS_REPO_ROOT}/core-nonfree" \
-       -path '*/src/*/java/*' \
-       -name '*.java' \
-       -type f \
-       -not -path '*/target/*' \
-        -print0 2>/dev/null \
-    | xargs -0 -n 100000 wc -l \
-    | awk '$2 != "total" {print}' \
-    | sort -nr \
-    | awk -v root="${ATLAS_REPO_ROOT}/" 'NR == 1 {
+  local roots=()
+  local root
+  for root in "${ATLAS_SOURCE_ROOTS[@]}"; do
+    [[ -d "${ATLAS_REPO_ROOT}/${root}" ]] && roots+=("${ATLAS_REPO_ROOT}/${root}")
+  done
+
+  [[ "${#roots[@]}" -gt 0 ]] || return 0
+
+  find "${roots[@]}" \
+        -path '*/src/*/java/*' \
+        -name '*.java' \
+        -type f \
+        -not -path '*/target/*' \
+        -print0 \
+    | xargs -0 -r -n 100000 wc -l \
+    | awk -v root="${ATLAS_REPO_ROOT}/" '$2 != "total" && $1 > max {
+        max = $1
         path = $2
-        sub(root, "", path)
-        print path
+      }
+      END {
+        if (path != "") {
+          sub(root, "", path)
+          print path
+        }
       }'
 }
 

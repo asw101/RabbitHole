@@ -70,4 +70,4 @@ rg -n "TODO|FIXME|HACK|XXX|@Deprecated|deprecated|unused|dead code|not used|stal
   --glob '!**/target/**'
 ```
 
-Classify each result before reporting it. Template placeholders, localized example snippets, and logger level names are usually not bugs.
+Classify each result before reporting it. Template example text, localized example snippets, and logger level names are usually not bugs.

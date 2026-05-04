@@ -69,10 +69,6 @@ The hotspot tables are generated from Java source under `core`, `alice-ide`, `ne
 | 18 | 1010 | `core/issue-reporting` | Module size | Use module-local characterization before structural changes |
 | 19 | 795 | `alice-ide` | Module size | Use module-local characterization before structural changes |
 | 20 | 193 | `external/wrapped-flow-layout` | Module size | Use module-local characterization before structural changes |
-| 21 | 0 | `external/collada-schema-1-4-1` | Module size | Use module-local characterization before structural changes |
-| 22 | 0 | `core/resources` | Module size | Use module-local characterization before structural changes |
-| 23 | 0 | `core/i18n` | Module size | Use module-local characterization before structural changes |
-| 24 | 0 | `core-nonfree/resources-nonfree` | Module size | Use module-local characterization before structural changes |
 
 ## Refactor-risk rules
 
