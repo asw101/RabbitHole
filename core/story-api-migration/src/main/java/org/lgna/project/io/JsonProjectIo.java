@@ -169,20 +169,30 @@ public class JsonProjectIo extends DataSourceIo implements ProjectIo {
       try (InputStream resourceStream = is) {
         byte[] data = InputStreamUtilities.getBytes(resourceStream);
         if (resourceReference instanceof ImageReference imageReference) {
-          ImageResource resource = new ImageResource(Objects.requireNonNull(imageReference.uuid));
+          ImageResource resource = new ImageResource(requireUuid(imageReference, imageReference.uuid));
           applyResourceReference(resource, imageReference, data);
           resource.setWidth((int) imageReference.width);
           resource.setHeight((int) imageReference.height);
           return resource;
         }
         if (resourceReference instanceof AudioReference audioReference) {
-          AudioResource resource = new AudioResource(Objects.requireNonNull(audioReference.uuid));
+          AudioResource resource = new AudioResource(requireUuid(audioReference, audioReference.uuid));
           applyResourceReference(resource, audioReference, data);
           resource.setDuration(audioReference.duration);
           return resource;
         }
       }
       return null;
+    }
+
+    private static UUID requireUuid(
+        ResourceReference resourceReference,
+        UUID uuid) throws IOException {
+      if (uuid == null) {
+        throw new IOException(
+            "Resource " + resourceReference.name + " does not specify UUID");
+      }
+      return uuid;
     }
 
     private static void applyResourceReference(Resource resource, ResourceReference resourceReference, byte[] data) {
