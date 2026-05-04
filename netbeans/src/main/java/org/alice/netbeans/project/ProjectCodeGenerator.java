@@ -74,6 +74,8 @@ import javax.lang.model.SourceVersion;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -109,10 +111,15 @@ public class ProjectCodeGenerator {
     List<FileObject> fileObjectsToFormat = Lists.newLinkedList();
     Set<NamedUserType> namedUserTypes = aliceProject.getNamedUserTypes();
     final Set<org.lgna.common.Resource> resources = aliceProject.getResources();
+    ResourcesTypeWrapper resourcesTypeWrapper = null;
     if (!resources.isEmpty()) {
-      ResourcesTypeWrapper resourcesTypeWrapper = new ResourcesTypeWrapper(aliceProject.getResources());
+      resourcesTypeWrapper = new ResourcesTypeWrapper(aliceProject.getResources());
       namedUserTypes.add(resourcesTypeWrapper.getType());
+    }
 
+    ensureGeneratedDestinationFilesAreAvailable(javaSrcDirectory, namedUserTypes, resources, resourcesTypeWrapper);
+
+    if (!resources.isEmpty()) {
       FileObject javaSrcDirectoryFileObject = FileUtil.toFileObject(javaSrcDirectory);
       if (javaSrcDirectoryFileObject == null || !javaSrcDirectoryFileObject.isFolder()) {
         throw new IOException("Java source directory is not available: " + javaSrcDirectory);
@@ -139,14 +146,8 @@ public class ProjectCodeGenerator {
       progressHandle.switchToDeterminate(namedUserTypes.size());
     }
     int createWorkUnit = 0;
-    Set<String> generatedSourceNames = new HashSet<>();
-    generatedSourceNames.add(LAUNCHER_FILE_NAME);
     for (NamedUserType type : namedUserTypes) {
       File file = getJavaSourceFileForType(javaSrcDirectory, type);
-      if (!generatedSourceNames.add(file.getName())) {
-        throw new IOException("Duplicate generated Java source file: " + file.getName());
-      }
-      validateUserAuthoredJavaIdentifiers(type);
       final NetbeansJavaCodeGenerator generator = new NetbeansJavaCodeGenerator(javaCodeGeneratorBuilder);
       type.process(generator);
       String code = generator.getText();
@@ -183,6 +184,57 @@ public class ProjectCodeGenerator {
       formatGeneratedFiles(fileObjectsToFormat, progressHandle);
     }
     return filesToOpen;
+  }
+
+  private static void ensureGeneratedDestinationFilesAreAvailable(
+      File javaSrcDirectory,
+      Set<NamedUserType> namedUserTypes,
+      Set<org.lgna.common.Resource> resources,
+      ResourcesTypeWrapper resourcesTypeWrapper) throws IOException {
+    Path sourceRoot = javaSrcDirectory.getCanonicalFile().toPath();
+    Set<String> generatedSourceNames = new HashSet<>();
+    Set<Path> generatedOutputPaths = new HashSet<>();
+    List<Path> existingPaths = new ArrayList<>();
+
+    generatedSourceNames.add(LAUNCHER_FILE_NAME);
+    addGeneratedOutputPath(generatedOutputPaths, new File(javaSrcDirectory, LAUNCHER_FILE_NAME), sourceRoot);
+
+    if (resourcesTypeWrapper != null) {
+      for (org.lgna.common.Resource resource : resources) {
+        addGeneratedOutputPath(
+            generatedOutputPaths,
+            new File(javaSrcDirectory, resourcesTypeWrapper.getResourcePathForResource(resource)),
+            sourceRoot);
+      }
+    }
+
+    for (NamedUserType type : namedUserTypes) {
+      File file = getJavaSourceFileForType(javaSrcDirectory, type);
+      if (!generatedSourceNames.add(file.getName())) {
+        throw new IOException("Duplicate generated Java source file: " + file.getName());
+      }
+      validateUserAuthoredJavaIdentifiers(type);
+      addGeneratedOutputPath(generatedOutputPaths, file, sourceRoot);
+    }
+
+    for (Path generatedOutputPath : generatedOutputPaths) {
+      if (generatedOutputPath.toFile().exists()) {
+        existingPaths.add(generatedOutputPath);
+      }
+    }
+    if (!existingPaths.isEmpty()) {
+      throw new IOException("Generated destination already exists: " + existingPaths.get(0));
+    }
+  }
+
+  private static void addGeneratedOutputPath(Set<Path> generatedOutputPaths, File file, Path sourceRoot) throws IOException {
+    Path generatedOutputPath = file.getCanonicalFile().toPath();
+    if (!generatedOutputPath.startsWith(sourceRoot)) {
+      throw new IOException("Generated output path escapes source directory: " + generatedOutputPath);
+    }
+    if (!generatedOutputPaths.add(generatedOutputPath)) {
+      throw new IOException("Duplicate generated output file: " + sourceRoot.relativize(generatedOutputPath));
+    }
   }
 
   private static void validateUserAuthoredJavaIdentifiers(NamedUserType type) throws IOException {
