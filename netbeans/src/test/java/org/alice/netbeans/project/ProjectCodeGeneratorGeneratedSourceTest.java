@@ -196,6 +196,22 @@ public class ProjectCodeGeneratorGeneratedSourceTest {
   }
 
   @Test
+  public void generatedSyntheticForEachLoopRepairsCachedCountItemNameSourceCompiles() throws Exception {
+    Path sourceDirectory = generateProgramSource(
+        "synthetic-for-each-loop-cached-count-item.a3p",
+        programTypeWithCachedCountForEachLoopItemAccessMethod(),
+        "generated-for-each-loop-cached-count-item-src");
+
+    Path programPath = sourceDirectory.resolve("Program.java");
+    String programSource = Files.readString(programPath);
+    assertTrue(programSource.contains("void copyCachedItem()"));
+    assertFalse(programSource, programSource.contains("COUNT__"));
+    assertTrue(programSource, programSource.contains("for(String itemA : new String[]{\"red\", \"blue\"})"));
+    assertTrue(programSource, programSource.contains("final String copy=itemA;"));
+    compileProgramAndLauncher("generated-for-each-loop-cached-count-item-classes", programPath, sourceDirectory);
+  }
+
+  @Test
   public void generatedSyntheticNamedForEachLoopItemAccessSourceCompiles() throws Exception {
     Path sourceDirectory = generateProgramSource(
         "synthetic-named-for-each-loop-item-access.a3p",
@@ -433,6 +449,24 @@ public class ProjectCodeGeneratorGeneratedSourceTest {
         new UserParameter[0],
         new BlockStatement(loop));
     type.methods.add(copyEach);
+    return type;
+  }
+
+  private static NamedUserType programTypeWithCachedCountForEachLoopItemAccessMethod() {
+    NamedUserType type = programType("Program");
+    ForEachInArrayLoop loop = AstUtilities.createForEachInArrayLoop(AstUtilities.createArrayInstanceCreation(
+        String[].class,
+        new StringLiteral("red"),
+        new StringLiteral("blue")));
+    loop.item.getValue().name.setValue("COUNT__");
+    UserLocal copy = new UserLocal("copy", String.class, true);
+    loop.body.getValue().statements.add(new LocalDeclarationStatement(copy, new LocalAccess(loop.item.getValue())));
+    UserMethod copyCachedItem = new UserMethod(
+        "copyCachedItem",
+        Void.TYPE,
+        new UserParameter[0],
+        new BlockStatement(loop));
+    type.methods.add(copyCachedItem);
     return type;
   }
 

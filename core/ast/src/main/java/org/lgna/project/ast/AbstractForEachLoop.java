@@ -66,10 +66,22 @@ public abstract class AbstractForEachLoop extends AbstractLoop implements EachIn
 
   @Override
   public String generateLocalName(UserLocal local) {
-    if (local == this.item.getValue()) {
+    if (isItem(local)) {
       return "item" + getForEachDepthSuffix();
     }
     return super.generateLocalName(local);
+  }
+
+  boolean isStaleGeneratedItemName(UserLocal local, String name) {
+    return isItem(local) && isGeneratedCountLoopName(name);
+  }
+
+  private boolean isItem(UserLocal local) {
+    return local == this.item.getValue();
+  }
+
+  private static boolean isGeneratedCountLoopName(String name) {
+    return "COUNT__".equals(name);
   }
 
   protected abstract ExpressionProperty getArrayOrIterableProperty();
