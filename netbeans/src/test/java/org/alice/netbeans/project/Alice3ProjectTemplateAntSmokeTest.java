@@ -1,6 +1,4 @@
-package org.alice.netbeans;
-
-import org.alice.netbeans.project.ProjectCodeGenerator;
+package org.alice.netbeans.project;
 import org.apache.tools.ant.launch.Launcher;
 import org.junit.Test;
 import org.lgna.project.Project;
@@ -18,7 +16,6 @@ import org.xml.sax.InputSource;
 
 import java.io.File;
 import java.io.StringReader;
-import java.lang.reflect.Method;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -79,15 +76,7 @@ public class Alice3ProjectTemplateAntSmokeTest {
   }
 
   private static void generateProjectCodeWithoutFormatting(Path aliceProject, Path sourceDirectory) throws Exception {
-    Method generateCode = ProjectCodeGenerator.class.getDeclaredMethod(
-        "generateCode",
-        File.class,
-        File.class,
-        org.netbeans.api.progress.ProgressHandle.class,
-        boolean.class);
-    generateCode.setAccessible(true);
-    generateCode.invoke(
-        null,
+    ProjectCodeGenerator.generateCode(
         aliceProject.toAbsolutePath().normalize().toFile(),
         sourceDirectory.toAbsolutePath().normalize().toFile(),
         null,
