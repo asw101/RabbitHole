@@ -111,6 +111,16 @@ public class Alice3LibraryRegistrationTest {
     assertTrue(pom.contains("<descriptor>src/main/resources/assemblies/rename-nbm.xml</descriptor>"));
   }
 
+  @Test
+  public void installAssemblyRenamesPackagedPluginForDistribution() throws Exception {
+    String descriptor = Files.readString(
+        Path.of("src/main/resources/assemblies/rename-nbm.xml"),
+        StandardCharsets.UTF_8);
+
+    assertTrue(descriptor.contains("<source>${project.build.directory}/netbeans-9.1.0-SNAPSHOT.nbm</source>"));
+    assertTrue(descriptor.contains("<destName>Alice3_netbeans_plugin_${alice.build.version}${alice.build.prerelease}${alice.build.metadata}.nbm</destName>"));
+  }
+
   private static List<String> resourcesForVolume(String volumeType) throws Exception {
     DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
     var builder = factory.newDocumentBuilder();
