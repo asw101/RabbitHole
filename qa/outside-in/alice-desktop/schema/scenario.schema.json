@@ -37,7 +37,10 @@
         "scene-creation",
         "run-debug",
         "save-load",
-        "export"
+        "export",
+        "open-load-save",
+        "package-install-smoke",
+        "wizard-palette-completion-smoke"
       ]
     },
     "automationMode": {
@@ -221,6 +224,47 @@
               "items": false,
               "minItems": 7,
               "maxItems": 7
+            },
+            {
+              "prefixItems": [
+                {
+                  "const": "qa/outside-in/alice-desktop/runners/package-install-smoke.sh"
+                }
+              ],
+              "items": false,
+              "minItems": 1,
+              "maxItems": 1
+            },
+            {
+              "prefixItems": [
+                {
+                  "const": "mvn"
+                },
+                {
+                  "const": "-DincludeSims=false"
+                },
+                {
+                  "const": "-Dinstall4j.skip"
+                },
+                {
+                  "const": "-pl"
+                },
+                {
+                  "const": "netbeans"
+                },
+                {
+                  "const": "-am"
+                },
+                {
+                  "const": "-Dtest=org.alice.netbeans.Alice3ProjectTemplateWizardIteratorTest,org.alice.netbeans.palette.Alice3PaletteFactoryTest,org.alice.netbeans.palette.items.AliceComponentPaletteUtilitiesTest,org.alice.netbeans.palette.items.resources.PaletteBundleLocalizationTest,org.alice.netbeans.completion.Alice3CompletionItemTest"
+                },
+                {
+                  "const": "test"
+                }
+              ],
+              "items": false,
+              "minItems": 8,
+              "maxItems": 8
             }
           ]
         },

@@ -1,0 +1,35 @@
+id: alice-desktop-open-load-save
+title: Open, load, and save project variants
+workflow: open-load-save
+automationMode: manual-evidence-required
+preconditions:
+  - Java 21 is available.
+  - Maven dependencies are available.
+  - The tweedle-lang submodule is initialized.
+  - A known-good a3p fixture or previously saved Alice project is available.
+userActions:
+  - Launch Alice.
+  - Open the known-good a3p project through the desktop open flow.
+  - Confirm the loaded scene, objects, and program controls are visible.
+  - Save the opened project as a copy in the evidence location.
+  - Reopen the copied project through File Open or the recent-project path.
+  - Confirm the copied project still matches the loaded state.
+expectedOutcomes:
+  - Alice opens an existing a3p from the user-visible open flow without uncaught application errors.
+  - Saving the opened project as a copy produces a durable a3p file.
+  - Reopening the copied project preserves the visible scene, object list, and runnable program state.
+evidence:
+  required:
+    - Open operation log or manual notes identifying the source a3p fixture.
+    - Screenshot after the first open showing the loaded project.
+    - Saved copy a3p project file from the evidence location.
+    - Screenshot after reopening the saved copy.
+    - review-notes.txt comparing source, saved copy, and reopened state with an accept or reject decision.
+fallback:
+  mode: manual-evidence-required
+  notes:
+    - If the open dialog cannot access the fixture path, record the dialog error and use the nearest supported recent-project path.
+    - Link project IO smoke evidence when available, but keep manual GUI open/load/save evidence for acceptance.
+supportingEvidence:
+  - alice-desktop-launch
+  - alice-desktop-project-io-smoke
