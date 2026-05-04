@@ -42,7 +42,6 @@
  *******************************************************************************/
 package org.alice.ide.croquet.models.projecturi;
 
-import edu.cmu.cs.dennisc.java.io.FileUtilities;
 import edu.cmu.cs.dennisc.java.net.UriUtilities;
 import edu.cmu.cs.dennisc.javax.swing.option.Dialogs;
 import org.alice.ide.ProjectApplication;
@@ -51,7 +50,6 @@ import org.lgna.croquet.history.UserActivity;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
 import java.util.UUID;
 
 /**
@@ -73,43 +71,56 @@ public abstract class AbstractSaveOperation extends UriActionOperation {
   @Override
   protected void perform(UserActivity activity) {
     StageIDE application = StageIDE.getActiveInstance();
-    URI uri = application.getUri();
-    File filePrevious = UriUtilities.getFile(uri);
-    boolean isExceptionRaised = false;
-    do {
-      File fileNext;
-      if (application.isBackup()) {
-        File mainFile = application.getMainProjectFile();
-        String newProjectName = "";
-
-        if (mainFile != null) {
-          newProjectName = FileUtilities.getBaseName(mainFile) + " Copy";
-        }
-
-        fileNext = application.getDocumentFrame().showSaveFileDialog(this.getDefaultDirectory(application), newProjectName, this.getExtension());
-      } else if (isExceptionRaised || this.isPromptNecessary(filePrevious)) {
-          fileNext = application.getDocumentFrame().showSaveFileDialog(this.getDefaultDirectory(application), FileUtilities.getBaseName(filePrevious), this.getExtension());
-      } else {
-        fileNext = filePrevious;
+    SaveOperationFlow.run(new SaveOperationFlow.Context() {
+      @Override
+      public File getCurrentFile() {
+        return UriUtilities.getFile(application.getUri());
       }
-      isExceptionRaised = false;
-      if (fileNext != null) {
-        try {
-          application.showWaitCursor();
-          this.save(application, fileNext);
-        } catch (IOException ioe) {
-          isExceptionRaised = true;
-          //TODO I18n
-          Dialogs.showError("Unable to save file", ioe.getMessage());
-        } finally {
-          application.hideWaitCursor();
-        }
-        if (!isExceptionRaised) {
-          activity.finish();
-        }
-      } else {
+
+      @Override
+      public boolean isBackup() {
+        return application.isBackup();
+      }
+
+      @Override
+      public File getMainProjectFile() {
+        return application.getMainProjectFile();
+      }
+
+      @Override
+      public File getDefaultDirectory() {
+        return AbstractSaveOperation.this.getDefaultDirectory(application);
+      }
+
+      @Override
+      public File showSaveFileDialog(File directory, String filename, String extension) {
+        return application.getDocumentFrame().showSaveFileDialog(directory, filename, extension);
+      }
+
+      @Override
+      public void showWaitCursor() {
+        application.showWaitCursor();
+      }
+
+      @Override
+      public void hideWaitCursor() {
+        application.hideWaitCursor();
+      }
+
+      @Override
+      public void showError(String title, String message) {
+        Dialogs.showError(title, message);
+      }
+
+      @Override
+      public void finish() {
+        activity.finish();
+      }
+
+      @Override
+      public void cancel() {
         activity.cancel();
       }
-    } while (isExceptionRaised);
+    }, this::isPromptNecessary, this.getExtension(), file -> this.save(application, file));
   }
 }

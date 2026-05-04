@@ -48,7 +48,6 @@ import org.netbeans.spi.palette.DragAndDropHandler;
 import org.netbeans.spi.palette.PaletteActions;
 import org.netbeans.spi.palette.PaletteController;
 import org.netbeans.spi.palette.PaletteFactory;
-import org.openide.util.Exceptions;
 import org.openide.util.Lookup;
 import org.openide.util.datatransfer.ExTransferable;
 
@@ -62,10 +61,10 @@ public class Alice3PaletteFactory {
   private static PaletteController palette = null;
 
   @MimeRegistration(mimeType = "text/x-java", service = PaletteController.class)
-  public static PaletteController createPalette() {
+  public static synchronized PaletteController createPalette() {
     try {
       if (null == palette) {
-        return PaletteFactory.createPalette(
+        palette = PaletteFactory.createPalette(
             //Folder:
             "AlicePalette",
             //Palette Actions:
@@ -104,10 +103,10 @@ public class Alice3PaletteFactory {
               }
             });
       }
+      return palette;
     } catch (IOException ex) {
-      Exceptions.printStackTrace(ex);
+      throw new IllegalStateException("Unable to create Alice palette", ex);
     }
-    return null;
   }
 
 }

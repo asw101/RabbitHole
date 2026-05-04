@@ -64,7 +64,8 @@ import java.awt.event.KeyEvent;
  */
 public class Alice3CompletionItem implements CompletionItem {
 
-  private static final ImageIcon fieldIcon = new ImageIcon(ImageUtilities.loadImage("src/main/java/org/alice/netbeans/aliceIcon.png"));
+  static final String FIELD_ICON_RESOURCE = "org/alice/netbeans/aliceIcon.png";
+  private static final ImageIcon fieldIcon = new ImageIcon(ImageUtilities.loadImage(FIELD_ICON_RESOURCE));
   private static final Color fieldColor = Color.decode("0x0000B2");
 
   public Alice3CompletionItem(String searchText, String completionText, int startOffset, int caretOffset, int sortPriority) {

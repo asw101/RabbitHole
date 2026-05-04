@@ -1,7 +1,10 @@
 package org.lgna.project.io;
 
+import edu.cmu.cs.dennisc.java.util.zip.ByteArrayDataSource;
 import edu.cmu.cs.dennisc.java.util.zip.DataSource;
 import edu.cmu.cs.dennisc.pattern.IsInstanceCrawler;
+import edu.cmu.cs.dennisc.xml.XMLUtilities;
+import org.alice.serialization.xml.XmlEncoderDecoder;
 import org.alice.tweedle.file.AliceTextureReference;
 import org.alice.tweedle.file.Manifest;
 import org.alice.tweedle.file.ManifestEncoderDecoder;
@@ -32,7 +35,9 @@ import org.lgna.project.ast.UserLocal;
 import org.lgna.project.ast.UserMethod;
 import org.lgna.story.SProgram;
 
+import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -65,7 +70,7 @@ public class IoUtilitiesTest {
   }
 
   @Test
-  public void writtenProjectContainsVersionAndProgramTypeEntries() throws Exception {
+  public void writtenProjectContainsVersionManifestAndProgramTypeEntries() throws Exception {
     Project project = new Project(programType("Program"), Project.SceneCameraType.WindowCamera);
     File projectFile = temporaryFolder.newFile("synthetic.a3p");
 
@@ -73,7 +78,9 @@ public class IoUtilitiesTest {
 
     try (ZipFile zipFile = new ZipFile(projectFile)) {
       assertNotNull(zipFile.getEntry(ProjectIo.VERSION_ENTRY_NAME));
-      assertNull(zipFile.getEntry(ProjectIo.MANIFEST_ENTRY_NAME));
+      ProjectManifest manifest = readProjectManifest(zipFile);
+      assertEquals("Program", manifest.description.name);
+      assertEquals(IoUtilities.PROJECT_EXTENSION, manifest.metadata.fileType);
       assertNotNull(zipFile.getEntry("programType.xml"));
       assertNull(zipFile.getEntry("resources.xml"));
     }
@@ -102,6 +109,39 @@ public class IoUtilitiesTest {
       assertNotNull(zipFile.getEntry("resources.xml"));
       assertNotNull(zipFile.getEntry("resources/note.txt"));
     }
+  }
+
+  @Test
+  public void writeProjectIncludesProvidedThumbnailAndManifestIcon() throws Exception {
+    Project project = new Project(programType("Program"), Project.SceneCameraType.WindowCamera);
+    File projectFile = temporaryFolder.newFile("synthetic-thumbnail.a3p");
+
+    IoUtilities.writeProject(
+        projectFile,
+        project,
+        new ByteArrayDataSource("thumbnail.png", thumbnailPng()));
+
+    try (ZipFile zipFile = new ZipFile(projectFile)) {
+      assertNotNull(zipFile.getEntry("thumbnail.png"));
+      ProjectManifest manifest = readProjectManifest(zipFile);
+      assertEquals("thumbnail.png", manifest.description.icon);
+    }
+  }
+
+  @Test
+  public void writeProjectRemainsReadableWithoutThumbnailEntry() throws Exception {
+    Project project = new Project(programType("Program"), Project.SceneCameraType.WindowCamera);
+    File projectFile = temporaryFolder.newFile("synthetic-no-thumbnail.a3p");
+
+    IoUtilities.writeProject(projectFile, project);
+
+    try (ZipFile zipFile = new ZipFile(projectFile)) {
+      assertNull(zipFile.getEntry("thumbnail.png"));
+      ProjectManifest manifest = readProjectManifest(zipFile);
+      assertEquals("Program", manifest.description.name);
+    }
+    Project readProject = IoUtilities.readProject(projectFile);
+    assertEquals("Program", readProject.getProgramType().getName());
   }
 
   @Test
@@ -505,6 +545,18 @@ public class IoUtilitiesTest {
   }
 
   @Test
+  public void jsonPlayerReaderRejectsTraversalResourceReference() throws Exception {
+    ImageReference imageReference = imageReference(UUID.randomUUID(), "evil.png", "png");
+    imageReference.file = "../evil.png";
+    File exportFile = temporaryFolder.newFile("traversal-resource.a3w");
+    writePlayerArchive(exportFile, imageReference, new byte[] {1, 2, 3});
+
+    IOException thrown = assertThrows(IOException.class, () -> IoUtilities.readProject(exportFile));
+
+    assertTrue(thrown.getMessage().contains(imageReference.file));
+  }
+
+  @Test
   public void jsonPlayerAudioReadsWithSameUuidDoNotMutateEarlierRead() throws Exception {
     UUID sharedId = UUID.randomUUID();
     byte[] firstData = new byte[] {1, 2, 3};
@@ -526,6 +578,31 @@ public class IoUtilitiesTest {
     assertEquals("second.wav", secondRead.getName());
     assertArrayEquals(secondData, secondRead.getData());
     assertEquals(2.0, secondRead.getDuration(), 0.0);
+  }
+
+  @Test
+  public void xmlProjectReaderRejectsTraversalResourceEntry() throws Exception {
+    File projectFile = temporaryFolder.newFile("traversal-resource.a3p");
+    UUID resourceId = UUID.randomUUID();
+    try (ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(projectFile))) {
+      writeZipEntry(zipOutputStream, ProjectIo.VERSION_ENTRY_NAME, ProjectVersion.getCurrentVersion().toString());
+      writeZipEntry(zipOutputStream, "programType.xml", encodedProgramTypeXml("Program"));
+      writeZipEntry(zipOutputStream, "resources.xml",
+          """
+          <?xml version="1.0" encoding="UTF-8" standalone="no"?>
+          <root>
+            <resource
+                className="%s"
+                entryName="../evil.txt"
+                uuid="%s"/>
+          </root>
+          """.formatted(TestResource.class.getName(), resourceId));
+      writeZipEntry(zipOutputStream, "../evil.txt", "not safe");
+    }
+
+    IOException thrown = assertThrows(IOException.class, () -> IoUtilities.readProject(projectFile));
+
+    assertTrue(thrown.getMessage().contains("../evil.txt"));
   }
 
   @Test
@@ -688,6 +765,20 @@ public class IoUtilitiesTest {
     return resources;
   }
 
+  private static ProjectManifest readProjectManifest(ZipFile zipFile) throws IOException {
+    ZipEntry manifestEntry = zipFile.getEntry(ProjectIo.MANIFEST_ENTRY_NAME);
+    assertNotNull(manifestEntry);
+    return ManifestEncoderDecoder.fromJson(
+        new String(zipFile.getInputStream(manifestEntry).readAllBytes(), StandardCharsets.UTF_8),
+        ProjectManifest.class);
+  }
+
+  private static byte[] thumbnailPng() throws IOException {
+    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    ImageIO.write(new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB), "png", outputStream);
+    return outputStream.toByteArray();
+  }
+
   private static Resource onlyResource(Project project) {
     assertEquals(1, project.getResources().size());
     return project.getResources().iterator().next();
@@ -775,6 +866,12 @@ public class IoUtilitiesTest {
     try (ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(file))) {
       writeZipEntry(zipOutputStream, entryName, content);
     }
+  }
+
+  private static byte[] encodedProgramTypeXml(String name) {
+    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    XMLUtilities.write((new XmlEncoderDecoder()).encode(programType(name)), outputStream);
+    return outputStream.toByteArray();
   }
 
   private static void writeZipEntry(ZipOutputStream zipOutputStream, String name, String content) throws Exception {

@@ -38,6 +38,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
+import java.util.prefs.Preferences;
 
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
@@ -220,6 +221,43 @@ public class ProjectCodeGeneratorGeneratedSourceTest {
     assertTrue(programSource, programSource.contains("for(String item : Arrays.asList(\"red\",\"blue\"))"));
     assertTrue(programSource, programSource.contains("final String copy=item;"));
     compileProgramAndLauncher("generated-for-each-iterable-classes", programPath, sourceDirectory);
+  }
+
+  @Test
+  public void importFoldingPreferenceControlsGeneratedImportFoldMarkers() throws Exception {
+    Preferences preferences = aliceOptionsPreferences();
+    String previousCollapseImports = preferences.get("collapseImports", null);
+    try {
+      preferences.putBoolean("collapseImports", true);
+      Path foldedSourceDirectory = generateProgramSource(
+          "synthetic-folded-imports.a3p",
+          programTypeWithForEachIterableMethod(),
+          "generated-folded-imports-src");
+      String foldedSource = Files.readString(foldedSourceDirectory.resolve("Program.java"));
+
+      int foldStart = foldedSource.indexOf("// <editor-fold defaultstate=\"collapsed\" desc=\"imports\">");
+      int importStart = foldedSource.indexOf("import java.util.Arrays;");
+      int foldEnd = foldedSource.indexOf("// </editor-fold>", importStart);
+      assertTrue(foldedSource, foldStart >= 0);
+      assertTrue(foldedSource, importStart > foldStart);
+      assertTrue(foldedSource, foldEnd > importStart);
+
+      preferences.putBoolean("collapseImports", false);
+      Path uncollapsedSourceDirectory = generateProgramSource(
+          "synthetic-uncollapsed-imports.a3p",
+          programTypeWithForEachIterableMethod(),
+          "generated-uncollapsed-imports-src");
+      String uncollapsedSource = Files.readString(uncollapsedSourceDirectory.resolve("Program.java"));
+
+      assertTrue(uncollapsedSource, uncollapsedSource.contains("import java.util.Arrays;"));
+      assertFalse(uncollapsedSource, uncollapsedSource.contains("desc=\"imports\""));
+    } finally {
+      if (previousCollapseImports == null) {
+        preferences.remove("collapseImports");
+      } else {
+        preferences.put("collapseImports", previousCollapseImports);
+      }
+    }
   }
 
   private Path generateProgramSource(String projectFileName, NamedUserType programType, String sourceDirectoryName)
@@ -453,6 +491,10 @@ public class ProjectCodeGeneratorGeneratedSourceTest {
     mainMethod.isStatic.setValue(true);
     mainMethod.isSignatureLocked.setValue(true);
     return mainMethod;
+  }
+
+  private static Preferences aliceOptionsPreferences() throws ClassNotFoundException {
+    return Preferences.userNodeForPackage(Class.forName("org.alice.netbeans.options.Alice3Panel"));
   }
 
   private static void compileJavaSources(Path outputDirectory, Path... sources) throws Exception {

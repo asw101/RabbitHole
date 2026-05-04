@@ -47,6 +47,7 @@ import edu.cmu.cs.dennisc.java.util.Lists;
 import edu.cmu.cs.dennisc.java.util.logging.Logger;
 import org.alice.netbeans.options.Alice3OptionsPanelController;
 import org.alice.netbeans.project.ProjectCodeGenerator;
+import org.lgna.project.VersionNotSupportedException;
 import org.lgna.project.migration.ast.MigrationException;
 import org.netbeans.api.progress.ProgressHandle;
 import org.netbeans.api.templates.TemplateRegistration;
@@ -56,7 +57,6 @@ import org.openide.WizardDescriptor;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileUtil;
 import org.openide.nodes.Node;
-import org.openide.util.Exceptions;
 import org.openide.util.NbBundle;
 import org.openide.windows.TopComponent;
 import org.openide.xml.XMLUtil;
@@ -64,6 +64,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 import javax.swing.JComponent;
 import javax.swing.JOptionPane;
@@ -77,6 +78,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.LinkedHashSet;
@@ -211,10 +213,13 @@ import java.util.zip.ZipInputStream;
     try {
       Set<FileObject> resultSet = new LinkedHashSet<FileObject>();
       File projectDirectory = FileUtil.normalizeFile((File) wizardDescriptor.getProperty("projdir"));
-      projectDirectory.mkdirs();
+      ensureDirectoryExists(projectDirectory, "project directory");
 
       FileObject template = Templates.getTemplate(wizardDescriptor);
       FileObject projectDirectoryObject = FileUtil.toFileObject(projectDirectory);
+      if (projectDirectoryObject == null) {
+        throw new IOException("Unable to access project directory: " + projectDirectory);
+      }
       unZipFile(template.getInputStream(), projectDirectoryObject);
 
       // Always open top dir as a project:
@@ -228,9 +233,7 @@ import java.util.zip.ZipInputStream;
       File aliceProjectFile = (File) wizardDescriptor.getProperty("aliceProjectFile");
       File javaSrcDirectory = new File(projectDirectory, "src");
 
-      if (!javaSrcDirectory.exists()) {
-        javaSrcDirectory.mkdirs();
-      }
+      ensureDirectoryExists(javaSrcDirectory, "source directory");
 
       //open source folder: does not seem to work when there are no existing open projects
       FileObject javaSrcDirectoryFileObject = (FileUtil.toFileObject(javaSrcDirectory));
@@ -243,11 +246,15 @@ import java.util.zip.ZipInputStream;
       } catch (MigrationException me) {
         Logger.throwable(me);
         notifyUserOfMigrationFailure();
-        return null;
-      } catch (Exception e) {
-        Logger.throwable(e);
+        throw new IOException("Unable to migrate Alice project: " + aliceProjectFile, me);
+      } catch (VersionNotSupportedException vnse) {
+        Logger.throwable(vnse);
         notifyUserOfFailure();
-        return null;
+        throw new IOException("Unable to import Alice project: " + aliceProjectFile, vnse);
+      } catch (IOException ioe) {
+        Logger.throwable(ioe);
+        notifyUserOfFailure();
+        throw ioe;
       }
 
       this.cleanSlateIfAppropriate();
@@ -256,6 +263,16 @@ import java.util.zip.ZipInputStream;
       if (progressHandle != null) {
         progressHandle.finish();
       }
+    }
+  }
+
+  static void ensureDirectoryExists(File directory, String description) throws IOException {
+    if (directory.exists()) {
+      if (!directory.isDirectory()) {
+        throw new IOException("The " + description + " is not a directory: " + directory);
+      }
+    } else if (!directory.mkdirs()) {
+      throw new IOException("Unable to create " + description + ": " + directory);
     }
   }
 
@@ -320,35 +337,42 @@ import java.util.zip.ZipInputStream;
   }
 
   private static void unZipFile(InputStream source, FileObject projectRoot) throws IOException {
-    try {
-      ZipInputStream str = new ZipInputStream(source);
+    try (ZipInputStream str = new ZipInputStream(source)) {
       ZipEntry entry;
       while ((entry = str.getNextEntry()) != null) {
+        String entryName = projectTemplateEntryName(entry);
         if (entry.isDirectory()) {
-          FileUtil.createFolder(projectRoot, entry.getName());
+          FileUtil.createFolder(projectRoot, entryName);
         } else {
-          FileObject fo = FileUtil.createData(projectRoot, entry.getName());
-          if ("nbproject/project.xml".equals(entry.getName())) {
+          FileObject fo = FileUtil.createData(projectRoot, entryName);
+          if ("nbproject/project.xml".equals(entryName)) {
             // Special handling for setting name of Ant-based projects; customize as needed:
             filterProjectXML(fo, str, projectRoot.getName());
-          } else if ("nbproject/project.properties".equals(entry.getName())) {
+          } else if ("nbproject/project.properties".equals(entryName)) {
             filterProjectProperties(fo, str, projectRoot.getName());
           } else {
             writeFile(str, fo);
           }
         }
       }
-    } finally {
-      source.close();
     }
   }
 
+  static String projectTemplateEntryName(ZipEntry entry) throws IOException {
+    String name = entry.getName();
+    if (name == null || name.isBlank() || name.contains("\\") || name.contains(":")) {
+      throw new IOException("Project template contains an unsafe zip entry: " + name);
+    }
+    Path normalized = Path.of(name).normalize();
+    if (normalized.isAbsolute() || normalized.startsWith("..") || normalized.toString().isEmpty() || ".".equals(normalized.toString())) {
+      throw new IOException("Project template contains an unsafe zip entry: " + name);
+    }
+    return normalized.toString().replace('\\', '/');
+  }
+
   private static void writeFile(ZipInputStream str, FileObject fo) throws IOException {
-    OutputStream out = fo.getOutputStream();
-    try {
+    try (OutputStream out = fo.getOutputStream()) {
       FileUtil.copy(str, out);
-    } finally {
-      out.close();
     }
   }
 
@@ -376,9 +400,8 @@ import java.util.zip.ZipInputStream;
       } finally {
         out.close();
       }
-    } catch (Exception ex) {
-      Exceptions.printStackTrace(ex);
-      writeFile(str, fo);
+    } catch (SAXException ex) {
+      throw new IOException("Unable to update generated project.xml", ex);
     }
 
   }

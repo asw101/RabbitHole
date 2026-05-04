@@ -43,6 +43,7 @@
 
 package org.alice.netbeans.palette.items;
 
+import edu.cmu.cs.dennisc.java.util.logging.Logger;
 import org.alice.netbeans.palette.items.views.DoTogetherCustomizer;
 import org.openide.text.ActiveEditorDrop;
 
@@ -82,6 +83,7 @@ public class DoTogether implements ActiveEditorDrop {
       try {
         AliceComponentPaletteUtilities.insert(body, imports, targetComponent);
       } catch (BadLocationException ble) {
+        Logger.throwable(ble, body);
         accept = false;
       }
     }
@@ -98,4 +100,3 @@ public class DoTogether implements ActiveEditorDrop {
   }
 
 }
-

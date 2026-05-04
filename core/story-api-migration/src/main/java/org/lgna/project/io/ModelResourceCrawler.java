@@ -87,7 +87,7 @@ public class ModelResourceCrawler implements Crawler {
         Set<JointedModelResource> resources = modelResources.computeIfAbsent(modelName, k -> new HashSet<>());
         resources.add(modelResource);
       } catch (IllegalAccessException e) {
-        e.printStackTrace(); //TODO: Log this
+        throw new IllegalStateException("Unable to read model resource enum field " + field.getName(), e);
       }
     }
   }
