@@ -107,22 +107,47 @@ public class JsonModelIo extends DataSourceIo {
     return textureName;
   }
 
+  private static Set<JointedModelResource> createUniqueResourceSet(Collection<JointedModelResource> modelResources) {
+    if (modelResources == null || modelResources.isEmpty()) {
+      throw new IllegalArgumentException("At least one model resource is required to create a model manifest");
+    }
+    Set<JointedModelResource> uniqueResources = new LinkedHashSet<>();
+    for (JointedModelResource modelResource : modelResources) {
+      if (modelResource == null) {
+        throw new IllegalArgumentException("Model resources must not contain null entries");
+      }
+      uniqueResources.add(modelResource);
+    }
+    return uniqueResources;
+  }
+
   //Build a new ModelResourceInfo that includes only the resources in the modelResources list
-  private static ModelResourceInfo createModelResourceInfo(List<JointedModelResource> modelResources) {
+  private static ModelResourceInfo createModelResourceInfo(Collection<JointedModelResource> modelResources) {
+    Set<JointedModelResource> uniqueResources = createUniqueResourceSet(modelResources);
     //Get the ModelResourceInfo from the first resource in the list.
     //The get the parent info for this ModelResourceInfo. This will be the ModelResourceInfo that represents the model class.
-    ModelResource firstResource = modelResources.getFirst();
-    ModelResourceInfo rootInfo = AliceResourceUtilities.getModelResourceInfo(firstResource.getClass(), firstResource.toString()).getParent();
-    return copyResourceInfo(modelResources, rootInfo);
+    ModelResource firstResource = uniqueResources.iterator().next();
+    ModelResourceInfo resourceInfo = AliceResourceUtilities.getModelResourceInfo(firstResource.getClass(), firstResource.toString());
+    if (resourceInfo == null || resourceInfo.getParent() == null) {
+      throw new IllegalStateException("No model resource metadata found for " + firstResource.getClass().getName() + " " + firstResource);
+    }
+    ModelResourceInfo rootInfo = resourceInfo.getParent();
+    return copyResourceInfo(uniqueResources, rootInfo);
   }
 
   private static ModelResourceInfo copyResourceInfo(Iterable<JointedModelResource> modelResources, ModelResourceInfo rootInfo) {
     //Make a copy of the rootInfo and then go through all the passed in modelResources and add ModelResourceInfos for them
     ModelResourceInfo toReturn = rootInfo.createShallowCopy();
     for (JointedModelResource modelResource : modelResources) {
+      if (modelResource == null) {
+        throw new IllegalArgumentException("Model resources must not contain null entries");
+      }
       String visualName = AliceResourceUtilities.getVisualResourceName(modelResource);
       String textureName = getTextureName(modelResource);
       ModelResourceInfo subResource = rootInfo.getSubResource(visualName, textureName);
+      if (subResource == null) {
+        throw new IllegalStateException("No model resource metadata found for " + modelResource.getClass().getName() + " " + modelResource);
+      }
       ModelResourceInfo newSubResource = subResource.createShallowCopy();
       toReturn.addSubResource(newSubResource);
     }
@@ -131,15 +156,10 @@ public class JsonModelIo extends DataSourceIo {
 
   //Build a new ModelResourceInfo that includes only the resources in the modelResources list
   private static ModelManifest createModelManifestFromEnums(Set<JointedModelResource> modelResources) {
-    if (modelResources == null || modelResources.isEmpty()) {
-      throw new IllegalArgumentException("At least one model resource is required to create a model manifest");
-    }
+    ModelResourceInfo modelInfo = createModelResourceInfo(modelResources);
     //Get the ModelResourceInfo from the first resource found.
     //Then get the parent info for this ModelResourceInfo. This will be the ModelResourceInfo that represents the model class.
     JointedModelResource firstResource = modelResources.iterator().next();
-    ModelResourceInfo rootInfo = AliceResourceUtilities.getModelResourceInfo(firstResource.getClass(), firstResource.toString()).getParent();
-
-    ModelResourceInfo modelInfo = copyResourceInfo(modelResources, rootInfo);
 
     ModelManifest modelManifest = modelInfo.createModelManifest();
     //Alice resources are enums that implement the base resource interfaces. For instance, the Alien implements the BipedResource interface
@@ -519,8 +539,12 @@ public class JsonModelIo extends DataSourceIo {
   }
 
   public void writeModel(OutputStream os, List<JointedModelResource> modelResources) throws IOException {
-    ModelResourceInfo modelInfo = createModelResourceInfo(modelResources);
-
+    this.modelResources = createUniqueResourceSet(modelResources);
+    this.skeletonVisuals = null;
+    this.thumbnails = null;
+    this.renamedJoints.clear();
+    this.modelManifest = createModelManifestFromEnums(this.modelResources);
+    writeModel(os, "models");
   }
 
 }
