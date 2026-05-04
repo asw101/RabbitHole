@@ -32,6 +32,7 @@ import java.util.zip.ZipInputStream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
@@ -99,6 +100,30 @@ public class JsonModelIoTest {
   }
 
   @Test
+  public void writeModelFromResourceListReflectsResourceJointDataIntoManifest() throws Exception {
+    ReflectiveResource resource = ReflectiveResource.DEFAULT;
+    registerModelResourceMetadata(resource, "ReflectiveModel", "DEFAULT");
+    CapturingJsonModelIo modelIo = new CapturingJsonModelIo(JsonModelIo.ExportFormat.ALICE);
+
+    modelIo.writeModel(new ByteArrayOutputStream(), Collections.singletonList(resource));
+
+    ModelManifest manifest = modelIo.modelManifest;
+    assertEquals("ReflectiveModel", manifest.getName());
+    assertEquals("restPose", findPose(manifest, "restPose").name);
+
+    ModelManifest.Joint root = findJoint(manifest, "ROOT");
+    assertEquals("ROOT", root.name);
+    assertNull(root.parent);
+    assertEquals("ROOT", findJoint(manifest, "CHILD").parent);
+
+    assertEquals(Arrays.asList("ROOT", "CHILD"), findJointArray(manifest, "CHAIN").jointIds);
+    ModelManifest.JointArrayId fingers = findJointArrayId(manifest, "FINGERS");
+    assertEquals("finger[%d]", fingers.patternId);
+    assertEquals("ROOT", fingers.rootJoint);
+    assertEquals(Collections.singletonList("ROOT"), manifest.rootJoints);
+  }
+
+  @Test
   public void writeModelFromEmptyResourceListIsRejected() {
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
@@ -140,6 +165,42 @@ public class JsonModelIoTest {
       }
     }
     return names;
+  }
+
+  private ModelManifest.Pose findPose(ModelManifest manifest, String name) {
+    for (ModelManifest.Pose pose : manifest.poses) {
+      if (name.equals(pose.name)) {
+        return pose;
+      }
+    }
+    throw new AssertionError("Missing pose " + name);
+  }
+
+  private ModelManifest.Joint findJoint(ModelManifest manifest, String name) {
+    for (ModelManifest.Joint joint : manifest.additionalJoints) {
+      if (name.equals(joint.name)) {
+        return joint;
+      }
+    }
+    throw new AssertionError("Missing joint " + name);
+  }
+
+  private ModelManifest.JointArray findJointArray(ModelManifest manifest, String name) {
+    for (ModelManifest.JointArray jointArray : manifest.additionalJointArrays) {
+      if (name.equals(jointArray.name)) {
+        return jointArray;
+      }
+    }
+    throw new AssertionError("Missing joint array " + name);
+  }
+
+  private ModelManifest.JointArrayId findJointArrayId(ModelManifest manifest, String name) {
+    for (ModelManifest.JointArrayId jointArrayId : manifest.additionalJointArrayIds) {
+      if (name.equals(jointArrayId.name)) {
+        return jointArrayId;
+      }
+    }
+    throw new AssertionError("Missing joint array id " + name);
   }
 
   @SuppressWarnings("unchecked")
@@ -184,7 +245,7 @@ public class JsonModelIoTest {
   }
 
   private void assertFieldReaderThrows(String methodName, String fieldName, JointedModelResource resource) throws Exception {
-    Method method = JsonModelIo.class.getDeclaredMethod(methodName, Field.class, JointedModelResource.class);
+    Method method = ModelManifestResourceData.class.getDeclaredMethod(methodName, Field.class, JointedModelResource.class);
     method.setAccessible(true);
     Field field = resource.getClass().getDeclaredField(fieldName);
 
@@ -222,6 +283,29 @@ public class JsonModelIoTest {
     }
   }
 
+  public static class ReflectiveResource implements JointedModelResource {
+    private static final ReflectiveResource DEFAULT = new ReflectiveResource();
+    public static final JointId ROOT = new JointId(null, ReflectiveResource.class);
+    public static final JointId CHILD = new JointId(ROOT, ReflectiveResource.class);
+    public static final JointId[] CHAIN = {ROOT, CHILD};
+    public static final JointArrayId FINGERS = new JointArrayId("finger[%d]", ROOT, ReflectiveResource.class);
+    public final JointedModelPose restPose = new JointedModelPose();
+
+    @Override
+    public JointedModelImp.JointImplementationAndVisualDataFactory<JointedModelResource> getImplementationAndVisualFactory() {
+      return null;
+    }
+
+    public JointId[] getRootJointIds() {
+      return new JointId[] {ROOT};
+    }
+
+    @Override
+    public String toString() {
+      return "DEFAULT";
+    }
+  }
+
   private static class SyntheticJsonModelIo extends JsonModelIo {
     SyntheticJsonModelIo(ExportFormat exportFormat) {
       super(exportFormat);
@@ -246,6 +330,12 @@ public class JsonModelIoTest {
           new ByteArrayDataSource(modelPath + "/" + modelManifest.getName() + ".a3r", "structure"),
           new ByteArrayDataSource(modelPath + "/" + modelManifest.getName() + ".png", "thumbnail"),
           new ByteArrayDataSource(modelPath + "/" + modelManifest.getName() + ".json", "{}"));
+    }
+  }
+
+  private static class CapturingJsonModelIo extends SyntheticJsonModelIo {
+    CapturingJsonModelIo(ExportFormat exportFormat) {
+      super(exportFormat);
     }
   }
 }
