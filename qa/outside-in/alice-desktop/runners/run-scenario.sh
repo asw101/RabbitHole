@@ -98,6 +98,20 @@ validate_allowed_automation() {
   fi
 
   if [ "$cwd" = . ] &&
+    [ "$#" -eq 9 ] &&
+    [ "$1" = mvn ] &&
+    [ "$2" = -DincludeSims=false ] &&
+    [ "$3" = -Dinstall4j.skip ] &&
+    [ "$4" = -Dsurefire.failIfNoSpecifiedTests=false ] &&
+    [ "$5" = -pl ] &&
+    [ "$6" = core/ide ] &&
+    [ "$7" = -am ] &&
+    [ "$8" = -Dtest=org.alice.ide.croquet.models.AliceMenuBarContractTest ] &&
+    [ "$9" = test ]; then
+    return 0
+  fi
+
+  if [ "$cwd" = . ] &&
     [ "$#" -eq 1 ] &&
     [ "$1" = qa/outside-in/alice-desktop/runners/netbeans-package-smoke.sh ]; then
     return 0
