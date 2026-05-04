@@ -96,7 +96,7 @@ public abstract class AbstractForEachLoop extends AbstractLoop implements EachIn
   private int getForEachInstanceDepth() {
     UserCode code = getFirstAncestorAssignableTo(UserCode.class);
     if (code == null) {
-      return -1;
+      return 0;
     }
     IsInstanceCrawler<AbstractForEachLoop> crawler = IsInstanceCrawler.createInstance(AbstractForEachLoop.class);
     code.crawl(crawler, CrawlPolicy.EXCLUDE_REFERENCES_ENTIRELY, null);
@@ -105,6 +105,6 @@ public abstract class AbstractForEachLoop extends AbstractLoop implements EachIn
 
   private char getForEachDepthSuffix() {
     int index = getForEachInstanceDepth();
-    return index != -1 ? (char) (((int) 'A') + index) : '_';
+    return index != -1 ? (char) (((int) 'A') + index) : 'A';
   }
 }
