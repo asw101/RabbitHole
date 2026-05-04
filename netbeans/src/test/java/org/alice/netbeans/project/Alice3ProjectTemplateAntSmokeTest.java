@@ -1,6 +1,7 @@
 package org.alice.netbeans.project;
 import org.apache.tools.ant.launch.Launcher;
 import org.junit.Test;
+import org.lgna.common.resources.AudioResource;
 import org.lgna.project.Project;
 import org.lgna.project.ast.BlockStatement;
 import org.lgna.project.ast.JavaType;
@@ -37,7 +38,9 @@ import java.util.zip.ZipInputStream;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 public class Alice3ProjectTemplateAntSmokeTest {
@@ -80,6 +83,52 @@ public class Alice3ProjectTemplateAntSmokeTest {
     assertJarContainsGeneratedProject(jarPath);
   }
 
+  @Test
+  public void exportedResourceProjectAntJarPackagesGeneratedResourcesAndRunTargetLoadsThem() throws Exception {
+    Path smokeRoot = TARGET.resolve("ant-resource-smoke");
+    Path projectDirectory = smokeRoot.resolve("project");
+    deleteRecursively(smokeRoot);
+    Files.createDirectories(smokeRoot);
+
+    byte[] resourceData = "alice ant resource\n".getBytes(StandardCharsets.UTF_8);
+    Path audioFile = smokeRoot.resolve("probe.wav");
+    Files.write(audioFile, resourceData);
+    Project project = new Project(programType("Program"), Project.SceneCameraType.WindowCamera);
+    project.addResource(new AudioResource(audioFile.toFile(), "audio.x_wav"));
+    Path aliceProject = smokeRoot.resolve("resource-world.a3p");
+    IoUtilities.writeProject(aliceProject.toFile(), project);
+
+    unzip(TARGET.resolve("classes/org/alice/netbeans/ProjectTemplate.zip"), projectDirectory);
+    Path sourceDirectory = projectDirectory.resolve("src");
+    Files.createDirectories(sourceDirectory);
+    generateProjectCodeWithoutFormatting(aliceProject, sourceDirectory);
+    assertTrue(Files.exists(sourceDirectory.resolve("Resources.java")));
+    assertArrayEquals(resourceData, Files.readAllBytes(sourceDirectory.resolve("resources").resolve("probe.wav")));
+    writeAntResourceProbe(sourceDirectory);
+
+    Path antScratch = smokeRoot.resolve("ant-scratch");
+    Files.createDirectories(antScratch);
+    Path userProperties = smokeRoot.resolve("user.properties");
+    writeLibraryProperties(userProperties, antScratch);
+
+    String antLog = executeAntJarTarget(projectDirectory, userProperties, antScratch);
+    String antRunLog = executeAntTarget(
+        projectDirectory,
+        userProperties,
+        antScratch,
+        "run",
+        "ant-resource-run.log",
+        Map.of("main.class", "AntResourceProbe"));
+
+    Path jarPath = projectDirectory.resolve("dist/Alice3JavaApplication.jar");
+    assertTrue(antLog, Files.exists(jarPath));
+    assertJarContainsEntry(jarPath, "Resources.class");
+    assertJarContainsEntry(jarPath, "AntResourceProbe.class");
+    assertJarEntryBytes(jarPath, "resources/probe.wav", resourceData);
+    assertTrue(antRunLog, antRunLog.contains("ANT_RESOURCE_PROBE_OK audio.x_wav alice ant resource"));
+    assertTrue(antRunLog, !antRunLog.contains("Java Result:"));
+  }
+
   private static void generateProjectCodeWithoutFormatting(Path aliceProject, Path sourceDirectory) throws Exception {
     ProjectCodeGenerator.generateCode(
         aliceProject.toAbsolutePath().normalize().toFile(),
@@ -99,6 +148,30 @@ public class Alice3ProjectTemplateAntSmokeTest {
                 }
                 Program.main(args);
                 System.out.println("ANT_RUN_PROBE_OK " + Program.class.getSuperclass().getName() + " args=" + args.length);
+            }
+        }
+        """,
+        StandardCharsets.UTF_8);
+  }
+
+  private static void writeAntResourceProbe(Path sourceDirectory) throws Exception {
+    Files.writeString(
+        sourceDirectory.resolve("AntResourceProbe.java"),
+        """
+        public class AntResourceProbe {
+            public static void main(String[] args) {
+                org.lgna.common.resources.AudioResource resource = Resources.probe_wav;
+                String body = new String(resource.getData(), java.nio.charset.StandardCharsets.UTF_8);
+                if (!"alice ant resource\\n".equals(body)) {
+                    throw new AssertionError(body);
+                }
+                if (!"audio.x_wav".equals(resource.getContentType())) {
+                    throw new AssertionError(resource.getContentType());
+                }
+                if (AntResourceProbe.class.getClassLoader().getResource("resources/probe.wav") == null) {
+                    throw new AssertionError("resources/probe.wav missing from runtime classpath");
+                }
+                System.out.println("ANT_RESOURCE_PROBE_OK " + resource.getContentType() + " " + body.trim());
             }
         }
         """,
@@ -132,6 +205,20 @@ public class Alice3ProjectTemplateAntSmokeTest {
       Manifest manifest = jarFile.getManifest();
       assertTrue("Jar manifest should be present", manifest != null);
       assertEquals("AliceJavaFXLauncher", manifest.getMainAttributes().getValue("Main-Class"));
+    }
+  }
+
+  private static void assertJarContainsEntry(Path jarPath, String entryName) throws Exception {
+    try (JarFile jarFile = new JarFile(jarPath.toFile())) {
+      assertTrue(jarPath + " should contain " + entryName, jarFile.getEntry(entryName) != null);
+    }
+  }
+
+  private static void assertJarEntryBytes(Path jarPath, String entryName, byte[] expected) throws Exception {
+    try (JarFile jarFile = new JarFile(jarPath.toFile())) {
+      ZipEntry entry = jarFile.getEntry(entryName);
+      assertNotNull(jarPath + " should contain " + entryName, entry);
+      assertArrayEquals(expected, jarFile.getInputStream(entry).readAllBytes());
     }
   }
 
