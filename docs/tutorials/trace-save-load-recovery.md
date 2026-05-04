@@ -110,15 +110,17 @@ mvn -pl core/ide -am -Dtest=ProjectFileUtilitiesTest -Dsurefire.failIfNoSpecifie
 
 ## Check the complete recovery model
 
-When TLC is available, check the model with the committed config:
+TLC was not run for this PR validation because no local `tlc`, `tla2tools`, or
+`tla2tools.jar` was found. When TLC is available, check the model with the
+committed config:
 
 ```shell
 cd eatme/formal/backup-load-recovery
 java -cp /path/to/tla2tools.jar tlc2.TLC BackupLoadRecovery.cfg
 ```
 
-The config checks type safety, readable-backup selection, skipped-unloadable
-ordering, final-state consistency, and eventual completion.
+The config is intended to check type safety, readable-backup selection,
+skipped-unloadable ordering, final-state consistency, and eventual completion.
 
 ## Use the trace when implementing changes
 

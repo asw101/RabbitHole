@@ -172,7 +172,7 @@ public class XmlProjectIo implements ProjectIo {
       while ((count = is.read(chunk)) != -1) {
         buffer.write(chunk, 0, count);
       }
-      return new String(buffer.toByteArray());
+      return new String(buffer.toByteArray(), StandardCharsets.UTF_8);
     }
 
     private static Document readXML(InputStream is, MigrationManager migrationManager, Version decodedVersion) {

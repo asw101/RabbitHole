@@ -87,14 +87,16 @@ value.
 ## Check the TLA+ model locally
 
 The repository stores the TLA+ module and config but does not require a Maven
-TLC integration. When TLC is installed locally, run it from the model directory:
+TLC integration. TLC was not run for this PR validation because no local `tlc`,
+`tla2tools`, or `tla2tools.jar` was found. When TLC is installed locally, run it
+from the model directory:
 
 ```shell
 cd eatme/formal/backup-load-recovery
 java -cp /path/to/tla2tools.jar tlc2.TLC BackupLoadRecovery.cfg
 ```
 
-The checked invariants are listed in the config:
+The invariants intended for TLC checking are listed in the config:
 
 - `TypeOK`
 - `CorruptPrimaryDoesNotReplaceCurrentBeforeFinal`
@@ -106,7 +108,7 @@ The checked invariants are listed in the config:
 - `FinalProjectMatchesOutcome`
 - `NoStaleAsyncCompletion`
 
-The liveness property is `EventuallyFinal`.
+The intended liveness property is `EventuallyFinal`.
 
 ## Keep artifacts in the correct place
 

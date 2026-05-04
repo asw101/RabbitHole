@@ -1,8 +1,8 @@
 # Formal Spec Contracts Reference
 
 This reference defines the formal-spec lane for Alice project archives and
-backup recovery. The contract describes durable behavior enforced by the
-Gherkin, TLA+, and JUnit artifacts listed here.
+backup recovery. The contract describes durable behavior documented by the
+Gherkin and TLA+ artifacts and enforced by the JUnit artifacts listed here.
 
 ## Artifact inventory
 
@@ -10,7 +10,7 @@ Gherkin, TLA+, and JUnit artifacts listed here.
 | --- | --- | --- |
 | Gherkin feature | [`../../eatme/specs/save-load-export/project-archive.feature`](../../eatme/specs/save-load-export/project-archive.feature) | Acceptance contract for save, load, export, resource safety, and backup recovery scenarios. |
 | TLA+ module | [`../../eatme/formal/backup-load-recovery/BackupLoadRecovery.tla`](../../eatme/formal/backup-load-recovery/BackupLoadRecovery.tla) | Formal state machine for corrupt primary load and backup recovery. |
-| TLA+ config | [`../../eatme/formal/backup-load-recovery/BackupLoadRecovery.cfg`](../../eatme/formal/backup-load-recovery/BackupLoadRecovery.cfg) | Example model constants, invariants, and liveness property for TLC. |
+| TLA+ config | [`../../eatme/formal/backup-load-recovery/BackupLoadRecovery.cfg`](../../eatme/formal/backup-load-recovery/BackupLoadRecovery.cfg) | Example model constants, invariants, and liveness property intended for TLC. |
 | Archive I/O tests | `core/story-api-migration/src/test/java/org/lgna/project/io/IoUtilitiesTest.java` | Characterization tests for low-level archive reading, writing, export, resource safety, and reader failure modes. |
 | IDE archive-flow tests | `core/ide/src/test/java/org/alice/ide/ProjectFileUtilitiesTest.java` | Characterization tests for IDE save-copy and export-copy archive flows. |
 | Backup selector tests | `core/ide/src/test/java/org/alice/ide/ProjectBackupSelectorTest.java` | Characterization tests for backup ordering and unloadable candidate skipping. |
@@ -115,7 +115,7 @@ The TLA+ module models recovery after the primary project cannot be loaded.
 | `LoadingBackup` | Alice is loading the accepted backup. |
 | `Final` | Alice has reached a terminal recovery outcome. |
 
-### Required invariants
+### Intended TLC properties
 
 | Invariant | Required behavior |
 | --- | --- |
@@ -129,8 +129,8 @@ The TLA+ module models recovery after the primary project cannot be loaded.
 | `FinalProjectMatchesOutcome` | A loaded-backup outcome points to a readable backup; a new-project outcome points to `NewProject`. |
 | `NoStaleAsyncCompletion` | Final states do not leave stale load attempts or backup candidates behind. |
 
-The liveness property `EventuallyFinal` requires each modeled recovery path to
-reach `Final`.
+The liveness property `EventuallyFinal` is intended to require each modeled
+recovery path to reach `Final` when the model is checked with TLC.
 
 ## Configuration
 
@@ -139,7 +139,7 @@ The formal-spec lane has no runtime configuration.
 | Concern | Configuration |
 | --- | --- |
 | Gherkin execution | None. The `.feature` file is a committed acceptance contract and is not wired to Cucumber. |
-| TLA+ execution | Optional local TLC invocation using `BackupLoadRecovery.cfg`; no Maven or CI plugin is required. |
+| TLA+ execution | Optional local TLC invocation using `BackupLoadRecovery.cfg`; no Maven or CI plugin is required, and TLC was not available for this PR validation. |
 | Java validation | Existing Maven/JUnit module tests. |
 
 ## Focused validation commands
@@ -156,7 +156,8 @@ mvn -pl core/ide -am -Dtest=ProjectLoadFailurePlanTest,ProjectLoadFailureDispatc
 The Surefire flag keeps upstream modules without the named test from failing the
 focused run.
 
-Run the TLA+ model when `tla2tools.jar` is available:
+Run the TLA+ model when `tla2tools.jar` is available. TLC was not run for this
+PR validation because no local `tlc`, `tla2tools`, or `tla2tools.jar` was found.
 
 ```shell
 cd eatme/formal/backup-load-recovery
