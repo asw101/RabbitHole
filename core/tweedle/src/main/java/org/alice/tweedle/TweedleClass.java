@@ -66,4 +66,12 @@ public class TweedleClass extends TweedleType implements InvocableMethodHolder {
   public List<TweedleMethod> getMethods() {
     return methods;
   }
+
+  public List<TweedleField> getProperties() {
+    return properties;
+  }
+
+  public List<TweedleConstructor> getConstructors() {
+    return constructors;
+  }
 }
