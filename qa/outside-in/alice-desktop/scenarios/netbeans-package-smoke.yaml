@@ -1,0 +1,38 @@
+id: alice-desktop-netbeans-package-smoke
+title: NetBeans package artifact smoke
+workflow: netbeans-package-smoke
+automationMode: gated-command-smoke
+preconditions:
+  - Java 21 is available.
+  - Maven dependencies are available.
+  - The tweedle-lang submodule is initialized.
+  - The checkout can build the NetBeans module without Sims assets.
+userActions:
+  - Run the no-Sims NetBeans package command.
+  - Inspect the produced NBM and support artifacts.
+  - Verify representative archive contents that users need for NetBeans export.
+expectedOutcomes:
+  - The NetBeans package command exits successfully when the gate is enabled.
+  - Exactly one top-level netbeans NBM is produced.
+  - The packaged module contains Alice library registration and layer entries.
+  - Source and documentation support archives are present.
+automation:
+  cwd: .
+  command: mvn -DincludeSims=false -Dinstall4j.skip -pl netbeans -am package -DskipTests && test "$(find netbeans/target -maxdepth 1 -name 'netbeans-*.nbm' | wc -l | tr -d ' ')" = 1 && test -f netbeans/target/nbm/clusters/extra/modules/org-alice-netbeans.jar && test -f netbeans/target/nbm/clusters/extra/src/aliceSource.jar && test -f netbeans/target/nbm/clusters/extra/doc/aliceDocs.zip && jar tf netbeans/target/nbm/clusters/extra/modules/org-alice-netbeans.jar | grep -F org/alice/netbeans/Alice3Library.xml && jar tf netbeans/target/nbm/clusters/extra/modules/org-alice-netbeans.jar | grep -F org/alice/netbeans/layer.xml
+  timeoutSeconds: 900
+  readyWaitSeconds: 1
+evidence:
+  required:
+    - status.txt recording the gated command outcome.
+    - command.log from the package and artifact checks.
+    - netbeans target artifact listing or CI artifact link.
+    - Representative jar or zip content listing for Alice3Library.xml and layer.xml.
+fallback:
+  mode: manual-evidence-required
+  notes:
+    - Leave the scenario gated on developer machines where a NetBeans package build is too expensive.
+    - Use the Alice NetBeans Package CI artifact checks as supporting evidence when local execution is not practical.
+tags:
+  - immediate-qa-backlog
+  - netbeans-package
+  - command-smoke

@@ -19,6 +19,9 @@ Environment:
   ALICE_QA_SCREEN        Xvfb screen geometry, default 1280x900x24.
   ALICE_QA_READY_WAIT_SECONDS
                          Override GUI readiness wait before screenshot capture.
+  ALICE_QA_RUN_GATED_SMOKES=1
+                         Execute gated command smoke scenarios. By default they
+                         only write status and checklist evidence.
 EOF
 }
 
@@ -343,6 +346,70 @@ run_xvfb_real_alice() {
   printf 'Evidence written to %s\n' "$run_dir"
 }
 
+run_gated_command_smoke() {
+  local scenario_json=$1
+  local run_dir=$2
+  local timeout_override=$3
+
+  local automation_fields command cwd configured_timeout scenario_id automation_mode run_timeout checklist exit_code outcome
+  mapfile -t automation_fields < <(json_fields "$scenario_json" "automation.command" "automation.cwd" "automation.timeoutSeconds" "id" "automationMode")
+  command=${automation_fields[0]}
+  cwd=${automation_fields[1]}
+  configured_timeout=${automation_fields[2]}
+  scenario_id=${automation_fields[3]}
+  automation_mode=${automation_fields[4]}
+  run_timeout="${timeout_override:-$configured_timeout}"
+
+  write_environment "$run_dir"
+
+  if [ "${ALICE_QA_RUN_GATED_SMOKES:-}" != "1" ]; then
+    checklist=$(write_checklist "$scenario_json" "$run_dir")
+    {
+      printf 'scenario=%s\n' "$scenario_id"
+      printf 'automationMode=%s\n' "$automation_mode"
+      printf 'outcome=gated-not-run\n'
+      printf 'gate=ALICE_QA_RUN_GATED_SMOKES\n'
+      printf 'checklist=%s\n' "$(basename "$checklist")"
+      printf 'command=%s\n' "$command"
+      printf 'cwd=%s\n' "$cwd"
+      printf 'timeoutSeconds=%s\n' "$run_timeout"
+    } > "$run_dir/status.txt"
+    printf 'Gated command scenario prepared: set ALICE_QA_RUN_GATED_SMOKES=1 to execute %s\n' "$scenario_id"
+    return 0
+  fi
+
+  set +e
+  (
+    cd "$REPO_ROOT/$cwd"
+    timeout -k 10s "${run_timeout}s" bash -lc "$command"
+  ) > "$run_dir/command.log" 2>&1
+  exit_code=$?
+  set -e
+
+  outcome=failed
+  if [ "$exit_code" -eq 0 ]; then
+    outcome=passed
+  fi
+
+  {
+    printf 'scenario=%s\n' "$scenario_id"
+    printf 'automationMode=%s\n' "$automation_mode"
+    printf 'outcome=%s\n' "$outcome"
+    printf 'exitCode=%s\n' "$exit_code"
+    printf 'commandLog=command.log\n'
+    printf 'command=%s\n' "$command"
+    printf 'cwd=%s\n' "$cwd"
+    printf 'timeoutSeconds=%s\n' "$run_timeout"
+  } > "$run_dir/status.txt"
+
+  if [ "$exit_code" -ne 0 ]; then
+    printf 'Gated command scenario failed; see %s/command.log\n' "$run_dir" >&2
+    return "$exit_code"
+  fi
+
+  printf 'Evidence written to %s\n' "$run_dir"
+}
+
 command_name=${1:-}
 case "$command_name" in
   list)
@@ -399,6 +466,9 @@ case "$command_name" in
     case "$automation_mode" in
       xvfb-real-alice)
         run_xvfb_real_alice "$scenario_json" "$run_dir" "$timeout_override"
+        ;;
+      gated-command-smoke)
+        run_gated_command_smoke "$scenario_json" "$run_dir" "$timeout_override"
         ;;
       manual-evidence-required)
         write_environment "$run_dir"

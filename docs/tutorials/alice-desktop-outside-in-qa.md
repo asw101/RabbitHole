@@ -31,7 +31,7 @@ Run:
 qa/outside-in/alice-desktop/runners/validate-scenarios.sh
 ```
 
-The catalog is ready when the command reports all six scenarios as valid.
+The catalog is ready when the command reports all eleven scenarios as valid.
 
 ## Step 2: List the scenario catalog
 
@@ -50,6 +50,11 @@ alice-desktop-scene-creation
 alice-desktop-run-debug
 alice-desktop-save-load
 alice-desktop-export
+alice-desktop-exported-project-smoke
+alice-desktop-netbeans-package-smoke
+alice-desktop-project-io-smoke
+alice-desktop-failure-path-smoke
+alice-desktop-future-ui-smoke
 ```
 
 You can run scenarios by ID or by direct YAML path. In later steps, use the ID form shown in the commands. When reviewing a scenario file, replace the ID with the direct path:
@@ -124,7 +129,24 @@ review-notes.txt
 
 The save/load scenario is complete only after the workflow has been performed in Alice and the required evidence, including `review-notes.txt`, has been added to the run directory.
 
-## Step 6: Keep evidence out of commits
+## Step 6: Prepare a gated command smoke
+
+Run a gated smoke without enabling heavy execution:
+
+```bash
+qa/outside-in/alice-desktop/runners/run-scenario.sh run alice-desktop-netbeans-package-smoke \
+  --evidence-dir qa/outside-in/alice-desktop/evidence/tutorial-runs
+```
+
+The runner writes `status.txt` with `outcome=gated-not-run` plus a checklist. To execute the configured Maven/package command in a prepared worktree, rerun with:
+
+```bash
+ALICE_QA_RUN_GATED_SMOKES=1 \
+qa/outside-in/alice-desktop/runners/run-scenario.sh run alice-desktop-netbeans-package-smoke \
+  --evidence-dir qa/outside-in/alice-desktop/evidence/tutorial-runs
+```
+
+## Step 7: Keep evidence out of commits
 
 Evidence files are local run artifacts. Keep them for review or attach them to the relevant review record, but do not commit them.
 

@@ -27,8 +27,13 @@
     "workflow": {
       "type": "string",
       "enum": [
+        "exported-project-smoke",
+        "failure-path-smoke",
+        "future-ui-smoke",
         "instructor-student-setup",
         "launch",
+        "netbeans-package-smoke",
+        "project-io-smoke",
         "scene-creation",
         "run-debug",
         "save-load",
@@ -38,6 +43,7 @@
     "automationMode": {
       "type": "string",
       "enum": [
+        "gated-command-smoke",
         "xvfb-real-alice",
         "manual-evidence-required"
       ]
@@ -123,7 +129,10 @@
       "if": {
         "properties": {
           "automationMode": {
-            "const": "xvfb-real-alice"
+            "enum": [
+              "xvfb-real-alice",
+              "gated-command-smoke"
+            ]
           }
         },
         "required": [

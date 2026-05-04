@@ -36,6 +36,11 @@ This reference describes the Alice desktop outside-in QA lane: file layout, runn
 | `alice-desktop-run-debug` | `run-debug` | `manual-evidence-required` | Covers program run controls plus the closest baseline debug-like control, such as fast-forward or statement execution. |
 | `alice-desktop-save-load` | `save-load` | `manual-evidence-required` | Covers saving an `.a3p` project, reopening it, and checking persistence. |
 | `alice-desktop-export` | `export` | `manual-evidence-required` | Covers the current Alice export path and verification of the exported artifact. |
+| `alice-desktop-exported-project-smoke` | `exported-project-smoke` | `gated-command-smoke` | Covers generated Java project compile/launcher handoff evidence without running by default. |
+| `alice-desktop-netbeans-package-smoke` | `netbeans-package-smoke` | `gated-command-smoke` | Covers NetBeans package command and representative NBM/support artifact checks. |
+| `alice-desktop-project-io-smoke` | `project-io-smoke` | `gated-command-smoke` | Covers synthetic project save/reload evidence at the command seam. |
+| `alice-desktop-failure-path-smoke` | `failure-path-smoke` | `gated-command-smoke` | Covers corrupt project input failure handling evidence. |
+| `alice-desktop-future-ui-smoke` | `future-ui-smoke` | `gated-command-smoke` | Placeholder for controlled-display UI startup evidence; no-op unless gated on. |
 
 ## Runner commands
 
@@ -130,6 +135,7 @@ Runner and validator commands return a non-zero exit status when the catalog is 
 | `ALICE_QA_DISPLAY` | Xvfb runs | First free display from `:90` through `:120` | Reuses a specific X display instead of selecting one automatically. |
 | `ALICE_QA_SCREEN` | Xvfb runs | `1280x900x24` | Sets Xvfb screen geometry. |
 | `ALICE_QA_READY_WAIT_SECONDS` | Xvfb runs | Scenario `automation.readyWaitSeconds` | Overrides the scenario readiness wait before screenshot capture. |
+| `ALICE_QA_RUN_GATED_SMOKES` | Gated command smokes | unset | Set to `1` to execute configured command smokes. When unset, the runner writes `outcome=gated-not-run` status and a checklist. |
 | `NODE_OPTIONS` | Surrounding Node tooling | unset | Use `--max-old-space-size=32768` when a larger QA orchestrator invokes Node-based helpers around this lane. The lane itself does not require Node. |
 
 Example:
@@ -206,20 +212,25 @@ supportingEvidence:
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `automation.cwd` | string | Working directory for command-backed automation. Required for `xvfb-real-alice`. |
-| `automation.command` | string | Command executed by the runner. Required for `xvfb-real-alice`. |
-| `automation.timeoutSeconds` | positive integer | Default timeout for command-backed automation. Required for `xvfb-real-alice`. |
-| `automation.readyWaitSeconds` | positive integer | Wait before screenshot capture. Required for `xvfb-real-alice`. |
+| `automation.cwd` | string | Working directory for command-backed automation. Required for `xvfb-real-alice` and `gated-command-smoke`. |
+| `automation.command` | string | Command executed by the runner. Required for `xvfb-real-alice` and `gated-command-smoke`. |
+| `automation.timeoutSeconds` | positive integer | Default timeout for command-backed automation. Required for `xvfb-real-alice` and `gated-command-smoke`. |
+| `automation.readyWaitSeconds` | positive integer | Wait before screenshot capture for UI automation; use `1` for command smokes. Required for `xvfb-real-alice` and `gated-command-smoke`. |
 | `supportingEvidence` | string list | Scenario IDs or evidence sources that support this scenario. |
 | `tags` | string list | Additional scenario labels. |
 
-`automation` is required when `automationMode` is `xvfb-real-alice`. Manual scenarios do not need an `automation` block because the runner generates a checklist instead of driving Swing interactions.
+`automation` is required when `automationMode` is `xvfb-real-alice` or `gated-command-smoke`. Manual scenarios do not need an `automation` block because the runner generates a checklist instead of driving Swing interactions.
 
 ### Workflow values
 
 ```text
 instructor-student-setup
 launch
+exported-project-smoke
+failure-path-smoke
+future-ui-smoke
+netbeans-package-smoke
+project-io-smoke
 scene-creation
 run-debug
 save-load
@@ -232,6 +243,7 @@ export
 | --- | --- |
 | `xvfb-real-alice` | Starts Xvfb, launches Alice through the scenario command, waits for readiness, and captures environment data, logs, status, and screenshot when the launch reaches evidence capture. This is a launch evidence check, not a full semantic oracle for every startup log condition. |
 | `manual-evidence-required` | Writes a structured checklist for human execution and evidence collection. Checklist generation does not complete the scenario. |
+| `gated-command-smoke` | Writes environment, status, and checklist evidence by default without running heavy commands. When `ALICE_QA_RUN_GATED_SMOKES=1`, runs the configured command under `timeout`, captures `command.log`, and records pass/fail status. |
 
 ## Evidence contract
 
@@ -256,6 +268,21 @@ Manual scenario preparation includes:
 | `environment.txt` | UTC timestamp, repository root, display, Java version, Maven version, and OS details. |
 | `status.txt` | Scenario ID, automation mode, generated checklist name, and `manual-evidence-required` outcome. |
 | `manual-evidence-checklist.txt` | Scenario preconditions, actions, outcomes, required evidence, and fallback notes. This file prepares the work; it is not proof that the workflow has been executed. |
+
+Gated command smoke preparation includes:
+
+| Artifact | Description |
+| --- | --- |
+| `environment.txt` | UTC timestamp, repository root, display, Java version, Maven version, and OS details. |
+| `status.txt` | Scenario ID, automation mode, `outcome=gated-not-run`, gate name, command, working directory, timeout, and generated checklist name. |
+| `manual-evidence-checklist.txt` | Review checklist describing what evidence is required when the gate is enabled or fulfilled elsewhere. |
+
+Enabled gated command smoke execution also includes:
+
+| Artifact | Description |
+| --- | --- |
+| `command.log` | Captured stdout/stderr for the configured command. |
+| `status.txt` | Scenario ID, automation mode, command, working directory, timeout, command log name, exit code, and `outcome=passed` or `outcome=failed`. |
 
 Successful `xvfb-real-alice` evidence capture includes:
 
@@ -284,6 +311,11 @@ Manual scenarios are complete only after a human performs the workflow and place
 | Run/debug | Screenshot before run, screenshot or screen capture during execution, notes naming run/debug-like controls in `review-notes.txt`, launch or run log, saved `.a3p`. |
 | Save/load | Save log or notes, saved `.a3p`, screenshot before saving, screenshot after reopening, comparison notes in `review-notes.txt`. |
 | Export | Export log or notes, screenshot before export, screenshot after export completion, exported artifact, file listing or checksum, `review-notes.txt`. |
+| Exported project smoke | `status.txt`, `command.log`, generated source or exported project listing, launcher handoff or compile evidence. |
+| NetBeans package smoke | `status.txt`, `command.log`, NetBeans target artifact listing or CI artifact link, representative jar/zip content listing. |
+| Project IO smoke | `status.txt`, `command.log`, saved/synthetic project artifact reference, metadata or resource survival notes. |
+| Failure path smoke | `status.txt`, `command.log`, failure classification or dispatch-plan output, corrupt input fixture name or generated fixture notes. |
+| Future UI smoke | `status.txt`, `command.log` when gated, startup screenshot or first-window signal when collected, manual fallback notes otherwise. |
 
 ## Scenario authoring rules
 
@@ -294,10 +326,11 @@ Scenario files are the public acceptance contract for this lane. A valid scenari
 3. Names evidence that a reviewer can inspect without reconstructing hidden local state.
 4. Uses `xvfb-real-alice` only for workflows the runner can execute through the real Alice desktop command.
 5. Uses `manual-evidence-required` for Swing GUI workflows that still require human interaction.
-6. Lists any dependent scenario evidence in `supportingEvidence`, such as using launch evidence to support save/load or export evidence.
-7. Requires `review-notes.txt` for manual workflow acceptance.
-8. Uses only the supported YAML subset: mappings, nested mappings, scalar values, and scalar lists with spaces for indentation.
-9. Avoids implementation details such as Java class names, internal package names, or assumptions about private UI objects.
+6. Uses `gated-command-smoke` for expensive CLI/package or future UI smokes that must not be mandatory in lightweight validation.
+7. Lists any dependent scenario evidence in `supportingEvidence`, such as using launch evidence to support save/load or export evidence.
+8. Requires `review-notes.txt` for manual workflow acceptance.
+9. Uses only the supported YAML subset: mappings, nested mappings, scalar values, and scalar lists with spaces for indentation.
+10. Avoids implementation details such as Java class names, internal package names, or assumptions about private UI objects.
 
 ## Extension rules
 
@@ -306,10 +339,11 @@ When adding or changing scenarios:
 1. Keep the scenario user-like. Describe what the instructor, student, or Alice user does and observes.
 2. Prefer real Alice execution through the runner when it is stable.
 3. Use `manual-evidence-required` when Swing GUI interaction is not stable enough to automate.
-4. Do not introduce Playwright unless Alice exposes a browser/web surface.
-5. Do not use a virtual TTY for Swing GUI interaction.
-6. Preserve Alice 3 baseline behavior unless a behavior change is explicitly documented and tested.
-7. Validate the catalog before committing:
+4. Use `gated-command-smoke` when the scenario is executable but too expensive or environment-sensitive for default validation.
+5. Do not introduce Playwright unless Alice exposes a browser/web surface.
+6. Do not use a virtual TTY for Swing GUI interaction.
+7. Preserve Alice 3 baseline behavior unless a behavior change is explicitly documented and tested.
+8. Validate the catalog before committing:
 
 ```bash
 qa/outside-in/alice-desktop/runners/validate-scenarios.sh

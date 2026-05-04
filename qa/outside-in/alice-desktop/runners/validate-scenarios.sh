@@ -29,14 +29,20 @@ required_top = [
 ]
 allowed_top = set(required_top) | {"automation", "supportingEvidence", "tags"}
 workflow_values = {
+    "exported-project-smoke",
+    "failure-path-smoke",
+    "future-ui-smoke",
     "instructor-student-setup",
     "launch",
+    "netbeans-package-smoke",
+    "project-io-smoke",
     "scene-creation",
     "run-debug",
     "save-load",
     "export",
 }
 mode_values = {
+    "gated-command-smoke",
     "xvfb-real-alice",
     "manual-evidence-required",
 }
@@ -202,8 +208,8 @@ def validate(path, scenario):
             errors.append("automation.timeoutSeconds must be a positive integer")
         if not isinstance(automation.get("readyWaitSeconds"), int) or automation.get("readyWaitSeconds", 0) < 1:
             errors.append("automation.readyWaitSeconds must be a positive integer")
-    if automation_mode == "xvfb-real-alice" and not isinstance(automation, dict):
-        errors.append("xvfb-real-alice scenarios must include automation")
+    if automation_mode in {"xvfb-real-alice", "gated-command-smoke"} and not isinstance(automation, dict):
+        errors.append(f"{automation_mode} scenarios must include automation")
 
     if "supportingEvidence" in scenario:
         require_string_list(errors, path, "supportingEvidence", scenario.get("supportingEvidence"))

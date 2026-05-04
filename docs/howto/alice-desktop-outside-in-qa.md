@@ -1,6 +1,6 @@
 # Run Alice desktop outside-in QA
 
-Use the Alice desktop outside-in QA lane to validate the scenario catalog and collect reviewable evidence for user-like workflows: launch, instructor/student setup, scene creation, run/debug-like behavior, save/load, and export.
+Use the Alice desktop outside-in QA lane to validate the scenario catalog and collect reviewable evidence for user-like workflows: launch, instructor/student setup, scene creation, run/debug-like behavior, save/load, export, exported-project smoke, NetBeans package smoke, project IO smoke, failure-path smoke, and future UI smoke.
 
 ## Contents
 
@@ -29,7 +29,7 @@ git submodule update --init tweedle-lang
 test -d tweedle-lang/Grammar
 ```
 
-The real desktop launch scenario uses Xvfb when available. Manual scenarios do not require Xvfb; they generate structured evidence checklists.
+The real desktop launch scenario uses Xvfb when available. Manual scenarios do not require Xvfb; they generate structured evidence checklists. Gated command smokes do not run heavy Maven or GUI commands unless `ALICE_QA_RUN_GATED_SMOKES=1` is set.
 
 No browser surface is part of this lane, so Playwright is not required. Virtual TTY tools are only useful for terminal wrappers and are not used for Swing GUI interaction.
 
@@ -44,7 +44,7 @@ qa/outside-in/alice-desktop/runners/validate-scenarios.sh
 Expected output:
 
 ```text
-Validated 6 scenario(s) in .../qa/outside-in/alice-desktop/scenarios
+Validated 11 scenario(s) in .../qa/outside-in/alice-desktop/scenarios
 ```
 
 ## Validate a custom scenario catalog
@@ -192,6 +192,7 @@ The runner accepts these environment variables:
 | `ALICE_QA_DISPLAY` | Reuse a specific X display instead of selecting a free display from `:90` through `:120`. | `ALICE_QA_DISPLAY=:99` |
 | `ALICE_QA_SCREEN` | Set Xvfb screen geometry. Defaults to `1280x900x24`. | `ALICE_QA_SCREEN=1600x1000x24` |
 | `ALICE_QA_READY_WAIT_SECONDS` | Override the scenario readiness wait before screenshot capture. | `ALICE_QA_READY_WAIT_SECONDS=60` |
+| `ALICE_QA_RUN_GATED_SMOKES` | Run gated CLI/UI smoke commands instead of only preparing status/checklist evidence. | `ALICE_QA_RUN_GATED_SMOKES=1` |
 
 Example:
 
@@ -208,6 +209,8 @@ qa/outside-in/alice-desktop/runners/run-scenario.sh run alice-desktop-launch \
   --timeout-seconds 180
 ```
 
+Gated command smokes cover exported-project, NetBeans package, project IO, failure path, and future UI startup paths. Without `ALICE_QA_RUN_GATED_SMOKES=1`, those scenarios exit successfully after writing `status.txt` with `outcome=gated-not-run` and a checklist. Enable the gate only in a worktree prepared for the configured Maven or display-backed command.
+
 The QA lane itself does not require Node.js. If a surrounding QA orchestrator invokes Node-based tooling around this lane, use:
 
 ```bash
@@ -221,11 +224,12 @@ Every run directory is timestamped and self-contained. Review these files first:
 | File | Meaning |
 | --- | --- |
 | `environment.txt` | Java, Maven, OS, repository root, timestamp, and display information. |
-| `status.txt` | Run status. Real launch runs record display, readiness, process status, screenshot status, and timeout; manual runs record that human evidence is still required. |
+| `status.txt` | Run status. Real launch runs record display, readiness, process status, screenshot status, and timeout; manual runs record that human evidence is still required; gated smokes record whether the command was skipped, passed, or failed. |
 | `launch.log` | Maven/Alice startup output for real launch scenarios. |
 | `xvfb.log` | Xvfb startup and display output. |
 | `screenshot.png` or `screenshot.xwd` | Captured desktop state. |
 | `manual-evidence-checklist.txt` | Repeatable checklist for manual scenarios. |
+| `command.log` | Captured stdout/stderr for gated command smokes when `ALICE_QA_RUN_GATED_SMOKES=1` is set. |
 | `review-notes.txt` | Human acceptance notes for manual scenarios, including reviewed artifacts, observed result, deviations, and accept/reject decision. |
 
 Generated evidence is ignored by Git. Commit scenario definitions, schema changes, runner changes, and documentation; do not commit local evidence artifacts.

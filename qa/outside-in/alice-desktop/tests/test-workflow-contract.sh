@@ -36,6 +36,11 @@ required_workflows = [
     "run-debug",
     "save-load",
     "export",
+    "exported-project-smoke",
+    "netbeans-package-smoke",
+    "project-io-smoke",
+    "failure-path-smoke",
+    "future-ui-smoke",
 ]
 manual_scenarios = [
     "alice-desktop-instructor-student-setup",
@@ -43,6 +48,13 @@ manual_scenarios = [
     "alice-desktop-run-debug",
     "alice-desktop-save-load",
     "alice-desktop-export",
+]
+gated_scenarios = [
+    "alice-desktop-exported-project-smoke",
+    "alice-desktop-netbeans-package-smoke",
+    "alice-desktop-project-io-smoke",
+    "alice-desktop-failure-path-smoke",
+    "alice-desktop-future-ui-smoke",
 ]
 errors = []
 
@@ -68,6 +80,25 @@ for scenario_id in manual_scenarios:
         errors.append(f"{scenario_id} must require a durable artifact, log, or notes")
     if "review-notes.txt" not in evidence_text:
         errors.append(f"{scenario_id} must require review-notes.txt for manual acceptance")
+
+for scenario_id in gated_scenarios:
+    scenario = catalog.get(scenario_id)
+    if scenario is None:
+        errors.append(f"catalog must contain {scenario_id}")
+        continue
+    if scenario["automationMode"] != "gated-command-smoke":
+        errors.append(f"{scenario_id} must use gated-command-smoke to avoid mandatory heavy GUI/build work")
+    automation = scenario.get("automation", {})
+    for field in ("cwd", "command", "timeoutSeconds", "readyWaitSeconds"):
+        if field not in automation:
+            errors.append(f"{scenario_id} automation must include {field}")
+    if "immediate-qa-backlog" not in scenario.get("tags", []):
+        errors.append(f"{scenario_id} must be tagged as immediate-qa-backlog coverage")
+    evidence_text = "\n".join(scenario["evidence"]["required"]).lower()
+    if "status.txt" not in evidence_text:
+        errors.append(f"{scenario_id} must require status.txt evidence")
+    if not any(token in evidence_text for token in ("command.log", "artifact", "project", "failure")):
+        errors.append(f"{scenario_id} must require command, artifact, project, or failure-path evidence")
 
 if errors:
     raise AssertionError("\n".join(errors))
