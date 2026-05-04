@@ -324,6 +324,32 @@ public class IoUtilitiesTest {
   }
 
   @Test
+  public void xmlProjectReaderDefaultsMissingProjectStructureToWindowCamera() throws Exception {
+    File projectFile = temporaryFolder.newFile("xml-missing-project-structure.a3p");
+    String manifestJson = """
+        {
+          "description": {
+            "name": "ProgramWithoutStructure"
+          },
+          "metadata": {
+            "fileType": "a3p"
+          }
+        }
+        """;
+
+    try (ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(projectFile))) {
+      writeZipEntry(zipOutputStream, ProjectIo.VERSION_ENTRY_NAME, ProjectVersion.getCurrentVersion().toString());
+      writeZipEntry(zipOutputStream, ProjectIo.MANIFEST_ENTRY_NAME, manifestJson);
+      writeZipEntry(zipOutputStream, "programType.xml", encodedProgramTypeXml("ProgramWithoutStructure"));
+    }
+
+    Project readProject = IoUtilities.readProject(projectFile);
+
+    assertEquals("ProgramWithoutStructure", readProject.getProgramType().getName());
+    assertEquals(Project.SceneCameraType.WindowCamera, sceneCameraType(readProject));
+  }
+
+  @Test
   public void ignoresUnsupportedJsonResourceReferencesWithoutCrashing() throws Exception {
     ProjectManifest manifest = new ProjectManifest();
     manifest.metadata.fileType = IoUtilities.EXPORT_EXTENSION;
