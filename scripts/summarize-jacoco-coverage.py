@@ -94,20 +94,51 @@ def render_markdown(aggregate: Optional[Coverage], module_reports: List[Coverage
     if not module_reports:
         lines.append("| _none_ | n/a | 0 | 0 | 0 |")
     lines.append("")
-    lines.append("No coverage threshold is enforced by this report.")
+    lines.append("Coverage gate details appear below when a threshold is requested.")
     lines.append("")
     return "\n".join(lines)
+
+
+def append_gate(markdown: str, aggregate: Optional[Coverage], minimum: float) -> Tuple[str, bool]:
+    lines = [markdown.rstrip(), "", "## Aggregate coverage gate", ""]
+    if aggregate is None:
+        lines.extend([
+            f"Required aggregate line coverage: {minimum:.2f}%",
+            "",
+            "Result: FAIL - aggregate report was not found.",
+            "",
+        ])
+        return "\n".join(lines), False
+
+    passed = aggregate.percent >= minimum
+    result = "PASS" if passed else "FAIL"
+    lines.extend([
+        f"Required aggregate line coverage: {minimum:.2f}%",
+        f"Actual aggregate line coverage: {aggregate.percent:.2f}%",
+        "",
+        f"Result: {result}",
+        "",
+    ])
+    return "\n".join(lines), passed
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path.cwd(), help="repository root")
     parser.add_argument("--output", type=Path, help="write Markdown summary to this path")
+    parser.add_argument(
+        "--min-aggregate-line-percent",
+        type=float,
+        help="fail when aggregate line coverage is missing or below this percentage",
+    )
     args = parser.parse_args()
 
     root = args.root.resolve()
     aggregate, module_reports = collect_reports(root)
     markdown = render_markdown(aggregate, module_reports)
+    passed = True
+    if args.min_aggregate_line_percent is not None:
+        markdown, passed = append_gate(markdown, aggregate, args.min_aggregate_line_percent)
     print(markdown)
 
     if args.output:
@@ -118,7 +149,7 @@ def main() -> int:
         with Path(github_summary).open("a", encoding="utf-8") as handle:
             handle.write(markdown)
             handle.write("\n")
-    return 0
+    return 0 if passed else 2
 
 
 if __name__ == "__main__":
