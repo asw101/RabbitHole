@@ -108,8 +108,7 @@ public class XmlProjectIo implements ProjectIo {
     @Override
     public Project readProject(boolean makeVrReady) throws IOException, VersionNotSupportedException {
       ProjectManifest manifest = readManifest();
-      Project.SceneCameraType cameraType =
-          manifest == null ? Project.SceneCameraType.WindowCamera : manifest.projectStructure.sceneCameraType;
+      Project.SceneCameraType cameraType = sceneCameraType(manifest);
       NamedUserType type = readType(PROGRAM_TYPE_ENTRY_NAME);
       if (makeVrReady) {
         CAMERA_TO_VR.migrate(type, typeHelper, ProjectVersion.getCurrentVersion());
@@ -127,6 +126,13 @@ public class XmlProjectIo implements ProjectIo {
         return null;
       }
       return ManifestEncoderDecoder.fromJson(readContent(is), ProjectManifest.class);
+    }
+
+    private static Project.SceneCameraType sceneCameraType(ProjectManifest manifest) {
+      if ((manifest == null) || (manifest.projectStructure == null) || (manifest.projectStructure.sceneCameraType == null)) {
+        return Project.SceneCameraType.WindowCamera;
+      }
+      return manifest.projectStructure.sceneCameraType;
     }
 
     @Override
