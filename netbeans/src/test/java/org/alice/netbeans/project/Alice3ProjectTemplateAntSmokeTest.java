@@ -196,6 +196,46 @@ public class Alice3ProjectTemplateAntSmokeTest {
   }
 
   @Test
+  public void exportedProjectRunTestWithMainTargetCompilesAndRunsTestMainWithAlice3LibraryClasspath() throws Exception {
+    Path smokeRoot = TARGET.resolve("ant-run-test-main-smoke");
+    Path projectDirectory = smokeRoot.resolve("project");
+    deleteRecursively(smokeRoot);
+
+    unzip(TARGET.resolve("classes/org/alice/netbeans/ProjectTemplate.zip"), projectDirectory);
+    Path sourceDirectory = projectDirectory.resolve("src");
+    Files.createDirectories(sourceDirectory);
+    Path aliceProject = smokeRoot.resolve("test-main-world.a3p");
+    IoUtilities.writeProject(
+        aliceProject.toFile(),
+        new Project(programType("Program"), Project.SceneCameraType.WindowCamera));
+    generateProjectCodeWithoutFormatting(aliceProject, sourceDirectory);
+
+    Path testDirectory = projectDirectory.resolve("test");
+    writeAntTestMainProbe(testDirectory);
+
+    Path antScratch = smokeRoot.resolve("ant-scratch");
+    Files.createDirectories(antScratch);
+    Path userProperties = smokeRoot.resolve("user.properties");
+    writeLibraryProperties(userProperties, antScratch);
+
+    String antRunLog = executeAntTarget(
+        projectDirectory,
+        userProperties,
+        antScratch,
+        "run-test-with-main",
+        "ant-run-test-with-main.log",
+        Map.of(
+            "run.class", "AntTestMainProbe",
+            "javac.includes", "AntTestMainProbe.java"));
+
+    assertTrue(antRunLog, Files.exists(projectDirectory.resolve("build/classes/Program.class")));
+    assertTrue(antRunLog, Files.exists(projectDirectory.resolve("build/test/classes/AntTestMainProbe.class")));
+    assertTrue(antRunLog, antRunLog.contains("ANT_TEST_MAIN_PROBE_OK org.lgna.story.SProgram "));
+    assertTrue(antRunLog, antRunLog.contains("aliceSource.jar_root"));
+    assertTrue(antRunLog, !antRunLog.contains("Java Result:"));
+  }
+
+  @Test
   public void exportedProjectAntCleanTargetRemovesGeneratedBuildOutputs() throws Exception {
     Path smokeRoot = TARGET.resolve("ant-clean-smoke");
     Path projectDirectory = smokeRoot.resolve("project");
@@ -431,6 +471,42 @@ public class Alice3ProjectTemplateAntSmokeTest {
                     throw new AssertionError("Unexpected Alice root directory: " + aliceRootDirectory);
                 }
                 System.out.println("ANT_RUNTIME_CONFIGURATION_PROBE_OK " + normalizedAliceRootDirectory);
+            }
+        }
+        """,
+        StandardCharsets.UTF_8);
+  }
+
+  private static void writeAntTestMainProbe(Path testDirectory) throws Exception {
+    Files.createDirectories(testDirectory);
+    Files.writeString(
+        testDirectory.resolve("AntTestMainProbe.java"),
+        """
+        public class AntTestMainProbe {
+            public static void main(String[] args) {
+                if (!org.lgna.story.SProgram.class.equals(Program.class.getSuperclass())) {
+                    throw new AssertionError(Program.class.getSuperclass().getName());
+                }
+                boolean assertionsEnabled = false;
+                assert assertionsEnabled = true;
+                if (!assertionsEnabled) {
+                    throw new AssertionError("Assertions were not enabled by run.jvmargs");
+                }
+                String aliceRootDirectory = System.getProperty("org.alice.ide.rootDirectory");
+                if ((aliceRootDirectory == null) || aliceRootDirectory.isBlank()) {
+                    throw new AssertionError("org.alice.ide.rootDirectory was not set");
+                }
+                if (aliceRootDirectory.contains("${")) {
+                    throw new AssertionError("Unresolved Alice root directory: " + aliceRootDirectory);
+                }
+                String normalizedAliceRootDirectory = aliceRootDirectory.replace('\\\\', '/');
+                if (!normalizedAliceRootDirectory.endsWith("aliceSource.jar_root")) {
+                    throw new AssertionError("Unexpected Alice root directory: " + aliceRootDirectory);
+                }
+                System.out.println("ANT_TEST_MAIN_PROBE_OK "
+                    + Program.class.getSuperclass().getName()
+                    + " "
+                    + normalizedAliceRootDirectory);
             }
         }
         """,
