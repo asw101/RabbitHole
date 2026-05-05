@@ -31,6 +31,7 @@ import org.lgna.project.ast.JavaType;
 import org.lgna.project.ast.LocalDeclarationStatement;
 import org.lgna.project.ast.NamedUserType;
 import org.lgna.project.ast.ResourceExpression;
+import org.lgna.project.ast.UserField;
 import org.lgna.project.ast.UserLocal;
 import org.lgna.project.ast.UserMethod;
 import org.lgna.story.SProgram;
@@ -750,13 +751,13 @@ public class IoUtilitiesTest {
   }
 
   @Test
-  public void unsupportedJsonPlayerTweedleConstructsRemainUndecoded() throws Exception {
-    File exportFile = temporaryFolder.newFile("json-unsupported-program.a3w");
+  public void jsonPlayerTweedleFieldDecodesProgramType() throws Exception {
+    File exportFile = temporaryFolder.newFile("json-field-program.a3w");
     writeJsonPlayerArchive(exportFile, "Program", "class Program { WholeNumber count; }");
 
     Project readProject = IoUtilities.readProject(exportFile);
 
-    assertNull("Unsupported Tweedle members remain documented null program type behavior for now.", readProject.getProgramType());
+    assertSingleIntegerField(readProject.getProgramType(), "count");
   }
 
   @Test
@@ -771,8 +772,8 @@ public class IoUtilitiesTest {
   }
 
   @Test
-  public void jsonPlayerManifestTypeBoundaryKeepsResourcesReadableWhenTweedleTypeIsUnsupported() throws Exception {
-    String programName = "ProgramWithUnsupportedType";
+  public void jsonPlayerManifestTypeReadsFieldAndKeepsResourcesReadable() throws Exception {
+    String programName = "ProgramWithField";
     TypeReference typeReference = new TypeReference(programName, "src/" + programName + ".twe", "tweedle");
     UUID imageId = UUID.randomUUID();
     ImageReference imageReference = imageReference(imageId, "boundary-picture.png", "png");
@@ -785,7 +786,7 @@ public class IoUtilitiesTest {
     manifest.projectStructure.sceneCameraType = Project.SceneCameraType.WindowCamera;
     manifest.resources.add(typeReference);
     manifest.resources.add(imageReference);
-    File exportFile = temporaryFolder.newFile("manifest-type-boundary-resource.a3w");
+    File exportFile = temporaryFolder.newFile("manifest-type-field-resource.a3w");
 
     try (ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(exportFile))) {
       writeZipEntry(zipOutputStream, ProjectIo.VERSION_ENTRY_NAME, ProjectVersion.getCurrentVersion().toString());
@@ -797,8 +798,7 @@ public class IoUtilitiesTest {
     Project readProject = IoUtilities.readProject(exportFile);
 
     assertNotNull(readProject);
-    assertNull("Unsupported manifest-declared Tweedle type should not be reported as a decoded program type.",
-        readProject.getProgramType());
+    assertSingleIntegerField(readProject.getProgramType(), "count");
     Resource readResource = onlyResource(readProject);
     assertEquals(ImageResource.class, readResource.getClass());
     assertEquals(imageId, readResource.getId());
@@ -811,13 +811,13 @@ public class IoUtilitiesTest {
   }
 
   @Test
-  public void unsupportedJsonTypeTweedleConstructsRemainUndecoded() throws Exception {
-    File typeFile = temporaryFolder.newFile("json-unsupported-type.a3c");
+  public void jsonTypeTweedleFieldDecodesType() throws Exception {
+    File typeFile = temporaryFolder.newFile("json-field-type.a3c");
     writeJsonTypeArchive(typeFile, "SyntheticType", "class SyntheticType { WholeNumber count; }");
 
     TypeResourcesPair readType = IoUtilities.readType(typeFile);
 
-    assertNull("Unsupported Tweedle members remain documented null behavior for now.", readType.getType());
+    assertSingleIntegerField(readType.getType(), "count");
   }
 
   @Test
@@ -1402,6 +1402,14 @@ public class IoUtilitiesTest {
 
   private static Resource firstResourceExpressionResource(Project project) {
     return firstResourceExpressionResource(project.getProgramType());
+  }
+
+  private static void assertSingleIntegerField(NamedUserType type, String expectedName) {
+    assertNotNull(type);
+    assertEquals(1, type.getDeclaredFields().size());
+    UserField field = type.getDeclaredFields().get(0);
+    assertEquals(expectedName, field.getName());
+    assertSame(JavaType.getInstance(Integer.class), field.getValueType());
   }
 
   private static Resource firstResourceExpressionResource(NamedUserType type) {

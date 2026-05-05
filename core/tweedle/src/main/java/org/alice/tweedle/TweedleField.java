@@ -18,4 +18,8 @@ public class TweedleField extends TweedleValueHolderDeclaration {
     this.modifiers = modifiers;
     this.initializer = initializer;
   }
+
+  public boolean hasInitializer() {
+    return initializer != null;
+  }
 }

@@ -4,6 +4,7 @@ import org.junit.Test;
 import org.lgna.project.ast.AbstractNode;
 import org.lgna.project.ast.JavaType;
 import org.lgna.project.ast.NamedUserType;
+import org.lgna.project.ast.UserField;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -52,12 +53,22 @@ public class TweedleEncoderDecoderTest {
   }
 
   @Test
-  public void decodeClassWithFieldReportsUnsupportedMembers() {
+  public void decodeClassWithFieldCreatesUserField() throws Exception {
+    NamedUserType type = decodeUserType("class SyntheticType { WholeNumber count; }");
+
+    assertEquals(1, type.getDeclaredFields().size());
+    UserField field = type.getDeclaredFields().get(0);
+    assertEquals("count", field.getName());
+    assertSame(JavaType.getInstance(Integer.class), field.getValueType());
+  }
+
+  @Test
+  public void decodeClassWithInitializedFieldReportsUnsupportedInitializer() {
     UnsupportedTweedleDecodeException thrown = assertThrows(
         UnsupportedTweedleDecodeException.class,
-        () -> coder.decode("class SyntheticType { WholeNumber count; }"));
+        () -> coder.decode("class SyntheticType { WholeNumber count <- 1; }"));
 
-    assertTrue(thrown.getMessage().contains("members"));
+    assertTrue(thrown.getMessage().contains("initializers"));
   }
 
   @Test
@@ -66,7 +77,7 @@ public class TweedleEncoderDecoderTest {
         UnsupportedTweedleDecodeException.class,
         () -> coder.decode("class SyntheticType { WholeNumber count() { return 1; } }"));
 
-    assertTrue(thrown.getMessage().contains("members"));
+    assertTrue(thrown.getMessage().contains("methods and constructors"));
   }
 
   @Test
