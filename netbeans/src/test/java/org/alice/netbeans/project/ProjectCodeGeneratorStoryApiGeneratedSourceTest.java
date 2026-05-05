@@ -33,6 +33,7 @@ import org.lgna.story.SetAtmosphereColor;
 import org.lgna.story.SetFogDensity;
 import org.lgna.story.SetOpacity;
 import org.lgna.story.SetPaint;
+import org.lgna.story.event.SceneActivationEvent;
 import org.lgna.story.event.SceneActivationListener;
 import org.lgna.story.event.TimeListener;
 
@@ -158,11 +159,65 @@ public class ProjectCodeGeneratorStoryApiGeneratedSourceTest {
     }
   }
 
+  @Test
+  public void generatedSyntheticTimeListenerDispatchesThroughTimerHandlerSeamHeadless() throws Exception {
+    Path sourceDirectory = generateProgramSource(
+        "synthetic-time-listener-runtime.a3p",
+        programTypeWithExecutableTimeListenerRegistration(),
+        "generated-time-listener-runtime-src");
+
+    Path scenePath = sourceDirectory.resolve("Scene.java");
+    String sceneSource = Files.readString(scenePath);
+    assertTrue(sceneSource, sceneSource.contains("public void handleActiveChanged(Boolean isActive,Integer activationCount)"));
+    assertTrue(sceneSource, sceneSource.contains("this.addTimeListener((TimeEvent p0) ->"));
+    assertTrue(sceneSource, sceneSource.contains("ProjectCodeGeneratorStoryApiGeneratedSourceTest.recordTimeEvent();"));
+
+    Path classesDirectory = compileAllGeneratedSources(
+        "generated-time-listener-runtime-classes",
+        sourceDirectory);
+    timeEventLatch = new CountDownLatch(1);
+    Object timer = null;
+    try (URLClassLoader classLoader = new URLClassLoader(
+        new URL[] {classesDirectory.toUri().toURL()},
+        Thread.currentThread().getContextClassLoader())) {
+      Class<?> sceneClass = Class.forName("Scene", true, classLoader);
+      var constructor = sceneClass.getDeclaredConstructor();
+      constructor.setAccessible(true);
+      Object scene = constructor.newInstance();
+      var handleActiveChanged = sceneClass.getDeclaredMethod("handleActiveChanged", Boolean.class, Integer.class);
+      handleActiveChanged.setAccessible(true);
+      handleActiveChanged.invoke(scene, Boolean.TRUE, 1);
+      Object sceneImplementation = sceneClass.getMethod("getImplementation").invoke(scene);
+      Object eventManager = sceneImplementation.getClass().getMethod("getEventManager").invoke(sceneImplementation);
+      var timerField = eventManager.getClass().getDeclaredField("timer");
+      timerField.setAccessible(true);
+      timer = timerField.get(eventManager);
+      timer.getClass().getMethod("sceneActivated", SceneActivationEvent.class).invoke(timer, new SceneActivationEvent());
+      var currentTimeField = timer.getClass().getDeclaredField("currentTime");
+      currentTimeField.setAccessible(true);
+      currentTimeField.set(timer, 2.0);
+      var update = timer.getClass().getDeclaredMethod("update");
+      update.setAccessible(true);
+      update.invoke(timer);
+      assertTrue("Generated time listener should run when the timer handler seam updates",
+          timeEventLatch.await(5, TimeUnit.SECONDS));
+    } finally {
+      if (timer != null) {
+        timer.getClass().getMethod("disable").invoke(timer);
+      }
+    }
+  }
+
   public static void recordSceneActivationEvent() {
     sceneActivationEventLatch.countDown();
   }
 
+  public static void recordTimeEvent() {
+    timeEventLatch.countDown();
+  }
+
   private static CountDownLatch sceneActivationEventLatch;
+  private static CountDownLatch timeEventLatch;
 
   private Path generateProgramSource(String projectFileName, NamedUserType programType, String sourceDirectoryName)
       throws Exception {
@@ -271,6 +326,13 @@ public class ProjectCodeGeneratorStoryApiGeneratedSourceTest {
     return type;
   }
 
+  private static NamedUserType programTypeWithExecutableTimeListenerRegistration() {
+    NamedUserType type = programType("Program");
+    NamedUserType sceneType = sceneTypeWithExecutableTimeListenerRegistration();
+    type.fields.add(new UserField("scene", sceneType));
+    return type;
+  }
+
   private static NamedUserType sceneTypeWithListenerRegistrationCalls() {
     NamedUserType type = AstUtilities.createType("Scene", JavaType.getInstance(SScene.class));
     JavaMethod addTimeListener = AstUtilities.lookupMethod(
@@ -320,21 +382,51 @@ public class ProjectCodeGeneratorStoryApiGeneratedSourceTest {
         new BlockStatement(AstUtilities.createMethodInvocationStatement(
             new ThisExpression(),
             addSceneActivationListener,
-            listenerLambda(SceneActivationListener.class, "scene activation listener registered"))));
+            listenerLambda(
+                SceneActivationListener.class,
+                "recordSceneActivationEvent",
+                "scene activation listener registered"))));
     type.methods.add(handleActiveChanged);
     return type;
   }
 
-  private static LambdaExpression listenerLambda(Class<?> listenerClass, String commentText) {
+  private static NamedUserType sceneTypeWithExecutableTimeListenerRegistration() {
+    NamedUserType type = AstUtilities.createType("Scene", JavaType.getInstance(SScene.class));
+    JavaMethod addTimeListener = AstUtilities.lookupMethod(
+        SScene.class,
+        "addTimeListener",
+        TimeListener.class,
+        Number.class,
+        AddTimeListener.Detail[].class);
+    UserMethod handleActiveChanged = new UserMethod(
+        "handleActiveChanged",
+        Void.TYPE,
+        new UserParameter[] {
+            new UserParameter("isActive", Boolean.class),
+            new UserParameter("activationCount", Integer.class)
+        },
+        new BlockStatement(AstUtilities.createMethodInvocationStatement(
+            new ThisExpression(),
+            addTimeListener,
+            listenerLambda(
+                TimeListener.class,
+                "recordTimeEvent",
+                "time listener registered"),
+            new IntegerLiteral(1))));
+    type.methods.add(handleActiveChanged);
+    return type;
+  }
+
+  private static LambdaExpression listenerLambda(Class<?> listenerClass, String recordMethodName, String commentText) {
     LambdaExpression expression = AstUtilities.createLambdaExpression(listenerClass);
     UserLambda lambda = (UserLambda) expression.value.getValue();
-    JavaMethod recordSceneActivationEvent = AstUtilities.lookupMethod(
+    JavaMethod recordEvent = AstUtilities.lookupMethod(
         ProjectCodeGeneratorStoryApiGeneratedSourceTest.class,
-        "recordSceneActivationEvent");
+        recordMethodName);
     lambda.body.getValue().statements.add(new Comment(commentText));
     lambda.body.getValue().statements.add(AstUtilities.createMethodInvocationStatement(
-        new org.lgna.project.ast.TypeExpression(recordSceneActivationEvent.getDeclaringType()),
-        recordSceneActivationEvent));
+        new org.lgna.project.ast.TypeExpression(recordEvent.getDeclaringType()),
+        recordEvent));
     return expression;
   }
 
