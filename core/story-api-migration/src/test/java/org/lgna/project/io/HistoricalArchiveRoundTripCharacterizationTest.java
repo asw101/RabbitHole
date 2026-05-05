@@ -121,6 +121,51 @@ public class HistoricalArchiveRoundTripCharacterizationTest {
   }
 
   @Test
+  public void generatedJsonProjectArchiveReadsSiblingTypeAndImageResourceWithoutExternalFixture() throws Exception {
+    ImageResource imageResource = generatedImageResource("json-project-texture.png", 0xFF669933);
+    File projectArchive = temporaryFolder.newFile("generated-json-project-with-resource.a3w");
+
+    writeJsonProjectArchive(
+        projectArchive,
+        "GeneratedProgramWithResource",
+        "class GeneratedProgramWithResource extends SProgram { GeneratedResourceScene scene; }",
+        "GeneratedResourceScene",
+        "class GeneratedResourceScene extends SScene { WholeNumber count; }",
+        imageResource);
+
+    try (ZipFile zipFile = new ZipFile(projectArchive)) {
+      ProjectManifest manifest = readProjectManifest(zipFile);
+      assertTypeReference(manifest, "GeneratedProgramWithResource", "src/GeneratedProgramWithResource.twe");
+      assertTypeReference(manifest, "GeneratedResourceScene", "src/GeneratedResourceScene.twe");
+      assertImageReference(
+          manifest,
+          imageResource.getId(),
+          imageResource.getName(),
+          "resources/" + imageResource.getName());
+    }
+    Project readProject = IoUtilities.readProject(projectArchive);
+
+    NamedUserType readProgramType = readProject.getProgramType();
+    assertNotNull("Generated JSON .a3w program with a sibling scene type should decode", readProgramType);
+    assertEquals("GeneratedProgramWithResource", readProgramType.getName());
+    assertEquals(1, readProgramType.getDeclaredFields().size());
+    UserField readSceneField = readProgramType.getDeclaredFields().get(0);
+    assertEquals("scene", readSceneField.getName());
+    NamedUserType readSceneType = namedUserTypeNamed(readProject, "GeneratedResourceScene");
+    assertSame(readSceneType, readSceneField.getValueType());
+    assertEquals("SScene", readSceneType.getSuperType().getName());
+    assertEquals(1, readSceneType.getDeclaredFields().size());
+    assertEquals("count", readSceneType.getDeclaredFields().get(0).getName());
+
+    Resource readResource = onlyResource(readProject.getResources());
+    assertEquals(imageResource.getId(), readResource.getId());
+    assertEquals(imageResource.getName(), readResource.getName());
+    assertEquals(imageResource.getOriginalFileName(), readResource.getOriginalFileName());
+    assertEquals(imageResource.getContentType(), readResource.getContentType());
+    assertArrayEquals(imageResource.getData(), readResource.getData());
+  }
+
+  @Test
   public void generatedWorldArchiveCharacterizesManifestResourceReadbackLimitWithoutExternalFixture() throws Exception {
     ImageResource imageResource = generatedImageResource("historical-world-texture.png", 0xFF663399);
     Project project = new Project(
@@ -418,6 +463,22 @@ public class HistoricalArchiveRoundTripCharacterizationTest {
       String programTweedleSource,
       String sceneTypeName,
       String sceneTweedleSource) throws Exception {
+    writeJsonProjectArchive(
+        archive,
+        programTypeName,
+        programTweedleSource,
+        sceneTypeName,
+        sceneTweedleSource,
+        null);
+  }
+
+  private static void writeJsonProjectArchive(
+      File archive,
+      String programTypeName,
+      String programTweedleSource,
+      String sceneTypeName,
+      String sceneTweedleSource,
+      ImageResource imageResource) throws Exception {
     ProjectManifest manifest = new ProjectManifest();
     manifest.description.name = programTypeName;
     manifest.metadata.fileType = IoUtilities.EXPORT_EXTENSION;
@@ -426,6 +487,12 @@ public class HistoricalArchiveRoundTripCharacterizationTest {
     manifest.projectStructure.sceneCameraType = Project.SceneCameraType.WindowCamera;
     manifest.resources.add(new TypeReference(programTypeName, "src/" + programTypeName + ".twe", "tweedle"));
     manifest.resources.add(new TypeReference(sceneTypeName, "src/" + sceneTypeName + ".twe", "tweedle"));
+    ImageReference imageReference = null;
+    if (imageResource != null) {
+      imageReference = new ImageReference(imageResource);
+      imageReference.file = "resources/" + imageResource.getName();
+      manifest.resources.add(imageReference);
+    }
 
     try (ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(archive))) {
       writeEntry(
@@ -444,6 +511,9 @@ public class HistoricalArchiveRoundTripCharacterizationTest {
           zipOutputStream,
           "src/" + sceneTypeName + ".twe",
           sceneTweedleSource.getBytes(StandardCharsets.UTF_8));
+      if (imageReference != null) {
+        writeEntry(zipOutputStream, imageReference.file, imageResource.getData());
+      }
     }
   }
 
