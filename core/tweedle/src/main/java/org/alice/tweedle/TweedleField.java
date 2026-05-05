@@ -25,4 +25,8 @@ public class TweedleField extends TweedleValueHolderDeclaration {
   public boolean hasInitializer() {
     return hasInitializer;
   }
+
+  public TweedleExpression getInitializer() {
+    return initializer;
+  }
 }
