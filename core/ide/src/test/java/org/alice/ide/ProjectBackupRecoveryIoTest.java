@@ -196,6 +196,63 @@ public class ProjectBackupRecoveryIoTest {
     assertTrue(dispatch.shouldShowNewProject());
   }
 
+  @Test
+  public void acceptedRecoveredBackupCanBeSavedAndExported() throws Exception {
+    File corruptMainProject = temporaryFolder.newFile("teaching-world.a3p");
+    Files.writeString(corruptMainProject.toPath(), "not a project archive", StandardCharsets.UTF_8);
+    File backupDirectory = temporaryFolder.newFolder("teaching-world.bak");
+    File validBackup = new File(backupDirectory, "auto20240102_140000.a3p");
+    byte[] noteData = "keep student notes".getBytes(StandardCharsets.UTF_8);
+    Project backupProject = new Project(programType("RecoveredTeachingProgram"), Project.SceneCameraType.WindowCamera);
+    TestResource note = new TestResource("student-note.txt", "text/plain", noteData);
+    backupProject.addResource(note);
+    IoUtilities.writeProject(validBackup, backupProject);
+    File savedProjectFile = temporaryFolder.newFile("saved-recovered-world.a3p");
+    File exportedProjectFile = temporaryFolder.newFile("saved-recovered-world.a3w");
+    ProjectBackupSelector selector = new ProjectBackupSelector(file -> {
+      throw new AssertionError("corrupted main project should not compare backup times");
+    });
+
+    Project mainProject = new TestFileProjectLoader(corruptMainProject).loadNow();
+    File backup = selector.getNextBackup(
+        LocalDateTime.MIN,
+        backupDirectory,
+        new File[] {validBackup},
+        true,
+        Set.of(corruptMainProject.getName()));
+    ProjectLoadFailurePlan plan = ProjectLoadFailurePlan.choose(
+        false,
+        false,
+        true,
+        false,
+        backup,
+        corruptMainProject);
+    ProjectLoadFailureDispatchPlan dispatch = ProjectLoadFailureDispatchPlan.afterUserChoice(
+        plan.getAction(),
+        true);
+    Project recoveredProject = new TestFileProjectLoader(plan.getBackupToLoad()).loadNow();
+
+    IoUtilities.writeProject(savedProjectFile, recoveredProject);
+    Project savedProject = new TestFileProjectLoader(savedProjectFile).loadNow();
+    IoUtilities.exportProject(exportedProjectFile, savedProject);
+    Project exportedProject = IoUtilities.readProject(exportedProjectFile);
+
+    assertNull(mainProject);
+    assertEquals(ProjectLoadFailurePlan.Action.PROMPT_LOAD_BACKUP, plan.getAction());
+    assertEquals(validBackup, plan.getBackupToLoad());
+    assertEquals(ProjectLoadFailureDispatchPlan.LoadTarget.BACKUP, dispatch.getLoadTarget());
+    assertFalse(dispatch.shouldShowNewProject());
+    assertEquals("RecoveredTeachingProgram", savedProject.getProgramType().getName());
+    assertEquals(1, savedProject.getResources().size());
+    Resource savedResource = savedProject.getResources().iterator().next();
+    assertEquals(note.getId(), savedResource.getId());
+    assertEquals("student-note.txt", savedResource.getOriginalFileName());
+    assertArrayEquals(noteData, savedResource.getData());
+    assertTrue(exportedProjectFile.isFile());
+    assertNotNull(exportedProject);
+    assertEquals("RecoveredTeachingProgram", exportedProject.getProgramType().getName());
+  }
+
   private static NamedUserType programType(String name) {
     NamedUserType type = new NamedUserType();
     type.name.setValue(name);
