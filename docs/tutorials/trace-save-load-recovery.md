@@ -16,9 +16,10 @@ The backup recovery scenarios describe this user-visible flow:
 1. Alice attempts to load `world.a3p`.
 2. The primary project is corrupt.
 3. Alice checks the newest backups first.
-4. Alice skips backups that cannot be loaded.
-5. Alice offers the newest readable backup.
-6. The user either accepts the backup or reaches a new-project outcome.
+4. Alice skips known unloadable or unsafe candidates.
+5. Alice offers the next trusted backup candidate.
+6. Accepted backups that fail to load are marked unloadable and retried until a
+   readable backup loads or Alice reaches a new-project outcome.
 
 The scenarios avoid dialog implementation details. They define the observable
 contract that users and tests rely on.
@@ -44,15 +45,17 @@ The model names the same recovery steps:
 | `BackupLoadSucceeds` | The accepted backup becomes the loaded project. |
 
 The `NextBackup` definition chooses the remaining backup with the smallest
-newest-first order index. That is the formal rule behind newest-readable backup
-selection.
+newest-first order index. The model treats backup readability as policy-level
+state; the Java implementation discovers readability by attempting to load the
+accepted backup and then retrying on failure.
 
 ## Match the model to Java tests
 
-Open the backup selector tests:
+Open the backup selector and recovery IO tests:
 
 ```shell
 sed -n '23,172p' core/ide/src/test/java/org/alice/ide/ProjectBackupSelectorTest.java
+sed -n '28,153p' core/ide/src/test/java/org/alice/ide/ProjectBackupRecoveryIoTest.java
 ```
 
 These tests characterize the same rules:
@@ -63,11 +66,16 @@ These tests characterize the same rules:
 | Known unloadable backups are skipped | `SkipUnreadableBackup` |
 | Missing candidates are ignored by recovery selection | Unloadable candidates do not become final loaded projects |
 | No remaining candidates returns `null` | `NoBackupRemaining` |
+| Corrupt primary plus corrupt newest backup loads the next readable temporary `.a3p` backup | `SkipUnreadableBackup`, `OfferReadableBackup`, and `BackupLoadSucceeds` |
+| Corrupt primary plus all corrupt backups dispatches the new-project failure path | `NoBackupRemaining` and final-state invariants |
 
 Run the focused validation:
 
 ```shell
-mvn -pl core/ide -am -Dtest=ProjectBackupSelectorTest -Dsurefire.failIfNoSpecifiedTests=false test
+mvn -DincludeSims=false -Dinstall4j.skip -pl core/ide -am \
+  -Dtest=ProjectBackupSelectorTest,ProjectBackupRecoveryIoTest \
+  -Dsurefire.failIfNoSpecifiedTests=false \
+  test
 ```
 
 ## Trace archive behavior

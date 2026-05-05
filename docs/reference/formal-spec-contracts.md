@@ -14,6 +14,7 @@ Gherkin and TLA+ artifacts and enforced by the JUnit artifacts listed here.
 | Archive I/O tests | `core/story-api-migration/src/test/java/org/lgna/project/io/IoUtilitiesTest.java` | Characterization tests for low-level archive reading, writing, export, resource safety, and reader failure modes. |
 | IDE archive-flow tests | `core/ide/src/test/java/org/alice/ide/ProjectFileUtilitiesTest.java` | Characterization tests for IDE save-copy and export-copy archive flows. |
 | Backup selector tests | `core/ide/src/test/java/org/alice/ide/ProjectBackupSelectorTest.java` | Characterization tests for backup ordering and unloadable candidate skipping. |
+| Backup recovery IO tests | `core/ide/src/test/java/org/alice/ide/ProjectBackupRecoveryIoTest.java` | Characterization tests that use real temporary `.a3p` files for corrupt primary loads, corrupt backup retries, readable backup recovery, and all-backups failure dispatch. |
 | Failure plan tests | `core/ide/src/test/java/org/alice/ide/ProjectLoadFailurePlanTest.java` | Characterization tests for choosing the next recovery action. |
 | Dispatch plan tests | `core/ide/src/test/java/org/alice/ide/ProjectLoadFailureDispatchPlanTest.java` | Characterization tests for user-choice outcomes. |
 
@@ -32,6 +33,8 @@ The archive contracts are implemented through the existing `IoUtilities` API:
 `ProjectBackupSelector`, `ProjectLoadFailurePlan`, and
 `ProjectLoadFailureDispatchPlan` are package-private IDE implementation
 boundaries. They are documented by their tests rather than exposed as public API.
+See [Project Backup Recovery IO Characterization](./project-backup-recovery-io.md)
+for the recovery IO contract, configuration, and examples.
 
 ## Editable project archive contract
 
@@ -83,6 +86,15 @@ Required behavior:
 
 The TLA+ module models recovery after the primary project cannot be loaded.
 
+The executable recovery IO characterization uses temporary files to exercise the
+same policy through Java seams: `FileProjectLoader` returns `null` for corrupt
+archives, `ProjectBackupSelector` chooses the next trusted candidate,
+`ProjectLoadFailurePlan` chooses the recovery action, and
+`ProjectLoadFailureDispatchPlan` reaches the final user-visible load target.
+The TLA+ model treats readability as known at the policy level; the Java
+implementation learns that fact by loading the accepted candidate and retrying
+when the load fails.
+
 ### Constants
 
 | Constant | Meaning |
@@ -111,7 +123,7 @@ The TLA+ module models recovery after the primary project cannot be loaded.
 | --- | --- |
 | `LoadingMain` | Alice is attempting to load the primary project. |
 | `SelectingBackup` | Alice is selecting the newest remaining backup candidate. |
-| `PromptBackup` | Alice is offering a readable backup to the user. |
+| `PromptBackup` | Alice is offering a backup that the model classifies as readable. |
 | `LoadingBackup` | Alice is loading the accepted backup. |
 | `Final` | Alice has reached a terminal recovery outcome. |
 
@@ -122,7 +134,7 @@ The TLA+ module models recovery after the primary project cannot be loaded.
 | `TypeOK` | All variables stay within the modeled domains. |
 | `CorruptPrimaryDoesNotReplaceCurrentBeforeFinal` | A failed primary load does not replace the current project before a terminal decision. |
 | `LoadedBackupWasReadable` | A loaded backup must be one of the readable backups. |
-| `PromptedBackupsAreReadable` | Alice offers only readable backups to the user. |
+| `PromptedBackupsAreReadable` | In the model, Alice offers only backups classified as readable. Java validates the equivalent outcome by retrying failed accepted loads until a readable backup succeeds or no backup remains. |
 | `PromptedBackupsAreSafe` | Alice never offers unsafe backup candidates to the user. |
 | `UnloadableBackupsSkipped` | Earlier backups in the newest-first order are skipped only after they are marked unloadable or unsafe. |
 | `FinalOutcomeExactlyOne` | Final states have one terminal outcome and no pending attempt or candidate. |
@@ -149,7 +161,7 @@ Run commands from the repository root.
 ```shell
 mvn -pl core/story-api-migration -am -Dtest=IoUtilitiesTest -Dsurefire.failIfNoSpecifiedTests=false test
 mvn -pl core/ide -am -Dtest=ProjectFileUtilitiesTest -Dsurefire.failIfNoSpecifiedTests=false test
-mvn -pl core/ide -am -Dtest=ProjectBackupSelectorTest -Dsurefire.failIfNoSpecifiedTests=false test
+mvn -pl core/ide -am -Dtest=ProjectBackupSelectorTest,ProjectBackupRecoveryIoTest -Dsurefire.failIfNoSpecifiedTests=false test
 mvn -pl core/ide -am -Dtest=ProjectLoadFailurePlanTest,ProjectLoadFailureDispatchPlanTest -Dsurefire.failIfNoSpecifiedTests=false test
 ```
 
@@ -173,9 +185,9 @@ java -cp /path/to/tla2tools.jar tlc2.TLC BackupLoadRecovery.cfg
 | Player archive export with Tweedle source | Gherkin `@export @player-archive` scenarios | `IoUtilitiesTest` |
 | Resource preservation and safe entries | Gherkin `@export @resources` and `@security` scenarios | `IoUtilitiesTest` |
 | Missing, future, or corrupt archive metadata | Gherkin `@load @failure` scenarios | `IoUtilitiesTest` |
-| Corrupt primary backup recovery | Gherkin `@backup-recovery` scenarios and TLA+ `MainLoadFails` | `ProjectBackupSelectorTest`, `ProjectLoadFailurePlanTest`, `ProjectLoadFailureDispatchPlanTest` |
-| Newest readable backup selection | TLA+ `NextBackup`, `OfferReadableBackup`, and `SkipUnreadableBackup` | `ProjectBackupSelectorTest` |
-| Terminal recovery outcome | TLA+ final-state invariants | `ProjectLoadFailurePlanTest` and `ProjectLoadFailureDispatchPlanTest` |
+| Corrupt primary backup recovery | Gherkin `@backup-recovery` scenarios and TLA+ `MainLoadFails` | `ProjectBackupSelectorTest`, `ProjectBackupRecoveryIoTest`, `ProjectLoadFailurePlanTest`, `ProjectLoadFailureDispatchPlanTest` |
+| Newest trusted candidate selection and readable recovery outcome | TLA+ `NextBackup`, `OfferReadableBackup`, and `SkipUnreadableBackup` | `ProjectBackupSelectorTest` and `ProjectBackupRecoveryIoTest` |
+| Terminal recovery outcome | TLA+ final-state invariants | `ProjectBackupRecoveryIoTest`, `ProjectLoadFailurePlanTest`, and `ProjectLoadFailureDispatchPlanTest` |
 
 ## Implemented coverage
 
@@ -184,3 +196,4 @@ java -cp /path/to/tla2tools.jar tlc2.TLC BackupLoadRecovery.cfg
 | Saved `.a3p` archives include `manifest.json`. | `IoUtilitiesTest.writtenProjectContainsVersionManifestAndProgramTypeEntries`; `ProjectFileUtilitiesTest.saveCopyWritesReadableEditorArchiveWithResourceManifestAndThumbnail` |
 | Saved `.a3p` thumbnail behavior is characterized. | `IoUtilitiesTest.writeProjectIncludesProvidedThumbnailAndManifestIcon` and `IoUtilitiesTest.writeProjectRemainsReadableWithoutThumbnailEntry` |
 | Backup recovery rejects traversal or out-of-directory candidates. | `ProjectBackupSelectorTest.corruptedMainProjectSkipsBackupSymlinkEscapingBackupDirectory`; `ProjectBackupSelectorTest.corruptedMainProjectSkipsBackupSymlinkEvenWhenTargetStaysInBackupDirectory`; `ProjectBackupSelectorTest.corruptedMainProjectSkipsCandidatesFromSymlinkedBackupDirectory` |
+| Backup recovery uses real temporary archives for readable-backup and all-backups-fail paths. | `ProjectBackupRecoveryIoTest.corruptMainProjectSkipsUnloadableBackupAndLoadsNextBackupWithResources`; `ProjectBackupRecoveryIoTest.corruptMainProjectAndAllBackupsPlanUserVisibleFailure` |
