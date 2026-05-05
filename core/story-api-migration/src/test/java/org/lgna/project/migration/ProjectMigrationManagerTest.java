@@ -154,6 +154,24 @@ public class ProjectMigrationManagerTest {
   }
 
   @Test
+  public void textMigrationRewritesVersion3_2_110ResourceFields() {
+    TextMigration migration = textMigrationFor("3.2.110.0.0");
+    String source = String.join("\n",
+        "name=\"OVAL\">\n<declaringClass name=\"org.lgna.story.resources.prop.SandDunesResource\"",
+        "name=\"DEFAULT\">\n<declaringClass name=\"org.lgna.story.resources.prop.AncientTempleArchResource\"",
+        "name=\"WATER\">\n<declaringClass name=\"org.lgna.story.resources.prop.WaterTankResource\""
+    );
+
+    String migrated = migration.migrate(source);
+
+    assertEquals(String.join("\n",
+        "name=\"OVAL_DESERT\"> <declaringClass name=\"org.lgna.story.resources.prop.SandDunesResource\"",
+        "name=\"INDIA_BRICK_D\"> <declaringClass name=\"org.lgna.story.resources.prop.AncientTempleArchResource\"",
+        "name=\"WATER_INDIA_WATER_TANK\"> <declaringClass name=\"org.lgna.story.resources.prop.WaterTankResource\""
+    ), migrated);
+  }
+
+  @Test
   public void managerReportsNoPendingMigrationsAtCurrentVersion() {
     Version currentVersion = manager.getCurrentVersion();
 

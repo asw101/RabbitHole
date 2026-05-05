@@ -52,6 +52,7 @@ import org.lgna.story.Think;
 import org.lgna.story.resources.prop.FirTreeTrunkResource;
 import org.lgna.story.resources.prop.IceFloeResource;
 
+import static org.lgna.project.migration.ProjectMigrationTextMigrationFactory.createVersion3_2_110TextMigration;
 import static org.lgna.project.migration.ProjectMigrationTextSnippets.createJointAccessorPattern;
 import static org.lgna.project.migration.ProjectMigrationTextSnippets.createJointAccessorReplacement;
 import static org.lgna.project.migration.ProjectMigrationTextSnippets.createJointIdPattern;
@@ -5423,102 +5424,7 @@ public class ProjectMigrationManager extends AbstractMigrationManager {
           new Version("3.2.108.0.0")
 
           ),
-      new TextMigration(
-          new Version("3.2.110.0.0"),
-
-          createMoreSpecificFieldPattern("OVAL", "org.lgna.story.resources.prop.SandDunesResource"),
-          createMoreSpecificFieldReplacement("OVAL_DESERT", "org.lgna.story.resources.prop.SandDunesResource"),
-
-          createMoreSpecificFieldPattern("CRESCENT", "org.lgna.story.resources.prop.SandDunesResource"),
-          createMoreSpecificFieldReplacement("CRESCENT_DESERT", "org.lgna.story.resources.prop.SandDunesResource"),
-
-          createMoreSpecificFieldPattern("BLOB", "org.lgna.story.resources.prop.SandDunesResource"),
-          createMoreSpecificFieldReplacement("BLOB_DESERT", "org.lgna.story.resources.prop.SandDunesResource"),
-
-
-          createMoreSpecificFieldPattern("ARCHES", "org.lgna.story.resources.prop.AncientTempleBlockResource"),
-          createMoreSpecificFieldReplacement("ARCHES_INDIA_BRICK_D", "org.lgna.story.resources.prop.AncientTempleBlockResource"),
-
-          createMoreSpecificFieldPattern("PASSAGE", "org.lgna.story.resources.prop.AncientTempleBlockResource"),
-          createMoreSpecificFieldReplacement("PASSAGE_INDIA_BRICK_D", "org.lgna.story.resources.prop.AncientTempleBlockResource"),
-
-          createMoreSpecificFieldPattern("SHELF", "org.lgna.story.resources.prop.AncientTempleBlockResource"),
-          createMoreSpecificFieldReplacement("SHELF_INDIA_BRICK_D", "org.lgna.story.resources.prop.AncientTempleBlockResource"),
-
-          createMoreSpecificFieldPattern("SOLID", "org.lgna.story.resources.prop.AncientTempleBlockResource"),
-          createMoreSpecificFieldReplacement("SOLID_INDIA_BRICK_D", "org.lgna.story.resources.prop.AncientTempleBlockResource"),
-
-
-          createMoreSpecificFieldPattern("END", "org.lgna.story.resources.prop.AncientTemplePieceResource"),
-          createMoreSpecificFieldReplacement("END_INDIA_BRICK_D", "org.lgna.story.resources.prop.AncientTemplePieceResource"),
-
-          createMoreSpecificFieldPattern("LEDGE", "org.lgna.story.resources.prop.AncientTemplePieceResource"),
-          createMoreSpecificFieldReplacement("LEDGE_INDIA_BRICK_D", "org.lgna.story.resources.prop.AncientTemplePieceResource"),
-
-          createMoreSpecificFieldPattern("LEDGE_AND_STAIRS", "org.lgna.story.resources.prop.AncientTemplePieceResource"),
-          createMoreSpecificFieldReplacement("LEDGE_AND_STAIRS_INDIA_BRICK_D", "org.lgna.story.resources.prop.AncientTemplePieceResource"),
-
-          createMoreSpecificFieldPattern("PLAZA", "org.lgna.story.resources.prop.AncientTemplePieceResource"),
-          createMoreSpecificFieldReplacement("PLAZA_INDIA_BRICK_D", "org.lgna.story.resources.prop.AncientTemplePieceResource"),
-
-          createMoreSpecificFieldPattern("ROOM", "org.lgna.story.resources.prop.AncientTemplePieceResource"),
-          createMoreSpecificFieldReplacement("ROOM_INDIA_BRICK_D", "org.lgna.story.resources.prop.AncientTemplePieceResource"),
-
-          createMoreSpecificFieldPattern("STACK", "org.lgna.story.resources.prop.AncientTemplePieceResource"),
-          createMoreSpecificFieldReplacement("STACK_INDIA_BRICK_D", "org.lgna.story.resources.prop.AncientTemplePieceResource"),
-
-          createMoreSpecificFieldPattern("STAIRS", "org.lgna.story.resources.prop.AncientTemplePieceResource"),
-          createMoreSpecificFieldReplacement("STAIRS_INDIA_BRICK_D", "org.lgna.story.resources.prop.AncientTemplePieceResource"),
-
-
-          createMoreSpecificFieldPattern("DEFAULT", "org.lgna.story.resources.prop.AncientTempleArchResource"),
-          createMoreSpecificFieldReplacement("INDIA_BRICK_D", "org.lgna.story.resources.prop.AncientTempleArchResource"),
-
-
-          createMoreSpecificFieldPattern("DEFAULT", "org.lgna.story.resources.prop.AncientTemplePillarResource"),
-          createMoreSpecificFieldReplacement("INDIA_BRICK_D", "org.lgna.story.resources.prop.AncientTemplePillarResource"),
-
-
-          createMoreSpecificFieldPattern("DEFAULT", "org.lgna.story.resources.prop.AncientTempleWallResource"),
-          createMoreSpecificFieldReplacement("INDIA_BRICK_D", "org.lgna.story.resources.prop.AncientTempleWallResource"),
-
-
-          createMoreSpecificFieldPattern("DEFAULT", "org.lgna.story.resources.prop.AncientTempleWellResource"),
-          createMoreSpecificFieldReplacement("INDIA_BRICK_D", "org.lgna.story.resources.prop.AncientTempleWellResource"),
-
-
-          createMoreSpecificFieldPattern("NO_WATER", "org.lgna.story.resources.prop.WaterTankResource"),
-          createMoreSpecificFieldReplacement("NO_WATER_INDIA_WATER_TANK", "org.lgna.story.resources.prop.WaterTankResource"),
-
-          createMoreSpecificFieldPattern("WATER", "org.lgna.story.resources.prop.WaterTankResource"),
-          createMoreSpecificFieldReplacement("WATER_INDIA_WATER_TANK", "org.lgna.story.resources.prop.WaterTankResource"),
-
-
-          createMoreSpecificFieldPattern("DEFAULT", "org.lgna.story.resources.prop.WaterTankPillarResource"),
-          createMoreSpecificFieldReplacement("INDIA_WATER_TANK", "org.lgna.story.resources.prop.WaterTankPillarResource"),
-
-
-          createMoreSpecificFieldPattern("DEFAULT", "org.lgna.story.resources.prop.WaterTankShrineResource"),
-          createMoreSpecificFieldReplacement("INDIA_WATER_TANK", "org.lgna.story.resources.prop.WaterTankShrineResource"),
-
-
-          createMoreSpecificFieldPattern("DEFAULT", "org.lgna.story.resources.prop.WaterTankTowerResource"),
-          createMoreSpecificFieldReplacement("INDIA_WATER_TANK", "org.lgna.story.resources.prop.WaterTankTowerResource"),
-
-
-          createMoreSpecificFieldPattern("ARCH", "org.lgna.story.resources.prop.WaterTankWallResource"),
-          createMoreSpecificFieldReplacement("ARCH_INDIA_WATER_TANK", "org.lgna.story.resources.prop.WaterTankWallResource"),
-
-          createMoreSpecificFieldPattern("CIRCLE", "org.lgna.story.resources.prop.WaterTankWallResource"),
-          createMoreSpecificFieldReplacement("CIRCLE_INDIA_WATER_TANK", "org.lgna.story.resources.prop.WaterTankWallResource"),
-
-
-          createMoreSpecificFieldPattern("NO_WATER", "org.lgna.story.resources.prop.WaterTankWellResource"),
-          createMoreSpecificFieldReplacement("NO_WATER_INDIA_WATER_TANK", "org.lgna.story.resources.prop.WaterTankWellResource"),
-
-          createMoreSpecificFieldPattern("WATER", "org.lgna.story.resources.prop.WaterTankWellResource"),
-          createMoreSpecificFieldReplacement("WATER_INDIA_WATER_TANK", "org.lgna.story.resources.prop.WaterTankWellResource")
-          ),
+      createVersion3_2_110TextMigration(),
       new TextMigration(
           new Version("3.2.111.0.0"),
 
