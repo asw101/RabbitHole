@@ -75,7 +75,7 @@ public class ProjectCodeGeneratorStandaloneProjectTest {
   }
 
   @Test
-  public void generatedLauncherStartsProgramMainAndForwardsArgsHeadless() throws Exception {
+  public void generatedLauncherInvokesProgramMainThroughStubbedJavaFxLaunchPath() throws Exception {
     File aliceProject = temporaryFolder.newFile("launcher-runtime.a3p");
     IoUtilities.writeProject(
         aliceProject,
@@ -93,8 +93,11 @@ public class ProjectCodeGeneratorStandaloneProjectTest {
     Path classesDirectory = projectDirectory.resolve("build").resolve("classes");
     compileJavaSources(classesDirectory, javaSourcesUnder(sourceDirectory));
 
-    generatedProgramMainArgs = null;
-    generatedProgramMainLatch = new CountDownLatch(1);
+    CountDownLatch latch = new CountDownLatch(1);
+    synchronized (GENERATED_PROGRAM_PROBE_LOCK) {
+      generatedProgramMainArgs = null;
+      generatedProgramMainLatch = latch;
+    }
     try (GeneratedProjectClassLoader classLoader = new GeneratedProjectClassLoader(
         new URL[] {classesDirectory.toUri().toURL()})) {
       Class<?> launcherClass = Class.forName("AliceJavaFXLauncher", true, classLoader);
@@ -103,12 +106,14 @@ public class ProjectCodeGeneratorStandaloneProjectTest {
       launcherClass.getMethod("main", String[].class).invoke(null, (Object) args);
 
       assertTrue(
-          "Generated launcher should start generated Program.main without a display when JavaFX is stubbed",
-          generatedProgramMainLatch.await(5, TimeUnit.SECONDS));
+          "Stubbed JavaFX launch path should reach the generated Program.main probe",
+          latch.await(5, TimeUnit.SECONDS));
       assertArrayEquals(args, generatedProgramMainArgs);
     } finally {
-      generatedProgramMainArgs = null;
-      generatedProgramMainLatch = null;
+      synchronized (GENERATED_PROGRAM_PROBE_LOCK) {
+        generatedProgramMainArgs = null;
+        generatedProgramMainLatch = null;
+      }
     }
   }
 
@@ -188,10 +193,15 @@ public class ProjectCodeGeneratorStandaloneProjectTest {
   }
 
   public static void recordGeneratedProgramMainArgs(String[] args) {
-    generatedProgramMainArgs = args;
-    generatedProgramMainLatch.countDown();
+    synchronized (GENERATED_PROGRAM_PROBE_LOCK) {
+      generatedProgramMainArgs = args;
+      if (generatedProgramMainLatch != null) {
+        generatedProgramMainLatch.countDown();
+      }
+    }
   }
 
+  private static final Object GENERATED_PROGRAM_PROBE_LOCK = new Object();
   private static volatile String[] generatedProgramMainArgs;
   private static CountDownLatch generatedProgramMainLatch;
 
