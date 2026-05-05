@@ -137,6 +137,23 @@ public class ProjectMigrationManagerTest {
   }
 
   @Test
+  public void textMigrationRewritesLegacyJointFieldsAndAccessors() {
+    String source = String.join("\n",
+        "name=\"LEFT_THUMB_1\">",
+        "<declaringClass name=\"org.lgna.story.resources.biped.Alien\"",
+        "name=\"getRightClavicle\">",
+        "<declaringClass name=\"org.lgna.story.SFlyer\""
+    );
+
+    String migrated = migrateWithoutTestLogNoise(source, "3.1.33.0.0");
+
+    assertTrue(migrated.contains("name=\"LEFT_THUMB\"> <declaringClass name=\"org.lgna.story.resources.BipedResource\""));
+    assertTrue(migrated.contains("name=\"getRightWingShoulder\"> <declaringClass name=\"org.lgna.story.SFlyer\""));
+    assertFalse(migrated.contains("LEFT_THUMB_1"));
+    assertFalse(migrated.contains("getRightClavicle"));
+  }
+
+  @Test
   public void managerReportsNoPendingMigrationsAtCurrentVersion() {
     Version currentVersion = manager.getCurrentVersion();
 

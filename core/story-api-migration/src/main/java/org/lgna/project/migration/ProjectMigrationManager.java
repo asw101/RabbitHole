@@ -52,142 +52,24 @@ import org.lgna.story.Think;
 import org.lgna.story.resources.prop.FirTreeTrunkResource;
 import org.lgna.story.resources.prop.IceFloeResource;
 
+import static org.lgna.project.migration.ProjectMigrationTextSnippets.createJointAccessorPattern;
+import static org.lgna.project.migration.ProjectMigrationTextSnippets.createJointAccessorReplacement;
+import static org.lgna.project.migration.ProjectMigrationTextSnippets.createJointIdPattern;
+import static org.lgna.project.migration.ProjectMigrationTextSnippets.createJointIdReplacement;
+import static org.lgna.project.migration.ProjectMigrationTextSnippets.createMoreSpecificFieldPattern;
+import static org.lgna.project.migration.ProjectMigrationTextSnippets.createMoreSpecificFieldReplacement;
+import static org.lgna.project.migration.ProjectMigrationTextSnippets.createNextBipedJointString;
+import static org.lgna.project.migration.ProjectMigrationTextSnippets.createNextFlyerJointString;
+import static org.lgna.project.migration.ProjectMigrationTextSnippets.createNextQuadrupedJointString;
+import static org.lgna.project.migration.ProjectMigrationTextSnippets.createPrevBipedJointString;
+import static org.lgna.project.migration.ProjectMigrationTextSnippets.createPrevFlyerJointString;
+import static org.lgna.project.migration.ProjectMigrationTextSnippets.createPrevQuadrupedJointString;
+
 /**
  * @author Dennis Cosgrove
  */
 public class ProjectMigrationManager extends AbstractMigrationManager {
-  private static final String PATTERN_WHITESPACE = "\\s*";
-  private static final String REPLACEMENT_WHITESPACE = " ";
-
   // @formatter:off
-  private static String createMoreSpecificFieldString(String fieldName, String clsName, String whitespace) {
-    StringBuilder sb = new StringBuilder();
-    sb.append("name=\"");
-    sb.append(fieldName);
-    sb.append("\">");
-    sb.append(whitespace);
-    sb.append("<declaringClass name=\"");
-    sb.append(clsName);
-    sb.append("\"");
-    return sb.toString();
-  }
-
-  private static String createMoreSpecificFieldPattern(String fieldName, String clsName) {
-    return createMoreSpecificFieldString(fieldName, clsName, PATTERN_WHITESPACE);
-  }
-
-  private static String createMoreSpecificFieldReplacement(String fieldName, String clsName) {
-    return createMoreSpecificFieldString(fieldName, clsName, REPLACEMENT_WHITESPACE);
-  }
-
-  private static String createPrevJointString(String prevFieldName, String packageSubName) {
-    StringBuilder sb = new StringBuilder();
-    sb.append("name=\"");
-    sb.append(prevFieldName);
-    sb.append("\">");
-    sb.append(PATTERN_WHITESPACE);
-    sb.append("<declaringClass name=\"org\\.lgna\\.story\\.resources.");
-    sb.append(packageSubName);
-    sb.append("\\.[A-Za-z]*\"");
-    return sb.toString();
-  }
-
-  private static String createNextJointString(String prevFieldName, String clsName) {
-    StringBuilder sb = new StringBuilder();
-    sb.append("name=\"");
-    sb.append(prevFieldName);
-    sb.append("\">");
-    sb.append(REPLACEMENT_WHITESPACE);
-    sb.append("<declaringClass name=\"org.lgna.story.resources.");
-    sb.append(clsName);
-    sb.append("\"");
-    return sb.toString();
-  }
-
-  private static String createPrevBipedJointString(String prevFieldName) {
-    return createPrevJointString(prevFieldName, "biped");
-  }
-
-  private static String createNextBipedJointString(String prevFieldName) {
-    return createNextJointString(prevFieldName, "BipedResource");
-  }
-
-  private static String createPrevQuadrupedJointString(String prevFieldName) {
-    return createPrevJointString(prevFieldName, "quadruped");
-  }
-
-  private static String createNextQuadrupedJointString(String prevFieldName) {
-    return createNextJointString(prevFieldName, "QuadrupedResource");
-  }
-
-  private static String createPrevFlyerJointString(String prevFieldName) {
-    return createPrevJointString(prevFieldName, "flyer");
-  }
-
-  private static String createNextFlyerJointString(String prevFieldName) {
-    return createNextJointString(prevFieldName, "FlyerResource");
-  }
-
-  private static String createPrevSwimmerJointString(String prevFieldName) {
-    return createPrevJointString(prevFieldName, "swimmer");
-  }
-
-  private static String createNextSwimmerJointString(String prevFieldName) {
-    return createNextJointString(prevFieldName, "SwimmerResource");
-  }
-
-  private static String createJointAccessorString(String accessorName, String clsName, String whitespace) {
-    StringBuilder sb = new StringBuilder();
-    sb.append("name=\"");
-    sb.append(accessorName);
-    sb.append("\">");
-    sb.append(whitespace);
-    sb.append("<declaringClass name=\"org.lgna.story.");
-    sb.append(clsName);
-    sb.append("\"");
-    return sb.toString();
-  }
-
-  private static String createJointAccessorPattern(String accessorName, String clsName) {
-    return createJointAccessorString(accessorName, clsName, PATTERN_WHITESPACE);
-  }
-
-  private static String createJointAccessorReplacement(String accessorName, String clsName) {
-    return createJointAccessorString(accessorName, clsName, REPLACEMENT_WHITESPACE);
-  }
-
-  private static String createJointIdString(String fieldName, String subPackageAndClassName, String whitespace) {
-    StringBuilder sb = new StringBuilder();
-    sb.append("name=\"");
-    sb.append(fieldName);
-    sb.append("\">");
-    sb.append(PATTERN_WHITESPACE);
-    sb.append("<declaringClass name=\"org.lgna.story.resources.");
-    sb.append(subPackageAndClassName);
-    sb.append("\"");
-    return sb.toString();
-  }
-
-  private static String CACHE_FROM_PREVIOUS_CALL_subPackageAndClassName;
-
-  private static String createJointIdPattern(String prevFieldName, String subPackageAndClassName) {
-    CACHE_FROM_PREVIOUS_CALL_subPackageAndClassName = subPackageAndClassName;
-    return createJointIdString(prevFieldName, subPackageAndClassName, PATTERN_WHITESPACE);
-  }
-
-  private static String createJointIdReplacement(String nextFieldName) {
-    assert CACHE_FROM_PREVIOUS_CALL_subPackageAndClassName != null : nextFieldName;
-    try {
-      return createJointIdString(nextFieldName, CACHE_FROM_PREVIOUS_CALL_subPackageAndClassName, PATTERN_WHITESPACE);
-    } finally {
-      CACHE_FROM_PREVIOUS_CALL_subPackageAndClassName = null;
-    }
-  }
-
-  //  private static String createJointIdReplacement_NoLongerExistsCondition(String nextFieldNameToUseDespitePotentialProblems) {
-  //    return createJointIdReplacement(nextFieldNameToUseDespitePotentialProblems);
-  //  }
-
   private final TextMigration[] textMigrations = {
       new TextMigration(
           new Version("3.1.8.0.0")),
