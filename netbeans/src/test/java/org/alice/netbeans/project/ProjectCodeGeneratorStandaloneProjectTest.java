@@ -5,9 +5,13 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.lgna.project.Project;
+import org.lgna.project.ast.AstUtilities;
 import org.lgna.project.ast.BlockStatement;
+import org.lgna.project.ast.JavaMethod;
 import org.lgna.project.ast.JavaType;
 import org.lgna.project.ast.NamedUserType;
+import org.lgna.project.ast.ParameterAccess;
+import org.lgna.project.ast.TypeExpression;
 import org.lgna.project.ast.UserMethod;
 import org.lgna.project.ast.UserParameter;
 import org.lgna.project.io.IoUtilities;
@@ -23,6 +27,8 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -69,6 +75,44 @@ public class ProjectCodeGeneratorStandaloneProjectTest {
   }
 
   @Test
+  public void generatedLauncherStartsProgramMainAndForwardsArgsHeadless() throws Exception {
+    File aliceProject = temporaryFolder.newFile("launcher-runtime.a3p");
+    IoUtilities.writeProject(
+        aliceProject,
+        new Project(programTypeWithMainProbe("Program"), Project.SceneCameraType.WindowCamera));
+    Path projectDirectory = temporaryFolder.newFolder("launcher-runtime-project").toPath();
+    Path sourceDirectory = projectDirectory.resolve("src");
+    Files.createDirectories(sourceDirectory);
+
+    ProjectCodeGenerator.generateCode(aliceProject, sourceDirectory.toFile(), null, false);
+    writeJavaFxStubs(sourceDirectory);
+
+    String programSource = Files.readString(sourceDirectory.resolve("Program.java"));
+    assertTrue(programSource, programSource.contains("recordGeneratedProgramMainArgs(args);"));
+
+    Path classesDirectory = projectDirectory.resolve("build").resolve("classes");
+    compileJavaSources(classesDirectory, javaSourcesUnder(sourceDirectory));
+
+    generatedProgramMainArgs = null;
+    generatedProgramMainLatch = new CountDownLatch(1);
+    try (GeneratedProjectClassLoader classLoader = new GeneratedProjectClassLoader(
+        new URL[] {classesDirectory.toUri().toURL()})) {
+      Class<?> launcherClass = Class.forName("AliceJavaFXLauncher", true, classLoader);
+      String[] args = {"--project", "launcher-runtime.a3p"};
+
+      launcherClass.getMethod("main", String[].class).invoke(null, (Object) args);
+
+      assertTrue(
+          "Generated launcher should start generated Program.main without a display when JavaFX is stubbed",
+          generatedProgramMainLatch.await(5, TimeUnit.SECONDS));
+      assertArrayEquals(args, generatedProgramMainArgs);
+    } finally {
+      generatedProgramMainArgs = null;
+      generatedProgramMainLatch = null;
+    }
+  }
+
+  @Test
   public void generatedTemplateProjectSourcesCompileWithAliceLibraryClasspath() throws Exception {
     File aliceProject = temporaryFolder.newFile("template-smoke.a3p");
     IoUtilities.writeProject(
@@ -104,6 +148,14 @@ public class ProjectCodeGeneratorStandaloneProjectTest {
     return type;
   }
 
+  private static NamedUserType programTypeWithMainProbe(String name) {
+    NamedUserType type = new NamedUserType();
+    type.name.setValue(name);
+    type.superType.setValue(JavaType.getInstance(SProgram.class));
+    type.methods.add(mainMethodWithProbe());
+    return type;
+  }
+
   private static UserMethod mainMethod() {
     UserParameter argsParameter = new UserParameter("args", String[].class);
     UserMethod mainMethod = new UserMethod(
@@ -115,6 +167,33 @@ public class ProjectCodeGeneratorStandaloneProjectTest {
     mainMethod.isSignatureLocked.setValue(true);
     return mainMethod;
   }
+
+  private static UserMethod mainMethodWithProbe() {
+    UserParameter argsParameter = new UserParameter("args", String[].class);
+    JavaMethod recorder = AstUtilities.lookupMethod(
+        ProjectCodeGeneratorStandaloneProjectTest.class,
+        "recordGeneratedProgramMainArgs",
+        String[].class);
+    UserMethod mainMethod = new UserMethod(
+        "main",
+        Void.TYPE,
+        new UserParameter[] {argsParameter},
+        new BlockStatement(AstUtilities.createMethodInvocationStatement(
+            new TypeExpression(recorder.getDeclaringType()),
+            recorder,
+            new ParameterAccess(argsParameter))));
+    mainMethod.isStatic.setValue(true);
+    mainMethod.isSignatureLocked.setValue(true);
+    return mainMethod;
+  }
+
+  public static void recordGeneratedProgramMainArgs(String[] args) {
+    generatedProgramMainArgs = args;
+    generatedProgramMainLatch.countDown();
+  }
+
+  private static volatile String[] generatedProgramMainArgs;
+  private static CountDownLatch generatedProgramMainLatch;
 
   private static void writeJavaFxStubs(Path sourceDirectory) throws Exception {
     writeJavaSource(
