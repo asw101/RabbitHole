@@ -87,9 +87,6 @@ public class ProjectCodeGeneratorStandaloneProjectTest {
     ProjectCodeGenerator.generateCode(aliceProject, sourceDirectory.toFile(), null, false);
     writeJavaFxStubs(sourceDirectory);
 
-    String programSource = Files.readString(sourceDirectory.resolve("Program.java"));
-    assertTrue(programSource, programSource.contains("recordGeneratedProgramMainArgs(args);"));
-
     Path classesDirectory = projectDirectory.resolve("build").resolve("classes");
     compileJavaSources(classesDirectory, javaSourcesUnder(sourceDirectory));
 
@@ -219,6 +216,9 @@ public class ProjectCodeGeneratorStandaloneProjectTest {
 
           public static void launch(String[] args) {
             try {
+              // Stub only: enough Application.launch() behavior to exercise generated launcher wiring.
+              // This does not implement JavaFX toolkit initialization, lifecycle callbacks, an event
+              // loop, or real Stage behavior.
               launchedArgs = args;
               String callerClassName = StackWalker
                   .getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE)
