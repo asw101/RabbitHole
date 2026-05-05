@@ -90,6 +90,37 @@ public class HistoricalArchiveRoundTripCharacterizationTest {
   }
 
   @Test
+  public void generatedJsonProjectArchiveDecodesProgramFieldTypedBySceneWithoutExternalFixture() throws Exception {
+    File projectArchive = temporaryFolder.newFile("generated-json-project-with-scene-field.a3w");
+
+    writeJsonProjectArchive(
+        projectArchive,
+        "GeneratedProgramWithScene",
+        "class GeneratedProgramWithScene extends SProgram { GeneratedScene scene; }",
+        "GeneratedScene",
+        "class GeneratedScene extends SScene {}");
+
+    try (ZipFile zipFile = new ZipFile(projectArchive)) {
+      ProjectManifest manifest = readProjectManifest(zipFile);
+      assertTypeReference(manifest, "GeneratedProgramWithScene", "src/GeneratedProgramWithScene.twe");
+      assertTypeReference(manifest, "GeneratedScene", "src/GeneratedScene.twe");
+    }
+    Project readProject = IoUtilities.readProject(projectArchive);
+
+    NamedUserType readProgramType = readProject.getProgramType();
+    assertNotNull("Generated JSON .a3w program with a scene field should decode", readProgramType);
+    assertEquals("GeneratedProgramWithScene", readProgramType.getName());
+    assertEquals(1, readProgramType.getDeclaredFields().size());
+    UserField readSceneField = readProgramType.getDeclaredFields().get(0);
+    assertEquals("scene", readSceneField.getName());
+    NamedUserType readSceneType = namedUserTypeNamed(readProject, "GeneratedScene");
+    assertSame("Decoded program field should resolve to the scene type decoded from the same archive",
+        readSceneType,
+        readSceneField.getValueType());
+    assertEquals("SScene", readSceneType.getSuperType().getName());
+  }
+
+  @Test
   public void generatedWorldArchiveCharacterizesManifestResourceReadbackLimitWithoutExternalFixture() throws Exception {
     ImageResource imageResource = generatedImageResource("historical-world-texture.png", 0xFF663399);
     Project project = new Project(
@@ -381,6 +412,41 @@ public class HistoricalArchiveRoundTripCharacterizationTest {
     }
   }
 
+  private static void writeJsonProjectArchive(
+      File archive,
+      String programTypeName,
+      String programTweedleSource,
+      String sceneTypeName,
+      String sceneTweedleSource) throws Exception {
+    ProjectManifest manifest = new ProjectManifest();
+    manifest.description.name = programTypeName;
+    manifest.metadata.fileType = IoUtilities.EXPORT_EXTENSION;
+    manifest.metadata.identifier.name = programTypeName;
+    manifest.metadata.identifier.type = Manifest.ProjectType.World;
+    manifest.projectStructure.sceneCameraType = Project.SceneCameraType.WindowCamera;
+    manifest.resources.add(new TypeReference(programTypeName, "src/" + programTypeName + ".twe", "tweedle"));
+    manifest.resources.add(new TypeReference(sceneTypeName, "src/" + sceneTypeName + ".twe", "tweedle"));
+
+    try (ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(archive))) {
+      writeEntry(
+          zipOutputStream,
+          ProjectIo.VERSION_ENTRY_NAME,
+          ProjectVersion.getCurrentVersion().toString().getBytes(StandardCharsets.UTF_8));
+      writeEntry(
+          zipOutputStream,
+          ProjectIo.MANIFEST_ENTRY_NAME,
+          ManifestEncoderDecoder.toJson(manifest).getBytes(StandardCharsets.UTF_8));
+      writeEntry(
+          zipOutputStream,
+          "src/" + programTypeName + ".twe",
+          programTweedleSource.getBytes(StandardCharsets.UTF_8));
+      writeEntry(
+          zipOutputStream,
+          "src/" + sceneTypeName + ".twe",
+          sceneTweedleSource.getBytes(StandardCharsets.UTF_8));
+    }
+  }
+
   private static void writeEntry(ZipOutputStream zipOutputStream, String entryName, byte[] bytes) throws IOException {
     zipOutputStream.putNextEntry(new ZipEntry(entryName));
     zipOutputStream.write(bytes);
@@ -417,6 +483,13 @@ public class HistoricalArchiveRoundTripCharacterizationTest {
   private static Resource onlyResource(Collection<Resource> resources) {
     assertEquals(1, resources.size());
     return resources.iterator().next();
+  }
+
+  private static NamedUserType namedUserTypeNamed(Project project, String name) {
+    return project.getNamedUserTypes().stream()
+        .filter(type -> name.equals(type.getName()))
+        .findFirst()
+        .orElseThrow(() -> new AssertionError("Missing decoded user type " + name));
   }
 
   private static Resource firstResourceExpressionResource(NamedUserType type) {

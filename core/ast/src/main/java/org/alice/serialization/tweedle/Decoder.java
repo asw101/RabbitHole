@@ -23,9 +23,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class Decoder {
-  private final Set<AbstractDeclaration> terminalNodes;
+  private final Map<String, AbstractType<?, ?, ?>> terminalTypesByName;
   private static final List<String> JAVA_TYPE_PACKAGES = List.of(
       "org.lgna.story.",
       "org.lgna.story.resources.",
@@ -39,11 +40,15 @@ public class Decoder {
       "Number", Number.class);
 
   Decoder(Set<AbstractDeclaration> terminals) {
-    terminalNodes = terminals;
+    terminalTypesByName = terminals.stream()
+        .filter(AbstractType.class::isInstance)
+        .map(AbstractType.class::cast)
+        .filter(type -> type.getName() != null)
+        .collect(Collectors.toMap(AbstractType::getName, type -> type, (existing, replacement) -> existing));
   }
 
   Decoder() {
-    terminalNodes = new HashSet<>();
+    this(new HashSet<>());
   }
 
   public AbstractNode decode(String document) {
@@ -72,7 +77,7 @@ public class Decoder {
       throw new UnsupportedTweedleDecodeException("Tweedle class methods and constructors are not yet supported by the AST decoder.");
     }
 
-    NamedUserType type = new NamedUserType();
+    NamedUserType type = userTypeNamed(tweedleClass.getName());
     type.name.setValue(tweedleClass.getName());
     type.superType.setValue(resolveType(tweedleClass.getSuperclassName(), "superclass"));
     for (TweedleField property : tweedleClass.getProperties()) {
@@ -128,6 +133,10 @@ public class Decoder {
     if (aliasedClass != null) {
       return JavaType.getInstance(aliasedClass);
     }
+    AbstractType<?, ?, ?> terminalType = terminalTypesByName.get(typeName);
+    if (terminalType != null) {
+      return terminalType;
+    }
     for (String packageName : JAVA_TYPE_PACKAGES) {
       try {
         return JavaType.getInstance(Class.forName(packageName + typeName));
@@ -135,5 +144,13 @@ public class Decoder {
       }
     }
     throw new UnsupportedTweedleDecodeException("Unsupported Tweedle " + usage + ": " + typeName);
+  }
+
+  private NamedUserType userTypeNamed(String name) {
+    AbstractType<?, ?, ?> terminalType = terminalTypesByName.get(name);
+    if (terminalType instanceof NamedUserType namedUserType) {
+      return namedUserType;
+    }
+    return new NamedUserType();
   }
 }

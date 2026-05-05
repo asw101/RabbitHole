@@ -29,6 +29,10 @@ public class TweedleEncoderDecoder implements EncoderDecoder<String> {
     return new Decoder().decode(document);
   }
 
+  public AbstractNode decode(String document, Set<AbstractDeclaration> terminals) throws VersionNotSupportedException {
+    return new Decoder(terminals).decode(document);
+  }
+
   @Override
   public AbstractNode copy(String document, Set<AbstractDeclaration> terminals) throws VersionNotSupportedException {
     return new Decoder(terminals).copy(document);

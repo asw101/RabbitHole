@@ -220,10 +220,11 @@ public class JsonProjectIo extends DataSourceIo implements ProjectIo {
       if (manifest == null) {
         return result;
       }
+      Set<AbstractDeclaration> typeTerminals = typeTerminals(manifest);
       for (ResourceReference resourceReference : manifest.resources) {
         if (resourceReference instanceof TypeReference typeReference) {
           result.hasTypeReferences = true;
-          NamedUserType type = readTweedleType(typeReference);
+          NamedUserType type = readTweedleType(typeReference, typeTerminals);
           if (type != null) {
             result.add(type);
           }
@@ -232,7 +233,25 @@ public class JsonProjectIo extends DataSourceIo implements ProjectIo {
       return result;
     }
 
-    private NamedUserType readTweedleType(TypeReference typeReference) throws IOException {
+    private static Set<AbstractDeclaration> typeTerminals(Manifest manifest) {
+      Map<String, NamedUserType> terminalsByName = new LinkedHashMap<>();
+      for (ResourceReference resourceReference : manifest.resources) {
+        if (resourceReference instanceof TypeReference typeReference
+            && (typeReference.name != null)
+            && !typeReference.name.isEmpty()) {
+          terminalsByName.computeIfAbsent(typeReference.name, name -> {
+            NamedUserType terminal = new NamedUserType();
+            terminal.name.setValue(name);
+            return terminal;
+          });
+        }
+      }
+      return new LinkedHashSet<>(terminalsByName.values());
+    }
+
+    private NamedUserType readTweedleType(
+        TypeReference typeReference,
+        Set<AbstractDeclaration> typeTerminals) throws IOException {
       if (!TWEEDLE_FORMAT.equals(typeReference.format)) {
         throw new IOException(
             "Unsupported type reference format '" + typeReference.format + "' for " + typeReferenceContext(typeReference));
@@ -246,7 +265,7 @@ public class JsonProjectIo extends DataSourceIo implements ProjectIo {
       }
       try (InputStream typeStream = is) {
         byte[] typeBytes = InputStreamUtilities.getBytes(typeStream);
-        AbstractNode decoded = coder.decode(new String(typeBytes, StandardCharsets.UTF_8));
+        AbstractNode decoded = coder.decode(new String(typeBytes, StandardCharsets.UTF_8), typeTerminals);
         if (decoded == null) {
           throw new IOException("Tweedle type entry " + typeReference.file + " decoded to null");
         }
