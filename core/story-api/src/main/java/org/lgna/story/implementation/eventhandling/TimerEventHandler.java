@@ -85,13 +85,15 @@ public class TimerEventHandler extends AbstractEventHandler<TimeListener, TimeEv
   }
 
   public void disable() {
-    isEnabled = false;
-    GlrRenderFactory.getInstance().removeAutomaticDisplayListener(this.automaticDisplayListener);
+    if (isEnabled) {
+      isEnabled = false;
+      GlrRenderFactory.getInstance().removeAutomaticDisplayListener(this.automaticDisplayListener);
+    }
   }
 
   public void addListener(TimeListener timerEventListener, Double frequency, MultipleEventPolicy policy) {
     activationMap.put(timerEventListener, true);
-    if (!isEnabled) {
+    if (!isEnabled && (scene.getProgram() != null)) {
       enable();
     }
     registerPolicyMap(timerEventListener, policy);
