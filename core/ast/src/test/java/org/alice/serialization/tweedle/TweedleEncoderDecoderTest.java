@@ -81,6 +81,15 @@ public class TweedleEncoderDecoderTest {
   }
 
   @Test
+  public void decodeClassWithConstructorReportsUnsupportedMembers() {
+    UnsupportedTweedleDecodeException thrown = assertThrows(
+        UnsupportedTweedleDecodeException.class,
+        () -> coder.decode("class SyntheticType { SyntheticType() { } }"));
+
+    assertTrue(thrown.getMessage().contains("methods and constructors"));
+  }
+
+  @Test
   public void decodeEnumReportsOnlyClassDeclarationsSupported() {
     UnsupportedTweedleDecodeException thrown = assertThrows(
         UnsupportedTweedleDecodeException.class,
