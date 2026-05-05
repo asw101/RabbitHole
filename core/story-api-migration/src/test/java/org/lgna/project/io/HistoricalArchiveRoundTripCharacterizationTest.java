@@ -21,6 +21,7 @@ import org.lgna.project.ast.JavaType;
 import org.lgna.project.ast.LocalDeclarationStatement;
 import org.lgna.project.ast.NamedUserType;
 import org.lgna.project.ast.ResourceExpression;
+import org.lgna.project.ast.UserField;
 import org.lgna.project.ast.UserLocal;
 import org.lgna.project.ast.UserMethod;
 import org.lgna.story.SProgram;
@@ -114,7 +115,7 @@ public class HistoricalArchiveRoundTripCharacterizationTest {
   }
 
   @Test
-  public void generatedJsonTypeArchiveCharacterizesUnsupportedTweedleAsNullTypeWithResourceReadbackWithoutExternalFixture() throws Exception {
+  public void generatedJsonTypeArchiveDecodesFieldOnlyTweedleWithResourceReadbackWithoutExternalFixture() throws Exception {
     ImageResource imageResource = generatedImageResource("json-type-texture.png", 0xFF339966);
     File typeArchive = temporaryFolder.newFile("generated-json-type.a3c");
 
@@ -127,8 +128,14 @@ public class HistoricalArchiveRoundTripCharacterizationTest {
     TypeResourcesPair readType = IoUtilities.readType(typeArchive);
 
     assertNotNull("Generated JSON .a3c archive should read a type/resources pair", readType);
-    assertNull("Tweedle member decoding is not implemented yet, so JSON .a3c type reads preserve the current null type boundary.",
-        readType.getType());
+    NamedUserType decodedType = readType.getType();
+    assertNotNull("JSON .a3c type reads now decode field-only Tweedle classes.", decodedType);
+    assertEquals("GeneratedJsonType", decodedType.getName());
+    assertEquals("SProgram", decodedType.getSuperType().getName());
+    assertEquals(1, decodedType.getDeclaredFields().size());
+    UserField field = decodedType.getDeclaredFields().get(0);
+    assertEquals("count", field.getName());
+    assertSame(JavaType.getInstance(Integer.class), field.getValueType());
     Resource readResource = onlyResource(readType.getResources());
     assertEquals(imageResource.getId(), readResource.getId());
     assertEquals(imageResource.getName(), readResource.getName());
