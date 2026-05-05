@@ -70,14 +70,18 @@ public class TimerEventHandler extends AbstractEventHandler<TimeListener, TimeEv
   private final AutomaticDisplayListener automaticDisplayListener = new AutomaticDisplayListener() {
     @Override
     public void automaticDisplayCompleted(AutomaticDisplayEvent e) {
-      ProgramImp program = scene.getProgram();
-      if (program == null) {
-        return;
-      }
-      currentTime = program.getAnimator().getCurrentTime();
-      update();
+      handleAutomaticDisplayCompleted();
     }
   };
+
+  void handleAutomaticDisplayCompleted() {
+    ProgramImp program = scene.getProgram();
+    if (program == null) {
+      return;
+    }
+    currentTime = program.getAnimator().getCurrentTime();
+    update();
+  }
 
   public void enable() {
     isEnabled = true;
