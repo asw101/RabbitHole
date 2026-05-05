@@ -49,6 +49,34 @@ public class ProjectOpenSaveExportJourneyTest {
     assertEquals(PROGRAM_NAME, exportedProject.getProgramType().getName());
   }
 
+  @Test
+  public void classroomProjectWithSpacesInFileNameCanBeSavedAndExportedHeadlessly() throws Exception {
+    Path workingDirectory = Files.createDirectories(Path.of(
+        "target",
+        "headless-project-journey",
+        UUID.randomUUID().toString()));
+    File originalProjectFile = workingDirectory.resolve("classroom unit one.a3p").toFile();
+    File savedProjectFile = workingDirectory.resolve("classroom unit one copy.a3p").toFile();
+    File exportedProjectFile = workingDirectory.resolve("classroom unit one export.a3w").toFile();
+    Project originalProject = new Project(programType("ClassroomUnitProgram"), Project.SceneCameraType.WindowCamera);
+
+    IoUtilities.writeProject(originalProjectFile, originalProject);
+    Project loadedProject = new TestFileProjectLoader(originalProjectFile).loadNow();
+    IoUtilities.writeProject(savedProjectFile, loadedProject);
+    Project savedProject = new TestFileProjectLoader(savedProjectFile).loadNow();
+    IoUtilities.exportProject(exportedProjectFile, savedProject);
+    Project exportedProject = IoUtilities.readProject(exportedProjectFile);
+
+    assertNotNull(loadedProject);
+    assertEquals("ClassroomUnitProgram", loadedProject.getProgramType().getName());
+    assertTrue(savedProjectFile.isFile());
+    assertNotNull(savedProject);
+    assertEquals("ClassroomUnitProgram", savedProject.getProgramType().getName());
+    assertTrue(exportedProjectFile.isFile());
+    assertNotNull(exportedProject);
+    assertEquals("ClassroomUnitProgram", exportedProject.getProgramType().getName());
+  }
+
   private static NamedUserType programType(String name) {
     NamedUserType type = new NamedUserType();
     type.name.setValue(name);
