@@ -2,8 +2,13 @@ package org.alice.serialization.tweedle;
 
 import org.junit.Test;
 import org.lgna.project.ast.AbstractNode;
+import org.lgna.project.ast.BooleanLiteral;
+import org.lgna.project.ast.DoubleLiteral;
+import org.lgna.project.ast.Expression;
+import org.lgna.project.ast.IntegerLiteral;
 import org.lgna.project.ast.JavaType;
 import org.lgna.project.ast.NamedUserType;
+import org.lgna.project.ast.StringLiteral;
 import org.lgna.project.ast.UserField;
 
 import static org.junit.Assert.assertEquals;
@@ -63,10 +68,28 @@ public class TweedleEncoderDecoderTest {
   }
 
   @Test
-  public void decodeClassWithInitializedFieldReportsUnsupportedInitializer() {
+  public void decodeClassWithPrimitiveInitializedFieldsCreatesLiteralInitializers() throws Exception {
+    NamedUserType type = decodeUserType("""
+        class SyntheticType {
+          WholeNumber count <- 1;
+          DecimalNumber distance <- 2.5;
+          TextString label <- "hello";
+          Boolean enabled <- true;
+        }
+        """);
+
+    assertEquals(4, type.getDeclaredFields().size());
+    assertIntegerInitializer(type.getDeclaredFields().get(0), "count", 1);
+    assertDoubleInitializer(type.getDeclaredFields().get(1), "distance", 2.5);
+    assertStringInitializer(type.getDeclaredFields().get(2), "label", "hello");
+    assertBooleanInitializer(type.getDeclaredFields().get(3), "enabled", true);
+  }
+
+  @Test
+  public void decodeClassWithNonLiteralInitializedFieldReportsUnsupportedInitializer() {
     UnsupportedTweedleDecodeException thrown = assertThrows(
         UnsupportedTweedleDecodeException.class,
-        () -> coder.decode("class SyntheticType { WholeNumber count <- 1; }"));
+        () -> coder.decode("class SyntheticType { WholeNumber count <- 1 + 2; }"));
 
     assertTrue(thrown.getMessage().contains("initializers"));
   }
@@ -113,4 +136,33 @@ public class TweedleEncoderDecoderTest {
     assertTrue(decoded instanceof NamedUserType);
     return (NamedUserType) decoded;
   }
+
+  private static void assertIntegerInitializer(UserField field, String expectedName, int expectedValue) {
+    assertEquals(expectedName, field.getName());
+    Expression initializer = field.initializer.getValue();
+    assertTrue(initializer instanceof IntegerLiteral);
+    assertEquals(expectedValue, ((IntegerLiteral) initializer).value.getValue().intValue());
+  }
+
+  private static void assertDoubleInitializer(UserField field, String expectedName, double expectedValue) {
+    assertEquals(expectedName, field.getName());
+    Expression initializer = field.initializer.getValue();
+    assertTrue(initializer instanceof DoubleLiteral);
+    assertEquals(expectedValue, ((DoubleLiteral) initializer).value.getValue(), 0.0);
+  }
+
+  private static void assertStringInitializer(UserField field, String expectedName, String expectedValue) {
+    assertEquals(expectedName, field.getName());
+    Expression initializer = field.initializer.getValue();
+    assertTrue(initializer instanceof StringLiteral);
+    assertEquals(expectedValue, ((StringLiteral) initializer).value.getValue());
+  }
+
+  private static void assertBooleanInitializer(UserField field, String expectedName, boolean expectedValue) {
+    assertEquals(expectedName, field.getName());
+    Expression initializer = field.initializer.getValue();
+    assertTrue(initializer instanceof BooleanLiteral);
+    assertEquals(expectedValue, ((BooleanLiteral) initializer).value.getValue());
+  }
+
 }

@@ -3,13 +3,20 @@ package org.alice.serialization.tweedle;
 import org.alice.tweedle.TweedleClass;
 import org.alice.tweedle.TweedleLinkException;
 import org.alice.tweedle.TweedleField;
+import org.alice.tweedle.TweedlePrimitiveValue;
 import org.alice.tweedle.TweedleType;
+import org.alice.tweedle.ast.TweedleExpression;
 import org.alice.tweedle.unlinked.TweedleUnlinkedParser;
 import org.lgna.project.ast.AbstractDeclaration;
 import org.lgna.project.ast.AbstractNode;
 import org.lgna.project.ast.AbstractType;
+import org.lgna.project.ast.BooleanLiteral;
+import org.lgna.project.ast.DoubleLiteral;
+import org.lgna.project.ast.Expression;
+import org.lgna.project.ast.IntegerLiteral;
 import org.lgna.project.ast.JavaType;
 import org.lgna.project.ast.NamedUserType;
+import org.lgna.project.ast.StringLiteral;
 import org.lgna.project.ast.UserField;
 
 import java.util.HashSet;
@@ -75,11 +82,42 @@ public class Decoder {
   }
 
   private UserField decodeField(TweedleField property) {
-    if (property.hasInitializer()) {
-      throw new UnsupportedTweedleDecodeException(
-          "Tweedle field initializers are not yet supported by the AST decoder: " + property.getName());
+    AbstractType<?, ?, ?> valueType = resolveType(property.getType().getName(), "field");
+    Expression initializer = property.hasInitializer() ? decodeFieldInitializer(property) : null;
+    return new UserField(property.getName(), valueType, initializer);
+  }
+
+  private Expression decodeFieldInitializer(TweedleField property) {
+    TweedleExpression initializer = property.getInitializer();
+    if (initializer instanceof TweedlePrimitiveValue<?> primitiveValue) {
+      return primitiveLiteral(primitiveValue.getPrimitiveValue());
     }
-    return new UserField(property.getName(), resolveType(property.getType().getName(), "field"), null);
+    throw unsupportedFieldInitializer(property);
+  }
+
+  private Expression primitiveLiteral(Object value) {
+    if (value instanceof Integer integerValue) {
+      return new IntegerLiteral(integerValue);
+    }
+    if (value instanceof Double doubleValue) {
+      return new DoubleLiteral(doubleValue);
+    }
+    if (value instanceof String stringValue) {
+      return new StringLiteral(stringValue);
+    }
+    if (value instanceof Boolean booleanValue) {
+      return new BooleanLiteral(booleanValue);
+    }
+    throw new UnsupportedTweedleDecodeException("Unsupported Tweedle primitive initializer value: " + value);
+  }
+
+  private UnsupportedTweedleDecodeException unsupportedFieldInitializer(TweedleField property) {
+    if (property.hasInitializer()) {
+      return new UnsupportedTweedleDecodeException(
+          "Non-literal Tweedle field initializers are not yet supported by the AST decoder: " + property.getName());
+    }
+    return new UnsupportedTweedleDecodeException(
+        "Missing Tweedle field initializer: " + property.getName());
   }
 
   private AbstractType<?, ?, ?> resolveType(String typeName, String usage) {

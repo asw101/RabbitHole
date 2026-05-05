@@ -27,6 +27,8 @@ import org.lgna.project.ProjectVersion;
 import org.lgna.project.Version;
 import org.lgna.project.ast.BlockStatement;
 import org.lgna.project.ast.CrawlPolicy;
+import org.lgna.project.ast.Expression;
+import org.lgna.project.ast.IntegerLiteral;
 import org.lgna.project.ast.JavaType;
 import org.lgna.project.ast.LocalDeclarationStatement;
 import org.lgna.project.ast.NamedUserType;
@@ -761,6 +763,16 @@ public class IoUtilitiesTest {
   }
 
   @Test
+  public void jsonPlayerTweedlePrimitiveFieldInitializerDecodesProgramType() throws Exception {
+    File exportFile = temporaryFolder.newFile("json-initialized-field-program.a3w");
+    writeJsonPlayerArchive(exportFile, "Program", "class Program { WholeNumber count <- 7; }");
+
+    Project readProject = IoUtilities.readProject(exportFile);
+
+    assertSingleIntegerFieldWithInitializer(readProject.getProgramType(), "count", 7);
+  }
+
+  @Test
   public void unsupportedJsonPlayerTweedleSuperclassRemainsUndecoded() throws Exception {
     File exportFile = temporaryFolder.newFile("json-unsupported-super-program.a3w");
     writeJsonPlayerArchive(exportFile, "Program", "class Program extends MissingSuper {}");
@@ -818,6 +830,16 @@ public class IoUtilitiesTest {
     TypeResourcesPair readType = IoUtilities.readType(typeFile);
 
     assertSingleIntegerField(readType.getType(), "count");
+  }
+
+  @Test
+  public void jsonTypeTweedlePrimitiveFieldInitializerDecodesType() throws Exception {
+    File typeFile = temporaryFolder.newFile("json-initialized-field-type.a3c");
+    writeJsonTypeArchive(typeFile, "SyntheticType", "class SyntheticType { WholeNumber count <- 7; }");
+
+    TypeResourcesPair readType = IoUtilities.readType(typeFile);
+
+    assertSingleIntegerFieldWithInitializer(readType.getType(), "count", 7);
   }
 
   @Test
@@ -1410,6 +1432,13 @@ public class IoUtilitiesTest {
     UserField field = type.getDeclaredFields().get(0);
     assertEquals(expectedName, field.getName());
     assertSame(JavaType.getInstance(Integer.class), field.getValueType());
+  }
+
+  private static void assertSingleIntegerFieldWithInitializer(NamedUserType type, String expectedName, int expectedValue) {
+    assertSingleIntegerField(type, expectedName);
+    Expression initializer = type.getDeclaredFields().get(0).initializer.getValue();
+    assertTrue(initializer instanceof IntegerLiteral);
+    assertEquals(expectedValue, ((IntegerLiteral) initializer).value.getValue().intValue());
   }
 
   private static Resource firstResourceExpressionResource(NamedUserType type) {
