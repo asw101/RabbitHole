@@ -320,18 +320,6 @@ public class ModelResourceExporter {
     return this.jointList;
   }
 
-  private boolean hasParent(List<Tuple2<String, String>> listToCheck, String parent) {
-    if ((parent == null) || (parent.length() == 0)) {
-      return true;
-    }
-    for (Tuple2<String, String> entry : listToCheck) {
-      if (entry.getA().equalsIgnoreCase(parent)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
   public void addArrayNamesToExposeFirstElementOf(List<String> arrayNames) {
     for (String arrayName : arrayNames) {
       if (!this.arraysToExposeFirstElementOf.contains(arrayName)) {
@@ -400,62 +388,8 @@ public class ModelResourceExporter {
     return ModelResourceArrayUtilities.getArrayEntries(jointNames, customArrayNameMap, jointsToSuppress, arrayNamesToSkip);
   }
 
-  private static List<Tuple2<String, String>> removeEntry(List<Tuple2<String, String>> sourceList, String toRemove) {
-    Tuple2<String, String> entryToRemove = null;
-    //Find the entry to remove
-    for (Tuple2<String, String> entry : sourceList) {
-      if (entry.getA().equalsIgnoreCase(toRemove)) {
-        entryToRemove = entry;
-        break;
-      }
-    }
-    if (entryToRemove != null) {
-      //Remap any existing joints that are children of the joint to remove to be children of the parent of the joint to remove
-      for (Tuple2<String, String> entry : sourceList) {
-        if ((entry.getB() != null) && entry.getB().equalsIgnoreCase(entryToRemove.getA())) {
-          entry.setB(entryToRemove.getB());
-        }
-      }
-      //Remove the joint
-      sourceList.remove(entryToRemove);
-    }
-    return sourceList;
-  }
-
-  private static boolean isRootJoint(String jointName) {
-    return jointName.equalsIgnoreCase("root");
-  }
-
   private List<Tuple2<String, String>> makeCodeReadyTree(List<Tuple2<String, String>> sourceList) {
-    if (sourceList != null) {
-      List<Tuple2<String, String>> cleaned = new ArrayList<Tuple2<String, String>>();
-      for (Tuple2<String, String> entry : sourceList) {
-        if (REMOVE_ROOT_JOINTS) {
-          if (isRootJoint(entry.getA()) && ((entry.getB() == null) || (entry.getB().length() == 0))) {
-            continue;
-          } else if ((entry.getB() != null) && isRootJoint(entry.getB())) {
-            entry.setB(null);
-          }
-        }
-        cleaned.add(entry);
-      }
-      List<Tuple2<String, String>> sorted = new ArrayList<Tuple2<String, String>>();
-      while (sorted.size() != cleaned.size()) {
-        for (Tuple2<String, String> entry : cleaned) {
-          if (!sorted.contains(entry) && hasParent(sorted, entry.getB())) {
-            sorted.add(entry);
-          }
-        }
-      }
-
-      //Remove joints that are in the "to suppress" list
-      //      for (String toSuppress : this.jointIdsToSuppress) {
-      //        sorted = removeEntry(sorted, toSuppress);
-      //      }
-
-      return sorted;
-    }
-    return null;
+    return ModelResourceJointTreeUtilities.makeCodeReadyTree(sourceList, REMOVE_ROOT_JOINTS);
   }
 
   public void setJointMap(List<Tuple2<String, String>> jointList) {
@@ -774,7 +708,7 @@ public class ModelResourceExporter {
     if (this.jointIdsToSuppress.contains(jointString)) {
       return true;
     }
-    if (isRootJoint(jointString)) {
+    if (ModelResourceJointTreeUtilities.isRootJoint(jointString)) {
       return true;
     }
     return false;
