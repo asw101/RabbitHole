@@ -203,6 +203,35 @@ public class HistoricalArchiveRoundTripCharacterizationTest {
   }
 
   @Test
+  public void generatedJsonPlayerArchiveWithUnresolvedProgramParentIsRejectedWithoutPartialProgramDecode() throws Exception {
+    File projectArchive = temporaryFolder.newFile("generated-json-player-unresolved-parent-boundary.a3w");
+
+    writeJsonProjectArchive(
+        projectArchive,
+        "GeneratedProgramWithUnresolvedParentBoundary",
+        "class GeneratedProgramWithUnresolvedParentBoundary extends MissingLegacyProgramParent { WholeNumber count; }",
+        "GeneratedUnresolvedParentBoundaryScene",
+        "class GeneratedUnresolvedParentBoundaryScene extends SScene {}");
+
+    try (ZipFile zipFile = new ZipFile(projectArchive)) {
+      ProjectManifest manifest = readProjectManifest(zipFile);
+      assertTypeReference(
+          manifest,
+          "GeneratedProgramWithUnresolvedParentBoundary",
+          "src/GeneratedProgramWithUnresolvedParentBoundary.twe");
+      assertTypeReference(
+          manifest,
+          "GeneratedUnresolvedParentBoundaryScene",
+          "src/GeneratedUnresolvedParentBoundaryScene.twe");
+    }
+    IOException thrown = assertThrows(IOException.class, () -> IoUtilities.readProject(projectArchive));
+
+    assertTrue(thrown.getMessage().contains(
+        "Project archive manifest names program type 'GeneratedProgramWithUnresolvedParentBoundary'"));
+    assertTrue(thrown.getMessage().contains("decoded type names are [GeneratedUnresolvedParentBoundaryScene]"));
+  }
+
+  @Test
   public void generatedWorldArchiveCharacterizesManifestResourceReadbackLimitWithoutExternalFixture() throws Exception {
     ImageResource imageResource = generatedImageResource("historical-world-texture.png", 0xFF663399);
     Project project = new Project(
