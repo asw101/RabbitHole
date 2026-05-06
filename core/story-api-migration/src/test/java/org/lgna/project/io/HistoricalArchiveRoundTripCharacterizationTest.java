@@ -43,6 +43,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
@@ -163,6 +164,24 @@ public class HistoricalArchiveRoundTripCharacterizationTest {
     assertEquals(imageResource.getOriginalFileName(), readResource.getOriginalFileName());
     assertEquals(imageResource.getContentType(), readResource.getContentType());
     assertArrayEquals(imageResource.getData(), readResource.getData());
+  }
+
+  @Test
+  public void generatedJsonPlayerArchiveWithMethodBearingProgramTypeIsRejectedWithoutPartialProgramDecode() throws Exception {
+    File projectArchive = temporaryFolder.newFile("generated-json-player-method-boundary.a3w");
+
+    writeJsonProjectArchive(
+        projectArchive,
+        "GeneratedProgramWithMethodBoundary",
+        "class GeneratedProgramWithMethodBoundary extends SProgram { WholeNumber count() { return 1; } }",
+        "GeneratedMethodBoundaryScene",
+        "class GeneratedMethodBoundaryScene extends SScene {}");
+
+    IOException thrown = assertThrows(IOException.class, () -> IoUtilities.readProject(projectArchive));
+
+    assertTrue(thrown.getMessage().contains(
+        "Project archive manifest names program type 'GeneratedProgramWithMethodBoundary'"));
+    assertTrue(thrown.getMessage().contains("decoded type names are [GeneratedMethodBoundaryScene]"));
   }
 
   @Test
