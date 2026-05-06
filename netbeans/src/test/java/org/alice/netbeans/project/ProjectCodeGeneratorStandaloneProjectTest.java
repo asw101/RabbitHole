@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -149,7 +150,7 @@ public class ProjectCodeGeneratorStandaloneProjectTest {
   }
 
   @Test
-  public void templatePackagedLauncherJarDocumentsForkedJavaFxRuntimeBoundary() throws Exception {
+  public void templatePackagedLauncherJarFailsBeforeMainWhenJavaFxClassesAreAbsent() throws Exception {
     Path projectDirectory = temporaryFolder.newFolder("template-packaged-runtime").toPath();
     extractProjectTemplate(projectDirectory);
     Path sourceDirectory = projectDirectory.resolve("src");
@@ -164,27 +165,28 @@ public class ProjectCodeGeneratorStandaloneProjectTest {
     Path classesDirectory = resolveBuildClassesDirectory(projectDirectory, properties);
     compileJavaSources(classesDirectory, javaSourcesUnder(sourceDirectory));
 
-    Path distJar = packageDistJarFromTemplate(projectDirectory, classesDirectory, properties);
+    Path distJar = packageDistJarFromTemplate(
+        projectDirectory,
+        classesDirectory,
+        properties,
+        entryName -> !entryName.startsWith("javafx/"));
     assertEquals("AliceJavaFXLauncher", mainClassInJar(distJar));
 
     Path launchMarker = projectDirectory.resolve("javafx-launch-marker.txt");
     Path programMarker = projectDirectory.resolve("program-main-marker.txt");
     ProcessResult result = runJarInForkedJava(projectDirectory, distJar, launchMarker, programMarker, "alpha", "beta");
 
-    if (result.exitCode == 0) {
-      assertEquals(List.of("AliceJavaFXLauncher", "alpha", "beta"), Files.readAllLines(launchMarker, StandardCharsets.UTF_8));
-      assertEquals(List.of("alpha", "beta"), Files.readAllLines(programMarker, StandardCharsets.UTF_8));
-    } else {
-      assertTrue(
-          "Forked java launcher failed for an unexpected reason:\n" + result.output,
-          result.output.contains("JavaFX runtime components are missing"));
-      assertFalse(
-          "The JavaFX stub marker must not be written when the java launcher rejects the runtime before main()",
-          Files.exists(launchMarker));
-      assertFalse(
-          "Program.main must not run when the java launcher rejects the runtime before main()",
-          Files.exists(programMarker));
-    }
+    assertNotEquals("Forked java launcher should fail without JavaFX classes on the classpath", 0, result.exitCode);
+    assertTrue(
+        "Forked java launcher failed for an unexpected reason:\n" + result.output,
+        result.output.contains("javafx/application/Application")
+            || result.output.contains("javafx.application.Application"));
+    assertFalse(
+        "The JavaFX stub marker must not be written when the java launcher rejects the runtime before main()",
+        Files.exists(launchMarker));
+    assertFalse(
+        "Program.main must not run when the java launcher rejects the runtime before main()",
+        Files.exists(programMarker));
   }
 
   private static NamedUserType programType(String name) {
@@ -441,6 +443,14 @@ public class ProjectCodeGeneratorStandaloneProjectTest {
       Path projectDirectory,
       Path classesDirectory,
       Properties properties) throws Exception {
+    return packageDistJarFromTemplate(projectDirectory, classesDirectory, properties, entryName -> true);
+  }
+
+  private static Path packageDistJarFromTemplate(
+      Path projectDirectory,
+      Path classesDirectory,
+      Properties properties,
+      Predicate<String> includeEntry) throws Exception {
     Path distJar = resolveDistJar(projectDirectory, properties);
     Files.createDirectories(distJar.getParent());
     Manifest manifest;
@@ -453,7 +463,11 @@ public class ProjectCodeGeneratorStandaloneProjectTest {
     try (JarOutputStream jarOutputStream = new JarOutputStream(Files.newOutputStream(distJar), manifest);
          Stream<Path> paths = Files.walk(classesDirectory)) {
       for (Path path : paths.filter(Files::isRegularFile).sorted().toList()) {
-        JarEntry entry = new JarEntry(classesDirectory.relativize(path).toString().replace(File.separatorChar, '/'));
+        String entryName = classesDirectory.relativize(path).toString().replace(File.separatorChar, '/');
+        if (!includeEntry.test(entryName)) {
+          continue;
+        }
+        JarEntry entry = new JarEntry(entryName);
         jarOutputStream.putNextEntry(entry);
         Files.copy(path, jarOutputStream);
         jarOutputStream.closeEntry();
