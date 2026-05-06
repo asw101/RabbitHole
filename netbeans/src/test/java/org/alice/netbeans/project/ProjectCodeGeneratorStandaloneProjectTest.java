@@ -25,8 +25,11 @@ import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -187,6 +190,59 @@ public class ProjectCodeGeneratorStandaloneProjectTest {
     assertFalse(
         "Program.main must not run when the java launcher rejects the runtime before main()",
         Files.exists(programMarker));
+  }
+
+  @Test
+  public void templatePackagedLauncherWithRealJavaFxModulesStopsAtDisplayBoundaryWhenHeadless() throws Exception {
+    Path projectDirectory = temporaryFolder.newFolder("template-real-javafx-runtime").toPath();
+    extractProjectTemplate(projectDirectory);
+    Path sourceDirectory = projectDirectory.resolve("src");
+    Files.createDirectories(sourceDirectory);
+
+    ProjectCodeGenerator.generateLauncher(sourceDirectory.toFile());
+    writeProgramMarkerSource(sourceDirectory);
+
+    List<Path> javaFxModulePath = javaFxRuntimeModulePath();
+    ProcessResult moduleResult = runForkedJava(
+        projectDirectory,
+        List.of(
+            "--module-path", pathList(javaFxModulePath),
+            "--add-modules", "javafx.graphics,javafx.media",
+            "--list-modules"));
+    assertEquals(moduleResult.output, 0, moduleResult.exitCode);
+    assertFalse(moduleResult.output, moduleResult.timedOut);
+    assertTrue(moduleResult.output, moduleResult.output.contains("javafx.base@"));
+    assertTrue(moduleResult.output, moduleResult.output.contains("javafx.graphics@"));
+    assertTrue(moduleResult.output, moduleResult.output.contains("javafx.media@"));
+
+    Properties properties = loadProperties(projectDirectory.resolve("nbproject").resolve("project.properties"));
+    Path classesDirectory = resolveBuildClassesDirectory(projectDirectory, properties);
+    compileJavaSources(classesDirectory, pathList(javaFxModulePath), javaSourcesUnder(sourceDirectory));
+    Path distJar = packageDistJarFromTemplate(projectDirectory, classesDirectory, properties);
+    assertEquals("AliceJavaFXLauncher", mainClassInJar(distJar));
+
+    Path programMarker = projectDirectory.resolve("program-main-marker.txt");
+    ProcessResult launchResult = runJarWithJavaFxModulesInForkedJava(
+        projectDirectory,
+        distJar,
+        javaFxModulePath,
+        programMarker,
+        "real-javafx", "display-boundary");
+
+    if ((launchResult.exitCode == 0) || Files.exists(programMarker)) {
+      assertProgramMarker(programMarker, "real-javafx", "display-boundary");
+      return;
+    }
+
+    assertFalse(
+        "Program.main must not run when the real JavaFX toolkit stops at the display precondition",
+        Files.exists(programMarker));
+    assertTrue(
+        "Real JavaFX launch failed for an unexpected reason:\n" + launchResult.output,
+        launchResult.output.contains("Unable to open DISPLAY")
+            || launchResult.output.contains("DISPLAY")
+            || launchResult.output.contains("Glass")
+            || launchResult.output.contains("gtk"));
   }
 
   private static NamedUserType programType(String name) {
@@ -487,6 +543,53 @@ public class ProjectCodeGeneratorStandaloneProjectTest {
     }
   }
 
+  private static List<Path> javaFxRuntimeModulePath() throws Exception {
+    Map<String, Path> modules = new LinkedHashMap<>();
+    for (String entry : System.getProperty(
+        "surefire.test.class.path",
+        System.getProperty("java.class.path", "")).split(File.pathSeparator)) {
+      if (entry.isBlank()) {
+        continue;
+      }
+      Path path = Path.of(entry);
+      String artifact = javaFxArtifact(path);
+      if ((artifact != null) && containsClassEntry(path)) {
+        modules.putIfAbsent(artifact, path.toAbsolutePath().normalize());
+      }
+    }
+    assertTrue("Missing JavaFX base runtime jar on test classpath", modules.containsKey("javafx-base"));
+    assertTrue("Missing JavaFX graphics runtime jar on test classpath", modules.containsKey("javafx-graphics"));
+    assertTrue("Missing JavaFX media runtime jar on test classpath", modules.containsKey("javafx-media"));
+    return List.of(
+        modules.get("javafx-base"),
+        modules.get("javafx-graphics"),
+        modules.get("javafx-media"));
+  }
+
+  private static String javaFxArtifact(Path path) {
+    String fileName = path.getFileName().toString();
+    for (String artifact : List.of("javafx-base", "javafx-graphics", "javafx-media")) {
+      if (fileName.startsWith(artifact + "-") && fileName.endsWith(".jar")) {
+        return artifact;
+      }
+    }
+    return null;
+  }
+
+  private static boolean containsClassEntry(Path jarPath) {
+    try (JarFile jarFile = new JarFile(jarPath.toFile())) {
+      return jarFile.stream().anyMatch(entry -> !entry.isDirectory() && entry.getName().endsWith(".class"));
+    } catch (Exception e) {
+      return false;
+    }
+  }
+
+  private static String pathList(List<Path> paths) {
+    return paths.stream()
+        .map(path -> path.toAbsolutePath().normalize().toString())
+        .collect(java.util.stream.Collectors.joining(File.pathSeparator));
+  }
+
   private static ProcessResult runJarInForkedJava(
       Path workingDirectory,
       Path distJar,
@@ -507,6 +610,46 @@ public class ProjectCodeGeneratorStandaloneProjectTest {
     assertTrue("Timed out waiting for forked java launcher", process.waitFor(10, TimeUnit.SECONDS));
     String output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
     return new ProcessResult(process.exitValue(), output);
+  }
+
+  private static ProcessResult runJarWithJavaFxModulesInForkedJava(
+      Path workingDirectory,
+      Path distJar,
+      List<Path> javaFxModulePath,
+      Path programMarker,
+      String... args) throws Exception {
+    List<String> command = new ArrayList<>();
+    command.add("-Dalice.test.program.marker=" + programMarker.toAbsolutePath().normalize());
+    command.add("--module-path");
+    command.add(pathList(javaFxModulePath));
+    command.add("--add-modules");
+    command.add("javafx.graphics,javafx.media");
+    command.add("-jar");
+    command.add(distJar.toAbsolutePath().normalize().toString());
+    command.addAll(Arrays.asList(args));
+    return runForkedJava(workingDirectory, command);
+  }
+
+  private static ProcessResult runForkedJava(Path workingDirectory, List<String> javaArguments) throws Exception {
+    List<String> command = new ArrayList<>();
+    command.add(Path.of(System.getProperty("java.home"), "bin", "java").toString());
+    command.addAll(javaArguments);
+    Process process = new ProcessBuilder(command)
+        .directory(workingDirectory.toFile())
+        .redirectErrorStream(true)
+        .start();
+    boolean exited = process.waitFor(10, TimeUnit.SECONDS);
+    if (!exited) {
+      process.destroyForcibly();
+      assertTrue("Timed out waiting for forked java to terminate", process.waitFor(5, TimeUnit.SECONDS));
+    }
+    String output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+    return new ProcessResult(exited ? process.exitValue() : -1, output, !exited);
+  }
+
+  private static void assertProgramMarker(Path programMarker, String... expectedArgs) throws Exception {
+    assertTrue("Program.main marker should be written after real JavaFX start", Files.exists(programMarker));
+    assertEquals(Arrays.asList(expectedArgs), Files.readAllLines(programMarker, StandardCharsets.UTF_8));
   }
 
   private static void writeJavaSource(Path sourcePath, String source) throws Exception {
@@ -544,10 +687,16 @@ public class ProjectCodeGeneratorStandaloneProjectTest {
   private static class ProcessResult {
     private final int exitCode;
     private final String output;
+    private final boolean timedOut;
 
     private ProcessResult(int exitCode, String output) {
+      this(exitCode, output, false);
+    }
+
+    private ProcessResult(int exitCode, String output, boolean timedOut) {
       this.exitCode = exitCode;
       this.output = output;
+      this.timedOut = timedOut;
     }
   }
 }
