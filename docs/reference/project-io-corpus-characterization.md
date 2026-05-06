@@ -253,6 +253,7 @@ part of the archive contract:
 | --- | --- |
 | Manifest names a program, but no matching Tweedle type reference exists | `IoUtilities.readProject` throws `IOException` with context for the manifest program and missing type reference. |
 | Manifest names a program, but the referenced Tweedle source decodes to a different type name | `IoUtilities.readProject` throws `IOException` with context for both names. |
+| Manifest names a program, but the referenced Tweedle source extends an unresolved legacy parent type | `IoUtilities.readProject` throws `IOException` at the project read boundary instead of returning a partial project whose program type is missing. |
 | Manifest names a program and the referenced Tweedle source decodes to the same type name | `IoUtilities.readProject` returns a `Project` with that program type. |
 
 This fail-fast behavior is production-compatible because the public read API is
