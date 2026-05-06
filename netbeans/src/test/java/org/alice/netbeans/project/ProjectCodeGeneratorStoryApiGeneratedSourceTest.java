@@ -15,7 +15,9 @@ import org.lgna.project.ast.JavaType;
 import org.lgna.project.ast.LambdaExpression;
 import org.lgna.project.ast.NamedUserType;
 import org.lgna.project.ast.NullLiteral;
+import org.lgna.project.ast.ParameterAccess;
 import org.lgna.project.ast.ThisExpression;
+import org.lgna.project.ast.TypeExpression;
 import org.lgna.project.ast.UserField;
 import org.lgna.project.ast.UserLambda;
 import org.lgna.project.ast.UserMethod;
@@ -35,6 +37,7 @@ import org.lgna.story.SetOpacity;
 import org.lgna.story.SetPaint;
 import org.lgna.story.event.SceneActivationEvent;
 import org.lgna.story.event.SceneActivationListener;
+import org.lgna.story.event.TimeEvent;
 import org.lgna.story.event.TimeListener;
 
 import java.io.File;
@@ -180,31 +183,83 @@ public class ProjectCodeGeneratorStoryApiGeneratedSourceTest {
     try (URLClassLoader classLoader = new URLClassLoader(
         new URL[] {classesDirectory.toUri().toURL()},
         Thread.currentThread().getContextClassLoader())) {
-      Class<?> sceneClass = Class.forName("Scene", true, classLoader);
-      var constructor = sceneClass.getDeclaredConstructor();
-      constructor.setAccessible(true);
-      Object scene = constructor.newInstance();
-      var handleActiveChanged = sceneClass.getDeclaredMethod("handleActiveChanged", Boolean.class, Integer.class);
-      handleActiveChanged.setAccessible(true);
-      handleActiveChanged.invoke(scene, Boolean.TRUE, 1);
-      Object sceneImplementation = sceneClass.getMethod("getImplementation").invoke(scene);
-      Object eventManager = sceneImplementation.getClass().getMethod("getEventManager").invoke(sceneImplementation);
-      var timerField = eventManager.getClass().getDeclaredField("timer");
-      timerField.setAccessible(true);
-      timer = timerField.get(eventManager);
-      timer.getClass().getMethod("sceneActivated", SceneActivationEvent.class).invoke(timer, new SceneActivationEvent());
-      var currentTimeField = timer.getClass().getDeclaredField("currentTime");
-      currentTimeField.setAccessible(true);
-      currentTimeField.set(timer, 2.0);
-      var update = timer.getClass().getDeclaredMethod("update");
-      update.setAccessible(true);
-      update.invoke(timer);
+      Object scene = instantiateGeneratedScene(classLoader);
+      timer = timerFor(scene);
+      activateAndUpdateTimer(timer, 2.0);
       assertTrue("Generated time listener should run when the timer handler seam updates",
           timeEventLatch.await(5, TimeUnit.SECONDS));
     } finally {
-      if (timer != null) {
-        timer.getClass().getMethod("disable").invoke(timer);
-      }
+      disableTimer(timer);
+    }
+  }
+
+  @Test
+  public void generatedSyntheticTimeListenerReceivesElapsedTimePayloadHeadless() throws Exception {
+    Path sourceDirectory = generateProgramSource(
+        "synthetic-time-listener-payload-runtime.a3p",
+        programTypeWithExecutableTimeListenerElapsedProbe(),
+        "generated-time-listener-payload-runtime-src");
+
+    Path scenePath = sourceDirectory.resolve("Scene.java");
+    String sceneSource = Files.readString(scenePath);
+    assertTrue(sceneSource, sceneSource.contains("this.addTimeListener((TimeEvent p0) ->"));
+    assertTrue(sceneSource, sceneSource.contains(
+        "ProjectCodeGeneratorStoryApiGeneratedSourceTest.recordTimeEventElapsed(p0.getTimeSinceLastFire());"));
+
+    Path classesDirectory = compileAllGeneratedSources(
+        "generated-time-listener-payload-runtime-classes",
+        sourceDirectory);
+    timeEventElapsedLatch = new CountDownLatch(1);
+    recordedTimeSinceLastFire = null;
+    Object timer = null;
+    try (URLClassLoader classLoader = new URLClassLoader(
+        new URL[] {classesDirectory.toUri().toURL()},
+        Thread.currentThread().getContextClassLoader())) {
+      Object scene = instantiateGeneratedScene(classLoader);
+      timer = timerFor(scene);
+      activateAndUpdateTimer(timer, 2.0);
+      assertTrue("Generated time listener should receive elapsed time from the runtime timer event",
+          timeEventElapsedLatch.await(5, TimeUnit.SECONDS));
+      assertEquals(2.0, recordedTimeSinceLastFire, 0.0);
+    } finally {
+      disableTimer(timer);
+      recordedTimeSinceLastFire = null;
+      timeEventElapsedLatch = null;
+    }
+  }
+
+  private static Object instantiateGeneratedScene(ClassLoader classLoader) throws Exception {
+    Class<?> sceneClass = Class.forName("Scene", true, classLoader);
+    var constructor = sceneClass.getDeclaredConstructor();
+    constructor.setAccessible(true);
+    Object scene = constructor.newInstance();
+    var handleActiveChanged = sceneClass.getDeclaredMethod("handleActiveChanged", Boolean.class, Integer.class);
+    handleActiveChanged.setAccessible(true);
+    handleActiveChanged.invoke(scene, Boolean.TRUE, 1);
+    return scene;
+  }
+
+  private static Object timerFor(Object scene) throws Exception {
+    Object sceneImplementation = scene.getClass().getMethod("getImplementation").invoke(scene);
+    Object eventManager = sceneImplementation.getClass().getMethod("getEventManager").invoke(sceneImplementation);
+    var timerField = eventManager.getClass().getDeclaredField("timer");
+    timerField.setAccessible(true);
+    return timerField.get(eventManager);
+  }
+
+  private static void activateAndUpdateTimer(Object timer, double currentTime) throws Exception {
+    timer.getClass().getMethod("sceneActivated", SceneActivationEvent.class).invoke(timer, new SceneActivationEvent());
+    var currentTimeField = timer.getClass().getDeclaredField("currentTime");
+    currentTimeField.setAccessible(true);
+    currentTimeField.set(timer, currentTime);
+    var update = timer.getClass().getDeclaredMethod("update");
+    update.setAccessible(true);
+    update.invoke(timer);
+  }
+
+  private static void disableTimer(Object timer) throws Exception {
+    if (timer != null) {
+      timer.getClass().getMethod("disable").invoke(timer);
     }
   }
 
@@ -216,8 +271,15 @@ public class ProjectCodeGeneratorStoryApiGeneratedSourceTest {
     timeEventLatch.countDown();
   }
 
+  public static void recordTimeEventElapsed(Double timeSinceLastFire) {
+    recordedTimeSinceLastFire = timeSinceLastFire;
+    timeEventElapsedLatch.countDown();
+  }
+
   private static CountDownLatch sceneActivationEventLatch;
   private static CountDownLatch timeEventLatch;
+  private static CountDownLatch timeEventElapsedLatch;
+  private static volatile Double recordedTimeSinceLastFire;
 
   private Path generateProgramSource(String projectFileName, NamedUserType programType, String sourceDirectoryName)
       throws Exception {
@@ -333,6 +395,13 @@ public class ProjectCodeGeneratorStoryApiGeneratedSourceTest {
     return type;
   }
 
+  private static NamedUserType programTypeWithExecutableTimeListenerElapsedProbe() {
+    NamedUserType type = programType("Program");
+    NamedUserType sceneType = sceneTypeWithExecutableTimeListenerElapsedProbe();
+    type.fields.add(new UserField("scene", sceneType));
+    return type;
+  }
+
   private static NamedUserType sceneTypeWithListenerRegistrationCalls() {
     NamedUserType type = AstUtilities.createType("Scene", JavaType.getInstance(SScene.class));
     JavaMethod addTimeListener = AstUtilities.lookupMethod(
@@ -417,6 +486,30 @@ public class ProjectCodeGeneratorStoryApiGeneratedSourceTest {
     return type;
   }
 
+  private static NamedUserType sceneTypeWithExecutableTimeListenerElapsedProbe() {
+    NamedUserType type = AstUtilities.createType("Scene", JavaType.getInstance(SScene.class));
+    JavaMethod addTimeListener = AstUtilities.lookupMethod(
+        SScene.class,
+        "addTimeListener",
+        TimeListener.class,
+        Number.class,
+        AddTimeListener.Detail[].class);
+    UserMethod handleActiveChanged = new UserMethod(
+        "handleActiveChanged",
+        Void.TYPE,
+        new UserParameter[] {
+            new UserParameter("isActive", Boolean.class),
+            new UserParameter("activationCount", Integer.class)
+        },
+        new BlockStatement(AstUtilities.createMethodInvocationStatement(
+            new ThisExpression(),
+            addTimeListener,
+            elapsedTimeListenerLambda(),
+            new IntegerLiteral(1))));
+    type.methods.add(handleActiveChanged);
+    return type;
+  }
+
   private static LambdaExpression listenerLambda(Class<?> listenerClass, String recordMethodName, String commentText) {
     LambdaExpression expression = AstUtilities.createLambdaExpression(listenerClass);
     UserLambda lambda = (UserLambda) expression.value.getValue();
@@ -427,6 +520,24 @@ public class ProjectCodeGeneratorStoryApiGeneratedSourceTest {
     lambda.body.getValue().statements.add(AstUtilities.createMethodInvocationStatement(
         new org.lgna.project.ast.TypeExpression(recordEvent.getDeclaringType()),
         recordEvent));
+    return expression;
+  }
+
+  private static LambdaExpression elapsedTimeListenerLambda() {
+    LambdaExpression expression = AstUtilities.createLambdaExpression(TimeListener.class);
+    UserLambda lambda = (UserLambda) expression.value.getValue();
+    UserParameter eventParameter = lambda.requiredParameters.get(0);
+    JavaMethod timeSinceLastFire = AstUtilities.lookupMethod(TimeEvent.class, "getTimeSinceLastFire");
+    JavaMethod recordEvent = AstUtilities.lookupMethod(
+        ProjectCodeGeneratorStoryApiGeneratedSourceTest.class,
+        "recordTimeEventElapsed",
+        Double.class);
+    lambda.body.getValue().statements.add(AstUtilities.createMethodInvocationStatement(
+        new TypeExpression(recordEvent.getDeclaringType()),
+        recordEvent,
+        AstUtilities.createMethodInvocation(
+            new ParameterAccess(eventParameter),
+            timeSinceLastFire)));
     return expression;
   }
 
