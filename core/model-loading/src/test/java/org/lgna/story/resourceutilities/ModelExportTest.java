@@ -1,5 +1,6 @@
 package org.lgna.story.resourceutilities;
 
+import edu.cmu.cs.dennisc.pattern.Tuple2;
 import org.alice.math.immutable.AxisAlignedBox;
 import org.lgna.story.implementation.alice.AliceResourceUtilities;
 import org.junit.Test;
@@ -21,6 +22,7 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -94,6 +96,23 @@ public class ModelExportTest {
 
     assertTrue(javaCode.contains("\tDEFAULT;"));
     assertFalse(javaCode.contains("VARIANT_PROP"));
+    assertCompiles("org/lgna/story/resources/prop/TestPropResource.java", javaCode);
+  }
+
+  @Test
+  public void modelExporterWritesJointFieldsInParentReadyOrder() throws Exception {
+    ModelResourceExporter exporter = createSyntheticPropExporter();
+    exporter.setJointMap(Arrays.asList(
+        Tuple2.createInstance("hand", "arm"),
+        Tuple2.createInstance("root", null),
+        Tuple2.createInstance("finger", "hand"),
+        Tuple2.createInstance("arm", "root")));
+
+    String javaCode = exporter.createJavaCode();
+
+    assertAppearsBefore(javaCode, "JointId root =", "JointId arm =");
+    assertAppearsBefore(javaCode, "JointId arm =", "JointId hand =");
+    assertAppearsBefore(javaCode, "JointId hand =", "JointId finger =");
     assertCompiles("org/lgna/story/resources/prop/TestPropResource.java", javaCode);
   }
 
@@ -270,6 +289,14 @@ public class ModelExportTest {
     NodeList nodes = parent.getElementsByTagName(childTag);
     assertEquals(1, nodes.getLength());
     assertEquals(expectedText, nodes.item(0).getTextContent());
+  }
+
+  private static void assertAppearsBefore(String text, String first, String second) {
+    int firstIndex = text.indexOf(first);
+    int secondIndex = text.indexOf(second);
+    assertTrue(first + " should be present", firstIndex >= 0);
+    assertTrue(second + " should be present", secondIndex >= 0);
+    assertTrue(first + " should appear before " + second, firstIndex < secondIndex);
   }
 
   private static void assertCompiles(String sourcePath, String source) throws Exception {
