@@ -239,10 +239,7 @@ public class ProjectCodeGeneratorStandaloneProjectTest {
         Files.exists(programMarker));
     assertTrue(
         "Real JavaFX launch failed for an unexpected reason:\n" + launchResult.output,
-        launchResult.output.contains("Unable to open DISPLAY")
-            || launchResult.output.contains("DISPLAY")
-            || launchResult.output.contains("Glass")
-            || launchResult.output.contains("gtk"));
+        launchResult.output.contains("Unable to open DISPLAY"));
   }
 
   private static NamedUserType programType(String name) {
