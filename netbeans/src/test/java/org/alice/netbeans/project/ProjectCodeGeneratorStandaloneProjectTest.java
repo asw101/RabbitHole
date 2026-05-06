@@ -242,6 +242,41 @@ public class ProjectCodeGeneratorStandaloneProjectTest {
         launchResult.output.contains("Unable to open DISPLAY"));
   }
 
+  @Test
+  public void templatePackagedLauncherWithRealJavaFxModulesRunsOnXvfbDisplay() throws Exception {
+    Path xvfbRun = findExecutableOnPath("xvfb-run");
+    org.junit.Assume.assumeTrue(
+        "xvfb-run is required to prove the real JavaFX display launch path",
+        xvfbRun != null);
+
+    Path projectDirectory = temporaryFolder.newFolder("template-real-javafx-xvfb-runtime").toPath();
+    extractProjectTemplate(projectDirectory);
+    Path sourceDirectory = projectDirectory.resolve("src");
+    Files.createDirectories(sourceDirectory);
+
+    ProjectCodeGenerator.generateLauncher(sourceDirectory.toFile());
+    writeProgramMarkerAndExitSource(sourceDirectory);
+
+    List<Path> javaFxModulePath = javaFxRuntimeModulePath();
+    Properties properties = loadProperties(projectDirectory.resolve("nbproject").resolve("project.properties"));
+    Path classesDirectory = resolveBuildClassesDirectory(projectDirectory, properties);
+    compileJavaSources(classesDirectory, pathList(javaFxModulePath), javaSourcesUnder(sourceDirectory));
+    Path distJar = packageDistJarFromTemplate(projectDirectory, classesDirectory, properties);
+
+    Path programMarker = projectDirectory.resolve("program-main-marker.txt");
+    ProcessResult launchResult = runJarWithJavaFxModulesUnderXvfb(
+        projectDirectory,
+        xvfbRun,
+        distJar,
+        javaFxModulePath,
+        programMarker,
+        "real-javafx", "xvfb-display");
+
+    assertFalse(launchResult.output, launchResult.timedOut);
+    assertEquals(launchResult.output, 0, launchResult.exitCode);
+    assertProgramMarker(programMarker, "real-javafx", "xvfb-display");
+  }
+
   private static NamedUserType programType(String name) {
     NamedUserType type = new NamedUserType();
     type.name.setValue(name);
@@ -361,6 +396,30 @@ public class ProjectCodeGeneratorStandaloneProjectTest {
               }
             } catch (java.io.IOException e) {
               throw new RuntimeException(e);
+            }
+          }
+        }
+        """);
+  }
+
+  private static void writeProgramMarkerAndExitSource(Path sourceDirectory) throws Exception {
+    writeJavaSource(
+        sourceDirectory.resolve("Program.java"),
+        """
+        public class Program {
+          public static void main(String[] args) {
+            try {
+              String marker = System.getProperty("alice.test.program.marker");
+              if (marker != null) {
+                java.nio.file.Files.write(
+                    java.nio.file.Path.of(marker),
+                    java.util.Arrays.asList(args),
+                    java.nio.charset.StandardCharsets.UTF_8);
+              }
+            } catch (java.io.IOException e) {
+              throw new RuntimeException(e);
+            } finally {
+              javafx.application.Platform.exit();
             }
           }
         }
@@ -627,10 +686,38 @@ public class ProjectCodeGeneratorStandaloneProjectTest {
     return runForkedJava(workingDirectory, command);
   }
 
+  private static ProcessResult runJarWithJavaFxModulesUnderXvfb(
+      Path workingDirectory,
+      Path xvfbRun,
+      Path distJar,
+      List<Path> javaFxModulePath,
+      Path programMarker,
+      String... args) throws Exception {
+    List<String> command = new ArrayList<>();
+    command.add(xvfbRun.toAbsolutePath().normalize().toString());
+    command.add("-a");
+    command.add("-s");
+    command.add("-screen 0 1024x768x24");
+    command.add(Path.of(System.getProperty("java.home"), "bin", "java").toString());
+    command.add("-Dalice.test.program.marker=" + programMarker.toAbsolutePath().normalize());
+    command.add("--module-path");
+    command.add(pathList(javaFxModulePath));
+    command.add("--add-modules");
+    command.add("javafx.graphics,javafx.media");
+    command.add("-jar");
+    command.add(distJar.toAbsolutePath().normalize().toString());
+    command.addAll(Arrays.asList(args));
+    return runCommand(workingDirectory, command);
+  }
+
   private static ProcessResult runForkedJava(Path workingDirectory, List<String> javaArguments) throws Exception {
     List<String> command = new ArrayList<>();
     command.add(Path.of(System.getProperty("java.home"), "bin", "java").toString());
     command.addAll(javaArguments);
+    return runCommand(workingDirectory, command);
+  }
+
+  private static ProcessResult runCommand(Path workingDirectory, List<String> command) throws Exception {
     Process process = new ProcessBuilder(command)
         .directory(workingDirectory.toFile())
         .redirectErrorStream(true)
@@ -642,6 +729,23 @@ public class ProjectCodeGeneratorStandaloneProjectTest {
     }
     String output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
     return new ProcessResult(exited ? process.exitValue() : -1, output, !exited);
+  }
+
+  private static Path findExecutableOnPath(String executableName) {
+    String path = System.getenv("PATH");
+    if (path == null) {
+      return null;
+    }
+    for (String entry : path.split(File.pathSeparator)) {
+      if (entry.isBlank()) {
+        continue;
+      }
+      Path candidate = Path.of(entry, executableName);
+      if (Files.isRegularFile(candidate) && Files.isExecutable(candidate)) {
+        return candidate;
+      }
+    }
+    return null;
   }
 
   private static void assertProgramMarker(Path programMarker, String... expectedArgs) throws Exception {
