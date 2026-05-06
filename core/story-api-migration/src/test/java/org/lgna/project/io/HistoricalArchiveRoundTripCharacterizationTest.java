@@ -185,6 +185,24 @@ public class HistoricalArchiveRoundTripCharacterizationTest {
   }
 
   @Test
+  public void generatedJsonPlayerArchiveWithComplexProgramInitializerIsRejectedWithoutPartialProgramDecode() throws Exception {
+    File projectArchive = temporaryFolder.newFile("generated-json-player-complex-initializer-boundary.a3w");
+
+    writeJsonProjectArchive(
+        projectArchive,
+        "GeneratedProgramWithComplexInitializerBoundary",
+        "class GeneratedProgramWithComplexInitializerBoundary extends SProgram { WholeNumber count <- 1 + 2; }",
+        "GeneratedComplexInitializerBoundaryScene",
+        "class GeneratedComplexInitializerBoundaryScene extends SScene {}");
+
+    IOException thrown = assertThrows(IOException.class, () -> IoUtilities.readProject(projectArchive));
+
+    assertTrue(thrown.getMessage().contains(
+        "Project archive manifest names program type 'GeneratedProgramWithComplexInitializerBoundary'"));
+    assertTrue(thrown.getMessage().contains("decoded type names are [GeneratedComplexInitializerBoundaryScene]"));
+  }
+
+  @Test
   public void generatedWorldArchiveCharacterizesManifestResourceReadbackLimitWithoutExternalFixture() throws Exception {
     ImageResource imageResource = generatedImageResource("historical-world-texture.png", 0xFF663399);
     Project project = new Project(
