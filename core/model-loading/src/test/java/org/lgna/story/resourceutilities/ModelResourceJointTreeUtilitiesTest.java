@@ -8,6 +8,8 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class ModelResourceJointTreeUtilitiesTest {
   @Test
@@ -56,6 +58,20 @@ public class ModelResourceJointTreeUtilitiesTest {
     assertEquals(2, sorted.size());
     assertJoint(sorted.get(0), "pelvis", null);
     assertJoint(sorted.get(1), "spine", "pelvis");
+  }
+
+  @Test(timeout = 1000)
+  public void codeReadyTreeRejectsMissingParentInsteadOfLooping() {
+    List<Tuple2<String, String>> joints = Arrays.asList(
+        Tuple2.createInstance("root", null),
+        Tuple2.createInstance("orphan", "missingParent"));
+
+    try {
+      ModelResourceJointTreeUtilities.makeCodeReadyTree(joints, false);
+      fail("Expected missing parent to be rejected");
+    } catch (IllegalArgumentException exception) {
+      assertTrue(exception.getMessage().contains("orphan -> missingParent"));
+    }
   }
 
   private static void assertJoint(Tuple2<String, String> joint, String expectedName, String expectedParent) {

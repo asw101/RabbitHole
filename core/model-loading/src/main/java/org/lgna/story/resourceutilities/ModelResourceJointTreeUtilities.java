@@ -42,10 +42,16 @@ final class ModelResourceJointTreeUtilities {
       }
       List<Tuple2<String, String>> sorted = new ArrayList<Tuple2<String, String>>();
       while (sorted.size() != cleaned.size()) {
+        int sizeBeforePass = sorted.size();
         for (Tuple2<String, String> entry : cleaned) {
           if (!sorted.contains(entry) && hasParent(sorted, entry.getB())) {
             sorted.add(entry);
           }
+        }
+        if (sorted.size() == sizeBeforePass) {
+          throw new IllegalArgumentException(
+              "Joint tree cannot be ordered because one or more parents are missing or cyclic: "
+                  + describeUnresolvedJoints(cleaned, sorted));
         }
       }
 
@@ -64,6 +70,20 @@ final class ModelResourceJointTreeUtilities {
       }
     }
     return false;
+  }
+
+  private static String describeUnresolvedJoints(
+      List<Tuple2<String, String>> cleaned, List<Tuple2<String, String>> sorted) {
+    StringBuilder description = new StringBuilder();
+    for (Tuple2<String, String> entry : cleaned) {
+      if (!sorted.contains(entry)) {
+        if (description.length() > 0) {
+          description.append(", ");
+        }
+        description.append(entry.getA()).append(" -> ").append(entry.getB());
+      }
+    }
+    return description.toString();
   }
 
   static boolean isRootJoint(String jointName) {
