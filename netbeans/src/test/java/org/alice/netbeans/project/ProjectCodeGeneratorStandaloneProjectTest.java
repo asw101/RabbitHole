@@ -22,6 +22,7 @@ import java.io.StringWriter;
 import java.lang.reflect.Field;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -29,6 +30,12 @@ import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
+import java.util.jar.Attributes;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import java.util.jar.JarOutputStream;
+import java.util.jar.Manifest;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -142,6 +149,46 @@ public class ProjectCodeGeneratorStandaloneProjectTest {
     assertTrue(Files.exists(classesDirectory.resolve("AliceJavaFXLauncher.class")));
   }
 
+  @Test
+  public void templatePackagedLauncherJarFailsBeforeMainWhenJavaFxClassesAreAbsent() throws Exception {
+    Path projectDirectory = temporaryFolder.newFolder("template-packaged-runtime").toPath();
+    extractProjectTemplate(projectDirectory);
+    Path sourceDirectory = projectDirectory.resolve("src");
+    Files.createDirectories(sourceDirectory);
+
+    ProjectCodeGenerator.generateLauncher(sourceDirectory.toFile());
+    writeProgramMarkerSource(sourceDirectory);
+    writeJavaFxLaunchMarkerStubs(sourceDirectory);
+
+    Properties properties = loadProperties(projectDirectory.resolve("nbproject").resolve("project.properties"));
+    assertEquals("AliceJavaFXLauncher", properties.getProperty("main.class"));
+    Path classesDirectory = resolveBuildClassesDirectory(projectDirectory, properties);
+    compileJavaSources(classesDirectory, javaSourcesUnder(sourceDirectory));
+
+    Path distJar = packageDistJarFromTemplate(
+        projectDirectory,
+        classesDirectory,
+        properties,
+        entryName -> !entryName.startsWith("javafx/"));
+    assertEquals("AliceJavaFXLauncher", mainClassInJar(distJar));
+
+    Path launchMarker = projectDirectory.resolve("javafx-launch-marker.txt");
+    Path programMarker = projectDirectory.resolve("program-main-marker.txt");
+    ProcessResult result = runJarInForkedJava(projectDirectory, distJar, launchMarker, programMarker, "alpha", "beta");
+
+    assertNotEquals("Forked java launcher should fail without JavaFX classes on the classpath", 0, result.exitCode);
+    assertTrue(
+        "Forked java launcher failed for an unexpected reason:\n" + result.output,
+        result.output.contains("javafx/application/Application")
+            || result.output.contains("javafx.application.Application"));
+    assertFalse(
+        "The JavaFX stub marker must not be written when the java launcher rejects the runtime before main()",
+        Files.exists(launchMarker));
+    assertFalse(
+        "Program.main must not run when the java launcher rejects the runtime before main()",
+        Files.exists(programMarker));
+  }
+
   private static NamedUserType programType(String name) {
     NamedUserType type = new NamedUserType();
     type.name.setValue(name);
@@ -245,6 +292,77 @@ public class ProjectCodeGeneratorStandaloneProjectTest {
         """);
   }
 
+  private static void writeProgramMarkerSource(Path sourceDirectory) throws Exception {
+    writeJavaSource(
+        sourceDirectory.resolve("Program.java"),
+        """
+        public class Program {
+          public static void main(String[] args) {
+            try {
+              String marker = System.getProperty("alice.test.program.marker");
+              if (marker != null) {
+                java.nio.file.Files.write(
+                    java.nio.file.Path.of(marker),
+                    java.util.Arrays.asList(args),
+                    java.nio.charset.StandardCharsets.UTF_8);
+              }
+            } catch (java.io.IOException e) {
+              throw new RuntimeException(e);
+            }
+          }
+        }
+        """);
+  }
+
+  private static void writeJavaFxLaunchMarkerStubs(Path sourceDirectory) throws Exception {
+    writeJavaSource(
+        sourceDirectory.resolve("javafx/application/Application.java"),
+        """
+        package javafx.application;
+
+        public abstract class Application {
+          public abstract void start(javafx.stage.Stage stage) throws Exception;
+
+          public static void launch(String[] args) {
+            try {
+              String callerClassName = StackWalker
+                  .getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE)
+                  .walk(frames -> frames.skip(1).findFirst().orElseThrow().getDeclaringClass().getName());
+              writeMarker(callerClassName, args);
+              Application application = (Application) Class
+                  .forName(callerClassName)
+                  .getDeclaredConstructor()
+                  .newInstance();
+              application.start(new javafx.stage.Stage());
+            } catch (Exception e) {
+              throw new RuntimeException(e);
+            }
+          }
+
+          private static void writeMarker(String callerClassName, String[] args) throws Exception {
+            String marker = System.getProperty("alice.test.javafx.launch.marker");
+            if (marker != null) {
+              java.util.List<String> lines = new java.util.ArrayList<>();
+              lines.add(callerClassName);
+              lines.addAll(java.util.Arrays.asList(args));
+              java.nio.file.Files.write(
+                  java.nio.file.Path.of(marker),
+                  lines,
+                  java.nio.charset.StandardCharsets.UTF_8);
+            }
+          }
+        }
+        """);
+    writeJavaSource(
+        sourceDirectory.resolve("javafx/stage/Stage.java"),
+        """
+        package javafx.stage;
+
+        public class Stage {
+        }
+        """);
+  }
+
   private static void compileJavaSources(Path outputDirectory, Path... sources) throws Exception {
     compileJavaSources(outputDirectory, System.getProperty("java.class.path"), sources);
   }
@@ -321,6 +439,76 @@ public class ProjectCodeGeneratorStandaloneProjectTest {
     return projectDirectory.resolve(buildClassesDirectory);
   }
 
+  private static Path packageDistJarFromTemplate(
+      Path projectDirectory,
+      Path classesDirectory,
+      Properties properties) throws Exception {
+    return packageDistJarFromTemplate(projectDirectory, classesDirectory, properties, entryName -> true);
+  }
+
+  private static Path packageDistJarFromTemplate(
+      Path projectDirectory,
+      Path classesDirectory,
+      Properties properties,
+      Predicate<String> includeEntry) throws Exception {
+    Path distJar = resolveDistJar(projectDirectory, properties);
+    Files.createDirectories(distJar.getParent());
+    Manifest manifest;
+    try (java.io.InputStream inputStream =
+             Files.newInputStream(projectDirectory.resolve(properties.getProperty("manifest.file")))) {
+      manifest = new Manifest(inputStream);
+    }
+    manifest.getMainAttributes().put(Attributes.Name.MAIN_CLASS, properties.getProperty("main.class"));
+
+    try (JarOutputStream jarOutputStream = new JarOutputStream(Files.newOutputStream(distJar), manifest);
+         Stream<Path> paths = Files.walk(classesDirectory)) {
+      for (Path path : paths.filter(Files::isRegularFile).sorted().toList()) {
+        String entryName = classesDirectory.relativize(path).toString().replace(File.separatorChar, '/');
+        if (!includeEntry.test(entryName)) {
+          continue;
+        }
+        JarEntry entry = new JarEntry(entryName);
+        jarOutputStream.putNextEntry(entry);
+        Files.copy(path, jarOutputStream);
+        jarOutputStream.closeEntry();
+      }
+    }
+    return distJar;
+  }
+
+  private static Path resolveDistJar(Path projectDirectory, Properties properties) {
+    return projectDirectory.resolve(
+        properties.getProperty("dist.jar").replace("${dist.dir}", properties.getProperty("dist.dir")));
+  }
+
+  private static String mainClassInJar(Path jarPath) throws Exception {
+    try (JarFile jarFile = new JarFile(jarPath.toFile())) {
+      return jarFile.getManifest().getMainAttributes().getValue(Attributes.Name.MAIN_CLASS);
+    }
+  }
+
+  private static ProcessResult runJarInForkedJava(
+      Path workingDirectory,
+      Path distJar,
+      Path launchMarker,
+      Path programMarker,
+      String... args) throws Exception {
+    List<String> command = new java.util.ArrayList<>();
+    command.add(Path.of(System.getProperty("java.home"), "bin", "java").toString());
+    command.add("-Dalice.test.javafx.launch.marker=" + launchMarker.toAbsolutePath().normalize());
+    command.add("-Dalice.test.program.marker=" + programMarker.toAbsolutePath().normalize());
+    command.add("-jar");
+    command.add(distJar.toAbsolutePath().normalize().toString());
+    command.addAll(Arrays.asList(args));
+    Process process = new ProcessBuilder(command)
+        .directory(workingDirectory.toFile())
+        .redirectErrorStream(true)
+        .start();
+    assertTrue("Timed out waiting for forked java launcher", process.waitFor(10, TimeUnit.SECONDS));
+    String output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+    return new ProcessResult(process.exitValue(), output);
+  }
+
   private static void writeJavaSource(Path sourcePath, String source) throws Exception {
     Files.createDirectories(sourcePath.getParent());
     Files.writeString(sourcePath, source);
@@ -350,6 +538,16 @@ public class ProjectCodeGeneratorStandaloneProjectTest {
         }
       }
       return super.loadClass(name, resolve);
+    }
+  }
+
+  private static class ProcessResult {
+    private final int exitCode;
+    private final String output;
+
+    private ProcessResult(int exitCode, String output) {
+      this.exitCode = exitCode;
+      this.output = output;
     }
   }
 }
