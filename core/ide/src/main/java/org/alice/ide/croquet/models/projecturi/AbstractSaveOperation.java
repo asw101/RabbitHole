@@ -71,6 +71,29 @@ public abstract class AbstractSaveOperation extends UriActionOperation {
   @Override
   protected void perform(UserActivity activity) {
     StageIDE application = StageIDE.getActiveInstance();
+    if (application == null) {
+      SaveOperationCompletionEvidence.recordSaveActionInvocation(
+          this.getClass().getName(),
+          this.getExtension(),
+          false,
+          false);
+      activity.cancel();
+      return;
+    }
+    if (application.getDocumentFrame() == null) {
+      SaveOperationCompletionEvidence.recordSaveActionInvocation(
+          this.getClass().getName(),
+          this.getExtension(),
+          true,
+          false);
+      activity.cancel();
+      return;
+    }
+    SaveOperationCompletionEvidence.recordSaveActionInvocation(
+        this.getClass().getName(),
+        this.getExtension(),
+        true,
+        true);
     SaveOperationFlow.Result result = SaveOperationFlow.run(new SaveOperationFlow.Context() {
       @Override
       public File getCurrentFile() {
