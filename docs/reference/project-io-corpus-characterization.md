@@ -168,13 +168,47 @@ boundaries:
 | Manifest entry | Current readback behavior |
 | --- | --- |
 | `TypeReference` with format `tweedle` and supported `src/<Program>.twe` source | `IoUtilities.readProject(File)` returns a project with a decoded program type. |
-| `TypeReference` with format `tweedle` and unsupported Tweedle members in `src/<Program>.twe` | `IoUtilities.readProject(File)` returns a project whose program type is `null`; this is the documented incomplete Tweedle decode boundary, not a successful full program decode. |
-| Valid image resource reference with matching archive data | Resource identity, name, original file name, content type, and bytes remain readable even when the Tweedle program type is not decoded. |
+| `TypeReference` with format `tweedle` and unsupported Tweedle members in `src/<Program>.twe` | Generated named archives fail with `IOException` instead of returning a partial project whose program type is `null`. The legacy player-resource recovery path is narrower: a `.a3w` archive named `Program` with exactly one recovered image resource can still return a resource-only project with no program type. |
+| Valid image resource reference with matching archive data and supported Tweedle source | Resource identity, name, original file name, content type, and bytes remain readable through `IoUtilities.readProject(File)`. |
 
 This boundary keeps player/export resource compatibility honest. Tests may
 assert resource readback for manifest-declared resources, but they must not infer
-that an unsupported Tweedle `TypeReference` has produced an editable Alice
-program type.
+that an unsupported Tweedle `TypeReference` has produced an editable Alice program
+type or a complete player-project decode. Tests that expect fail-fast behavior use
+non-legacy generated archive names so they do not exercise the compatibility-only
+resource recovery path.
+
+When unsupported Tweedle causes an archive read to fail, tests may still inspect
+the raw manifest and zip entries to prove resources were written into the archive.
+That is archive-shape evidence, not successful project readback.
+
+#### Current Tweedle decoder status
+
+The current archive tests cover the important fail-fast edges around the partial
+Tweedle decoder. Covered boundaries include:
+
+- missing, malformed, unnamed, or unsupported manifest-declared Tweedle type
+  entries for player (`.a3w`) and type (`.a3c`) archives;
+- non-legacy manifest names that do not decode to the required player program
+  type;
+- unresolved parent types;
+- method-bearing and constructor-bearing program and sibling types;
+- complex, resource-expression, and null field initializers;
+- corrupt manifests that must not fall back to the XML reader; and
+- safe resource entry names and manifest resource references.
+
+The decoder itself is still intentionally narrow. It decodes simple Tweedle class
+declarations, supported superclass/type names, and primitive field values. It does
+not yet decode method bodies, constructor bodies, broad null semantics, or the full
+Tweedle language.
+
+The next larger implementation should start with a decoder design/spec before more
+one-off boundary tests. That design should spell out the supported Tweedle subset,
+how null values map into Alice AST nodes, how method and constructor bodies map to
+statements and expressions, how sibling type references are resolved, and which
+archive failures should remain clear `IOException`s at the `IoUtilities` boundary.
+It should also decide whether the legacy resource-only player recovery path stays
+as-is, becomes more explicit, or is retired behind new compatibility tests.
 
 ### Type `.a3c` XML fallback archive
 
@@ -368,26 +402,45 @@ Then the simple Tweedle program type decodes and scene-camera metadata is
      preserved
 ```
 
-### Characterize a manifest-declared `.a3w` type/resource boundary
+### Characterize supported manifest-declared `.a3w` type/resource readback
 
 ```text
-Given a JSON/player archive named manifest-type-boundary-resource.a3w
-And manifest.json declares description.name ProgramWithUnsupportedType
+Given a JSON/player archive named manifest-type-resource.a3w
+And manifest.json declares description.name ProgramWithResource
 And manifest.json includes a tweedle TypeReference to
-    src/ProgramWithUnsupportedType.twe
-And that Tweedle entry contains an unsupported member declaration
+    src/ProgramWithResource.twe
+And that Tweedle entry contains a supported simple class declaration
 And manifest.json includes an image resource reference to
-    resources/boundary-picture.png
+    resources/picture.png
 When IoUtilities.readProject reads the archive
-Then the returned Project exists
-And the Project program type is null
+Then the returned Project has a decoded program type
 And the image resource id, name, original file name, content type, and bytes are
     preserved
 ```
 
-This is resource-oriented player archive compatibility. It documents that
-resource readback can remain useful at the JSON/player boundary without claiming
-that unsupported Tweedle source has been decoded into a full Alice program/type.
+This is the supported-source resource readback case. Unsupported Tweedle source in
+non-legacy generated archives fails at the JSON/player read boundary instead of
+returning a partial project with a missing program type. Resource entries can still
+be checked directly in the manifest and zip file when a test is documenting archive
+shape rather than successful readback.
+
+### Characterize unsupported manifest-declared `.a3w` Tweedle fail-fast
+
+```text
+Given a JSON/player archive named generated-json-player-method-boundary.a3w
+And manifest.json declares description.name GeneratedProgramWithMethodBoundary
+And manifest.json includes a tweedle TypeReference to
+    src/GeneratedProgramWithMethodBoundary.twe
+And that Tweedle entry contains an unsupported method declaration
+When IoUtilities.readProject reads the archive
+Then reading fails with IOException
+And the message names the expected program type and decoded type names
+```
+
+Keep the legacy player-resource recovery case separate from generated fail-fast
+tests. That compatibility path is limited to a `.a3w` manifest named `Program`
+whose unsupported `Program` Tweedle source still has exactly one recovered image
+resource; it may return a resource-only project with no program type.
 
 ### Characterize generated `.a3c` type behavior
 
