@@ -11,6 +11,7 @@ import org.lgna.project.ast.JavaType;
 import org.lgna.project.ast.NamedUserType;
 import org.lgna.project.ast.NullLiteral;
 import org.lgna.project.ast.StringLiteral;
+import org.lgna.project.ast.UserArrayType;
 import org.lgna.project.ast.UserField;
 
 import java.util.Set;
@@ -131,6 +132,41 @@ public class TweedleEncoderDecoderTest {
     assertEquals("companion", field.getName());
     assertSame(friendType, field.getValueType());
     assertTrue(field.initializer.getValue() instanceof NullLiteral);
+  }
+
+  @Test
+  public void decodeClassWithJavaArrayNullInitializedFieldCreatesNullLiteralInitializer() throws Exception {
+    NamedUserType type = decodeUserType("class SyntheticType { WholeNumber[] counts <- null; }");
+
+    assertEquals(1, type.getDeclaredFields().size());
+    UserField field = type.getDeclaredFields().get(0);
+    assertEquals("counts", field.getName());
+    assertSame(JavaType.getInstance(Integer[].class), field.getValueType());
+    assertTrue(field.initializer.getValue() instanceof NullLiteral);
+  }
+
+  @Test
+  public void decodeClassWithTerminalUserArrayNullInitializedFieldCreatesNullLiteralInitializer() throws Exception {
+    NamedUserType friendType = userTypeNamed("Friend");
+    NamedUserType type = decodeUserType(
+        "class SyntheticType { Friend[] companions <- null; }",
+        Set.of(friendType));
+
+    assertEquals(1, type.getDeclaredFields().size());
+    UserField field = type.getDeclaredFields().get(0);
+    assertEquals("companions", field.getName());
+    assertSame(UserArrayType.getInstance(friendType, 1), field.getValueType());
+    assertTrue(field.initializer.getValue() instanceof NullLiteral);
+  }
+
+  @Test
+  public void decodeClassWithArrayInitializerReportsUnsupportedInitializer() {
+    UnsupportedTweedleDecodeException thrown = assertThrows(
+        UnsupportedTweedleDecodeException.class,
+        () -> coder.decode("class SyntheticType { WholeNumber[] counts <- new WholeNumber[] {1, 2}; }"));
+
+    assertTrue(thrown.getMessage().contains("initializers"));
+    assertTrue(thrown.getMessage().contains("counts"));
   }
 
   @Test
