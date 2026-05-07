@@ -1,0 +1,60 @@
+id: alice-desktop-post-project-open-window-state
+title: Prove Alice 3 main window AT-SPI state after Select Project dismissal
+workflow: post-project-open-window-state-smoke
+automationMode: xvfb-real-alice
+preconditions:
+  - Java 21 is available.
+  - Maven dependencies are available.
+  - The tweedle-lang submodule is initialized.
+  - Controlled QA license acceptance is explicitly enabled with an isolated java.util.prefs.userRoot.
+  - python3-pyatspi is installed (sudo apt-get install -y python3-pyatspi).
+  - libatk-wrapper-java is installed at /usr/share/java/java-atk-wrapper.jar.
+  - The AT-SPI2 accessibility bus is running for the current user session.
+  - alice-ide/pom.xml declares the alice-ide-atk exec:exec execution with -Xbootclasspath/a:/usr/share/java/java-atk-wrapper.jar.
+  - PR #278 has been merged, proving Select Project tab click and project open (projectOpenObserved=true).
+  - tab-click-observation.json from the alice-desktop-select-project-tab-click-exec run is available.
+userActions:
+  - Run the alice-desktop-select-project-tab-click-exec scenario to completion (Select Project dismissed with Africa Full selected).
+  - With the tab-click-observation.json confirming projectOpenObserved=true, run post-project-open-probe.py with x-window-inventory.json and tab-click-observation.json as inputs.
+  - The probe connects to AT-SPI, waits 5 seconds for Alice to finish loading, then enumerates all top-level AT-SPI frames of the Alice application.
+  - Record the frame names and child counts in post-project-open-observation.json.
+expectedOutcomes:
+  - post-project-open-observation.json records status=observed.
+  - post-project-open-observation.json records postOpenWindowObserved=true.
+  - post-project-open-observation.json records mainFrameNames containing at least one entry that is NOT "Select Project".
+  - post-project-open-observation.json records mainWindowObservationBlocker=none.
+  - mainFrameChildCounts contains at least one non-zero entry, confirming the main Alice 3 frame has accessible children (widgets present in the IDE).
+  - The evidence closes the gap left by PR #278: Select Project frame disappeared (projectOpenObserved=true) but the main IDE window state was previously uncharacterised.
+automation:
+  cwd: alice-ide
+  argv:
+    - mvn
+    - -DincludeSims=false
+    - -Dinstall4j.skip
+    - -Dcheckstyle.skip
+    - -DskipTests
+    - compile
+    - exec:exec@alice-ide-atk
+  timeoutSeconds: 300
+  readyWaitSeconds: 60
+evidence:
+  required:
+    - root-directory-prep.json confirming org.alice.ide.rootDirectory resolves to core/resources/target/distribution.
+    - license-acceptance.json recording the isolated java.util.prefs.userRoot state.
+    - license-dialog.json recording not-observed.
+    - x-window-inventory.json naming visible X window title, class, process, and geometry.
+    - tab-click-observation.json recording projectOpenObserved=true (prerequisite from alice-desktop-select-project-tab-click-exec).
+    - post-project-open-observation.json recording status=observed, postOpenWindowObserved=true, mainFrameNames with at least one non-Select-Project entry, and mainFrameChildCounts confirming widget presence.
+    - Screenshot of the Alice desktop state after project load.
+    - Environment summary with Java version, Maven version, and DISPLAY value.
+fallback:
+  mode: manual-evidence-required
+  notes:
+    - If AT-SPI is unavailable (pyatspi-not-installed or at-spi-registry-unavailable), record the exact blocker in post-project-open-observation.json and treat it as a machine-readable gap report (option c).
+    - If the only frame visible is still "Select Project", record blocker=no-non-select-project-frame-visible; this is a precise gap report that names the missing target.
+    - Do not claim postOpenWindowObserved=true unless post-project-open-observation.json explicitly records it.
+    - Do not claim lesson completion, world rendering, or full scene load; this proof is limited to AT-SPI frame presence.
+supportingEvidence:
+  - alice-desktop-select-project-tab-click-exec
+  - alice-desktop-select-project-atk-exec
+  - alice-desktop-select-project-widget-introspection

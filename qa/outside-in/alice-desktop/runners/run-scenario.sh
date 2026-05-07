@@ -11,6 +11,7 @@ LICENSE_DIALOG_PROBE="$SCRIPT_DIR/license-dialog-probe.py"
 SELECT_PROJECT_PROBE="$SCRIPT_DIR/select-project-probe.py"
 SWING_WIDGET_PROBE="$SCRIPT_DIR/swing-widget-probe.py"
 TAB_CLICK_PROBE="$SCRIPT_DIR/tab-click-probe.py"
+POST_PROJECT_OPEN_PROBE="$SCRIPT_DIR/post-project-open-probe.py"
 
 usage() {
   cat <<'EOF'
@@ -766,6 +767,14 @@ write_tab_click_probe() {
   python3 "$TAB_CLICK_PROBE" "$inventory_path" "$output_path"
 }
 
+write_post_project_open_probe() {
+  local inventory_path=$1
+  local tab_click_path=$2
+  local output_path=$3
+
+  python3 "$POST_PROJECT_OPEN_PROBE" "$inventory_path" "$tab_click_path" "$output_path"
+}
+
 select_display() {
   if [ -n "${ALICE_QA_DISPLAY:-}" ]; then
     printf '%s\n' "$ALICE_QA_DISPLAY"
@@ -1208,7 +1217,8 @@ JSON
   if [ "$scenario_id" = alice-desktop-select-project-inventory ] \
       || [ "$scenario_id" = alice-desktop-select-project-widget-introspection ] \
       || [ "$scenario_id" = alice-desktop-select-project-atk-exec ] \
-      || [ "$scenario_id" = alice-desktop-select-project-tab-click-exec ]; then
+      || [ "$scenario_id" = alice-desktop-select-project-tab-click-exec ] \
+      || [ "$scenario_id" = alice-desktop-post-project-open-window-state ]; then
     if [ "${ALICE_QA_DISABLE_WINDOW_DETECTOR:-}" != "1" ] && command -v xdotool >/dev/null 2>&1; then
       select_project_wait_status=not-found
       local select_waited=0
@@ -1243,13 +1253,23 @@ JSON
     swing_widget_blocker=$(inventory_json_field "$run_dir/swing-widget-observation.json" blocker)
   fi
   local tab_click_status=not-requested tab_click_blocker=not-requested
-  if [ "$scenario_id" = alice-desktop-select-project-tab-click-exec ]; then
+  if [ "$scenario_id" = alice-desktop-select-project-tab-click-exec ] \
+      || [ "$scenario_id" = alice-desktop-post-project-open-window-state ]; then
     # Allow the Swing accessibility tree to build before probing, then run
     # the tab structure diagnosis and click attempt.
     sleep 3
     write_tab_click_probe "$run_dir/x-window-inventory.json" "$run_dir/tab-click-observation.json"
     tab_click_status=$(inventory_json_field "$run_dir/tab-click-observation.json" status)
     tab_click_blocker=$(inventory_json_field "$run_dir/tab-click-observation.json" blocker)
+  fi
+  local post_open_status=not-requested post_open_blocker=not-requested
+  if [ "$scenario_id" = alice-desktop-post-project-open-window-state ]; then
+    write_post_project_open_probe \
+      "$run_dir/x-window-inventory.json" \
+      "$run_dir/tab-click-observation.json" \
+      "$run_dir/post-project-open-observation.json"
+    post_open_status=$(inventory_json_field "$run_dir/post-project-open-observation.json" status)
+    post_open_blocker=$(inventory_json_field "$run_dir/post-project-open-observation.json" blocker)
   fi
   local window_inventory_status alice_window_candidate_count application_root_error_status application_root_error_blocker license_dialog_status license_dialog_blocker select_project_status select_project_blocker select_project_interaction
   window_inventory_status=$(inventory_json_field "$run_dir/x-window-inventory.json" status)
@@ -1308,6 +1328,9 @@ JSON
     printf 'tabClickObservation=%s\n' tab-click-observation.json
     printf 'tabClickStatus=%s\n' "$tab_click_status"
     printf 'tabClickBlocker=%s\n' "$tab_click_blocker"
+    printf 'postProjectOpenObservation=%s\n' post-project-open-observation.json
+    printf 'postProjectOpenStatus=%s\n' "$post_open_status"
+    printf 'postProjectOpenBlocker=%s\n' "$post_open_blocker"
     printf 'timeoutSeconds=%s\n' "$run_timeout"
   } > "$run_dir/status.txt"
 
