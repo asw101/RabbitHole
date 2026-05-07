@@ -38,6 +38,7 @@ public final class EatmeDesktopRunExecutionEvidence {
   public static final String DESKTOP_RUN_RENDER_AFFORDANCE_ARTIFACT = "desktop-run-render-affordance.json";
   public static final String DESKTOP_RUN_PIXEL_BOUNDARY_ARTIFACT = "desktop-run-pixel-boundary.json";
   public static final String DESKTOP_RUN_PIXEL_OBSERVATION_ARTIFACT = "desktop-run-pixel-observation.json";
+  public static final String DESKTOP_FIRST_LESSON_NEXT_ACTION_ARTIFACT = "desktop-first-lesson-next-action.json";
   private static final String DESKTOP_RUN_RENDER_TARGET_SCREENSHOT = "desktop-run-render-target.png";
   private static final int MAX_RECORDED_EVENTS = 200;
   private static final String RENDER_AFFORDANCE_CLAIM =
@@ -276,6 +277,7 @@ public final class EatmeDesktopRunExecutionEvidence {
     Path artifact = EatmeRunWindowEvidence.artifactPath(evidenceDir, DESKTOP_RUN_RENDER_AFFORDANCE_ARTIFACT);
     Path pixelBoundaryArtifact = EatmeRunWindowEvidence.artifactPath(evidenceDir, DESKTOP_RUN_PIXEL_BOUNDARY_ARTIFACT);
     Path pixelObservationArtifact = EatmeRunWindowEvidence.artifactPath(evidenceDir, DESKTOP_RUN_PIXEL_OBSERVATION_ARTIFACT);
+    Path nextActionArtifact = EatmeRunWindowEvidence.artifactPath(evidenceDir, DESKTOP_FIRST_LESSON_NEXT_ACTION_ARTIFACT);
     writeStringAtomically(
         artifact,
         "{\n"
@@ -326,7 +328,54 @@ public final class EatmeDesktopRunExecutionEvidence {
         renderPanelComponent,
         runViewComponent);
     requireNonEmptyArtifact(pixelObservationArtifact, "desktop Run pixel observation artifact");
+    writeFirstLessonNextActionContract(nextActionArtifact);
+    requireNonEmptyArtifact(nextActionArtifact, "desktop first-lesson next-action artifact");
     return artifact;
+  }
+
+  private static void writeFirstLessonNextActionContract(Path artifact) throws IOException {
+    writeStringAtomically(
+        artifact,
+        "{\n"
+            + "  \"schema_version\": \"eatme.alice-desktop-first-lesson-next-action/v1\",\n"
+            + "  \"status\": \"blocked\",\n"
+            + "  \"source\": \"desktop_run_render_target_attachment\",\n"
+            + "  \"evaluated_after\": \"" + DESKTOP_RUN_PIXEL_OBSERVATION_ARTIFACT + "\",\n"
+            + "  \"candidate_actions\": [\n"
+            + "    \"desktop_save_menu_action\",\n"
+            + "    \"desktop_code_editor_or_procedure_action\"\n"
+            + "  ],\n"
+            + "  \"blocker\": {\n"
+            + "    \"reason\": \"The Run render attachment seam does not receive or invoke a stable desktop Save menu or code editor/procedure action target.\",\n"
+            + "    \"codes\": [\n"
+            + "      \"desktop_save_menu_action_not_bound\",\n"
+            + "      \"procedure_editor_action_not_bound\",\n"
+            + "      \"no_ui_action_invoker_at_run_render_attachment\"\n"
+            + "    ],\n"
+            + "    \"details\": [\n"
+            + "      {\n"
+            + "        \"observed\": \"recordRenderTargetAttached receives render target, render panel, Run view, and control-panel attachment state only\",\n"
+            + "        \"required\": \"stable desktop Save command/menu target plus invocation result\"\n"
+            + "      },\n"
+            + "      {\n"
+            + "        \"observed\": \"no code editor or procedure operation target is exposed at this seam\",\n"
+            + "        \"required\": \"stable code editor/procedure action target plus invocation result\"\n"
+            + "      }\n"
+            + "    ]\n"
+            + "  },\n"
+            + "  \"requiresNextEvidence\": [\n"
+            + "    \"desktop Save menu readiness or invocation artifact from the menu/action owner\",\n"
+            + "    \"code editor/procedure action readiness or invocation artifact from the editor/action owner\"\n"
+            + "  ],\n"
+            + "  \"doesNotClaim\": [\n"
+            + "    \"full Alice UI automation\",\n"
+            + "    \"desktop save-menu completion\",\n"
+            + "    \"code editor/procedure action completion\",\n"
+            + "    \"first-lesson completion\",\n"
+            + "    \"grading\",\n"
+            + "    \"creative assessment\"\n"
+            + "  ]\n"
+            + "}\n");
   }
 
   private static void writePixelObservation(

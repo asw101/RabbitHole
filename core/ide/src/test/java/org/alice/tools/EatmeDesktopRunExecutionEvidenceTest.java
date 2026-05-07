@@ -104,9 +104,11 @@ public class EatmeDesktopRunExecutionEvidenceTest {
     Path artifact = evidenceDir.resolve("desktop-run-render-affordance.json");
     Path pixelBoundaryArtifact = evidenceDir.resolve("desktop-run-pixel-boundary.json");
     Path pixelObservationArtifact = evidenceDir.resolve("desktop-run-pixel-observation.json");
+    Path nextActionArtifact = evidenceDir.resolve("desktop-first-lesson-next-action.json");
     assertTrue(Files.size(artifact) > 0);
     assertTrue(Files.size(pixelBoundaryArtifact) > 0);
     assertTrue(Files.size(pixelObservationArtifact) > 0);
+    assertTrue(Files.size(nextActionArtifact) > 0);
     String json = Files.readString(artifact);
     assertTrue(json, json.contains("\"evidenceKind\": \"desktop_run_render_affordance\""));
     assertTrue(json, json.contains("\"renderTargetAttachedToRunView\": true"));
@@ -187,6 +189,31 @@ public class EatmeDesktopRunExecutionEvidenceTest {
     assertTrue(pixelObservationJson, pixelObservationJson.contains("grading"));
     assertTrue(pixelObservationJson, pixelObservationJson.contains("creative assessment"));
     assertNoField(pixelObservationJson, "mousePosition");
+
+    String nextActionJson = Files.readString(nextActionArtifact);
+    assertTrue(nextActionJson,
+        nextActionJson.contains("\"schema_version\": \"eatme.alice-desktop-first-lesson-next-action/v1\""));
+    assertTrue(nextActionJson, nextActionJson.contains("\"status\": \"blocked\""));
+    assertTrue(nextActionJson, nextActionJson.contains("\"source\": \"desktop_run_render_target_attachment\""));
+    assertTrue(nextActionJson, nextActionJson.contains("\"evaluated_after\": \"desktop-run-pixel-observation.json\""));
+    assertTrue(nextActionJson, nextActionJson.contains("\"candidate_actions\""));
+    assertTrue(nextActionJson, nextActionJson.contains("\"desktop_save_menu_action\""));
+    assertTrue(nextActionJson, nextActionJson.contains("\"desktop_code_editor_or_procedure_action\""));
+    assertTrue(nextActionJson, nextActionJson.contains("\"blocker\""));
+    assertTrue(nextActionJson, nextActionJson.contains("\"desktop_save_menu_action_not_bound\""));
+    assertTrue(nextActionJson, nextActionJson.contains("\"procedure_editor_action_not_bound\""));
+    assertTrue(nextActionJson, nextActionJson.contains("\"no_ui_action_invoker_at_run_render_attachment\""));
+    assertTrue(nextActionJson, nextActionJson.contains("stable desktop Save command/menu target plus invocation result"));
+    assertTrue(nextActionJson, nextActionJson.contains("stable code editor/procedure action target plus invocation result"));
+    assertTrue(nextActionJson, nextActionJson.contains("\"requiresNextEvidence\""));
+    assertTrue(nextActionJson, nextActionJson.contains("desktop Save menu readiness or invocation artifact"));
+    assertTrue(nextActionJson, nextActionJson.contains("code editor/procedure action readiness or invocation artifact"));
+    assertTrue(nextActionJson, nextActionJson.contains("full Alice UI automation"));
+    assertTrue(nextActionJson, nextActionJson.contains("desktop save-menu completion"));
+    assertTrue(nextActionJson, nextActionJson.contains("code editor/procedure action completion"));
+    assertTrue(nextActionJson, nextActionJson.contains("first-lesson completion"));
+    assertTrue(nextActionJson, nextActionJson.contains("grading"));
+    assertTrue(nextActionJson, nextActionJson.contains("creative assessment"));
   }
 
   @Test
