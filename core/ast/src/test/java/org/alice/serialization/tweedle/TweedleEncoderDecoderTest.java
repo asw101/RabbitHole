@@ -539,7 +539,7 @@ public class TweedleEncoderDecoderTest {
         UnsupportedTweedleDecodeException.class,
         () -> coder.decode("class SyntheticType { SyntheticType() { unknown <- 1; } }"));
 
-    assertTrue(thrown.getMessage().contains("field assignment target is not a known field"));
+    assertTrue(thrown.getMessage().contains("assignment target is not a known local or field"));
     assertTrue(thrown.getMessage().contains("unknown"));
     assertTrue(thrown.getMessage().contains("SyntheticType"));
   }
@@ -707,7 +707,7 @@ public class TweedleEncoderDecoderTest {
         UnsupportedTweedleDecodeException.class,
         () -> coder.decode("class SyntheticType { void setCount() { unknown <- 7; } }"));
 
-    assertTrue(thrown.getMessage().contains("field assignment target is not a known field"));
+    assertTrue(thrown.getMessage().contains("assignment target is not a known local or field"));
     assertTrue(thrown.getMessage().contains("unknown"));
     assertTrue(thrown.getMessage().contains("setCount"));
   }
@@ -726,6 +726,86 @@ public class TweedleEncoderDecoderTest {
     assertTrue(thrown.getMessage().contains("Tweedle field assignment value type is not assignable to"));
     assertTrue(thrown.getMessage().contains("setCount"));
     assertTrue(thrown.getMessage().contains("count"));
+  }
+
+  @Test
+  public void decodeClassWithLiteralLocalReassignmentInMethodBodyCreatesAssignmentStatement() throws Exception {
+    NamedUserType type = decodeUserType("""
+        class SyntheticType {
+          void update() { WholeNumber x <- 1; x <- 5; }
+        }
+        """);
+
+    UserMethod method = type.getDeclaredMethods().get(0);
+    assertEquals(2, method.body.getValue().statements.size());
+    assertTrue(method.body.getValue().statements.get(0) instanceof LocalDeclarationStatement);
+    LocalDeclarationStatement decl = (LocalDeclarationStatement) method.body.getValue().statements.get(0);
+    UserLocal local = decl.local.getValue();
+    assertEquals("x", local.getName());
+    assertIntegerLiteral(decl.initializer.getValue(), 1);
+    assertTrue(method.body.getValue().statements.get(1) instanceof ExpressionStatement);
+    ExpressionStatement stmt = (ExpressionStatement) method.body.getValue().statements.get(1);
+    assertTrue(stmt.expression.getValue() instanceof AssignmentExpression);
+    AssignmentExpression assign = (AssignmentExpression) stmt.expression.getValue();
+    assertSame(AssignmentExpression.Operator.ASSIGN, assign.operator.getValue());
+    assertTrue(assign.leftHandSide.getValue() instanceof LocalAccess);
+    assertSame(local, ((LocalAccess) assign.leftHandSide.getValue()).local.getValue());
+    assertIntegerLiteral(assign.rightHandSide.getValue(), 5);
+  }
+
+  @Test
+  public void decodeClassWithLiteralLocalReassignmentInConstructorBodyCreatesAssignmentStatement() throws Exception {
+    NamedUserType type = decodeUserType("""
+        class SyntheticType {
+          SyntheticType() { WholeNumber x <- 1; x <- 5; }
+        }
+        """);
+
+    NamedUserConstructor constructor = (NamedUserConstructor) type.getDeclaredConstructors().get(0);
+    assertEquals(2, constructor.body.getValue().statements.size());
+    assertTrue(constructor.body.getValue().statements.get(0) instanceof LocalDeclarationStatement);
+    LocalDeclarationStatement decl = (LocalDeclarationStatement) constructor.body.getValue().statements.get(0);
+    UserLocal local = decl.local.getValue();
+    assertEquals("x", local.getName());
+    assertIntegerLiteral(decl.initializer.getValue(), 1);
+    assertTrue(constructor.body.getValue().statements.get(1) instanceof ExpressionStatement);
+    ExpressionStatement stmt = (ExpressionStatement) constructor.body.getValue().statements.get(1);
+    assertTrue(stmt.expression.getValue() instanceof AssignmentExpression);
+    AssignmentExpression assign = (AssignmentExpression) stmt.expression.getValue();
+    assertSame(AssignmentExpression.Operator.ASSIGN, assign.operator.getValue());
+    assertTrue(assign.leftHandSide.getValue() instanceof LocalAccess);
+    assertSame(local, ((LocalAccess) assign.leftHandSide.getValue()).local.getValue());
+    assertIntegerLiteral(assign.rightHandSide.getValue(), 5);
+  }
+
+  @Test
+  public void decodeClassWithTypeMismatchLocalReassignmentInMethodBodyReportsTypeError() {
+    UnsupportedTweedleDecodeException thrown = assertThrows(
+        UnsupportedTweedleDecodeException.class,
+        () -> coder.decode("""
+            class SyntheticType {
+              void update() { WholeNumber x <- 1; x <- "bad"; }
+            }
+            """));
+
+    assertTrue(thrown.getMessage().contains("local variable assignment value type is not assignable to"));
+    assertTrue(thrown.getMessage().contains("update"));
+    assertTrue(thrown.getMessage().contains("x"));
+  }
+
+  @Test
+  public void decodeClassWithTypeMismatchLocalReassignmentInConstructorBodyReportsTypeError() {
+    UnsupportedTweedleDecodeException thrown = assertThrows(
+        UnsupportedTweedleDecodeException.class,
+        () -> coder.decode("""
+            class SyntheticType {
+              SyntheticType() { WholeNumber x <- 1; x <- "bad"; }
+            }
+            """));
+
+    assertTrue(thrown.getMessage().contains("constructor local variable assignment value type is not assignable to"));
+    assertTrue(thrown.getMessage().contains("SyntheticType"));
+    assertTrue(thrown.getMessage().contains("x"));
   }
 
   @Test
