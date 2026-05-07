@@ -27,6 +27,7 @@
     "workflow": {
       "type": "string",
       "enum": [
+        "export",
         "exported-project-smoke",
         "failure-path-smoke",
         "future-ui-smoke",
@@ -34,14 +35,14 @@
         "launch",
         "menu-action-smoke",
         "netbeans-package-smoke",
-        "project-io-smoke",
-        "scene-creation",
-        "run-debug",
-        "save-load",
-        "select-project-interaction-smoke",
-        "export",
         "open-load-save",
         "package-install-smoke",
+        "project-io-smoke",
+        "run-debug",
+        "save-load",
+        "scene-creation",
+        "select-project-interaction-smoke",
+        "select-project-widget-introspection-smoke",
         "wizard-palette-completion-smoke"
       ]
     },

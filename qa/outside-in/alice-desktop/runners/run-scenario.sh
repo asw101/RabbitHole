@@ -9,6 +9,7 @@ ROOT_DIRECTORY_PREP="$SCRIPT_DIR/prepare-root-directory.py"
 LICENSE_ACCEPTANCE_PREP="$SCRIPT_DIR/prepare-license-acceptance.py"
 LICENSE_DIALOG_PROBE="$SCRIPT_DIR/license-dialog-probe.py"
 SELECT_PROJECT_PROBE="$SCRIPT_DIR/select-project-probe.py"
+SWING_WIDGET_PROBE="$SCRIPT_DIR/swing-widget-probe.py"
 
 usage() {
   cat <<'EOF'
@@ -738,6 +739,13 @@ write_select_project_probe() {
   python3 "$SELECT_PROJECT_PROBE" "$inventory_path" "$output_path"
 }
 
+write_swing_widget_probe() {
+  local inventory_path=$1
+  local output_path=$2
+
+  python3 "$SWING_WIDGET_PROBE" "$inventory_path" "$output_path"
+}
+
 select_display() {
   if [ -n "${ALICE_QA_DISPLAY:-}" ]; then
     printf '%s\n' "$ALICE_QA_DISPLAY"
@@ -1177,7 +1185,8 @@ JSON
   fi
 
   local select_project_wait_status=not-requested
-  if [ "$scenario_id" = alice-desktop-select-project-inventory ]; then
+  if [ "$scenario_id" = alice-desktop-select-project-inventory ] \
+      || [ "$scenario_id" = alice-desktop-select-project-widget-introspection ]; then
     if [ "${ALICE_QA_DISABLE_WINDOW_DETECTOR:-}" != "1" ] && command -v xdotool >/dev/null 2>&1; then
       select_project_wait_status=not-found
       local select_waited=0
@@ -1202,6 +1211,14 @@ JSON
   write_application_root_error_probe "$run_dir/x-window-inventory.json" "$run_dir/application-root-error.json"
   write_license_dialog_probe "$run_dir/x-window-inventory.json" "$run_dir/license-dialog.json"
   write_select_project_probe "$run_dir/x-window-inventory.json" "$run_dir/select-project-window.json"
+  local swing_widget_status=not-requested swing_widget_blocker=not-requested
+  if [ "$scenario_id" = alice-desktop-select-project-widget-introspection ]; then
+    # Allow the Swing accessibility tree to build before probing.
+    sleep 3
+    write_swing_widget_probe "$run_dir/x-window-inventory.json" "$run_dir/swing-widget-observation.json"
+    swing_widget_status=$(inventory_json_field "$run_dir/swing-widget-observation.json" status)
+    swing_widget_blocker=$(inventory_json_field "$run_dir/swing-widget-observation.json" blocker)
+  fi
   local window_inventory_status alice_window_candidate_count application_root_error_status application_root_error_blocker license_dialog_status license_dialog_blocker select_project_status select_project_blocker select_project_interaction
   window_inventory_status=$(inventory_json_field "$run_dir/x-window-inventory.json" status)
   alice_window_candidate_count=$(inventory_json_field "$run_dir/x-window-inventory.json" aliceWindowCandidateCount)
@@ -1253,6 +1270,9 @@ JSON
     printf 'selectProjectBlocker=%s\n' "$select_project_blocker"
     printf 'selectProjectInteraction=%s\n' "$select_project_interaction"
     printf 'selectProjectWaitStatus=%s\n' "$select_project_wait_status"
+    printf 'swingWidgetObservation=%s\n' swing-widget-observation.json
+    printf 'swingWidgetStatus=%s\n' "$swing_widget_status"
+    printf 'swingWidgetBlocker=%s\n' "$swing_widget_blocker"
     printf 'timeoutSeconds=%s\n' "$run_timeout"
   } > "$run_dir/status.txt"
 
