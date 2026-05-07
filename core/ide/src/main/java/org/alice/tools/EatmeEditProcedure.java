@@ -27,6 +27,7 @@ public final class EatmeEditProcedure {
   private static final String SUPPORTED_EDIT_PREFIX = "append-comment:";
   private static final String EDIT_ARTIFACT = "procedure-edit.json";
   private static final String DIFF_ARTIFACT = "procedure.diff.json";
+  private static final String UI_ACTION_NO_GO_ARTIFACT = "procedure-ui-action-no-go.json";
   private static final String EDITED_PROJECT = "edited-project.a3p";
 
   private EatmeEditProcedure() {
@@ -123,6 +124,9 @@ public final class EatmeEditProcedure {
     Path diffArtifact = artifactPath(arguments.evidenceDir(), DIFF_ARTIFACT);
     Files.writeString(diffArtifact, diffArtifactJson(edit), StandardCharsets.UTF_8);
     requireNonEmptyArtifact(diffArtifact, "procedure diff artifact");
+    Path uiActionNoGoArtifact = artifactPath(arguments.evidenceDir(), UI_ACTION_NO_GO_ARTIFACT);
+    Files.writeString(uiActionNoGoArtifact, uiActionNoGoArtifactJson(edit), StandardCharsets.UTF_8);
+    requireNonEmptyArtifact(uiActionNoGoArtifact, "procedure UI action no-go artifact");
     return edit;
   }
 
@@ -177,7 +181,8 @@ public final class EatmeEditProcedure {
         + "\"status\":\"edited\","
         + "\"procedure_selector\":\"" + escapeJson(procedureSelector) + "\","
         + "\"edited_project_artifact\":\"" + EDITED_PROJECT + "\","
-        + "\"procedure_or_code_diff\":\"" + DIFF_ARTIFACT + "\""
+        + "\"procedure_or_code_diff\":\"" + DIFF_ARTIFACT + "\","
+        + "\"procedure_ui_action_no_go\":\"" + UI_ACTION_NO_GO_ARTIFACT + "\""
         + "}";
   }
 
@@ -205,6 +210,56 @@ public final class EatmeEditProcedure {
         + "  \"after_methods\": " + jsonArray(edit.afterMethods()) + ",\n"
         + "  \"statement_count_delta\": " + (edit.afterStatementCount() - edit.beforeStatementCount()) + ",\n"
         + "  \"edited_project\": \"" + escapeJson(edit.editedProject()) + "\"\n"
+        + "}\n";
+  }
+
+  private static String uiActionNoGoArtifactJson(ProcedureEdit edit) {
+    return "{\n"
+        + "  \"schema_version\": \"eatme.alice-code-procedure-ui-action-no-go/v1\",\n"
+        + "  \"status\": \"blocked\",\n"
+        + "  \"source\": \"EatmeEditProcedure\",\n"
+        + "  \"procedure_selector\": \"" + escapeJson(edit.procedureSelector()) + "\",\n"
+        + "  \"edit_spec\": \"" + escapeJson(edit.editSpec()) + "\",\n"
+        + "  \"ast_edit_artifact\": \"" + EDIT_ARTIFACT + "\",\n"
+        + "  \"procedure_or_code_diff\": \"" + DIFF_ARTIFACT + "\",\n"
+        + "  \"proven\": \"Deterministic project AST procedure edit writes edited-project.a3p and a procedure diff artifact.\",\n"
+        + "  \"exact_missing_ui_action_target\": {\n"
+        + "    \"expected_target\": \"desktop code editor/procedure UI action for " + escapeJson(edit.procedureSelector()) + "\",\n"
+        + "    \"missing_target\": \"No stable public action or invoker is exposed from org.alice.ide.codeeditor.CodeEditor or org.alice.ide.declarationseditor.CodeComposite for selecting "
+        + escapeJson(edit.procedureSelector()) + " and applying " + escapeJson(edit.editSpec()) + " through the desktop code editor.\"\n"
+        + "  },\n"
+        + "  \"examined_code_targets\": [\n"
+        + "    {\n"
+        + "      \"class\": \"org.alice.ide.codeeditor.CodeEditor\",\n"
+        + "      \"observation\": \"Exposes getCode(), getTrackableShape(DropSite), and statement-list view construction, but no named operation that selects a procedure and invokes a code edit with an action result.\"\n"
+        + "    },\n"
+        + "    {\n"
+        + "      \"class\": \"org.alice.ide.declarationseditor.CodeComposite\",\n"
+        + "      \"observation\": \"Wraps AbstractCode/UserMethod into a declaration tab/view, but does not expose a deterministic code-edit action invoker.\"\n"
+        + "    },\n"
+        + "    {\n"
+        + "      \"class\": \"org.alice.ide.declarationseditor.DeclarationsEditorComposite\",\n"
+        + "      \"observation\": \"Exposes DeclarationMenu and DeclarationTabState, not a procedure-selector UI action invocation result.\"\n"
+        + "    }\n"
+        + "  ],\n"
+        + "  \"blocker_codes\": [\n"
+        + "    \"code_editor_action_target_not_exposed\",\n"
+        + "    \"procedure_selector_not_bound_to_ui_action\",\n"
+        + "    \"append_comment_ui_invocation_not_available\"\n"
+        + "  ],\n"
+        + "  \"required_next\": [\n"
+        + "    \"Expose a stable code editor/procedure UI action target for a selected UserMethod.\",\n"
+        + "    \"Return an invocation result that names the selected procedure and the changed code/procedure artifact.\"\n"
+        + "  ],\n"
+        + "  \"doesNotClaim\": [\n"
+        + "    \"desktop UI action invoked\",\n"
+        + "    \"code editor/procedure action completion\",\n"
+        + "    \"full Alice UI automation\",\n"
+        + "    \"visible rendering correctness\",\n"
+        + "    \"first-lesson completion\",\n"
+        + "    \"grading\",\n"
+        + "    \"creative assessment\"\n"
+        + "  ]\n"
         + "}\n";
   }
 

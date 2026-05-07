@@ -57,8 +57,35 @@ public class EatmeEditProcedureTest {
     assertTrue(result, result.contains("\"status\":\"edited\""));
     assertTrue(result, result.contains("\"edited_project_artifact\":\"edited-project.a3p\""));
     assertTrue(result, result.contains("\"procedure_or_code_diff\":\"procedure.diff.json\""));
+    assertTrue(result, result.contains("\"procedure_ui_action_no_go\":\"procedure-ui-action-no-go.json\""));
     assertTrue(Files.size(evidenceDir.resolve("procedure-edit.json")) > 0);
     assertTrue(Files.size(evidenceDir.resolve("procedure.diff.json")) > 0);
+    assertTrue(Files.size(evidenceDir.resolve("procedure-ui-action-no-go.json")) > 0);
+
+    String uiActionNoGo = Files.readString(evidenceDir.resolve("procedure-ui-action-no-go.json"));
+    assertTrue(uiActionNoGo,
+        uiActionNoGo.contains("\"schema_version\": \"eatme.alice-code-procedure-ui-action-no-go/v1\""));
+    assertTrue(uiActionNoGo, uiActionNoGo.contains("\"status\": \"blocked\""));
+    assertTrue(uiActionNoGo, uiActionNoGo.contains("\"source\": \"EatmeEditProcedure\""));
+    assertTrue(uiActionNoGo, uiActionNoGo.contains("\"procedure_selector\": \"scene.eatmeFirstLesson\""));
+    assertTrue(uiActionNoGo, uiActionNoGo.contains("\"ast_edit_artifact\": \"procedure-edit.json\""));
+    assertTrue(uiActionNoGo, uiActionNoGo.contains("\"procedure_or_code_diff\": \"procedure.diff.json\""));
+    assertTrue(uiActionNoGo, uiActionNoGo.contains("\"exact_missing_ui_action_target\""));
+    assertTrue(uiActionNoGo, uiActionNoGo.contains("desktop code editor/procedure UI action for scene.eatmeFirstLesson"));
+    assertTrue(uiActionNoGo, uiActionNoGo.contains("org.alice.ide.codeeditor.CodeEditor"));
+    assertTrue(uiActionNoGo, uiActionNoGo.contains("org.alice.ide.declarationseditor.CodeComposite"));
+    assertTrue(uiActionNoGo, uiActionNoGo.contains("org.alice.ide.declarationseditor.DeclarationsEditorComposite"));
+    assertTrue(uiActionNoGo, uiActionNoGo.contains("\"code_editor_action_target_not_exposed\""));
+    assertTrue(uiActionNoGo, uiActionNoGo.contains("\"procedure_selector_not_bound_to_ui_action\""));
+    assertTrue(uiActionNoGo, uiActionNoGo.contains("\"append_comment_ui_invocation_not_available\""));
+    String doesNotClaim = jsonSection(uiActionNoGo, "doesNotClaim");
+    assertTrue(doesNotClaim, doesNotClaim.contains("desktop UI action invoked"));
+    assertTrue(doesNotClaim, doesNotClaim.contains("code editor/procedure action completion"));
+    assertTrue(doesNotClaim, doesNotClaim.contains("full Alice UI automation"));
+    assertTrue(doesNotClaim, doesNotClaim.contains("visible rendering correctness"));
+    assertTrue(doesNotClaim, doesNotClaim.contains("first-lesson completion"));
+    assertTrue(doesNotClaim, doesNotClaim.contains("grading"));
+    assertTrue(doesNotClaim, doesNotClaim.contains("creative assessment"));
 
     Project editedProject = IoUtilities.readProject(evidenceDir.resolve("edited-project.a3p").toFile());
     NamedUserType sceneType = (NamedUserType) editedProject.getProgramType()
@@ -73,6 +100,17 @@ public class EatmeEditProcedureTest {
     Statement statement = method.body.getValue().statements.get(0);
     assertTrue("edit proof should be a comment statement", statement instanceof Comment);
     assertEquals("eatme edit proof", ((Comment) statement).text.getValue());
+  }
+
+  private static String jsonSection(String json, String fieldName) {
+    int fieldStart = json.indexOf("\"" + fieldName + "\"");
+    assertTrue(fieldName + " field should exist", fieldStart >= 0);
+    int nextFieldStart = json.indexOf("\n  \"", fieldStart + 1);
+    if (nextFieldStart < 0) {
+      nextFieldStart = json.lastIndexOf('}');
+    }
+    assertTrue(fieldName + " field should have an end", nextFieldStart > fieldStart);
+    return json.substring(fieldStart, nextFieldStart);
   }
 
   @Test
@@ -119,6 +157,7 @@ public class EatmeEditProcedureTest {
     assertEquals(2, status);
     assertTrue(stderr.toString(StandardCharsets.UTF_8).contains("unsupported edit spec"));
     assertTrue(Files.notExists(evidenceDir.resolve("procedure-edit.json")));
+    assertTrue(Files.notExists(evidenceDir.resolve("procedure-ui-action-no-go.json")));
   }
 
   @Test
@@ -142,6 +181,7 @@ public class EatmeEditProcedureTest {
     assertEquals(2, status);
     assertTrue(stderr.toString(StandardCharsets.UTF_8).contains("procedure selector must name one scene method"));
     assertTrue(Files.notExists(evidenceDir.resolve("procedure-edit.json")));
+    assertTrue(Files.notExists(evidenceDir.resolve("procedure-ui-action-no-go.json")));
   }
 
   @Test
@@ -165,6 +205,7 @@ public class EatmeEditProcedureTest {
     assertEquals(2, status);
     assertTrue(stderr.toString(StandardCharsets.UTF_8).contains("unsupported procedure selector"));
     assertTrue(Files.notExists(evidenceDir.resolve("procedure-edit.json")));
+    assertTrue(Files.notExists(evidenceDir.resolve("procedure-ui-action-no-go.json")));
   }
 
   @Test
@@ -188,6 +229,7 @@ public class EatmeEditProcedureTest {
     assertEquals(2, status);
     assertTrue(stderr.toString(StandardCharsets.UTF_8).contains("append-comment edit spec must include non-blank text"));
     assertTrue(Files.notExists(evidenceDir.resolve("procedure-edit.json")));
+    assertTrue(Files.notExists(evidenceDir.resolve("procedure-ui-action-no-go.json")));
   }
 
   @Test
@@ -209,6 +251,7 @@ public class EatmeEditProcedureTest {
     assertEquals(2, status);
     assertTrue(stderr.toString(StandardCharsets.UTF_8).contains("project file does not exist"));
     assertTrue(Files.notExists(evidenceDir.resolve("procedure-edit.json")));
+    assertTrue(Files.notExists(evidenceDir.resolve("procedure-ui-action-no-go.json")));
   }
 
   @Test
@@ -233,6 +276,7 @@ public class EatmeEditProcedureTest {
     assertEquals(2, status);
     assertTrue(stderr.toString(StandardCharsets.UTF_8).contains("project does not contain a program field typed by an SScene subtype"));
     assertTrue(Files.notExists(evidenceDir.resolve("procedure-edit.json")));
+    assertTrue(Files.notExists(evidenceDir.resolve("procedure-ui-action-no-go.json")));
   }
 
   private static Project projectWithScene() {
