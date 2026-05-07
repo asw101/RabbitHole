@@ -463,6 +463,48 @@ public class HistoricalArchiveRoundTripCharacterizationTest {
   }
 
   @Test
+  public void generatedJsonPlayerArchiveWithResourceFieldInitializerSiblingTypeIsRejectedWithoutSilentOmission() throws Exception {
+    ImageResource imageResource = generatedImageResource("historical-world-sibling-texture.png", 0xFF993366);
+    File projectArchive = temporaryFolder.newFile("generated-json-player-resource-field-initializer-sibling-boundary.a3w");
+
+    writeJsonProjectArchive(
+        projectArchive,
+        "GeneratedProgramWithResourceInitializerSibling",
+        "class GeneratedProgramWithResourceInitializerSibling extends SProgram { GeneratedResourceInitializerSiblingScene scene; }",
+        "GeneratedResourceInitializerSiblingScene",
+        "class GeneratedResourceInitializerSiblingScene extends SScene { ImageResource texture <- \""
+            + imageResource.getName()
+            + "\"; }",
+        imageResource);
+
+    try (ZipFile zipFile = new ZipFile(projectArchive)) {
+      ProjectManifest manifest = readProjectManifest(zipFile);
+      assertTypeReference(
+          manifest,
+          "GeneratedProgramWithResourceInitializerSibling",
+          "src/GeneratedProgramWithResourceInitializerSibling.twe");
+      assertTypeReference(
+          manifest,
+          "GeneratedResourceInitializerSiblingScene",
+          "src/GeneratedResourceInitializerSiblingScene.twe");
+      assertImageReference(
+          manifest,
+          imageResource.getId(),
+          imageResource.getName(),
+          "resources/" + imageResource.getName());
+      ZipEntry siblingTypeEntry = zipFile.getEntry("src/GeneratedResourceInitializerSiblingScene.twe");
+      assertNotNull("Generated JSON .a3w fixture should contain the resource-initializer sibling type source",
+          siblingTypeEntry);
+      assertTrue(readEntry(zipFile, siblingTypeEntry).contains(
+          "ImageResource texture <- \"" + imageResource.getName() + "\""));
+    }
+    IOException thrown = assertThrows(IOException.class, () -> IoUtilities.readProject(projectArchive));
+
+    assertTrue(thrown.getMessage(), thrown.getMessage().contains(
+        "Project archive contains unsupported manifest-declared Tweedle type names [GeneratedResourceInitializerSiblingScene]"));
+  }
+
+  @Test
   public void generatedJsonTypeArchiveDecodesFieldOnlyTweedleWithResourceReadbackWithoutExternalFixture() throws Exception {
     ImageResource imageResource = generatedImageResource("json-type-texture.png", 0xFF339966);
     File typeArchive = temporaryFolder.newFile("generated-json-type.a3c");
