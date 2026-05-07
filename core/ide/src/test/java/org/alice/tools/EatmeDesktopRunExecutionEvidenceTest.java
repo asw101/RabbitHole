@@ -240,6 +240,8 @@ public class EatmeDesktopRunExecutionEvidenceTest {
     Path pixelObservationArtifact = evidenceDir.resolve("desktop-run-pixel-observation.json");
     String pixelObservationJson = Files.readString(pixelObservationArtifact);
     assumeTrue(pixelObservationJson, pixelObservationJson.contains("\"status\": \"observed\""));
+    assertTrue(pixelObservationJson, pixelObservationJson.contains("\"captureTarget\""));
+    assertTrue(pixelObservationJson, pixelObservationJson.contains("\"role\": \"render_target_component\""));
     assertTrue(pixelObservationJson, pixelObservationJson.contains("\"screenshot\""));
     assertTrue(pixelObservationJson, pixelObservationJson.contains("\"file\": \"desktop-run-render-target.png\""));
     assertTrue(pixelObservationJson, pixelObservationJson.contains("\"renderTargetWidth\": 24"));
@@ -249,6 +251,46 @@ public class EatmeDesktopRunExecutionEvidenceTest {
     assertTrue(pixelObservationJson, pixelObservationJson.contains("\"sample\""));
     assertTrue(pixelObservationJson, pixelObservationJson.contains("\"coordinateSystem\": \"screenshot\""));
     assertTrue(pixelObservationJson, pixelObservationJson.contains("\"argb\": \"0x"));
+    assertTrue(Files.size(evidenceDir.resolve("desktop-run-render-target.png")) > 0);
+  }
+
+  @Test
+  public void writesObservedPixelArtifactFromRenderPanelWhenRawRenderTargetIsNotShowing() throws Exception {
+    assumeFalse(GraphicsEnvironment.isHeadless());
+    Path evidenceDir = temporaryFolder.newFolder("observed-render-panel-pixel").toPath();
+    JPanel rawRenderTargetComponent = new JPanel();
+    JPanel renderPanelComponent = new JPanel();
+    renderPanelComponent.setBackground(Color.BLUE);
+    renderPanelComponent.setPreferredSize(new Dimension(24, 24));
+    JFrame frame = new JFrame("Run panel pixel observation test");
+    frame.getContentPane().add(renderPanelComponent, BorderLayout.CENTER);
+    frame.pack();
+
+    String previousEvidenceDir = System.getProperty(EatmeDesktopRunExecutionEvidence.EVIDENCE_DIR_PROPERTY);
+    try {
+      frame.setVisible(true);
+      System.setProperty(EatmeDesktopRunExecutionEvidence.EVIDENCE_DIR_PROPERTY, evidenceDir.toString());
+
+      EatmeDesktopRunExecutionEvidence.recordRenderTargetAttached(
+          rawRenderTargetComponent,
+          renderPanelComponent,
+          frame.getContentPane(),
+          false);
+    } finally {
+      frame.dispose();
+      restoreEvidenceDirProperty(previousEvidenceDir);
+    }
+
+    Path pixelObservationArtifact = evidenceDir.resolve("desktop-run-pixel-observation.json");
+    String pixelObservationJson = Files.readString(pixelObservationArtifact);
+    assumeTrue(pixelObservationJson, pixelObservationJson.contains("\"status\": \"observed\""));
+    assertTrue(pixelObservationJson, pixelObservationJson.contains("\"role\": \"render_panel_component\""));
+    assertTrue(pixelObservationJson, pixelObservationJson.contains("\"renderTargetDisplayable\": false"));
+    assertTrue(pixelObservationJson, pixelObservationJson.contains("\"renderTargetShowing\": false"));
+    assertTrue(pixelObservationJson, pixelObservationJson.contains("\"renderPanelDisplayable\": true"));
+    assertTrue(pixelObservationJson, pixelObservationJson.contains("\"renderPanelShowing\": true"));
+    assertTrue(pixelObservationJson, pixelObservationJson.contains("\"screenshot\""));
+    assertTrue(pixelObservationJson, pixelObservationJson.contains("\"sample\""));
     assertTrue(Files.size(evidenceDir.resolve("desktop-run-render-target.png")) > 0);
   }
 
