@@ -7,6 +7,7 @@ import org.alice.tweedle.TweedlePrimitiveValue;
 import org.alice.tweedle.TweedleType;
 import org.alice.tweedle.ast.TweedleExpression;
 import org.alice.tweedle.unlinked.TweedleUnlinkedParser;
+import org.lgna.common.Resource;
 import org.lgna.project.ast.AbstractDeclaration;
 import org.lgna.project.ast.AbstractNode;
 import org.lgna.project.ast.AbstractType;
@@ -88,6 +89,9 @@ public class Decoder {
 
   private UserField decodeField(TweedleField property) {
     AbstractType<?, ?, ?> valueType = resolveType(property.getType().getName(), "field");
+    if (property.hasInitializer() && valueType != null && valueType.isAssignableTo(Resource.class)) {
+      throw unsupportedResourceFieldInitializer(property);
+    }
     Expression initializer = property.hasInitializer() ? decodeFieldInitializer(property) : null;
     return new UserField(property.getName(), valueType, initializer);
   }
@@ -123,6 +127,11 @@ public class Decoder {
     }
     return new UnsupportedTweedleDecodeException(
         "Missing Tweedle field initializer: " + property.getName());
+  }
+
+  private UnsupportedTweedleDecodeException unsupportedResourceFieldInitializer(TweedleField property) {
+    return new UnsupportedTweedleDecodeException(
+        "Tweedle resource field initializers are not yet supported by the AST decoder: " + property.getName());
   }
 
   private AbstractType<?, ?, ?> resolveType(String typeName, String usage) {
