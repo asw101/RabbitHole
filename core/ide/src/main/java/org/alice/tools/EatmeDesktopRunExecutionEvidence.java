@@ -39,6 +39,7 @@ public final class EatmeDesktopRunExecutionEvidence {
   public static final String DESKTOP_RUN_PIXEL_BOUNDARY_ARTIFACT = "desktop-run-pixel-boundary.json";
   public static final String DESKTOP_RUN_PIXEL_OBSERVATION_ARTIFACT = "desktop-run-pixel-observation.json";
   public static final String DESKTOP_FIRST_LESSON_NEXT_ACTION_ARTIFACT = "desktop-first-lesson-next-action.json";
+  public static final String DESKTOP_SAVE_MENU_ACTION_TARGET_ARTIFACT = "desktop-save-menu-action-target.json";
   private static final String DESKTOP_RUN_RENDER_TARGET_SCREENSHOT = "desktop-run-render-target.png";
   private static final int MAX_RECORDED_EVENTS = 200;
   private static final String RENDER_AFFORDANCE_CLAIM =
@@ -278,6 +279,7 @@ public final class EatmeDesktopRunExecutionEvidence {
     Path pixelBoundaryArtifact = EatmeRunWindowEvidence.artifactPath(evidenceDir, DESKTOP_RUN_PIXEL_BOUNDARY_ARTIFACT);
     Path pixelObservationArtifact = EatmeRunWindowEvidence.artifactPath(evidenceDir, DESKTOP_RUN_PIXEL_OBSERVATION_ARTIFACT);
     Path nextActionArtifact = EatmeRunWindowEvidence.artifactPath(evidenceDir, DESKTOP_FIRST_LESSON_NEXT_ACTION_ARTIFACT);
+    Path saveMenuActionTargetArtifact = EatmeRunWindowEvidence.artifactPath(evidenceDir, DESKTOP_SAVE_MENU_ACTION_TARGET_ARTIFACT);
     writeStringAtomically(
         artifact,
         "{\n"
@@ -330,6 +332,8 @@ public final class EatmeDesktopRunExecutionEvidence {
     requireNonEmptyArtifact(pixelObservationArtifact, "desktop Run pixel observation artifact");
     writeFirstLessonNextActionContract(nextActionArtifact);
     requireNonEmptyArtifact(nextActionArtifact, "desktop first-lesson next-action artifact");
+    writeSaveMenuActionTargetNoGo(saveMenuActionTargetArtifact);
+    requireNonEmptyArtifact(saveMenuActionTargetArtifact, "desktop Save menu action-target artifact");
     return artifact;
   }
 
@@ -371,6 +375,52 @@ public final class EatmeDesktopRunExecutionEvidence {
             + "    \"full Alice UI automation\",\n"
             + "    \"desktop save-menu completion\",\n"
             + "    \"code editor/procedure action completion\",\n"
+            + "    \"first-lesson completion\",\n"
+            + "    \"grading\",\n"
+            + "    \"creative assessment\"\n"
+            + "  ]\n"
+            + "}\n");
+  }
+
+  private static void writeSaveMenuActionTargetNoGo(Path artifact) throws IOException {
+    writeStringAtomically(
+        artifact,
+        "{\n"
+            + "  \"schema_version\": \"eatme.alice-desktop-save-menu-action-target/v1\",\n"
+            + "  \"status\": \"blocked\",\n"
+            + "  \"source\": \"desktop_run_render_target_attachment\",\n"
+            + "  \"target\": {\n"
+            + "    \"menu_owner\": \"org.alice.ide.croquet.models.menubar.FileMenuModel#createModels\",\n"
+            + "    \"operation\": \"org.alice.ide.croquet.models.projecturi.SaveProjectOperation.getInstance()\",\n"
+            + "    \"menu_item\": \"SaveProjectOperation.getInstance().getMenuItemPrepModel()\",\n"
+            + "    \"operation_uuid\": \"44ffba8a-3fb3-4cb5-97b6-55cd93c88e9d\"\n"
+            + "  },\n"
+            + "  \"blocker\": {\n"
+            + "    \"reason\": \"The current evidence seam runs after Run render-target attachment and does not receive the desktop File menu owner, ProjectDocumentFrame, or SaveProjectOperation target needed to prove Save menu readiness or invocation.\",\n"
+            + "    \"codes\": [\n"
+            + "      \"desktop_save_menu_owner_not_available_at_render_attachment\",\n"
+            + "      \"desktop_save_project_operation_not_invoked\",\n"
+            + "      \"desktop_save_menu_readiness_not_observed\"\n"
+            + "    ],\n"
+            + "    \"details\": [\n"
+            + "      {\n"
+            + "        \"observed\": \"recordRenderTargetAttached receives render target, render panel, Run view, and control-panel attachment state only\",\n"
+            + "        \"required\": \"FileMenuModel or ProjectDocumentFrame evidence that SaveProjectOperation.getInstance().getMenuItemPrepModel() is present and enabled\"\n"
+            + "      },\n"
+            + "      {\n"
+            + "        \"observed\": \"no SaveProjectOperation invocation result is emitted by this seam\",\n"
+            + "        \"required\": \"SaveProjectOperation.getInstance() invocation attempt with a success, prompt, or blocked result artifact\"\n"
+            + "      }\n"
+            + "    ]\n"
+            + "  },\n"
+            + "  \"requiresNextEvidence\": [\n"
+            + "    \"desktop File menu artifact from FileMenuModel showing SaveProjectOperation.getInstance().getMenuItemPrepModel() is installed\",\n"
+            + "    \"desktop SaveProjectOperation.getInstance() readiness or invocation result from the menu/action owner\"\n"
+            + "  ],\n"
+            + "  \"doesNotClaim\": [\n"
+            + "    \"full Alice UI automation\",\n"
+            + "    \"visible rendering correctness\",\n"
+            + "    \"desktop save-menu completion\",\n"
             + "    \"first-lesson completion\",\n"
             + "    \"grading\",\n"
             + "    \"creative assessment\"\n"

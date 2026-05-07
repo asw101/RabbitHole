@@ -105,10 +105,12 @@ public class EatmeDesktopRunExecutionEvidenceTest {
     Path pixelBoundaryArtifact = evidenceDir.resolve("desktop-run-pixel-boundary.json");
     Path pixelObservationArtifact = evidenceDir.resolve("desktop-run-pixel-observation.json");
     Path nextActionArtifact = evidenceDir.resolve("desktop-first-lesson-next-action.json");
+    Path saveMenuActionTargetArtifact = evidenceDir.resolve("desktop-save-menu-action-target.json");
     assertTrue(Files.size(artifact) > 0);
     assertTrue(Files.size(pixelBoundaryArtifact) > 0);
     assertTrue(Files.size(pixelObservationArtifact) > 0);
     assertTrue(Files.size(nextActionArtifact) > 0);
+    assertTrue(Files.size(saveMenuActionTargetArtifact) > 0);
     String json = Files.readString(artifact);
     assertTrue(json, json.contains("\"evidenceKind\": \"desktop_run_render_affordance\""));
     assertTrue(json, json.contains("\"renderTargetAttachedToRunView\": true"));
@@ -214,6 +216,38 @@ public class EatmeDesktopRunExecutionEvidenceTest {
     assertTrue(nextActionJson, nextActionJson.contains("first-lesson completion"));
     assertTrue(nextActionJson, nextActionJson.contains("grading"));
     assertTrue(nextActionJson, nextActionJson.contains("creative assessment"));
+
+    String saveMenuActionTargetJson = Files.readString(saveMenuActionTargetArtifact);
+    assertTrue(saveMenuActionTargetJson,
+        saveMenuActionTargetJson.contains("\"schema_version\": \"eatme.alice-desktop-save-menu-action-target/v1\""));
+    assertTrue(saveMenuActionTargetJson, saveMenuActionTargetJson.contains("\"status\": \"blocked\""));
+    assertTrue(saveMenuActionTargetJson,
+        saveMenuActionTargetJson.contains("\"source\": \"desktop_run_render_target_attachment\""));
+    assertTrue(saveMenuActionTargetJson,
+        saveMenuActionTargetJson.contains("org.alice.ide.croquet.models.menubar.FileMenuModel#createModels"));
+    assertTrue(saveMenuActionTargetJson,
+        saveMenuActionTargetJson.contains("org.alice.ide.croquet.models.projecturi.SaveProjectOperation.getInstance()"));
+    assertTrue(saveMenuActionTargetJson,
+        saveMenuActionTargetJson.contains("SaveProjectOperation.getInstance().getMenuItemPrepModel()"));
+    assertTrue(saveMenuActionTargetJson, saveMenuActionTargetJson.contains("44ffba8a-3fb3-4cb5-97b6-55cd93c88e9d"));
+    assertTrue(saveMenuActionTargetJson,
+        saveMenuActionTargetJson.contains("desktop_save_menu_owner_not_available_at_render_attachment"));
+    assertTrue(saveMenuActionTargetJson,
+        saveMenuActionTargetJson.contains("desktop_save_project_operation_not_invoked"));
+    assertTrue(saveMenuActionTargetJson,
+        saveMenuActionTargetJson.contains("desktop_save_menu_readiness_not_observed"));
+    assertTrue(saveMenuActionTargetJson,
+        saveMenuActionTargetJson.contains("FileMenuModel or ProjectDocumentFrame evidence"));
+    assertTrue(saveMenuActionTargetJson,
+        saveMenuActionTargetJson.contains("SaveProjectOperation.getInstance() invocation attempt"));
+    assertTrue(saveMenuActionTargetJson, saveMenuActionTargetJson.contains("\"requiresNextEvidence\""));
+    assertTrue(saveMenuActionTargetJson,
+        saveMenuActionTargetJson.contains("desktop File menu artifact from FileMenuModel"));
+    assertTrue(saveMenuActionTargetJson,
+        saveMenuActionTargetJson.contains("desktop SaveProjectOperation.getInstance() readiness"));
+    assertTrue(saveMenuActionTargetJson, saveMenuActionTargetJson.contains("desktop save-menu completion"));
+    assertFalse(saveMenuActionTargetJson, saveMenuActionTargetJson.contains("procedure"));
+    assertFalse(saveMenuActionTargetJson, saveMenuActionTargetJson.contains("code editor"));
   }
 
   @Test
