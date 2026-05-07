@@ -33,6 +33,7 @@ coverage summary with Git LFS disabled.
 | Aggregate reactor | 8.0% | `--min-aggregate-line-percent 8.0` |
 | `core/ast` | 18.0% | `--min-module-line-percent core/ast=18.0` |
 | `core/model-loading` | 10.0% | `--min-module-line-percent core/model-loading=10.0` |
+| `core/scenegraph` | 10.0% | `--min-module-line-percent core/scenegraph=10.0` |
 | `core/story-api-migration` | 75.0% | `--min-module-line-percent core/story-api-migration=75.0` |
 | `core/tweedle` | 50.0% | `--min-module-line-percent core/tweedle=50.0` |
 | `netbeans` | 25.0% | `--min-module-line-percent netbeans=25.0` |
@@ -51,9 +52,9 @@ coverage-report/target/site/jacoco-aggregate/jacoco.csv
 
 | Measurement | State | Meaning |
 | --- | --- | --- |
-| Aggregate JaCoCo CSV | Missing | The no-Sims Maven coverage lane has not produced aggregate coverage data in this checkout. |
-| Aggregate line coverage | Not measured | The scorecard cannot report a current aggregate percent without the CSV. |
-| Aggregate CI ratchet | 8.0% | The CI floor is still reported because it comes from the workflow. |
+| Aggregate JaCoCo CSV | Present | `coverage-report/target/site/jacoco-aggregate/jacoco.csv` |
+| Aggregate line coverage | 12.11% | 14661 covered, 106454 missed, 121115 total lines. |
+| Aggregate CI ratchet | 8.0% | The CI floor is reported separately from the long-term target. |
 
 Missing aggregate coverage is a blocker for claiming coverage progress, but it
 is not a scorecard generation failure.
@@ -66,11 +67,17 @@ CSV is missing, because losing a ratcheted module report is itself a gap.
 
 | Module | CI floor | Expected CSV | State |
 | --- | ---: | --- | --- |
-| `core/ast` | 18.0% | `core/ast/target/site/jacoco/jacoco.csv` | Missing measurement |
-| `core/model-loading` | 10.0% | `core/model-loading/target/site/jacoco/jacoco.csv` | Missing measurement |
-| `core/story-api-migration` | 75.0% | `core/story-api-migration/target/site/jacoco/jacoco.csv` | Missing measurement |
-| `core/tweedle` | 50.0% | `core/tweedle/target/site/jacoco/jacoco.csv` | Missing measurement |
-| `netbeans` | 25.0% | `netbeans/target/site/jacoco/jacoco.csv` | Missing measurement |
+| `alice-ide` | n/a | `alice-ide/target/site/jacoco/jacoco.csv` | 21.21% |
+| `core/ast` | 18.0% | `core/ast/target/site/jacoco/jacoco.csv` | 24.06% |
+| `core/croquet` | n/a | `core/croquet/target/site/jacoco/jacoco.csv` | 0.32% |
+| `core/ide` | n/a | `core/ide/target/site/jacoco/jacoco.csv` | 4.23% |
+| `core/model-loading` | 10.0% | `core/model-loading/target/site/jacoco/jacoco.csv` | 17.56% |
+| `core/scenegraph` | 10.0% | `core/scenegraph/target/site/jacoco/jacoco.csv` | 11.17% |
+| `core/story-api` | n/a | `core/story-api/target/site/jacoco/jacoco.csv` | 4.55% |
+| `core/story-api-migration` | 75.0% | `core/story-api-migration/target/site/jacoco/jacoco.csv` | 81.96% |
+| `core/tweedle` | 50.0% | `core/tweedle/target/site/jacoco/jacoco.csv` | 54.66% |
+| `core/util` | n/a | `core/util/target/site/jacoco/jacoco.csv` | 1.85% |
+| `netbeans` | 25.0% | `netbeans/target/site/jacoco/jacoco.csv` | 38.74% |
 
 Rows with no line totals are ignored rather than converted to false zero
 coverage. This matches the coverage summary contract.
@@ -83,7 +90,7 @@ coverage is at least `70.0%`.
 
 | Target | State | Evidence |
 | --- | --- | --- |
-| 70.0% aggregate line coverage | Not claimable | Aggregate JaCoCo CSV is missing, so the scorecard cannot claim the 70% target from current measured data. |
+| 70.0% aggregate line coverage | Not met | Measured aggregate line coverage is 12.11%, below the 70.0% target. |
 
 ## Production hotspots over 500 lines
 
@@ -96,13 +103,13 @@ using this deterministic filter:
 4. Include only files with line count greater than 500.
 5. Sort by descending line count, then by path.
 
-Current scorecard state for this checkout: 51 production-root Java hotspots over 500 lines.
+Current scorecard state for this checkout: 52 production-root Java hotspots over 500 lines.
 
 | File | Lines |
 | --- | ---: |
-| `core/story-api-migration/src/main/java/org/lgna/project/migration/ProjectMigrationManager.java` | 5914 |
+| `core/story-api-migration/src/main/java/org/lgna/project/migration/ProjectMigrationManager.java` | 5702 |
 | `core/glrender/src/main/java/edu/cmu/cs/dennisc/render/joglrenderer/NonCachingTextRenderer.java` | 1842 |
-| `core/model-loading/src/main/java/org/lgna/story/resourceutilities/ModelResourceExporter.java` | 1505 |
+| `core/model-loading/src/main/java/org/lgna/story/resourceutilities/ModelResourceExporter.java` | 1345 |
 | `core/story-api/src/main/java/org/lgna/ik/core/enforcer/TightPositionalIkEnforcer.java` | 1328 |
 | `core/ide/src/main/java/org/alice/stageide/sceneeditor/StorytellingSceneEditor.java` | 1259 |
 | `core/scenegraph/src/main/java/edu/cmu/cs/dennisc/scenegraph/io/ASG.java` | 1241 |
@@ -117,6 +124,7 @@ Current scorecard state for this checkout: 51 production-root Java hotspots over
 | `core/story-api/src/main/java/Jama/EigenvalueDecomposition.java` | 956 |
 | `core/story-api/src/main/java/org/lgna/story/implementation/JointedModelImp.java` | 955 |
 | `core/tweedle/src/main/java/org/alice/tweedle/run/VirtualMachine.java` | 938 |
+| `core/ide/src/main/java/org/alice/tools/EatmeDesktopRunExecutionEvidence.java` | 925 |
 | `core/story-api/src/main/java/org/lgna/story/implementation/alice/AliceResourceUtilities.java` | 916 |
 | `core-nonfree/ide-nonfree/src/main/java/org/alice/stageide/personresource/IngredientsComposite.java` | 789 |
 | `core/story-api/src/main/java/org/lgna/story/implementation/EntityImp.java` | 786 |
@@ -128,11 +136,11 @@ Current scorecard state for this checkout: 51 production-root Java hotspots over
 | `core/model-loading/src/main/java/org/lgna/story/resourceutilities/JointedModelGltfExporter.java` | 724 |
 | `core/glrender/src/main/java/edu/cmu/cs/dennisc/render/gl/imp/adapters/GlrSkeletonVisual.java` | 712 |
 | `core/model-loading/src/main/java/org/lgna/story/resourceutilities/JointedModelColladaImporter.java` | 688 |
+| `core/story-api-migration/src/main/java/org/lgna/project/io/JsonProjectIo.java` | 682 |
 | `core/story-api/src/main/java/org/alice/interact/handle/ManipulationHandle3D.java` | 664 |
 | `core/ast/src/main/java/org/lgna/project/ast/AstUtilities.java` | 649 |
 | `core/ast/src/main/java/org/lgna/project/ast/JavaCodeGenerator.java` | 643 |
 | `core/croquet/src/main/java/org/lgna/croquet/views/FolderTabbedPane.java` | 643 |
-| `core/story-api-migration/src/main/java/org/lgna/project/io/JsonProjectIo.java` | 642 |
 | `core/ide/src/main/java/org/alice/ide/clipboard/icons/ClipboardIcon.java` | 619 |
 | `core/ide/src/main/java/org/alice/ide/ast/declaration/DeclarationLikeSubstanceComposite.java` | 617 |
 | `core/story-api/src/main/java/org/lgna/story/resourceutilities/StorytellingResources.java` | 611 |
@@ -143,9 +151,9 @@ Current scorecard state for this checkout: 51 production-root Java hotspots over
 | `core/ide/src/main/java/org/alice/ide/croquet/models/html/HtmlEncoder.java` | 580 |
 | `core/croquet/src/main/java/org/lgna/croquet/views/AwtComponentView.java` | 575 |
 | `core/ide/src/main/java/org/alice/stageide/properties/uicontroller/ModelSizePropertyController.java` | 561 |
+| `core/tweedle/src/main/java/org/alice/tweedle/unlinked/TweedleUnlinkedParser.java` | 558 |
 | `core/story-api/src/main/java/org/lgna/ik/core/solver/Solver.java` | 557 |
 | `core/story-api/src/main/java/Jama/SingularValueDecomposition.java` | 553 |
-| `core/tweedle/src/main/java/org/alice/tweedle/unlinked/TweedleUnlinkedParser.java` | 548 |
 | `core/ide/src/main/java/org/alice/ide/IDE.java` | 539 |
 | `core/ide/src/main/java/org/alice/stageide/sceneeditor/interact/GlobalDragAdapter.java` | 534 |
 | `core-nonfree/story-api-nonfree/src/main/java/edu/cmu/cs/dennisc/nebulous/Model.java` | 521 |
@@ -172,7 +180,7 @@ smokes as remaining evidence gaps.
 | Automation mode | Count | Scorecard category |
 | --- | ---: | --- |
 | `xvfb-real-alice` | 1 | Automated real Alice journey |
-| `gated-command-smoke` | 8 | Gated command smoke coverage |
+| `gated-command-smoke` | 9 | Gated command smoke coverage |
 | `manual-evidence-required` | 6 | Manual evidence gap |
 
 Manual evidence gaps:
@@ -190,6 +198,7 @@ Gated command smoke gaps:
 
 | Scenario | Workflow |
 | --- | --- |
+| `alice-desktop-archive-fixture-smoke` | `archive-fixture-smoke` |
 | `alice-desktop-exported-project-smoke` | `exported-project-smoke` |
 | `alice-desktop-failure-path-smoke` | `failure-path-smoke` |
 | `alice-desktop-future-ui-smoke` | `future-ui-smoke` |
@@ -222,12 +231,12 @@ Corpus coverage is representative manifest evidence only; it is not full histori
 
 | Blocker | Current state | Required movement |
 | --- | --- | --- |
-| Aggregate coverage measurement | Missing aggregate JaCoCo CSV | Run the no-Sims coverage lane and regenerate the scorecard. |
-| Ratcheted module measurements | Missing module JaCoCo CSVs for 5 ratcheted modules in this checkout | Run the no-Sims coverage lane and confirm each ratcheted module still emits a report. |
-| 70% target evidence | Not claimable | Produce aggregate measured coverage at or above 70.0% before marking the target met. |
-| Production hotspots | 51 files over 500 lines | Characterize behavior first; refactor only protected hotspots in focused changes. |
+| Aggregate coverage measurement | Available | Keep regenerating the scorecard from current JaCoCo CSVs before claiming progress. |
+| Ratcheted module measurements | Available for all ratcheted modules | Keep module CSVs attached to the coverage workflow artifacts. |
+| 70% target evidence | Not met | Produce aggregate measured coverage at or above 70.0% before marking the target met. |
+| Production hotspots | 52 files over 500 lines | Characterize behavior first; refactor only protected hotspots in focused changes. |
 | Manual QA journeys | 6 scenarios require manual evidence | Add stable automation or collect accepted manual evidence for each workflow. |
-| Gated QA smokes | 8 smokes are gated by local prerequisites | Run with `ALICE_QA_RUN_GATED_SMOKES=1` where prerequisites exist, or attach equivalent CI evidence. |
+| Gated QA smokes | 9 smokes are gated by local prerequisites | Run with `ALICE_QA_RUN_GATED_SMOKES=1` where prerequisites exist, or attach equivalent CI evidence. |
 | Corpus manifest | Present | Keep manifest entries mapped to representative modernization journeys. |
 
 ## Interpretation notes

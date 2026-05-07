@@ -67,6 +67,7 @@ Suppose the summary reports:
 | `core/model-loading` | 12.47% |
 | `core/story-api-migration` | 81.72% |
 | `core/tweedle` | 54.13% |
+| `core/scenegraph` | 11.17% |
 | `netbeans` | 28.54% |
 
 Choose floors that sit below those measurements:
@@ -78,6 +79,7 @@ Choose floors that sit below those measurements:
 | `core/model-loading` | 10.0% |
 | `core/story-api-migration` | 75.0% |
 | `core/tweedle` | 50.0% |
+| `core/scenegraph` | 10.0% |
 | `netbeans` | 25.0% |
 
 The aggregate gate stays at 8.0% because 10.24% measured coverage does not leave
@@ -98,6 +100,7 @@ python3 scripts/summarize-jacoco-coverage.py \
   --min-module-line-percent core/model-loading=10.0 \
   --min-module-line-percent core/story-api-migration=75.0 \
   --min-module-line-percent core/tweedle=50.0 \
+  --min-module-line-percent core/scenegraph=10.0 \
   --min-module-line-percent netbeans=25.0
 ```
 
@@ -157,7 +160,7 @@ artifact with language like:
 Measured no-Sims aggregate line coverage at 10.24%.
 Kept aggregate floor at 8.0% because a 10.0% floor has insufficient margin.
 Added module floors: core/ast 18.0%, core/model-loading 10.0%,
-core/story-api-migration 75.0%, core/tweedle 50.0%, netbeans 25.0%.
+core/story-api-migration 75.0%, core/tweedle 50.0%, core/scenegraph 10.0%, netbeans 25.0%.
 Attached coverage-summary.md and coverage-evidence-manifest.json from the
 alice-coverage-evidence-no-sims CI artifact.
 Did not claim the 70% target; aggregate JaCoCo is below 70.0%.

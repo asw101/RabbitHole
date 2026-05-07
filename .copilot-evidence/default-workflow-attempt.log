@@ -1,0 +1,5 @@
+Running default-workflow at 2026-05-07T13:07:04+00:00
+Error: recipe-runner-rs exited with signal SIGTERM (15)
+
+Stopped default-workflow attempt at 2026-05-07T13:08:23+00:00 after it produced no recipe output and did not exit in non-interactive mode.
+Process tree was: bash 1149110 -> amplihack 1149114 -> recipe-runner-rs 1149115.
