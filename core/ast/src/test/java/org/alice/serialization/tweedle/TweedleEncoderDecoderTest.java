@@ -442,6 +442,96 @@ public class TweedleEncoderDecoderTest {
   }
 
   @Test
+  public void decodeClassWithParameterIdentifierLocalInitializerInMethodBodyCreatesParameterAccess() throws Exception {
+    NamedUserType type = decodeUserType("""
+        class SyntheticType {
+          WholeNumber doubleIt(WholeNumber val) { WholeNumber copy <- val; return copy; }
+        }
+        """);
+
+    UserMethod method = type.getDeclaredMethods().get(0);
+    UserParameter param = method.getRequiredParameters().get(0);
+    assertEquals("val", param.getName());
+    assertEquals(2, method.body.getValue().statements.size());
+    LocalDeclarationStatement decl = (LocalDeclarationStatement) method.body.getValue().statements.get(0);
+    UserLocal local = decl.local.getValue();
+    assertEquals("copy", local.getName());
+    assertSame(JavaType.getInstance(Integer.class), local.getValueType());
+    assertTrue(decl.initializer.getValue() instanceof ParameterAccess);
+    assertSame(param, ((ParameterAccess) decl.initializer.getValue()).parameter.getValue());
+  }
+
+  @Test
+  public void decodeClassWithLocalIdentifierLocalInitializerInMethodBodyCreatesLocalAccess() throws Exception {
+    NamedUserType type = decodeUserType("""
+        class SyntheticType {
+          void update() { WholeNumber x <- 1; WholeNumber y <- x; }
+        }
+        """);
+
+    UserMethod method = type.getDeclaredMethods().get(0);
+    assertEquals(2, method.body.getValue().statements.size());
+    LocalDeclarationStatement xDecl = (LocalDeclarationStatement) method.body.getValue().statements.get(0);
+    UserLocal xLocal = xDecl.local.getValue();
+    assertEquals("x", xLocal.getName());
+    LocalDeclarationStatement yDecl = (LocalDeclarationStatement) method.body.getValue().statements.get(1);
+    UserLocal yLocal = yDecl.local.getValue();
+    assertEquals("y", yLocal.getName());
+    assertTrue(yDecl.initializer.getValue() instanceof LocalAccess);
+    assertSame(xLocal, ((LocalAccess) yDecl.initializer.getValue()).local.getValue());
+  }
+
+  @Test
+  public void decodeClassWithFieldIdentifierLocalInitializerInMethodBodyCreatesFieldAccess() throws Exception {
+    NamedUserType type = decodeUserType("""
+        class SyntheticType {
+          WholeNumber count <- 0;
+          WholeNumber getCount() { WholeNumber result <- count; return result; }
+        }
+        """);
+
+    UserField field = type.getDeclaredFields().get(0);
+    assertEquals("count", field.getName());
+    UserMethod method = type.getDeclaredMethods().get(0);
+    assertEquals(2, method.body.getValue().statements.size());
+    LocalDeclarationStatement decl = (LocalDeclarationStatement) method.body.getValue().statements.get(0);
+    UserLocal local = decl.local.getValue();
+    assertEquals("result", local.getName());
+    assertTrue(decl.initializer.getValue() instanceof FieldAccess);
+    assertSame(field, ((FieldAccess) decl.initializer.getValue()).field.getValue());
+  }
+
+  @Test
+  public void decodeClassWithUnknownIdentifierLocalInitializerInMethodBodyReportsUnknownIdentifier() {
+    UnsupportedTweedleDecodeException thrown = assertThrows(
+        UnsupportedTweedleDecodeException.class,
+        () -> coder.decode("""
+            class SyntheticType {
+              void update() { WholeNumber x <- missing; }
+            }
+            """));
+
+    assertTrue(thrown.getMessage().contains("local variable initializer identifier is not a known local, parameter, or field"));
+    assertTrue(thrown.getMessage().contains("update.x"));
+    assertTrue(thrown.getMessage().contains("missing"));
+  }
+
+  @Test
+  public void decodeClassWithTypeMismatchIdentifierLocalInitializerInMethodBodyReportsTypeError() {
+    UnsupportedTweedleDecodeException thrown = assertThrows(
+        UnsupportedTweedleDecodeException.class,
+        () -> coder.decode("""
+            class SyntheticType {
+              TextString label <- "hi";
+              void update() { WholeNumber x <- label; }
+            }
+            """));
+
+    assertTrue(thrown.getMessage().contains("local variable initializer type is not assignable to"));
+    assertTrue(thrown.getMessage().contains("update.x"));
+  }
+
+  @Test
   public void decodeClassWithRequiredMethodParameterCreatesUserMethodParameter() throws Exception {
     NamedUserType type = decodeUserType("class SyntheticType { void initialize(WholeNumber count) { } }");
 
@@ -580,6 +670,75 @@ public class TweedleEncoderDecoderTest {
 
     assertTrue(thrown.getMessage().contains("local variable initializers"));
     assertTrue(thrown.getMessage().contains("SyntheticType.local"));
+  }
+
+  @Test
+  public void decodeClassWithParameterIdentifierLocalInitializerInConstructorBodyCreatesParameterAccess() throws Exception {
+    NamedUserType type = decodeUserType("""
+        class SyntheticType {
+          SyntheticType(WholeNumber val) { WholeNumber copy <- val; }
+        }
+        """);
+
+    NamedUserConstructor constructor = (NamedUserConstructor) type.getDeclaredConstructors().get(0);
+    UserParameter param = constructor.getRequiredParameters().get(0);
+    assertEquals("val", param.getName());
+    assertEquals(1, constructor.body.getValue().statements.size());
+    LocalDeclarationStatement decl = (LocalDeclarationStatement) constructor.body.getValue().statements.get(0);
+    UserLocal local = decl.local.getValue();
+    assertEquals("copy", local.getName());
+    assertSame(JavaType.getInstance(Integer.class), local.getValueType());
+    assertTrue(decl.initializer.getValue() instanceof ParameterAccess);
+    assertSame(param, ((ParameterAccess) decl.initializer.getValue()).parameter.getValue());
+  }
+
+  @Test
+  public void decodeClassWithLocalIdentifierLocalInitializerInConstructorBodyCreatesLocalAccess() throws Exception {
+    NamedUserType type = decodeUserType("""
+        class SyntheticType {
+          SyntheticType() { WholeNumber x <- 1; WholeNumber y <- x; }
+        }
+        """);
+
+    NamedUserConstructor constructor = (NamedUserConstructor) type.getDeclaredConstructors().get(0);
+    assertEquals(2, constructor.body.getValue().statements.size());
+    LocalDeclarationStatement xDecl = (LocalDeclarationStatement) constructor.body.getValue().statements.get(0);
+    UserLocal xLocal = xDecl.local.getValue();
+    assertEquals("x", xLocal.getName());
+    LocalDeclarationStatement yDecl = (LocalDeclarationStatement) constructor.body.getValue().statements.get(1);
+    assertEquals("y", yDecl.local.getValue().getName());
+    assertTrue(yDecl.initializer.getValue() instanceof LocalAccess);
+    assertSame(xLocal, ((LocalAccess) yDecl.initializer.getValue()).local.getValue());
+  }
+
+  @Test
+  public void decodeClassWithFieldIdentifierLocalInitializerInConstructorBodyCreatesFieldAccess() throws Exception {
+    NamedUserType type = decodeUserType("""
+        class SyntheticType {
+          WholeNumber count <- 0;
+          SyntheticType() { WholeNumber snap <- count; }
+        }
+        """);
+
+    UserField field = type.getDeclaredFields().get(0);
+    assertEquals("count", field.getName());
+    NamedUserConstructor constructor = (NamedUserConstructor) type.getDeclaredConstructors().get(0);
+    assertEquals(1, constructor.body.getValue().statements.size());
+    LocalDeclarationStatement decl = (LocalDeclarationStatement) constructor.body.getValue().statements.get(0);
+    assertEquals("snap", decl.local.getValue().getName());
+    assertTrue(decl.initializer.getValue() instanceof FieldAccess);
+    assertSame(field, ((FieldAccess) decl.initializer.getValue()).field.getValue());
+  }
+
+  @Test
+  public void decodeClassWithUnknownIdentifierLocalInitializerInConstructorBodyReportsUnknownIdentifier() {
+    UnsupportedTweedleDecodeException thrown = assertThrows(
+        UnsupportedTweedleDecodeException.class,
+        () -> coder.decode("class SyntheticType { SyntheticType() { WholeNumber local <- missing; } }"));
+
+    assertTrue(thrown.getMessage().contains("local variable initializer identifier is not a known local, parameter, or field"));
+    assertTrue(thrown.getMessage().contains("SyntheticType.local"));
+    assertTrue(thrown.getMessage().contains("missing"));
   }
 
   @Test
