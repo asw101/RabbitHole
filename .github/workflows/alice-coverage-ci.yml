@@ -41,7 +41,7 @@ jobs:
         run: mvn -v
 
       - name: Generate no-Sims aggregate and per-module coverage reports
-        run: mvn -DincludeSims=false -Dinstall4j.skip -Pcoverage verify
+        run: mvn -DincludeSims=false -Dinstall4j.skip -Dmdep.skip=true -Pcoverage verify
 
       - name: Summarize and gate line coverage
         if: always()
