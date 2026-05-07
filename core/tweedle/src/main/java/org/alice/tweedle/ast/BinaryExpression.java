@@ -15,6 +15,14 @@ public abstract class BinaryExpression extends TweedleExpression {
     this.rhs = rhs;
   }
 
+  public TweedleExpression getLhs() {
+    return lhs;
+  }
+
+  public TweedleExpression getRhs() {
+    return rhs;
+  }
+
   @Override
   public TweedleValue evaluate(Frame frame) {
     return evaluate(lhs.evaluate(frame), rhs.evaluate(frame));

@@ -4,7 +4,7 @@ import org.alice.tweedle.TweedlePrimitiveType;
 import org.alice.tweedle.TweedlePrimitiveValue;
 import org.alice.tweedle.TweedleValue;
 
-abstract class BinaryNumericExpression<T> extends BinaryExpression {
+public abstract class BinaryNumericExpression<T> extends BinaryExpression {
 
   private TweedlePrimitiveType<T> primitiveResultType;
 
