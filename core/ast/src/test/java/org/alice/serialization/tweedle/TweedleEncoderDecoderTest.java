@@ -19,6 +19,7 @@ import org.lgna.project.ast.NamedUserConstructor;
 import org.lgna.project.ast.NamedUserType;
 import org.lgna.project.ast.NullLiteral;
 import org.lgna.project.ast.ParameterAccess;
+import org.lgna.project.ast.RelationalInfixExpression;
 import org.lgna.project.ast.ReturnStatement;
 import org.lgna.project.ast.StringConcatenation;
 import org.lgna.project.ast.StringLiteral;
@@ -1337,6 +1338,101 @@ public class TweedleEncoderDecoderTest {
     assertTrue(thrown.getMessage().contains("Only Tweedle class declarations"));
   }
 
+  @Test
+  public void decodeClassWithEqualityLocalInitializerInMethodBodyCreatesRelationalEquals() throws Exception {
+    NamedUserType type = decodeUserType("""
+        class SyntheticType {
+          Boolean check(WholeNumber a, WholeNumber b) { Boolean result <- a == b; return result; }
+        }
+        """);
+
+    UserMethod method = type.getDeclaredMethods().get(0);
+    LocalDeclarationStatement decl = (LocalDeclarationStatement) method.body.getValue().statements.get(0);
+    assertRelationalInfix(decl.initializer.getValue(), RelationalInfixExpression.Operator.EQUALS);
+  }
+
+  @Test
+  public void decodeClassWithLessThanLocalInitializerInMethodBodyCreatesRelationalLess() throws Exception {
+    NamedUserType type = decodeUserType("""
+        class SyntheticType {
+          Boolean check(WholeNumber a, WholeNumber b) { Boolean result <- a < b; return result; }
+        }
+        """);
+
+    UserMethod method = type.getDeclaredMethods().get(0);
+    LocalDeclarationStatement decl = (LocalDeclarationStatement) method.body.getValue().statements.get(0);
+    assertRelationalInfix(decl.initializer.getValue(), RelationalInfixExpression.Operator.LESS);
+  }
+
+  @Test
+  public void decodeClassWithGreaterThanReturnInMethodCreatesRelationalGreater() throws Exception {
+    NamedUserType type = decodeUserType("""
+        class SyntheticType {
+          Boolean isGreater(WholeNumber a, WholeNumber b) { return a > b; }
+        }
+        """);
+
+    UserMethod method = type.getDeclaredMethods().get(0);
+    ReturnStatement ret = (ReturnStatement) method.body.getValue().statements.get(0);
+    assertSame(JavaType.BOOLEAN_OBJECT_TYPE, ret.expressionType.getValue());
+    assertRelationalInfix(ret.expression.getValue(), RelationalInfixExpression.Operator.GREATER);
+  }
+
+  @Test
+  public void decodeClassWithNotEqualToRhsInMethodAssignmentCreatesRelationalNotEquals() throws Exception {
+    NamedUserType type = decodeUserType("""
+        class SyntheticType {
+          Boolean flag <- false;
+          void check(WholeNumber a, WholeNumber b) { flag <- a != b; }
+        }
+        """);
+
+    UserMethod method = type.getDeclaredMethods().get(0);
+    ExpressionStatement stmt = (ExpressionStatement) method.body.getValue().statements.get(0);
+    AssignmentExpression assign = (AssignmentExpression) stmt.expression.getValue();
+    assertRelationalInfix(assign.rightHandSide.getValue(), RelationalInfixExpression.Operator.NOT_EQUALS);
+  }
+
+  @Test
+  public void decodeClassWithLessThanOrEqualReturnInMethodCreatesRelationalLessEquals() throws Exception {
+    NamedUserType type = decodeUserType("""
+        class SyntheticType {
+          Boolean check(WholeNumber a, WholeNumber b) { return a <= b; }
+        }
+        """);
+
+    UserMethod method = type.getDeclaredMethods().get(0);
+    ReturnStatement ret = (ReturnStatement) method.body.getValue().statements.get(0);
+    assertRelationalInfix(ret.expression.getValue(), RelationalInfixExpression.Operator.LESS_EQUALS);
+  }
+
+  @Test
+  public void decodeClassWithGreaterThanOrEqualReturnInMethodCreatesRelationalGreaterEquals() throws Exception {
+    NamedUserType type = decodeUserType("""
+        class SyntheticType {
+          Boolean check(WholeNumber a, WholeNumber b) { return a >= b; }
+        }
+        """);
+
+    UserMethod method = type.getDeclaredMethods().get(0);
+    ReturnStatement ret = (ReturnStatement) method.body.getValue().statements.get(0);
+    assertRelationalInfix(ret.expression.getValue(), RelationalInfixExpression.Operator.GREATER_EQUALS);
+  }
+
+  @Test
+  public void decodeClassWithComparisonReturnTypeMismatchReportsTypeError() {
+    UnsupportedTweedleDecodeException thrown = assertThrows(
+        UnsupportedTweedleDecodeException.class,
+        () -> coder.decode("""
+            class SyntheticType {
+              TextString bad(WholeNumber a, WholeNumber b) { return a == b; }
+            }
+            """));
+
+    assertTrue(thrown.getMessage().contains("not assignable to"));
+    assertTrue(thrown.getMessage().contains("bad"));
+  }
+
   private NamedUserType decodeUserType(String source) throws Exception {
     AbstractNode decoded = coder.decode(source);
 
@@ -1415,6 +1511,14 @@ public class TweedleEncoderDecoderTest {
     ArithmeticInfixExpression infix = assertArithmeticInfixOperator(expression, expectedOperator, expectedType);
     assertIntegerLiteral(infix.leftOperand.getValue(), expectedLeft);
     assertIntegerLiteral(infix.rightOperand.getValue(), expectedRight);
+  }
+
+  private static void assertRelationalInfix(Expression expression, RelationalInfixExpression.Operator expectedOperator) {
+    assertTrue("Expected RelationalInfixExpression, got: " + expression.getClass().getSimpleName(),
+        expression instanceof RelationalInfixExpression);
+    RelationalInfixExpression infix = (RelationalInfixExpression) expression;
+    assertSame(expectedOperator, infix.operator.getValue());
+    assertSame(JavaType.BOOLEAN_OBJECT_TYPE, infix.getType());
   }
 
 }
