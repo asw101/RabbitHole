@@ -94,6 +94,7 @@ public class IssueReportWorkerTest {
   private static void assertSubmissionFailureProgress(RecordingWorkerListener listener, RuntimeException failure) {
     String messages = listener.messages();
     assertTrue(messages, messages.contains("FAILED.\n"));
+    assertFalse(messages, messages.contains("* retrying REST upload"));
     assertTrue(messages, messages.contains("submission failed: " + failure.getClass().getSimpleName() + ": " + failure.getMessage()));
   }
 
