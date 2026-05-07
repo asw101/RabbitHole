@@ -335,7 +335,7 @@ public final class EatmeDesktopRunExecutionEvidence {
       Component renderTargetComponent,
       Component renderPanelComponent,
       Component runViewComponent) throws IOException {
-    PixelObservation observation = observePixel(evidenceDir, renderTargetComponent);
+    PixelObservation observation = observePixel(evidenceDir, renderTargetComponent, renderPanelComponent);
     writeStringAtomically(
         artifact,
         "{\n"
@@ -370,46 +370,69 @@ public final class EatmeDesktopRunExecutionEvidence {
             + "}\n");
   }
 
-  private static PixelObservation observePixel(Path evidenceDir, Component renderTargetComponent) {
-    List<BlockerDetail> blockers = new ArrayList<>();
+  private static PixelObservation observePixel(
+      Path evidenceDir,
+      Component renderTargetComponent,
+      Component renderPanelComponent) {
     if (GraphicsEnvironment.isHeadless()) {
+      List<BlockerDetail> blockers = new ArrayList<>();
       blockers.add(new BlockerDetail(
           "java_awt_headless",
           "graphicsEnvironmentHeadless=true",
           "graphicsEnvironmentHeadless=false"));
-    }
-    if (!renderTargetComponent.isDisplayable()) {
-      blockers.add(new BlockerDetail(
-          "render_target_not_displayable",
-          "renderTargetDisplayable=false",
-          "renderTargetDisplayable=true"));
-    }
-    if (!renderTargetComponent.isShowing()) {
-      blockers.add(new BlockerDetail(
-          "render_target_not_showing",
-          "renderTargetShowing=false",
-          "renderTargetShowing=true"));
-    }
-    if (renderTargetComponent.getWidth() <= 0 || renderTargetComponent.getHeight() <= 0) {
-      blockers.add(new BlockerDetail(
-          "render_target_has_no_positive_size",
-          "renderTargetWidth=" + renderTargetComponent.getWidth()
-              + ", renderTargetHeight=" + renderTargetComponent.getHeight(),
-          "renderTargetWidth>0 and renderTargetHeight>0"));
+      blockers.addAll(componentReadinessBlockers(renderTargetComponent, "render_target", "renderTarget"));
+      if (renderTargetComponent != renderPanelComponent) {
+        blockers.addAll(componentReadinessBlockers(renderPanelComponent, "render_panel", "renderPanel"));
+      }
+      return PixelObservation.blocked(blockers, "");
     }
 
+    PixelObservation renderTargetObservation = observeComponentPixel(
+        evidenceDir,
+        renderTargetComponent,
+        "render_target",
+        "renderTarget",
+        "render_target_component");
+    if (renderTargetObservation.isObserved() || renderTargetComponent == renderPanelComponent) {
+      return renderTargetObservation;
+    }
+
+    PixelObservation renderPanelObservation = observeComponentPixel(
+        evidenceDir,
+        renderPanelComponent,
+        "render_panel",
+        "renderPanel",
+        "render_panel_component");
+    if (renderPanelObservation.isObserved()) {
+      return renderPanelObservation;
+    }
+
+    List<BlockerDetail> blockers = new ArrayList<>(renderTargetObservation.blockers);
+    blockers.addAll(renderPanelObservation.blockers);
+    return PixelObservation.blocked(blockers, firstNonBlank(
+        renderTargetObservation.exceptionType,
+        renderPanelObservation.exceptionType));
+  }
+
+  private static PixelObservation observeComponentPixel(
+      Path evidenceDir,
+      Component component,
+      String blockerPrefix,
+      String statePrefix,
+      String captureRole) {
+    List<BlockerDetail> blockers = componentReadinessBlockers(component, blockerPrefix, statePrefix);
     Point screenLocation = null;
     if (blockers.isEmpty()) {
       try {
-        screenLocation = renderTargetComponent.getLocationOnScreen();
+        screenLocation = component.getLocationOnScreen();
       } catch (IllegalComponentStateException ex) {
         blockers.add(new BlockerDetail(
-            "render_target_screen_location_unavailable",
+            blockerPrefix + "_screen_location_unavailable",
             exceptionObserved(ex),
-            "render target screen location available"));
+            captureRole + " screen location available"));
       } catch (SecurityException ex) {
         blockers.add(new BlockerDetail(
-            "render_target_screen_location_denied",
+            blockerPrefix + "_screen_location_denied",
             exceptionObserved(ex),
             "screen-location access permitted"));
       }
@@ -423,12 +446,12 @@ public final class EatmeDesktopRunExecutionEvidence {
       Rectangle captureArea = new Rectangle(
           screenLocation.x,
           screenLocation.y,
-          renderTargetComponent.getWidth(),
-          renderTargetComponent.getHeight());
+          component.getWidth(),
+          component.getHeight());
       BufferedImage screenshot = new Robot().createScreenCapture(captureArea);
       if (screenshot.getWidth() <= 0 || screenshot.getHeight() <= 0) {
         return PixelObservation.blocked(List.of(new BlockerDetail(
-            "render_target_screenshot_has_no_positive_size",
+            blockerPrefix + "_screenshot_has_no_positive_size",
             "screenshotWidth=" + screenshot.getWidth() + ", screenshotHeight=" + screenshot.getHeight(),
             "screenshotWidth>0 and screenshotHeight>0")), "");
       }
@@ -438,6 +461,8 @@ public final class EatmeDesktopRunExecutionEvidence {
       int sampleY = screenshot.getHeight() / 2;
       int argb = screenshot.getRGB(sampleX, sampleY);
       return PixelObservation.observed(
+          captureRole,
+          component,
           DESKTOP_RUN_RENDER_TARGET_SCREENSHOT,
           captureArea,
           screenshot.getWidth(),
@@ -452,25 +477,62 @@ public final class EatmeDesktopRunExecutionEvidence {
           "java.awt.Robot screen capture available")), ex.getClass().getSimpleName());
     } catch (IOException ex) {
       return PixelObservation.blocked(List.of(new BlockerDetail(
-          "render_target_screenshot_write_failed",
+          blockerPrefix + "_screenshot_write_failed",
           exceptionObserved(ex),
           "desktop-run-render-target.png writable in evidence directory")), ex.getClass().getSimpleName());
     } catch (IllegalArgumentException ex) {
       return PixelObservation.blocked(List.of(new BlockerDetail(
-          "render_target_screen_capture_area_invalid",
+          blockerPrefix + "_screen_capture_area_invalid",
           exceptionObserved(ex),
           "valid positive screen capture rectangle")), ex.getClass().getSimpleName());
     } catch (SecurityException ex) {
       return PixelObservation.blocked(List.of(new BlockerDetail(
-          "render_target_screen_capture_denied",
+          blockerPrefix + "_screen_capture_denied",
           exceptionObserved(ex),
           "screen-capture access permitted")), ex.getClass().getSimpleName());
     } catch (RuntimeException ex) {
       return PixelObservation.blocked(List.of(new BlockerDetail(
-          "render_target_pixel_sample_failed",
+          blockerPrefix + "_pixel_sample_failed",
           exceptionObserved(ex),
           "center pixel sample readable from captured image")), ex.getClass().getSimpleName());
     }
+  }
+
+  private static List<BlockerDetail> componentReadinessBlockers(
+      Component component,
+      String blockerPrefix,
+      String statePrefix) {
+    List<BlockerDetail> blockers = new ArrayList<>();
+    if (!component.isDisplayable()) {
+      blockers.add(new BlockerDetail(
+          blockerPrefix + "_not_displayable",
+          statePrefix + "Displayable=false",
+          statePrefix + "Displayable=true"));
+    }
+    if (!component.isShowing()) {
+      blockers.add(new BlockerDetail(
+          blockerPrefix + "_not_showing",
+          statePrefix + "Showing=false",
+          statePrefix + "Showing=true"));
+    }
+    if (component.getWidth() <= 0 || component.getHeight() <= 0) {
+      blockers.add(new BlockerDetail(
+          blockerPrefix + "_has_no_positive_size",
+          statePrefix + "Width=" + component.getWidth()
+              + ", " + statePrefix + "Height=" + component.getHeight(),
+          statePrefix + "Width>0 and " + statePrefix + "Height>0"));
+    }
+    return blockers;
+  }
+
+  private static String firstNonBlank(String first, String second) {
+    if (first != null && !first.isBlank()) {
+      return first;
+    }
+    if (second != null && !second.isBlank()) {
+      return second;
+    }
+    return "";
   }
 
   private static String exceptionObserved(Throwable throwable) {
@@ -532,11 +594,24 @@ public final class EatmeDesktopRunExecutionEvidence {
     private final String status;
     private final String claim;
     private final String detailJson;
+    private final List<BlockerDetail> blockers;
+    private final String exceptionType;
 
-    private PixelObservation(String status, String claim, String detailJson) {
+    private PixelObservation(
+        String status,
+        String claim,
+        String detailJson,
+        List<BlockerDetail> blockers,
+        String exceptionType) {
       this.status = status;
       this.claim = claim;
       this.detailJson = detailJson;
+      this.blockers = blockers;
+      this.exceptionType = exceptionType;
+    }
+
+    private boolean isObserved() {
+      return "observed".equals(status);
     }
 
     private static PixelObservation blocked(List<BlockerDetail> blockers, String exceptionType) {
@@ -548,10 +623,14 @@ public final class EatmeDesktopRunExecutionEvidence {
               + "    \"codes\": " + blockerCodesJson(blockers) + ",\n"
               + "    \"details\": " + blockerDetailsJson(blockers) + ",\n"
               + "    \"exceptionType\": \"" + EatmeRunWindowEvidence.escapeJson(exceptionType) + "\"\n"
-              + "  },\n");
+              + "  },\n",
+          blockers,
+          exceptionType);
     }
 
     private static PixelObservation observed(
+        String captureRole,
+        Component captureComponent,
         String screenshot,
         Rectangle captureArea,
         int screenshotWidth,
@@ -562,7 +641,12 @@ public final class EatmeDesktopRunExecutionEvidence {
       return new PixelObservation(
           "observed",
           "A desktop screenshot of the Run render target area was captured and its center pixel was sampled.",
-          "  \"screenshot\": {\n"
+          "  \"captureTarget\": {\n"
+              + "    \"role\": \"" + EatmeRunWindowEvidence.escapeJson(captureRole) + "\",\n"
+              + "    \"componentClass\": \"" + componentClassName(captureComponent) + "\",\n"
+              + "    \"componentName\": \"" + EatmeRunWindowEvidence.escapeJson(componentName(captureComponent)) + "\"\n"
+              + "  },\n"
+              + "  \"screenshot\": {\n"
               + "    \"file\": \"" + EatmeRunWindowEvidence.escapeJson(screenshot) + "\",\n"
               + "    \"width\": " + screenshotWidth + ",\n"
               + "    \"height\": " + screenshotHeight + "\n"
@@ -579,7 +663,9 @@ public final class EatmeDesktopRunExecutionEvidence {
               + "    \"x\": " + sampleX + ",\n"
               + "    \"y\": " + sampleY + ",\n"
               + "    \"argb\": \"" + String.format("0x%08X", argb) + "\"\n"
-              + "  },\n");
+              + "  },\n",
+          List.of(),
+          "");
     }
   }
 

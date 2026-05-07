@@ -23,6 +23,7 @@ evidence:
   required:
     - desktop-run-execution.json and desktop-run-runtime.log when opt-in desktop Run execution evidence is enabled.
     - desktop-run-render-affordance.json when opt-in desktop Run render-affordance evidence is enabled.
+    - desktop-run-pixel-observation.json from the same opt-in desktop Run path, with status observed when screen capture can sample the Run render area or blocked with exact blocker details when it cannot.
     - Screenshot or screen capture for manual workflow context, not pixel-correctness evidence.
     - Notes naming the run and debug-like controls exercised and whether any manual visual evidence was collected.
     - Launch or run log.
@@ -33,6 +34,6 @@ fallback:
   notes:
     - Do not invent a conventional debugger requirement if Alice does not expose one.
     - Treat fast-forward or statement execution as debug-like coverage only when it is visible in the baseline UI.
-    - Treat render-affordance evidence as structural Run-view attachment evidence only; do not use it as screenshot, pixel, coordinate, or rendering-engine correctness evidence.
+    - Treat render-affordance evidence as structural Run-view attachment evidence only; use desktop-run-pixel-observation.json for screenshot or pixel sampling status, not for rendering-engine correctness evidence.
 supportingEvidence:
   - alice-desktop-launch
