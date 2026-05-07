@@ -3,6 +3,7 @@ package org.alice.serialization.tweedle;
 import org.junit.Test;
 import org.lgna.common.resources.ImageResource;
 import org.lgna.project.ast.AbstractNode;
+import org.lgna.project.ast.ArithmeticInfixExpression;
 import org.lgna.project.ast.ArrayInstanceCreation;
 import org.lgna.project.ast.AssignmentExpression;
 import org.lgna.project.ast.BooleanLiteral;
@@ -431,14 +432,15 @@ public class TweedleEncoderDecoderTest {
   }
 
   @Test
-  public void decodeClassWithNonLiteralLocalInitializerReportsUnsupportedLocalInitializer() {
-    UnsupportedTweedleDecodeException thrown = assertThrows(
-        UnsupportedTweedleDecodeException.class,
-        () -> coder.decode(
-            "class SyntheticType { WholeNumber count() { WholeNumber local <- 1 + 2; return local; } }"));
+  public void decodeClassWithAdditionLocalInitializerInMethodBodyCreatesArithmeticInfix() throws Exception {
+    NamedUserType type = decodeUserType(
+        "class SyntheticType { WholeNumber count() { WholeNumber local <- 1 + 2; return local; } }");
 
-    assertTrue(thrown.getMessage().contains("local variable initializers"));
-    assertTrue(thrown.getMessage().contains("count.local"));
+    UserMethod method = type.getDeclaredMethods().get(0);
+    LocalDeclarationStatement decl = (LocalDeclarationStatement) method.body.getValue().statements.get(0);
+    assertEquals("local", decl.local.getValue().getName());
+    assertArithmeticInfix(decl.initializer.getValue(),
+        ArithmeticInfixExpression.Operator.PLUS, JavaType.getInstance(Integer.class), 1, 2);
   }
 
   @Test
@@ -511,8 +513,8 @@ public class TweedleEncoderDecoderTest {
             }
             """));
 
-    assertTrue(thrown.getMessage().contains("local variable initializer identifier is not a known local, parameter, or field"));
-    assertTrue(thrown.getMessage().contains("update.x"));
+    assertTrue(thrown.getMessage().contains("value expression identifier is not a known local, parameter, or field"));
+    assertTrue(thrown.getMessage().contains("update.missing"));
     assertTrue(thrown.getMessage().contains("missing"));
   }
 
@@ -663,13 +665,15 @@ public class TweedleEncoderDecoderTest {
   }
 
   @Test
-  public void decodeClassWithNonLiteralConstructorLocalInitializerReportsUnsupportedLocalInitializer() {
-    UnsupportedTweedleDecodeException thrown = assertThrows(
-        UnsupportedTweedleDecodeException.class,
-        () -> coder.decode("class SyntheticType { SyntheticType() { WholeNumber local <- 1 + 2; } }"));
+  public void decodeClassWithAdditionLocalInitializerInConstructorBodyCreatesArithmeticInfix() throws Exception {
+    NamedUserType type = decodeUserType(
+        "class SyntheticType { SyntheticType() { WholeNumber local <- 1 + 2; } }");
 
-    assertTrue(thrown.getMessage().contains("local variable initializers"));
-    assertTrue(thrown.getMessage().contains("SyntheticType.local"));
+    NamedUserConstructor constructor = (NamedUserConstructor) type.getDeclaredConstructors().get(0);
+    LocalDeclarationStatement decl = (LocalDeclarationStatement) constructor.body.getValue().statements.get(0);
+    assertEquals("local", decl.local.getValue().getName());
+    assertArithmeticInfix(decl.initializer.getValue(),
+        ArithmeticInfixExpression.Operator.PLUS, JavaType.getInstance(Integer.class), 1, 2);
   }
 
   @Test
@@ -736,8 +740,8 @@ public class TweedleEncoderDecoderTest {
         UnsupportedTweedleDecodeException.class,
         () -> coder.decode("class SyntheticType { SyntheticType() { WholeNumber local <- missing; } }"));
 
-    assertTrue(thrown.getMessage().contains("local variable initializer identifier is not a known local, parameter, or field"));
-    assertTrue(thrown.getMessage().contains("SyntheticType.local"));
+    assertTrue(thrown.getMessage().contains("value expression identifier is not a known local, parameter, or field"));
+    assertTrue(thrown.getMessage().contains("SyntheticType.missing"));
     assertTrue(thrown.getMessage().contains("missing"));
   }
 
@@ -793,18 +797,21 @@ public class TweedleEncoderDecoderTest {
   }
 
   @Test
-  public void decodeClassWithNonLiteralFieldAssignmentInConstructorBodyReportsNonLiteralValue() {
-    UnsupportedTweedleDecodeException thrown = assertThrows(
-        UnsupportedTweedleDecodeException.class,
-        () -> coder.decode("""
-            class SyntheticType {
-              WholeNumber count <- 0;
-              SyntheticType() { count <- 1 + 2; }
-            }
-            """));
+  public void decodeClassWithAdditionRhsInConstructorAssignmentCreatesArithmeticInfix() throws Exception {
+    NamedUserType type = decodeUserType("""
+        class SyntheticType {
+          WholeNumber count <- 0;
+          SyntheticType() { count <- 1 + 2; }
+        }
+        """);
 
-    assertTrue(thrown.getMessage().contains("Unsupported Tweedle assignment value expression"));
-    assertTrue(thrown.getMessage().contains("SyntheticType"));
+    UserField field = type.getDeclaredFields().get(0);
+    NamedUserConstructor constructor = (NamedUserConstructor) type.getDeclaredConstructors().get(0);
+    ExpressionStatement stmt = (ExpressionStatement) constructor.body.getValue().statements.get(0);
+    AssignmentExpression assign = (AssignmentExpression) stmt.expression.getValue();
+    assertSame(field, ((FieldAccess) assign.leftHandSide.getValue()).field.getValue());
+    assertArithmeticInfix(assign.rightHandSide.getValue(),
+        ArithmeticInfixExpression.Operator.PLUS, JavaType.getInstance(Integer.class), 1, 2);
   }
 
   @Test
@@ -895,18 +902,133 @@ public class TweedleEncoderDecoderTest {
   }
 
   @Test
-  public void decodeClassWithNonLiteralFieldAssignmentInMethodBodyReportsUnsupportedAssignment() {
+  public void decodeClassWithIntegerAdditionRhsInMethodAssignmentCreatesArithmeticInfix() throws Exception {
+    NamedUserType type = decodeUserType("""
+        class SyntheticType {
+          WholeNumber count <- 0;
+          void setCount() { count <- 1 + 2; }
+        }
+        """);
+
+    UserField field = type.getDeclaredFields().get(0);
+    UserMethod method = type.getDeclaredMethods().get(0);
+    assertEquals(1, method.body.getValue().statements.size());
+    ExpressionStatement stmt = (ExpressionStatement) method.body.getValue().statements.get(0);
+    AssignmentExpression assign = (AssignmentExpression) stmt.expression.getValue();
+    assertSame(field, ((FieldAccess) assign.leftHandSide.getValue()).field.getValue());
+    assertArithmeticInfix(assign.rightHandSide.getValue(),
+        ArithmeticInfixExpression.Operator.PLUS, JavaType.getInstance(Integer.class), 1, 2);
+  }
+
+  @Test
+  public void decodeClassWithDecimalSubtractionRhsInMethodAssignmentCreatesArithmeticInfix() throws Exception {
+    NamedUserType type = decodeUserType("""
+        class SyntheticType {
+          DecimalNumber dist <- 0.0;
+          void update() { dist <- 5.0 - 1.5; }
+        }
+        """);
+
+    UserField field = type.getDeclaredFields().get(0);
+    UserMethod method = type.getDeclaredMethods().get(0);
+    ExpressionStatement stmt = (ExpressionStatement) method.body.getValue().statements.get(0);
+    AssignmentExpression assign = (AssignmentExpression) stmt.expression.getValue();
+    assertSame(field, ((FieldAccess) assign.leftHandSide.getValue()).field.getValue());
+    ArithmeticInfixExpression infix = assertArithmeticInfixOperator(assign.rightHandSide.getValue(),
+        ArithmeticInfixExpression.Operator.MINUS, JavaType.getInstance(Double.class));
+    assertTrue(infix.leftOperand.getValue() instanceof DoubleLiteral);
+    assertEquals(5.0, ((DoubleLiteral) infix.leftOperand.getValue()).value.getValue(), 0.0);
+    assertTrue(infix.rightOperand.getValue() instanceof DoubleLiteral);
+    assertEquals(1.5, ((DoubleLiteral) infix.rightOperand.getValue()).value.getValue(), 0.0);
+  }
+
+  @Test
+  public void decodeClassWithIntegerMultiplicationRhsInMethodAssignmentCreatesArithmeticInfix() throws Exception {
+    NamedUserType type = decodeUserType("""
+        class SyntheticType {
+          WholeNumber area <- 0;
+          void compute() { area <- 3 * 4; }
+        }
+        """);
+
+    UserField field = type.getDeclaredFields().get(0);
+    UserMethod method = type.getDeclaredMethods().get(0);
+    ExpressionStatement stmt = (ExpressionStatement) method.body.getValue().statements.get(0);
+    AssignmentExpression assign = (AssignmentExpression) stmt.expression.getValue();
+    assertSame(field, ((FieldAccess) assign.leftHandSide.getValue()).field.getValue());
+    assertArithmeticInfix(assign.rightHandSide.getValue(),
+        ArithmeticInfixExpression.Operator.TIMES, JavaType.getInstance(Integer.class), 3, 4);
+  }
+
+  @Test
+  public void decodeClassWithIntegerDivisionRhsInMethodAssignmentCreatesIntegerDivide() throws Exception {
+    NamedUserType type = decodeUserType("""
+        class SyntheticType {
+          WholeNumber half <- 0;
+          void compute() { half <- 10 / 2; }
+        }
+        """);
+
+    UserField field = type.getDeclaredFields().get(0);
+    UserMethod method = type.getDeclaredMethods().get(0);
+    ExpressionStatement stmt = (ExpressionStatement) method.body.getValue().statements.get(0);
+    AssignmentExpression assign = (AssignmentExpression) stmt.expression.getValue();
+    assertSame(field, ((FieldAccess) assign.leftHandSide.getValue()).field.getValue());
+    assertArithmeticInfix(assign.rightHandSide.getValue(),
+        ArithmeticInfixExpression.Operator.INTEGER_DIVIDE, JavaType.getInstance(Integer.class), 10, 2);
+  }
+
+  @Test
+  public void decodeClassWithDecimalDivisionRhsInMethodAssignmentCreatesRealDivide() throws Exception {
+    NamedUserType type = decodeUserType("""
+        class SyntheticType {
+          DecimalNumber ratio <- 0.0;
+          void compute() { ratio <- 10.0 / 3.0; }
+        }
+        """);
+
+    UserField field = type.getDeclaredFields().get(0);
+    UserMethod method = type.getDeclaredMethods().get(0);
+    ExpressionStatement stmt = (ExpressionStatement) method.body.getValue().statements.get(0);
+    AssignmentExpression assign = (AssignmentExpression) stmt.expression.getValue();
+    assertSame(field, ((FieldAccess) assign.leftHandSide.getValue()).field.getValue());
+    ArithmeticInfixExpression infix = assertArithmeticInfixOperator(assign.rightHandSide.getValue(),
+        ArithmeticInfixExpression.Operator.REAL_DIVIDE, JavaType.getInstance(Double.class));
+    assertTrue(infix.leftOperand.getValue() instanceof DoubleLiteral);
+    assertEquals(10.0, ((DoubleLiteral) infix.leftOperand.getValue()).value.getValue(), 0.0);
+    assertTrue(infix.rightOperand.getValue() instanceof DoubleLiteral);
+    assertEquals(3.0, ((DoubleLiteral) infix.rightOperand.getValue()).value.getValue(), 0.0);
+  }
+
+  @Test
+  public void decodeLocalInitWithAdditionRhsCreatesArithmeticInfix() throws Exception {
+    NamedUserType type = decodeUserType("""
+        class SyntheticType {
+          void compute() { WholeNumber x <- 2 + 3; }
+        }
+        """);
+
+    UserMethod method = type.getDeclaredMethods().get(0);
+    assertEquals(1, method.body.getValue().statements.size());
+    LocalDeclarationStatement decl = (LocalDeclarationStatement) method.body.getValue().statements.get(0);
+    assertEquals("x", decl.local.getValue().getName());
+    assertArithmeticInfix(decl.initializer.getValue(),
+        ArithmeticInfixExpression.Operator.PLUS, JavaType.getInstance(Integer.class), 2, 3);
+  }
+
+  @Test
+  public void decodeClassWithStringConcatRhsInMethodAssignmentReportsUnsupportedExpression() {
     UnsupportedTweedleDecodeException thrown = assertThrows(
         UnsupportedTweedleDecodeException.class,
         () -> coder.decode("""
             class SyntheticType {
-              WholeNumber count <- 0;
-              void setCount() { count <- 1 + 2; }
+              TextString label <- "";
+              void tag() { label <- "hello" .. " world"; }
             }
             """));
 
-    assertTrue(thrown.getMessage().contains("Unsupported Tweedle assignment value expression"));
-    assertTrue(thrown.getMessage().contains("setCount"));
+    assertTrue(thrown.getMessage().contains("Unsupported Tweedle value expression"));
+    assertTrue(thrown.getMessage().contains("tag"));
   }
 
   @Test
@@ -1177,6 +1299,29 @@ public class TweedleEncoderDecoderTest {
   private static void assertNullInitializer(UserField field, String expectedName) {
     assertEquals(expectedName, field.getName());
     assertTrue(field.initializer.getValue() instanceof NullLiteral);
+  }
+
+  private static ArithmeticInfixExpression assertArithmeticInfixOperator(
+      Expression expression,
+      ArithmeticInfixExpression.Operator expectedOperator,
+      org.lgna.project.ast.AbstractType<?, ?, ?> expectedType) {
+    assertTrue("Expected ArithmeticInfixExpression, got: " + expression.getClass().getSimpleName(),
+        expression instanceof ArithmeticInfixExpression);
+    ArithmeticInfixExpression infix = (ArithmeticInfixExpression) expression;
+    assertSame(expectedOperator, infix.operator.getValue());
+    assertSame(expectedType, infix.getType());
+    return infix;
+  }
+
+  private static void assertArithmeticInfix(
+      Expression expression,
+      ArithmeticInfixExpression.Operator expectedOperator,
+      org.lgna.project.ast.AbstractType<?, ?, ?> expectedType,
+      int expectedLeft,
+      int expectedRight) {
+    ArithmeticInfixExpression infix = assertArithmeticInfixOperator(expression, expectedOperator, expectedType);
+    assertIntegerLiteral(infix.leftOperand.getValue(), expectedLeft);
+    assertIntegerLiteral(infix.rightOperand.getValue(), expectedRight);
   }
 
 }

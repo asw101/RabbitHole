@@ -13,8 +13,13 @@ import org.alice.tweedle.TweedleRequiredParameter;
 import org.alice.tweedle.TweedleStatement;
 import org.alice.tweedle.TweedleType;
 import org.alice.tweedle.TweedleVoidType;
+import org.alice.tweedle.ast.AdditionExpression;
+import org.alice.tweedle.ast.BinaryNumericExpression;
+import org.alice.tweedle.ast.DivisionExpression;
 import org.alice.tweedle.ast.IdentifierReference;
 import org.alice.tweedle.ast.LocalVariableDeclaration;
+import org.alice.tweedle.ast.MultiplicationExpression;
+import org.alice.tweedle.ast.SubtractionExpression;
 import org.alice.tweedle.ast.TweedleArrayInitializer;
 import org.alice.tweedle.ast.TweedleExpression;
 import org.alice.tweedle.ast.TweedleLocalVariable;
@@ -24,6 +29,7 @@ import org.lgna.common.Resource;
 import org.lgna.project.ast.AbstractDeclaration;
 import org.lgna.project.ast.AbstractNode;
 import org.lgna.project.ast.AbstractType;
+import org.lgna.project.ast.ArithmeticInfixExpression;
 import org.lgna.project.ast.ArrayInstanceCreation;
 import org.lgna.project.ast.AstUtilities;
 import org.lgna.project.ast.BlockStatement;
@@ -232,32 +238,7 @@ public class Decoder {
     TweedleLocalVariable tweedleLocal = localVariableDeclaration.getDeclaration();
     AbstractType<?, ?, ?> localType = resolveType(tweedleLocal.getType(), "local variable");
     TweedleExpression initializer = tweedleLocal.getInitializer();
-    Expression astInitializer;
-    if (initializer instanceof TweedlePrimitiveValue<?> primitiveValue) {
-      astInitializer = primitiveLiteral(primitiveValue.getPrimitiveValue());
-    } else if (initializer instanceof IdentifierReference identifierReference) {
-      String name = identifierReference.getName();
-      UserLocal prior = findLocal(priorLocals, name);
-      if (prior != null) {
-        astInitializer = new LocalAccess(prior);
-      } else {
-        UserParameter parameter = findParameter(parameters, name);
-        if (parameter != null) {
-          astInitializer = new ParameterAccess(parameter);
-        } else {
-          UserField field = findField(fields, name);
-          if (field != null) {
-            astInitializer = new FieldAccess(field);
-          } else {
-            throw new UnsupportedTweedleDecodeException(
-                "Tweedle local variable initializer identifier is not a known local, parameter, or field: "
-                    + ownerName + "." + tweedleLocal.getName() + " <- " + name);
-          }
-        }
-      }
-    } else {
-      throw unsupportedLocalInitializer(ownerName, tweedleLocal);
-    }
+    Expression astInitializer = decodeValueExpression(ownerName, initializer, parameters, priorLocals, fields);
     if (!localType.isAssignableFrom(astInitializer.getType())) {
       throw new UnsupportedTweedleDecodeException(
           "Tweedle local variable initializer type is not assignable to "
@@ -380,30 +361,7 @@ public class Decoder {
       UserParameter[] parameters,
       List<UserLocal> locals,
       List<UserField> fields) {
-    if (value instanceof TweedlePrimitiveValue<?> primitiveValue) {
-      return primitiveLiteral(primitiveValue.getPrimitiveValue());
-    }
-    if (value instanceof IdentifierReference identifierReference) {
-      String name = identifierReference.getName();
-      UserLocal local = findLocal(locals, name);
-      if (local != null) {
-        return new LocalAccess(local);
-      }
-      UserParameter parameter = findParameter(parameters, name);
-      if (parameter != null) {
-        return new ParameterAccess(parameter);
-      }
-      UserField field = findField(fields, name);
-      if (field != null) {
-        return new FieldAccess(field);
-      }
-      throw new UnsupportedTweedleDecodeException(
-          "Tweedle assignment value identifier is not a known local, parameter, or field: "
-              + ownerName + "." + name);
-    }
-    throw new UnsupportedTweedleDecodeException(
-        "Unsupported Tweedle assignment value expression (only primitive literals and identifier references are supported): "
-            + ownerName);
+    return decodeValueExpression(ownerName, value, parameters, locals, fields);
   }
 
   private org.lgna.project.ast.ReturnStatement decodeReturnStatement(
@@ -416,6 +374,86 @@ public class Decoder {
     Expression expression =
         decodeMethodReturnExpression(method, returnType, allParameters, locals, fields, returnStatement.getExpression());
     return new org.lgna.project.ast.ReturnStatement(returnType, expression);
+  }
+
+  private Expression decodeValueExpression(
+      String ownerName,
+      TweedleExpression expr,
+      UserParameter[] parameters,
+      List<UserLocal> priorLocals,
+      List<UserField> fields) {
+    if (expr instanceof TweedlePrimitiveValue<?> primitiveValue) {
+      return primitiveLiteral(primitiveValue.getPrimitiveValue());
+    }
+    if (expr instanceof IdentifierReference identifierReference) {
+      String name = identifierReference.getName();
+      UserLocal local = findLocal(priorLocals, name);
+      if (local != null) {
+        return new LocalAccess(local);
+      }
+      UserParameter parameter = findParameter(parameters, name);
+      if (parameter != null) {
+        return new ParameterAccess(parameter);
+      }
+      UserField field = findField(fields, name);
+      if (field != null) {
+        return new FieldAccess(field);
+      }
+      throw new UnsupportedTweedleDecodeException(
+          "Tweedle value expression identifier is not a known local, parameter, or field: "
+              + ownerName + "." + name);
+    }
+    if (expr instanceof BinaryNumericExpression<?> binaryNumeric) {
+      return decodeBinaryNumericExpression(ownerName, binaryNumeric, parameters, priorLocals, fields);
+    }
+    throw new UnsupportedTweedleDecodeException(
+        "Unsupported Tweedle value expression (only primitive literals, identifier references, "
+            + "and arithmetic binary expressions are supported): " + ownerName);
+  }
+
+  private ArithmeticInfixExpression decodeBinaryNumericExpression(
+      String ownerName,
+      BinaryNumericExpression<?> binaryNumeric,
+      UserParameter[] parameters,
+      List<UserLocal> locals,
+      List<UserField> fields) {
+    Expression lhs = decodeValueExpression(ownerName, binaryNumeric.getLhs(), parameters, locals, fields);
+    Expression rhs = decodeValueExpression(ownerName, binaryNumeric.getRhs(), parameters, locals, fields);
+    org.alice.tweedle.TweedleType resultTweedleType = binaryNumeric.getType();
+    AbstractType<?, ?, ?> astResultType = resolveType(
+        resultTweedleType != null ? resultTweedleType.getName() : null, "arithmetic expression");
+    ArithmeticInfixExpression.Operator operator = arithmeticOperator(ownerName, binaryNumeric, resultTweedleType);
+    return new ArithmeticInfixExpression(lhs, operator, rhs, astResultType);
+  }
+
+  private ArithmeticInfixExpression.Operator arithmeticOperator(
+      String ownerName,
+      BinaryNumericExpression<?> binaryNumeric,
+      org.alice.tweedle.TweedleType resultType) {
+    if (binaryNumeric instanceof AdditionExpression) {
+      return ArithmeticInfixExpression.Operator.PLUS;
+    }
+    if (binaryNumeric instanceof SubtractionExpression) {
+      return ArithmeticInfixExpression.Operator.MINUS;
+    }
+    if (binaryNumeric instanceof MultiplicationExpression) {
+      return ArithmeticInfixExpression.Operator.TIMES;
+    }
+    if (binaryNumeric instanceof DivisionExpression) {
+      String typeName = resultType != null ? resultType.getName() : null;
+      if ("WholeNumber".equals(typeName)) {
+        return ArithmeticInfixExpression.Operator.INTEGER_DIVIDE;
+      }
+      if ("DecimalNumber".equals(typeName)) {
+        return ArithmeticInfixExpression.Operator.REAL_DIVIDE;
+      }
+      throw new UnsupportedTweedleDecodeException(
+          "Tweedle division expression has ambiguous numeric type "
+              + "(both operands must be explicitly WholeNumber or DecimalNumber): " + ownerName);
+    }
+    throw new UnsupportedTweedleDecodeException(
+        "Unsupported Tweedle arithmetic operator " + binaryNumeric.getClass().getSimpleName()
+            + ": " + ownerName);
   }
 
   private Expression decodeMethodReturnExpression(
@@ -686,14 +724,6 @@ public class Decoder {
       return identifierReference.getName() + "." + fieldAccess.getFieldName();
     }
     return "<unsupported>." + fieldAccess.getFieldName();
-  }
-
-  private UnsupportedTweedleDecodeException unsupportedLocalInitializer(
-      String ownerName,
-      TweedleLocalVariable local) {
-    return new UnsupportedTweedleDecodeException(
-        "Only primitive literal and identifier-reference Tweedle local variable initializers are supported by the AST decoder: "
-            + ownerName + "." + local.getName());
   }
 
   private UnsupportedTweedleDecodeException unsupportedFieldInitializer(TweedleField property) {
