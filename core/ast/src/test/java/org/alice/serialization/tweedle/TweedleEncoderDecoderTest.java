@@ -644,7 +644,7 @@ public class TweedleEncoderDecoderTest {
             }
             """));
 
-    assertTrue(thrown.getMessage().contains("Non-literal Tweedle constructor field assignment values"));
+    assertTrue(thrown.getMessage().contains("Unsupported Tweedle assignment value expression"));
     assertTrue(thrown.getMessage().contains("SyntheticType"));
   }
 
@@ -746,7 +746,7 @@ public class TweedleEncoderDecoderTest {
             }
             """));
 
-    assertTrue(thrown.getMessage().contains("Non-literal Tweedle field assignment values"));
+    assertTrue(thrown.getMessage().contains("Unsupported Tweedle assignment value expression"));
     assertTrue(thrown.getMessage().contains("setCount"));
   }
 
@@ -855,6 +855,94 @@ public class TweedleEncoderDecoderTest {
     assertTrue(thrown.getMessage().contains("constructor local variable assignment value type is not assignable to"));
     assertTrue(thrown.getMessage().contains("SyntheticType"));
     assertTrue(thrown.getMessage().contains("x"));
+  }
+
+  @Test
+  public void decodeClassWithParameterIdentifierRhsInMethodAssignmentCreatesParameterAccess() throws Exception {
+    NamedUserType type = decodeUserType("""
+        class SyntheticType {
+          WholeNumber count <- 0;
+          void setCount(WholeNumber val) { count <- val; }
+        }
+        """);
+
+    UserField field = type.getDeclaredFields().get(0);
+    UserMethod method = type.getDeclaredMethods().get(0);
+    UserParameter param = method.getRequiredParameters().get(0);
+    assertEquals("val", param.getName());
+    assertEquals(1, method.body.getValue().statements.size());
+    ExpressionStatement stmt = (ExpressionStatement) method.body.getValue().statements.get(0);
+    AssignmentExpression assign = (AssignmentExpression) stmt.expression.getValue();
+    assertTrue(assign.leftHandSide.getValue() instanceof FieldAccess);
+    assertSame(field, ((FieldAccess) assign.leftHandSide.getValue()).field.getValue());
+    assertTrue(assign.rightHandSide.getValue() instanceof ParameterAccess);
+    assertSame(param, ((ParameterAccess) assign.rightHandSide.getValue()).parameter.getValue());
+  }
+
+  @Test
+  public void decodeClassWithLocalIdentifierRhsInMethodAssignmentCreatesLocalAccess() throws Exception {
+    NamedUserType type = decodeUserType("""
+        class SyntheticType {
+          void update() { WholeNumber x <- 1; WholeNumber y <- 3; x <- y; }
+        }
+        """);
+
+    UserMethod method = type.getDeclaredMethods().get(0);
+    assertEquals(3, method.body.getValue().statements.size());
+    LocalDeclarationStatement xDecl = (LocalDeclarationStatement) method.body.getValue().statements.get(0);
+    UserLocal xLocal = xDecl.local.getValue();
+    LocalDeclarationStatement yDecl = (LocalDeclarationStatement) method.body.getValue().statements.get(1);
+    UserLocal yLocal = yDecl.local.getValue();
+    ExpressionStatement stmt = (ExpressionStatement) method.body.getValue().statements.get(2);
+    AssignmentExpression assign = (AssignmentExpression) stmt.expression.getValue();
+    assertTrue(assign.leftHandSide.getValue() instanceof LocalAccess);
+    assertSame(xLocal, ((LocalAccess) assign.leftHandSide.getValue()).local.getValue());
+    assertTrue(assign.rightHandSide.getValue() instanceof LocalAccess);
+    assertSame(yLocal, ((LocalAccess) assign.rightHandSide.getValue()).local.getValue());
+  }
+
+  @Test
+  public void decodeClassWithParameterIdentifierRhsInConstructorAssignmentCreatesParameterAccess() throws Exception {
+    NamedUserType type = decodeUserType("""
+        class SyntheticType {
+          WholeNumber count <- 0;
+          SyntheticType(WholeNumber val) { count <- val; }
+        }
+        """);
+
+    UserField field = type.getDeclaredFields().get(0);
+    NamedUserConstructor constructor = (NamedUserConstructor) type.getDeclaredConstructors().get(0);
+    UserParameter param = constructor.getRequiredParameters().get(0);
+    assertEquals("val", param.getName());
+    assertEquals(1, constructor.body.getValue().statements.size());
+    ExpressionStatement stmt = (ExpressionStatement) constructor.body.getValue().statements.get(0);
+    AssignmentExpression assign = (AssignmentExpression) stmt.expression.getValue();
+    assertTrue(assign.leftHandSide.getValue() instanceof FieldAccess);
+    assertSame(field, ((FieldAccess) assign.leftHandSide.getValue()).field.getValue());
+    assertTrue(assign.rightHandSide.getValue() instanceof ParameterAccess);
+    assertSame(param, ((ParameterAccess) assign.rightHandSide.getValue()).parameter.getValue());
+  }
+
+  @Test
+  public void decodeClassWithParameterIdentifierRhsInConstructorThisFieldAssignmentCreatesParameterAccess() throws Exception {
+    NamedUserType type = decodeUserType("""
+        class SyntheticType {
+          WholeNumber count <- 0;
+          SyntheticType(WholeNumber val) { this.count <- val; }
+        }
+        """);
+
+    UserField field = type.getDeclaredFields().get(0);
+    NamedUserConstructor constructor = (NamedUserConstructor) type.getDeclaredConstructors().get(0);
+    UserParameter param = constructor.getRequiredParameters().get(0);
+    assertEquals("val", param.getName());
+    assertEquals(1, constructor.body.getValue().statements.size());
+    ExpressionStatement stmt = (ExpressionStatement) constructor.body.getValue().statements.get(0);
+    AssignmentExpression assign = (AssignmentExpression) stmt.expression.getValue();
+    assertTrue(assign.leftHandSide.getValue() instanceof FieldAccess);
+    assertSame(field, ((FieldAccess) assign.leftHandSide.getValue()).field.getValue());
+    assertTrue(assign.rightHandSide.getValue() instanceof ParameterAccess);
+    assertSame(param, ((ParameterAccess) assign.rightHandSide.getValue()).parameter.getValue());
   }
 
   @Test
