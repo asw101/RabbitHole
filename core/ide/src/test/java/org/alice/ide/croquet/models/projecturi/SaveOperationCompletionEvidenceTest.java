@@ -1,6 +1,7 @@
 package org.alice.ide.croquet.models.projecturi;
 
 import org.junit.Test;
+import org.lgna.croquet.history.UserActivity;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -137,6 +138,35 @@ public class SaveOperationCompletionEvidenceTest {
     assertTrue(json, json.contains("No Save dialog was requested, so this artifact cannot prove dialog discovery or control."));
     assertTrue(json, json.contains("desktop Save dialog control"));
     assertTrue(json, json.contains("full Alice UI automation"));
+  }
+
+  @Test
+  public void saveProjectOperationReportsMissingActiveStageIdeBeforeDesktopDialog() throws Exception {
+    Path evidenceDir = Files.createDirectories(newTestDir().resolve("action-invocation"));
+    String previousEvidenceDir = System.getProperty(SaveOperationCompletionEvidence.EVIDENCE_DIR_PROPERTY);
+    System.setProperty(SaveOperationCompletionEvidence.EVIDENCE_DIR_PROPERTY, evidenceDir.toString());
+    try {
+      SaveProjectOperation.getInstance().fire(new UserActivity());
+
+      Path artifact = evidenceDir.resolve(SaveOperationCompletionEvidence.SAVE_ACTION_INVOCATION_PROOF_ARTIFACT);
+      assertTrue(Files.size(artifact) > 0);
+      String json = Files.readString(artifact);
+      assertTrue(json, json.contains("\"schema_version\": \"eatme.alice-desktop-save-action-invocation-proof/v1\""));
+      assertTrue(json, json.contains("\"status\": \"unsupported\""));
+      assertTrue(json, json.contains("\"reason\": \"missing_active_stage_ide\""));
+      assertTrue(json, json.contains("org.alice.stageide.StageIDE.getActiveInstance()"));
+      assertTrue(json, json.contains("SaveProjectOperation.getInstance().fire(UserActivity)"));
+      assertTrue(json, json.contains("application.getDocumentFrame().showSaveFileDialog"));
+      assertTrue(json, json.contains("desktop Save dialog control"));
+      assertTrue(json, json.contains("doesNotClaim"));
+      assertFalse(Files.exists(evidenceDir.resolve(SaveOperationCompletionEvidence.ARTIFACT)));
+    } finally {
+      if (previousEvidenceDir == null) {
+        System.clearProperty(SaveOperationCompletionEvidence.EVIDENCE_DIR_PROPERTY);
+      } else {
+        System.setProperty(SaveOperationCompletionEvidence.EVIDENCE_DIR_PROPERTY, previousEvidenceDir);
+      }
+    }
   }
 
   private static Path newTestDir() throws Exception {
