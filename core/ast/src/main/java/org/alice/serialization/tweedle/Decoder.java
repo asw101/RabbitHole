@@ -1,5 +1,6 @@
 package org.alice.serialization.tweedle;
 
+import org.alice.tweedle.TweedleArrayType;
 import org.alice.tweedle.TweedleClass;
 import org.alice.tweedle.TweedleLinkException;
 import org.alice.tweedle.TweedleField;
@@ -90,7 +91,7 @@ public class Decoder {
   }
 
   private UserField decodeField(TweedleField property) {
-    AbstractType<?, ?, ?> valueType = resolveType(property.getType().getName(), "field");
+    AbstractType<?, ?, ?> valueType = resolveType(property.getType(), "field");
     Expression initializer = property.hasInitializer() ? decodeFieldInitializer(property, valueType) : null;
     return new UserField(property.getName(), valueType, initializer);
   }
@@ -121,6 +122,7 @@ public class Decoder {
   private boolean isSupportedNullableField(TweedleField property, AbstractType<?, ?, ?> valueType) {
     return "TextString".equals(property.getType().getName())
         || valueType instanceof NamedUserType
+        || valueType.isArray()
         || isResourceType(valueType);
   }
 
@@ -167,6 +169,21 @@ public class Decoder {
         "Tweedle resource field initializers are not yet supported by the AST decoder: " + property.getName());
   }
 
+  private AbstractType<?, ?, ?> resolveType(TweedleType tweedleType, String usage) {
+    if (tweedleType instanceof TweedleArrayType arrayType) {
+      TweedleType componentType = arrayType.getValueType();
+      if (componentType == null) {
+        throw unsupportedType(tweedleType.getName(), usage);
+      }
+      AbstractType<?, ?, ?> componentAstType = resolveType(componentType, usage);
+      if (componentAstType == null) {
+        throw unsupportedType(tweedleType.getName(), usage);
+      }
+      return componentAstType.getArrayType();
+    }
+    return resolveType(tweedleType == null ? null : tweedleType.getName(), usage);
+  }
+
   private AbstractType<?, ?, ?> resolveType(String typeName, String usage) {
     if (typeName == null) {
       return null;
@@ -185,7 +202,11 @@ public class Decoder {
       } catch (ClassNotFoundException ignored) {
       }
     }
-    throw new UnsupportedTweedleDecodeException("Unsupported Tweedle " + usage + ": " + typeName);
+    throw unsupportedType(typeName, usage);
+  }
+
+  private UnsupportedTweedleDecodeException unsupportedType(String typeName, String usage) {
+    return new UnsupportedTweedleDecodeException("Unsupported Tweedle " + usage + ": " + typeName);
   }
 
   private NamedUserType userTypeNamed(String name) {
