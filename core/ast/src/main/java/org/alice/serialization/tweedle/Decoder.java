@@ -7,6 +7,7 @@ import org.alice.tweedle.TweedleLinkException;
 import org.alice.tweedle.TweedleField;
 import org.alice.tweedle.TweedleMethod;
 import org.alice.tweedle.TweedleNull;
+import org.alice.tweedle.TweedleOptionalParameter;
 import org.alice.tweedle.TweedlePrimitiveValue;
 import org.alice.tweedle.TweedleRequiredParameter;
 import org.alice.tweedle.TweedleStatement;
@@ -122,12 +123,8 @@ public class Decoder {
       throw new UnsupportedTweedleDecodeException(
           "Tweedle constructor name does not match declaring class: " + constructor.getName());
     }
-    if (!constructor.getOptionalParameters().isEmpty()) {
-      throw new UnsupportedTweedleDecodeException(
-          "Tweedle optional constructor parameters are not yet supported by the AST decoder: " + constructor.getName());
-    }
     return new NamedUserConstructor(
-        decodeRequiredParameters(constructor.getRequiredParameters(), "constructor parameter"),
+        decodeAllParameters(constructor.getRequiredParameters(), constructor.getOptionalParameters(), "constructor parameter"),
         decodeConstructorBody(constructor, fields));
   }
 
@@ -161,24 +158,34 @@ public class Decoder {
         .toArray(UserParameter[]::new);
   }
 
-  private UserMethod decodeMethod(TweedleMethod method, List<UserField> fields) {
-    if (!method.getOptionalParameters().isEmpty()) {
-      throw new UnsupportedTweedleDecodeException(
-          "Tweedle optional method parameters are not yet supported by the AST decoder: " + method.getName());
+  private UserParameter[] decodeAllParameters(
+      List<TweedleRequiredParameter> required,
+      List<TweedleOptionalParameter> optional,
+      String usage) {
+    List<UserParameter> all = new ArrayList<>();
+    for (TweedleRequiredParameter p : required) {
+      all.add(new UserParameter(p.getName(), resolveType(p.getType(), usage)));
     }
+    for (TweedleOptionalParameter p : optional) {
+      all.add(new UserParameter(p.getName(), resolveType(p.getType(), usage)));
+    }
+    return all.toArray(UserParameter[]::new);
+  }
+
+  private UserMethod decodeMethod(TweedleMethod method, List<UserField> fields) {
     AbstractType<?, ?, ?> returnType = resolveReturnType(method.getType());
-    UserParameter[] requiredParameters = decodeRequiredParameters(method.getRequiredParameters(), "method parameter");
+    UserParameter[] allParameters = decodeAllParameters(method.getRequiredParameters(), method.getOptionalParameters(), "method parameter");
     return new UserMethod(
         method.getName(),
         returnType,
-        requiredParameters,
-        decodeMethodBody(method, returnType, requiredParameters, fields));
+        allParameters,
+        decodeMethodBody(method, returnType, allParameters, fields));
   }
 
   private BlockStatement decodeMethodBody(
       TweedleMethod method,
       AbstractType<?, ?, ?> returnType,
-      UserParameter[] requiredParameters,
+      UserParameter[] allParameters,
       List<UserField> fields) {
     if (method.getBody().isEmpty()) {
       if (returnType != JavaType.VOID_TYPE) {
@@ -201,7 +208,7 @@ public class Decoder {
         statements.add(decodeMethodAssignmentStatement(method, assignment, locals, fields));
       } else if (statement instanceof org.alice.tweedle.ast.ReturnStatement returnStatement
           && i == method.getBody().size() - 1) {
-        statements.add(decodeReturnStatement(method, returnType, requiredParameters, locals, fields, returnStatement));
+        statements.add(decodeReturnStatement(method, returnType, allParameters, locals, fields, returnStatement));
       } else {
         throw unsupportedMethodBody(method);
       }
@@ -350,19 +357,19 @@ public class Decoder {
   private org.lgna.project.ast.ReturnStatement decodeReturnStatement(
       TweedleMethod method,
       AbstractType<?, ?, ?> returnType,
-      UserParameter[] requiredParameters,
+      UserParameter[] allParameters,
       List<UserLocal> locals,
       List<UserField> fields,
       org.alice.tweedle.ast.ReturnStatement returnStatement) {
     Expression expression =
-        decodeMethodReturnExpression(method, returnType, requiredParameters, locals, fields, returnStatement.getExpression());
+        decodeMethodReturnExpression(method, returnType, allParameters, locals, fields, returnStatement.getExpression());
     return new org.lgna.project.ast.ReturnStatement(returnType, expression);
   }
 
   private Expression decodeMethodReturnExpression(
       TweedleMethod method,
       AbstractType<?, ?, ?> returnType,
-      UserParameter[] requiredParameters,
+      UserParameter[] allParameters,
       List<UserLocal> locals,
       List<UserField> fields,
       TweedleExpression returnExpression) {
@@ -386,7 +393,7 @@ public class Decoder {
             "Tweedle method return identifier type is not assignable to "
                 + returnType.getName() + ": " + method.getName() + "." + identifierReference.getName());
       }
-      UserParameter parameter = findParameter(requiredParameters, identifierReference.getName());
+      UserParameter parameter = findParameter(allParameters, identifierReference.getName());
       if (parameter != null) {
         ParameterAccess access = new ParameterAccess(parameter);
         if (returnType.isAssignableFrom(access.getType())) {

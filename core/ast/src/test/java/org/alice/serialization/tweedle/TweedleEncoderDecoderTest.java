@@ -456,13 +456,46 @@ public class TweedleEncoderDecoderTest {
   }
 
   @Test
-  public void decodeClassWithOptionalMethodParameterReportsUnsupportedMethodParameters() {
-    UnsupportedTweedleDecodeException thrown = assertThrows(
-        UnsupportedTweedleDecodeException.class,
-        () -> coder.decode("class SyntheticType { void initialize(WholeNumber count <- 1) { } }"));
+  public void decodeClassWithOptionalMethodParameterCreatesUserMethodParameter() throws Exception {
+    NamedUserType type = decodeUserType("class SyntheticType { void initialize(WholeNumber count <- 1) { } }");
 
-    assertTrue(thrown.getMessage().contains("optional method parameters"));
-    assertTrue(thrown.getMessage().contains("initialize"));
+    assertEquals(1, type.getDeclaredMethods().size());
+    UserMethod method = type.getDeclaredMethods().get(0);
+    assertEquals("initialize", method.getName());
+    assertEquals(1, method.getRequiredParameters().size());
+    UserParameter parameter = method.getRequiredParameters().get(0);
+    assertEquals("count", parameter.getName());
+    assertSame(JavaType.getInstance(Integer.class), parameter.getValueType());
+  }
+
+  @Test
+  public void decodeClassWithRequiredAndOptionalMethodParametersCreatesAllUserMethodParameters() throws Exception {
+    NamedUserType type = decodeUserType(
+        "class SyntheticType { void initialize(WholeNumber x, WholeNumber y <- 2) { } }");
+
+    assertEquals(1, type.getDeclaredMethods().size());
+    UserMethod method = type.getDeclaredMethods().get(0);
+    assertEquals(2, method.getRequiredParameters().size());
+    assertEquals("x", method.getRequiredParameters().get(0).getName());
+    assertEquals("y", method.getRequiredParameters().get(1).getName());
+    assertSame(JavaType.getInstance(Integer.class), method.getRequiredParameters().get(1).getValueType());
+  }
+
+  @Test
+  public void decodeClassWithOptionalMethodParameterInReturnCreatesParameterAccess() throws Exception {
+    NamedUserType type = decodeUserType(
+        "class SyntheticType { WholeNumber getCount(WholeNumber count <- 0) { return count; } }");
+
+    UserMethod method = type.getDeclaredMethods().get(0);
+    assertEquals(1, method.getRequiredParameters().size());
+    UserParameter parameter = method.getRequiredParameters().get(0);
+    assertEquals("count", parameter.getName());
+    assertEquals(1, method.body.getValue().statements.size());
+    assertTrue(method.body.getValue().statements.get(0) instanceof ReturnStatement);
+    ReturnStatement returnStatement = (ReturnStatement) method.body.getValue().statements.get(0);
+    assertTrue(returnStatement.expression.getValue() instanceof ParameterAccess);
+    ParameterAccess access = (ParameterAccess) returnStatement.expression.getValue();
+    assertSame(parameter, access.parameter.getValue());
   }
 
   @Test
@@ -514,13 +547,29 @@ public class TweedleEncoderDecoderTest {
   }
 
   @Test
-  public void decodeClassWithOptionalConstructorParameterReportsUnsupportedConstructorParameters() {
-    UnsupportedTweedleDecodeException thrown = assertThrows(
-        UnsupportedTweedleDecodeException.class,
-        () -> coder.decode("class SyntheticType { SyntheticType(WholeNumber count <- 1) { } }"));
+  public void decodeClassWithOptionalConstructorParameterCreatesUserConstructorParameter() throws Exception {
+    NamedUserType type = decodeUserType("class SyntheticType { SyntheticType(WholeNumber count <- 1) { } }");
 
-    assertTrue(thrown.getMessage().contains("optional constructor parameters"));
-    assertTrue(thrown.getMessage().contains("SyntheticType"));
+    assertEquals(1, type.getDeclaredConstructors().size());
+    NamedUserConstructor constructor = (NamedUserConstructor) type.getDeclaredConstructors().get(0);
+    assertEquals(1, constructor.getRequiredParameters().size());
+    UserParameter parameter = constructor.getRequiredParameters().get(0);
+    assertEquals("count", parameter.getName());
+    assertSame(JavaType.getInstance(Integer.class), parameter.getValueType());
+    assertTrue(constructor.body.getValue().statements.isEmpty());
+  }
+
+  @Test
+  public void decodeClassWithRequiredAndOptionalConstructorParametersCreatesAllConstructorParameters() throws Exception {
+    NamedUserType type = decodeUserType(
+        "class SyntheticType { SyntheticType(WholeNumber x, WholeNumber y <- 2) { } }");
+
+    assertEquals(1, type.getDeclaredConstructors().size());
+    NamedUserConstructor constructor = (NamedUserConstructor) type.getDeclaredConstructors().get(0);
+    assertEquals(2, constructor.getRequiredParameters().size());
+    assertEquals("x", constructor.getRequiredParameters().get(0).getName());
+    assertEquals("y", constructor.getRequiredParameters().get(1).getName());
+    assertSame(JavaType.getInstance(Integer.class), constructor.getRequiredParameters().get(1).getValueType());
   }
 
   @Test
