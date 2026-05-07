@@ -185,6 +185,39 @@ public class HistoricalArchiveRoundTripCharacterizationTest {
   }
 
   @Test
+  public void generatedJsonPlayerArchiveWithMethodBearingSiblingTypeIsRejectedWithoutSilentOmission() throws Exception {
+    File projectArchive = temporaryFolder.newFile("generated-json-player-method-sibling-boundary.a3w");
+
+    writeJsonProjectArchive(
+        projectArchive,
+        "GeneratedProgramWithMethodSiblingBoundary",
+        "class GeneratedProgramWithMethodSiblingBoundary extends SProgram { WholeNumber count; }",
+        "GeneratedMethodSiblingBoundaryScene",
+        "class GeneratedMethodSiblingBoundaryScene extends SScene { WholeNumber count() { return 1; } }");
+
+    try (ZipFile zipFile = new ZipFile(projectArchive)) {
+      ProjectManifest manifest = readProjectManifest(zipFile);
+      assertTypeReference(
+          manifest,
+          "GeneratedProgramWithMethodSiblingBoundary",
+          "src/GeneratedProgramWithMethodSiblingBoundary.twe");
+      assertTypeReference(
+          manifest,
+          "GeneratedMethodSiblingBoundaryScene",
+          "src/GeneratedMethodSiblingBoundaryScene.twe");
+      ZipEntry siblingTypeEntry = zipFile.getEntry("src/GeneratedMethodSiblingBoundaryScene.twe");
+      assertNotNull(
+          "Generated JSON .a3w fixture should contain the method-bearing sibling type source",
+          siblingTypeEntry);
+      assertTrue(readEntry(zipFile, siblingTypeEntry).contains("WholeNumber count()"));
+    }
+    IOException thrown = assertThrows(IOException.class, () -> IoUtilities.readProject(projectArchive));
+
+    assertTrue(thrown.getMessage().contains(
+        "Project archive contains unsupported manifest-declared Tweedle type names [GeneratedMethodSiblingBoundaryScene]"));
+  }
+
+  @Test
   public void constructorBearingJsonA3wProgramTypeIsRejected() throws Exception {
     File projectArchive = temporaryFolder.newFile("constructor-bearing-json-a3w-program-boundary.a3w");
 
