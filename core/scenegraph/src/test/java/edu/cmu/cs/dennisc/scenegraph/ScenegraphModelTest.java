@@ -1,6 +1,9 @@
 package edu.cmu.cs.dennisc.scenegraph;
 
 import edu.cmu.cs.dennisc.scenegraph.event.BoundEvent;
+import edu.cmu.cs.dennisc.scenegraph.event.ComponentAddedEvent;
+import edu.cmu.cs.dennisc.scenegraph.event.ComponentRemovedEvent;
+import edu.cmu.cs.dennisc.scenegraph.event.ComponentsListener;
 import org.alice.math.immutable.AffineMatrix4x4;
 import org.alice.math.immutable.AxisAlignedBox;
 import org.alice.math.immutable.Point3;
@@ -10,6 +13,7 @@ import java.nio.DoubleBuffer;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -177,6 +181,92 @@ public class ScenegraphModelTest {
 
     assertBoxEquals(AxisAlignedBox.createAxisAlignedBox(0, 0, 0, 1, 1, 1), localOnly);
     assertBoxEquals(AxisAlignedBox.createAxisAlignedBox(0, 0, 0, 12, 23, 34), cumulative);
+  }
+
+  @Test
+  public void compositeAddAndRemoveComponentUpdatesParentOrderAndEvents() {
+    Scene parent = new Scene();
+    Transformable first = new Transformable();
+    Transformable second = new Transformable();
+    AtomicReference<ComponentAddedEvent> added = new AtomicReference<>();
+    AtomicReference<ComponentRemovedEvent> removed = new AtomicReference<>();
+    parent.addChildrenListener(new ComponentsListener() {
+      @Override
+      public void componentAdded(ComponentAddedEvent event) {
+        added.set(event);
+      }
+
+      @Override
+      public void componentRemoved(ComponentRemovedEvent event) {
+        removed.set(event);
+      }
+    });
+
+    parent.addComponent(first);
+    parent.addComponent(second);
+
+    assertSame(parent, first.getParent());
+    assertSame(parent, first.getRoot());
+    assertTrue(parent.isAncestorOf(first));
+    assertTrue(first.isDescendantOf(parent));
+    assertEquals(2, parent.getComponentCount());
+    assertEquals(1, parent.getIndexOfComponent(second));
+    assertSame(second, parent.getComponentAt(1));
+    assertArrayEquals(new Component[] {first, second}, parent.getComponentsAsArray());
+    assertSame(parent, added.get().getTypedSource());
+    assertSame(second, added.get().getChild());
+
+    parent.removeComponent(first);
+
+    assertNull(first.getParent());
+    assertEquals(1, parent.getComponentCount());
+    assertSame(parent, removed.get().getTypedSource());
+    assertSame(first, removed.get().getChild());
+  }
+
+  @Test
+  public void parentChangesPropagateHierarchyAndAbsoluteEventsThroughSubtree() {
+    Scene scene = new Scene();
+    Transformable parent = new Transformable();
+    Transformable child = new Transformable();
+    parent.addComponent(child);
+    AtomicInteger parentHierarchyChanges = new AtomicInteger();
+    AtomicInteger childHierarchyChanges = new AtomicInteger();
+    AtomicInteger childAbsoluteChanges = new AtomicInteger();
+    parent.addHierarchyListener(event -> {
+      assertSame(parent, event.getTypedSource());
+      parentHierarchyChanges.incrementAndGet();
+    });
+    child.addHierarchyListener(event -> {
+      assertSame(child, event.getTypedSource());
+      childHierarchyChanges.incrementAndGet();
+    });
+    child.addAbsoluteTransformationListener(event -> {
+      assertSame(child, event.getTypedSource());
+      childAbsoluteChanges.incrementAndGet();
+    });
+
+    scene.addComponent(parent);
+
+    assertEquals(1, parentHierarchyChanges.get());
+    assertEquals(1, childHierarchyChanges.get());
+    assertEquals(1, childAbsoluteChanges.get());
+    assertSame(scene, child.getRoot());
+  }
+
+  @Test
+  public void transformableConvertsPointsBetweenLocalParentAndSceneFrames() {
+    Scene scene = new Scene();
+    Transformable parent = new Transformable();
+    Transformable child = new Transformable();
+    parent.setLocalTransformation(AffineMatrix4x4.createTranslation(10, 0, 0));
+    child.setLocalTransformation(AffineMatrix4x4.createTranslation(0, 5, 0));
+    scene.addComponent(parent);
+    parent.addComponent(child);
+
+    assertPointEquals(new Point3(11, 7, 3), child.transformToAbsolute(new Point3(1, 2, 3)));
+    assertPointEquals(new Point3(1, 7, 3), child.transformTo(new Point3(1, 2, 3), parent));
+    assertPointEquals(new Point3(1, 2, 3), child.transformFrom(new Point3(1, 7, 3), parent));
   }
 
   private static Mesh meshWithVertices(double... xyzs) {

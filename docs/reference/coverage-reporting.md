@@ -28,6 +28,7 @@ python3 scripts/summarize-jacoco-coverage.py \
   --min-module-line-percent core/model-loading=10.0 \
   --min-module-line-percent core/story-api-migration=75.0 \
   --min-module-line-percent core/tweedle=50.0 \
+  --min-module-line-percent core/scenegraph=10.0 \
   --min-module-line-percent netbeans=25.0
 ```
 
@@ -253,6 +254,7 @@ expectations in the workflow:
 | `core/model-loading` | 12.47% | 10.0% | Module coverage safely exceeds the ratchet. |
 | `core/story-api-migration` | 81.72% | 75.0% | Characterization coverage supports a high module floor with margin. |
 | `core/tweedle` | 54.13% | 50.0% | Parser-related coverage supports a module floor with margin. |
+| `core/scenegraph` | 11.17% | 10.0% | Scenegraph characterization coverage protects hierarchy and transform behavior with margin. |
 | `netbeans` | 28.54% | 25.0% | IDE coverage supports a conservative module floor. |
 
 These values live in `.github/workflows/alice-coverage-ci.yml`. Local validation
@@ -276,7 +278,7 @@ Use these rules when changing thresholds:
 | Avoid artificial coverage | Do not raise gates by excluding production code or by adding tests that execute code without asserting behavior. |
 
 Durable ratchets come from behavior-focused tests around modernization areas such
-as save/load/export, Tweedle parsing, story migration, model loading, and IDE
+as save/load/export, Tweedle parsing, story migration, model loading, scenegraph hierarchy, and IDE
 service boundaries.
 
 ## Configuration examples
@@ -305,6 +307,7 @@ python3 scripts/summarize-jacoco-coverage.py \
   --min-module-line-percent core/model-loading=10.0 \
   --min-module-line-percent core/story-api-migration=75.0 \
   --min-module-line-percent core/tweedle=50.0 \
+  --min-module-line-percent core/scenegraph=10.0 \
   --min-module-line-percent netbeans=25.0 \
   --min-module-line-percent core/new-characterized-module=12.0
 ```

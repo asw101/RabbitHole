@@ -33,6 +33,7 @@ python3 scripts/summarize-jacoco-coverage.py \
   --min-module-line-percent core/model-loading=10.0 \
   --min-module-line-percent core/story-api-migration=75.0 \
   --min-module-line-percent core/tweedle=50.0 \
+  --min-module-line-percent core/scenegraph=10.0 \
   --min-module-line-percent netbeans=25.0
 ```
 
@@ -51,6 +52,7 @@ Good ratchet choices:
 | ---: | ---: | --- |
 | 81.72% | 75.0% | The floor is high enough to prevent meaningful regression and still leaves several points of margin. |
 | 28.54% | 25.0% | The floor protects current progress without failing on tiny report changes. |
+| 11.17% | 10.0% | The floor is below measured scenegraph coverage and protects the new behavior tests with a small margin. |
 | 10.24% aggregate | 8.0% | The aggregate gate remains honest because a 10.0% gate would have too little margin. |
 
 Avoid these changes:
@@ -79,6 +81,7 @@ python3 scripts/summarize-jacoco-coverage.py \
   --min-module-line-percent core/model-loading=10.0 \
   --min-module-line-percent core/story-api-migration=75.0 \
   --min-module-line-percent core/tweedle=50.0 \
+  --min-module-line-percent core/scenegraph=10.0 \
   --min-module-line-percent netbeans=25.0
 ```
 
@@ -101,6 +104,7 @@ python3 scripts/summarize-jacoco-coverage.py \
   --min-module-line-percent core/model-loading=10.0 \
   --min-module-line-percent core/story-api-migration=75.0 \
   --min-module-line-percent core/tweedle=50.0 \
+  --min-module-line-percent core/scenegraph=10.0 \
   --min-module-line-percent netbeans=25.0
 ```
 
