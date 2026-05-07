@@ -62,12 +62,39 @@ public class IssueReportWorkerTest {
     assertTrue(listener.messages(), listener.messages().contains("submission failed: " + message));
   }
 
+  @Test
+  public void doesNotRetryIllegalArgumentExceptionSubmissionFailure() {
+    assertNonRetryableSubmissionFailure(new IllegalArgumentException("invalid report"));
+  }
+
+  @Test
+  public void doesNotRetryIllegalStateExceptionSubmissionFailure() {
+    assertNonRetryableSubmissionFailure(new IllegalStateException("invalid submission state"));
+  }
+
   private static IssueReportWorker createWorker(RecordingIssueSubmissionService service, JIRAReport report, int maxAttempts) {
     return createWorker(new RecordingWorkerListener(), service, report, maxAttempts);
   }
 
   private static IssueReportWorker createWorker(RecordingWorkerListener listener, RecordingIssueSubmissionService service, JIRAReport report, int maxAttempts) {
     return new IssueReportWorker(listener, report, REPORT_SUBMISSION, service, new IssueSubmissionRetryPolicy(maxAttempts, 0));
+  }
+
+  private static void assertNonRetryableSubmissionFailure(RuntimeException failure) {
+    RecordingIssueSubmissionService service = new RecordingIssueSubmissionService(failure);
+    RecordingWorkerListener listener = new RecordingWorkerListener();
+
+    Boolean result = createWorker(listener, service, createReport(), 3).doInBackground();
+
+    assertFalse(result);
+    assertEquals(1, service.attempts);
+    assertSubmissionFailureProgress(listener, failure);
+  }
+
+  private static void assertSubmissionFailureProgress(RecordingWorkerListener listener, RuntimeException failure) {
+    String messages = listener.messages();
+    assertTrue(messages, messages.contains("FAILED.\n"));
+    assertTrue(messages, messages.contains("submission failed: " + failure.getClass().getSimpleName() + ": " + failure.getMessage()));
   }
 
   private static JIRAReport createReport() {
