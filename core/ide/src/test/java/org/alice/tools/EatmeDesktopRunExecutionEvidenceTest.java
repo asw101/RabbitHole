@@ -173,6 +173,13 @@ public class EatmeDesktopRunExecutionEvidenceTest {
     assertTrue(pixelObservationJson, pixelObservationJson.contains("\"render_target_not_displayable\""));
     assertTrue(pixelObservationJson, pixelObservationJson.contains("\"render_target_not_showing\""));
     assertTrue(pixelObservationJson, pixelObservationJson.contains("\"render_target_has_no_positive_size\""));
+    assertTrue(pixelObservationJson, pixelObservationJson.contains("\"details\""));
+    assertTrue(pixelObservationJson, pixelObservationJson.contains("\"observed\": \"renderTargetDisplayable=false\""));
+    assertTrue(pixelObservationJson, pixelObservationJson.contains("\"required\": \"renderTargetDisplayable=true\""));
+    assertTrue(pixelObservationJson, pixelObservationJson.contains("\"observed\": \"renderTargetShowing=false\""));
+    assertTrue(pixelObservationJson, pixelObservationJson.contains("\"required\": \"renderTargetShowing=true\""));
+    assertTrue(pixelObservationJson, pixelObservationJson.contains("\"observed\": \"renderTargetWidth=0, renderTargetHeight=0\""));
+    assertTrue(pixelObservationJson, pixelObservationJson.contains("\"required\": \"renderTargetWidth>0 and renderTargetHeight>0\""));
     assertTrue(pixelObservationJson, pixelObservationJson.contains("desktop world execution"));
     assertTrue(pixelObservationJson, pixelObservationJson.contains("visible rendering correctness"));
     assertTrue(pixelObservationJson, pixelObservationJson.contains("desktop save-menu completion"));

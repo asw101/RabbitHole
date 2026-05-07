@@ -371,33 +371,52 @@ public final class EatmeDesktopRunExecutionEvidence {
   }
 
   private static PixelObservation observePixel(Path evidenceDir, Component renderTargetComponent) {
-    List<String> blockerCodes = new ArrayList<>();
+    List<BlockerDetail> blockers = new ArrayList<>();
     if (GraphicsEnvironment.isHeadless()) {
-      blockerCodes.add("java_awt_headless");
+      blockers.add(new BlockerDetail(
+          "java_awt_headless",
+          "graphicsEnvironmentHeadless=true",
+          "graphicsEnvironmentHeadless=false"));
     }
     if (!renderTargetComponent.isDisplayable()) {
-      blockerCodes.add("render_target_not_displayable");
+      blockers.add(new BlockerDetail(
+          "render_target_not_displayable",
+          "renderTargetDisplayable=false",
+          "renderTargetDisplayable=true"));
     }
     if (!renderTargetComponent.isShowing()) {
-      blockerCodes.add("render_target_not_showing");
+      blockers.add(new BlockerDetail(
+          "render_target_not_showing",
+          "renderTargetShowing=false",
+          "renderTargetShowing=true"));
     }
     if (renderTargetComponent.getWidth() <= 0 || renderTargetComponent.getHeight() <= 0) {
-      blockerCodes.add("render_target_has_no_positive_size");
+      blockers.add(new BlockerDetail(
+          "render_target_has_no_positive_size",
+          "renderTargetWidth=" + renderTargetComponent.getWidth()
+              + ", renderTargetHeight=" + renderTargetComponent.getHeight(),
+          "renderTargetWidth>0 and renderTargetHeight>0"));
     }
 
     Point screenLocation = null;
-    if (blockerCodes.isEmpty()) {
+    if (blockers.isEmpty()) {
       try {
         screenLocation = renderTargetComponent.getLocationOnScreen();
       } catch (IllegalComponentStateException ex) {
-        blockerCodes.add("render_target_screen_location_unavailable");
+        blockers.add(new BlockerDetail(
+            "render_target_screen_location_unavailable",
+            exceptionObserved(ex),
+            "render target screen location available"));
       } catch (SecurityException ex) {
-        blockerCodes.add("render_target_screen_location_denied");
+        blockers.add(new BlockerDetail(
+            "render_target_screen_location_denied",
+            exceptionObserved(ex),
+            "screen-location access permitted"));
       }
     }
 
-    if (!blockerCodes.isEmpty()) {
-      return PixelObservation.blocked(blockerCodes, "");
+    if (!blockers.isEmpty()) {
+      return PixelObservation.blocked(blockers, "");
     }
 
     try {
@@ -408,7 +427,10 @@ public final class EatmeDesktopRunExecutionEvidence {
           renderTargetComponent.getHeight());
       BufferedImage screenshot = new Robot().createScreenCapture(captureArea);
       if (screenshot.getWidth() <= 0 || screenshot.getHeight() <= 0) {
-        return PixelObservation.blocked(List.of("render_target_screenshot_has_no_positive_size"), "");
+        return PixelObservation.blocked(List.of(new BlockerDetail(
+            "render_target_screenshot_has_no_positive_size",
+            "screenshotWidth=" + screenshot.getWidth() + ", screenshotHeight=" + screenshot.getHeight(),
+            "screenshotWidth>0 and screenshotHeight>0")), "");
       }
       Path screenshotPath = EatmeRunWindowEvidence.artifactPath(evidenceDir, DESKTOP_RUN_RENDER_TARGET_SCREENSHOT);
       writePngAtomically(screenshotPath, screenshot);
@@ -424,16 +446,39 @@ public final class EatmeDesktopRunExecutionEvidence {
           sampleY,
           argb);
     } catch (AWTException ex) {
-      return PixelObservation.blocked(List.of("java_awt_robot_unavailable"), ex.getClass().getSimpleName());
+      return PixelObservation.blocked(List.of(new BlockerDetail(
+          "java_awt_robot_unavailable",
+          exceptionObserved(ex),
+          "java.awt.Robot screen capture available")), ex.getClass().getSimpleName());
     } catch (IOException ex) {
-      return PixelObservation.blocked(List.of("render_target_screenshot_write_failed"), ex.getClass().getSimpleName());
+      return PixelObservation.blocked(List.of(new BlockerDetail(
+          "render_target_screenshot_write_failed",
+          exceptionObserved(ex),
+          "desktop-run-render-target.png writable in evidence directory")), ex.getClass().getSimpleName());
     } catch (IllegalArgumentException ex) {
-      return PixelObservation.blocked(List.of("render_target_screen_capture_area_invalid"), ex.getClass().getSimpleName());
+      return PixelObservation.blocked(List.of(new BlockerDetail(
+          "render_target_screen_capture_area_invalid",
+          exceptionObserved(ex),
+          "valid positive screen capture rectangle")), ex.getClass().getSimpleName());
     } catch (SecurityException ex) {
-      return PixelObservation.blocked(List.of("render_target_screen_capture_denied"), ex.getClass().getSimpleName());
+      return PixelObservation.blocked(List.of(new BlockerDetail(
+          "render_target_screen_capture_denied",
+          exceptionObserved(ex),
+          "screen-capture access permitted")), ex.getClass().getSimpleName());
     } catch (RuntimeException ex) {
-      return PixelObservation.blocked(List.of("render_target_pixel_sample_failed"), ex.getClass().getSimpleName());
+      return PixelObservation.blocked(List.of(new BlockerDetail(
+          "render_target_pixel_sample_failed",
+          exceptionObserved(ex),
+          "center pixel sample readable from captured image")), ex.getClass().getSimpleName());
     }
+  }
+
+  private static String exceptionObserved(Throwable throwable) {
+    String message = throwable.getMessage();
+    if (message == null || message.isBlank()) {
+      return throwable.getClass().getSimpleName();
+    }
+    return throwable.getClass().getSimpleName() + ": " + message;
   }
 
   private static void writeStringAtomically(Path target, String content) throws IOException {
@@ -494,13 +539,14 @@ public final class EatmeDesktopRunExecutionEvidence {
       this.detailJson = detailJson;
     }
 
-    private static PixelObservation blocked(List<String> blockerCodes, String exceptionType) {
+    private static PixelObservation blocked(List<BlockerDetail> blockers, String exceptionType) {
       return new PixelObservation(
           "blocked",
           "No desktop pixel was sampled.",
           "  \"blocker\": {\n"
               + "    \"reason\": \"A desktop screenshot requires a non-headless graphics environment, a showing Run render target, positive component size, and screen-capture access.\",\n"
-              + "    \"codes\": " + jsonArray(blockerCodes) + ",\n"
+              + "    \"codes\": " + blockerCodesJson(blockers) + ",\n"
+              + "    \"details\": " + blockerDetailsJson(blockers) + ",\n"
               + "    \"exceptionType\": \"" + EatmeRunWindowEvidence.escapeJson(exceptionType) + "\"\n"
               + "  },\n");
     }
@@ -535,6 +581,43 @@ public final class EatmeDesktopRunExecutionEvidence {
               + "    \"argb\": \"" + String.format("0x%08X", argb) + "\"\n"
               + "  },\n");
     }
+  }
+
+  private static final class BlockerDetail {
+    private final String code;
+    private final String observed;
+    private final String required;
+
+    private BlockerDetail(String code, String observed, String required) {
+      this.code = code;
+      this.observed = observed;
+      this.required = required;
+    }
+  }
+
+  private static String blockerCodesJson(List<BlockerDetail> blockers) {
+    List<String> values = new ArrayList<>();
+    for (BlockerDetail blocker : blockers) {
+      values.add(blocker.code);
+    }
+    return jsonArray(values);
+  }
+
+  private static String blockerDetailsJson(List<BlockerDetail> blockers) {
+    StringBuilder builder = new StringBuilder("[\n");
+    for (int i = 0; i < blockers.size(); i++) {
+      BlockerDetail blocker = blockers.get(i);
+      if (i > 0) {
+        builder.append(",\n");
+      }
+      builder.append("      {\n")
+          .append("        \"code\": \"").append(EatmeRunWindowEvidence.escapeJson(blocker.code)).append("\",\n")
+          .append("        \"observed\": \"").append(EatmeRunWindowEvidence.escapeJson(blocker.observed)).append("\",\n")
+          .append("        \"required\": \"").append(EatmeRunWindowEvidence.escapeJson(blocker.required)).append("\"\n")
+          .append("      }");
+    }
+    builder.append("\n    ]");
+    return builder.toString();
   }
 
   private static String jsonArray(List<String> values) {
