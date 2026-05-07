@@ -73,6 +73,11 @@ public class TweedleStatementParseTest {
   }
 
   @Test
+  public void ifConditionShouldNotAcceptNull() {
+    assertThrows(RuntimeException.class, () -> parseStatement("if(null) { }"));
+  }
+
+  @Test
   public void aConditionalCreatedForIfThenShouldHaveThenStatementList() {
     ConditionalStatement tested = (ConditionalStatement) parseStatement("if(true) { }");
     assertTrue("The parser should have returned a ConditionalStatement with an empty then block.", tested.getThenBlock().isEmpty());
@@ -179,6 +184,11 @@ public class TweedleStatementParseTest {
   public void aWhileLoopShouldHaveRunCondition() {
     WhileLoop tested = (WhileLoop) parseStatement("while(true) { }");
     assertNotNull("The WhileLoop should have a run condition.", tested.getRunCondition());
+  }
+
+  @Test
+  public void whileConditionShouldNotAcceptNull() {
+    assertThrows(RuntimeException.class, () -> parseStatement("while(null) { }"));
   }
 
   @Test

@@ -122,7 +122,7 @@ public class TweedleUnlinkedParser {
       final String name = context.variableDeclarator().variableDeclaratorId().IDENTIFIER().getText();
       TweedleField property;
       if (context.variableDeclarator().variableInitializer() != null) {
-        ExpressionVisitor initVisitor = new ExpressionVisitor(type);
+        ExpressionVisitor initVisitor = new ExpressionVisitor(type, true);
         TweedleExpression init = context.variableDeclarator().variableInitializer().accept(initVisitor);
         property = new TweedleField(modifiers, type, name, init);
       } else {
@@ -216,13 +216,19 @@ public class TweedleUnlinkedParser {
 
   private class ExpressionVisitor extends TweedleParserBaseVisitor<TweedleExpression> {
     private TweedleType expectedType;
+    private final boolean allowPrimitiveNull;
 
     ExpressionVisitor() {
-      this.expectedType = null;
+      this(null);
     }
 
     ExpressionVisitor(TweedleType expectedType) {
+      this(expectedType, false);
+    }
+
+    ExpressionVisitor(TweedleType expectedType, boolean allowPrimitiveNull) {
       this.expectedType = expectedType;
+      this.allowPrimitiveNull = allowPrimitiveNull;
     }
 
     @Override
@@ -290,7 +296,9 @@ public class TweedleUnlinkedParser {
         return true;
       }
       if (expression instanceof TweedleNull) {
-        return expectedType == TweedleTypes.TEXT_STRING || !(expectedType instanceof TweedlePrimitiveType<?>);
+        return expectedType == TweedleTypes.TEXT_STRING
+            || !(expectedType instanceof TweedlePrimitiveType<?>)
+            || allowPrimitiveNull;
       }
       return expectedType.willAcceptValueOfType(expression.getType()) || expression.getType().willAcceptValueOfType(expectedType);
     }

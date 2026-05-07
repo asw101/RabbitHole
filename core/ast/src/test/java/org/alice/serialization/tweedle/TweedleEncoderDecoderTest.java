@@ -190,13 +190,21 @@ public class TweedleEncoderDecoderTest {
   }
 
   @Test
-  public void decodeClassWithWholeNumberNullInitializedFieldReportsUnsupportedInitializer() {
-    RuntimeException thrown = assertThrows(
-        RuntimeException.class,
-        () -> coder.decode("class SyntheticType { WholeNumber count <- null; }"));
+  public void decodeClassWithNumericAndBooleanNullInitializedFieldsCreatesNullLiteralInitializers() throws Exception {
+    NamedUserType type = decodeUserType("""
+        class SyntheticType {
+          WholeNumber count <- null;
+          DecimalNumber distance <- null;
+          Number amount <- null;
+          Boolean enabled <- null;
+        }
+        """);
 
-    assertTrue(throwableMessageContains(thrown, "WholeNumber"));
-    assertTrue(throwableMessageContains(thrown, "Null initializer") || throwableMessageContains(thrown, "void"));
+    assertEquals(4, type.getDeclaredFields().size());
+    assertNullInitializer(type.getDeclaredFields().get(0), "count");
+    assertNullInitializer(type.getDeclaredFields().get(1), "distance");
+    assertNullInitializer(type.getDeclaredFields().get(2), "amount");
+    assertNullInitializer(type.getDeclaredFields().get(3), "enabled");
   }
 
   @Test
@@ -287,14 +295,9 @@ public class TweedleEncoderDecoderTest {
     assertEquals(expectedValue, ((BooleanLiteral) initializer).value.getValue());
   }
 
-  private static boolean throwableMessageContains(Throwable throwable, String expected) {
-    while (throwable != null) {
-      if (throwable.getMessage() != null && throwable.getMessage().contains(expected)) {
-        return true;
-      }
-      throwable = throwable.getCause();
-    }
-    return false;
+  private static void assertNullInitializer(UserField field, String expectedName) {
+    assertEquals(expectedName, field.getName());
+    assertTrue(field.initializer.getValue() instanceof NullLiteral);
   }
 
 }
