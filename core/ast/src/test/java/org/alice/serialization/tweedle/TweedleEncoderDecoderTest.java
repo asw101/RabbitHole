@@ -20,6 +20,7 @@ import org.lgna.project.ast.NamedUserType;
 import org.lgna.project.ast.NullLiteral;
 import org.lgna.project.ast.ParameterAccess;
 import org.lgna.project.ast.ReturnStatement;
+import org.lgna.project.ast.StringConcatenation;
 import org.lgna.project.ast.StringLiteral;
 import org.lgna.project.ast.UserArrayType;
 import org.lgna.project.ast.UserField;
@@ -1017,18 +1018,110 @@ public class TweedleEncoderDecoderTest {
   }
 
   @Test
-  public void decodeClassWithStringConcatRhsInMethodAssignmentReportsUnsupportedExpression() {
-    UnsupportedTweedleDecodeException thrown = assertThrows(
-        UnsupportedTweedleDecodeException.class,
-        () -> coder.decode("""
-            class SyntheticType {
-              TextString label <- "";
-              void tag() { label <- "hello" .. " world"; }
-            }
-            """));
+  public void decodeClassWithStringConcatRhsInMethodAssignmentCreatesStringConcatenation() throws Exception {
+    NamedUserType type = decodeUserType("""
+        class SyntheticType {
+          TextString label <- "";
+          void tag() { label <- "hello" .. " world"; }
+        }
+        """);
 
-    assertTrue(thrown.getMessage().contains("Unsupported Tweedle value expression"));
-    assertTrue(thrown.getMessage().contains("tag"));
+    UserField field = type.getDeclaredFields().get(0);
+    UserMethod method = type.getDeclaredMethods().get(0);
+    assertEquals(1, method.body.getValue().statements.size());
+    ExpressionStatement stmt = (ExpressionStatement) method.body.getValue().statements.get(0);
+    AssignmentExpression assign = (AssignmentExpression) stmt.expression.getValue();
+    assertSame(field, ((FieldAccess) assign.leftHandSide.getValue()).field.getValue());
+    assertTrue(assign.rightHandSide.getValue() instanceof StringConcatenation);
+    StringConcatenation concat = (StringConcatenation) assign.rightHandSide.getValue();
+    assertSame(JavaType.STRING_TYPE, concat.getType());
+    assertTrue(concat.leftOperand.getValue() instanceof StringLiteral);
+    assertEquals("hello", ((StringLiteral) concat.leftOperand.getValue()).value.getValue());
+    assertTrue(concat.rightOperand.getValue() instanceof StringLiteral);
+    assertEquals(" world", ((StringLiteral) concat.rightOperand.getValue()).value.getValue());
+  }
+
+  @Test
+  public void decodeClassWithStringConcatLocalInitializerInMethodBodyCreatesStringConcatenation() throws Exception {
+    NamedUserType type = decodeUserType("""
+        class SyntheticType {
+          void greet() { TextString msg <- "hi" .. " there"; }
+        }
+        """);
+
+    UserMethod method = type.getDeclaredMethods().get(0);
+    assertEquals(1, method.body.getValue().statements.size());
+    LocalDeclarationStatement decl = (LocalDeclarationStatement) method.body.getValue().statements.get(0);
+    assertEquals("msg", decl.local.getValue().getName());
+    assertSame(JavaType.STRING_TYPE, decl.local.getValue().getValueType());
+    assertTrue(decl.initializer.getValue() instanceof StringConcatenation);
+    StringConcatenation concat = (StringConcatenation) decl.initializer.getValue();
+    assertTrue(concat.leftOperand.getValue() instanceof StringLiteral);
+    assertEquals("hi", ((StringLiteral) concat.leftOperand.getValue()).value.getValue());
+    assertTrue(concat.rightOperand.getValue() instanceof StringLiteral);
+    assertEquals(" there", ((StringLiteral) concat.rightOperand.getValue()).value.getValue());
+  }
+
+  @Test
+  public void decodeClassWithStringConcatRhsInConstructorAssignmentCreatesStringConcatenation() throws Exception {
+    NamedUserType type = decodeUserType("""
+        class SyntheticType {
+          TextString label <- "";
+          SyntheticType() { label <- "foo" .. "bar"; }
+        }
+        """);
+
+    UserField field = type.getDeclaredFields().get(0);
+    NamedUserConstructor constructor = (NamedUserConstructor) type.getDeclaredConstructors().get(0);
+    assertEquals(1, constructor.body.getValue().statements.size());
+    ExpressionStatement stmt = (ExpressionStatement) constructor.body.getValue().statements.get(0);
+    AssignmentExpression assign = (AssignmentExpression) stmt.expression.getValue();
+    assertSame(field, ((FieldAccess) assign.leftHandSide.getValue()).field.getValue());
+    assertTrue(assign.rightHandSide.getValue() instanceof StringConcatenation);
+    StringConcatenation concat = (StringConcatenation) assign.rightHandSide.getValue();
+    assertSame(JavaType.STRING_TYPE, concat.getType());
+    assertTrue(concat.leftOperand.getValue() instanceof StringLiteral);
+    assertEquals("foo", ((StringLiteral) concat.leftOperand.getValue()).value.getValue());
+    assertTrue(concat.rightOperand.getValue() instanceof StringLiteral);
+    assertEquals("bar", ((StringLiteral) concat.rightOperand.getValue()).value.getValue());
+  }
+
+  @Test
+  public void decodeClassWithStringConcatReturnInMethodBodyCreatesStringConcatenation() throws Exception {
+    NamedUserType type = decodeUserType("""
+        class SyntheticType {
+          TextString greet() { return "hello" .. " world"; }
+        }
+        """);
+
+    UserMethod method = type.getDeclaredMethods().get(0);
+    assertEquals(1, method.body.getValue().statements.size());
+    assertTrue(method.body.getValue().statements.get(0) instanceof ReturnStatement);
+    ReturnStatement ret = (ReturnStatement) method.body.getValue().statements.get(0);
+    assertSame(JavaType.STRING_TYPE, ret.expressionType.getValue());
+    assertTrue(ret.expression.getValue() instanceof StringConcatenation);
+    StringConcatenation concat = (StringConcatenation) ret.expression.getValue();
+    assertTrue(concat.leftOperand.getValue() instanceof StringLiteral);
+    assertEquals("hello", ((StringLiteral) concat.leftOperand.getValue()).value.getValue());
+    assertTrue(concat.rightOperand.getValue() instanceof StringLiteral);
+    assertEquals(" world", ((StringLiteral) concat.rightOperand.getValue()).value.getValue());
+  }
+
+  @Test
+  public void decodeClassWithNestedStringConcatRhsInMethodAssignmentCreatesNestedStringConcatenation() throws Exception {
+    NamedUserType type = decodeUserType("""
+        class SyntheticType {
+          TextString label <- "";
+          void tag() { label <- "a" .. "b" .. "c"; }
+        }
+        """);
+
+    UserMethod method = type.getDeclaredMethods().get(0);
+    ExpressionStatement stmt = (ExpressionStatement) method.body.getValue().statements.get(0);
+    AssignmentExpression assign = (AssignmentExpression) stmt.expression.getValue();
+    assertTrue(assign.rightHandSide.getValue() instanceof StringConcatenation);
+    StringConcatenation outer = (StringConcatenation) assign.rightHandSide.getValue();
+    assertSame(JavaType.STRING_TYPE, outer.getType());
   }
 
   @Test

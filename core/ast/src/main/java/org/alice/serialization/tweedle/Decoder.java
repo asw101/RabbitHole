@@ -19,6 +19,7 @@ import org.alice.tweedle.ast.DivisionExpression;
 import org.alice.tweedle.ast.IdentifierReference;
 import org.alice.tweedle.ast.LocalVariableDeclaration;
 import org.alice.tweedle.ast.MultiplicationExpression;
+import org.alice.tweedle.ast.StringConcatenationExpression;
 import org.alice.tweedle.ast.SubtractionExpression;
 import org.alice.tweedle.ast.TweedleArrayInitializer;
 import org.alice.tweedle.ast.TweedleExpression;
@@ -31,6 +32,7 @@ import org.lgna.project.ast.AbstractNode;
 import org.lgna.project.ast.AbstractType;
 import org.lgna.project.ast.ArithmeticInfixExpression;
 import org.lgna.project.ast.ArrayInstanceCreation;
+import org.lgna.project.ast.StringConcatenation;
 import org.lgna.project.ast.AstUtilities;
 import org.lgna.project.ast.BlockStatement;
 import org.lgna.project.ast.BooleanLiteral;
@@ -406,9 +408,23 @@ public class Decoder {
     if (expr instanceof BinaryNumericExpression<?> binaryNumeric) {
       return decodeBinaryNumericExpression(ownerName, binaryNumeric, parameters, priorLocals, fields);
     }
+    if (expr instanceof StringConcatenationExpression stringConcat) {
+      return decodeStringConcatenationExpression(ownerName, stringConcat, parameters, priorLocals, fields);
+    }
     throw new UnsupportedTweedleDecodeException(
         "Unsupported Tweedle value expression (only primitive literals, identifier references, "
-            + "and arithmetic binary expressions are supported): " + ownerName);
+            + "arithmetic binary expressions, and string concatenation are supported): " + ownerName);
+  }
+
+  private StringConcatenation decodeStringConcatenationExpression(
+      String ownerName,
+      StringConcatenationExpression stringConcat,
+      UserParameter[] parameters,
+      List<UserLocal> locals,
+      List<UserField> fields) {
+    Expression lhs = decodeValueExpression(ownerName, stringConcat.getLhs(), parameters, locals, fields);
+    Expression rhs = decodeValueExpression(ownerName, stringConcat.getRhs(), parameters, locals, fields);
+    return new StringConcatenation(lhs, rhs);
   }
 
   private ArithmeticInfixExpression decodeBinaryNumericExpression(
@@ -507,6 +523,16 @@ public class Decoder {
     }
     if (returnExpression instanceof org.alice.tweedle.ast.FieldAccess fieldAccess) {
       return decodeMethodReturnFieldAccess(method, returnType, fields, fieldAccess);
+    }
+    if (returnExpression instanceof StringConcatenationExpression stringConcat) {
+      StringConcatenation concat = decodeStringConcatenationExpression(
+          method.getName(), stringConcat, allParameters, locals, fields);
+      if (returnType.isAssignableFrom(concat.getType())) {
+        return concat;
+      }
+      throw new UnsupportedTweedleDecodeException(
+          "Tweedle method return string concatenation type is not assignable to "
+              + returnType.getName() + ": " + method.getName());
     }
     throw unsupportedMethodReturnExpression(method);
   }
