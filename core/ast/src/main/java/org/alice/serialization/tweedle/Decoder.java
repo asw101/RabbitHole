@@ -100,7 +100,7 @@ public class Decoder {
     if (initializer instanceof TweedleNull) {
       return decodeNullFieldInitializer(property, valueType);
     }
-    if (valueType != null && valueType.isAssignableTo(Resource.class)) {
+    if (isResourceType(valueType)) {
       throw unsupportedResourceFieldInitializer(property);
     }
     if (initializer instanceof TweedlePrimitiveValue<?> primitiveValue) {
@@ -120,7 +120,21 @@ public class Decoder {
 
   private boolean isSupportedNullableField(TweedleField property, AbstractType<?, ?, ?> valueType) {
     return "TextString".equals(property.getType().getName())
-        || valueType != null && valueType.isAssignableTo(Resource.class);
+        || valueType instanceof NamedUserType
+        || isResourceType(valueType);
+  }
+
+  private boolean isResourceType(AbstractType<?, ?, ?> valueType) {
+    JavaType javaType = firstJavaTypeInHierarchy(valueType);
+    return javaType != null && javaType.isAssignableTo(Resource.class);
+  }
+
+  private JavaType firstJavaTypeInHierarchy(AbstractType<?, ?, ?> valueType) {
+    AbstractType<?, ?, ?> type = valueType;
+    while (type != null && !(type instanceof JavaType)) {
+      type = type.getSuperType();
+    }
+    return (JavaType) type;
   }
 
   private Expression primitiveLiteral(Object value) {

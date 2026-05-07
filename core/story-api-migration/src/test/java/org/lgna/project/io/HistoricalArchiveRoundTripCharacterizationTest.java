@@ -169,6 +169,36 @@ public class HistoricalArchiveRoundTripCharacterizationTest {
   }
 
   @Test
+  public void generatedJsonProjectArchiveDecodesNullInitializedSiblingTypeFieldWithoutExternalFixture() throws Exception {
+    File projectArchive = temporaryFolder.newFile("generated-json-project-null-sibling-field.a3w");
+
+    writeJsonProjectArchive(
+        projectArchive,
+        "GeneratedProgramWithNullSiblingField",
+        "class GeneratedProgramWithNullSiblingField extends SProgram { GeneratedNullableScene scene <- null; }",
+        "GeneratedNullableScene",
+        "class GeneratedNullableScene extends SScene {}");
+
+    try (ZipFile zipFile = new ZipFile(projectArchive)) {
+      ProjectManifest manifest = readProjectManifest(zipFile);
+      assertTypeReference(manifest, "GeneratedProgramWithNullSiblingField", "src/GeneratedProgramWithNullSiblingField.twe");
+      assertTypeReference(manifest, "GeneratedNullableScene", "src/GeneratedNullableScene.twe");
+    }
+    Project readProject = IoUtilities.readProject(projectArchive);
+
+    NamedUserType readProgramType = readProject.getProgramType();
+    assertNotNull("Generated JSON .a3w program with a null sibling type field should decode", readProgramType);
+    assertEquals("GeneratedProgramWithNullSiblingField", readProgramType.getName());
+    assertEquals(1, readProgramType.getDeclaredFields().size());
+    UserField readSceneField = readProgramType.getDeclaredFields().get(0);
+    assertEquals("scene", readSceneField.getName());
+    NamedUserType readSceneType = namedUserTypeNamed(readProject, "GeneratedNullableScene");
+    assertSame(readSceneType, readSceneField.getValueType());
+    assertTrue(readSceneField.initializer.getValue() instanceof NullLiteral);
+    assertEquals("SScene", readSceneType.getSuperType().getName());
+  }
+
+  @Test
   public void generatedJsonPlayerArchiveWithMethodBearingProgramTypeIsRejectedWithoutPartialProgramDecode() throws Exception {
     File projectArchive = temporaryFolder.newFile("generated-json-player-method-boundary.a3w");
 
