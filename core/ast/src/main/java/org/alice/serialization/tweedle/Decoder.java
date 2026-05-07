@@ -123,12 +123,15 @@ public class Decoder {
       throw new UnsupportedTweedleDecodeException(
           "Tweedle constructor name does not match declaring class: " + constructor.getName());
     }
+    UserParameter[] allParameters = decodeAllParameters(
+        constructor.getRequiredParameters(), constructor.getOptionalParameters(), "constructor parameter");
     return new NamedUserConstructor(
-        decodeAllParameters(constructor.getRequiredParameters(), constructor.getOptionalParameters(), "constructor parameter"),
-        decodeConstructorBody(constructor, fields));
+        allParameters,
+        decodeConstructorBody(constructor, allParameters, fields));
   }
 
-  private ConstructorBlockStatement decodeConstructorBody(TweedleConstructor constructor, List<UserField> fields) {
+  private ConstructorBlockStatement decodeConstructorBody(
+      TweedleConstructor constructor, UserParameter[] parameters, List<UserField> fields) {
     List<Statement> statements = new ArrayList<>();
     List<UserLocal> locals = new ArrayList<>();
     for (TweedleStatement statement : constructor.getBody()) {
@@ -139,7 +142,7 @@ public class Decoder {
         locals.add(localStatement.local.getValue());
       } else if (statement instanceof org.alice.tweedle.ast.ExpressionStatement expressionStatement
           && expressionStatement.getExpression() instanceof org.alice.tweedle.ast.AssignmentExpression assignment) {
-        statements.add(decodeConstructorAssignmentStatement(constructor, assignment, locals, fields));
+        statements.add(decodeConstructorAssignmentStatement(constructor, assignment, parameters, locals, fields));
       } else {
         throw unsupportedConstructorBody(constructor);
       }
@@ -205,7 +208,7 @@ public class Decoder {
         locals.add(localStatement.local.getValue());
       } else if (statement instanceof org.alice.tweedle.ast.ExpressionStatement expressionStatement
           && expressionStatement.getExpression() instanceof org.alice.tweedle.ast.AssignmentExpression assignment) {
-        statements.add(decodeMethodAssignmentStatement(method, assignment, locals, fields));
+        statements.add(decodeMethodAssignmentStatement(method, assignment, allParameters, locals, fields));
       } else if (statement instanceof org.alice.tweedle.ast.ReturnStatement returnStatement
           && i == method.getBody().size() - 1) {
         statements.add(decodeReturnStatement(method, returnType, allParameters, locals, fields, returnStatement));
@@ -243,14 +246,10 @@ public class Decoder {
   private Statement decodeMethodAssignmentStatement(
       TweedleMethod method,
       org.alice.tweedle.ast.AssignmentExpression assignment,
+      UserParameter[] parameters,
       List<UserLocal> locals,
       List<UserField> fields) {
-    TweedleExpression value = assignment.getValueExp();
-    if (!(value instanceof TweedlePrimitiveValue<?> primitiveValue)) {
-      throw new UnsupportedTweedleDecodeException(
-          "Non-literal Tweedle field assignment values are not yet supported by the AST decoder: " + method.getName());
-    }
-    Expression rhs = primitiveLiteral(primitiveValue.getPrimitiveValue());
+    Expression rhs = decodeAssignmentRhs(method.getName(), assignment.getValueExp(), parameters, locals, fields);
     TweedleExpression assignee = assignment.getAssigneeExp();
     if (assignee instanceof IdentifierReference identifierReference) {
       String name = identifierReference.getName();
@@ -300,14 +299,10 @@ public class Decoder {
   private Statement decodeConstructorAssignmentStatement(
       TweedleConstructor constructor,
       org.alice.tweedle.ast.AssignmentExpression assignment,
+      UserParameter[] parameters,
       List<UserLocal> locals,
       List<UserField> fields) {
-    TweedleExpression value = assignment.getValueExp();
-    if (!(value instanceof TweedlePrimitiveValue<?> primitiveValue)) {
-      throw new UnsupportedTweedleDecodeException(
-          "Non-literal Tweedle constructor field assignment values are not yet supported by the AST decoder: " + constructor.getName());
-    }
-    Expression rhs = primitiveLiteral(primitiveValue.getPrimitiveValue());
+    Expression rhs = decodeAssignmentRhs(constructor.getName(), assignment.getValueExp(), parameters, locals, fields);
     TweedleExpression assignee = assignment.getAssigneeExp();
     if (assignee instanceof IdentifierReference identifierReference) {
       String name = identifierReference.getName();
@@ -352,6 +347,38 @@ public class Decoder {
     }
     throw new UnsupportedTweedleDecodeException(
         "Unsupported Tweedle assignment target in constructor: " + constructor.getName());
+  }
+
+  private Expression decodeAssignmentRhs(
+      String ownerName,
+      TweedleExpression value,
+      UserParameter[] parameters,
+      List<UserLocal> locals,
+      List<UserField> fields) {
+    if (value instanceof TweedlePrimitiveValue<?> primitiveValue) {
+      return primitiveLiteral(primitiveValue.getPrimitiveValue());
+    }
+    if (value instanceof IdentifierReference identifierReference) {
+      String name = identifierReference.getName();
+      UserLocal local = findLocal(locals, name);
+      if (local != null) {
+        return new LocalAccess(local);
+      }
+      UserParameter parameter = findParameter(parameters, name);
+      if (parameter != null) {
+        return new ParameterAccess(parameter);
+      }
+      UserField field = findField(fields, name);
+      if (field != null) {
+        return new FieldAccess(field);
+      }
+      throw new UnsupportedTweedleDecodeException(
+          "Tweedle assignment value identifier is not a known local, parameter, or field: "
+              + ownerName + "." + name);
+    }
+    throw new UnsupportedTweedleDecodeException(
+        "Unsupported Tweedle assignment value expression (only primitive literals and identifier references are supported): "
+            + ownerName);
   }
 
   private org.lgna.project.ast.ReturnStatement decodeReturnStatement(
