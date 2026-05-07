@@ -203,9 +203,22 @@ public class TweedleParseTest {
     assertSame("The initializer should be Tweedle null.", TweedleNull.NULL, field.getInitializer());
   }
 
-  @Test(expected = RuntimeException.class)
-  public void classWithNullInitializedWholeNumberFieldShouldFailTypeCheck() {
-    parseType("class Scene extends SScene { WholeNumber count <- null; }");
+  @Test
+  public void classWithNullInitializedNumericAndBooleanFieldsShouldHaveNullInitializers() {
+    TweedleClass tested = (TweedleClass) parseType("""
+        class Scene extends SScene {
+          WholeNumber count <- null;
+          DecimalNumber distance <- null;
+          Number amount <- null;
+          Boolean enabled <- null;
+        }
+        """);
+
+    assertEquals("Four fields should be parsed.", 4, tested.getProperties().size());
+    assertSame("The WholeNumber initializer should be Tweedle null.", TweedleNull.NULL, tested.getProperties().get(0).getInitializer());
+    assertSame("The DecimalNumber initializer should be Tweedle null.", TweedleNull.NULL, tested.getProperties().get(1).getInitializer());
+    assertSame("The Number initializer should be Tweedle null.", TweedleNull.NULL, tested.getProperties().get(2).getInitializer());
+    assertSame("The Boolean initializer should be Tweedle null.", TweedleNull.NULL, tested.getProperties().get(3).getInitializer());
   }
 
   @Test

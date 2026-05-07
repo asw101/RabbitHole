@@ -163,7 +163,7 @@ public class Decoder {
   }
 
   private boolean isSupportedNullableField(TweedleField property, AbstractType<?, ?, ?> valueType) {
-    return "TextString".equals(property.getType().getName())
+    return TWEEDLE_TYPE_ALIASES.containsKey(property.getType().getName())
         || valueType instanceof NamedUserType
         || valueType.isArray()
         || isResourceType(valueType);
