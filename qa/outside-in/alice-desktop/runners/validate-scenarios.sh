@@ -46,6 +46,7 @@ workflow_values = {
     "run-debug",
     "save-load",
     "select-project-interaction-smoke",
+    "select-project-widget-introspection-smoke",
     "export",
     "wizard-palette-completion-smoke",
 }

@@ -172,6 +172,18 @@ qa/outside-in/alice-desktop/runners/run-scenario.sh run alice-desktop-select-pro
 
 Review `select-project-window.json` with `status=observed`, `interactionProof=select-project-window-visible`, and `projectWorldInteraction=not-observed`. The widget labels are resource-contract evidence only until live Swing widget introspection exists; the artifact names `swing-widget-inventory-not-collected` rather than claiming widget observation.
 
+### Run the Select Project live Swing widget introspection proof
+
+After the inventory proof, the widget introspection proof attempts live AT-SPI enumeration of the Select Project frame's accessible children. It requires `python3-pyatspi` and `libatk-wrapper-java`. The runner sets `JAVA_TOOL_OPTIONS` and `CLASSPATH` automatically when it detects this scenario:
+
+```bash
+ALICE_QA_ACCEPT_LICENSES_FOR_TESTS=1 \
+qa/outside-in/alice-desktop/runners/run-scenario.sh run alice-desktop-select-project-widget-introspection \
+  --evidence-dir qa/outside-in/alice-desktop/evidence/select-project-widget-introspection
+```
+
+Review `swing-widget-observation.json`. If `status=observed`, `tabLabels` lists the live tab names observed in the Select Project frame. If `status=blocked`, `blocker` and `blockerDetail` name the exact missing condition (e.g., `atk-wrapper-not-loaded` with the exact `JAVA_TOOL_OPTIONS` and `CLASSPATH` required).
+
 ## Prepare evidence for manual workflows
 
 Manual workflows are still executable: the runner creates a checklist with preconditions, user actions, expected outcomes, evidence requirements, and fallback notes.
