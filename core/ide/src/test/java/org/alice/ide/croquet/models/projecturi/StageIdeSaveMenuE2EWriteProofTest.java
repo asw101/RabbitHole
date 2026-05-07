@@ -330,8 +330,8 @@ public class StageIdeSaveMenuE2EWriteProofTest {
             final JFileChooser fc = chooser;
             SwingUtilities.invokeLater(() -> {
               fc.setSelectedFile(this.targetFile);
-              fc.approveSelection();
               this.approvedSelection = true;
+              fc.approveSelection();
             });
             return;
           }
