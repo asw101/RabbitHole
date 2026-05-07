@@ -3,6 +3,7 @@ package org.alice.serialization.tweedle;
 import org.junit.Test;
 import org.lgna.common.resources.ImageResource;
 import org.lgna.project.ast.AbstractNode;
+import org.lgna.project.ast.ArrayInstanceCreation;
 import org.lgna.project.ast.BooleanLiteral;
 import org.lgna.project.ast.DoubleLiteral;
 import org.lgna.project.ast.Expression;
@@ -160,12 +161,31 @@ public class TweedleEncoderDecoderTest {
   }
 
   @Test
-  public void decodeClassWithArrayInitializerReportsUnsupportedInitializer() {
+  public void decodeClassWithWholeNumberArrayInitializerCreatesArrayInstanceCreation() throws Exception {
+    NamedUserType type = decodeUserType("class SyntheticType { WholeNumber[] counts <- new WholeNumber[] {1, 2}; }");
+
+    assertEquals(1, type.getDeclaredFields().size());
+    UserField field = type.getDeclaredFields().get(0);
+    assertEquals("counts", field.getName());
+    assertSame(JavaType.getInstance(Integer[].class), field.getValueType());
+    Expression initializer = field.initializer.getValue();
+    assertTrue(initializer instanceof ArrayInstanceCreation);
+    ArrayInstanceCreation array = (ArrayInstanceCreation) initializer;
+    assertSame(JavaType.getInstance(Integer[].class), array.arrayType.getValue());
+    assertEquals(1, array.lengths.size());
+    assertEquals(Integer.valueOf(2), array.lengths.get(0));
+    assertEquals(2, array.expressions.size());
+    assertIntegerLiteral(array.expressions.get(0), 1);
+    assertIntegerLiteral(array.expressions.get(1), 2);
+  }
+
+  @Test
+  public void decodeClassWithNonLiteralArrayInitializerElementReportsUnsupportedInitializer() {
     UnsupportedTweedleDecodeException thrown = assertThrows(
         UnsupportedTweedleDecodeException.class,
-        () -> coder.decode("class SyntheticType { WholeNumber[] counts <- new WholeNumber[] {1, 2}; }"));
+        () -> coder.decode("class SyntheticType { WholeNumber[] counts <- new WholeNumber[] {1, 1 + 2}; }"));
 
-    assertTrue(thrown.getMessage().contains("initializers"));
+    assertTrue(thrown.getMessage().contains("array initializer elements"));
     assertTrue(thrown.getMessage().contains("counts"));
   }
 
@@ -238,6 +258,10 @@ public class TweedleEncoderDecoderTest {
   private static void assertIntegerInitializer(UserField field, String expectedName, int expectedValue) {
     assertEquals(expectedName, field.getName());
     Expression initializer = field.initializer.getValue();
+    assertIntegerLiteral(initializer, expectedValue);
+  }
+
+  private static void assertIntegerLiteral(Expression initializer, int expectedValue) {
     assertTrue(initializer instanceof IntegerLiteral);
     assertEquals(expectedValue, ((IntegerLiteral) initializer).value.getValue().intValue());
   }

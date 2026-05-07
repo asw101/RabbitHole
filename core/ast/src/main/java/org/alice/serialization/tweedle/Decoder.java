@@ -7,12 +7,14 @@ import org.alice.tweedle.TweedleField;
 import org.alice.tweedle.TweedleNull;
 import org.alice.tweedle.TweedlePrimitiveValue;
 import org.alice.tweedle.TweedleType;
+import org.alice.tweedle.ast.TweedleArrayInitializer;
 import org.alice.tweedle.ast.TweedleExpression;
 import org.alice.tweedle.unlinked.TweedleUnlinkedParser;
 import org.lgna.common.Resource;
 import org.lgna.project.ast.AbstractDeclaration;
 import org.lgna.project.ast.AbstractNode;
 import org.lgna.project.ast.AbstractType;
+import org.lgna.project.ast.AstUtilities;
 import org.lgna.project.ast.BooleanLiteral;
 import org.lgna.project.ast.DoubleLiteral;
 import org.lgna.project.ast.Expression;
@@ -23,6 +25,7 @@ import org.lgna.project.ast.NullLiteral;
 import org.lgna.project.ast.StringLiteral;
 import org.lgna.project.ast.UserField;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -101,6 +104,9 @@ public class Decoder {
     if (initializer instanceof TweedleNull) {
       return decodeNullFieldInitializer(property, valueType);
     }
+    if (initializer instanceof TweedleArrayInitializer arrayInitializer) {
+      return decodeArrayFieldInitializer(property, valueType, arrayInitializer);
+    }
     if (isResourceType(valueType)) {
       throw unsupportedResourceFieldInitializer(property);
     }
@@ -108,6 +114,43 @@ public class Decoder {
       return primitiveLiteral(primitiveValue.getPrimitiveValue());
     }
     throw unsupportedFieldInitializer(property);
+  }
+
+  private Expression decodeArrayFieldInitializer(
+      TweedleField property,
+      AbstractType<?, ?, ?> valueType,
+      TweedleArrayInitializer arrayInitializer) {
+    if (!valueType.isArray()) {
+      throw unsupportedFieldInitializer(property);
+    }
+    if (!arrayInitializer.hasElementInitializers()) {
+      throw new UnsupportedTweedleDecodeException(
+          "Sized Tweedle array initializers are not yet supported by the AST decoder: " + property.getName());
+    }
+
+    AbstractType<?, ?, ?> componentType = valueType.getComponentType();
+    List<Expression> elements = new ArrayList<>();
+    for (TweedleExpression element : arrayInitializer.getElements()) {
+      Expression elementExpression = decodeArrayInitializerElement(property, componentType, element);
+      elements.add(elementExpression);
+    }
+    return AstUtilities.createArrayInstanceCreation(valueType, elements);
+  }
+
+  private Expression decodeArrayInitializerElement(
+      TweedleField property,
+      AbstractType<?, ?, ?> componentType,
+      TweedleExpression element) {
+    if (!(element instanceof TweedlePrimitiveValue<?> primitiveValue)) {
+      throw unsupportedArrayInitializerElement(property);
+    }
+    Expression expression = primitiveLiteral(primitiveValue.getPrimitiveValue());
+    if (!componentType.isAssignableFrom(expression.getType())) {
+      throw new UnsupportedTweedleDecodeException(
+          "Tweedle array initializer element type is not assignable to "
+              + componentType.getName() + ": " + property.getName());
+    }
+    return expression;
   }
 
   private Expression decodeNullFieldInitializer(TweedleField property, AbstractType<?, ?, ?> valueType) {
@@ -167,6 +210,11 @@ public class Decoder {
   private UnsupportedTweedleDecodeException unsupportedResourceFieldInitializer(TweedleField property) {
     return new UnsupportedTweedleDecodeException(
         "Tweedle resource field initializers are not yet supported by the AST decoder: " + property.getName());
+  }
+
+  private UnsupportedTweedleDecodeException unsupportedArrayInitializerElement(TweedleField property) {
+    return new UnsupportedTweedleDecodeException(
+        "Non-literal Tweedle array initializer elements are not yet supported by the AST decoder: " + property.getName());
   }
 
   private AbstractType<?, ?, ?> resolveType(TweedleType tweedleType, String usage) {

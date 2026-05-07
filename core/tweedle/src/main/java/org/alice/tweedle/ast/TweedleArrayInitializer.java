@@ -35,6 +35,14 @@ public class TweedleArrayInitializer extends TweedleExpression {
     this.initializeSize = initializeSize;
   }
 
+  public boolean hasElementInitializers() {
+    return elements != null;
+  }
+
+  public List<TweedleExpression> getElements() {
+    return elements == null ? List.of() : elements;
+  }
+
   private static TweedleType findCommonType(List<TweedleExpression> elements) {
     // TODO
     return null;
