@@ -534,13 +534,85 @@ public class TweedleEncoderDecoderTest {
   }
 
   @Test
-  public void decodeClassWithNonEmptyConstructorReportsUnsupportedConstructorBody() {
+  public void decodeClassWithUnknownFieldAssignmentInConstructorBodyReportsUnknownTarget() {
     UnsupportedTweedleDecodeException thrown = assertThrows(
         UnsupportedTweedleDecodeException.class,
-        () -> coder.decode("class SyntheticType { SyntheticType() { count <- 1; } }"));
+        () -> coder.decode("class SyntheticType { SyntheticType() { unknown <- 1; } }"));
 
-    assertTrue(thrown.getMessage().contains("constructor bodies"));
+    assertTrue(thrown.getMessage().contains("field assignment target is not a known field"));
+    assertTrue(thrown.getMessage().contains("unknown"));
     assertTrue(thrown.getMessage().contains("SyntheticType"));
+  }
+
+  @Test
+  public void decodeClassWithPrimitiveLiteralFieldAssignmentInConstructorBodyCreatesAssignmentStatement() throws Exception {
+    NamedUserType type = decodeUserType("""
+        class SyntheticType {
+          WholeNumber count <- 0;
+          SyntheticType() { count <- 7; }
+        }
+        """);
+
+    UserField field = type.getDeclaredFields().get(0);
+    NamedUserConstructor constructor = (NamedUserConstructor) type.getDeclaredConstructors().get(0);
+    assertEquals(1, constructor.body.getValue().statements.size());
+    assertTrue(constructor.body.getValue().statements.get(0) instanceof ExpressionStatement);
+    ExpressionStatement stmt = (ExpressionStatement) constructor.body.getValue().statements.get(0);
+    assertTrue(stmt.expression.getValue() instanceof AssignmentExpression);
+    AssignmentExpression assign = (AssignmentExpression) stmt.expression.getValue();
+    assertSame(AssignmentExpression.Operator.ASSIGN, assign.operator.getValue());
+    assertTrue(assign.rightHandSide.getValue() instanceof IntegerLiteral);
+    assertEquals(7, ((IntegerLiteral) assign.rightHandSide.getValue()).value.getValue().intValue());
+  }
+
+  @Test
+  public void decodeClassWithThisFieldAssignmentInConstructorBodyCreatesAssignmentStatement() throws Exception {
+    NamedUserType type = decodeUserType("""
+        class SyntheticType {
+          WholeNumber count <- 0;
+          SyntheticType() { this.count <- 7; }
+        }
+        """);
+
+    NamedUserConstructor constructor = (NamedUserConstructor) type.getDeclaredConstructors().get(0);
+    assertEquals(1, constructor.body.getValue().statements.size());
+    assertTrue(constructor.body.getValue().statements.get(0) instanceof ExpressionStatement);
+    ExpressionStatement stmt = (ExpressionStatement) constructor.body.getValue().statements.get(0);
+    assertTrue(stmt.expression.getValue() instanceof AssignmentExpression);
+    AssignmentExpression assign = (AssignmentExpression) stmt.expression.getValue();
+    assertTrue(assign.rightHandSide.getValue() instanceof IntegerLiteral);
+    assertEquals(7, ((IntegerLiteral) assign.rightHandSide.getValue()).value.getValue().intValue());
+  }
+
+  @Test
+  public void decodeClassWithNonLiteralFieldAssignmentInConstructorBodyReportsNonLiteralValue() {
+    UnsupportedTweedleDecodeException thrown = assertThrows(
+        UnsupportedTweedleDecodeException.class,
+        () -> coder.decode("""
+            class SyntheticType {
+              WholeNumber count <- 0;
+              SyntheticType() { count <- 1 + 2; }
+            }
+            """));
+
+    assertTrue(thrown.getMessage().contains("Non-literal Tweedle constructor field assignment values"));
+    assertTrue(thrown.getMessage().contains("SyntheticType"));
+  }
+
+  @Test
+  public void decodeClassWithTypeMismatchFieldAssignmentInConstructorBodyReportsTypeError() {
+    UnsupportedTweedleDecodeException thrown = assertThrows(
+        UnsupportedTweedleDecodeException.class,
+        () -> coder.decode("""
+            class SyntheticType {
+              WholeNumber count <- 0;
+              SyntheticType() { count <- "hello"; }
+            }
+            """));
+
+    assertTrue(thrown.getMessage().contains("value type is not assignable to"));
+    assertTrue(thrown.getMessage().contains("SyntheticType"));
+    assertTrue(thrown.getMessage().contains("count"));
   }
 
   @Test
