@@ -133,12 +133,16 @@ public class Decoder {
 
   private ConstructorBlockStatement decodeConstructorBody(TweedleConstructor constructor, List<UserField> fields) {
     List<Statement> statements = new ArrayList<>();
+    List<UserLocal> locals = new ArrayList<>();
     for (TweedleStatement statement : constructor.getBody()) {
       if (statement instanceof LocalVariableDeclaration localVariableDeclaration) {
-        statements.add(decodeLocalDeclarationStatement(constructor.getName(), localVariableDeclaration));
+        LocalDeclarationStatement localStatement =
+            decodeLocalDeclarationStatement(constructor.getName(), localVariableDeclaration);
+        statements.add(localStatement);
+        locals.add(localStatement.local.getValue());
       } else if (statement instanceof org.alice.tweedle.ast.ExpressionStatement expressionStatement
           && expressionStatement.getExpression() instanceof org.alice.tweedle.ast.AssignmentExpression assignment) {
-        statements.add(decodeConstructorFieldAssignment(constructor, assignment, fields));
+        statements.add(decodeConstructorAssignmentStatement(constructor, assignment, locals, fields));
       } else {
         throw unsupportedConstructorBody(constructor);
       }
@@ -194,7 +198,7 @@ public class Decoder {
         locals.add(localStatement.local.getValue());
       } else if (statement instanceof org.alice.tweedle.ast.ExpressionStatement expressionStatement
           && expressionStatement.getExpression() instanceof org.alice.tweedle.ast.AssignmentExpression assignment) {
-        statements.add(decodeMethodFieldAssignment(method, assignment, fields));
+        statements.add(decodeMethodAssignmentStatement(method, assignment, locals, fields));
       } else if (statement instanceof org.alice.tweedle.ast.ReturnStatement returnStatement
           && i == method.getBody().size() - 1) {
         statements.add(decodeReturnStatement(method, returnType, requiredParameters, locals, fields, returnStatement));
@@ -229,9 +233,10 @@ public class Decoder {
         astInitializer);
   }
 
-  private Statement decodeMethodFieldAssignment(
+  private Statement decodeMethodAssignmentStatement(
       TweedleMethod method,
       org.alice.tweedle.ast.AssignmentExpression assignment,
+      List<UserLocal> locals,
       List<UserField> fields) {
     TweedleExpression value = assignment.getValueExp();
     if (!(value instanceof TweedlePrimitiveValue<?> primitiveValue)) {
@@ -241,17 +246,27 @@ public class Decoder {
     Expression rhs = primitiveLiteral(primitiveValue.getPrimitiveValue());
     TweedleExpression assignee = assignment.getAssigneeExp();
     if (assignee instanceof IdentifierReference identifierReference) {
-      UserField field = findField(fields, identifierReference.getName());
+      String name = identifierReference.getName();
+      UserLocal local = findLocal(locals, name);
+      if (local != null) {
+        if (!local.getValueType().isAssignableFrom(rhs.getType())) {
+          throw new UnsupportedTweedleDecodeException(
+              "Tweedle local variable assignment value type is not assignable to "
+                  + local.getValueType().getName() + ": " + method.getName() + "." + name);
+        }
+        return AstUtilities.createLocalAssignmentStatement(local, rhs);
+      }
+      UserField field = findField(fields, name);
       if (field != null) {
         if (!field.getValueType().isAssignableFrom(rhs.getType())) {
           throw new UnsupportedTweedleDecodeException(
               "Tweedle field assignment value type is not assignable to "
-                  + field.getValueType().getName() + ": " + method.getName() + "." + identifierReference.getName());
+                  + field.getValueType().getName() + ": " + method.getName() + "." + name);
         }
         return AstUtilities.createFieldAssignmentStatement(field, rhs);
       }
       throw new UnsupportedTweedleDecodeException(
-          "Tweedle field assignment target is not a known field: " + method.getName() + "." + identifierReference.getName());
+          "Tweedle assignment target is not a known local or field: " + method.getName() + "." + name);
     }
     if (assignee instanceof org.alice.tweedle.ast.FieldAccess fieldAccess) {
       if (!(fieldAccess.getTarget() instanceof ThisExpression)) {
@@ -275,9 +290,10 @@ public class Decoder {
         "Unsupported Tweedle assignment target in method: " + method.getName());
   }
 
-  private Statement decodeConstructorFieldAssignment(
+  private Statement decodeConstructorAssignmentStatement(
       TweedleConstructor constructor,
       org.alice.tweedle.ast.AssignmentExpression assignment,
+      List<UserLocal> locals,
       List<UserField> fields) {
     TweedleExpression value = assignment.getValueExp();
     if (!(value instanceof TweedlePrimitiveValue<?> primitiveValue)) {
@@ -287,17 +303,27 @@ public class Decoder {
     Expression rhs = primitiveLiteral(primitiveValue.getPrimitiveValue());
     TweedleExpression assignee = assignment.getAssigneeExp();
     if (assignee instanceof IdentifierReference identifierReference) {
-      UserField field = findField(fields, identifierReference.getName());
+      String name = identifierReference.getName();
+      UserLocal local = findLocal(locals, name);
+      if (local != null) {
+        if (!local.getValueType().isAssignableFrom(rhs.getType())) {
+          throw new UnsupportedTweedleDecodeException(
+              "Tweedle constructor local variable assignment value type is not assignable to "
+                  + local.getValueType().getName() + ": " + constructor.getName() + "." + name);
+        }
+        return AstUtilities.createLocalAssignmentStatement(local, rhs);
+      }
+      UserField field = findField(fields, name);
       if (field != null) {
         if (!field.getValueType().isAssignableFrom(rhs.getType())) {
           throw new UnsupportedTweedleDecodeException(
               "Tweedle constructor field assignment value type is not assignable to "
-                  + field.getValueType().getName() + ": " + constructor.getName() + "." + identifierReference.getName());
+                  + field.getValueType().getName() + ": " + constructor.getName() + "." + name);
         }
         return AstUtilities.createFieldAssignmentStatement(field, rhs);
       }
       throw new UnsupportedTweedleDecodeException(
-          "Tweedle constructor field assignment target is not a known field: " + constructor.getName() + "." + identifierReference.getName());
+          "Tweedle constructor assignment target is not a known local or field: " + constructor.getName() + "." + name);
     }
     if (assignee instanceof org.alice.tweedle.ast.FieldAccess fieldAccess) {
       if (!(fieldAccess.getTarget() instanceof ThisExpression)) {
