@@ -137,7 +137,7 @@ public class Decoder {
     for (TweedleStatement statement : constructor.getBody()) {
       if (statement instanceof LocalVariableDeclaration localVariableDeclaration) {
         LocalDeclarationStatement localStatement =
-            decodeLocalDeclarationStatement(constructor.getName(), localVariableDeclaration);
+            decodeLocalDeclarationStatement(constructor.getName(), localVariableDeclaration, parameters, locals, fields);
         statements.add(localStatement);
         locals.add(localStatement.local.getValue());
       } else if (statement instanceof org.alice.tweedle.ast.ExpressionStatement expressionStatement
@@ -203,7 +203,7 @@ public class Decoder {
       TweedleStatement statement = method.getBody().get(i);
       if (statement instanceof LocalVariableDeclaration localVariableDeclaration) {
         LocalDeclarationStatement localStatement =
-            decodeLocalDeclarationStatement(method.getName(), localVariableDeclaration);
+            decodeLocalDeclarationStatement(method.getName(), localVariableDeclaration, allParameters, locals, fields);
         statements.add(localStatement);
         locals.add(localStatement.local.getValue());
       } else if (statement instanceof org.alice.tweedle.ast.ExpressionStatement expressionStatement
@@ -225,14 +225,39 @@ public class Decoder {
 
   private LocalDeclarationStatement decodeLocalDeclarationStatement(
       String ownerName,
-      LocalVariableDeclaration localVariableDeclaration) {
+      LocalVariableDeclaration localVariableDeclaration,
+      UserParameter[] parameters,
+      List<UserLocal> priorLocals,
+      List<UserField> fields) {
     TweedleLocalVariable tweedleLocal = localVariableDeclaration.getDeclaration();
     AbstractType<?, ?, ?> localType = resolveType(tweedleLocal.getType(), "local variable");
     TweedleExpression initializer = tweedleLocal.getInitializer();
-    if (!(initializer instanceof TweedlePrimitiveValue<?> primitiveValue)) {
+    Expression astInitializer;
+    if (initializer instanceof TweedlePrimitiveValue<?> primitiveValue) {
+      astInitializer = primitiveLiteral(primitiveValue.getPrimitiveValue());
+    } else if (initializer instanceof IdentifierReference identifierReference) {
+      String name = identifierReference.getName();
+      UserLocal prior = findLocal(priorLocals, name);
+      if (prior != null) {
+        astInitializer = new LocalAccess(prior);
+      } else {
+        UserParameter parameter = findParameter(parameters, name);
+        if (parameter != null) {
+          astInitializer = new ParameterAccess(parameter);
+        } else {
+          UserField field = findField(fields, name);
+          if (field != null) {
+            astInitializer = new FieldAccess(field);
+          } else {
+            throw new UnsupportedTweedleDecodeException(
+                "Tweedle local variable initializer identifier is not a known local, parameter, or field: "
+                    + ownerName + "." + tweedleLocal.getName() + " <- " + name);
+          }
+        }
+      }
+    } else {
       throw unsupportedLocalInitializer(ownerName, tweedleLocal);
     }
-    Expression astInitializer = primitiveLiteral(primitiveValue.getPrimitiveValue());
     if (!localType.isAssignableFrom(astInitializer.getType())) {
       throw new UnsupportedTweedleDecodeException(
           "Tweedle local variable initializer type is not assignable to "
@@ -667,7 +692,7 @@ public class Decoder {
       String ownerName,
       TweedleLocalVariable local) {
     return new UnsupportedTweedleDecodeException(
-        "Non-literal Tweedle local variable initializers are not yet supported by the AST decoder: "
+        "Only primitive literal and identifier-reference Tweedle local variable initializers are supported by the AST decoder: "
             + ownerName + "." + local.getName());
   }
 
