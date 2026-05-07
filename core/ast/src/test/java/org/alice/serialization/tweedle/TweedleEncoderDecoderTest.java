@@ -13,6 +13,8 @@ import org.lgna.project.ast.NullLiteral;
 import org.lgna.project.ast.StringLiteral;
 import org.lgna.project.ast.UserField;
 
+import java.util.Set;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
@@ -118,6 +120,20 @@ public class TweedleEncoderDecoderTest {
   }
 
   @Test
+  public void decodeClassWithTerminalUserTypeNullInitializedFieldCreatesNullLiteralInitializer() throws Exception {
+    NamedUserType friendType = userTypeNamed("Friend");
+    NamedUserType type = decodeUserType(
+        "class SyntheticType { Friend companion <- null; }",
+        Set.of(friendType));
+
+    assertEquals(1, type.getDeclaredFields().size());
+    UserField field = type.getDeclaredFields().get(0);
+    assertEquals("companion", field.getName());
+    assertSame(friendType, field.getValueType());
+    assertTrue(field.initializer.getValue() instanceof NullLiteral);
+  }
+
+  @Test
   public void decodeClassWithWholeNumberNullInitializedFieldReportsUnsupportedInitializer() {
     RuntimeException thrown = assertThrows(
         RuntimeException.class,
@@ -168,6 +184,19 @@ public class TweedleEncoderDecoderTest {
 
     assertTrue(decoded instanceof NamedUserType);
     return (NamedUserType) decoded;
+  }
+
+  private NamedUserType decodeUserType(String source, Set<NamedUserType> terminals) throws Exception {
+    AbstractNode decoded = coder.decode(source, Set.copyOf(terminals));
+
+    assertTrue(decoded instanceof NamedUserType);
+    return (NamedUserType) decoded;
+  }
+
+  private NamedUserType userTypeNamed(String name) {
+    NamedUserType type = new NamedUserType();
+    type.name.setValue(name);
+    return type;
   }
 
   private static void assertIntegerInitializer(UserField field, String expectedName, int expectedValue) {
