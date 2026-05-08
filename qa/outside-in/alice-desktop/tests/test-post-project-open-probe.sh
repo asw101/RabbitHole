@@ -134,8 +134,10 @@ JSON
 }
 
 # ---- 1. Missing inventory → blocked ----
+opened_tab1="$tmp_root/opened-tab1.json"
+write_tab_click_opened "$opened_tab1"
 missing_out="$tmp_root/missing-inventory-out.json"
-python3 "$PROBE" "$tmp_root/no-inventory.json" "$tmp_root/no-tab-click.json" "$missing_out"
+python3 "$PROBE" "$tmp_root/no-inventory.json" "$opened_tab1" "$missing_out"
 status=$?
 assert_success "$status" "probe exits 0 when inventory file is missing"
 assert_contains "$missing_out" '"status": "blocked"' "missing-inventory records blocked status"
@@ -157,8 +159,10 @@ assert_contains "$missing_tab_out" '"postOpenWindowObserved": false' "missing-ta
 # ---- 3. Malformed inventory JSON → blocked ----
 malformed_inv="$tmp_root/malformed-inv.json"
 printf 'not-json\n' > "$malformed_inv"
+opened_tab3="$tmp_root/opened-tab3.json"
+write_tab_click_opened "$opened_tab3"
 malformed_inv_out="$tmp_root/malformed-inv-out.json"
-python3 "$PROBE" "$malformed_inv" "$tmp_root/no-tab-click.json" "$malformed_inv_out"
+python3 "$PROBE" "$malformed_inv" "$opened_tab3" "$malformed_inv_out"
 status=$?
 assert_success "$status" "probe exits 0 for malformed inventory JSON"
 assert_contains "$malformed_inv_out" '"status": "blocked"' "malformed-inventory records blocked status"
@@ -284,7 +288,66 @@ assert_contains "$target_selected_out" '"blocker": "target-starter-open-not-prov
 assert_contains "$target_selected_out" '"postOpenWindowObserved": false' "target-selected-not-opened does not claim post-open window observation"
 assert_contains "$target_selected_out" '"mainWindowObservationBlocker": "target-starter-open-not-proven"' "target-selected-not-opened names exact mainWindowObservationBlocker"
 
-# ---- 11. Probe output is valid JSON ----
+# ---- 11. Ready post-open frame returns without fixed wait ----
+python3 - "$PROBE" >"$tmp_root/post-open-polling.out" 2>"$tmp_root/post-open-polling.err" <<'PY'
+import importlib.util
+import sys
+import types
+from pathlib import Path
+
+
+class FakeNode:
+    def __init__(self, name, children=None, process_id=None):
+        self.name = name
+        self.children = list(children or [])
+        self.process_id = process_id
+
+    @property
+    def childCount(self):
+        return len(self.children)
+
+    def getChildAtIndex(self, index):
+        return self.children[index]
+
+    def get_process_id(self):
+        return self.process_id
+
+
+class FakeRegistry:
+    desktop = None
+
+    @staticmethod
+    def getDesktop(index):
+        if index != 0:
+            raise RuntimeError("only desktop 0 exists in this test")
+        return FakeRegistry.desktop
+
+
+def load_probe(path):
+    spec = importlib.util.spec_from_file_location("post_project_open_probe_under_test", path)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules["pyatspi"] = types.SimpleNamespace(Registry=FakeRegistry)
+    spec.loader.exec_module(module)
+    return module
+
+
+probe = load_probe(Path(sys.argv[1]))
+alice_app = FakeNode("", [FakeNode("Alice 3")], process_id=2468)
+FakeRegistry.desktop = FakeNode("desktop", [alice_app])
+sleep_calls = []
+probe.time.sleep = lambda seconds: sleep_calls.append(seconds)
+
+payload = probe.probe_post_open(2468)
+if payload.get("status") != "observed":
+    raise AssertionError(f"expected observed payload, got {payload!r}")
+if payload.get("mainFrameNames") != ["Alice 3"]:
+    raise AssertionError(f"unexpected frame names: {payload.get('mainFrameNames')!r}")
+if sleep_calls:
+    raise AssertionError(f"ready frame should not incur fixed sleeps, saw {sleep_calls!r}")
+PY
+assert_success "$?" "ready post-open frame is observed without fixed sleep"
+
+# ---- 12. Probe output is valid JSON ----
 for out_file in "$missing_out" "$missing_tab_out" "$malformed_inv_out" "$malformed_tab_out" \
                 "$not_opened_out" "$no_java_out" "$non_alice_java_out" "$mixed_java_out" \
                 "$atk_out" "$target_selected_out"; do

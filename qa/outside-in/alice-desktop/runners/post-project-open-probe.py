@@ -43,7 +43,11 @@ from typing import Any
 
 EXPECTED_SELECT_PROJECT_TITLE = "Select Project"
 EXPECTED_ALICE_TITLE = "Alice 3"
+APP_LOOKUP_ATTEMPTS = 5
+APP_LOOKUP_WAIT_SECONDS = 2
 POST_OPEN_WAIT_SECONDS = 5
+POST_OPEN_POLL_INTERVAL_SECONDS = 0.5
+MAX_TOP_LEVEL_FRAMES = 20
 
 
 def post_open_payload(
@@ -111,7 +115,7 @@ def find_java_pid(inventory: dict[str, Any]) -> int | None:
 
 def find_alice_app(desktop: Any, java_pid: int) -> tuple[Any | None, int]:
     app_count = 0
-    for _attempt in range(5):
+    for attempt in range(APP_LOOKUP_ATTEMPTS):
         try:
             app_count = desktop.childCount
         except Exception:
@@ -129,14 +133,15 @@ def find_alice_app(desktop: Any, java_pid: int) -> tuple[Any | None, int]:
                 app_pid = None
             if app_pid == java_pid and safe_child_count(app) > 0:
                 return app, app_count
-        time.sleep(2)
+        if attempt < APP_LOOKUP_ATTEMPTS - 1:
+            time.sleep(APP_LOOKUP_WAIT_SECONDS)
     return None, app_count
 
 
 def top_level_frame_state(alice_app: Any) -> tuple[list[str], list[int]]:
     frame_names: list[str] = []
     frame_child_counts: list[int] = []
-    for index in range(min(safe_child_count(alice_app), 20)):
+    for index in range(min(safe_child_count(alice_app), MAX_TOP_LEVEL_FRAMES)):
         try:
             child = alice_app.getChildAtIndex(index)
         except Exception:
@@ -146,6 +151,23 @@ def top_level_frame_state(alice_app: Any) -> tuple[list[str], list[int]]:
         frame_names.append(safe_node_name(child))
         frame_child_counts.append(safe_child_count(child))
     return frame_names, frame_child_counts
+
+
+def post_open_frame_observed(frame_names: list[str]) -> bool:
+    return any(name != EXPECTED_SELECT_PROJECT_TITLE for name in frame_names)
+
+
+def wait_for_post_open_frame_state(alice_app: Any) -> tuple[list[str], list[int]]:
+    deadline = time.monotonic() + POST_OPEN_WAIT_SECONDS
+    while True:
+        frame_names, frame_child_counts = top_level_frame_state(alice_app)
+        if post_open_frame_observed(frame_names):
+            return frame_names, frame_child_counts
+
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            return frame_names, frame_child_counts
+        time.sleep(min(POST_OPEN_POLL_INTERVAL_SECONDS, remaining))
 
 
 def probe_post_open(java_pid: int) -> dict[str, Any]:
@@ -182,13 +204,10 @@ def probe_post_open(java_pid: int) -> dict[str, Any]:
             java_pid=java_pid,
         )
 
-    # Wait briefly to allow Alice to finish loading the project.
-    time.sleep(POST_OPEN_WAIT_SECONDS)
-
-    frame_names, frame_child_counts = top_level_frame_state(alice_app)
+    frame_names, frame_child_counts = wait_for_post_open_frame_state(alice_app)
 
     # The proof criterion: at least one frame present that is NOT "Select Project".
-    post_open_observed = any(name != EXPECTED_SELECT_PROJECT_TITLE for name in frame_names)
+    post_open_observed = post_open_frame_observed(frame_names)
     blocker = "none" if post_open_observed else "no-non-select-project-frame-visible"
 
     blocker_detail = ""
@@ -266,6 +285,17 @@ def no_java_pid_payload(inventory_path: Path) -> dict[str, Any]:
     )
 
 
+def read_json_payload(path: Path) -> dict[str, Any]:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise ValueError(f"{path} did not contain a JSON object")
+    return payload
+
+
+def write_json_payload(path: Path, payload: dict[str, Any]) -> None:
+    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("inventory", help="Path to x-window-inventory.json")
@@ -277,24 +307,13 @@ def main() -> int:
     tab_click_path = Path(args.tab_click)
     output_path = Path(args.output)
 
-    # Load inventory.
+    # Load the cheap prerequisite first. If tab-click evidence is absent, avoid
+    # parsing inventory or touching AT-SPI because post-open evidence cannot exist.
     try:
-        inventory = json.loads(inventory_path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as exc:
-        payload = blocked_payload(inventory_path, exc)
-        output_path.write_text(
-            json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-        )
-        return 0
-
-    # Load tab-click observation.
-    try:
-        tab_click = json.loads(tab_click_path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as exc:
+        tab_click = read_json_payload(tab_click_path)
+    except (OSError, json.JSONDecodeError, ValueError) as exc:
         payload = blocked_payload(tab_click_path, exc)
-        output_path.write_text(
-            json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-        )
+        write_json_payload(output_path, payload)
         return 0
 
     # Target-specific scenarios must prove the selected/opened starter before the
@@ -307,31 +326,32 @@ def main() -> int:
             or not tab_click.get("projectOpenObserved", False)
         ):
             payload = target_starter_open_not_proven_payload(tab_click_path, tab_click)
-            output_path.write_text(
-                json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-            )
+            write_json_payload(output_path, payload)
             return 0
 
     # Require projectOpenObserved=true before connecting to AT-SPI.
     if not tab_click.get("projectOpenObserved", False):
         payload = project_not_opened_payload(tab_click_path)
-        output_path.write_text(
-            json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-        )
+        write_json_payload(output_path, payload)
+        return 0
+
+    # Only now load inventory: it is needed solely to positively identify the
+    # Alice 3 Java PID before AT-SPI introspection.
+    try:
+        inventory = read_json_payload(inventory_path)
+    except (OSError, json.JSONDecodeError, ValueError) as exc:
+        payload = blocked_payload(inventory_path, exc)
+        write_json_payload(output_path, payload)
         return 0
 
     java_pid = find_java_pid(inventory)
     if java_pid is None:
         payload = no_java_pid_payload(inventory_path)
-        output_path.write_text(
-            json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-        )
+        write_json_payload(output_path, payload)
         return 0
 
     payload = probe_post_open(java_pid)
-    output_path.write_text(
-        json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-    )
+    write_json_payload(output_path, payload)
     return 0
 
 
