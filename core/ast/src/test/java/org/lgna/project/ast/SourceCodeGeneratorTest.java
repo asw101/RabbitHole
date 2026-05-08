@@ -124,6 +124,53 @@ public class SourceCodeGeneratorTest {
         generate(greeter));
   }
 
+  @Test
+  public void characterizesWhileLoopWithBooleanCondition() {
+    WhileLoop loop = new WhileLoop(new BooleanLiteral(false), new BlockStatement());
+    assertEquals("while (false){}", generate(loop));
+  }
+
+  @Test
+  public void characterizesNullLiteral() {
+    assertEquals("null", generate(new NullLiteral()));
+  }
+
+  @Test
+  public void characterizesLogicalComplement() {
+    assertEquals("!true", generate(new LogicalComplement(new BooleanLiteral(true))));
+  }
+
+  @Test
+  public void characterizesArithmeticInfixExpression() {
+    assertEquals(
+        "3+4",
+        generate(new ArithmeticInfixExpression(
+            new IntegerLiteral(3), ArithmeticInfixExpression.Operator.PLUS, new IntegerLiteral(4), Integer.class)));
+  }
+
+  @Test
+  public void characterizesRelationalInfixExpression() {
+    assertEquals(
+        "3<10",
+        generate(new RelationalInfixExpression(
+            new IntegerLiteral(3), RelationalInfixExpression.Operator.LESS, new IntegerLiteral(10),
+            Integer.class, Integer.class)));
+  }
+
+  @Test
+  public void characterizesArrayAccess() {
+    UserLocal items = new UserLocal("items", String[].class, false);
+    assertEquals(
+        "items[0]",
+        generate(new ArrayAccess(String[].class, new LocalAccess(items), new IntegerLiteral(0))));
+  }
+
+  @Test
+  public void characterizesArrayLength() {
+    UserLocal items = new UserLocal("items", String[].class, false);
+    assertEquals("items.length", generate(new ArrayLength(new LocalAccess(items))));
+  }
+
   private static ForEachInArrayLoop forEachLoop(String itemName) {
     return new ForEachInArrayLoop(
         new UserLocal(itemName, String.class, true),
