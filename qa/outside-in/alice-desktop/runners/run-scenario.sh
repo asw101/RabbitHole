@@ -101,15 +101,16 @@ validate_allowed_automation() {
   fi
 
   if [ "$cwd" = . ] &&
-    [ "$#" -eq 8 ] &&
+    [ "$#" -eq 9 ] &&
     [ "$1" = mvn ] &&
     [ "$2" = -DincludeSims=false ] &&
     [ "$3" = -Dinstall4j.skip ] &&
-    [ "$4" = -pl ] &&
-    [ "$5" = netbeans ] &&
-    [ "$6" = -am ] &&
-    [ "$7" = -Dtest=org.alice.netbeans.project.ProjectCodeGeneratorStandaloneProjectTest ] &&
-    [ "$8" = test ]; then
+    [ "$4" = -Dsurefire.failIfNoSpecifiedTests=false ] &&
+    [ "$5" = -pl ] &&
+    [ "$6" = netbeans ] &&
+    [ "$7" = -am ] &&
+    [ "$8" = -Dtest=org.alice.netbeans.project.ProjectCodeGeneratorStandaloneProjectTest ] &&
+    [ "$9" = test ]; then
     return 0
   fi
 
@@ -1181,7 +1182,7 @@ JSON
         export JAVA_TOOL_OPTIONS="$license_jvm_option"
       fi
     fi
-    timeout -k 10s "${run_timeout}s" "${argv[@]}"
+    timeout --foreground -k 10s "${run_timeout}s" "${argv[@]}" < /dev/null
   ) > "$run_dir/launch.log" 2>&1 &
   alice_pid=$!
 
@@ -1498,7 +1499,7 @@ run_gated_command_smoke() {
   set +e
   (
     cd "$resolved_cwd"
-    timeout -k 10s "${run_timeout}s" "${argv[@]}"
+    timeout --foreground -k 10s "${run_timeout}s" "${argv[@]}" < /dev/null
   ) > "$run_dir/command.log" 2>&1
   exit_code=$?
   set -e

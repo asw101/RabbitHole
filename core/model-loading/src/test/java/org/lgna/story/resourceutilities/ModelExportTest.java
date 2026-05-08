@@ -62,6 +62,24 @@ public class ModelExportTest {
   }
 
   @Test
+  public void addResourceOmitsRedundantAndBlankAttributionFromXml() throws Exception {
+    ModelResourceExporter exporter = new ModelResourceExporter("TestProp", ModelClassData.PROP_CLASS_DATA);
+    exporter.addAttribution("Alice Test", "2026");
+    exporter.addResource("MatchingAttributionProp", "Default", "ALICE", "Alice Test", "2026");
+    exporter.addResource("BlankAttributionProp", "Default", "ALICE", "", "");
+
+    Document xml = parseXml(exporter.createXMLString());
+    Element root = xml.getDocumentElement();
+    assertEquals("Alice Test", root.getAttribute("creator"));
+    assertEquals("2026", root.getAttribute("creationYear"));
+
+    NodeList resources = root.getElementsByTagName("Resource");
+    assertEquals(2, resources.getLength());
+    assertResourceWithoutAttribution(findResourceByModelName(resources, "MatchingAttributionProp"));
+    assertResourceWithoutAttribution(findResourceByModelName(resources, "BlankAttributionProp"));
+  }
+
+  @Test
   public void modelExporterCreatesCompilableResourceJavaCode() throws Exception {
     ModelResourceExporter exporter = createSyntheticPropExporter();
 
@@ -289,6 +307,21 @@ public class ModelExportTest {
     NodeList nodes = parent.getElementsByTagName(childTag);
     assertEquals(1, nodes.getLength());
     assertEquals(expectedText, nodes.item(0).getTextContent());
+  }
+
+  private static void assertResourceWithoutAttribution(Element resource) {
+    assertFalse(resource.hasAttribute("creator"));
+    assertFalse(resource.hasAttribute("creationYear"));
+  }
+
+  private static Element findResourceByModelName(NodeList resources, String modelName) {
+    for (int i = 0; i < resources.getLength(); i++) {
+      Element resource = (Element) resources.item(i);
+      if (modelName.equals(resource.getAttribute("modelName"))) {
+        return resource;
+      }
+    }
+    throw new AssertionError("Resource not found for modelName " + modelName);
   }
 
   private static void assertAppearsBefore(String text, String first, String second) {
