@@ -26,7 +26,7 @@ import json
 import os
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterator
 
 ATK_WRAPPER_JAR = "/usr/share/java/java-atk-wrapper.jar"
 EXPECTED_SELECT_PROJECT_TITLE = "Select Project"
@@ -34,9 +34,13 @@ EXPECTED_TAB_LABELS = ["Blank Slates", "Starters", "My Projects", "Recent", "Fil
 # Depth limit high enough to see tab children even if they are nested
 MAX_DEPTH = 12
 # Alice's Select Project uses custom toggle buttons for tabs rather than standard
-# JTabbedPane page tabs.  These are the AT-SPI role strings to search for.
+# JTabbedPane page tabs. These are the AT-SPI role strings to search for.
+PAGE_TAB_LIST_ROLES = frozenset({"pagetablist", "page tab list"})
 TAB_ROLES = frozenset({"pagetab", "page tab"})
 TOGGLE_TAB_ROLES = frozenset({"togglebutton", "toggle button"})
+BUTTON_ROLES = frozenset({"button", "pushbutton"})
+LIST_ROLES = frozenset({"list"})
+PREFERRED_ACTIONS = ("click", "select", "activate")
 TARGET_STARTER_DISPLAY_ENV = "TARGET_STARTER_DISPLAY_NAME"
 TARGET_STARTER_REPO_ENV = "TARGET_STARTER_REPO_PATH"
 
@@ -58,26 +62,42 @@ def find_select_project_java_pid(inventory: dict[str, Any]) -> int | None:
     return None
 
 
+def safe_node_name(node: Any) -> str:
+    try:
+        return node.name or ""
+    except Exception:
+        return ""
+
+
+def safe_role_name(node: Any) -> str:
+    try:
+        return node.getRoleName()
+    except Exception:
+        return ""
+
+
+def safe_node_description(node: Any) -> str:
+    try:
+        return node.description or ""
+    except Exception:
+        return ""
+
+
+def safe_child_count(node: Any) -> int:
+    try:
+        return int(node.childCount)
+    except Exception:
+        return 0
+
+
 def node_properties(node: Any) -> dict[str, Any]:
     """Extract safe scalar properties from an AT-SPI node."""
-    props: dict[str, Any] = {}
-    try:
-        props["name"] = node.name or ""
-    except Exception:
-        props["name"] = ""
-    try:
-        props["role"] = node.getRoleName()
-    except Exception:
-        props["role"] = ""
-    try:
-        props["description"] = node.description or ""
-    except Exception:
-        props["description"] = ""
-    try:
-        props["childCount"] = node.childCount
-    except Exception:
-        props["childCount"] = 0
-    return props
+    return {
+        "name": safe_node_name(node),
+        "role": safe_role_name(node),
+        "description": safe_node_description(node),
+        "childCount": safe_child_count(node),
+    }
 
 
 def configured_target_starter() -> dict[str, str] | None:
@@ -145,31 +165,6 @@ def add_target_metadata(
     return payload
 
 
-def safe_node_name(node: Any) -> str:
-    try:
-        return node.name or ""
-    except Exception:
-        return ""
-
-
-def safe_role_name(node: Any) -> str:
-    try:
-        return node.getRoleName()
-    except Exception:
-        return ""
-
-
-def normalised_role(node: Any) -> str:
-    return safe_role_name(node).lower().replace(" ", "")
-
-
-def safe_child_count(node: Any) -> int:
-    try:
-        return int(node.childCount)
-    except Exception:
-        return 0
-
-
 def state_names(node: Any) -> list[str]:
     try:
         state_set = node.getState()
@@ -190,28 +185,27 @@ def state_names(node: Any) -> list[str]:
     return names
 
 
-def node_has_state(node: Any, expected: str) -> bool:
+def states_include(states: list[str], expected: str) -> bool:
     expected = expected.lower()
-    return any(expected in state.lower() for state in state_names(node))
+    return any(expected in state.lower() for state in states)
 
 
 def node_index_in_parent(node: Any) -> int:
     try:
         return int(node.getIndexInParent())
     except Exception:
-        pass
-    try:
-        parent = node.get_parent()
-        if parent is None:
+        try:
+            parent = node.get_parent()
+            if parent is None:
+                return -1
+            for index in range(safe_child_count(parent)):
+                try:
+                    if parent.getChildAtIndex(index) is node:
+                        return index
+                except Exception:
+                    continue
+        except Exception:
             return -1
-        for index in range(safe_child_count(parent)):
-            try:
-                if parent.getChildAtIndex(index) is node:
-                    return index
-            except Exception:
-                continue
-    except Exception:
-        pass
     return -1
 
 
@@ -229,10 +223,10 @@ def iter_nodes_with_paths(
     depth: int = 0,
     path: tuple[int, ...] = (),
     max_depth: int = MAX_DEPTH,
-) -> list[tuple[Any, int, tuple[int, ...]]]:
+) -> Iterator[tuple[Any, int, tuple[int, ...]]]:
     if node is None or depth > max_depth:
-        return []
-    nodes = [(node, depth, path)]
+        return
+    yield node, depth, path
     if depth < max_depth:
         for index in range(safe_child_count(node)):
             try:
@@ -240,15 +234,12 @@ def iter_nodes_with_paths(
             except Exception:
                 continue
             if child is not None:
-                nodes.extend(
-                    iter_nodes_with_paths(
-                        child,
-                        depth=depth + 1,
-                        path=path + (index,),
-                        max_depth=max_depth,
-                    )
+                yield from iter_nodes_with_paths(
+                    child,
+                    depth=depth + 1,
+                    path=path + (index,),
+                    max_depth=max_depth,
                 )
-    return nodes
 
 
 def child_display_name(node: Any) -> str:
@@ -277,7 +268,7 @@ def target_observation_record(
     return {
         "name": child_display_name(item_node),
         "role": safe_role_name(item_node),
-        "description": node_properties(item_node).get("description", ""),
+        "description": safe_node_description(item_node),
         "states": state_names(item_node),
         "availableActions": get_available_actions(item_node),
         "treePath": list(tree_path),
@@ -333,12 +324,9 @@ def find_nodes_with_roles(
     if node is None or depth > max_depth:
         return []
     results: list[tuple[Any, int, str, str]] = []
-    try:
-        raw_role = node.getRoleName()
-        name = node.name or ""
-        child_count = node.childCount
-    except Exception:
-        return results
+    raw_role = safe_role_name(node)
+    name = safe_node_name(node)
+    child_count = safe_child_count(node)
     normalised = raw_role.lower().replace(" ", "")
     if normalised in target_roles:
         results.append((node, depth, name, raw_role))
@@ -371,11 +359,14 @@ def do_action(node: Any, action_name: str) -> tuple[bool, str]:
     """
     try:
         iface = node.queryAction()
+        target_action = action_name.lower()
+        available = []
         for i in range(iface.nActions):
-            if iface.getName(i).lower() == action_name.lower():
+            available_name = iface.getName(i)
+            available.append(available_name)
+            if available_name.lower() == target_action:
                 ok = iface.doAction(i)
                 return bool(ok), f"invoked {action_name!r} at index {i}"
-        available = [iface.getName(i) for i in range(iface.nActions)]
         return False, f"action {action_name!r} not found; available: {available}"
     except Exception as exc:
         return False, f"action invocation error: {exc}"
@@ -391,6 +382,7 @@ def attempt_tab_clicks(
     attempts: list[dict[str, Any]] = []
     for node, depth, name, raw_role in tab_nodes:
         actions = get_available_actions(node)
+        lowered_actions = {action.lower() for action in actions}
         record: dict[str, Any] = {
             "name": name,
             "role": raw_role,
@@ -401,14 +393,9 @@ def attempt_tab_clicks(
             "clickSuccess": False,
             "clickDetail": "",
         }
-        try:
-            record["description"] = node.description or ""
-        except Exception:
-            pass
-        # Prefer "click" but accept any action that suggests selection/activation.
-        action_priority = ["click", "select", "activate"]
-        for preferred in action_priority:
-            if preferred in [a.lower() for a in actions]:
+        record["description"] = safe_node_description(node)
+        for preferred in PREFERRED_ACTIONS:
+            if preferred in lowered_actions:
                 ok, detail = do_action(node, preferred)
                 record["clickAttempted"] = True
                 record["clickSuccess"] = ok
@@ -525,7 +512,7 @@ def probe_tab_click(java_pid: int) -> dict[str, Any]:
                 except Exception:
                     continue
         except Exception:
-            pass
+            app_count = 0
         if alice_app is not None and alice_app.childCount > 0:
             break
         time.sleep(2)
@@ -575,9 +562,9 @@ def probe_tab_click(java_pid: int) -> dict[str, Any]:
             try:
                 child = alice_app.getChildAtIndex(i)
                 if child is not None:
-                    top_names.append(f"{child.name!r}({child.getRoleName()})")
+                    top_names.append(f"{safe_node_name(child)!r}({safe_role_name(child)})")
             except Exception:
-                pass
+                continue
         return add_target_metadata(
             {
                 "status": "blocked",
@@ -614,17 +601,11 @@ def probe_tab_click(java_pid: int) -> dict[str, Any]:
         role_counts[r] = role_counts.get(r, 0) + 1
 
     # Locate tab list containers and tab page nodes.
-    tab_list_infos = find_nodes_with_roles(
-        select_project_frame, frozenset({"pagetablist", "page tab list"})
-    )
-    tab_infos = find_nodes_with_roles(
-        select_project_frame, frozenset({"pagetab", "page tab"})
-    )
+    tab_list_infos = find_nodes_with_roles(select_project_frame, PAGE_TAB_LIST_ROLES)
+    tab_infos = find_nodes_with_roles(select_project_frame, TAB_ROLES)
     # Alice's Select Project uses custom toggle buttons for its tab selectors;
     # filter to those whose name is one of the expected tab labels.
-    toggle_all = find_nodes_with_roles(
-        select_project_frame, frozenset({"togglebutton", "toggle button"})
-    )
+    toggle_all = find_nodes_with_roles(select_project_frame, TOGGLE_TAB_ROLES)
     toggle_tab_infos = [
         (node, depth, name, raw_role)
         for node, depth, name, raw_role in toggle_all
@@ -707,9 +688,6 @@ def attempt_project_open(
     *,
     target_starter: dict[str, str] | None = None,
 ) -> dict[str, Any]:
-    if target_starter is not None:
-        return attempt_target_project_open(select_project_frame, alice_app, target_starter)
-
     """After tab clicks, try to select a Starters project and click OK.
 
     Strategy:
@@ -722,6 +700,9 @@ def attempt_project_open(
 
     Returns a machine-readable record of each step and its result.
     """
+    if target_starter is not None:
+        return attempt_target_project_open(select_project_frame, alice_app, target_starter)
+
     record: dict[str, Any] = {
         "startersTabClick": {"attempted": False, "success": False, "detail": ""},
         "listItemClick": {"attempted": False, "success": False, "detail": "", "item": ""},
@@ -732,9 +713,7 @@ def attempt_project_open(
 
     # Step 1 – re-click the "Starters" tab so its panel is active.
     starters_node: Any = None
-    starters_infos = find_nodes_with_roles(
-        select_project_frame, frozenset({"togglebutton", "toggle button"})
-    )
+    starters_infos = find_nodes_with_roles(select_project_frame, TOGGLE_TAB_ROLES)
     for node, _depth, name, _role in starters_infos:
         if name == "Starters":
             starters_node = node
@@ -751,38 +730,25 @@ def attempt_project_open(
     # All panels are always in the AT-SPI tree even when hidden; we need the one
     # that corresponds to the active "Starters" tab.  The Starters list has more
     # children than any other list in the dialog (34 vs 19 for Blank Slates).
-    list_nodes_raw = find_nodes_with_roles(
-        select_project_frame, frozenset({"list"})
-    )
+    list_nodes_raw = find_nodes_with_roles(select_project_frame, LIST_ROLES)
     # Pick the list with the most children (Starters).
     target_list_node: Any = None
     best_count = 0
     for node, _depth, _name, _role in list_nodes_raw:
-        try:
-            count = node.childCount
-            if count > best_count:
-                best_count = count
-                target_list_node = node
-        except Exception:
-            continue
+        count = safe_child_count(node)
+        if count > best_count:
+            best_count = count
+            target_list_node = node
 
     if target_list_node is not None:
         # Step 3 – try to click the first child panel (or its label child).
-        for candidate_index in range(min(target_list_node.childCount, 3)):
+        for candidate_index in range(min(safe_child_count(target_list_node), 3)):
             try:
                 item_node = target_list_node.getChildAtIndex(candidate_index)
                 if item_node is None:
                     continue
                 item_name = ""
-                try:
-                    item_name = item_node.name or ""
-                    # If the panel itself has no name, try its first label child.
-                    if not item_name and item_node.childCount > 0:
-                        child = item_node.getChildAtIndex(0)
-                        if child is not None:
-                            item_name = child.name or ""
-                except Exception:
-                    pass
+                item_name = child_display_name(item_node)
                 actions_on_item = get_available_actions(item_node)
                 if "click" in [a.lower() for a in actions_on_item]:
                     ok, detail = do_action(item_node, "click")
@@ -796,16 +762,12 @@ def attempt_project_open(
                         time.sleep(1)
                     break
                 # No click action directly; try first label child.
-                if item_node.childCount > 0:
+                if safe_child_count(item_node) > 0:
                     label_child = item_node.getChildAtIndex(0)
                     if label_child is not None:
                         label_actions = get_available_actions(label_child)
                         if "click" in [a.lower() for a in label_actions]:
-                            label_name = ""
-                            try:
-                                label_name = label_child.name or ""
-                            except Exception:
-                                pass
+                            label_name = safe_node_name(label_child)
                             ok, detail = do_action(label_child, "click")
                             record["listItemClick"] = {
                                 "attempted": True,
@@ -826,9 +788,7 @@ def attempt_project_open(
         )
 
     # Step 4 – click OK.
-    ok_buttons = find_nodes_with_roles(
-        select_project_frame, frozenset({"button", "pushbutton"})
-    )
+    ok_buttons = find_nodes_with_roles(select_project_frame, BUTTON_ROLES)
     ok_node: Any = None
     for node, _depth, name, _role in ok_buttons:
         if name == "OK":
@@ -868,8 +828,11 @@ def attempt_project_open(
                     "project opening is observed."
                 )
                 return record
-        except Exception:
-            pass
+        except Exception as exc:
+            record["projectOpenDetail"] = (
+                f"AT-SPI error while waiting for Select Project dismissal: {exc}"
+            )
+            return record
         time.sleep(1)
 
     record["projectOpenDetail"] = (
@@ -882,9 +845,7 @@ def attempt_project_open(
 
 def select_starters_tab(select_project_frame: Any) -> dict[str, Any]:
     record: dict[str, Any] = {"attempted": False, "success": False, "detail": ""}
-    starters_infos = find_nodes_with_roles(
-        select_project_frame, frozenset({"togglebutton", "toggle button"})
-    )
+    starters_infos = find_nodes_with_roles(select_project_frame, TOGGLE_TAB_ROLES)
     for node, _depth, name, _role in starters_infos:
         if name == "Starters":
             ok, detail = do_action(node, "click")
@@ -899,15 +860,18 @@ def select_starters_tab(select_project_frame: Any) -> dict[str, Any]:
 def active_starter_lists(select_project_frame: Any) -> list[dict[str, Any]]:
     candidates: list[dict[str, Any]] = []
     for node, depth, path in iter_nodes_with_paths(select_project_frame):
-        if normalised_role(node) != "list":
+        raw_role = safe_role_name(node)
+        if raw_role.lower().replace(" ", "") != "list":
             continue
         states = state_names(node)
         child_count = safe_child_count(node)
         name = safe_node_name(node)
+        showing = states_include(states, "showing")
+        visible = states_include(states, "visible")
         score = child_count
-        if node_has_state(node, "showing"):
+        if showing:
             score += 10_000
-        if node_has_state(node, "visible"):
+        if visible:
             score += 1_000
         if name == "Starters":
             score += 100
@@ -917,12 +881,12 @@ def active_starter_lists(select_project_frame: Any) -> list[dict[str, Any]]:
                 "depth": depth,
                 "path": path,
                 "name": name,
-                "role": safe_role_name(node),
+                "role": raw_role,
                 "states": states,
                 "childCount": child_count,
                 "score": score,
-                "showing": node_has_state(node, "showing"),
-                "visible": node_has_state(node, "visible"),
+                "showing": showing,
+                "visible": visible,
             }
         )
     showing_candidates = [candidate for candidate in candidates if candidate["showing"]]
@@ -935,6 +899,21 @@ def active_starter_lists(select_project_frame: Any) -> list[dict[str, Any]]:
     if starters_named:
         return sorted(starters_named, key=lambda candidate: candidate["score"], reverse=True)
     return sorted(candidates, key=lambda candidate: candidate["score"], reverse=True)[:1]
+
+
+def starter_list_summary_records(list_records: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [
+        {
+            "name": record["name"],
+            "role": record["role"],
+            "states": record["states"],
+            "childCount": record["childCount"],
+            "treePath": list(record["path"]),
+            "showing": record["showing"],
+            "visible": record["visible"],
+        }
+        for record in list_records
+    ]
 
 
 def find_target_starter(
@@ -964,18 +943,7 @@ def find_target_starter(
             )
             observation.update(
                 {
-                    "activeListCandidates": [
-                        {
-                            "name": record["name"],
-                            "role": record["role"],
-                            "states": record["states"],
-                            "childCount": record["childCount"],
-                            "treePath": list(record["path"]),
-                            "showing": record["showing"],
-                            "visible": record["visible"],
-                        }
-                        for record in list_records
-                    ],
+                    "activeListCandidates": starter_list_summary_records(list_records),
                 }
             )
             return {
@@ -1001,9 +969,8 @@ def attempt_target_selection(
         "detail": "",
     }
 
-    available_actions = get_available_actions(item_node)
-    lowered_actions = [action.lower() for action in available_actions]
-    for action_name in ("click", "select", "activate"):
+    lowered_actions = [action.lower() for action in get_available_actions(item_node)]
+    for action_name in PREFERRED_ACTIONS:
         if action_name not in lowered_actions:
             continue
         ok, detail = do_action(item_node, action_name)
@@ -1034,8 +1001,11 @@ def attempt_target_selection(
         selected = bool(selection.selectChild(child_index))
         try:
             selected = selected and bool(selection.isChildSelected(child_index))
-        except Exception:
-            pass
+        except Exception as exc:
+            attempt["detail"] = (
+                f"parent list selection selected child {child_index}, but verification failed: {exc}"
+            )
+            return False, attempt
     except Exception as exc:
         attempt["detail"] = f"parent list selection interface failed for target child {child_index}: {exc}"
         return False, attempt
@@ -1051,9 +1021,7 @@ def attempt_target_selection(
 
 
 def find_ok_or_open_button(select_project_frame: Any) -> Any | None:
-    ok_buttons = find_nodes_with_roles(
-        select_project_frame, frozenset({"button", "pushbutton"})
-    )
+    ok_buttons = find_nodes_with_roles(select_project_frame, BUTTON_ROLES)
     for preferred_name in ("OK", "Open"):
         for node, _depth, name, _role in ok_buttons:
             if name == preferred_name:
@@ -1089,19 +1057,31 @@ def wait_for_select_project_dismissal(alice_app: Any) -> tuple[bool, str]:
 
 
 def active_list_summary(list_records: list[dict[str, Any]]) -> str:
-    compact = [
+    return json.dumps(starter_list_summary_records(list_records), sort_keys=True)
+
+
+def target_observed_state(record: dict[str, Any]) -> str:
+    return json.dumps(record["targetStarterObserved"], sort_keys=True)
+
+
+def apply_target_blocker(
+    record: dict[str, Any],
+    *,
+    blocker_name: str,
+    blocker: dict[str, str],
+    evidence_status: str | None = None,
+) -> dict[str, Any]:
+    if evidence_status is not None:
+        record["evidenceStatus"] = evidence_status
+    record.update(
         {
-            "name": record["name"],
-            "role": record["role"],
-            "states": record["states"],
-            "childCount": record["childCount"],
-            "treePath": list(record["path"]),
-            "showing": record["showing"],
-            "visible": record["visible"],
+            "blocker": blocker_name,
+            "blockerDetail": blocker["reasonProgressStopped"],
+            "targetStarterBlocker": blocker,
+            "projectOpenDetail": blocker["reasonProgressStopped"],
         }
-        for record in list_records
-    ]
-    return json.dumps(compact, sort_keys=True)
+    )
+    return record
 
 
 def attempt_target_project_open(
@@ -1143,15 +1123,11 @@ def attempt_target_project_open(
             ),
             f"{target_display_name!r} was not found in the active Starters AT-SPI list candidates.",
         )
-        record.update(
-            {
-                "blocker": "target-starter-not-found",
-                "blockerDetail": blocker["reasonProgressStopped"],
-                "targetStarterBlocker": blocker,
-                "projectOpenDetail": blocker["reasonProgressStopped"],
-            }
+        return apply_target_blocker(
+            record,
+            blocker_name="target-starter-not-found",
+            blocker=blocker,
         )
-        return record
 
     record["targetStarterObserved"] = target_match["observation"]
     selected, selection_attempt = attempt_target_selection(target_match)
@@ -1159,60 +1135,48 @@ def attempt_target_project_open(
     record["targetStarterSelected"] = selected
     if not selected:
         blocker = target_blocker(
-            json.dumps(record["targetStarterObserved"], sort_keys=True),
+            target_observed_state(record),
             "Try target item click/select/activate actions, then parent list selection interface.",
             f"Select {target_display_name!r}, then click OK/Open only after target-specific selection evidence.",
             selection_attempt.get("detail", "No target-specific selection method succeeded."),
         )
-        record.update(
-            {
-                "blocker": "target-starter-selection-unavailable",
-                "blockerDetail": blocker["reasonProgressStopped"],
-                "targetStarterBlocker": blocker,
-                "projectOpenDetail": blocker["reasonProgressStopped"],
-            }
+        return apply_target_blocker(
+            record,
+            blocker_name="target-starter-selection-unavailable",
+            blocker=blocker,
         )
-        return record
 
     ok_node = find_ok_or_open_button(select_project_frame)
     if ok_node is None:
         blocker = target_blocker(
-            json.dumps(record["targetStarterObserved"], sort_keys=True),
+            target_observed_state(record),
             f"Click OK/Open after selecting {target_display_name!r}.",
             "Find an OK or Open button and invoke its click action.",
             "No OK or Open button was found in the Select Project AT-SPI tree.",
         )
-        record.update(
-            {
-                "evidenceStatus": "selected",
-                "blocker": "target-starter-open-not-observed",
-                "blockerDetail": blocker["reasonProgressStopped"],
-                "targetStarterBlocker": blocker,
-                "projectOpenDetail": blocker["reasonProgressStopped"],
-            }
+        return apply_target_blocker(
+            record,
+            blocker_name="target-starter-open-not-observed",
+            blocker=blocker,
+            evidence_status="selected",
         )
-        return record
 
     ok, detail = do_action(ok_node, "click")
     record["targetStarterOpenAttempted"] = True
     record["okButtonClick"] = {"attempted": True, "success": ok, "detail": detail}
     if not ok:
         blocker = target_blocker(
-            json.dumps(record["targetStarterObserved"], sort_keys=True),
+            target_observed_state(record),
             f"Invoke OK/Open click after selecting {target_display_name!r}.",
             "Observe Select Project dismissal after target-specific selection and OK/Open activation.",
             f"OK/Open action did not succeed: {detail}",
         )
-        record.update(
-            {
-                "evidenceStatus": "selected",
-                "blocker": "target-starter-open-not-observed",
-                "blockerDetail": blocker["reasonProgressStopped"],
-                "targetStarterBlocker": blocker,
-                "projectOpenDetail": blocker["reasonProgressStopped"],
-            }
+        return apply_target_blocker(
+            record,
+            blocker_name="target-starter-open-not-observed",
+            blocker=blocker,
+            evidence_status="selected",
         )
-        return record
 
     project_open_observed, project_open_detail = wait_for_select_project_dismissal(alice_app)
     record["projectOpenObserved"] = project_open_observed
@@ -1230,20 +1194,17 @@ def attempt_target_project_open(
         return record
 
     blocker = target_blocker(
-        json.dumps(record["targetStarterObserved"], sort_keys=True),
+        target_observed_state(record),
         f"Clicked OK/Open after selecting {target_display_name!r}.",
         "Observe Select Project dismissal and record openedStarter matching the Africa Full metadata.",
         project_open_detail,
     )
-    record.update(
-        {
-            "evidenceStatus": "selected",
-            "blocker": "target-starter-open-not-observed",
-            "blockerDetail": blocker["reasonProgressStopped"],
-            "targetStarterBlocker": blocker,
-        }
+    return apply_target_blocker(
+        record,
+        blocker_name="target-starter-open-not-observed",
+        blocker=blocker,
+        evidence_status="selected",
     )
-    return record
 
 
 def not_observed_payload(inventory_path: Path) -> dict[str, Any]:

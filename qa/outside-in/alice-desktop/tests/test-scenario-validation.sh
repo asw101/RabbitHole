@@ -10,6 +10,7 @@ RUNNER="$BASE_DIR/runners/run-scenario.sh"
 . "$SCRIPT_DIR/lib/assertions.sh"
 
 TARGET_SCENARIO_ID=alice-desktop-select-project-tab-click-exec
+POST_OPEN_SCENARIO_ID=alice-desktop-post-project-open-window-state
 TARGET_DISPLAY_NAME="Africa Full"
 TARGET_REPOSITORY_PATH="core/resources/src/application/resources/starter-projects/AfricaFull.a3p"
 
@@ -43,6 +44,31 @@ if target["repositoryPath"].startswith("/"):
 PY
 assert_success "$?" "Select Project scenario declares Africa Full target starter metadata"
 
+"$VALIDATOR" --dump-json "$POST_OPEN_SCENARIO_ID" >"$tmp_root/post-open-scenario.json" 2>"$tmp_root/post-open-scenario.err"
+status=$?
+assert_success "$status" "validator dumps the post-project-open scenario"
+python3 - "$tmp_root/post-open-scenario.json" "$TARGET_DISPLAY_NAME" "$TARGET_REPOSITORY_PATH" <<'PY'
+import json
+import sys
+
+scenario = json.load(open(sys.argv[1], encoding="utf-8"))
+expected_display_name = sys.argv[2]
+expected_repository_path = sys.argv[3]
+target = scenario.get("targetStarter")
+if not isinstance(target, dict):
+    raise AssertionError("post-project-open scenario must declare targetStarter metadata")
+if target.get("displayName") != expected_display_name:
+    raise AssertionError(
+        f"targetStarter.displayName must be {expected_display_name!r}, got {target.get('displayName')!r}"
+    )
+if target.get("repositoryPath") != expected_repository_path:
+    raise AssertionError(
+        "targetStarter.repositoryPath must name the committed AfricaFull.a3p starter, got "
+        f"{target.get('repositoryPath')!r}"
+    )
+PY
+assert_success "$?" "Post-project-open scenario declares Africa Full target starter metadata"
+
 python3 - "$tmp_root/target-scenario.json" "$TARGET_REPOSITORY_PATH" <<'PY'
 import json
 import sys
@@ -66,7 +92,7 @@ assert_contains "$RUNNER" 'TARGET_STARTER_REPO_PATH' "runner passes target start
 missing_target_dir="$tmp_root/missing-target"
 mkdir -p "$missing_target_dir"
 cp "$BASE_DIR"/scenarios/*.yaml "$missing_target_dir"/
-python3 - "$missing_target_dir/select-project-tab-click-exec.yaml" <<'PY'
+python3 - "$missing_target_dir/post-project-open-window-state.yaml" <<'PY'
 import sys
 from pathlib import Path
 
@@ -86,7 +112,7 @@ path.write_text("\n".join(filtered) + "\n", encoding="utf-8")
 PY
 ALICE_QA_SCENARIO_DIR="$missing_target_dir" "$VALIDATOR" >"$tmp_root/missing-target.out" 2>"$tmp_root/missing-target.err"
 status=$?
-assert_failure "$status" "validator rejects the Select Project tab-click scenario without targetStarter"
+assert_failure "$status" "validator rejects the post-project-open scenario without targetStarter"
 assert_contains "$tmp_root/missing-target.err" 'targetStarter.*required|missing.*targetStarter' "missing targetStarter error names the required metadata"
 
 wrong_target_dir="$tmp_root/wrong-target"

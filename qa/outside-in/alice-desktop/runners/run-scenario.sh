@@ -76,37 +76,11 @@ target_starter_fields() {
   SCENARIO_JSON="$scenario_json" python3 - <<'PY'
 import json
 import os
-import sys
-from pathlib import Path
 
 scenario = json.loads(os.environ["SCENARIO_JSON"])
-target = scenario.get("targetStarter")
-if target is None:
-    print("")
-    print("")
-    sys.exit(0)
-if not isinstance(target, dict):
-    print("targetStarter must be a mapping", file=sys.stderr)
-    sys.exit(2)
-
-display_name = target.get("displayName")
-repository_path = target.get("repositoryPath")
-if not isinstance(display_name, str) or not display_name.strip():
-    print("targetStarter.displayName must be a non-empty string", file=sys.stderr)
-    sys.exit(2)
-if not isinstance(repository_path, str) or not repository_path.strip():
-    print("targetStarter.repositoryPath must be a non-empty string", file=sys.stderr)
-    sys.exit(2)
-path = Path(repository_path)
-if path.is_absolute():
-    print("targetStarter.repositoryPath must be repository-relative, not absolute", file=sys.stderr)
-    sys.exit(2)
-if any(part == ".." for part in path.parts):
-    print("targetStarter.repositoryPath must not contain .. path traversal", file=sys.stderr)
-    sys.exit(2)
-
-print(display_name)
-print(repository_path)
+target = scenario.get("targetStarter") or {}
+print(target.get("displayName", ""))
+print(target.get("repositoryPath", ""))
 PY
 }
 
@@ -934,6 +908,8 @@ run_xvfb_real_alice() {
   local automation_fields cwd configured_timeout ready_wait run_timeout display scenario_id automation_mode resolved_cwd
   local target_starter_display_name target_starter_repo_path
   local -a target_fields
+  local needs_select_project_wait=0 needs_tab_click_probe=0
+  local xvfb_executable xdotool_executable
   local root_directory_prep_status root_directory_prep_blocker
   local -a argv
   mapfile -t automation_fields < <(json_fields "$scenario_json" "automation.cwd" "automation.timeoutSeconds" "automation.readyWaitSeconds" "id" "automationMode")
@@ -943,13 +919,28 @@ run_xvfb_real_alice() {
   scenario_id=${automation_fields[3]}
   automation_mode=${automation_fields[4]}
   mapfile -d '' -t argv < <(json_list_nul "$scenario_json" "automation.argv")
-  mapfile -t target_fields < <(target_starter_fields "$scenario_json")
-  target_starter_display_name=${target_fields[0]:-}
-  target_starter_repo_path=${target_fields[1]:-}
+  case "$scenario_id" in
+    alice-desktop-select-project-*|alice-desktop-post-project-open-window-state)
+      needs_select_project_wait=1
+      ;;
+  esac
+  case "$scenario_id" in
+    alice-desktop-select-project-tab-click-exec|alice-desktop-post-project-open-window-state)
+      needs_tab_click_probe=1
+      mapfile -t target_fields < <(target_starter_fields "$scenario_json")
+      target_starter_display_name=${target_fields[0]:-}
+      target_starter_repo_path=${target_fields[1]:-}
+      ;;
+    *)
+      target_starter_display_name=
+      target_starter_repo_path=
+      ;;
+  esac
   run_timeout="${timeout_override:-$configured_timeout}"
   xvfb_pid=
   alice_pid=
   xvfb_executable=$(command -v Xvfb 2>/dev/null || true)
+  xdotool_executable=$(command -v xdotool 2>/dev/null || true)
   if [ "${ALICE_QA_DISABLE_XVFB:-}" = "1" ]; then
     xvfb_executable=
   fi
@@ -1251,16 +1242,16 @@ JSON
 
   local ready_status=not-checked
   local waited=0
-  if [ "${ALICE_QA_DISABLE_WINDOW_DETECTOR:-}" != "1" ] && command -v xdotool >/dev/null 2>&1; then
+  if [ "${ALICE_QA_DISABLE_WINDOW_DETECTOR:-}" != "1" ] && [ -n "$xdotool_executable" ]; then
     ready_status=not-found
     while [ "$waited" -lt "$ready_wait" ]; do
       if ! kill -0 "$alice_pid" >/dev/null 2>&1; then
         ready_status=process-exited
         break
       fi
-      if xdotool search --onlyvisible --name Alice >/dev/null 2>&1 ||
-          xdotool search --onlyvisible --class Alice >/dev/null 2>&1 ||
-          xdotool search --onlyvisible --class alice >/dev/null 2>&1; then
+      if "$xdotool_executable" search --onlyvisible --name Alice >/dev/null 2>&1 ||
+          "$xdotool_executable" search --onlyvisible --class Alice >/dev/null 2>&1 ||
+          "$xdotool_executable" search --onlyvisible --class alice >/dev/null 2>&1; then
         ready_status=alice-window-found
         break
       fi
@@ -1269,7 +1260,7 @@ JSON
     done
     if [ "$ready_status" = not-found ] &&
         kill -0 "$alice_pid" >/dev/null 2>&1 &&
-        xdotool search --onlyvisible --class ".*" >/dev/null 2>&1; then
+        "$xdotool_executable" search --onlyvisible --class ".*" >/dev/null 2>&1; then
       ready_status=non-alice-visible-window-found
     fi
   else
@@ -1278,12 +1269,8 @@ JSON
   fi
 
   local select_project_wait_status=not-requested
-  if [ "$scenario_id" = alice-desktop-select-project-inventory ] \
-      || [ "$scenario_id" = alice-desktop-select-project-widget-introspection ] \
-      || [ "$scenario_id" = alice-desktop-select-project-atk-exec ] \
-      || [ "$scenario_id" = alice-desktop-select-project-tab-click-exec ] \
-      || [ "$scenario_id" = alice-desktop-post-project-open-window-state ]; then
-    if [ "${ALICE_QA_DISABLE_WINDOW_DETECTOR:-}" != "1" ] && command -v xdotool >/dev/null 2>&1; then
+  if [ "$needs_select_project_wait" -eq 1 ]; then
+    if [ "${ALICE_QA_DISABLE_WINDOW_DETECTOR:-}" != "1" ] && [ -n "$xdotool_executable" ]; then
       select_project_wait_status=not-found
       local select_waited=0
       while [ "$select_waited" -lt "$ready_wait" ]; do
@@ -1291,7 +1278,7 @@ JSON
           select_project_wait_status=process-exited
           break
         fi
-        if xdotool search --onlyvisible --name '^Select Project$' >/dev/null 2>&1; then
+        if "$xdotool_executable" search --onlyvisible --name '^Select Project$' >/dev/null 2>&1; then
           select_project_wait_status=select-project-window-found
           break
         fi
@@ -1317,8 +1304,7 @@ JSON
     swing_widget_blocker=$(inventory_json_field "$run_dir/swing-widget-observation.json" blocker)
   fi
   local tab_click_status=not-requested tab_click_blocker=not-requested
-  if [ "$scenario_id" = alice-desktop-select-project-tab-click-exec ] \
-      || [ "$scenario_id" = alice-desktop-post-project-open-window-state ]; then
+  if [ "$needs_tab_click_probe" -eq 1 ]; then
     # Allow the Swing accessibility tree to build before probing, then run
     # the tab structure diagnosis and click attempt.
     sleep 3

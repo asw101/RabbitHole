@@ -34,6 +34,10 @@ EXPECTED_TARGET_STARTER = {
     "displayName": "Africa Full",
     "repositoryPath": "core/resources/src/application/resources/starter-projects/AfricaFull.a3p",
 }
+TARGET_STARTER_SCENARIO_IDS = {
+    "alice-desktop-select-project-tab-click-exec",
+    "alice-desktop-post-project-open-window-state",
+}
 workflow_values = {
     "archive-fixture-smoke",
     "exported-project-smoke",
@@ -335,8 +339,8 @@ def validate_automation_cwd(errors, cwd):
 
 def validate_target_starter(errors, scenario_id, value):
     if value is None:
-        if scenario_id == "alice-desktop-select-project-tab-click-exec":
-            errors.append("targetStarter is required for the Select Project tab-click scenario")
+        if scenario_id in TARGET_STARTER_SCENARIO_IDS:
+            errors.append("targetStarter is required for target-specific Select Project evidence scenarios")
         return
     if not isinstance(value, dict):
         errors.append("targetStarter must be a mapping")
@@ -357,13 +361,13 @@ def validate_target_starter(errors, scenario_id, value):
     elif any(part == ".." for part in Path(repository_path).parts):
         errors.append("targetStarter.repositoryPath must not contain .. path traversal")
 
-    if scenario_id == "alice-desktop-select-project-tab-click-exec":
+    if scenario_id in TARGET_STARTER_SCENARIO_IDS:
         if display_name != EXPECTED_TARGET_STARTER["displayName"]:
-            errors.append("targetStarter.displayName must be Africa Full for the Select Project tab-click scenario")
+            errors.append("targetStarter.displayName must be Africa Full for target-specific Select Project evidence scenarios")
         if repository_path != EXPECTED_TARGET_STARTER["repositoryPath"]:
             errors.append(
                 "targetStarter.repositoryPath must be "
-                f"{EXPECTED_TARGET_STARTER['repositoryPath']} for the Select Project tab-click scenario"
+                f"{EXPECTED_TARGET_STARTER['repositoryPath']} for target-specific Select Project evidence scenarios"
             )
 
 
