@@ -123,8 +123,8 @@ assertThrows(
 The failure proves the decoder does not resolve external targets or general
 member calls.
 
-The reference also lists implicit receiver calls, static-style calls,
-constructor calls, chained calls, and member access as non-goals. Focused tests
+The reference also lists implicit receiver calls, static-style calls, object
+construction calls, chained calls, and member access as non-goals. Focused tests
 may cover the forms that route through this slice; otherwise keep them
 documented as outside the accepted method-call shape.
 
@@ -134,7 +134,7 @@ Do not add assertions or documentation that imply support for:
 
 - method arguments;
 - static calls;
-- constructor calls;
+- object construction calls;
 - chained calls;
 - implicit receiver calls;
 - inherited methods;

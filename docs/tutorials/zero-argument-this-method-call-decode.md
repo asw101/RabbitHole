@@ -104,8 +104,8 @@ Each test should call `coder.decode(...)` and assert
 `UnsupportedTweedleDecodeException`.
 
 Other unsupported forms, including implicit receiver calls, static-style calls,
-constructor calls, chained calls, and member access, are non-goals for this
-tutorial. Keep any focused tests for those forms tied to this same narrow
+object construction calls, chained calls, and member access, are non-goals for
+this tutorial. Keep any focused tests for those forms tied to this same narrow
 decoder boundary.
 
 ## 6. Run validation
@@ -122,5 +122,5 @@ NODE_OPTIONS=--max-old-space-size=32768 mvn -pl core/ast -am \
 ```
 
 The result protects only zero-argument `this.method()` decode. It does not prove
-general method calls, constructor calls, member access, or full Tweedle/player
-decode support.
+general method calls, object construction calls, member access, or full
+Tweedle/player decode support.

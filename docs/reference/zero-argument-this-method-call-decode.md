@@ -11,8 +11,8 @@ as a claim that broader method-call decode already exists.
 ## API behavior
 
 `TweedleEncoderDecoder.decode(String source)` accepts a Tweedle class whose
-method body contains an expression statement that calls a known zero-argument
-method on `this`.
+method or constructor body contains an expression statement that calls a known
+zero-argument method on `this`.
 
 ```java
 class Program {
@@ -40,7 +40,7 @@ All of these conditions must be true:
 | Method owner | The resolved method is a supported method declaration directly on the currently decoded type. |
 | Parsed arguments | The Tweedle call has no arguments. |
 | Resolved parameters | The resolved `UserMethod` has no required or optional parameters. |
-| Statement form | The call appears as a method-body expression statement. |
+| Statement form | The call appears as a method-body or constructor-body expression statement. |
 | Resolution | The method name exactly matches one decoded method on the current type. |
 
 The implementation must resolve methods declared before or after the calling
@@ -62,7 +62,7 @@ unsupported-Tweedle archive behavior.
 | `other.helper();` | Non-`this` targets are outside the slice. |
 | `helper();` | Implicit targets are outside the slice. |
 | `Program.helper();` | Static-style calls are outside the slice. |
-| `new Helper();` | Constructor calls are outside the slice. |
+| `new Helper();` | Object construction calls are outside the slice. |
 | `this.helper().again();` | Chained calls are outside the slice. |
 | `this.helper` | Member access is a separate decoder contract. |
 
@@ -125,6 +125,11 @@ zeroArgumentThisMethodCallDecodeRejectsNonThisTarget
 zeroArgumentThisMethodCallDecodeRejectsStaticTargetMethod
 zeroArgumentThisMethodCallDecodeRejectsChainedCall
 zeroArgumentThisMethodCallDecodeRejectsImplicitTarget
+zeroArgumentThisMethodCallInConstructorDecodeCreatesMethodInvocation
+zeroArgumentThisMethodCallInConstructorDecodeRejectsArgumentBearingCall
+zeroArgumentThisMethodCallInConstructorDecodeRejectsUnknownMethod
+zeroArgumentThisMethodCallInConstructorDecodeRejectsNonThisTarget
+zeroArgumentThisMethodCallInConstructorDecodeRejectsStaticTargetMethod
 ```
 
 These tests belong in:
@@ -136,8 +141,9 @@ core/ast/src/test/java/org/alice/serialization/tweedle/TweedleEncoderDecoderTest
 ## Non-goals
 
 This feature must not decode general Tweedle calls, inherited calls, static
-calls, constructor calls, implicit receiver calls, external targets, chained
-calls, overloads, optional arguments, named arguments, or runtime dispatch.
+calls, object construction calls, implicit receiver calls, external targets,
+chained calls, overloads, optional arguments, named arguments, or runtime
+dispatch.
 
 Keep new docs, tests, and exception messages scoped to zero-argument
 `this.method()` decode.

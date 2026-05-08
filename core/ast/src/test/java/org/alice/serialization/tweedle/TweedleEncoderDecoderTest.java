@@ -1439,6 +1439,67 @@ public class TweedleEncoderDecoderTest {
   }
 
   @Test
+  public void zeroArgumentThisMethodCallInConstructorDecodeCreatesMethodInvocation() throws Exception {
+    NamedUserType type = decodeUserType("""
+        class SyntheticType {
+          SyntheticType() { this.helper(); }
+          void helper() { }
+        }
+        """);
+
+    NamedUserConstructor constructor = (NamedUserConstructor) type.getDeclaredConstructors().get(0);
+    UserMethod helper = userMethodNamed(type, "helper");
+    assertEquals(1, constructor.body.getValue().statements.size());
+    assertTrue(constructor.body.getValue().statements.get(0) instanceof ExpressionStatement);
+    ExpressionStatement stmt = (ExpressionStatement) constructor.body.getValue().statements.get(0);
+    assertTrue(stmt.expression.getValue() instanceof MethodInvocation);
+    MethodInvocation invocation = (MethodInvocation) stmt.expression.getValue();
+    assertTrue(invocation.expression.getValue() instanceof ThisExpression);
+    assertSame(helper, invocation.method.getValue());
+    assertTrue(invocation.requiredArguments.isEmpty());
+  }
+
+  @Test
+  public void zeroArgumentThisMethodCallInConstructorDecodeRejectsArgumentBearingCall() {
+    assertUnsupportedZeroArgumentThisMethodCallDecode("""
+        class SyntheticType {
+          SyntheticType() { this.helper(value: 1); }
+          void helper(WholeNumber value) { }
+        }
+        """, "SyntheticType.this.helper");
+  }
+
+  @Test
+  public void zeroArgumentThisMethodCallInConstructorDecodeRejectsUnknownMethod() {
+    assertUnsupportedZeroArgumentThisMethodCallDecode("""
+        class SyntheticType {
+          SyntheticType() { this.missing(); }
+        }
+        """, "SyntheticType.this.missing");
+  }
+
+  @Test
+  public void zeroArgumentThisMethodCallInConstructorDecodeRejectsNonThisTarget() {
+    assertUnsupportedZeroArgumentThisMethodCallDecode("""
+        class SyntheticType {
+          TextString label <- "";
+          SyntheticType() { label.helper(); }
+          void helper() { }
+        }
+        """, "SyntheticType.label.helper");
+  }
+
+  @Test
+  public void zeroArgumentThisMethodCallInConstructorDecodeRejectsStaticTargetMethod() {
+    assertUnsupportedZeroArgumentThisMethodCallDecode("""
+        class SyntheticType {
+          SyntheticType() { this.helper(); }
+          static void helper() { }
+        }
+        """, "SyntheticType.this.helper");
+  }
+
+  @Test
   public void decodeEnumReportsOnlyClassDeclarationsSupported() {
     UnsupportedTweedleDecodeException thrown = assertThrows(
         UnsupportedTweedleDecodeException.class,
