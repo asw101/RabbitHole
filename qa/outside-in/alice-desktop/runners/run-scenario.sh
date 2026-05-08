@@ -1459,6 +1459,43 @@ print(value)
 PY
 }
 
+inventory_json_fields() {
+  local inventory_path=$1
+  shift
+  python3 - "$inventory_path" "__alice_inventory_json_fields_end__" "$@" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as stream:
+    root = json.load(stream)
+
+for field in sys.argv[3:]:
+    value = root
+    for part in field.split("."):
+        value = value.get(part, "") if isinstance(value, dict) else ""
+    print(value)
+print(sys.argv[2])
+PY
+}
+
+read_inventory_json_fields() {
+  local -n fields_ref=$1
+  local inventory_path=$2
+  shift 2
+  local fields_output
+  local sentinel=__alice_inventory_json_fields_end__
+
+  fields_output=$(inventory_json_fields "$inventory_path" "$@")
+  mapfile -t fields_ref <<< "$fields_output"
+  local fields_count=${#fields_ref[@]}
+  local sentinel_index=$((fields_count - 1))
+  if [ "$fields_count" -eq 0 ] || [ "${fields_ref[$sentinel_index]}" != "$sentinel" ]; then
+    printf 'Failed to read expected JSON fields from %s\n' "$inventory_path" >&2
+    return 1
+  fi
+  unset "fields_ref[$sentinel_index]"
+}
+
 inventory_json_compact_field() {
   local inventory_path=$1
   local field=$2
@@ -2054,8 +2091,10 @@ run_xvfb_real_alice() {
     write_environment "$run_dir" "$display"
     write_checklist "$scenario_json" "$run_dir" >/dev/null
     if [ -f "$run_dir/root-directory-prep.json" ]; then
-      root_directory_prep_status=$(inventory_json_field "$run_dir/root-directory-prep.json" status)
-      root_directory_prep_blocker=$(inventory_json_field "$run_dir/root-directory-prep.json" blocker)
+      local -a failed_root_directory_prep_fields
+      read_inventory_json_fields failed_root_directory_prep_fields "$run_dir/root-directory-prep.json" status blocker
+      root_directory_prep_status=${failed_root_directory_prep_fields[0]}
+      root_directory_prep_blocker=${failed_root_directory_prep_fields[1]}
     else
       root_directory_prep_status=blocked
       root_directory_prep_blocker=root-directory-prep-script-failed
@@ -2161,8 +2200,10 @@ JSON
     printf 'Alice rootDirectory launch preparation blocked: %s; see %s/root-directory-prep.json\n' "$root_directory_prep_blocker" "$run_dir" >&2
     return 2
   fi
-  root_directory_prep_status=$(inventory_json_field "$run_dir/root-directory-prep.json" status)
-  root_directory_prep_blocker=$(inventory_json_field "$run_dir/root-directory-prep.json" blocker)
+  local -a root_directory_prep_fields
+  read_inventory_json_fields root_directory_prep_fields "$run_dir/root-directory-prep.json" status blocker
+  root_directory_prep_status=${root_directory_prep_fields[0]}
+  root_directory_prep_blocker=${root_directory_prep_fields[1]}
 
   local license_acceptance_status license_acceptance_blocker license_prefs_user_root license_jvm_option
   license_prefs_user_root="$(cd "$run_dir" && pwd)/java-user-prefs"
@@ -2245,8 +2286,10 @@ JSON
       --output "$run_dir/license-acceptance.json" >/dev/null 2>&1 || true
     license_jvm_option=
   fi
-  license_acceptance_status=$(inventory_json_field "$run_dir/license-acceptance.json" status)
-  license_acceptance_blocker=$(inventory_json_field "$run_dir/license-acceptance.json" blocker)
+  local -a license_acceptance_fields
+  read_inventory_json_fields license_acceptance_fields "$run_dir/license-acceptance.json" status blocker
+  license_acceptance_status=${license_acceptance_fields[0]}
+  license_acceptance_blocker=${license_acceptance_fields[1]}
 
   Xvfb "$display" -screen 0 "${ALICE_QA_SCREEN:-1280x900x24}" > "$run_dir/xvfb.log" 2>&1 &
   xvfb_pid=$!
@@ -2422,8 +2465,10 @@ JSON
     # Allow the Swing accessibility tree to build before probing.
     sleep 3
     write_swing_widget_probe "$run_dir/x-window-inventory.json" "$run_dir/swing-widget-observation.json"
-    swing_widget_status=$(inventory_json_field "$run_dir/swing-widget-observation.json" status)
-    swing_widget_blocker=$(inventory_json_field "$run_dir/swing-widget-observation.json" blocker)
+    local -a swing_widget_fields
+    read_inventory_json_fields swing_widget_fields "$run_dir/swing-widget-observation.json" status blocker
+    swing_widget_status=${swing_widget_fields[0]}
+    swing_widget_blocker=${swing_widget_fields[1]}
   fi
   local tab_click_status=not-requested tab_click_blocker=not-requested
   local select_project_evidence_status=not-requested
@@ -2445,17 +2490,29 @@ JSON
       "$run_dir/tab-click-observation.json" \
       "$target_starter_display_name" \
       "$target_starter_repo_path"
-    tab_click_status=$(inventory_json_field "$run_dir/tab-click-observation.json" status)
-    tab_click_blocker=$(inventory_json_field "$run_dir/tab-click-observation.json" blocker)
-    select_project_evidence_status=$(inventory_json_field "$run_dir/tab-click-observation.json" evidenceStatus)
-    select_project_target_display_name=$(inventory_json_field "$run_dir/tab-click-observation.json" targetStarter.displayName)
-    select_project_target_repo_path=$(inventory_json_field "$run_dir/tab-click-observation.json" targetStarter.repositoryPath)
-    select_project_opened_display_name=$(inventory_json_field "$run_dir/tab-click-observation.json" openedStarter.displayName)
-    select_project_opened_repo_path=$(inventory_json_field "$run_dir/tab-click-observation.json" openedStarter.repositoryPath)
-    select_project_project_open_observed=$(inventory_json_field "$run_dir/tab-click-observation.json" projectOpenObserved)
+    local -a tab_click_fields
+    read_inventory_json_fields tab_click_fields \
+      "$run_dir/tab-click-observation.json" \
+      status \
+      blocker \
+      evidenceStatus \
+      targetStarter.displayName \
+      targetStarter.repositoryPath \
+      openedStarter.displayName \
+      openedStarter.repositoryPath \
+      projectOpenObserved \
+      javaPid
+    tab_click_status=${tab_click_fields[0]}
+    tab_click_blocker=${tab_click_fields[1]}
+    select_project_evidence_status=${tab_click_fields[2]}
+    select_project_target_display_name=${tab_click_fields[3]}
+    select_project_target_repo_path=${tab_click_fields[4]}
+    select_project_opened_display_name=${tab_click_fields[5]}
+    select_project_opened_repo_path=${tab_click_fields[6]}
+    select_project_project_open_observed=${tab_click_fields[7]}
     select_project_next_blocker=$(inventory_json_compact_field "$run_dir/tab-click-observation.json" nextBlocker)
     select_project_window_context=$(inventory_json_compact_field "$run_dir/tab-click-observation.json" selectProjectWindowContext)
-    select_project_alice_java_pid=$(inventory_json_field "$run_dir/tab-click-observation.json" javaPid)
+    select_project_alice_java_pid=${tab_click_fields[8]}
     select_project_starters_tab_safety=$(inventory_json_compact_field "$run_dir/tab-click-observation.json" startersTabSafety)
   fi
   local post_open_status=not-requested post_open_blocker=not-requested
@@ -2466,8 +2523,10 @@ JSON
       "$run_dir/x-window-inventory.json" \
       "$run_dir/tab-click-observation.json" \
       "$run_dir/post-project-open-observation.json"
-    post_open_status=$(inventory_json_field "$run_dir/post-project-open-observation.json" status)
-    post_open_blocker=$(inventory_json_field "$run_dir/post-project-open-observation.json" blocker)
+    local -a post_open_fields
+    read_inventory_json_fields post_open_fields "$run_dir/post-project-open-observation.json" status blocker
+    post_open_status=${post_open_fields[0]}
+    post_open_blocker=${post_open_fields[1]}
   fi
   local procedure_target_status=not-requested procedure_target_blocker=not-requested
   if [ "$scenario_id" = "$FIRST_LESSON_PROCEDURE_TARGET_SCENARIO" ]; then
@@ -2480,8 +2539,10 @@ JSON
       "$automation_mode" \
       "$target_starter_display_name" \
       "$target_starter_repo_path"
-    procedure_target_status=$(inventory_json_field "$run_dir/$FIRST_LESSON_PROCEDURE_TARGET_ARTIFACT" status)
-    procedure_target_blocker=$(inventory_json_field "$run_dir/$FIRST_LESSON_PROCEDURE_TARGET_ARTIFACT" blocker.kind)
+    local -a procedure_target_fields
+    read_inventory_json_fields procedure_target_fields "$run_dir/$FIRST_LESSON_PROCEDURE_TARGET_ARTIFACT" status blocker.kind
+    procedure_target_status=${procedure_target_fields[0]}
+    procedure_target_blocker=${procedure_target_fields[1]}
   fi
   local runtime_display_status=not-requested runtime_display_blocker=not-requested
   if [ "$scenario_id" = "$POST_OPEN_RUNTIME_DISPLAY_SCENARIO" ]; then
@@ -2492,19 +2553,26 @@ JSON
       "$run_dir/runtime-display-accessibility-status.txt" \
       "$scenario_id" \
       "$automation_mode"
-    runtime_display_status=$(inventory_json_field "$run_dir/$POST_OPEN_RUNTIME_DISPLAY_ARTIFACT" status)
-    runtime_display_blocker=$(inventory_json_field "$run_dir/$POST_OPEN_RUNTIME_DISPLAY_ARTIFACT" blocker)
+    local -a runtime_display_fields
+    read_inventory_json_fields runtime_display_fields "$run_dir/$POST_OPEN_RUNTIME_DISPLAY_ARTIFACT" status blocker
+    runtime_display_status=${runtime_display_fields[0]}
+    runtime_display_blocker=${runtime_display_fields[1]}
   fi
   local window_inventory_status alice_window_candidate_count application_root_error_status application_root_error_blocker license_dialog_status license_dialog_blocker select_project_status select_project_blocker select_project_interaction
-  window_inventory_status=$(inventory_json_field "$run_dir/x-window-inventory.json" status)
-  alice_window_candidate_count=$(inventory_json_field "$run_dir/x-window-inventory.json" aliceWindowCandidateCount)
-  application_root_error_status=$(inventory_json_field "$run_dir/application-root-error.json" status)
-  application_root_error_blocker=$(inventory_json_field "$run_dir/application-root-error.json" blocker)
-  license_dialog_status=$(inventory_json_field "$run_dir/license-dialog.json" status)
-  license_dialog_blocker=$(inventory_json_field "$run_dir/license-dialog.json" blocker)
-  select_project_status=$(inventory_json_field "$run_dir/select-project-window.json" status)
-  select_project_blocker=$(inventory_json_field "$run_dir/select-project-window.json" blocker)
-  select_project_interaction=$(inventory_json_field "$run_dir/select-project-window.json" interactionProof)
+  local -a window_inventory_fields application_root_error_fields license_dialog_fields select_project_fields
+  read_inventory_json_fields window_inventory_fields "$run_dir/x-window-inventory.json" status aliceWindowCandidateCount
+  read_inventory_json_fields application_root_error_fields "$run_dir/application-root-error.json" status blocker
+  read_inventory_json_fields license_dialog_fields "$run_dir/license-dialog.json" status blocker
+  read_inventory_json_fields select_project_fields "$run_dir/select-project-window.json" status blocker interactionProof
+  window_inventory_status=${window_inventory_fields[0]}
+  alice_window_candidate_count=${window_inventory_fields[1]}
+  application_root_error_status=${application_root_error_fields[0]}
+  application_root_error_blocker=${application_root_error_fields[1]}
+  license_dialog_status=${license_dialog_fields[0]}
+  license_dialog_blocker=${license_dialog_fields[1]}
+  select_project_status=${select_project_fields[0]}
+  select_project_blocker=${select_project_fields[1]}
+  select_project_interaction=${select_project_fields[2]}
 
   local screenshot_tool screenshot_status
   screenshot_tool=$(screenshot_tool_name)
@@ -2702,9 +2770,11 @@ JSON
     write_visible_rendering_pixel_sampling_blocker \
       "$run_dir" \
       "$run_dir/controlled-display-pixel-observation.json"
-    visible_rendering_pixel_sampling_status=$(inventory_json_field "$run_dir/$VISIBLE_RENDERING_PIXEL_SAMPLING_BLOCKER" status)
+    local -a visible_rendering_pixel_sampling_fields
+    read_inventory_json_fields visible_rendering_pixel_sampling_fields "$run_dir/$VISIBLE_RENDERING_PIXEL_SAMPLING_BLOCKER" status blocker
+    visible_rendering_pixel_sampling_status=${visible_rendering_pixel_sampling_fields[0]}
     visible_rendering_pixel_sampling_artifact="$VISIBLE_RENDERING_PIXEL_SAMPLING_BLOCKER"
-    visible_rendering_pixel_sampling_blocker=$(inventory_json_field "$run_dir/$VISIBLE_RENDERING_PIXEL_SAMPLING_BLOCKER" blocker)
+    visible_rendering_pixel_sampling_blocker=${visible_rendering_pixel_sampling_fields[1]}
     scenario_outcome=blocked
     if [ "$observation_status" = observed ] && [ "$runtime_display_status" = observed ] && [ "$visible_rendering_pixel_sampling_status" = observed ]; then
       scenario_outcome=passed
