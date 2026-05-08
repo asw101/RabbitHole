@@ -33,7 +33,7 @@ This reference describes the Alice desktop outside-in QA lane: file layout, runn
 | --- | --- | --- | --- |
 | `alice-desktop-launch` | `launch` | `xvfb-real-alice` | Starts the real Alice desktop through Maven under Xvfb and captures launch evidence. |
 | `alice-desktop-select-project-inventory` | `select-project-interaction-smoke` | `xvfb-real-alice` | Waits for the real Select Project chooser after isolated license opt-in and records title, class, process, and geometry without opening a project. |
-| `alice-desktop-select-project-tab-click-exec` | `select-project-tab-click-smoke` | `xvfb-real-alice` | Uses the AT-SPI exec:exec launch path to activate Select Project tabs. The target-specific feature contract will bind this scenario to `Africa Full` and either prove target-specific selection/opening or record the exact blocker. |
+| `alice-desktop-select-project-tab-click-exec` | `select-project-tab-click-smoke` | `xvfb-real-alice` | Uses the AT-SPI exec:exec launch path to activate Select Project tabs, bind the scenario to `Africa Full`, and either prove target-specific selection/opening or record the exact blocker. |
 | `alice-desktop-post-project-open-window-state` | `post-project-open-window-state-smoke` | `xvfb-real-alice` | Characterizes the Alice main-window AT-SPI frame state after project open. Under the target-specific feature contract, it must be gated by prior Africa Full Select Project evidence. |
 | `alice-desktop-instructor-student-setup` | `instructor-student-setup` | `manual-evidence-required` | Covers instructor starter-project preparation and student project opening/saving. |
 | `alice-desktop-scene-creation` | `scene-creation` | `manual-evidence-required` | Covers creating or selecting a starter scene and saving it as an Alice project. |
@@ -262,8 +262,8 @@ supportingEvidence:
 | `automation.argv` | string list | Argument vector executed directly by the runner without shell interpretation. Required for `xvfb-real-alice` and `gated-command-smoke`; only the checked-in Alice QA argv allowlist is accepted. |
 | `automation.timeoutSeconds` | positive integer | Default timeout for argv-backed automation. Required for `xvfb-real-alice` and `gated-command-smoke`. |
 | `automation.readyWaitSeconds` | positive integer | Wait before screenshot capture for UI automation; use `1` for command smokes. Required for `xvfb-real-alice` and `gated-command-smoke`. |
-| `targetStarter.displayName` | string | Planned target-specific field: display name of the committed starter project targeted by Select Project AT-SPI automation. Required for `alice-desktop-select-project-tab-click-exec` when the target-specific feature lands. |
-| `targetStarter.repositoryPath` | string | Planned target-specific field: repository-relative path recorded as target evidence metadata. For the Select Project AT-SPI target scenario this must be `core/resources/src/application/resources/starter-projects/AfricaFull.a3p`. |
+| `targetStarter.displayName` | string | Display name of the committed starter project targeted by Select Project AT-SPI automation. Required for target-specific Select Project evidence scenarios. |
+| `targetStarter.repositoryPath` | string | Repository-relative path recorded as target evidence metadata. For the Select Project AT-SPI target scenarios this must be `core/resources/src/application/resources/starter-projects/AfricaFull.a3p`. |
 | `supportingEvidence` | string list | Scenario IDs or evidence sources that support this scenario. |
 | `tags` | string list | Additional scenario labels. |
 

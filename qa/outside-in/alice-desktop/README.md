@@ -30,7 +30,7 @@ Each scenario uses the same fields:
 - `evidence.required`
 - `fallback`
 
-The planned target-specific Select Project feature will use `targetStarter.displayName` and `targetStarter.repositoryPath` to bind AT-SPI evidence to a committed starter project instead of a generic chooser dismissal.
+The target-specific Select Project scenarios use `targetStarter.displayName` and `targetStarter.repositoryPath` to bind AT-SPI evidence to a committed starter project instead of a generic chooser dismissal.
 
 Allowed `automationMode` values are:
 
@@ -125,7 +125,7 @@ The runner records evidence under `qa/outside-in/alice-desktop/evidence/<scenari
 | `ALICE_QA_RUN_GATED_SMOKES` | Execute gated command smoke scenarios when set to `1`; otherwise they write `gated-not-run` evidence and exit non-zero unless `--prepare-only` is requested. |
 | `NODE_OPTIONS` | Optional for surrounding Node-based orchestrators. Use `--max-old-space-size=32768` when needed; this lane itself does not require Node. |
 
-The planned Select Project Africa Full feature must pass `targetStarter.displayName` and `targetStarter.repositoryPath` to the AT-SPI probe as `TARGET_STARTER_DISPLAY_NAME` and `TARGET_STARTER_REPO_PATH`. These variables are runner-managed evidence metadata, not user configuration knobs.
+The Select Project Africa Full scenarios pass `targetStarter.displayName` and `targetStarter.repositoryPath` to the AT-SPI probe as `TARGET_STARTER_DISPLAY_NAME` and `TARGET_STARTER_REPO_PATH`. These variables are runner-managed evidence metadata, not user configuration knobs.
 
 ## Scenario authoring checklist
 

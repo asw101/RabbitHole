@@ -1,12 +1,12 @@
 # Select Project Africa Full AT-SPI evidence reference
 
-This reference defines the intended scenario metadata, runner contract, and JSON evidence for selecting/opening the committed `Africa Full` starter through the Alice Select Project dialog.
+This reference defines the scenario metadata, runner contract, and JSON evidence for selecting/opening the committed `Africa Full` starter through the Alice Select Project dialog.
 
-It is a feature contract, not a claim that the current runner already emits every field below. The scenario YAML, JSON schema, validator, runner, tab-click probe, post-open probe, and tests must land together before this contract is treated as implemented.
+The scenario YAML, JSON schema, validator, runner, tab-click probe, post-open probe, and tests implement this contract together.
 
 ## Target starter metadata
 
-The target-specific feature must add exact starter metadata to `qa/outside-in/alice-desktop/scenarios/select-project-tab-click-exec.yaml`:
+The target-specific scenarios declare exact starter metadata:
 
 | Field | Value |
 | --- | --- |
@@ -50,16 +50,15 @@ When the target is found, the observation records the AT-SPI node shape:
 
 | Field | Type | Meaning |
 | --- | --- | --- |
-| `observed` | boolean | Whether an accessible matching `Africa Full` was found. |
 | `name` | string | Accessible name. |
 | `role` | string | Accessible role name. |
 | `states` | string list | Safe state names reported by AT-SPI. |
-| `actions` | string list | Available AT-SPI action names, such as `click` or `activate`. |
+| `availableActions` | string list | Available AT-SPI action names, such as `click` or `activate`. |
 | `treePath` | integer list | Child indexes from the Select Project frame to the target node. |
-| `indexInParent` | integer or null | Target index in its immediate parent when available. |
-| `selectionInterfaceAvailable` | boolean | Whether the target or parent exposes a usable selection interface. |
+| `indexInParent` | integer | Target index in its immediate parent when available, or `-1` when unavailable. |
+| `parentSelectionAvailable` | boolean | Whether the parent list exposes a usable selection interface. |
 
-If the target is not found, `targetStarterObserved.observed=false`; `blocker`, `blockerDetail`, and `targetStarterBlocker` explain the active Starters context and discovered candidate names.
+If the target is not found, `targetStarterObserved` remains `null`; `blocker`, `blockerDetail`, and `targetStarterBlocker` explain the active Starters context and discovered candidate lists.
 
 ### Required action order
 
@@ -90,7 +89,7 @@ Every non-`opened` terminal result must preserve existing blocker compatibility 
 
 | Field | Meaning |
 | --- | --- |
-| `blocker` | Stable machine-readable blocker code, such as `target-starter-selection-blocked`. |
+| `blocker` | Stable machine-readable blocker code, such as `target-starter-selection-unavailable`. |
 | `blockerDetail` | Concise existing-style explanation for humans and current tests. |
 | `targetStarterBlocker` | Structured target-specific blocker evidence. |
 

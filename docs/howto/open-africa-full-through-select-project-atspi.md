@@ -2,7 +2,7 @@
 
 Use the Select Project AT-SPI scenario to advance beyond the main-window proof and either prove that the committed `Africa Full` starter was selected/opened or capture the exact automation blocker.
 
-This page describes the target-specific contract for the feature to build. Until the matching scenario, schema, validator, runner, and probe changes land together, treat the `targetStarter` and `evidenceStatus` fields below as the intended review contract rather than current runner output.
+This page describes the target-specific contract implemented by the scenario, schema, validator, runner, and probes. Treat `targetStarter` and `evidenceStatus` as the review boundary for Africa Full evidence.
 
 ## Prerequisites
 
@@ -22,7 +22,7 @@ sudo apt-get install -y python3-pyatspi
 test -f /usr/share/java/java-atk-wrapper.jar
 ```
 
-After the target-specific implementation lands, use an isolated first-run license state for controlled QA launches:
+Use an isolated first-run license state for controlled QA launches:
 
 ```bash
 export NODE_OPTIONS=--max-old-space-size=32768
@@ -34,7 +34,7 @@ qa/outside-in/alice-desktop/runners/run-scenario.sh run \
 
 ## What the scenario targets
 
-The feature will extend the checked-in scenario with the starter target in `targetStarter`:
+The checked-in scenario declares the starter target in `targetStarter`:
 
 ```yaml
 targetStarter:
@@ -67,8 +67,9 @@ Open `tab-click-observation.json` in the run directory. Treat the Select Project
     "repositoryPath": "core/resources/src/application/resources/starter-projects/AfricaFull.a3p"
   },
   "targetStarterObserved": {
-    "observed": true,
-    "name": "Africa Full"
+    "name": "Africa Full",
+    "role": "panel",
+    "availableActions": ["click"]
   },
   "targetStarterSelected": true,
   "targetStarterOpenAttempted": true,
@@ -94,12 +95,11 @@ If AT-SPI can see the Select Project window but cannot complete target-specific 
     "repositoryPath": "core/resources/src/application/resources/starter-projects/AfricaFull.a3p"
   },
   "targetStarterObserved": {
-    "observed": true,
     "name": "Africa Full",
     "role": "panel",
     "states": ["enabled", "visible", "showing"],
-    "actions": [],
-    "selectionInterfaceAvailable": false,
+    "availableActions": [],
+    "parentSelectionAvailable": false,
     "treePath": [0, 3, 1, 0],
     "indexInParent": 0
   },
@@ -107,7 +107,7 @@ If AT-SPI can see the Select Project window but cannot complete target-specific 
   "targetStarterOpenAttempted": false,
   "projectOpenObserved": false,
   "evidenceStatus": "blocked",
-  "blocker": "target-starter-selection-blocked",
+  "blocker": "target-starter-selection-unavailable",
   "blockerDetail": "Africa Full is visible in the active Starters context but exposes no click/activate action and no usable parent selection interface.",
   "targetStarterBlocker": {
     "observedAtspiState": "Africa Full panel is visible in the active Starters context but exposes no click/activate action and no usable parent selection interface.",

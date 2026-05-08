@@ -199,9 +199,7 @@ Review `swing-widget-observation.json`. If `status=observed`, the Java process a
 
 ## Open Africa Full from Select Project
 
-The Select Project tab-click feature contract targets the committed starter project `core/resources/src/application/resources/starter-projects/AfricaFull.a3p` with display name `Africa Full`. It starts from the existing Select Project/main-window proof path and advances only through AT-SPI automation.
-
-Until the matching scenario metadata, schema, validator, runner, and probe changes land together, this section describes the intended target-specific evidence contract rather than the current tab-click artifact shape.
+The Select Project tab-click scenario targets the committed starter project `core/resources/src/application/resources/starter-projects/AfricaFull.a3p` with display name `Africa Full`. It starts from the existing Select Project/main-window proof path and advances only through AT-SPI automation.
 
 ```bash
 export NODE_OPTIONS=--max-old-space-size=32768
