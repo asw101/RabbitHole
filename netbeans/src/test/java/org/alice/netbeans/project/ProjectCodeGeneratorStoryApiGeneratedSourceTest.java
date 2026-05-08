@@ -1,5 +1,7 @@
 package org.alice.netbeans.project;
 
+import edu.cmu.cs.dennisc.animation.Animator;
+import edu.cmu.cs.dennisc.animation.ClockBasedAnimator;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -39,6 +41,7 @@ import org.lgna.story.event.SceneActivationEvent;
 import org.lgna.story.event.SceneActivationListener;
 import org.lgna.story.event.TimeEvent;
 import org.lgna.story.event.TimeListener;
+import org.lgna.story.implementation.ProgramImp;
 
 import java.io.File;
 import java.io.StringWriter;
@@ -75,6 +78,46 @@ public class ProjectCodeGeneratorStoryApiGeneratedSourceTest {
     assertTrue(programSource.contains("void configureStory()"));
     assertTrue(programSource, programSource.contains("this.setSimulationSpeedFactor(1.5);"));
     compileProgramAndLauncher("generated-story-api-call-classes", programPath, sourceDirectory);
+  }
+
+  @Test
+  public void generatedStoryApiSimulationSpeedCallUpdatesRuntimeStateHeadlessly() throws Exception {
+    Path sourceDirectory = generateProgramSource(
+        "synthetic-story-api-speed-runtime.a3p",
+        programTypeWithStoryApiCall(),
+        "generated-story-api-speed-runtime-src");
+
+    Path programPath = sourceDirectory.resolve("Program.java");
+    Path classesDirectory = temporaryFolder.newFolder("generated-story-api-speed-runtime-classes").toPath();
+    compileJavaSources(classesDirectory, programPath);
+    try (GeneratedProgramClassLoader classLoader = new GeneratedProgramClassLoader(
+        new URL[] {classesDirectory.toUri().toURL()})) {
+      Class<?> programClass = Class.forName("Program", true, classLoader);
+      var constructor = programClass.getDeclaredConstructor();
+      constructor.setAccessible(true);
+      ProgramImp.ACCEPTABLE_HACK_FOR_NOW_setClassForNextInstance(HeadlessProgramImp.class);
+      SProgram program = (SProgram) constructor.newInstance();
+
+      // Direct configureStory invocation characterizes generated runtime state without launching rendering.
+      var configureStory = programClass.getDeclaredMethod("configureStory");
+      configureStory.setAccessible(true);
+      configureStory.invoke(program);
+
+      assertEquals(1.5, program.getSimulationSpeedFactor(), 0.0);
+    }
+  }
+
+  public static class HeadlessProgramImp extends ProgramImp {
+    private final ClockBasedAnimator animator = new ClockBasedAnimator();
+
+    public HeadlessProgramImp(SProgram abstraction) {
+      super(abstraction, null);
+    }
+
+    @Override
+    public Animator getAnimator() {
+      return this.animator;
+    }
   }
 
   @Test
@@ -639,5 +682,28 @@ public class ProjectCodeGeneratorStoryApiGeneratedSourceTest {
     Path classesDirectory = temporaryFolder.newFolder(classesDirectoryName).toPath();
     compileJavaSources(classesDirectory, sources.toArray(Path[]::new));
     return classesDirectory;
+  }
+
+  private static class GeneratedProgramClassLoader extends URLClassLoader {
+    GeneratedProgramClassLoader(URL[] urls) {
+      super(urls, ProjectCodeGeneratorStoryApiGeneratedSourceTest.class.getClassLoader());
+    }
+
+    @Override
+    protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+      if ("Program".equals(name)) {
+        synchronized (getClassLoadingLock(name)) {
+          Class<?> loadedClass = findLoadedClass(name);
+          if (loadedClass == null) {
+            loadedClass = findClass(name);
+          }
+          if (resolve) {
+            resolveClass(loadedClass);
+          }
+          return loadedClass;
+        }
+      }
+      return super.loadClass(name, resolve);
+    }
   }
 }
