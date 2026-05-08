@@ -49,6 +49,7 @@ workflow_values = {
     "select-project-widget-introspection-smoke",
     "select-project-atk-exec-smoke",
     "select-project-tab-click-smoke",
+    "post-project-open-window-state-smoke",
     "export",
     "wizard-palette-completion-smoke",
 }
