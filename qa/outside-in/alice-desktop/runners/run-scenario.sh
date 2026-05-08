@@ -1083,6 +1083,8 @@ from pathlib import Path
 output_path = Path(sys.argv[1])
 controlled_display_path = Path(os.environ.get("VISIBLE_RENDERING_CONTROLLED_DISPLAY_ARTIFACT", ""))
 SOURCE_ARTIFACT = "controlled-display-pixel-observation.json"
+CONTROLLED_DISPLAY_CLAIM_SCOPE = "controlled-display-screenshot-consistency"
+CONTROLLED_DISPLAY_STATUSES = {"observed", "blocked"}
 unsupported_claims = [
     "world-canvas-pixel-correctness",
     "full-visible-rendering-correctness",
@@ -1095,16 +1097,22 @@ unsupported_claims = [
 ]
 
 
-def relative_artifact_name(path):
-    return path.name if str(path) else SOURCE_ARTIFACT
-
-
 def read_controlled_display(path):
+    if path.name != SOURCE_ARTIFACT:
+        return None
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
         return None
-    return payload if isinstance(payload, dict) else None
+    if not isinstance(payload, dict):
+        return None
+    if payload.get("schemaVersion") != 1:
+        return None
+    if payload.get("claimScope") != CONTROLLED_DISPLAY_CLAIM_SCOPE:
+        return None
+    if payload.get("status") not in CONTROLLED_DISPLAY_STATUSES:
+        return None
+    return payload
 
 
 def screenshot_path(payload):
@@ -1151,7 +1159,7 @@ payload = {
     "blockerDetail": blocker_detail,
     "claimScope": "visible-rendering-world-canvas-pixel-sampling",
     "claimScopeDetail": claim_scope_detail,
-    "sourceArtifact": relative_artifact_name(controlled_display_path),
+    "sourceArtifact": SOURCE_ARTIFACT,
     "prerequisiteTargetStatus": prerequisite_status,
     "exactNextUnblocker": exact_next_unblocker,
     "renderedWorldPixelsObserved": False,
