@@ -456,6 +456,26 @@
         }
       }
     },
+    "targetStarter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "displayName",
+        "repositoryPath"
+      ],
+      "properties": {
+        "displayName": {
+          "type": "string",
+          "minLength": 1
+        },
+        "repositoryPath": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*$",
+          "description": "Repository-relative evidence metadata; runners do not treat it as a filesystem target."
+        }
+      }
+    },
     "evidence": {
       "type": "object",
       "additionalProperties": false,

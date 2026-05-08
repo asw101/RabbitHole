@@ -2,7 +2,7 @@
 
 This lane defines executable acceptance coverage for Alice desktop workflows without changing product modules. It keeps scenario intent, execution wrappers, and evidence requirements in one repo-owned QA area.
 
-For user-facing instructions, see [Run Alice desktop outside-in QA](../../../docs/howto/alice-desktop-outside-in-qa.md). For the complete scenario schema and runner interface, see the [Alice desktop outside-in QA reference](../../../docs/reference/alice-desktop-outside-in-qa.md).
+For user-facing instructions, see [Run Alice desktop outside-in QA](../../../docs/howto/alice-desktop-outside-in-qa.md). For the target-specific Select Project starter path, see [Open Africa Full through Select Project with AT-SPI](../../../docs/howto/open-africa-full-through-select-project-atspi.md) and the [Select Project Africa Full AT-SPI evidence reference](../../../docs/reference/select-project-africa-full-atspi-evidence.md). For the complete scenario schema and runner interface, see the [Alice desktop outside-in QA reference](../../../docs/reference/alice-desktop-outside-in-qa.md).
 
 ## What belongs here
 
@@ -29,6 +29,8 @@ Each scenario uses the same fields:
 - `expectedOutcomes`
 - `evidence.required`
 - `fallback`
+
+The planned target-specific Select Project feature will use `targetStarter.displayName` and `targetStarter.repositoryPath` to bind AT-SPI evidence to a committed starter project instead of a generic chooser dismissal.
 
 Allowed `automationMode` values are:
 
@@ -122,6 +124,8 @@ The runner records evidence under `qa/outside-in/alice-desktop/evidence/<scenari
 | `ALICE_QA_ACCEPT_LICENSES_FOR_TESTS` | Set to `1` only for controlled QA launches that need to bypass first-run License Agreement dialogs with an isolated Java Preferences user root. |
 | `ALICE_QA_RUN_GATED_SMOKES` | Execute gated command smoke scenarios when set to `1`; otherwise they write `gated-not-run` evidence and exit non-zero unless `--prepare-only` is requested. |
 | `NODE_OPTIONS` | Optional for surrounding Node-based orchestrators. Use `--max-old-space-size=32768` when needed; this lane itself does not require Node. |
+
+The planned Select Project Africa Full feature must pass `targetStarter.displayName` and `targetStarter.repositoryPath` to the AT-SPI probe as `TARGET_STARTER_DISPLAY_NAME` and `TARGET_STARTER_REPO_PATH`. These variables are runner-managed evidence metadata, not user configuration knobs.
 
 ## Scenario authoring checklist
 
