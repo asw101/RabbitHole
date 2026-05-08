@@ -33,6 +33,7 @@ import org.lgna.project.ast.UserField;
 import org.lgna.project.ast.UserLocal;
 import org.lgna.project.ast.UserMethod;
 import org.lgna.project.ast.UserParameter;
+import org.lgna.project.ast.WhileLoop;
 
 import java.util.Set;
 
@@ -1786,6 +1787,114 @@ public class TweedleEncoderDecoderTest {
         expression instanceof LogicalComplement);
     LogicalComplement complement = (LogicalComplement) expression;
     assertSame(JavaType.BOOLEAN_OBJECT_TYPE, complement.getType());
+  }
+
+  // --- WhileLoop ---
+
+  @Test
+  public void decodeClassWithWhileLoopInVoidMethodCreatesWhileLoop() throws Exception {
+    NamedUserType type = decodeUserType("""
+        class SyntheticType {
+          WholeNumber count <- 0;
+          void reset(Boolean flag) {
+            while (flag) { count <- 0; }
+          }
+        }
+        """);
+
+    UserMethod method = type.getDeclaredMethods().get(0);
+    assertEquals(1, method.body.getValue().statements.size());
+    assertTrue(method.body.getValue().statements.get(0) instanceof WhileLoop);
+    WhileLoop loop = (WhileLoop) method.body.getValue().statements.get(0);
+    assertTrue(loop.conditional.getValue() instanceof ParameterAccess);
+    assertSame(JavaType.BOOLEAN_OBJECT_TYPE, loop.conditional.getValue().getType());
+    assertEquals(1, loop.body.getValue().statements.size());
+    assertTrue(loop.body.getValue().statements.get(0) instanceof ExpressionStatement);
+  }
+
+  @Test
+  public void decodeClassWithWhileLoopWithRelationalConditionCreatesWhileLoop() throws Exception {
+    NamedUserType type = decodeUserType("""
+        class SyntheticType {
+          WholeNumber count <- 10;
+          void countDown(WholeNumber n) {
+            while (n > 0) { count <- 0; }
+          }
+        }
+        """);
+
+    UserMethod method = type.getDeclaredMethods().get(0);
+    assertEquals(1, method.body.getValue().statements.size());
+    assertTrue(method.body.getValue().statements.get(0) instanceof WhileLoop);
+    WhileLoop loop = (WhileLoop) method.body.getValue().statements.get(0);
+    assertRelationalInfix(loop.conditional.getValue(), RelationalInfixExpression.Operator.GREATER);
+    assertEquals(1, loop.body.getValue().statements.size());
+  }
+
+  @Test
+  public void decodeClassWithEmptyWhileLoopBodyCreatesWhileLoopWithEmptyBody() throws Exception {
+    NamedUserType type = decodeUserType("""
+        class SyntheticType {
+          void spin(Boolean flag) {
+            while (flag) { }
+          }
+        }
+        """);
+
+    UserMethod method = type.getDeclaredMethods().get(0);
+    assertEquals(1, method.body.getValue().statements.size());
+    assertTrue(method.body.getValue().statements.get(0) instanceof WhileLoop);
+    WhileLoop loop = (WhileLoop) method.body.getValue().statements.get(0);
+    assertEquals(0, loop.body.getValue().statements.size());
+  }
+
+  @Test
+  public void decodeClassWithWhileLoopNonBooleanConditionReportsUnsupported() {
+    UnsupportedTweedleDecodeException thrown = assertThrows(
+        UnsupportedTweedleDecodeException.class,
+        () -> coder.decode("""
+            class SyntheticType {
+              void bad(WholeNumber n) {
+                while (n) { }
+              }
+            }
+            """));
+
+    assertTrue(thrown.getMessage().contains("while condition"));
+    assertTrue(thrown.getMessage().contains("bad"));
+  }
+
+  @Test
+  public void decodeClassWithWhileLoopWithLocalDeclarationInBodyReportsUnsupported() {
+    UnsupportedTweedleDecodeException thrown = assertThrows(
+        UnsupportedTweedleDecodeException.class,
+        () -> coder.decode("""
+            class SyntheticType {
+              void bad(Boolean flag) {
+                while (flag) { WholeNumber x <- 1; }
+              }
+            }
+            """));
+
+    assertTrue(thrown.getMessage().contains("while loop bodies"));
+    assertTrue(thrown.getMessage().contains("bad"));
+  }
+
+  @Test
+  public void decodeClassWithWhileLoopInNonVoidMethodReportsUnsupported() {
+    UnsupportedTweedleDecodeException thrown = assertThrows(
+        UnsupportedTweedleDecodeException.class,
+        () -> coder.decode("""
+            class SyntheticType {
+              WholeNumber bad(Boolean flag) {
+                while (flag) { }
+                return 0;
+              }
+            }
+            """));
+
+    assertTrue(thrown.getMessage().contains("while loops"));
+    assertTrue(thrown.getMessage().contains("bad"));
   }
 
 }
