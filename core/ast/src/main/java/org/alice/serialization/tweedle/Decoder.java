@@ -70,6 +70,7 @@ import org.lgna.project.ast.UserField;
 import org.lgna.project.ast.UserLocal;
 import org.lgna.project.ast.UserMethod;
 import org.lgna.project.ast.UserParameter;
+import org.lgna.project.ast.WhileLoop;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -234,6 +235,12 @@ public class Decoder {
         statements.add(decodeMethodAssignmentStatement(method, assignment, allParameters, locals, fields));
       } else if (statement instanceof org.alice.tweedle.ast.ConditionalStatement conditionalStatement) {
         statements.add(decodeIfStatement(method, allParameters, locals, fields, conditionalStatement));
+      } else if (statement instanceof org.alice.tweedle.ast.WhileLoop whileLoop) {
+        if (returnType != JavaType.VOID_TYPE) {
+          throw new UnsupportedTweedleDecodeException(
+              "Tweedle while loops are only supported in void methods by the AST decoder: " + method.getName());
+        }
+        statements.add(decodeWhileLoop(method, allParameters, locals, fields, whileLoop));
       } else if (statement instanceof org.alice.tweedle.ast.ReturnStatement returnStatement
           && i == method.getBody().size() - 1) {
         statements.add(decodeReturnStatement(method, returnType, allParameters, locals, fields, returnStatement));
@@ -280,6 +287,41 @@ public class Decoder {
       } else {
         throw new UnsupportedTweedleDecodeException(
             "Only assignment statements are supported in Tweedle if/else bodies by the AST decoder: "
+                + method.getName());
+      }
+    }
+    return new BlockStatement(decoded.toArray(Statement[]::new));
+  }
+
+  private WhileLoop decodeWhileLoop(
+      TweedleMethod method,
+      UserParameter[] parameters,
+      List<UserLocal> locals,
+      List<UserField> fields,
+      org.alice.tweedle.ast.WhileLoop whileLoop) {
+    Expression condition = decodeValueExpression(method.getName(), whileLoop.getRunCondition(), parameters, locals, fields);
+    if (!JavaType.BOOLEAN_OBJECT_TYPE.isAssignableFrom(condition.getType())) {
+      throw new UnsupportedTweedleDecodeException(
+          "Tweedle while condition must be a Boolean expression: " + method.getName());
+    }
+    BlockStatement body = decodeWhileLoopBody(method, parameters, locals, fields, whileLoop.getStatements());
+    return new WhileLoop(condition, body);
+  }
+
+  private BlockStatement decodeWhileLoopBody(
+      TweedleMethod method,
+      UserParameter[] parameters,
+      List<UserLocal> locals,
+      List<UserField> fields,
+      List<TweedleStatement> statements) {
+    List<Statement> decoded = new ArrayList<>();
+    for (TweedleStatement statement : statements) {
+      if (statement instanceof org.alice.tweedle.ast.ExpressionStatement expressionStatement
+          && expressionStatement.getExpression() instanceof org.alice.tweedle.ast.AssignmentExpression assignment) {
+        decoded.add(decodeMethodAssignmentStatement(method, assignment, parameters, locals, fields));
+      } else {
+        throw new UnsupportedTweedleDecodeException(
+            "Only assignment statements are supported in Tweedle while loop bodies by the AST decoder: "
                 + method.getName());
       }
     }
