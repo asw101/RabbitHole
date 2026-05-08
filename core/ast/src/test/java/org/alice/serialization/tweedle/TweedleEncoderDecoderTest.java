@@ -6,8 +6,11 @@ import org.lgna.project.ast.AbstractNode;
 import org.lgna.project.ast.ArithmeticInfixExpression;
 import org.lgna.project.ast.ArrayInstanceCreation;
 import org.lgna.project.ast.AssignmentExpression;
+import org.lgna.project.ast.BlockStatement;
+import org.lgna.project.ast.BooleanExpressionBodyPair;
 import org.lgna.project.ast.BooleanLiteral;
 import org.lgna.project.ast.ConditionalInfixExpression;
+import org.lgna.project.ast.ConditionalStatement;
 import org.lgna.project.ast.DoubleLiteral;
 import org.lgna.project.ast.Expression;
 import org.lgna.project.ast.ExpressionStatement;
@@ -1583,6 +1586,105 @@ public class TweedleEncoderDecoderTest {
     assertTrue(thrown.getMessage().contains("not assignable to"));
     assertTrue(thrown.getMessage().contains("bad"));
   }
+
+  // --- if/else (ConditionalStatement) ---
+
+  @Test
+  public void decodeClassWithIfStatementInVoidMethodCreatesConditionalStatement() throws Exception {
+    NamedUserType type = decodeUserType("""
+        class SyntheticType {
+          WholeNumber count <- 0;
+          void reset(Boolean flag) {
+            if (flag) { count <- 0; }
+          }
+        }
+        """);
+
+    UserMethod method = type.getDeclaredMethods().get(0);
+    assertEquals(1, method.body.getValue().statements.size());
+    assertTrue(method.body.getValue().statements.get(0) instanceof ConditionalStatement);
+    ConditionalStatement conditional = (ConditionalStatement) method.body.getValue().statements.get(0);
+    assertEquals(1, conditional.booleanExpressionBodyPairs.size());
+    BooleanExpressionBodyPair pair = conditional.booleanExpressionBodyPairs.get(0);
+    assertTrue(pair.expression.getValue() instanceof org.lgna.project.ast.ParameterAccess);
+    assertEquals(1, pair.body.getValue().statements.size());
+    assertTrue(pair.body.getValue().statements.get(0) instanceof ExpressionStatement);
+    assertEquals(0, conditional.elseBody.getValue().statements.size());
+  }
+
+  @Test
+  public void decodeClassWithIfElseStatementInVoidMethodCreatesBothBranches() throws Exception {
+    NamedUserType type = decodeUserType("""
+        class SyntheticType {
+          WholeNumber count <- 0;
+          void toggle(Boolean flag) {
+            if (flag) { count <- 1; } else { count <- 0; }
+          }
+        }
+        """);
+
+    UserMethod method = type.getDeclaredMethods().get(0);
+    assertEquals(1, method.body.getValue().statements.size());
+    ConditionalStatement conditional = (ConditionalStatement) method.body.getValue().statements.get(0);
+    assertEquals(1, conditional.booleanExpressionBodyPairs.size());
+    BooleanExpressionBodyPair pair = conditional.booleanExpressionBodyPairs.get(0);
+    assertEquals(1, pair.body.getValue().statements.size());
+    assertEquals(1, conditional.elseBody.getValue().statements.size());
+    ExpressionStatement elseStmt = (ExpressionStatement) conditional.elseBody.getValue().statements.get(0);
+    AssignmentExpression elseAssign = (AssignmentExpression) elseStmt.expression.getValue();
+    assertIntegerLiteral(elseAssign.rightHandSide.getValue(), 0);
+  }
+
+  @Test
+  public void decodeClassWithIfStatementWithRelationalConditionCreatesConditionalStatement() throws Exception {
+    NamedUserType type = decodeUserType("""
+        class SyntheticType {
+          WholeNumber count <- 0;
+          void clampToZero(WholeNumber n) {
+            if (n < 0) { count <- 0; }
+          }
+        }
+        """);
+
+    UserMethod method = type.getDeclaredMethods().get(0);
+    ConditionalStatement conditional = (ConditionalStatement) method.body.getValue().statements.get(0);
+    BooleanExpressionBodyPair pair = conditional.booleanExpressionBodyPairs.get(0);
+    assertRelationalInfix(pair.expression.getValue(), RelationalInfixExpression.Operator.LESS);
+  }
+
+  @Test
+  public void decodeClassWithLocalDeclarationInIfBodyReportsUnsupported() {
+    UnsupportedTweedleDecodeException thrown = assertThrows(
+        UnsupportedTweedleDecodeException.class,
+        () -> coder.decode("""
+            class SyntheticType {
+              void bad(Boolean flag) {
+                if (flag) { WholeNumber x <- 1; }
+              }
+            }
+            """));
+
+    assertTrue(thrown.getMessage().contains("if/else"));
+    assertTrue(thrown.getMessage().contains("bad"));
+  }
+
+  @Test
+  public void decodeClassWithNestedIfInIfBodyReportsUnsupported() {
+    UnsupportedTweedleDecodeException thrown = assertThrows(
+        UnsupportedTweedleDecodeException.class,
+        () -> coder.decode("""
+            class SyntheticType {
+              WholeNumber count <- 0;
+              void bad(Boolean a, Boolean b) {
+                if (a) { if (b) { count <- 1; } }
+              }
+            }
+            """));
+
+    assertTrue(thrown.getMessage().contains("if/else"));
+    assertTrue(thrown.getMessage().contains("bad"));
+  }
+
 
   private NamedUserType decodeUserType(String source) throws Exception {
     AbstractNode decoded = coder.decode(source);

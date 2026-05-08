@@ -42,7 +42,9 @@ import org.lgna.project.ast.AbstractNode;
 import org.lgna.project.ast.AbstractType;
 import org.lgna.project.ast.ArithmeticInfixExpression;
 import org.lgna.project.ast.ArrayInstanceCreation;
+import org.lgna.project.ast.BooleanExpressionBodyPair;
 import org.lgna.project.ast.ConditionalInfixExpression;
+import org.lgna.project.ast.ConditionalStatement;
 import org.lgna.project.ast.StringConcatenation;
 import org.lgna.project.ast.AstUtilities;
 import org.lgna.project.ast.BlockStatement;
@@ -230,6 +232,8 @@ public class Decoder {
       } else if (statement instanceof org.alice.tweedle.ast.ExpressionStatement expressionStatement
           && expressionStatement.getExpression() instanceof org.alice.tweedle.ast.AssignmentExpression assignment) {
         statements.add(decodeMethodAssignmentStatement(method, assignment, allParameters, locals, fields));
+      } else if (statement instanceof org.alice.tweedle.ast.ConditionalStatement conditionalStatement) {
+        statements.add(decodeIfStatement(method, allParameters, locals, fields, conditionalStatement));
       } else if (statement instanceof org.alice.tweedle.ast.ReturnStatement returnStatement
           && i == method.getBody().size() - 1) {
         statements.add(decodeReturnStatement(method, returnType, allParameters, locals, fields, returnStatement));
@@ -242,6 +246,44 @@ public class Decoder {
       throw unsupportedMethodBody(method);
     }
     return new BlockStatement(statements.toArray(Statement[]::new));
+  }
+
+  private ConditionalStatement decodeIfStatement(
+      TweedleMethod method,
+      UserParameter[] parameters,
+      List<UserLocal> locals,
+      List<UserField> fields,
+      org.alice.tweedle.ast.ConditionalStatement conditional) {
+    Expression condition = decodeValueExpression(method.getName(), conditional.getCondition(), parameters, locals, fields);
+    if (!JavaType.BOOLEAN_OBJECT_TYPE.isAssignableFrom(condition.getType())) {
+      throw new UnsupportedTweedleDecodeException(
+          "Tweedle if condition must be a Boolean expression: " + method.getName());
+    }
+    BlockStatement thenBody = decodeConditionalBranchBody(method, parameters, locals, fields, conditional.getThenBlock());
+    BlockStatement elseBody = decodeConditionalBranchBody(method, parameters, locals, fields, conditional.getElseBlock());
+    return new ConditionalStatement(
+        new BooleanExpressionBodyPair[]{new BooleanExpressionBodyPair(condition, thenBody)},
+        elseBody);
+  }
+
+  private BlockStatement decodeConditionalBranchBody(
+      TweedleMethod method,
+      UserParameter[] parameters,
+      List<UserLocal> locals,
+      List<UserField> fields,
+      List<TweedleStatement> statements) {
+    List<Statement> decoded = new ArrayList<>();
+    for (TweedleStatement statement : statements) {
+      if (statement instanceof org.alice.tweedle.ast.ExpressionStatement expressionStatement
+          && expressionStatement.getExpression() instanceof org.alice.tweedle.ast.AssignmentExpression assignment) {
+        decoded.add(decodeMethodAssignmentStatement(method, assignment, parameters, locals, fields));
+      } else {
+        throw new UnsupportedTweedleDecodeException(
+            "Only assignment statements are supported in Tweedle if/else bodies by the AST decoder: "
+                + method.getName());
+      }
+    }
+    return new BlockStatement(decoded.toArray(Statement[]::new));
   }
 
   private LocalDeclarationStatement decodeLocalDeclarationStatement(
