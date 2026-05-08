@@ -86,6 +86,16 @@ def safe_node_name(node: Any) -> str:
         return ""
 
 
+def is_alice_main_window_java_process(window: dict[str, Any]) -> bool:
+    pid = window.get("pid")
+    return (
+        isinstance(pid, int)
+        and pid > 0
+        and str(window.get("processName", "")).lower() == "java"
+        and str(window.get("title", "")) == EXPECTED_ALICE_TITLE
+    )
+
+
 def find_java_pid(inventory: dict[str, Any]) -> int | None:
     """Return the Java PID for the Alice 3 main window, if positively identified."""
     windows = inventory.get("windows", [])
@@ -94,13 +104,8 @@ def find_java_pid(inventory: dict[str, Any]) -> int | None:
     for window in windows:
         if not isinstance(window, dict):
             continue
-        pid = window.get("pid")
-        if not isinstance(pid, int) or pid <= 0:
-            continue
-        if str(window.get("processName", "")).lower() != "java":
-            continue
-        if str(window.get("title", "")) == EXPECTED_ALICE_TITLE:
-            return pid
+        if is_alice_main_window_java_process(window):
+            return window["pid"]
     return None
 
 
@@ -253,7 +258,8 @@ def no_java_pid_payload(inventory_path: Path) -> dict[str, Any]:
         blocker="alice-window-java-pid-not-identified",
         blocker_detail=(
             "Unable to identify the Java process for the Alice 3 main window "
-            f"from {inventory_path.name}. Refusing to introspect an arbitrary "
+            f"from {inventory_path.name}. Only a window titled 'Alice 3' owned "
+            "by a Java process is eligible. Refusing to introspect an arbitrary "
             "Java process."
         ),
         java_pid=None,
