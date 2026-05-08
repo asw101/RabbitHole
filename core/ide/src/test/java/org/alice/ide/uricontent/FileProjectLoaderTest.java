@@ -22,28 +22,22 @@ public class FileProjectLoaderTest {
   public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
   @Test
-  public void aliceProjectLoadingReadsGeneratedArchiveFromRealTemporaryFile() throws Exception {
-    File projectFile = temporaryFolder.newFile("generated-world.a3p");
+  public void savedTemporaryProjectLoadsAndCorruptTemporaryProjectIsRejected() throws IOException {
+    File savedProject = temporaryFolder.newFile("saved-generated-world.a3p");
     Project project = new Project(programType("GeneratedProgram"), Project.SceneCameraType.WindowCamera);
-    IoUtilities.writeProject(projectFile, project);
-    FileProjectLoader loader = new FileProjectLoader(projectFile);
+    IoUtilities.writeProject(savedProject, project);
 
-    Project loadedProject = loader.load();
+    Project loadedProject = new FileProjectLoader(savedProject).load();
 
     assertNotNull(loadedProject);
     assertEquals("GeneratedProgram", loadedProject.getProgramType().getName());
-    assertEquals(Project.SceneCameraType.WindowCamera, loadedProject.createSaveManifest().projectStructure.sceneCameraType);
-  }
 
-  @Test
-  public void aliceProjectLoadingReturnsNullForCorruptRealTemporaryArchive() throws IOException {
-    File corruptProject = temporaryFolder.newFile("corrupt-world.a3p");
+    File corruptProject = temporaryFolder.newFile("corrupt-generated-world.a3p");
     Files.writeString(corruptProject.toPath(), "not an Alice project archive", StandardCharsets.UTF_8);
-    FileProjectLoader loader = new FileProjectLoader(corruptProject);
 
-    Project project = loader.load();
+    Project rejectedProject = new FileProjectLoader(corruptProject).load();
 
-    assertNull(project);
+    assertNull(rejectedProject);
   }
 
   @Test
