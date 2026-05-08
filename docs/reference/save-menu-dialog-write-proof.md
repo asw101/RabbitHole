@@ -15,7 +15,7 @@ This reference describes the bounded desktop-safe proof shard for Alice project 
 
 ## Purpose
 
-The proof shard exists to show one real Save path beyond rendered File menu dispatch. It does not attempt comprehensive Save coverage. The intended successful path is:
+The proof shard shows one real Save path beyond rendered File menu dispatch. It does not attempt comprehensive Save coverage. The successful path is:
 
 ```text
 Save menu item doClick()
@@ -50,24 +50,41 @@ A successful run proves all of the following in one bounded path:
 
 | Required observation | Meaning |
 | --- | --- |
-| Save menu item `doClick()` ran | The proof starts from the production menu item dispatch path, not a direct `fire()` or `SaveOperationFlow` call. |
+| Save menu item `doClick()` ran | The proof starts from the production menu item dispatch path, not a direct `fire()` or `SaveOperationFlow` call, and the artifact records `trigger.menu_item_doclick: true`. |
 | Exactly one expected live Swing `JFileChooser` was controlled | The test reached the production dialog boundary without ambiguous chooser discovery. |
 | Chooser approval completed | `approved_selection` means the EDT callback verified the selected path and called `approveSelection()`; a queued approval is not enough. |
 | Selected path matched the normalized expected target | The proof writes only inside the JUnit temp directory. |
 | The target file exists, ends with `.a3p`, and is non-empty | The Save path reached the project write boundary. |
 | Canonical evidence reports `wroteFile: true` only after file assertions pass | Machine-readable evidence cannot report a success-shaped write without the real file. |
 
-Any unproven run fails closed. Preexisting target files, incomplete chooser observations, timeouts, path mismatches, canonicalization failures, and multiple live `JFileChooser` instances must not produce approval or write success claims.
+Any unproven run fails closed. Preexisting target files, shortcut chooser/file signals without the recorded menu `doClick()` seam, incomplete chooser observations, timeouts, path mismatches, canonicalization failures, and multiple live `JFileChooser` instances must not produce trigger, approval, or write success claims.
 
-### Executable blocker
+### Unsupported display result
 
-If the proof cannot run because the JVM cannot create a non-headless desktop, the final executable result records this precise blocker:
+If the proof cannot run because the JVM cannot create a non-headless desktop, the executable proof writes an unsupported-result artifact and returns without claiming success. The precise reason is:
 
 ```text
 No available non-headless AWT display
 ```
 
-This blocker is the intended desktop-precondition blocker for the canonical shard. It means the environment must provide a display, such as Xvfb, before the Save dialog/control/write path can be exercised.
+This blocker is the desktop-precondition blocker for the canonical shard. It means the environment must provide a display, such as Xvfb, before the Save dialog/control/write path can be exercised.
+
+The proof shard keeps result states distinct:
+
+| State | Meaning |
+| --- | --- |
+| `proven` | Menu activation, chooser approval, selected path verification, and non-empty `.a3p` write all completed. |
+| `not_proven` | The proof ran under a display but the complete chain did not finish. |
+| `unsupported` | The proof did not exercise the dialog path because no non-headless AWT display was available. |
+| `gated-not-run` | Outside-in QA wrapper state only; the gated command was not executed. |
+
+The Maven proof writes generated artifacts under its test target directory. It does not write directly to the outside-in QA evidence path. If a PR cannot provide the display-backed proof and needs persistent review evidence, copy the generated unsupported artifact to:
+
+```text
+qa/outside-in/alice-desktop/evidence/save-menu-dialog-write-proof-blocker.json
+```
+
+That copied artifact remains an unsupported-result artifact. It must preserve the single reason, `No available non-headless AWT display`, keep all success-shaped fields false, avoid inferring chooser behavior, and avoid claiming that a project file was written.
 
 ## Evidence artifacts
 
@@ -89,7 +106,7 @@ The canonical proof artifact records:
 
 | Field | Contract |
 | --- | --- |
-| `status` | `proven` only when menu activation, chooser approval, and file write assertions all pass. |
+| `status` | `proven` only when menu activation, chooser approval, and file write assertions all pass; `not_proven` for display-backed runs that do not complete the chain; `unsupported` for missing non-headless AWT display. |
 | `dialogType` | `Swing JFileChooser` for the controlled Linux Swing chooser path. |
 | `wroteFile` | `true` only after the target exists inside the proof root, has `.a3p` extension, and has non-zero size. |
 | `claim` / `reporting_summary` | `claim` is present only for `status: proven`; unsupported or not-proven runs use `reporting_summary` and must not claim chooser approval or file writing. |
@@ -98,8 +115,23 @@ The canonical proof artifact records:
 | `written_artifact.target_file` | The proof-root-relative target path, or a redacted outside-root marker; evidence must not store absolute machine paths. |
 | `written_artifact.target_inside_proof_root` | `true` only when the written target stayed inside the controlled proof root. |
 | `proof_chain` | The production Save menu path from `menuItem.doClick()` through `SaveProjectOperation`, `AbstractSaveOperation.perform`, dialog approval, and project write. |
-| `trigger.menu_item_doclick` | `true` for the production Save menu item activation path. |
+| `trigger.menu_item_doclick` | `true` only after the proof records `menuItem.doClick()` on the Save menu item created by `getMenuItemPrepModel().createMenuItemAndAddTo(...)`; incomplete or shortcut artifacts keep it `false`. |
 | `doesNotClaim` | Explicit exclusions for lesson completion, rendering, grading, physical user clicks, broad UI automation, and native dialog coverage. |
+
+The unsupported display artifact has this contract:
+
+| Field | Contract |
+| --- | --- |
+| `status` | `unsupported`; never `proven`. |
+| `reason` | Exactly `No available non-headless AWT display`. |
+| `dialogType` | `Swing JFileChooser`, naming the dialog path that could not be exercised. |
+| `wroteFile` | `false`; the unsupported artifact never represents a successful Save write. |
+| `approved_selection`, `file_written`, `file_nonempty` | `false`; chooser approval and file write remain unproven. |
+| `reporting_summary` | States that the Save menu/control/dialog/write path requires a non-headless AWT display before it can be proven. |
+| `blocker.observed` | States that `GraphicsEnvironment.isHeadless()` is true or no usable desktop display is available. |
+| `blocker.required` | States that Xvfb or another non-headless AWT display capable of showing a Swing `JFileChooser` is required. |
+| `requiresNextEvidence` | Includes running the proof under `xvfb-run -a` or an equivalent desktop session and collecting a `status: proven` artifact. |
+| `doesNotClaim` | Explicitly excludes full lesson completion, visible rendering correctness, grading correctness, physical user clicks, broad UI automation coverage, and native dialog coverage. |
 
 The dialog-discovery companion artifact is:
 
@@ -157,6 +189,19 @@ xvfb-run -a mvn -DincludeSims=false -Dinstall4j.skip \
 
 If the environment already has a usable non-headless AWT display, `xvfb-run -a` is optional.
 
+The outside-in QA scenario delegates to the same focused proof command and remains gated:
+
+```bash
+ALICE_QA_RUN_GATED_SMOKES=1 \
+qa/outside-in/alice-desktop/runners/run-scenario.sh run \
+  alice-desktop-save-menu-dialog-write-proof \
+  --evidence-dir qa/outside-in/alice-desktop/evidence/save-menu-dialog-write-proof
+```
+
+Use the direct Maven command for the canonical proof artifact. Use the QA scenario when review also needs the standard outside-in `status.txt` and `command.log` wrapper evidence.
+
+The QA scenario executes the checked-in Maven argv directly. It relies on the ambient process environment for a usable display and options such as `NODE_OPTIONS`; it does not prepend `xvfb-run` or set memory options itself.
+
 To collect dialog-discovery evidence for this proof, set:
 
 ```bash
@@ -173,6 +218,9 @@ To collect dialog-discovery evidence for this proof, set:
   "dialogType": "Swing JFileChooser",
   "wroteFile": true,
   "claim": "Save menu item doClick opened a Swing JFileChooser, approved the selected .a3p path, and wrote a non-empty project file",
+  "trigger": {
+    "menu_item_doclick": true
+  },
   "observed_dialog": {
     "approved_selection": true,
     "ambiguous_chooser_discovery": false
@@ -207,6 +255,9 @@ A preexisting file at the expected target is not write proof. If the complete me
   "dialogType": "Swing JFileChooser",
   "wroteFile": false,
   "reporting_summary": "Save menu item doClick write path was not proven; chooser approval and file writing remain unproven",
+  "trigger": {
+    "menu_item_doclick": false
+  },
   "observed_dialog": {
     "approved_selection": false,
     "ambiguous_chooser_discovery": false
@@ -238,23 +289,35 @@ A preexisting file at the expected target is not write proof. If the complete me
 }
 ```
 
-### Display-precondition blocker
+### Unsupported display result
 
 ```json
 {
+  "schema_version": "eatme.alice-desktop-stageide-save-menu-doclick-write-proof/v1",
   "status": "unsupported",
   "reason": "No available non-headless AWT display",
-  "blocker": "Display environment does not support the Swing Save proof.",
+  "dialogType": "Swing JFileChooser",
   "wroteFile": false,
+  "approved_selection": false,
+  "file_written": false,
+  "file_nonempty": false,
+  "proofTarget": "Save menu/control/dialog/write path",
   "reporting_summary": "Save menu/control/dialog/write path requires a non-headless AWT display before it can be proven",
-  "observed_dialog": {
-    "approved_selection": false
-  },
-  "written_artifact": {
-    "file_written": false
+  "blocker": {
+    "observed": "GraphicsEnvironment.isHeadless() is true or no usable desktop display is available",
+    "required": "Xvfb or another non-headless AWT display capable of showing a Swing JFileChooser"
   },
   "requiresNextEvidence": [
-    "Run this proof shard under xvfb-run -a or an equivalent desktop session"
+    "Run this proof shard under xvfb-run -a or an equivalent desktop session",
+    "Save menu/control/dialog/write path artifact with status proven"
+  ],
+  "doesNotClaim": [
+    "full lesson completion",
+    "visible rendering correctness",
+    "grading correctness",
+    "physical user click",
+    "broad UI automation coverage",
+    "native dialog coverage"
   ]
 }
 ```
