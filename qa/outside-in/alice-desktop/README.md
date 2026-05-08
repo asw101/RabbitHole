@@ -2,7 +2,7 @@
 
 This lane defines executable acceptance coverage for Alice desktop workflows without changing product modules. It keeps scenario intent, execution wrappers, and evidence requirements in one repo-owned QA area.
 
-For user-facing instructions, see [Run Alice desktop outside-in QA](../../../docs/howto/alice-desktop-outside-in-qa.md). For the post-open runtime/display evidence contract, see [Post-open runtime/display accessibility evidence](../../../docs/reference/post-open-runtime-display-accessibility-evidence.md). For the target-specific Select Project starter path, see [Open Africa Full through Select Project with AT-SPI](../../../docs/howto/open-africa-full-through-select-project-atspi.md) and the [Select Project Africa Full AT-SPI evidence reference](../../../docs/reference/select-project-africa-full-atspi-evidence.md). For the live first-lesson procedure/code-editor target seam, see [First-Lesson Live Procedure Target Observation](../../../docs/reference/first-lesson-live-procedure-target-observation.md). For the complete scenario schema and runner interface, see the [Alice desktop outside-in QA reference](../../../docs/reference/alice-desktop-outside-in-qa.md).
+For user-facing instructions, see [Run Alice desktop outside-in QA](../../../docs/howto/alice-desktop-outside-in-qa.md). For the post-open runtime/display evidence contract, see [Post-open runtime/display accessibility evidence](../../../docs/reference/post-open-runtime-display-accessibility-evidence.md). For the target-specific Select Project starter path, see [Open Africa Full through Select Project with AT-SPI](../../../docs/howto/open-africa-full-through-select-project-atspi.md) and the [Select Project Africa Full AT-SPI evidence reference](../../../docs/reference/select-project-africa-full-atspi-evidence.md). For the live first-lesson procedure/code-editor target seam, see [First-Lesson Live Procedure Target Observation](../../../docs/reference/first-lesson-live-procedure-target-observation.md). For the learner-world setup/open/save assessment boundary, see [Learner-world assessment boundary](../../../docs/reference/learner-world-assessment-boundary.md). For the complete scenario schema and runner interface, see the [Alice desktop outside-in QA reference](../../../docs/reference/alice-desktop-outside-in-qa.md).
 
 ## What belongs here
 
@@ -44,8 +44,17 @@ pass result and does not evaluate the learner's work.
 The checked-in boundary record is
 `qa/outside-in/alice-desktop/contracts/learner-world-assessment-boundary.json`.
 That file is declarative documentation for the current claim boundary. It names
-the next blocker, `define-reviewed-assessment-contract`, and is not consumed by
-the runner as behavior.
+the blocker, `define-reviewed-assessment-contract`, and supplies the generated
+manual checklist boundary wording.
+
+The generated `manual-evidence-checklist.txt` for
+`alice-desktop-instructor-student-setup` uses the standard manual checklist
+sections and includes a generated `Assessment boundary` section. That section
+states manual evidence required, setup/open/save evidence review only, no
+automated grading, no rubric scoring, no correctness scoring, and no creative
+assessment. Learner-world state extraction for grading or creative assessment is
+blocked until the reviewed assessment contract, evidence mapping, and reviewed
+implementation exist.
 
 Do not use learner-world QA evidence to claim learner-work grading, rubric
 scoring, correctness assessment, or creativity assessment. Any future
