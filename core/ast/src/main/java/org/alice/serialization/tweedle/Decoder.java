@@ -14,11 +14,18 @@ import org.alice.tweedle.TweedleStatement;
 import org.alice.tweedle.TweedleType;
 import org.alice.tweedle.TweedleVoidType;
 import org.alice.tweedle.ast.AdditionExpression;
+import org.alice.tweedle.ast.BinaryExpression;
 import org.alice.tweedle.ast.BinaryNumericExpression;
 import org.alice.tweedle.ast.DivisionExpression;
+import org.alice.tweedle.ast.EqualToExpression;
+import org.alice.tweedle.ast.GreaterThanExpression;
+import org.alice.tweedle.ast.GreaterThanOrEqualExpression;
 import org.alice.tweedle.ast.IdentifierReference;
+import org.alice.tweedle.ast.LessThanExpression;
+import org.alice.tweedle.ast.LessThanOrEqualExpression;
 import org.alice.tweedle.ast.LocalVariableDeclaration;
 import org.alice.tweedle.ast.MultiplicationExpression;
+import org.alice.tweedle.ast.NotEqualToExpression;
 import org.alice.tweedle.ast.StringConcatenationExpression;
 import org.alice.tweedle.ast.SubtractionExpression;
 import org.alice.tweedle.ast.TweedleArrayInitializer;
@@ -48,6 +55,7 @@ import org.lgna.project.ast.NamedUserConstructor;
 import org.lgna.project.ast.NamedUserType;
 import org.lgna.project.ast.NullLiteral;
 import org.lgna.project.ast.ParameterAccess;
+import org.lgna.project.ast.RelationalInfixExpression;
 import org.lgna.project.ast.Statement;
 import org.lgna.project.ast.StringLiteral;
 import org.lgna.project.ast.SuperConstructorInvocationStatement;
@@ -405,6 +413,9 @@ public class Decoder {
           "Tweedle value expression identifier is not a known local, parameter, or field: "
               + ownerName + "." + name);
     }
+    if (expr instanceof BinaryExpression binaryExpr && isComparisonExpression(binaryExpr)) {
+      return decodeRelationalExpression(ownerName, binaryExpr, parameters, priorLocals, fields);
+    }
     if (expr instanceof BinaryNumericExpression<?> binaryNumeric) {
       return decodeBinaryNumericExpression(ownerName, binaryNumeric, parameters, priorLocals, fields);
     }
@@ -413,7 +424,7 @@ public class Decoder {
     }
     throw new UnsupportedTweedleDecodeException(
         "Unsupported Tweedle value expression (only primitive literals, identifier references, "
-            + "arithmetic binary expressions, and string concatenation are supported): " + ownerName);
+            + "arithmetic binary expressions, string concatenation, and comparison expressions are supported): " + ownerName);
   }
 
   private StringConcatenation decodeStringConcatenationExpression(
@@ -425,6 +436,50 @@ public class Decoder {
     Expression lhs = decodeValueExpression(ownerName, stringConcat.getLhs(), parameters, locals, fields);
     Expression rhs = decodeValueExpression(ownerName, stringConcat.getRhs(), parameters, locals, fields);
     return new StringConcatenation(lhs, rhs);
+  }
+
+  private boolean isComparisonExpression(BinaryExpression expr) {
+    return expr instanceof EqualToExpression
+        || expr instanceof NotEqualToExpression
+        || expr instanceof LessThanExpression
+        || expr instanceof LessThanOrEqualExpression
+        || expr instanceof GreaterThanExpression
+        || expr instanceof GreaterThanOrEqualExpression;
+  }
+
+  private RelationalInfixExpression decodeRelationalExpression(
+      String ownerName,
+      BinaryExpression binaryExpr,
+      UserParameter[] parameters,
+      List<UserLocal> locals,
+      List<UserField> fields) {
+    Expression lhs = decodeValueExpression(ownerName, binaryExpr.getLhs(), parameters, locals, fields);
+    Expression rhs = decodeValueExpression(ownerName, binaryExpr.getRhs(), parameters, locals, fields);
+    RelationalInfixExpression.Operator operator = relationalOperator(ownerName, binaryExpr);
+    return new RelationalInfixExpression(lhs, operator, rhs, lhs.getType(), rhs.getType());
+  }
+
+  private RelationalInfixExpression.Operator relationalOperator(String ownerName, BinaryExpression expr) {
+    if (expr instanceof EqualToExpression) {
+      return RelationalInfixExpression.Operator.EQUALS;
+    }
+    if (expr instanceof NotEqualToExpression) {
+      return RelationalInfixExpression.Operator.NOT_EQUALS;
+    }
+    if (expr instanceof LessThanExpression) {
+      return RelationalInfixExpression.Operator.LESS;
+    }
+    if (expr instanceof LessThanOrEqualExpression) {
+      return RelationalInfixExpression.Operator.LESS_EQUALS;
+    }
+    if (expr instanceof GreaterThanExpression) {
+      return RelationalInfixExpression.Operator.GREATER;
+    }
+    if (expr instanceof GreaterThanOrEqualExpression) {
+      return RelationalInfixExpression.Operator.GREATER_EQUALS;
+    }
+    throw new UnsupportedTweedleDecodeException(
+        "Unsupported Tweedle comparison operator " + expr.getClass().getSimpleName() + ": " + ownerName);
   }
 
   private ArithmeticInfixExpression decodeBinaryNumericExpression(
@@ -532,6 +587,16 @@ public class Decoder {
       }
       throw new UnsupportedTweedleDecodeException(
           "Tweedle method return string concatenation type is not assignable to "
+              + returnType.getName() + ": " + method.getName());
+    }
+    if (returnExpression instanceof BinaryExpression binaryExpr && isComparisonExpression(binaryExpr)) {
+      RelationalInfixExpression comparison =
+          decodeRelationalExpression(method.getName(), binaryExpr, allParameters, locals, fields);
+      if (returnType.isAssignableFrom(comparison.getType())) {
+        return comparison;
+      }
+      throw new UnsupportedTweedleDecodeException(
+          "Tweedle method return comparison expression type is not assignable to "
               + returnType.getName() + ": " + method.getName());
     }
     throw unsupportedMethodReturnExpression(method);
