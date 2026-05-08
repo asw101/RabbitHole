@@ -30,7 +30,7 @@ Each scenario uses the same fields:
 - `evidence.required`
 - `fallback`
 
-The planned target-specific Select Project feature will use `targetStarter.displayName` and `targetStarter.repositoryPath` to bind AT-SPI evidence to a committed starter project instead of a generic chooser dismissal.
+The target-specific Select Project scenario uses `targetStarter.displayName` and `targetStarter.repositoryPath` to bind AT-SPI evidence to a committed starter project instead of a generic chooser dismissal.
 
 Allowed `automationMode` values are:
 
@@ -78,6 +78,26 @@ blocked result remains a precise blocker and does not prove visible rendering
 correctness, deployed installer success, full world execution, grading, lesson
 completion, active Save behavior, active Select Project behavior, or decoder
 behavior.
+
+To collect only the target-specific Select Project proof for the committed
+`Africa Full` starter:
+
+```bash
+export NODE_OPTIONS=--max-old-space-size=32768
+ALICE_QA_ACCEPT_LICENSES_FOR_TESTS=1 \
+qa/outside-in/alice-desktop/runners/run-scenario.sh run \
+  alice-desktop-select-project-tab-click-exec \
+  --evidence-dir qa/outside-in/alice-desktop/evidence/select-project-africa-full
+```
+
+Review `tab-click-observation.json` as the Select Project decision artifact.
+An opened result requires `evidenceStatus=opened`, exact `Africa Full`
+`targetStarter` metadata, `targetStarterObserved.name=Africa Full`,
+`targetStarterSelected=true`, `targetStarterOpenAttempted=true`, matching `openedStarter`, and
+`projectOpenObserved=true`. A blocked result preserves string `blocker` and
+`blockerDetail` fields and adds one structured `nextBlocker`; it is not a full
+Alice UI automation, visible rendering, grading, creative assessment, Save,
+first-lesson, launcher, or decoder claim.
 
 The Gadugi exported launcher evidence scenario is a separate CLI scenario under
 `gadugi/`, not a custom Alice scenario under `scenarios/`. Validate and run it
@@ -175,43 +195,14 @@ Early Xvfb fallback directories may contain only the diagnostics available befor
 | `ALICE_QA_RUN_GATED_SMOKES` | Execute gated command smoke scenarios when set to `1`; otherwise they write `gated-not-run` evidence and exit non-zero unless `--prepare-only` is requested. |
 | `NODE_OPTIONS` | Optional for surrounding Node-based orchestrators. Use `--max-old-space-size=32768` when needed; this lane itself does not require Node. |
 
-The planned Select Project Africa Full feature must pass `targetStarter.displayName` and `targetStarter.repositoryPath` to the AT-SPI probe as `TARGET_STARTER_DISPLAY_NAME` and `TARGET_STARTER_REPO_PATH`. These variables are runner-managed evidence metadata, not user configuration knobs.
+The Select Project Africa Full scenario passes `targetStarter.displayName` and `targetStarter.repositoryPath` to the AT-SPI probe as `TARGET_STARTER_DISPLAY_NAME` and `TARGET_STARTER_REPO_PATH`. These variables are runner-managed evidence metadata, not user configuration knobs.
 
 ## Scenario authoring checklist
 
 Before adding or changing a scenario:
 
 1. Keep actions and outcomes observable from the user-visible Alice desktop.
-2. Use one of the supported workflows:
-
-```text
-archive-fixture-smoke
-export
-exported-project-smoke
-failure-path-smoke
-file-loader-smoke
-future-ui-smoke
-instructor-student-setup
-launch
-menu-action-smoke
-netbeans-package-smoke
-open-load-save
-package-install-smoke
-post-open-runtime-display-accessibility-evidence
-post-project-open-window-state-smoke
-project-io-smoke
-run-debug
-save-load
-save-menu-dialog-write-proof
-scene-creation
-select-project-atk-exec-smoke
-select-project-interaction-smoke
-select-project-tab-click-smoke
-select-project-widget-introspection-smoke
-tweedle-decoder-boundary-smoke
-tweedle-decoder-this-call-smoke
-wizard-palette-completion-smoke
-```
+2. Use one of the supported [workflow values](../../../docs/reference/alice-desktop-outside-in-qa.md#workflow-values).
 3. Use `xvfb-real-alice` only when the runner can execute the real Alice command and collect logs/screenshots.
 4. Use `manual-evidence-required` when human Swing interaction is required.
 5. Name concrete required artifacts in `evidence.required`; manual workflows also require `review-notes.txt` for acceptance.
