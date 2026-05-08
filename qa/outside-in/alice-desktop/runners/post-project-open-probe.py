@@ -87,11 +87,10 @@ def safe_node_name(node: Any) -> str:
 
 
 def find_java_pid(inventory: dict[str, Any]) -> int | None:
-    """Return the PID of any Java window in the inventory, preferring 'Alice 3'."""
+    """Return the Java PID for the Alice 3 main window, if positively identified."""
     windows = inventory.get("windows", [])
     if not isinstance(windows, list):
         return None
-    fallback_java_pid: int | None = None
     for window in windows:
         if not isinstance(window, dict):
             continue
@@ -102,9 +101,7 @@ def find_java_pid(inventory: dict[str, Any]) -> int | None:
             continue
         if str(window.get("title", "")) == EXPECTED_ALICE_TITLE:
             return pid
-        if fallback_java_pid is None:
-            fallback_java_pid = pid
-    return fallback_java_pid
+    return None
 
 
 def find_alice_app(desktop: Any, java_pid: int) -> tuple[Any | None, int]:
@@ -253,10 +250,11 @@ def target_starter_open_not_proven_payload(tab_click_path: Path, tab_click: dict
 def no_java_pid_payload(inventory_path: Path) -> dict[str, Any]:
     return post_open_payload(
         status="blocked",
-        blocker="java-pid-not-in-inventory",
+        blocker="alice-window-java-pid-not-identified",
         blocker_detail=(
-            f"No Java window found in {inventory_path.name}; "
-            "cannot identify the Alice process for AT-SPI introspection."
+            "Unable to identify the Java process for the Alice 3 main window "
+            f"from {inventory_path.name}. Refusing to introspect an arbitrary "
+            "Java process."
         ),
         java_pid=None,
     )
