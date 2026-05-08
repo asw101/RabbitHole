@@ -157,8 +157,8 @@ public class SaveFileDialogShowControlProofTest {
             this.dialogClass = dialog.getClass().getName();
             this.dialogTitle = dialog.getTitle();
             chooser.setSelectedFile(this.selectedFile);
-            chooser.approveSelection();
             this.approvedSelection = true;
+            chooser.approveSelection();
             this.timer.stop();
             return;
           }
