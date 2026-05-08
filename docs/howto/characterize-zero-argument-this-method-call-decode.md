@@ -1,10 +1,10 @@
 # Characterize Zero-Argument This-Method Call Decode
 
-Use this guide when adding or reviewing decoder coverage for the planned
+Use this guide when reviewing or extending decoder coverage for the implemented
 `this.someMethod()` slice.
 
 This guide applies only to same-type, zero-argument calls with an explicit
-`this` target. It documents the feature to build, not broader Tweedle method
+`this` target. It documents the feature boundary, not broader Tweedle method
 support. See the
 [zero-argument this-method call decode reference](../reference/zero-argument-this-method-call-decode.md)
 for the full boundary.
@@ -52,11 +52,11 @@ Assert the observable AST shape:
 5. The invocation resolves to the `helper` `UserMethod`.
 6. The invocation target is the current instance, not an external receiver.
 
-Use a test name that states the planned slice:
+Use a test name that states the implemented slice:
 
 ```java
 @Test
-public void zeroArgumentThisMethodCallDecode() throws Exception {
+public void zeroArgumentThisMethodCallDecodeCreatesMethodInvocation() throws Exception {
   // decode and assert the MethodInvocation shape
 }
 ```
@@ -124,9 +124,9 @@ The failure proves the decoder does not resolve external targets or general
 member calls.
 
 The reference also lists implicit receiver calls, static-style calls,
-constructor calls, chained calls, and member access as non-goals. Do not claim
-focused tests for those forms unless the implementation routes them through this
-slice; otherwise keep them documented as outside the accepted method-call shape.
+constructor calls, chained calls, and member access as non-goals. Focused tests
+may cover the forms that route through this slice; otherwise keep them
+documented as outside the accepted method-call shape.
 
 ## Keep the scope narrow
 

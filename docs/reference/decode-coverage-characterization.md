@@ -53,9 +53,9 @@ The intended coverage covers successful decode behavior and known edge behavior:
 
 - empty and malformed Tweedle source;
 - unsupported Tweedle declarations, unsupported superclasses, and unsupported
-  adjacent method-call forms around the planned zero-argument `this.method()`
+  adjacent method-call forms around the zero-argument `this.method()`
   slice;
-- planned same-type zero-argument `this.method()` calls decoded to Alice
+- same-type zero-argument `this.method()` calls decoded to Alice
   `MethodInvocation` statements;
 - missing or malformed Tweedle entries in player archives;
 - JSON player archives that decode a simple Tweedle program;
@@ -110,7 +110,7 @@ current behavior so later parser work can make intentional, reviewed changes.
 `TweedleEncoderDecoder.decode(String source)` decodes supported Tweedle class
 source into Alice AST nodes.
 
-Documented behavior, including the planned zero-argument this-method slice:
+Documented behavior, including the zero-argument this-method slice:
 
 | Source shape | Required characterization result |
 | --- | --- |
@@ -119,7 +119,7 @@ Documented behavior, including the planned zero-argument this-method slice:
 | Unknown superclass | Throws `UnsupportedTweedleDecodeException` with the missing superclass name in the message. |
 | Malformed superclass syntax | Throws `IllegalArgumentException` describing the parser boundary. |
 | Supported class fields and supported method declarations | Decodes supported fields and supported `UserMethod` declarations. |
-| Planned method body expression statement `this.helper();` where `helper` is a known same-type zero-argument method | Decodes to an `ExpressionStatement` containing a `MethodInvocation` that resolves to the declared `helper` `UserMethod`; the implementation must register same-type methods before decoding bodies so declaration order does not matter. |
+| Method body expression statement `this.helper();` where `helper` is a known same-type zero-argument method | Decodes to an `ExpressionStatement` containing a `MethodInvocation` that resolves to the declared `helper` `UserMethod`; the implementation registers same-type methods before decoding bodies so declaration order does not matter. |
 | Argument-bearing calls, unknown methods, non-`this` targets, implicit calls, static-style calls, constructor calls, or chained calls | Throws `UnsupportedTweedleDecodeException`; this is not general method-call support. Focused tests cover argument-bearing calls, unknown methods, and non-`this` targets; the remaining forms are documented non-goals unless a later slice routes them through this boundary. |
 | Non-class declarations such as enums | Throws `UnsupportedTweedleDecodeException` describing the class-only boundary. |
 | Empty source | Throws `UnsupportedTweedleDecodeException` describing the class-only boundary. |
@@ -513,8 +513,8 @@ or pull request.
 | Unknown Tweedle superclass reports unsupported decode context. | `TweedleEncoderDecoderTest.decodeUnknownSuperclassReportsUnsupportedTweedle` |
 | Malformed Tweedle superclass reports parser decode context. | `TweedleEncoderDecoderTest.decodeMalformedSuperclassReportsMalformedTweedle` |
 | Supported Tweedle fields, supported method declarations, expressions, while loops, and returns decode through the AST decoder. | `TweedleEncoderDecoderTest` focused field, method, expression, while-loop, and return tests. |
-| Planned same-type zero-argument `this.method()` calls decode to Alice `MethodInvocation` statements after same-type methods are registered before body decode. | Add `TweedleEncoderDecoderTest.zeroArgumentThisMethodCallDecode` with the implementation. |
-| Argument-bearing calls, unknown methods, and non-`this` targets remain unsupported next to the zero-argument this-method slice. | Add `TweedleEncoderDecoderTest.zeroArgumentThisMethodCallDecodeRejectsArgumentBearingCall`; `TweedleEncoderDecoderTest.zeroArgumentThisMethodCallDecodeRejectsUnknownMethod`; `TweedleEncoderDecoderTest.zeroArgumentThisMethodCallDecodeRejectsNonThisTarget` with the implementation. |
+| Same-type zero-argument `this.method()` calls decode to Alice `MethodInvocation` statements after same-type methods are registered before body decode. | `TweedleEncoderDecoderTest.zeroArgumentThisMethodCallDecodeCreatesMethodInvocation` |
+| Argument-bearing calls, unknown methods, and non-`this` targets remain unsupported next to the zero-argument this-method slice. | `TweedleEncoderDecoderTest.zeroArgumentThisMethodCallDecodeRejectsArgumentBearingCall`; `TweedleEncoderDecoderTest.zeroArgumentThisMethodCallDecodeRejectsUnknownMethod`; `TweedleEncoderDecoderTest.zeroArgumentThisMethodCallDecodeRejectsNonThisTarget` |
 | Non-class and empty Tweedle source are rejected by the AST decoder. | `TweedleEncoderDecoderTest.decodeEnumReportsOnlyClassDeclarationsSupported`; `TweedleEncoderDecoderTest.decodeEmptySourceReportsOnlyClassDeclarationsSupported` |
 | Player archives with supported Tweedle decode program types through `IoUtilities.readProject(File)`. | `IoUtilitiesTest.readsSimpleJsonPlayerArchiveTweedleProgram`; `IoUtilitiesTest.jsonPlayerReaderDecodesProgramTypeWhenManifestReferencesSimpleTweedleSource` |
 | Saved `.a3p` archives reopen, accept edits on the reopened project, save again, reopen again with edited program metadata, and export with stable player archive structure. | `IoUtilitiesTest.savedProjectCanBeReopenedEditedSavedAgainReopenedAndExported` |

@@ -7,7 +7,7 @@ proof scopes.
 
 ## Goal
 
-Protect the planned decoder behavior:
+Protect the implemented decoder behavior:
 
 ```text
 A method body expression statement that calls this.<knownZeroArgMethod>() decodes
@@ -105,8 +105,8 @@ Each test should call `coder.decode(...)` and assert
 
 Other unsupported forms, including implicit receiver calls, static-style calls,
 constructor calls, chained calls, and member access, are non-goals for this
-tutorial. Add focused tests for those only if the implementation starts routing
-them through this same decoder boundary.
+tutorial. Keep any focused tests for those forms tied to this same narrow
+decoder boundary.
 
 ## 6. Run validation
 

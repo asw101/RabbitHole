@@ -14,7 +14,7 @@ public class MethodCallExpression extends MemberAccessExpression {
   private final boolean explicitTarget;
 
   public MethodCallExpression(TweedleExpression target, String methodName) {
-    this(target, methodName, new HashMap<>(), true);
+    this(target, methodName, Collections.emptyMap(), true);
   }
 
   public MethodCallExpression(TweedleExpression target, String methodName, Map<String, TweedleExpression> arguments) {
@@ -24,7 +24,9 @@ public class MethodCallExpression extends MemberAccessExpression {
   public MethodCallExpression(TweedleExpression target, String methodName, Map<String, TweedleExpression> arguments, boolean explicitTarget) {
     super(target);
     this.methodName = methodName;
-    this.arguments = arguments != null ? new HashMap<>(arguments) : new HashMap<>();
+    this.arguments = arguments == null || arguments.isEmpty()
+        ? Collections.emptyMap()
+        : Collections.unmodifiableMap(new HashMap<>(arguments));
     this.explicitTarget = explicitTarget;
   }
 
@@ -40,15 +42,11 @@ public class MethodCallExpression extends MemberAccessExpression {
   }
 
   public Map<String, TweedleExpression> getArguments() {
-    return Collections.unmodifiableMap(arguments);
+    return arguments;
   }
 
   public boolean hasExplicitTarget() {
     return explicitTarget;
-  }
-
-  public void addArgument(String argName, TweedleExpression argValue) {
-    arguments.put(argName, argValue);
   }
 
   public TweedleExpression getArg(String argName) {

@@ -1,6 +1,6 @@
 # Zero-Argument This-Method Call Decode Feature Contract
 
-This page defines the narrow Tweedle AST decoder feature to build:
+This page defines the narrow Tweedle AST decoder feature contract:
 `this.someMethod()` where `someMethod` is a zero-argument `UserMethod` declared
 on the same decoded `NamedUserType`.
 
@@ -10,9 +10,9 @@ as a claim that broader method-call decode already exists.
 
 ## API behavior
 
-After the feature is implemented, `TweedleEncoderDecoder.decode(String source)`
-accepts a Tweedle class whose method body contains an expression statement that
-calls a known zero-argument method on `this`.
+`TweedleEncoderDecoder.decode(String source)` accepts a Tweedle class whose
+method body contains an expression statement that calls a known zero-argument
+method on `this`.
 
 ```java
 class Program {
@@ -66,11 +66,11 @@ unsupported-Tweedle archive behavior.
 | `this.helper().again();` | Chained calls are outside the slice. |
 | `this.helper` | Member access is a separate decoder contract. |
 
-The focused implementation tests should cover the nearest rejection boundaries:
+The focused implementation tests cover the nearest rejection boundaries:
 argument-bearing `this` calls, unknown same-type methods, and non-`this`
-targets. The other rows are non-goals documented by the helper's accepted-shape
-boundary; add separate focused tests for them only if a later implementation
-starts routing those forms through this decoder slice.
+targets. They also protect selected adjacent non-goals that currently route
+through this decoder boundary, including optional-parameter targets, duplicate
+zero-argument method names, static targets, chained calls, and implicit targets.
 
 ## Configuration
 
@@ -94,8 +94,7 @@ That environment variable is not an Alice decode option.
 
 ## Validation command
 
-After adding the implementation and tests, run the focused decoder
-characterization from the repository root:
+Run the focused decoder characterization from the repository root:
 
 ```bash
 NODE_OPTIONS=--max-old-space-size=32768 git submodule update --init tweedle-lang
@@ -108,19 +107,24 @@ NODE_OPTIONS=--max-old-space-size=32768 mvn -pl core/ast -am \
 
 ## Characterization tests
 
-Add the focused positive test with a name that states the narrow behavior:
+The focused positive test uses a name that states the narrow behavior:
 
 ```text
-zeroArgumentThisMethodCallDecode
+zeroArgumentThisMethodCallDecodeCreatesMethodInvocation
 ```
 
-Add negative tests for adjacent unsupported syntax without implying general
+Negative tests cover adjacent unsupported syntax without implying general
 method-call support:
 
 ```text
 zeroArgumentThisMethodCallDecodeRejectsArgumentBearingCall
+zeroArgumentThisMethodCallDecodeRejectsOptionalParameterTargetMethod
 zeroArgumentThisMethodCallDecodeRejectsUnknownMethod
+zeroArgumentThisMethodCallDecodeRejectsDuplicateTargetMethodName
 zeroArgumentThisMethodCallDecodeRejectsNonThisTarget
+zeroArgumentThisMethodCallDecodeRejectsStaticTargetMethod
+zeroArgumentThisMethodCallDecodeRejectsChainedCall
+zeroArgumentThisMethodCallDecodeRejectsImplicitTarget
 ```
 
 These tests belong in:

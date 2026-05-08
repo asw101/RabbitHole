@@ -74,6 +74,7 @@ import org.lgna.project.ast.UserParameter;
 import org.lgna.project.ast.WhileLoop;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -134,12 +135,14 @@ public class Decoder {
     for (TweedleField property : tweedleClass.getProperties()) {
       type.fields.add(decodeField(property));
     }
+    List<UserField> fields = type.getDeclaredFields();
     List<UserMethod> userMethods = new ArrayList<>();
     for (TweedleMethod method : tweedleClass.getMethods()) {
       UserMethod userMethod = decodeMethodSignature(method);
       type.methods.add(userMethod);
       userMethods.add(userMethod);
     }
+    Map<String, UserMethod> zeroArgumentMethods = zeroArgumentMethodsByName(tweedleClass.getMethods(), userMethods);
     for (int i = 0; i < tweedleClass.getMethods().size(); i++) {
       TweedleMethod tweedleMethod = tweedleClass.getMethods().get(i);
       UserMethod userMethod = userMethods.get(i);
@@ -147,11 +150,12 @@ public class Decoder {
           tweedleMethod,
           userMethod.getReturnType(),
           userMethod.getRequiredParameters().toArray(UserParameter[]::new),
-          type.getDeclaredFields(),
-          type));
+          fields,
+          type,
+          zeroArgumentMethods));
     }
     for (TweedleConstructor constructor : tweedleClass.getConstructors()) {
-      type.constructors.add(decodeConstructor(tweedleClass, constructor, type.getDeclaredFields()));
+      type.constructors.add(decodeConstructor(tweedleClass, constructor, fields));
     }
     return type;
   }
@@ -228,7 +232,8 @@ public class Decoder {
       AbstractType<?, ?, ?> returnType,
       UserParameter[] allParameters,
       List<UserField> fields,
-      NamedUserType declaringType) {
+      NamedUserType declaringType,
+      Map<String, UserMethod> zeroArgumentMethods) {
     if (method.getBody().isEmpty()) {
       if (returnType != JavaType.VOID_TYPE) {
         throw new UnsupportedTweedleDecodeException(
@@ -258,7 +263,8 @@ public class Decoder {
         statements.add(decodeWhileLoop(method, allParameters, locals, fields, whileLoop));
       } else if (statement instanceof org.alice.tweedle.ast.ExpressionStatement expressionStatement
           && expressionStatement.getExpression() instanceof MethodCallExpression methodCall) {
-        statements.add(decodeZeroArgumentThisMethodCallStatement(declaringType, method, methodCall));
+        statements.add(decodeZeroArgumentThisMethodCallStatement(
+            declaringType, method, methodCall, zeroArgumentMethods));
       } else if (statement instanceof org.alice.tweedle.ast.ReturnStatement returnStatement
           && i == method.getBody().size() - 1) {
         statements.add(decodeReturnStatement(method, returnType, allParameters, locals, fields, returnStatement));
@@ -276,14 +282,15 @@ public class Decoder {
   private Statement decodeZeroArgumentThisMethodCallStatement(
       NamedUserType declaringType,
       TweedleMethod ownerMethod,
-      MethodCallExpression methodCall) {
+      MethodCallExpression methodCall,
+      Map<String, UserMethod> zeroArgumentMethods) {
     if (!methodCall.hasExplicitTarget() || !(methodCall.getTarget() instanceof ThisExpression)) {
       throw unsupportedZeroArgumentThisMethodCall(ownerMethod, methodCall);
     }
     if (!methodCall.getArguments().isEmpty()) {
       throw unsupportedZeroArgumentThisMethodCall(ownerMethod, methodCall);
     }
-    UserMethod targetMethod = findZeroArgumentMethod(declaringType, methodCall.getMethodName());
+    UserMethod targetMethod = zeroArgumentMethods.get(methodCall.getMethodName());
     if (targetMethod == null) {
       throw unsupportedZeroArgumentThisMethodCall(ownerMethod, methodCall);
     }
@@ -839,13 +846,26 @@ public class Decoder {
     return null;
   }
 
-  private UserMethod findZeroArgumentMethod(NamedUserType type, String name) {
-    for (UserMethod method : type.getDeclaredMethods()) {
-      if (method.getName().equals(name) && method.getRequiredParameters().isEmpty()) {
-        return method;
+  private Map<String, UserMethod> zeroArgumentMethodsByName(List<TweedleMethod> tweedleMethods, List<UserMethod> userMethods) {
+    Map<String, UserMethod> methodsByName = null;
+    for (int i = 0; i < tweedleMethods.size(); i++) {
+      TweedleMethod tweedleMethod = tweedleMethods.get(i);
+      UserMethod userMethod = userMethods.get(i);
+      if (!tweedleMethod.isStatic()
+          && tweedleMethod.getRequiredParameters().isEmpty()
+          && tweedleMethod.getOptionalParameters().isEmpty()
+          && userMethod.getRequiredParameters().isEmpty()) {
+        if (methodsByName == null) {
+          methodsByName = new HashMap<>(userMethods.size());
+        }
+        if (methodsByName.put(userMethod.getName(), userMethod) != null) {
+          throw new UnsupportedTweedleDecodeException(
+              "Duplicate zero-argument Tweedle methods are not supported by the AST decoder: "
+                  + userMethod.getName());
+        }
       }
     }
-    return null;
+    return methodsByName != null ? methodsByName : Map.of();
   }
 
   private AbstractType<?, ?, ?> resolveReturnType(TweedleType tweedleType) {

@@ -1362,12 +1362,38 @@ public class TweedleEncoderDecoderTest {
   }
 
   @Test
+  public void zeroArgumentThisMethodCallDecodeRejectsOptionalParameterTargetMethod() {
+    assertUnsupportedZeroArgumentThisMethodCallDecode("""
+        class SyntheticType {
+          void caller() { this.helper(); }
+          void helper(WholeNumber value <- 1) { }
+        }
+        """, "this.helper");
+  }
+
+  @Test
   public void zeroArgumentThisMethodCallDecodeRejectsUnknownMethod() {
     assertUnsupportedZeroArgumentThisMethodCallDecode("""
         class SyntheticType {
           void caller() { this.missing(); }
         }
         """, "this.missing");
+  }
+
+  @Test
+  public void zeroArgumentThisMethodCallDecodeRejectsDuplicateTargetMethodName() {
+    UnsupportedTweedleDecodeException thrown = assertThrows(
+        UnsupportedTweedleDecodeException.class,
+        () -> coder.decode("""
+            class SyntheticType {
+              void caller() { this.helper(); }
+              void helper() { }
+              void helper() { }
+            }
+            """));
+
+    assertTrue(thrown.getMessage().contains("Duplicate zero-argument Tweedle methods"));
+    assertTrue(thrown.getMessage().contains("helper"));
   }
 
   @Test
@@ -1379,6 +1405,27 @@ public class TweedleEncoderDecoderTest {
           void helper() { }
         }
         """, "label.helper");
+  }
+
+  @Test
+  public void zeroArgumentThisMethodCallDecodeRejectsStaticTargetMethod() {
+    assertUnsupportedZeroArgumentThisMethodCallDecode("""
+        class SyntheticType {
+          void caller() { this.helper(); }
+          static void helper() { }
+        }
+        """, "this.helper");
+  }
+
+  @Test
+  public void zeroArgumentThisMethodCallDecodeRejectsChainedCall() {
+    assertUnsupportedZeroArgumentThisMethodCallDecode("""
+        class SyntheticType {
+          void caller() { this.helper().other(); }
+          void helper() { }
+          void other() { }
+        }
+        """, "this.helper");
   }
 
   @Test
