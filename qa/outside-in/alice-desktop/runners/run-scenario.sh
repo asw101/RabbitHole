@@ -71,6 +71,45 @@ for item in value:
 PY
 }
 
+target_starter_fields() {
+  local scenario_json=$1
+  SCENARIO_JSON="$scenario_json" python3 - <<'PY'
+import json
+import os
+import sys
+from pathlib import Path
+
+scenario = json.loads(os.environ["SCENARIO_JSON"])
+target = scenario.get("targetStarter")
+if target is None:
+    print("")
+    print("")
+    sys.exit(0)
+if not isinstance(target, dict):
+    print("targetStarter must be a mapping", file=sys.stderr)
+    sys.exit(2)
+
+display_name = target.get("displayName")
+repository_path = target.get("repositoryPath")
+if not isinstance(display_name, str) or not display_name.strip():
+    print("targetStarter.displayName must be a non-empty string", file=sys.stderr)
+    sys.exit(2)
+if not isinstance(repository_path, str) or not repository_path.strip():
+    print("targetStarter.repositoryPath must be a non-empty string", file=sys.stderr)
+    sys.exit(2)
+path = Path(repository_path)
+if path.is_absolute():
+    print("targetStarter.repositoryPath must be repository-relative, not absolute", file=sys.stderr)
+    sys.exit(2)
+if any(part == ".." for part in path.parts):
+    print("targetStarter.repositoryPath must not contain .. path traversal", file=sys.stderr)
+    sys.exit(2)
+
+print(display_name)
+print(repository_path)
+PY
+}
+
 validate_allowed_automation() {
   local cwd=$1
   shift
@@ -779,7 +818,11 @@ write_swing_widget_probe() {
 write_tab_click_probe() {
   local inventory_path=$1
   local output_path=$2
+  local target_display_name=${3:-}
+  local target_repo_path=${4:-}
 
+  TARGET_STARTER_DISPLAY_NAME="$target_display_name" \
+  TARGET_STARTER_REPO_PATH="$target_repo_path" \
   python3 "$TAB_CLICK_PROBE" "$inventory_path" "$output_path"
 }
 
@@ -889,6 +932,8 @@ run_xvfb_real_alice() {
   local timeout_override=$3
 
   local automation_fields cwd configured_timeout ready_wait run_timeout display scenario_id automation_mode resolved_cwd
+  local target_starter_display_name target_starter_repo_path
+  local -a target_fields
   local root_directory_prep_status root_directory_prep_blocker
   local -a argv
   mapfile -t automation_fields < <(json_fields "$scenario_json" "automation.cwd" "automation.timeoutSeconds" "automation.readyWaitSeconds" "id" "automationMode")
@@ -898,6 +943,9 @@ run_xvfb_real_alice() {
   scenario_id=${automation_fields[3]}
   automation_mode=${automation_fields[4]}
   mapfile -d '' -t argv < <(json_list_nul "$scenario_json" "automation.argv")
+  mapfile -t target_fields < <(target_starter_fields "$scenario_json")
+  target_starter_display_name=${target_fields[0]:-}
+  target_starter_repo_path=${target_fields[1]:-}
   run_timeout="${timeout_override:-$configured_timeout}"
   xvfb_pid=
   alice_pid=
@@ -1274,7 +1322,11 @@ JSON
     # Allow the Swing accessibility tree to build before probing, then run
     # the tab structure diagnosis and click attempt.
     sleep 3
-    write_tab_click_probe "$run_dir/x-window-inventory.json" "$run_dir/tab-click-observation.json"
+    write_tab_click_probe \
+      "$run_dir/x-window-inventory.json" \
+      "$run_dir/tab-click-observation.json" \
+      "$target_starter_display_name" \
+      "$target_starter_repo_path"
     tab_click_status=$(inventory_json_field "$run_dir/tab-click-observation.json" status)
     tab_click_blocker=$(inventory_json_field "$run_dir/tab-click-observation.json" blocker)
   fi

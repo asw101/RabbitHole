@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import time
 from pathlib import Path
 from typing import Any
@@ -36,6 +37,8 @@ MAX_DEPTH = 12
 # JTabbedPane page tabs.  These are the AT-SPI role strings to search for.
 TAB_ROLES = frozenset({"pagetab", "page tab"})
 TOGGLE_TAB_ROLES = frozenset({"togglebutton", "toggle button"})
+TARGET_STARTER_DISPLAY_ENV = "TARGET_STARTER_DISPLAY_NAME"
+TARGET_STARTER_REPO_ENV = "TARGET_STARTER_REPO_PATH"
 
 
 def find_select_project_java_pid(inventory: dict[str, Any]) -> int | None:
@@ -75,6 +78,218 @@ def node_properties(node: Any) -> dict[str, Any]:
     except Exception:
         props["childCount"] = 0
     return props
+
+
+def configured_target_starter() -> dict[str, str] | None:
+    display_name = os.environ.get(TARGET_STARTER_DISPLAY_ENV, "").strip()
+    repository_path = os.environ.get(TARGET_STARTER_REPO_ENV, "").strip()
+    if not display_name and not repository_path:
+        return None
+    return {
+        "displayName": display_name,
+        "repositoryPath": repository_path,
+    }
+
+
+def validate_target_starter(target_starter: dict[str, str] | None) -> str:
+    if target_starter is None:
+        return ""
+    display_name = target_starter.get("displayName", "")
+    repository_path = target_starter.get("repositoryPath", "")
+    if not display_name:
+        return f"{TARGET_STARTER_DISPLAY_ENV} must be non-empty when target starter evidence is requested."
+    if not repository_path:
+        return f"{TARGET_STARTER_REPO_ENV} must be non-empty when target starter evidence is requested."
+    path = Path(repository_path)
+    if path.is_absolute():
+        return f"{TARGET_STARTER_REPO_ENV} must be repository-relative, not absolute."
+    if any(part == ".." for part in path.parts):
+        return f"{TARGET_STARTER_REPO_ENV} must not contain .. path traversal."
+    return ""
+
+
+def target_blocker(
+    observed_atspi_state: str,
+    action_attempted: str,
+    expected_next_action: str,
+    reason_progress_stopped: str,
+) -> dict[str, str]:
+    return {
+        "observedAtspiState": observed_atspi_state,
+        "actionAttempted": action_attempted,
+        "expectedNextAction": expected_next_action,
+        "reasonProgressStopped": reason_progress_stopped,
+    }
+
+
+def add_target_metadata(
+    payload: dict[str, Any],
+    target_starter: dict[str, str] | None,
+    *,
+    evidence_status: str,
+    blocker: dict[str, str] | None,
+) -> dict[str, Any]:
+    if target_starter is None:
+        return payload
+    payload.update(
+        {
+            "targetStarter": target_starter,
+            "targetStarterObserved": None,
+            "targetStarterSelected": False,
+            "targetStarterOpenAttempted": False,
+            "openedStarter": None,
+            "evidenceStatus": evidence_status,
+            "targetStarterBlocker": blocker,
+        }
+    )
+    return payload
+
+
+def safe_node_name(node: Any) -> str:
+    try:
+        return node.name or ""
+    except Exception:
+        return ""
+
+
+def safe_role_name(node: Any) -> str:
+    try:
+        return node.getRoleName()
+    except Exception:
+        return ""
+
+
+def normalised_role(node: Any) -> str:
+    return safe_role_name(node).lower().replace(" ", "")
+
+
+def safe_child_count(node: Any) -> int:
+    try:
+        return int(node.childCount)
+    except Exception:
+        return 0
+
+
+def state_names(node: Any) -> list[str]:
+    try:
+        state_set = node.getState()
+    except Exception:
+        return []
+    try:
+        states = state_set.getStates()
+    except Exception:
+        return []
+    names: list[str] = []
+    for state in states:
+        if isinstance(state, str):
+            names.append(state)
+        elif hasattr(state, "name"):
+            names.append(str(state.name))
+        else:
+            names.append(str(state))
+    return names
+
+
+def node_has_state(node: Any, expected: str) -> bool:
+    expected = expected.lower()
+    return any(expected in state.lower() for state in state_names(node))
+
+
+def node_index_in_parent(node: Any) -> int:
+    try:
+        return int(node.getIndexInParent())
+    except Exception:
+        pass
+    try:
+        parent = node.get_parent()
+        if parent is None:
+            return -1
+        for index in range(safe_child_count(parent)):
+            try:
+                if parent.getChildAtIndex(index) is node:
+                    return index
+            except Exception:
+                continue
+    except Exception:
+        pass
+    return -1
+
+
+def query_selection_available(node: Any) -> bool:
+    try:
+        node.querySelection()
+        return True
+    except Exception:
+        return False
+
+
+def iter_nodes_with_paths(
+    node: Any,
+    *,
+    depth: int = 0,
+    path: tuple[int, ...] = (),
+    max_depth: int = MAX_DEPTH,
+) -> list[tuple[Any, int, tuple[int, ...]]]:
+    if node is None or depth > max_depth:
+        return []
+    nodes = [(node, depth, path)]
+    if depth < max_depth:
+        for index in range(safe_child_count(node)):
+            try:
+                child = node.getChildAtIndex(index)
+            except Exception:
+                continue
+            if child is not None:
+                nodes.extend(
+                    iter_nodes_with_paths(
+                        child,
+                        depth=depth + 1,
+                        path=path + (index,),
+                        max_depth=max_depth,
+                    )
+                )
+    return nodes
+
+
+def child_display_name(node: Any) -> str:
+    name = safe_node_name(node)
+    if name:
+        return name
+    for index in range(safe_child_count(node)):
+        try:
+            child = node.getChildAtIndex(index)
+        except Exception:
+            continue
+        child_name = safe_node_name(child)
+        if child_name:
+            return child_name
+    return ""
+
+
+def target_observation_record(
+    item_node: Any,
+    list_node: Any,
+    *,
+    depth: int,
+    tree_path: tuple[int, ...],
+    child_index: int,
+) -> dict[str, Any]:
+    return {
+        "name": child_display_name(item_node),
+        "role": safe_role_name(item_node),
+        "description": node_properties(item_node).get("description", ""),
+        "states": state_names(item_node),
+        "availableActions": get_available_actions(item_node),
+        "treePath": list(tree_path),
+        "depth": depth,
+        "indexInParent": node_index_in_parent(item_node),
+        "listChildIndex": child_index,
+        "listName": safe_node_name(list_node),
+        "listRole": safe_role_name(list_node),
+        "listStates": state_names(list_node),
+        "listChildCount": safe_child_count(list_node),
+        "parentSelectionAvailable": query_selection_available(list_node),
+    }
 
 
 def enumerate_all_widgets(
@@ -207,39 +422,87 @@ def attempt_tab_clicks(
 
 def probe_tab_click(java_pid: int) -> dict[str, Any]:
     """Main probe: find Alice in AT-SPI, dump tab structure, attempt clicks."""
+    target_starter = configured_target_starter()
+    target_validation_error = validate_target_starter(target_starter)
+    if target_validation_error:
+        return add_target_metadata(
+            {
+                "status": "failed",
+                "blocker": "target-starter-metadata-invalid",
+                "blockerDetail": target_validation_error,
+                "javaPid": java_pid,
+                "allWidgetTree": [],
+                "roleCounts": {},
+                "tabListNodes": [],
+                "tabNodes": [],
+                "tabClickAttempts": [],
+                "widgetCountAfterClick": 0,
+                "allWidgetTreeAfterClick": [],
+                "projectOpenObserved": False,
+                "projectOpenAttempt": {},
+            },
+            target_starter,
+            evidence_status="failed",
+            blocker=target_blocker(
+                "Target starter metadata was provided to the probe but failed local validation.",
+                "Validate target starter metadata before connecting to AT-SPI.",
+                "Pass a non-empty display name and repository-relative committed starter path.",
+                target_validation_error,
+            ),
+        )
     try:
         import pyatspi  # noqa: PLC0415
     except ImportError:
-        return {
-            "status": "blocked",
-            "blocker": "pyatspi-not-installed",
-            "blockerDetail": "python3-pyatspi is not installed.",
-            "javaPid": java_pid,
-            "allWidgetTree": [],
-            "roleCounts": {},
-            "tabListNodes": [],
-            "tabNodes": [],
-            "tabClickAttempts": [],
-            "widgetCountAfterClick": 0,
-            "allWidgetTreeAfterClick": [],
-        }
+        return add_target_metadata(
+            {
+                "status": "blocked",
+                "blocker": "pyatspi-not-installed",
+                "blockerDetail": "python3-pyatspi is not installed.",
+                "javaPid": java_pid,
+                "allWidgetTree": [],
+                "roleCounts": {},
+                "tabListNodes": [],
+                "tabNodes": [],
+                "tabClickAttempts": [],
+                "widgetCountAfterClick": 0,
+                "allWidgetTreeAfterClick": [],
+            },
+            target_starter,
+            evidence_status="blocked",
+            blocker=target_blocker(
+                "AT-SPI probe could not import pyatspi before observing the Select Project tree.",
+                "Import python3-pyatspi.",
+                "Connect to AT-SPI and inspect the active Starters context.",
+                "python3-pyatspi is not installed.",
+            ),
+        )
 
     try:
         desktop = pyatspi.Registry.getDesktop(0)
     except Exception as exc:
-        return {
-            "status": "blocked",
-            "blocker": "at-spi-registry-unavailable",
-            "blockerDetail": f"Cannot connect to AT-SPI registry: {exc}",
-            "javaPid": java_pid,
-            "allWidgetTree": [],
-            "roleCounts": {},
-            "tabListNodes": [],
-            "tabNodes": [],
-            "tabClickAttempts": [],
-            "widgetCountAfterClick": 0,
-            "allWidgetTreeAfterClick": [],
-        }
+        return add_target_metadata(
+            {
+                "status": "blocked",
+                "blocker": "at-spi-registry-unavailable",
+                "blockerDetail": f"Cannot connect to AT-SPI registry: {exc}",
+                "javaPid": java_pid,
+                "allWidgetTree": [],
+                "roleCounts": {},
+                "tabListNodes": [],
+                "tabNodes": [],
+                "tabClickAttempts": [],
+                "widgetCountAfterClick": 0,
+                "allWidgetTreeAfterClick": [],
+            },
+            target_starter,
+            evidence_status="blocked",
+            blocker=target_blocker(
+                "AT-SPI registry was not reachable before observing the Select Project tree.",
+                "Connect to the AT-SPI registry.",
+                "Inspect the active Starters context and locate the target starter.",
+                f"Cannot connect to AT-SPI registry: {exc}",
+            ),
+        )
 
     # Find Alice by PID with retries.
     alice_app = None
@@ -268,22 +531,32 @@ def probe_tab_click(java_pid: int) -> dict[str, Any]:
         time.sleep(2)
 
     if alice_app is None:
-        return {
-            "status": "blocked",
-            "blocker": "atk-wrapper-not-loaded",
-            "blockerDetail": (
-                f"Java process PID {java_pid} not found in AT-SPI registry "
-                f"({app_count} total AT-SPI apps visible)."
+        return add_target_metadata(
+            {
+                "status": "blocked",
+                "blocker": "atk-wrapper-not-loaded",
+                "blockerDetail": (
+                    f"Java process PID {java_pid} not found in AT-SPI registry "
+                    f"({app_count} total AT-SPI apps visible)."
+                ),
+                "javaPid": java_pid,
+                "allWidgetTree": [],
+                "roleCounts": {},
+                "tabListNodes": [],
+                "tabNodes": [],
+                "tabClickAttempts": [],
+                "widgetCountAfterClick": 0,
+                "allWidgetTreeAfterClick": [],
+            },
+            target_starter,
+            evidence_status="blocked",
+            blocker=target_blocker(
+                f"Java process PID {java_pid} was not present in the AT-SPI registry.",
+                "Find the Alice Java process in AT-SPI.",
+                "Inspect the active Starters context and locate the target starter.",
+                f"ATK wrapper application node was not visible ({app_count} total AT-SPI apps visible).",
             ),
-            "javaPid": java_pid,
-            "allWidgetTree": [],
-            "roleCounts": {},
-            "tabListNodes": [],
-            "tabNodes": [],
-            "tabClickAttempts": [],
-            "widgetCountAfterClick": 0,
-            "allWidgetTreeAfterClick": [],
-        }
+        )
 
     # Locate the Select Project frame.
     select_project_frame = None
@@ -305,22 +578,32 @@ def probe_tab_click(java_pid: int) -> dict[str, Any]:
                     top_names.append(f"{child.name!r}({child.getRoleName()})")
             except Exception:
                 pass
-        return {
-            "status": "blocked",
-            "blocker": "select-project-not-accessible",
-            "blockerDetail": (
-                f"No frame named 'Select Project' found. "
-                f"Observed top-level children: {top_names[:10]}"
+        return add_target_metadata(
+            {
+                "status": "blocked",
+                "blocker": "select-project-not-accessible",
+                "blockerDetail": (
+                    f"No frame named 'Select Project' found. "
+                    f"Observed top-level children: {top_names[:10]}"
+                ),
+                "javaPid": java_pid,
+                "allWidgetTree": [],
+                "roleCounts": {},
+                "tabListNodes": [],
+                "tabNodes": [],
+                "tabClickAttempts": [],
+                "widgetCountAfterClick": 0,
+                "allWidgetTreeAfterClick": [],
+            },
+            target_starter,
+            evidence_status="blocked",
+            blocker=target_blocker(
+                f"Top-level AT-SPI children did not include {EXPECTED_SELECT_PROJECT_TITLE!r}.",
+                "Locate the Select Project frame.",
+                "Activate Starters and inspect its target starter entries.",
+                f"Observed top-level children: {top_names[:10]}",
             ),
-            "javaPid": java_pid,
-            "allWidgetTree": [],
-            "roleCounts": {},
-            "tabListNodes": [],
-            "tabNodes": [],
-            "tabClickAttempts": [],
-            "widgetCountAfterClick": 0,
-            "allWidgetTreeAfterClick": [],
-        }
+        )
 
     # Dump the full tree including unnamed nodes.
     all_widgets_before = enumerate_all_widgets(select_project_frame, depth=0)
@@ -364,12 +647,16 @@ def probe_tab_click(java_pid: int) -> dict[str, Any]:
     tab_descriptions_found = [a["description"] for a in tab_click_attempts if a["description"]]
 
     # Attempt project selection and opening via the Starters list + OK button.
-    project_open_result = attempt_project_open(select_project_frame, alice_app)
+    project_open_result = attempt_project_open(
+        select_project_frame,
+        alice_app,
+        target_starter=target_starter,
+    )
 
-    return {
+    payload = {
         "status": "observed",
-        "blocker": "none",
-        "blockerDetail": "",
+        "blocker": project_open_result.get("blocker", "none"),
+        "blockerDetail": project_open_result.get("blockerDetail", ""),
         "javaPid": java_pid,
         "widgetCount": len(all_widgets_before),
         "roleCounts": role_counts,
@@ -399,12 +686,30 @@ def probe_tab_click(java_pid: int) -> dict[str, Any]:
         "projectOpenAttempt": project_open_result,
         "projectOpenObserved": project_open_result.get("projectOpenObserved", False),
     }
+    if target_starter is not None:
+        payload.update(
+            {
+                "targetStarter": target_starter,
+                "targetStarterObserved": project_open_result.get("targetStarterObserved"),
+                "targetStarterSelected": project_open_result.get("targetStarterSelected", False),
+                "targetStarterOpenAttempted": project_open_result.get("targetStarterOpenAttempted", False),
+                "openedStarter": project_open_result.get("openedStarter"),
+                "evidenceStatus": project_open_result.get("evidenceStatus", "blocked"),
+                "targetStarterBlocker": project_open_result.get("targetStarterBlocker"),
+            }
+        )
+    return payload
 
 
 def attempt_project_open(
     select_project_frame: Any,
     alice_app: Any,
+    *,
+    target_starter: dict[str, str] | None = None,
 ) -> dict[str, Any]:
+    if target_starter is not None:
+        return attempt_target_project_open(select_project_frame, alice_app, target_starter)
+
     """After tab clicks, try to select a Starters project and click OK.
 
     Strategy:
@@ -522,7 +827,7 @@ def attempt_project_open(
 
     # Step 4 – click OK.
     ok_buttons = find_nodes_with_roles(
-        select_project_frame, frozenset({"button", "push button"})
+        select_project_frame, frozenset({"button", "pushbutton"})
     )
     ok_node: Any = None
     for node, _depth, name, _role in ok_buttons:
@@ -575,41 +880,431 @@ def attempt_project_open(
     return record
 
 
-def not_observed_payload(inventory_path: Path) -> dict[str, Any]:
-    return {
-        "status": "not-observed",
-        "blocker": "select-project-window-not-in-inventory",
-        "blockerDetail": (
-            f"No Java window titled '{EXPECTED_SELECT_PROJECT_TITLE}' was found in "
-            f"{inventory_path.name}."
-        ),
-        "javaPid": None,
-        "allWidgetTree": [],
-        "roleCounts": {},
-        "tabListNodes": [],
-        "tabNodes": [],
-        "tabClickAttempts": [],
-        "widgetCountAfterClick": 0,
-        "allWidgetTreeAfterClick": [],
-        "projectOpenObserved": False,
-        "projectOpenAttempt": {},
+def select_starters_tab(select_project_frame: Any) -> dict[str, Any]:
+    record: dict[str, Any] = {"attempted": False, "success": False, "detail": ""}
+    starters_infos = find_nodes_with_roles(
+        select_project_frame, frozenset({"togglebutton", "toggle button"})
+    )
+    for node, _depth, name, _role in starters_infos:
+        if name == "Starters":
+            ok, detail = do_action(node, "click")
+            record = {"attempted": True, "success": ok, "detail": detail}
+            if ok:
+                time.sleep(1)
+            return record
+    record["detail"] = "Starters tab toggle button not found in AT-SPI tree"
+    return record
+
+
+def active_starter_lists(select_project_frame: Any) -> list[dict[str, Any]]:
+    candidates: list[dict[str, Any]] = []
+    for node, depth, path in iter_nodes_with_paths(select_project_frame):
+        if normalised_role(node) != "list":
+            continue
+        states = state_names(node)
+        child_count = safe_child_count(node)
+        name = safe_node_name(node)
+        score = child_count
+        if node_has_state(node, "showing"):
+            score += 10_000
+        if node_has_state(node, "visible"):
+            score += 1_000
+        if name == "Starters":
+            score += 100
+        candidates.append(
+            {
+                "node": node,
+                "depth": depth,
+                "path": path,
+                "name": name,
+                "role": safe_role_name(node),
+                "states": states,
+                "childCount": child_count,
+                "score": score,
+                "showing": node_has_state(node, "showing"),
+                "visible": node_has_state(node, "visible"),
+            }
+        )
+    showing_candidates = [candidate for candidate in candidates if candidate["showing"]]
+    if showing_candidates:
+        return sorted(showing_candidates, key=lambda candidate: candidate["score"], reverse=True)
+    visible_candidates = [candidate for candidate in candidates if candidate["visible"]]
+    if visible_candidates:
+        return sorted(visible_candidates, key=lambda candidate: candidate["score"], reverse=True)
+    starters_named = [candidate for candidate in candidates if candidate["name"] == "Starters"]
+    if starters_named:
+        return sorted(starters_named, key=lambda candidate: candidate["score"], reverse=True)
+    return sorted(candidates, key=lambda candidate: candidate["score"], reverse=True)[:1]
+
+
+def find_target_starter(
+    select_project_frame: Any,
+    target_display_name: str,
+) -> tuple[dict[str, Any] | None, list[dict[str, Any]]]:
+    list_records = active_starter_lists(select_project_frame)
+    for list_record in list_records:
+        list_node = list_record["node"]
+        for child_index in range(safe_child_count(list_node)):
+            try:
+                item_node = list_node.getChildAtIndex(child_index)
+            except Exception:
+                continue
+            if item_node is None:
+                continue
+            item_name = child_display_name(item_node)
+            if item_name != target_display_name:
+                continue
+            item_path = tuple(list_record["path"]) + (child_index,)
+            observation = target_observation_record(
+                item_node,
+                list_node,
+                depth=int(list_record["depth"]) + 1,
+                tree_path=item_path,
+                child_index=child_index,
+            )
+            observation.update(
+                {
+                    "activeListCandidates": [
+                        {
+                            "name": record["name"],
+                            "role": record["role"],
+                            "states": record["states"],
+                            "childCount": record["childCount"],
+                            "treePath": list(record["path"]),
+                            "showing": record["showing"],
+                            "visible": record["visible"],
+                        }
+                        for record in list_records
+                    ],
+                }
+            )
+            return {
+                "itemNode": item_node,
+                "listNode": list_node,
+                "childIndex": child_index,
+                "observation": observation,
+            }, list_records
+    return None, list_records
+
+
+def attempt_target_selection(
+    target_match: dict[str, Any],
+) -> tuple[bool, dict[str, Any]]:
+    item_node = target_match["itemNode"]
+    list_node = target_match["listNode"]
+    child_index = int(target_match["childIndex"])
+    attempt: dict[str, Any] = {
+        "actionAttempts": [],
+        "parentSelectionAttempted": False,
+        "parentSelectionSuccess": False,
+        "selected": False,
+        "detail": "",
     }
+
+    available_actions = get_available_actions(item_node)
+    lowered_actions = [action.lower() for action in available_actions]
+    for action_name in ("click", "select", "activate"):
+        if action_name not in lowered_actions:
+            continue
+        ok, detail = do_action(item_node, action_name)
+        attempt["actionAttempts"].append(
+            {
+                "action": action_name,
+                "success": ok,
+                "detail": detail,
+            }
+        )
+        if ok:
+            time.sleep(1)
+            attempt["selected"] = True
+            attempt["detail"] = f"target starter selected via {action_name} action"
+            return True, attempt
+
+    try:
+        selection = list_node.querySelection()
+    except Exception as exc:
+        attempt["detail"] = (
+            "target starter exposed no successful click/select/activate action and "
+            f"parent list selection interface was unavailable: {exc}"
+        )
+        return False, attempt
+
+    attempt["parentSelectionAttempted"] = True
+    try:
+        selected = bool(selection.selectChild(child_index))
+        try:
+            selected = selected and bool(selection.isChildSelected(child_index))
+        except Exception:
+            pass
+    except Exception as exc:
+        attempt["detail"] = f"parent list selection interface failed for target child {child_index}: {exc}"
+        return False, attempt
+
+    attempt["parentSelectionSuccess"] = selected
+    attempt["selected"] = selected
+    if selected:
+        time.sleep(1)
+        attempt["detail"] = f"target starter selected via parent list selection child {child_index}"
+    else:
+        attempt["detail"] = f"parent list selection did not select child {child_index}"
+    return selected, attempt
+
+
+def find_ok_or_open_button(select_project_frame: Any) -> Any | None:
+    ok_buttons = find_nodes_with_roles(
+        select_project_frame, frozenset({"button", "pushbutton"})
+    )
+    for preferred_name in ("OK", "Open"):
+        for node, _depth, name, _role in ok_buttons:
+            if name == preferred_name:
+                return node
+    return None
+
+
+def wait_for_select_project_dismissal(alice_app: Any) -> tuple[bool, str]:
+    time.sleep(1)
+    for _wait in range(15):
+        try:
+            still_open = False
+            for index in range(safe_child_count(alice_app)):
+                try:
+                    child = alice_app.getChildAtIndex(index)
+                except Exception:
+                    continue
+                if child is not None and safe_node_name(child) == EXPECTED_SELECT_PROJECT_TITLE:
+                    still_open = True
+                    break
+            if not still_open:
+                return True, (
+                    "Select Project frame is no longer present in the AT-SPI tree; "
+                    "target starter project opening is observed."
+                )
+        except Exception as exc:
+            return False, f"AT-SPI error while waiting for Select Project dismissal: {exc}"
+        time.sleep(1)
+    return False, (
+        "OK/Open was clicked after target starter selection, but the Select Project "
+        "frame is still present after 15 seconds."
+    )
+
+
+def active_list_summary(list_records: list[dict[str, Any]]) -> str:
+    compact = [
+        {
+            "name": record["name"],
+            "role": record["role"],
+            "states": record["states"],
+            "childCount": record["childCount"],
+            "treePath": list(record["path"]),
+            "showing": record["showing"],
+            "visible": record["visible"],
+        }
+        for record in list_records
+    ]
+    return json.dumps(compact, sort_keys=True)
+
+
+def attempt_target_project_open(
+    select_project_frame: Any,
+    alice_app: Any,
+    target_starter: dict[str, str],
+) -> dict[str, Any]:
+    target_display_name = target_starter["displayName"]
+    target_repository_path = target_starter["repositoryPath"]
+    record: dict[str, Any] = {
+        "targetStarter": target_starter,
+        "startersTabClick": {"attempted": False, "success": False, "detail": ""},
+        "targetStarterObserved": None,
+        "targetStarterSelected": False,
+        "targetStarterOpenAttempted": False,
+        "openedStarter": None,
+        "targetSelectionAttempt": {},
+        "okButtonClick": {"attempted": False, "success": False, "detail": ""},
+        "projectOpenObserved": False,
+        "projectOpenDetail": "",
+        "evidenceStatus": "blocked",
+        "blocker": "target-starter-not-found",
+        "blockerDetail": "",
+        "targetStarterBlocker": None,
+    }
+
+    record["startersTabClick"] = select_starters_tab(select_project_frame)
+    target_match, list_records = find_target_starter(select_project_frame, target_display_name)
+    if target_match is None:
+        observed_state = (
+            f"Active Starters list candidates after Starters tab activation: {active_list_summary(list_records)}"
+        )
+        blocker = target_blocker(
+            observed_state,
+            f"Search active Starters context for starter named {target_display_name!r}.",
+            (
+                f"Expose and select {target_display_name!r} from the Starters list, then click OK/Open "
+                f"and record repositoryPath {target_repository_path!r}."
+            ),
+            f"{target_display_name!r} was not found in the active Starters AT-SPI list candidates.",
+        )
+        record.update(
+            {
+                "blocker": "target-starter-not-found",
+                "blockerDetail": blocker["reasonProgressStopped"],
+                "targetStarterBlocker": blocker,
+                "projectOpenDetail": blocker["reasonProgressStopped"],
+            }
+        )
+        return record
+
+    record["targetStarterObserved"] = target_match["observation"]
+    selected, selection_attempt = attempt_target_selection(target_match)
+    record["targetSelectionAttempt"] = selection_attempt
+    record["targetStarterSelected"] = selected
+    if not selected:
+        blocker = target_blocker(
+            json.dumps(record["targetStarterObserved"], sort_keys=True),
+            "Try target item click/select/activate actions, then parent list selection interface.",
+            f"Select {target_display_name!r}, then click OK/Open only after target-specific selection evidence.",
+            selection_attempt.get("detail", "No target-specific selection method succeeded."),
+        )
+        record.update(
+            {
+                "blocker": "target-starter-selection-unavailable",
+                "blockerDetail": blocker["reasonProgressStopped"],
+                "targetStarterBlocker": blocker,
+                "projectOpenDetail": blocker["reasonProgressStopped"],
+            }
+        )
+        return record
+
+    ok_node = find_ok_or_open_button(select_project_frame)
+    if ok_node is None:
+        blocker = target_blocker(
+            json.dumps(record["targetStarterObserved"], sort_keys=True),
+            f"Click OK/Open after selecting {target_display_name!r}.",
+            "Find an OK or Open button and invoke its click action.",
+            "No OK or Open button was found in the Select Project AT-SPI tree.",
+        )
+        record.update(
+            {
+                "evidenceStatus": "selected",
+                "blocker": "target-starter-open-not-observed",
+                "blockerDetail": blocker["reasonProgressStopped"],
+                "targetStarterBlocker": blocker,
+                "projectOpenDetail": blocker["reasonProgressStopped"],
+            }
+        )
+        return record
+
+    ok, detail = do_action(ok_node, "click")
+    record["targetStarterOpenAttempted"] = True
+    record["okButtonClick"] = {"attempted": True, "success": ok, "detail": detail}
+    if not ok:
+        blocker = target_blocker(
+            json.dumps(record["targetStarterObserved"], sort_keys=True),
+            f"Invoke OK/Open click after selecting {target_display_name!r}.",
+            "Observe Select Project dismissal after target-specific selection and OK/Open activation.",
+            f"OK/Open action did not succeed: {detail}",
+        )
+        record.update(
+            {
+                "evidenceStatus": "selected",
+                "blocker": "target-starter-open-not-observed",
+                "blockerDetail": blocker["reasonProgressStopped"],
+                "targetStarterBlocker": blocker,
+                "projectOpenDetail": blocker["reasonProgressStopped"],
+            }
+        )
+        return record
+
+    project_open_observed, project_open_detail = wait_for_select_project_dismissal(alice_app)
+    record["projectOpenObserved"] = project_open_observed
+    record["projectOpenDetail"] = project_open_detail
+    if project_open_observed:
+        record.update(
+            {
+                "evidenceStatus": "opened",
+                "blocker": "none",
+                "blockerDetail": "",
+                "openedStarter": target_starter,
+                "targetStarterBlocker": None,
+            }
+        )
+        return record
+
+    blocker = target_blocker(
+        json.dumps(record["targetStarterObserved"], sort_keys=True),
+        f"Clicked OK/Open after selecting {target_display_name!r}.",
+        "Observe Select Project dismissal and record openedStarter matching the Africa Full metadata.",
+        project_open_detail,
+    )
+    record.update(
+        {
+            "evidenceStatus": "selected",
+            "blocker": "target-starter-open-not-observed",
+            "blockerDetail": blocker["reasonProgressStopped"],
+            "targetStarterBlocker": blocker,
+        }
+    )
+    return record
+
+
+def not_observed_payload(inventory_path: Path) -> dict[str, Any]:
+    target_starter = configured_target_starter()
+    blocker_detail = (
+        f"No Java window titled '{EXPECTED_SELECT_PROJECT_TITLE}' was found in "
+        f"{inventory_path.name}."
+    )
+    return add_target_metadata(
+        {
+            "status": "not-observed",
+            "blocker": "select-project-window-not-in-inventory",
+            "blockerDetail": blocker_detail,
+            "javaPid": None,
+            "allWidgetTree": [],
+            "roleCounts": {},
+            "tabListNodes": [],
+            "tabNodes": [],
+            "tabClickAttempts": [],
+            "widgetCountAfterClick": 0,
+            "allWidgetTreeAfterClick": [],
+            "projectOpenObserved": False,
+            "projectOpenAttempt": {},
+        },
+        target_starter,
+        evidence_status="blocked",
+        blocker=target_blocker(
+            f"{inventory_path.name} did not contain a Select Project Java window.",
+            "Read the X window inventory and identify the Select Project Java PID.",
+            "Connect to AT-SPI and inspect the active Starters context.",
+            blocker_detail,
+        ),
+    )
 
 
 def blocked_payload(inventory_path: Path, exc: Exception) -> dict[str, Any]:
-    return {
-        "status": "blocked",
-        "blocker": "inventory-unreadable",
-        "blockerDetail": f"Could not read {inventory_path}: {exc}",
-        "javaPid": None,
-        "allWidgetTree": [],
-        "roleCounts": {},
-        "tabListNodes": [],
-        "tabNodes": [],
-        "tabClickAttempts": [],
-        "widgetCountAfterClick": 0,
-        "allWidgetTreeAfterClick": [],
-    }
+    target_starter = configured_target_starter()
+    blocker_detail = f"Could not read {inventory_path}: {exc}"
+    return add_target_metadata(
+        {
+            "status": "blocked",
+            "blocker": "inventory-unreadable",
+            "blockerDetail": blocker_detail,
+            "javaPid": None,
+            "allWidgetTree": [],
+            "roleCounts": {},
+            "tabListNodes": [],
+            "tabNodes": [],
+            "tabClickAttempts": [],
+            "widgetCountAfterClick": 0,
+            "allWidgetTreeAfterClick": [],
+        },
+        target_starter,
+        evidence_status="blocked",
+        blocker=target_blocker(
+            f"{inventory_path} could not be read, so no AT-SPI state was observed.",
+            "Read x-window-inventory.json before AT-SPI probing.",
+            "Identify the Select Project Java PID, then inspect and select the target starter.",
+            blocker_detail,
+        ),
+    )
 
 
 def main() -> int:

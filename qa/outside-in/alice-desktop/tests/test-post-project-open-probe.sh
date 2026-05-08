@@ -58,6 +58,33 @@ write_tab_click_not_opened() {
 JSON
 }
 
+# --- Helper: target-starter selection without target-specific open proof ---
+write_target_selected_not_opened() {
+  local path=$1
+  cat > "$path" <<'JSON'
+{
+  "status": "observed",
+  "blocker": "target-starter-open-not-observed",
+  "projectOpenObserved": true,
+  "projectOpenDetail": "Generic Select Project dismissal was observed, but Africa Full was not proven opened.",
+  "targetStarter": {
+    "displayName": "Africa Full",
+    "repositoryPath": "core/resources/src/application/resources/starter-projects/AfricaFull.a3p"
+  },
+  "targetStarterSelected": true,
+  "targetStarterOpenAttempted": true,
+  "openedStarter": null,
+  "evidenceStatus": "selected",
+  "targetStarterBlocker": {
+    "observedAtspiState": "Africa Full selection evidence exists, but openedStarter is not Africa Full.",
+    "actionAttempted": "Click OK/Open after selecting Africa Full.",
+    "expectedNextAction": "Observe projectOpenObserved=true with openedStarter set to Africa Full.",
+    "reasonProgressStopped": "The generic main-window transition is insufficient target-specific proof."
+  }
+}
+JSON
+}
+
 # ---- 1. Missing inventory → blocked ----
 missing_out="$tmp_root/missing-inventory-out.json"
 python3 "$PROBE" "$tmp_root/no-inventory.json" "$tmp_root/no-tab-click.json" "$missing_out"
@@ -163,9 +190,23 @@ assert_contains "$atk_out" '"postOpenWindowObserved": false' "no-AT-SPI does not
 assert_contains "$atk_out" '"blocker": "(pyatspi-not-installed|at-spi-registry-unavailable|atk-wrapper-not-loaded)"' \
   "no-AT-SPI names a precise AT-SPI-related blocker"
 
-# ---- 8. Probe output is valid JSON ----
+# ---- 8. Generic main-window observation does not imply Africa Full proof ----
+inventory8="$tmp_root/inventory8.json"
+write_alice_inventory "$inventory8"
+target_selected_tab="$tmp_root/target-selected-tab.json"
+write_target_selected_not_opened "$target_selected_tab"
+target_selected_out="$tmp_root/target-selected-out.json"
+python3 "$PROBE" "$inventory8" "$target_selected_tab" "$target_selected_out"
+status=$?
+assert_success "$status" "probe exits 0 when Africa Full target evidence is selected but not opened"
+assert_contains "$target_selected_out" '"status": "blocked"' "target-selected-not-opened records blocked status"
+assert_contains "$target_selected_out" '"blocker": "target-starter-open-not-proven"' "target-selected-not-opened refuses generic main-window proof"
+assert_contains "$target_selected_out" '"postOpenWindowObserved": false' "target-selected-not-opened does not claim post-open window observation"
+assert_contains "$target_selected_out" '"mainWindowObservationBlocker": "target-starter-open-not-proven"' "target-selected-not-opened names exact mainWindowObservationBlocker"
+
+# ---- 9. Probe output is valid JSON ----
 for out_file in "$missing_out" "$missing_tab_out" "$malformed_inv_out" "$malformed_tab_out" \
-                "$not_opened_out" "$no_java_out" "$atk_out"; do
+                "$not_opened_out" "$no_java_out" "$atk_out" "$target_selected_out"; do
   python3 - "$out_file" <<'PY'
 import json, sys
 try:

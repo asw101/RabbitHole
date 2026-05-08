@@ -226,6 +226,30 @@ def project_not_opened_payload(tab_click_path: Path) -> dict[str, Any]:
     }
 
 
+def target_starter_open_not_proven_payload(tab_click_path: Path, tab_click: dict[str, Any]) -> dict[str, Any]:
+    target = tab_click.get("targetStarter")
+    status = tab_click.get("evidenceStatus")
+    opened = tab_click.get("openedStarter")
+    blocker_detail = (
+        f"{tab_click_path.name} contains targetStarter metadata but does not record "
+        "evidenceStatus=opened with openedStarter matching targetStarter; generic "
+        "main-window observation cannot prove the Africa Full starter was opened."
+    )
+    return {
+        "status": "blocked",
+        "blocker": "target-starter-open-not-proven",
+        "blockerDetail": blocker_detail,
+        "javaPid": None,
+        "postOpenWindowObserved": False,
+        "mainFrameNames": [],
+        "mainFrameChildCounts": [],
+        "mainWindowObservationBlocker": "target-starter-open-not-proven",
+        "targetStarter": target,
+        "evidenceStatus": status,
+        "openedStarter": opened,
+    }
+
+
 def no_java_pid_payload(inventory_path: Path) -> dict[str, Any]:
     return {
         "status": "blocked",
@@ -272,6 +296,21 @@ def main() -> int:
             json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
         )
         return 0
+
+    # Target-specific scenarios must prove the selected/opened starter before the
+    # generic main-window state can be used as downstream evidence.
+    target_starter = tab_click.get("targetStarter")
+    if isinstance(target_starter, dict):
+        if (
+            tab_click.get("evidenceStatus") != "opened"
+            or tab_click.get("openedStarter") != target_starter
+            or not tab_click.get("projectOpenObserved", False)
+        ):
+            payload = target_starter_open_not_proven_payload(tab_click_path, tab_click)
+            output_path.write_text(
+                json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+            )
+            return 0
 
     # Require projectOpenObserved=true before connecting to AT-SPI.
     if not tab_click.get("projectOpenObserved", False):
