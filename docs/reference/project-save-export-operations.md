@@ -9,7 +9,9 @@ This reference describes the `core/ide` project Save, Save As, and Export operat
 - [Operation responsibilities](#operation-responsibilities)
 - [User-visible behavior](#user-visible-behavior)
 - [API reference](#api-reference)
+- [Evidence artifacts](#evidence-artifacts)
 - [Testing notes](#testing-notes)
+- [Focused validation](#focused-validation)
 - [Save menu dialog write proof](#save-menu-dialog-write-proof)
 - [Robot Save menu dialog write/readback proof](#robot-save-menu-dialog-writereadback-proof)
 - [Configuration](#configuration)
@@ -37,13 +39,15 @@ them.
 
 ## Characterization scope
 
-The characterization-test layer covers existing operation behavior. It does not change production Save, Save As, or Export behavior.
+The characterization-test layer covers existing operation behavior. It does not change production Save, Save As, or Export behavior. The documented modernization seam is the `SaveOperationFlow` routing layer plus the `SaveOperationCompletionEvidence` evidence writer used by `AbstractSaveOperation.perform(UserActivity)`.
 
 The direct operation coverage includes:
 
 | Scope | Expected implementation |
 | --- | --- |
 | Direct operation tests | JUnit 4 tests in `org.alice.ide.croquet.models.projecturi` cover prompt rules, extension selection, and toolbar text clobbering. |
+| Flow seam tests | `SaveOperationFlowTest` covers observable routing, prompt consultation, backup-save naming, retry behavior, wait cursor wrapping, finish/cancel outcomes, and returned result counts. |
+| Completion evidence tests | `SaveOperationCompletionEvidenceTest` covers opt-in evidence writing, success, cancellation, incomplete/failure-style results, action invocation states, path redaction, and non-interruption when evidence writing fails. |
 | Compatibility assertions | Assert the exact behavior currently implemented by `SaveProjectOperation`, `SaveAsProjectOperation`, and `ExportProjectOperation`. |
 | Portable file fixtures | Use real files from JUnit `TemporaryFolder`; use a missing file as the portable "cannot be reused" Save case. |
 
@@ -60,6 +64,8 @@ These areas stay outside direct operation tests:
 | Class | Responsibility |
 | --- | --- |
 | `AbstractSaveOperation` | Coordinates active `StageIDE` lookup, current project URI detection, save dialog routing, backup copy naming, wait cursor handling, `IOException` retry behavior, and activity finish/cancel. |
+| `SaveOperationFlow` | Provides the package-private, UI-free flow seam for current-file reuse, prompt selection, backup prompt naming, save attempts, retry after `IOException`, and observable result reporting. |
+| `SaveOperationCompletionEvidence` | Writes opt-in save action, dialog-control target, and completion evidence artifacts without changing the save result. |
 | `AbstractSaveProjectOperation` | Supplies the default projects directory, Alice project extension, and `ProjectApplication.saveProjectTo(File)` delegation used by project save operations. |
 | `SaveProjectOperation` | Saves to the current writable file without prompting; prompts when no writable project file exists. |
 | `SaveAsProjectOperation` | Always prompts for a destination and saves an Alice project file. |
@@ -79,6 +85,8 @@ If the user cancels the save dialog, the Croquet `UserActivity` is canceled and 
 
 If a save/export call raises `IOException`, Alice shows an error dialog, hides the wait cursor, and prompts again. Current-file Save retries suggest the current project base name. Prompted Save As or Export-style retries also keep the current project base name when one exists; if there is no current file, the retry prompt has no suggested base name. The characterized retry loop continues until the user cancels or a later save/export attempt succeeds.
 
+Completion evidence is developer opt-in and is not user-visible. Evidence writer failures are logged and do not convert a successful save/export into a failed save/export.
+
 ## API reference
 
 ### `AbstractSaveOperation`
@@ -93,6 +101,44 @@ protected abstract void save(ProjectApplication application, File file) throws I
 ```
 
 Concrete operations customize only the prompt rule, default directory, file extension, and final save/export delegation. The template owns the shared flow so Save, Save As, and Export stay behaviorally consistent.
+
+### `SaveOperationFlow`
+
+`SaveOperationFlow` is the package-private seam that makes the save routing behavior testable without desktop UI interception:
+
+```java
+static Result run(Context context, PromptDecision promptDecision, String extension, SaveAction saveAction)
+```
+
+The `Context` supplies the current file, backup state, default directory, dialog callback, wait cursor hooks, error display hook, and activity finish/cancel hooks. `PromptDecision` supplies the operation-specific prompt rule. `SaveAction` performs the final save/export callback and may throw `IOException`.
+
+`Result` records observable completion facts:
+
+| Field | Meaning |
+| --- | --- |
+| `finished` | `true` when the flow called the activity finish hook after a successful save/export attempt. |
+| `canceled` | `true` when the flow called the activity cancel hook after dialog cancellation or unsupported setup. |
+| `promptCount` | Number of save dialog requests made by the flow. |
+| `saveAttempts` | Number of save/export callback attempts. |
+| `savedFile` | The last successfully saved destination, or `null` when no successful write completed. |
+
+The flow has no runtime configuration and no public API commitment outside the package. Its contract is the behavior preserved by `AbstractSaveOperation.perform(UserActivity)`.
+
+### `SaveOperationCompletionEvidence`
+
+`SaveOperationCompletionEvidence` is package-private developer evidence infrastructure. It writes artifacts only when explicitly opted in by system property:
+
+```java
+static void record(String operationClass, String extension, SaveOperationFlow.Result result)
+static void recordSaveActionInvocation(String operationClass, String extension, boolean activeStageIdeAvailable, boolean projectDocumentFrameAvailable)
+static Path write(Path evidenceDir, String operationClass, String extension, SaveOperationFlow.Result result)
+static Path writeDialogControlTarget(Path evidenceDir, String operationClass, String extension, SaveOperationFlow.Result result)
+static Path writeSaveActionInvocationProof(Path evidenceDir, String operationClass, String extension, boolean activeStageIdeAvailable, boolean projectDocumentFrameAvailable)
+```
+
+`record(...)` is non-authoritative telemetry for tests and modernization evidence. It is not part of the user save contract. A failure to create evidence is logged and does not change the `UserActivity` outcome.
+
+Evidence path handling is bounded to the configured evidence directory. Saved paths under the current checkout are written relative to the checkout; absolute saved paths outside the checkout are redacted to `[redacted]/<file-name>`.
 
 ### `AbstractSaveProjectOperation`
 
@@ -142,6 +188,35 @@ ExportProjectOperation operation = new ExportProjectOperation();
 
 `ExportProjectOperation` always prompts, uses `IoUtilities.EXPORT_EXTENSION`, clobbers toolbar text, and delegates to `ProjectApplication.exportProjectTo(File)`.
 
+## Evidence artifacts
+
+Save operation evidence is written under the directory configured by `org.alice.eatme.saveOperationEvidenceDir`.
+
+| Artifact | Schema version | When written | Contract |
+| --- | --- | --- | --- |
+| `desktop-save-action-invocation-proof.json` | `eatme.alice-desktop-save-action-invocation-proof/v1` | Before the flow requests a dialog or save callback. | Records whether the action reached `AbstractSaveOperation.perform`, whether `StageIDE.getActiveInstance()` and the project document frame were available, whether invocation came from a Swing menu item dispatch, and which next evidence is required. |
+| `desktop-save-operation-result.json` | `eatme.alice-desktop-save-operation-result/v1` | After `SaveOperationFlow.run(...)` returns. | Records status, prompt count, save attempts, saved file metadata, and whether the evidence proves a non-empty file write with the expected extension. |
+| `desktop-save-dialog-control-target.json` | `eatme.alice-desktop-save-dialog-control-target/v1` | Alongside completion evidence. | Reports whether the flow requested the production dialog seam and identifies the desktop dialog-control targets still needed for outside-in proof. |
+
+Completion statuses are intentionally narrow:
+
+| Status | Meaning |
+| --- | --- |
+| `finished` | The flow finished after a save/export callback completed without `IOException`. |
+| `canceled` | The flow canceled because the user canceled a prompt, the retry prompt was canceled, or the action could not safely continue. |
+| `incomplete` | The result did not finish or cancel; this is failure-style evidence and does not claim a completed save. |
+
+Action invocation proof statuses describe how far the action reached:
+
+| Status | Meaning |
+| --- | --- |
+| `action_invoked` | The operation reached `AbstractSaveOperation.perform` with an active `StageIDE` and document frame. |
+| `menu_item_dispatched` | The operation was dispatched through the Swing menu item path and reached the operation owner. |
+| `blocked` | The action was invoked but a required desktop owner, such as the project document frame, was missing. |
+| `unsupported` | The current JVM has no active `StageIDE`, so the production dialog path cannot be reached. |
+
+The `wroteFile` evidence field is `true` only when `saved_file` exists, is non-empty, and matches the operation extension. Only that state includes the file-write claim. Canceled, incomplete, missing-file, empty-file, or wrong-extension evidence records a reporting summary instead of a write claim.
+
 ## Testing notes
 
 Direct operation tests live in the same package as the operations. Those tests can call protected prompt and extension methods without changing production visibility.
@@ -170,6 +245,57 @@ Flow-level tests use the package-private `SaveOperationFlow` seam so they can av
 | Current-file Save `IOException` followed by cancel | `SaveOperationFlowTest` throws from the first callback, returns `null` from the retry prompt, and asserts canceled activity. |
 | Prompted current-project retry | `SaveOperationFlowTest` prompts first, fails the selected destination, and asserts retry keeps the current project base name. |
 | Prompted no-current-file retry cancellation | `SaveOperationFlowTest` prompts first, fails the selected destination, and asserts retry cancellation keeps no suggested base name. |
+
+Completion evidence tests characterize the artifact contract rather than constructor or accessor behavior:
+
+| Evidence behavior | Test target |
+| --- | --- |
+| Successful completion evidence | `SaveOperationCompletionEvidenceTest` writes a finished result with a non-empty `.a3p` file and asserts `status: finished`, `wroteFile: true`, file metadata, and the bounded write claim. |
+| Failure-style completion evidence | `SaveOperationCompletionEvidenceTest` writes an incomplete or non-writing result and asserts no write claim is emitted. |
+| Cancellation evidence | `SaveOperationCompletionEvidenceTest` writes a canceled result and asserts `status: canceled`, null saved-file fields, `wroteFile: false`, and a reporting summary. |
+| Action invocation success | `SaveOperationCompletionEvidenceTest` asserts `action_invoked` or `menu_item_dispatched` when the operation reaches an active `StageIDE` and project document frame. |
+| Action invocation blocked/unsupported | `SaveOperationCompletionEvidenceTest` asserts `blocked` for a missing project document frame and `unsupported` for a missing active `StageIDE`. |
+| Opt-in behavior | `SaveOperationCompletionEvidenceTest` asserts no artifacts are written when `org.alice.eatme.saveOperationEvidenceDir` is unset. |
+| Evidence safety | `SaveOperationCompletionEvidenceTest` asserts evidence writer errors are logged, saved paths outside the checkout are redacted, and evidence writing does not interrupt save flow. |
+
+## Focused validation
+
+From a fresh checkout or worktree, initialize Tweedle grammar before broad Maven validation:
+
+```bash
+git submodule update --init tweedle-lang
+test -d tweedle-lang/Grammar
+```
+
+Run the focused characterization tests:
+
+```bash
+NODE_OPTIONS=--max-old-space-size=32768 mvn -DincludeSims=false -Dinstall4j.skip \
+  -pl core/ide -am \
+  -DfailIfNoTests=false \
+  -Dsurefire.failIfNoSpecifiedTests=false \
+  -Dtest=org.alice.ide.croquet.models.projecturi.SaveOperationFlowTest,org.alice.ide.croquet.models.projecturi.SaveOperationCompletionEvidenceTest \
+  test
+```
+
+Run the same focused shard through JaCoCo:
+
+```bash
+NODE_OPTIONS=--max-old-space-size=32768 mvn -DincludeSims=false -Dinstall4j.skip \
+  -pl core/ide -am \
+  -DfailIfNoTests=false \
+  -Dsurefire.failIfNoSpecifiedTests=false \
+  -Dtest=org.alice.ide.croquet.models.projecturi.SaveOperationFlowTest,org.alice.ide.croquet.models.projecturi.SaveOperationCompletionEvidenceTest \
+  verify
+```
+
+The focused report is expected at:
+
+```text
+core/ide/target/site/jacoco/jacoco.csv
+```
+
+Coverage claims for this shard compare only the `org.alice.ide.croquet.models.projecturi.SaveOperationFlow` and `org.alice.ide.croquet.models.projecturi.SaveOperationCompletionEvidence` rows before and after the characterization tests. Do not claim aggregate target progress from tests that merely instantiate classes, call trivial accessors, or assert implementation details unrelated to documented save behavior.
 
 ## Save menu dialog write proof
 
@@ -206,10 +332,17 @@ See [Robot Save Menu Dialog Write/Readback Proof](./robot-save-menu-dialog-write
 
 There is no runtime configuration flag for Save, Save As, or Export routing. The behavior is fixed by the operation classes and the Alice project save and export constants.
 
+Developer evidence uses these optional JVM system properties:
+
+| Property | Purpose |
+| --- | --- |
+| `org.alice.eatme.saveOperationEvidenceDir` | Enables save-operation evidence artifacts and selects the output directory. When unset or blank, no evidence artifacts are written. |
+| `org.alice.eatme.saveActionInvocationProofOnly` | Stops after action-invocation evidence and cancels the activity before dialog or save callbacks. This is for bounded proof scenarios only, not normal user saves. |
+
 Developer validation uses the existing Maven configuration:
 
 ```bash
-mvn -DincludeSims=false -Dinstall4j.skip \
+NODE_OPTIONS=--max-old-space-size=32768 mvn -DincludeSims=false -Dinstall4j.skip \
   -pl core/ide -am \
   -DfailIfNoTests=false \
   test
@@ -297,4 +430,36 @@ Current file: /home/dev/alice-projects/RobotDance.a3p
 Prompt: yes
 Extension: IoUtilities.EXPORT_EXTENSION
 Delegation after selection: ProjectApplication.exportProjectTo(selectedFile)
+```
+
+### Capture save completion evidence
+
+When a focused test opts in to completion evidence:
+
+```text
+Property: org.alice.eatme.saveOperationEvidenceDir=target/save-operation-evidence
+Action: Save As
+Prompt: yes
+Selected file: target/save-operation-evidence/classroom.a3p
+Result: UserActivity.finish()
+Artifacts:
+  target/save-operation-evidence/desktop-save-action-invocation-proof.json
+  target/save-operation-evidence/desktop-save-operation-result.json
+  target/save-operation-evidence/desktop-save-dialog-control-target.json
+```
+
+The completion artifact may claim a write only when `classroom.a3p` exists, is non-empty, and has the expected `.a3p` extension.
+
+### Capture cancellation evidence
+
+When the user cancels the prompted destination:
+
+```text
+Action: Save As
+Prompt: yes
+Selected file: null
+Save callback: not called
+Result: UserActivity.cancel()
+Evidence status: canceled
+Write claim: none
 ```
