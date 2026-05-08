@@ -24,6 +24,9 @@ import org.alice.tweedle.ast.IdentifierReference;
 import org.alice.tweedle.ast.LessThanExpression;
 import org.alice.tweedle.ast.LessThanOrEqualExpression;
 import org.alice.tweedle.ast.LocalVariableDeclaration;
+import org.alice.tweedle.ast.LogicalAndExpression;
+import org.alice.tweedle.ast.LogicalNotExpression;
+import org.alice.tweedle.ast.LogicalOrExpression;
 import org.alice.tweedle.ast.MultiplicationExpression;
 import org.alice.tweedle.ast.NotEqualToExpression;
 import org.alice.tweedle.ast.StringConcatenationExpression;
@@ -39,6 +42,7 @@ import org.lgna.project.ast.AbstractNode;
 import org.lgna.project.ast.AbstractType;
 import org.lgna.project.ast.ArithmeticInfixExpression;
 import org.lgna.project.ast.ArrayInstanceCreation;
+import org.lgna.project.ast.ConditionalInfixExpression;
 import org.lgna.project.ast.StringConcatenation;
 import org.lgna.project.ast.AstUtilities;
 import org.lgna.project.ast.BlockStatement;
@@ -51,6 +55,7 @@ import org.lgna.project.ast.IntegerLiteral;
 import org.lgna.project.ast.JavaType;
 import org.lgna.project.ast.LocalAccess;
 import org.lgna.project.ast.LocalDeclarationStatement;
+import org.lgna.project.ast.LogicalComplement;
 import org.lgna.project.ast.NamedUserConstructor;
 import org.lgna.project.ast.NamedUserType;
 import org.lgna.project.ast.NullLiteral;
@@ -416,6 +421,15 @@ public class Decoder {
     if (expr instanceof BinaryExpression binaryExpr && isComparisonExpression(binaryExpr)) {
       return decodeRelationalExpression(ownerName, binaryExpr, parameters, priorLocals, fields);
     }
+    if (expr instanceof LogicalAndExpression<?> logicalAnd) {
+      return decodeLogicalInfixExpression(ownerName, logicalAnd, ConditionalInfixExpression.Operator.AND, parameters, priorLocals, fields);
+    }
+    if (expr instanceof LogicalOrExpression<?> logicalOr) {
+      return decodeLogicalInfixExpression(ownerName, logicalOr, ConditionalInfixExpression.Operator.OR, parameters, priorLocals, fields);
+    }
+    if (expr instanceof LogicalNotExpression logicalNot) {
+      return decodeLogicalNotExpression(ownerName, logicalNot, parameters, priorLocals, fields);
+    }
     if (expr instanceof BinaryNumericExpression<?> binaryNumeric) {
       return decodeBinaryNumericExpression(ownerName, binaryNumeric, parameters, priorLocals, fields);
     }
@@ -424,7 +438,8 @@ public class Decoder {
     }
     throw new UnsupportedTweedleDecodeException(
         "Unsupported Tweedle value expression (only primitive literals, identifier references, "
-            + "arithmetic binary expressions, string concatenation, and comparison expressions are supported): " + ownerName);
+            + "arithmetic binary expressions, string concatenation, comparison expressions, "
+            + "and logical expressions are supported): " + ownerName);
   }
 
   private StringConcatenation decodeStringConcatenationExpression(
@@ -480,6 +495,28 @@ public class Decoder {
     }
     throw new UnsupportedTweedleDecodeException(
         "Unsupported Tweedle comparison operator " + expr.getClass().getSimpleName() + ": " + ownerName);
+  }
+
+  private ConditionalInfixExpression decodeLogicalInfixExpression(
+      String ownerName,
+      BinaryExpression binaryExpr,
+      ConditionalInfixExpression.Operator operator,
+      UserParameter[] parameters,
+      List<UserLocal> locals,
+      List<UserField> fields) {
+    Expression lhs = decodeValueExpression(ownerName, binaryExpr.getLhs(), parameters, locals, fields);
+    Expression rhs = decodeValueExpression(ownerName, binaryExpr.getRhs(), parameters, locals, fields);
+    return new ConditionalInfixExpression(lhs, operator, rhs);
+  }
+
+  private LogicalComplement decodeLogicalNotExpression(
+      String ownerName,
+      LogicalNotExpression logicalNot,
+      UserParameter[] parameters,
+      List<UserLocal> locals,
+      List<UserField> fields) {
+    Expression operand = decodeValueExpression(ownerName, logicalNot.getExpression(), parameters, locals, fields);
+    return new LogicalComplement(operand);
   }
 
   private ArithmeticInfixExpression decodeBinaryNumericExpression(
@@ -597,6 +634,36 @@ public class Decoder {
       }
       throw new UnsupportedTweedleDecodeException(
           "Tweedle method return comparison expression type is not assignable to "
+              + returnType.getName() + ": " + method.getName());
+    }
+    if (returnExpression instanceof LogicalAndExpression<?> logicalAnd) {
+      ConditionalInfixExpression conditional =
+          decodeLogicalInfixExpression(method.getName(), logicalAnd, ConditionalInfixExpression.Operator.AND, allParameters, locals, fields);
+      if (returnType.isAssignableFrom(conditional.getType())) {
+        return conditional;
+      }
+      throw new UnsupportedTweedleDecodeException(
+          "Tweedle method return logical && expression type is not assignable to "
+              + returnType.getName() + ": " + method.getName());
+    }
+    if (returnExpression instanceof LogicalOrExpression<?> logicalOr) {
+      ConditionalInfixExpression conditional =
+          decodeLogicalInfixExpression(method.getName(), logicalOr, ConditionalInfixExpression.Operator.OR, allParameters, locals, fields);
+      if (returnType.isAssignableFrom(conditional.getType())) {
+        return conditional;
+      }
+      throw new UnsupportedTweedleDecodeException(
+          "Tweedle method return logical || expression type is not assignable to "
+              + returnType.getName() + ": " + method.getName());
+    }
+    if (returnExpression instanceof LogicalNotExpression logicalNot) {
+      LogicalComplement complement =
+          decodeLogicalNotExpression(method.getName(), logicalNot, allParameters, locals, fields);
+      if (returnType.isAssignableFrom(complement.getType())) {
+        return complement;
+      }
+      throw new UnsupportedTweedleDecodeException(
+          "Tweedle method return logical ! expression type is not assignable to "
               + returnType.getName() + ": " + method.getName());
     }
     throw unsupportedMethodReturnExpression(method);

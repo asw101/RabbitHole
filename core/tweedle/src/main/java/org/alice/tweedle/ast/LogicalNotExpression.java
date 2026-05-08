@@ -13,6 +13,10 @@ public class LogicalNotExpression extends TweedleExpression {
     this.expression = exp;
   }
 
+  public TweedleExpression getExpression() {
+    return expression;
+  }
+
   @Override
   public TweedleValue evaluate(Frame frame) {
     TweedlePrimitiveValue<Boolean> valueHolder = (TweedlePrimitiveValue<Boolean>) expression.evaluate(frame);

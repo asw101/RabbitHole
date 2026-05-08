@@ -7,6 +7,7 @@ import org.lgna.project.ast.ArithmeticInfixExpression;
 import org.lgna.project.ast.ArrayInstanceCreation;
 import org.lgna.project.ast.AssignmentExpression;
 import org.lgna.project.ast.BooleanLiteral;
+import org.lgna.project.ast.ConditionalInfixExpression;
 import org.lgna.project.ast.DoubleLiteral;
 import org.lgna.project.ast.Expression;
 import org.lgna.project.ast.ExpressionStatement;
@@ -15,6 +16,7 @@ import org.lgna.project.ast.IntegerLiteral;
 import org.lgna.project.ast.JavaType;
 import org.lgna.project.ast.LocalAccess;
 import org.lgna.project.ast.LocalDeclarationStatement;
+import org.lgna.project.ast.LogicalComplement;
 import org.lgna.project.ast.NamedUserConstructor;
 import org.lgna.project.ast.NamedUserType;
 import org.lgna.project.ast.NullLiteral;
@@ -1433,6 +1435,113 @@ public class TweedleEncoderDecoderTest {
     assertTrue(thrown.getMessage().contains("bad"));
   }
 
+  // --- Logical && (ConditionalInfixExpression.AND) ---
+
+  @Test
+  public void decodeClassWithAndLocalInitCreatesConditionalAnd() throws Exception {
+    NamedUserType type = decodeUserType("""
+        class SyntheticType {
+          Boolean check(Boolean a, Boolean b) {
+            Boolean result <- a && b;
+            return result;
+          }
+        }
+        """);
+
+    UserMethod method = type.getDeclaredMethods().get(0);
+    LocalDeclarationStatement decl = (LocalDeclarationStatement) method.body.getValue().statements.get(0);
+    assertConditionalInfix(decl.initializer.getValue(), ConditionalInfixExpression.Operator.AND);
+  }
+
+  @Test
+  public void decodeClassWithAndRhsInMethodAssignmentCreatesConditionalAnd() throws Exception {
+    NamedUserType type = decodeUserType("""
+        class SyntheticType {
+          Boolean flag <- false;
+          void check(Boolean a, Boolean b) { flag <- a && b; }
+        }
+        """);
+
+    UserMethod method = type.getDeclaredMethods().get(0);
+    ExpressionStatement stmt = (ExpressionStatement) method.body.getValue().statements.get(0);
+    AssignmentExpression assign = (AssignmentExpression) stmt.expression.getValue();
+    assertConditionalInfix(assign.rightHandSide.getValue(), ConditionalInfixExpression.Operator.AND);
+  }
+
+  @Test
+  public void decodeClassWithAndReturnInMethodCreatesConditionalAnd() throws Exception {
+    NamedUserType type = decodeUserType("""
+        class SyntheticType {
+          Boolean check(Boolean a, Boolean b) { return a && b; }
+        }
+        """);
+
+    UserMethod method = type.getDeclaredMethods().get(0);
+    ReturnStatement ret = (ReturnStatement) method.body.getValue().statements.get(0);
+    assertConditionalInfix(ret.expression.getValue(), ConditionalInfixExpression.Operator.AND);
+  }
+
+  // --- Logical || (ConditionalInfixExpression.OR) ---
+
+  @Test
+  public void decodeClassWithOrReturnInMethodCreatesConditionalOr() throws Exception {
+    NamedUserType type = decodeUserType("""
+        class SyntheticType {
+          Boolean check(Boolean a, Boolean b) { return a || b; }
+        }
+        """);
+
+    UserMethod method = type.getDeclaredMethods().get(0);
+    ReturnStatement ret = (ReturnStatement) method.body.getValue().statements.get(0);
+    assertConditionalInfix(ret.expression.getValue(), ConditionalInfixExpression.Operator.OR);
+  }
+
+  // --- Logical ! (LogicalComplement) ---
+
+  @Test
+  public void decodeClassWithNotLocalInitCreatesLogicalComplement() throws Exception {
+    NamedUserType type = decodeUserType("""
+        class SyntheticType {
+          Boolean check(Boolean a) {
+            Boolean result <- !a;
+            return result;
+          }
+        }
+        """);
+
+    UserMethod method = type.getDeclaredMethods().get(0);
+    LocalDeclarationStatement decl = (LocalDeclarationStatement) method.body.getValue().statements.get(0);
+    assertLogicalComplement(decl.initializer.getValue());
+  }
+
+  @Test
+  public void decodeClassWithNotRhsInMethodAssignmentCreatesLogicalComplement() throws Exception {
+    NamedUserType type = decodeUserType("""
+        class SyntheticType {
+          Boolean flag <- false;
+          void check(Boolean a) { flag <- !a; }
+        }
+        """);
+
+    UserMethod method = type.getDeclaredMethods().get(0);
+    ExpressionStatement stmt = (ExpressionStatement) method.body.getValue().statements.get(0);
+    AssignmentExpression assign = (AssignmentExpression) stmt.expression.getValue();
+    assertLogicalComplement(assign.rightHandSide.getValue());
+  }
+
+  @Test
+  public void decodeClassWithNotReturnInMethodCreatesLogicalComplement() throws Exception {
+    NamedUserType type = decodeUserType("""
+        class SyntheticType {
+          Boolean check(Boolean a) { return !a; }
+        }
+        """);
+
+    UserMethod method = type.getDeclaredMethods().get(0);
+    ReturnStatement ret = (ReturnStatement) method.body.getValue().statements.get(0);
+    assertLogicalComplement(ret.expression.getValue());
+  }
+
   private NamedUserType decodeUserType(String source) throws Exception {
     AbstractNode decoded = coder.decode(source);
 
@@ -1519,6 +1628,20 @@ public class TweedleEncoderDecoderTest {
     RelationalInfixExpression infix = (RelationalInfixExpression) expression;
     assertSame(expectedOperator, infix.operator.getValue());
     assertSame(JavaType.BOOLEAN_OBJECT_TYPE, infix.getType());
+  }
+  private static void assertConditionalInfix(Expression expression, ConditionalInfixExpression.Operator expectedOperator) {
+    assertTrue("Expected ConditionalInfixExpression, got: " + expression.getClass().getSimpleName(),
+        expression instanceof ConditionalInfixExpression);
+    ConditionalInfixExpression infix = (ConditionalInfixExpression) expression;
+    assertSame(expectedOperator, infix.operator.getValue());
+    assertSame(JavaType.BOOLEAN_OBJECT_TYPE, infix.getType());
+  }
+
+  private static void assertLogicalComplement(Expression expression) {
+    assertTrue("Expected LogicalComplement, got: " + expression.getClass().getSimpleName(),
+        expression instanceof LogicalComplement);
+    LogicalComplement complement = (LogicalComplement) expression;
+    assertSame(JavaType.BOOLEAN_OBJECT_TYPE, complement.getType());
   }
 
 }
