@@ -446,17 +446,19 @@ review-notes.txt
 
 Open `manual-evidence-checklist.txt` before collecting the manual artifacts. The
 checklist describes the manual evidence required for setup/open/save review and
-includes a generated `Assessment boundary` section. Use that generated section
-and the checked-in boundary record while reviewing this run, and treat missing
+includes a generated `Assessment boundary` section. `status.txt` repeats the
+same boundary as plain fields, including
+`assessmentBoundary=define-reviewed-assessment-contract` and
+`assessmentBoundaryMode=manual/unsupported`. Use those generated lines and the
+checked-in boundary record while reviewing this run, and treat missing
 learner-world state extraction for grading or creative assessment as blocker
 `define-reviewed-assessment-contract`, not as a hidden fallback.
 
 Accept the manual run only as setup/open/save evidence. `review-notes.txt`
 should list the reviewed files, state whether the starter project was prepared,
 opened by the student, and saved as a separate copy, and end with `decision:
-accept` or `decision: reject`. Do not use the run notes to claim learner-work
-grading, rubric scoring, correctness assessment, correctness scoring, creativity
-assessment, or creative assessment.
+accept` or `decision: reject`. Do not use the run notes to claim learner-world
+grading, rubric scoring, correctness assessment, or creative assessment.
 
 The learner-world claim boundary is recorded in:
 
@@ -467,11 +469,12 @@ qa/outside-in/alice-desktop/contracts/learner-world-assessment-boundary.json
 Treat that JSON file as documentation for the current boundary, not as runner
 configuration. The current artifact records `id`, `selectedScenario`,
 `automationMode`, `scope`, `currentCapability`, `supportedEvidence`,
-`assessmentLimits`, `nonCapabilities`, `nextBlocker`, and `blocker`. Its blocker
-is `define-reviewed-assessment-contract`, which must be resolved with a reviewed
-assessment contract and evidence mapping before learner-world state extraction
-for grading or creative assessment can be claimed. The complete current contract
-is described in
+`assessmentLimits`, `nonCapabilities`, `nextBoundary`,
+`manualLimitationSummary`, `requiresReviewedAssessmentContractBefore`,
+`nextBlocker`, and `blocker`. It keeps `define-reviewed-assessment-contract` as
+the required next boundary before learner-world grading, rubric scoring,
+correctness assessment, or creative assessment can be claimed. The boundary is
+described in
 [Learner-world assessment boundary](../reference/learner-world-assessment-boundary.md).
 
 ## Choose a custom evidence directory

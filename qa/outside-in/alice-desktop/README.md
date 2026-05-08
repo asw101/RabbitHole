@@ -44,20 +44,25 @@ pass result and does not evaluate the learner's work.
 The checked-in boundary record is
 `qa/outside-in/alice-desktop/contracts/learner-world-assessment-boundary.json`.
 That file is declarative documentation for the current claim boundary. It names
-the blocker, `define-reviewed-assessment-contract`, and supplies the generated
-manual checklist boundary wording.
+next boundary `define-reviewed-assessment-contract` and supplies the generated
+manual status/checklist boundary wording.
 
 The generated `manual-evidence-checklist.txt` for
 `alice-desktop-instructor-student-setup` uses the standard manual checklist
 sections and includes a generated `Assessment boundary` section. That section
 states manual evidence required, setup/open/save evidence review only, no
-automated grading, no rubric scoring, no correctness scoring, and no creative
-assessment. Learner-world state extraction for grading or creative assessment is
-blocked until the reviewed assessment contract, evidence mapping, and reviewed
-implementation exist.
+automated grading, no rubric scoring, no correctness assessment, no creative
+assessment, and next boundary `define-reviewed-assessment-contract`. It also
+adds explicit manual/unsupported checklist lines and keeps learner-world
+grading, rubric scoring, correctness assessment, and creative assessment
+manual/unsupported until `define-reviewed-assessment-contract` is resolved with
+a reviewed assessment contract, evidence mapping, and reviewed implementation.
+The generated `status.txt` repeats the same boundary as plain status fields,
+including `assessmentBoundary=define-reviewed-assessment-contract` and
+`assessmentBoundaryMode=manual/unsupported`.
 
-Do not use learner-world QA evidence to claim learner-work grading, rubric
-scoring, correctness assessment, or creativity assessment. Any future
+Do not use learner-world QA evidence to claim learner-world grading, rubric
+scoring, correctness assessment, or creative assessment. Any future
 assessment capability first needs a reviewed assessment contract, evidence
 mapping, privacy and audit controls, and a separate implementation change.
 

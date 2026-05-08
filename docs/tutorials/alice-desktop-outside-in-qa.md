@@ -247,16 +247,17 @@ Open the generated run directory and review `manual-evidence-checklist.txt`,
 `environment.txt`, and `status.txt`. The checklist describes the manual evidence
 needed for instructor starter-project setup, student open, and student save
 review. It includes a generated `Assessment boundary` section; use that section
-and the checked-in boundary record while reviewing the manual run. Checklist
-generation does not complete the scenario.
+and the matching `status.txt` boundary fields while reviewing the manual run.
+`status.txt` records `assessmentBoundary=define-reviewed-assessment-contract`
+and `assessmentBoundaryMode=manual/unsupported`, not a grade or assessment pass.
+Checklist generation does not complete the scenario.
 
 Before accepting the run, add the instructor launch log, starter project
 screenshot, saved starter `.a3p`, student launch or open log, loaded project
 screenshot, saved student copy `.a3p`, and `review-notes.txt`.
 `review-notes.txt` should identify the reviewed files and the setup/open/save
-decision only. Do not turn this evidence into learner-work grading, rubric
-scoring, correctness assessment, correctness scoring, creativity assessment, or
-creative assessment.
+decision only. Do not turn this evidence into learner-world grading, rubric
+scoring, correctness assessment, or creative assessment.
 
 Review the checked-in blocker record:
 
@@ -265,13 +266,16 @@ python3 -m json.tool \
   qa/outside-in/alice-desktop/contracts/learner-world-assessment-boundary.json
 ```
 
-The record is documentation for the current boundary. It names
-`define-reviewed-assessment-contract` as the next blocker before any future
-learner-work grading, rubric scoring, correctness assessment, or creativity
-assessment capability can be claimed. Learner-world state extraction for grading
-or creative assessment remains blocked until a reviewed assessment contract,
-evidence mapping, and reviewed implementation exist. The current contract is
-documented in
+The record is documentation for the current boundary. It exposes
+`nextBoundary`, `manualLimitationSummary`,
+`requiresReviewedAssessmentContractBefore`, `nextBlocker`, and `blocker`, then
+renders matching manual/unsupported status and checklist lines.
+`define-reviewed-assessment-contract` remains the next boundary before any
+future learner-world grading, rubric scoring, correctness assessment, or
+creative assessment capability can be claimed. Learner-world state extraction
+for grading or creative assessment remains blocked until a reviewed assessment
+contract, evidence mapping, and reviewed implementation exist. The current
+contract is documented in
 [Learner-world assessment boundary](../reference/learner-world-assessment-boundary.md).
 
 ## Step 10: Prepare a gated command smoke
