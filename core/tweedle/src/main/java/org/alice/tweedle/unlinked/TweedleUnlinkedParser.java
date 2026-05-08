@@ -390,7 +390,7 @@ public class TweedleUnlinkedParser {
     @Override
     public TweedleExpression visitMethodCall(TweedleParser.MethodCallContext ctx) {
 
-      return new MethodCallExpression(new ThisExpression(), ctx.IDENTIFIER().getText(), visitLabeledArguments(ctx.labeledExpressionList()));
+      return new MethodCallExpression(new ThisExpression(), ctx.IDENTIFIER().getText(), visitLabeledArguments(ctx.labeledExpressionList()), false);
     }
 
     public @Override

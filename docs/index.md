@@ -41,6 +41,9 @@ repository.
 - [Tutorial: Add a modernization corpus manifest entry](./tutorials/add-modernization-corpus-manifest-entry.md) - guided example for documenting a new generated fixture shape and refreshing scorecard evidence.
 - [Model resource exporter reference](./reference/model-resource-exporter.md) - XML, generated Java, thumbnail, and protected-hotspot contracts for model-loading resource export.
 - [Decode coverage characterization](./reference/decode-coverage-characterization.md) - build contract, API behavior, examples, and tutorial guidance for Tweedle, player/type archive, and resource decode tests.
+- [Zero-argument this-method call decode reference](./reference/zero-argument-this-method-call-decode.md) - planned narrow Tweedle decoder contract for explicit same-type `this.method()` calls with no arguments.
+- [Characterize zero-argument this-method call decode](./howto/characterize-zero-argument-this-method-call-decode.md) - how to add or review focused positive and negative tests for the planned call slice.
+- [Tutorial: Add zero-argument this-method call decode coverage](./tutorials/zero-argument-this-method-call-decode.md) - guided example for adding decoded `MethodInvocation` shape coverage without broadening decoder claims.
 
 ## Formal specification lane
 
