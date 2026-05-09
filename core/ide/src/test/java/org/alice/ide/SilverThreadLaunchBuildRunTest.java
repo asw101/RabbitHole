@@ -108,6 +108,42 @@ public class SilverThreadLaunchBuildRunTest {
   }
 
   @Test
+  public void realStarterProjectCanBeLoadedAndItsStructureInspected() throws Exception {
+    // Load a real Alice starter project (the kind a student picks when launching Alice)
+    File starterProject = new File("src/test/resources/starters/indiaMinimum.a3p");
+    if (!starterProject.exists()) {
+      // Fallback: try from module root
+      starterProject = new File("core/ide/src/test/resources/starters/indiaMinimum.a3p");
+    }
+    assertTrue("Starter project fixture should exist at " + starterProject.getAbsolutePath(),
+        starterProject.exists());
+
+    Project project = IoUtilities.readProject(starterProject);
+    assertNotNull("Real starter project should load without errors", project);
+
+    // Verify it has a valid program type (what the student sees as their program)
+    NamedUserType programType = project.getProgramType();
+    assertNotNull("Program type should exist", programType);
+    assertNotNull("Program type should have a name", programType.getName());
+    assertFalse("Program type name should not be empty", programType.getName().isEmpty());
+
+    // Verify the project has some types (scenes, models, etc.)
+    assertNotNull("Project should have named user types", project.getNamedUserTypes());
+
+    // Save and reopen to prove round-trip works with real content
+    Path workDir = Files.createDirectories(Path.of(
+        "target", "silver-thread-starter", UUID.randomUUID().toString()));
+    File savedCopy = workDir.resolve("indiaMinimum-copy.a3p").toFile();
+    IoUtilities.writeProject(savedCopy, project);
+    assertTrue("Saved copy should exist", savedCopy.isFile());
+
+    Project reloaded = new TestFileProjectLoader(savedCopy).loadNow();
+    assertNotNull("Reloaded project should load", reloaded);
+    assertEquals("Program name should survive round-trip",
+        programType.getName(), reloaded.getProgramType().getName());
+  }
+
+  @Test
   public void programCanBeSavedAsExportAndReopened() throws Exception {
     Path workDir = Files.createDirectories(Path.of(
         "target", "silver-thread", UUID.randomUUID().toString()));
