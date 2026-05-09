@@ -13,8 +13,10 @@ repository.
 - [Project IO Corpus Characterization](./reference/project-io-corpus-characterization.md) - Reference for generated `.a3p`, `.a3w`, and `.a3c` archive characterization in `core/story-api-migration`.
 - [JSON `.a3c` Constructor Assignment Characterization](./reference/json-a3c-constructor-assignment-characterization.md) - Narrow feature contract for a generated JSON type archive whose constructor assigns a decoded field.
 - [ProjectMigrationManager Migration Characterization](./reference/project-migration-manager-characterization.md) - Reference for generated XML-string characterization around versioned Alice project text migrations.
-- [Exported NetBeans Ant Project Behavior](./reference/exported-netbeans-ant-project-behavior.md) - Reference for current exported-project launcher evidence plus the target bounded no-Sims exported Ant/NetBeans build proof, deterministic display no-go behavior, and Ant runtime metadata.
-- [Generated Story API Listener Source Characterization](./reference/generated-story-api-listener-source-characterization.md) - Reference for the headless generated-source evidence lane for synthetic listener registration calls, compilation, and no-GUI boundaries.
+- [Exported NetBeans Ant Project Behavior](./reference/exported-netbeans-ant-project-behavior.md) - Reference for exported-project launcher evidence, deterministic display no-go behavior, the bounded no-Sims exported Ant/NetBeans build proof, and Ant runtime metadata.
+- [Generated Story API and AST Source Characterization](./reference/generated-story-api-listener-source-characterization.md) - Reference for AST/source-code-generator snippets, generated NetBeans project source, headless Story API listener seams, compilation, and no-GUI boundaries.
+- [Characterize Source-Code-Generator Behavior](./howto/characterize-source-code-generator.md) - How to add or review focused AST, generated NetBeans source, Story API listener, and launcher evidence characterization.
+- [Finalize a source-code-generator pull request](./howto/finalize-source-code-generator.md) - How to refresh current-head GitHub evidence, verify review and required-check state, preserve focused `core/ast` scope, and produce a no-timeout no-op or focused-fix finalization.
 - [Characterize Project Save and Export Operations](./howto/characterize-project-save-export-operations.md) - How to add or review compatibility tests for save/export operations.
 - [Finalize exported NetBeans Ant smoke recovery](./howto/finalize-exported-netbeans-ant-smoke-recovery.md) - How to collect current-head, diff-scope, QA scenario, focused Ant smoke, quality-audit, docs-impact, GitHub Actions, and PR description evidence for a bounded recovery handoff.
 - [Run the Save Menu Dialog Write/Readback Proof](./howto/run-save-menu-dialog-write-proof.md) - How to run the focused Robot Save menu/dialog/write/readback QA scenario with Xvfb when needed.
@@ -24,6 +26,7 @@ repository.
 - [Tutorial: Trace the Robot Save Menu Dialog Write/Readback Proof](./tutorials/trace-robot-save-menu-dialog-write-readback-proof.md) - Guided review of Robot menu activation, chooser approval, `.a3p` write, readback, marker evidence, and non-claims.
 - [Tutorial: Add a Project IO Corpus Characterization](./tutorials/project-io-corpus-characterization.md) - A guided example for protecting generated `.a3p` archive behavior.
 - [Tutorial: Add a ProjectMigrationManager Migration Characterization](./tutorials/project-migration-manager-characterization.md) - A guided example for protecting ordered text migration behavior without binary fixtures.
+- [Tutorial: Trace Source-Code-Generator Characterization](./tutorials/trace-source-code-generator-characterization.md) - Guided review from core AST snippets to generated NetBeans source, Story API listener seams, launcher evidence, and bounded non-claims.
 
 ## QA and acceptance testing
 
