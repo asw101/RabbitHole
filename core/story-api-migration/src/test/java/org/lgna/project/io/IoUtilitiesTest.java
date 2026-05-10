@@ -388,7 +388,7 @@ public class IoUtilitiesTest {
       assertAudioReference(manifest, audioResource.getId(), "sound.wav", "resources/sound.wav");
       assertArrayEquals(audioBytes, readZipEntryBytes(zipFile, "resources/sound.wav"));
     }
-    assertUnsupportedProjectArchiveFailsClosed(exportFile, "Program");
+    assertUnsupportedLegacyJsonProjectArchiveFailsClosed(exportFile);
   }
 
   @Test
@@ -403,6 +403,23 @@ public class IoUtilitiesTest {
     assertEquals("VrProgram", readProject.getProgramType().getName());
     assertEquals(Project.SceneCameraType.VRHeadset, sceneCameraType(readProject));
     assertTrue(readProject.getResources().isEmpty());
+  }
+
+  @Test
+  public void jsonPlayerReaderRejectsImageEntryOutsideResourceDirectory() throws Exception {
+    UUID imageId = UUID.randomUUID();
+    ImageReference imageReference = imageReference(imageId, "legacy-picture.png", "png");
+    imageReference.file = "legacy-images/legacy-picture.png";
+    byte[] imageData = new byte[] {7, 8, 9};
+    File exportFile = temporaryFolder.newFile("safe-relative-image-entry.a3w");
+    writePlayerArchive(exportFile, imageReference, imageData);
+
+    try {
+      IoUtilities.readProject(exportFile);
+      fail("Expected IOException for resource entry outside resources directory");
+    } catch (IOException e) {
+      assertTrue(e.getMessage().contains("outside resources directory"));
+    }
   }
 
   @Test
@@ -908,11 +925,246 @@ public class IoUtilitiesTest {
   }
 
   @Test
-  public void unsupportedJsonPlayerTweedleSuperclassFailsClosed() throws Exception {
+  public void unsupportedLegacyProgramJsonArchiveFailsClosedWithClearBoundaryMessage() throws Exception {
     File exportFile = temporaryFolder.newFile("json-unsupported-super-program.a3w");
     writeJsonPlayerArchive(exportFile, "Program", "class Program extends MissingSuper {}");
 
-    assertUnsupportedProjectArchiveFailsClosed(exportFile, "Program");
+    assertUnsupportedLegacyJsonProjectArchiveFailsClosed(exportFile);
+  }
+
+  @Test
+  public void unsupportedLegacyProgramJsonArchiveWithAudioResourceDoesNotUseImageRecovery() throws Exception {
+    TypeReference typeReference = new TypeReference("Program", "src/Program.twe", "tweedle");
+    AudioReference audioReference = audioReference(UUID.randomUUID(), "legacy-sound.wav", 1.0);
+    ProjectManifest manifest = new ProjectManifest();
+    manifest.description.name = "Program";
+    manifest.metadata.fileType = IoUtilities.EXPORT_EXTENSION;
+    manifest.metadata.identifier.name = UUID.randomUUID().toString();
+    manifest.metadata.identifier.type = Manifest.ProjectType.World;
+    manifest.projectStructure.sceneCameraType = Project.SceneCameraType.WindowCamera;
+    manifest.resources.add(typeReference);
+    manifest.resources.add(audioReference);
+    File exportFile = temporaryFolder.newFile("unsupported-legacy-program-audio.a3w");
+
+    try (ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(exportFile))) {
+      writeZipEntry(zipOutputStream, ProjectIo.VERSION_ENTRY_NAME, ProjectVersion.getCurrentVersion().toString());
+      writeZipEntry(zipOutputStream, ProjectIo.MANIFEST_ENTRY_NAME, ManifestEncoderDecoder.toJson(manifest));
+      writeZipEntry(zipOutputStream, typeReference.file, "class Program extends MissingSuper {}");
+    }
+
+    assertUnsupportedLegacyJsonProjectArchiveFailsClosed(exportFile);
+  }
+
+  @Test
+  public void unsupportedLegacyProgramJsonArchiveWithImageAndUnsupportedResourceDoesNotPartiallyRecover() throws Exception {
+    TypeReference typeReference = new TypeReference("Program", "src/Program.twe", "tweedle");
+    ImageReference imageReference = imageReference(UUID.randomUUID(), "legacy-picture.png", "png");
+    ModelReference modelReference = new ModelReference();
+    modelReference.name = "LegacyModel";
+    modelReference.format = "json";
+    modelReference.file = "models/LegacyModel/LegacyModel.json";
+    ProjectManifest manifest = new ProjectManifest();
+    manifest.description.name = "Program";
+    manifest.metadata.fileType = IoUtilities.EXPORT_EXTENSION;
+    manifest.metadata.identifier.name = UUID.randomUUID().toString();
+    manifest.metadata.identifier.type = Manifest.ProjectType.World;
+    manifest.projectStructure.sceneCameraType = Project.SceneCameraType.WindowCamera;
+    manifest.resources.add(typeReference);
+    manifest.resources.add(imageReference);
+    manifest.resources.add(modelReference);
+    File exportFile = temporaryFolder.newFile("unsupported-legacy-program-image-and-model.a3w");
+
+    try (ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(exportFile))) {
+      writeZipEntry(zipOutputStream, ProjectIo.VERSION_ENTRY_NAME, ProjectVersion.getCurrentVersion().toString());
+      writeZipEntry(zipOutputStream, ProjectIo.MANIFEST_ENTRY_NAME, ManifestEncoderDecoder.toJson(manifest));
+      writeZipEntry(zipOutputStream, typeReference.file, "class Program extends MissingSuper {}");
+    }
+
+    assertUnsupportedLegacyJsonProjectArchiveFailsClosed(exportFile);
+  }
+
+  @Test
+  public void unsupportedLegacyProgramJsonArchiveWithMissingImageDataFailsClosed() throws Exception {
+    TypeReference typeReference = new TypeReference("Program", "src/Program.twe", "tweedle");
+    ImageReference imageReference = imageReference(UUID.randomUUID(), "missing-legacy-picture.png", "png");
+    ProjectManifest manifest = new ProjectManifest();
+    manifest.description.name = "Program";
+    manifest.metadata.fileType = IoUtilities.EXPORT_EXTENSION;
+    manifest.metadata.identifier.name = UUID.randomUUID().toString();
+    manifest.metadata.identifier.type = Manifest.ProjectType.World;
+    manifest.projectStructure.sceneCameraType = Project.SceneCameraType.WindowCamera;
+    manifest.resources.add(typeReference);
+    manifest.resources.add(imageReference);
+    File exportFile = temporaryFolder.newFile("unsupported-legacy-program-missing-image.a3w");
+
+    try (ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(exportFile))) {
+      writeZipEntry(zipOutputStream, ProjectIo.VERSION_ENTRY_NAME, ProjectVersion.getCurrentVersion().toString());
+      writeZipEntry(zipOutputStream, ProjectIo.MANIFEST_ENTRY_NAME, ManifestEncoderDecoder.toJson(manifest));
+      writeZipEntry(zipOutputStream, typeReference.file, "class Program extends MissingSuper {}");
+    }
+
+    IOException thrown = assertUnsupportedLegacyJsonProjectArchiveFailsClosed(exportFile);
+    assertNotNull(thrown.getCause());
+    assertTrue(thrown.getCause().getMessage().contains(imageReference.file));
+  }
+
+  @Test
+  public void unsupportedLegacyProgramJsonArchiveWithUnsafeImagePathFailsClosed() throws Exception {
+    String[] unsafeImagePaths = {
+        "../evil.png",
+        "resources/images/../../manifest.json",
+        "/tmp/picture.png",
+        "C:\\temp\\picture.png",
+        "."
+    };
+    int archiveIndex = 0;
+    for (String unsafeImagePath : unsafeImagePaths) {
+      TypeReference typeReference = new TypeReference("Program", "src/Program.twe", "tweedle");
+      ImageReference imageReference = imageReference(UUID.randomUUID(), "unsafe-legacy-picture.png", "png");
+      imageReference.file = unsafeImagePath;
+      ProjectManifest manifest = new ProjectManifest();
+      manifest.description.name = "Program";
+      manifest.metadata.fileType = IoUtilities.EXPORT_EXTENSION;
+      manifest.metadata.identifier.name = UUID.randomUUID().toString();
+      manifest.metadata.identifier.type = Manifest.ProjectType.World;
+      manifest.projectStructure.sceneCameraType = Project.SceneCameraType.WindowCamera;
+      manifest.resources.add(typeReference);
+      manifest.resources.add(imageReference);
+      File exportFile = temporaryFolder.newFile("unsupported-legacy-program-unsafe-image-" + archiveIndex++ + ".a3w");
+
+      try (ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(exportFile))) {
+        writeZipEntry(zipOutputStream, ProjectIo.VERSION_ENTRY_NAME, ProjectVersion.getCurrentVersion().toString());
+        writeZipEntry(zipOutputStream, ProjectIo.MANIFEST_ENTRY_NAME, ManifestEncoderDecoder.toJson(manifest));
+        writeZipEntry(zipOutputStream, typeReference.file, "class Program extends MissingSuper {}");
+      }
+
+      IOException thrown = assertUnsupportedLegacyJsonProjectArchiveFailsClosed(exportFile);
+      assertNotNull(thrown.getCause());
+      assertTrue(
+          "Cause should identify unsafe image path " + unsafeImagePath,
+          thrown.getCause().getMessage().contains(unsafeImagePath));
+    }
+  }
+
+  @Test
+  public void unsupportedLegacyProgramJsonArchiveWithImageAndSiblingTypeDoesNotPartiallyRecover() throws Exception {
+    TypeReference programTypeReference = new TypeReference("Program", "src/Program.twe", "tweedle");
+    TypeReference siblingTypeReference = new TypeReference("Helper", "src/Helper.twe", "tweedle");
+    ImageReference imageReference = imageReference(UUID.randomUUID(), "legacy-picture.png", "png");
+    ProjectManifest manifest = new ProjectManifest();
+    manifest.description.name = "Program";
+    manifest.metadata.fileType = IoUtilities.EXPORT_EXTENSION;
+    manifest.metadata.identifier.name = UUID.randomUUID().toString();
+    manifest.metadata.identifier.type = Manifest.ProjectType.World;
+    manifest.projectStructure.sceneCameraType = Project.SceneCameraType.WindowCamera;
+    manifest.resources.add(programTypeReference);
+    manifest.resources.add(siblingTypeReference);
+    manifest.resources.add(imageReference);
+    File exportFile = temporaryFolder.newFile("unsupported-legacy-program-image-and-sibling-type.a3w");
+
+    try (ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(exportFile))) {
+      writeZipEntry(zipOutputStream, ProjectIo.VERSION_ENTRY_NAME, ProjectVersion.getCurrentVersion().toString());
+      writeZipEntry(zipOutputStream, ProjectIo.MANIFEST_ENTRY_NAME, ManifestEncoderDecoder.toJson(manifest));
+      writeZipEntry(zipOutputStream, programTypeReference.file, "class Program extends MissingSuper {}");
+      writeZipEntry(zipOutputStream, siblingTypeReference.file, "class Helper extends MissingSuper {}");
+    }
+
+    assertUnsupportedLegacyJsonProjectArchiveFailsClosed(exportFile);
+  }
+
+  @Test
+  public void legacyProgramJsonArchiveWithModelReferenceKeepsDecodedProgramReadable() throws Exception {
+    TypeReference typeReference = new TypeReference("Program", "src/Program.twe", "tweedle");
+    ModelReference modelReference = new ModelReference();
+    modelReference.name = "LegacyModel";
+    modelReference.format = "gltf";
+    modelReference.file = "models/LegacyModel/LegacyModel.gltf";
+    ProjectManifest manifest = new ProjectManifest();
+    manifest.description.name = "Program";
+    manifest.metadata.fileType = IoUtilities.EXPORT_EXTENSION;
+    manifest.metadata.identifier.name = UUID.randomUUID().toString();
+    manifest.metadata.identifier.type = Manifest.ProjectType.World;
+    manifest.projectStructure.sceneCameraType = Project.SceneCameraType.WindowCamera;
+    manifest.resources.add(typeReference);
+    manifest.resources.add(modelReference);
+    File exportFile = temporaryFolder.newFile("legacy-program-model-resource.a3w");
+
+    try (ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(exportFile))) {
+      writeZipEntry(zipOutputStream, ProjectIo.VERSION_ENTRY_NAME, ProjectVersion.getCurrentVersion().toString());
+      writeZipEntry(zipOutputStream, ProjectIo.MANIFEST_ENTRY_NAME, ManifestEncoderDecoder.toJson(manifest));
+      writeZipEntry(zipOutputStream, typeReference.file, "class Program { WholeNumber count; }");
+      writeZipEntry(zipOutputStream, modelReference.file, "{}");
+    }
+
+    Project readProject = IoUtilities.readProject(exportFile);
+
+    assertNotNull(readProject);
+    assertSingleIntegerField(readProject.getProgramType(), "count");
+    assertTrue(
+        "Model references remain manifest entries; they are not binary resources read by this boundary.",
+        readProject.getResources().isEmpty());
+  }
+
+  @Test
+  public void unsupportedLegacyProgramJsonArchiveWithTwoImageReferencesDoesNotPartiallyRecover() throws Exception {
+    TypeReference typeReference = new TypeReference("Program", "src/Program.twe", "tweedle");
+    ImageReference imageReference1 = imageReference(UUID.randomUUID(), "legacy-picture-1.png", "png");
+    ImageReference imageReference2 = imageReference(UUID.randomUUID(), "legacy-picture-2.png", "png");
+    ProjectManifest manifest = new ProjectManifest();
+    manifest.description.name = "Program";
+    manifest.metadata.fileType = IoUtilities.EXPORT_EXTENSION;
+    manifest.metadata.identifier.name = UUID.randomUUID().toString();
+    manifest.metadata.identifier.type = Manifest.ProjectType.World;
+    manifest.projectStructure.sceneCameraType = Project.SceneCameraType.WindowCamera;
+    manifest.resources.add(typeReference);
+    manifest.resources.add(imageReference1);
+    manifest.resources.add(imageReference2);
+    File exportFile = temporaryFolder.newFile("unsupported-legacy-program-two-images.a3w");
+
+    try (ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(exportFile))) {
+      writeZipEntry(zipOutputStream, ProjectIo.VERSION_ENTRY_NAME, ProjectVersion.getCurrentVersion().toString());
+      writeZipEntry(zipOutputStream, ProjectIo.MANIFEST_ENTRY_NAME, ManifestEncoderDecoder.toJson(manifest));
+      writeZipEntry(zipOutputStream, typeReference.file, "class Program extends MissingSuper {}");
+      writeZipEntry(zipOutputStream, imageReference1.file, new byte[] {1, 2, 3});
+      writeZipEntry(zipOutputStream, imageReference2.file, new byte[] {4, 5, 6});
+    }
+
+    assertUnsupportedLegacyJsonProjectArchiveFailsClosed(exportFile);
+  }
+
+  @Test
+  public void diagnosticNameFormatsResourceFileNameAndUuid() {
+    UUID uuid = UUID.randomUUID();
+    ImageResource resource = new ImageResource(uuid);
+    resource.setOriginalFileName("test-picture.png");
+
+    String diagnostic = ResourceExportNames.diagnosticName(resource);
+
+    assertEquals("test-picture.png (" + uuid + ")", diagnostic);
+  }
+
+  @Test
+  public void diagnosticNameReturnsNullPlaceholderForNullResource() {
+    assertEquals("<null>", ResourceExportNames.diagnosticName(null));
+  }
+
+  @Test
+  public void modelResourceCrawlerCollectsResourceExpressionResources() {
+    ImageResource imageResource = new ImageResource(UUID.randomUUID());
+    imageResource.setOriginalFileName("crawled.png");
+    imageResource.setContent("png", new byte[] {1});
+    NamedUserType type = programType("Program");
+    BlockStatement body = new BlockStatement();
+    UserLocal local = new UserLocal("res", ImageResource.class, true);
+    body.statements.add(new LocalDeclarationStatement(local, new ResourceExpression(ImageResource.class, imageResource)));
+    UserMethod method = new UserMethod("resourceMethod", Void.TYPE, new org.lgna.project.ast.UserParameter[0], body);
+    type.methods.add(method);
+
+    ModelResourceCrawler crawler = new ModelResourceCrawler();
+    type.crawl(crawler, CrawlPolicy.COMPLETE);
+
+    assertTrue(crawler.resources.contains(imageResource));
+    assertEquals(1, crawler.resources.size());
   }
 
   @Test
@@ -1181,7 +1433,7 @@ public class IoUtilitiesTest {
       assertNotNull(zipFile.getEntry("resources/.._folder_picture.png"));
       assertNull(zipFile.getEntry("resources/../folder/picture.png"));
     }
-    assertUnsupportedProjectArchiveFailsClosed(exportFile, "Program");
+    assertUnsupportedLegacyJsonProjectArchiveFailsClosed(exportFile);
   }
 
   @Test
@@ -1193,7 +1445,8 @@ public class IoUtilitiesTest {
         Project.SceneCameraType.WindowCamera);
     File exportFile = temporaryFolder.newFile("absolute-path-resource-entries.a3w");
 
-    IoUtilities.exportProject(exportFile, project);
+    String diagnosticOutput = capturePrintUtilities(() -> IoUtilities.exportProject(exportFile, project));
+    assertNoLocalPathLeak(diagnosticOutput);
 
     try (ZipFile zipFile = new ZipFile(exportFile)) {
       assertNotNull(zipFile.getEntry("resources/unix-picture.png"));
@@ -1206,7 +1459,7 @@ public class IoUtilitiesTest {
       assertImageReference(manifest, unixPath.getId(), "unix-picture.png", "resources/unix-picture.png");
       assertImageReference(manifest, windowsPath.getId(), "windows-picture.png", "resources/windows-picture.png");
     }
-    assertUnsupportedProjectArchiveFailsClosed(exportFile, "Program");
+    assertUnsupportedLegacyJsonProjectArchiveFailsClosed(exportFile);
   }
 
   @Test
@@ -1255,7 +1508,8 @@ public class IoUtilitiesTest {
         Project.SceneCameraType.WindowCamera);
     File projectFile = temporaryFolder.newFile("absolute-path-resource-entries.a3p");
 
-    IoUtilities.writeProject(projectFile, project);
+    String diagnosticOutput = capturePrintUtilities(() -> IoUtilities.writeProject(projectFile, project));
+    assertNoLocalPathLeak(diagnosticOutput);
 
     try (ZipFile zipFile = new ZipFile(projectFile)) {
       assertNotNull(zipFile.getEntry("resources/unix-picture.png"));
@@ -1281,7 +1535,7 @@ public class IoUtilitiesTest {
 
     String output = captureStandardOutput(() -> IoUtilities.writeProject(projectFile, project));
 
-    assertTrue(output.contains("WARNING: adding missing resource reference"));
+    assertTrue(output.contains("WARNING: adding missing resource"));
     assertNoLocalPathLeak(output);
   }
 
@@ -1295,7 +1549,7 @@ public class IoUtilitiesTest {
 
     String output = captureStandardOutput(() -> IoUtilities.exportProject(exportFile, project));
 
-    assertTrue(output.contains("WARNING: added missing resource reference"));
+    assertTrue(output.contains("WARNING: added missing resource"));
     assertNoLocalPathLeak(output);
   }
 
@@ -1762,11 +2016,11 @@ public class IoUtilitiesTest {
         TypeManifest.class);
   }
 
-  private static IOException assertUnsupportedProjectArchiveFailsClosed(File exportFile, String expectedProgramName) {
+  private static IOException assertUnsupportedLegacyJsonProjectArchiveFailsClosed(File exportFile) {
     IOException thrown = assertThrows(IOException.class, () -> IoUtilities.readProject(exportFile));
-    assertTrue(thrown.getMessage().contains(
-        "Project archive manifest names program type '" + expectedProgramName + "'"));
-    assertTrue(thrown.getMessage().contains("decoded type names are []"));
+    assertTrue(thrown.getMessage().contains("Unsupported legacy JSON project archive"));
+    assertTrue(thrown.getMessage().contains("Program Tweedle decode is unsupported"));
+    assertTrue(thrown.getMessage().contains("no safe legacy resource recovery applies"));
     return thrown;
   }
 
@@ -1833,6 +2087,22 @@ public class IoUtilitiesTest {
     assertFalse("Local Windows drive leaked in " + value, value.contains("C:"));
     assertFalse("Local path owner leaked in " + value, value.contains("alice-secret"));
     assertFalse("Local path directory leaked in " + value, value.contains("private-model-assets"));
+  }
+
+  private static String capturePrintUtilities(ThrowingRunnable action) throws Exception {
+    ByteArrayOutputStream output = new ByteArrayOutputStream();
+    PrintUtilities.pushPrintStream();
+    try (PrintStream printStream = new PrintStream(output, true, StandardCharsets.UTF_8.name())) {
+      PrintUtilities.setPrintStream(printStream);
+      action.run();
+    } finally {
+      PrintUtilities.popPrintStream();
+    }
+    return new String(output.toByteArray(), StandardCharsets.UTF_8);
+  }
+
+  private interface ThrowingRunnable {
+    void run() throws Exception;
   }
 
   private static String captureStandardOutput(IoAction action) throws Exception {

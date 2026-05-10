@@ -132,6 +132,10 @@ Assert manifest metadata, scene-camera type, the `SceneGraphLibrary`
 prerequisite, and the Tweedle type reference.
 
 When a `.a3w` fixture includes resource-expression constructs, document the
+current decode boundary explicitly: simple program source can round trip, while
+unsupported resource-expression source only returns resource-only readback for
+the exact legacy image-resource compatibility shape. Nearby unsupported player
+archive shapes fail closed with `IOException`.
 current decode boundary explicitly: supported simple program source can round
 trip with manifest-backed resources, while unsupported resource-expression
 source in a non-legacy generated archive fails fast at the project read boundary.
@@ -148,6 +152,12 @@ resources/<resource-name>
 ```
 
 Use a `manifest.json` that includes both a Tweedle `TypeReference` and a valid
+resource reference. If the Tweedle source contains an unsupported member, first
+decide whether the fixture matches the exact legacy image-resource compatibility
+shape. Assert resource identity, name, original file name, content type, and bytes
+only for that compatibility shape or for supported Tweedle source; otherwise,
+assert the public `IOException` boundary. Do not describe compatibility readback
+as a full player archive program/type decode.
 resource reference. For ordinary generated archive names, use supported Tweedle
 source when asserting resource readback through `IoUtilities.readProject`. If the
 Tweedle source contains an unsupported member, assert `IOException` at the
@@ -192,6 +202,15 @@ For resource-bearing fixtures, assert:
 - AST `ResourceExpression` binding to the decoded resource object when the
   archive contains a resource expression.
 
+For JSON/player archives with unsupported Tweedle, first decide whether the
+fixture is the exact legacy image-resource compatibility shape. Only a `.a3w`
+archive named `Program` with exactly one `Program` type reference, exactly one
+valid image reference, and unsupported `Program` Tweedle source should read back
+as a resource-only project with `null` program type. Nearby unsupported shapes
+fail closed with `IOException`.
+
+See [Characterize the Archive/Player Boundary](./characterize-archive-player-boundary.md)
+for the focused decision table and assertions.
 For JSON/player archives with unsupported Tweedle and non-legacy generated
 archive names, assert that `IoUtilities.readProject` throws `IOException` rather
 than returning a partial project. Assert resource values through returned project

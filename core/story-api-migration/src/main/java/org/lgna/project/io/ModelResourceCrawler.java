@@ -44,6 +44,7 @@ package org.lgna.project.io;
 
 import edu.cmu.cs.dennisc.pattern.Crawlable;
 import edu.cmu.cs.dennisc.pattern.Crawler;
+import org.lgna.common.Resource;
 import org.lgna.project.ast.*;
 import org.lgna.story.resources.DynamicResource;
 import org.lgna.story.resources.JointedModelResource;
@@ -59,20 +60,18 @@ public class ModelResourceCrawler implements Crawler {
   Set<InstanceCreation> personCreations = new HashSet<>();
   Set<DynamicResource> dynamicResources = new HashSet<>();
   Set<NamedUserType> activeUserTypes = new HashSet<>();
+  Set<Resource> resources = new HashSet<>();
 
   @Override
   public void visit(Crawlable crawlable) {
-    if (crawlable == null) {
-      return;
-    }
-    if (FieldAccess.class.isAssignableFrom(crawlable.getClass())) {
-      addIfResourceEnum((FieldAccess) crawlable);
-    }
-    if (InstanceCreation.class.isAssignableFrom(crawlable.getClass())) {
-      addNonEnumResourceCreations((InstanceCreation) crawlable);
-    }
-    if (NamedUserType.class.isAssignableFrom(crawlable.getClass())) {
-      activeUserTypes.add((NamedUserType) crawlable);
+    if (crawlable instanceof FieldAccess fieldAccess) {
+      addIfResourceEnum(fieldAccess);
+    } else if (crawlable instanceof InstanceCreation instanceCreation) {
+      addNonEnumResourceCreations(instanceCreation);
+    } else if (crawlable instanceof NamedUserType namedUserType) {
+      activeUserTypes.add(namedUserType);
+    } else if (crawlable instanceof ResourceExpression resourceExpression) {
+      resources.add(resourceExpression.resource.getValue());
     }
   }
 
