@@ -4,7 +4,7 @@ Alice modernization documentation describes durable behavior, repo-owned
 contracts, contributor workflows, and compatibility characterization for this
 repository.
 
-## Project save and export characterization
+## Project save, export, and migration characterization
 
 - [Project Save and Export Operations](./reference/project-save-export-operations.md) - Reference for the `core/ide` Save, Save As, Export operation behavior, and characterization seams.
 - [Save Menu Dialog Write/Readback Proof](./reference/save-menu-dialog-write-proof.md) - Implemented contract for the `save-menu-dialog-write-proof` QA scenario that runs the rendered File-menu Save, controlled Swing chooser, `.a3p` write, readback, and marker proof path without workflow timeout wiring.
@@ -13,6 +13,8 @@ repository.
 - [Project IO Corpus Characterization](./reference/project-io-corpus-characterization.md) - Reference for generated `.a3p`, `.a3w`, and `.a3c` archive characterization in `core/story-api-migration`.
 - [Legacy Fixture Round-Trip Readiness](./reference/legacy-fixture-roundtrip-readiness.md) - Reference for the focused generated legacy fixture round-trip lane, fail-closed unsupported archive boundaries, validation command, PR evidence, PR #433 no-timeout finalization profile, merge-ready evidence contract, and explicit non-claims.
 - [JSON `.a3c` Constructor Assignment Characterization](./reference/json-a3c-constructor-assignment-characterization.md) - Narrow feature contract for a generated JSON type archive whose constructor assigns a decoded field.
+- [Migration Hotspot Characterization](./concepts/migration-hotspot-characterization.md) - Why migration hotspot characterization exists, what it protects, how it fits the modernization approach, and its relationship to the formal-spec and IO corpus layers.
+- [ProjectMigrationManager Migration Characterization](./reference/project-migration-manager-characterization.md) - Reference for generated XML-string characterization around versioned Alice project text migrations, selected rewrite seams, and current-version guards.
 - [ProjectMigrationManager Migration Characterization](./reference/project-migration-manager-characterization.md) - Reference for generated XML-string characterization around versioned Alice project text migrations.
 - [TextMigrationRegistry Extraction](./reference/text-migration-registry.md) - Reference for the `TextMigrationRegistry` class hierarchy that holds text migration data extracted from `ProjectMigrationManager`.
 - [Extract Text Migration Registry](./howto/extract-text-migration-registry.md) - How to verify, extend, or review the text migration registry extraction.
@@ -31,6 +33,7 @@ repository.
 - [Tutorial: Add a Project IO Corpus Characterization](./tutorials/project-io-corpus-characterization.md) - A guided example for protecting generated `.a3p` archive behavior.
 - [Tutorial: Trace Legacy Fixture Round-Trip Readiness](./tutorials/legacy-fixture-roundtrip-readiness.md) - Guided review of generated `.a3p`, `.a3w`, `.a3c`, fail-closed fixture readiness evidence, and merge-ready PR wording.
 - [Tutorial: Add a ProjectMigrationManager Migration Characterization](./tutorials/project-migration-manager-characterization.md) - A guided example for protecting ordered text migration behavior without binary fixtures.
+- [Characterize ProjectMigrationManager migrations](./howto/characterize-project-migration-manager.md) - How to add or review generated XML-string characterization for protected migration hotspots.
 - [Tutorial: Trace Source-Code-Generator Characterization](./tutorials/trace-source-code-generator-characterization.md) - Guided review from core AST snippets to generated NetBeans source, Story API listener seams, launcher evidence, and bounded non-claims.
 
 ## Issue-reporting characterization

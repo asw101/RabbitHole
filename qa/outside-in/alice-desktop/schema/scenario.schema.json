@@ -50,6 +50,7 @@
         "issue-reporting-smoke",
         "launch",
         "menu-action-smoke",
+        "migration-hotspot-characterization-smoke",
         "netbeans-package-smoke",
         "open-load-save",
         "package-install-smoke",
@@ -436,6 +437,7 @@
                   "const": "-pl"
                 },
                 {
+                  "const": "core/story-api-migration"
                   "const": "core/issue-reporting"
                   "const": "core/ide"
                 },
@@ -443,6 +445,7 @@
                   "const": "-am"
                 },
                 {
+                  "const": "-Dtest=org.lgna.project.migration.ProjectMigrationManagerTest"
                   "const": "-Dtest=org.lgna.issue.IssueSubmissionProgressWorkerTest"
                   "const": "-Dtest=org.alice.ide.SilverThreadLaunchBuildRunTest"
                 },
