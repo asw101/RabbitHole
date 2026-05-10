@@ -63,6 +63,7 @@ This reference describes the Alice desktop outside-in QA lane: file layout, runn
 | `alice-desktop-tweedle-decoder-boundary-smoke` | `tweedle-decoder-boundary-smoke` | `gated-command-smoke` | Covers unsupported adjacent Tweedle method-call boundaries for the narrow decoder slice. |
 | `alice-desktop-tweedle-decoder-this-call-smoke` | `tweedle-decoder-this-call-smoke` | `gated-command-smoke` | Covers explicit same-type zero-argument `this.method()` decoder acceptance without claiming broader decode. |
 | `alice-desktop-wizard-palette-completion-smoke` | `wizard-palette-completion-smoke` | `gated-command-smoke` | Covers focused wizard, palette, and completion affordance checks where current NetBeans tests can observe them. |
+| `alice-desktop-silver-thread-launch-build-run` | `silver-thread-launch-build-run` | `gated-command-smoke` | Proves the core student journey headlessly: create→build→save→reopen→execute→verify round-trip plus real starter project load→inspect→copy→reopen through `SilverThreadLaunchBuildRunTest`. |
 | `alice-desktop-post-open-runtime-display-accessibility-evidence` | `post-open-runtime-display-accessibility-evidence` | `xvfb-real-alice` | Collects narrow read-only post-open runtime/display accessibility evidence, or a precise structured blocker. |
 | `alice-desktop-procedure-edit-handoff-smoke` | `procedure-edit-handoff-smoke` | `gated-command-smoke` | Covers the object-placement artifact handoff into the deterministic procedure edit seam. |
 | `alice-desktop-procedure-edit-seam-smoke` | `procedure-edit-seam-smoke` | `gated-command-smoke` | Covers deterministic procedure edit artifacts and the exact missing UI edit action target. |
@@ -150,6 +151,7 @@ Run commands from the repository root.
 | `run-scenario.sh validate` | Validate the active catalog through the runner. | Delegates to `validate-scenarios.sh`. |
 | `run-scenario.sh run <scenario-id-or-path>` | Create evidence for one scenario. | Prints the created run directory and writes artifacts under the evidence directory. |
 | `gadugi-test validate -f qa/outside-in/alice-desktop/gadugi/exported-launcher-evidence.yaml` | Validate the Gadugi exported launcher evidence scenario. | Confirms the scenario uses the Gadugi CLI schema, not the custom Alice scenario schema. |
+| `gadugi-test validate scenarios/` | Validate all 30 Alice scenario YAML files against the gadugi-test canonical schema. | Reports valid/invalid counts; expects 0 invalid files. Run from `qa/outside-in/alice-desktop/`. |
 | `gadugi-test run -d qa/outside-in/alice-desktop/gadugi -s exported-launcher-evidence --timeout 300000` | Run the Gadugi exported launcher evidence scenario. | Delegates to the outside-in exported-project smoke runner in prepare-only mode by default. |
 | `uvx --from git+<repo>@<branch> amplihack alice-qa list` | Install the QA wrapper from a branch and list scenarios in the current checkout. | Prints the same user-facing list as the runner. |
 | `uvx --from git+<repo>@<branch> amplihack alice-qa run <scenario-id-or-path>` | Install the QA wrapper from a branch and create evidence in the current checkout. | Delegates to `run-scenario.sh run`. |
@@ -346,6 +348,7 @@ Example:
 
 ```yaml
 id: alice-desktop-save-load
+name: Save and load an Alice project
 title: Save and load an Alice project
 workflow: save-load
 automationMode: manual-evidence-required
@@ -378,6 +381,10 @@ fallback:
     - Manual evidence remains required until stable full GUI save and open automation exists.
 supportingEvidence:
   - alice-desktop-launch
+steps:
+  - validate
+agents:
+  - alice-desktop-qa
 ```
 
 ### Required fields
@@ -399,6 +406,9 @@ supportingEvidence:
 
 | Field | Type | Description |
 | --- | --- | --- |
+| `name` | string | Human-readable scenario name for gadugi-test compatibility. Must equal `title`. Present on every scenario; required by `gadugi-test validate`. |
+| `steps` | string list | Gadugi-test step list. Currently `["validate"]` for all scenarios. |
+| `agents` | string list | Gadugi-test agent list. Currently `["alice-desktop-qa"]` for all scenarios. |
 | `automation.cwd` | string | Repository-relative working directory for argv-backed automation. Required for `xvfb-real-alice` and `gated-command-smoke`; absolute paths, `..`, and realpath escapes outside the repository are rejected. |
 | `automation.argv` | string list | Argument vector executed directly by the runner without shell interpretation. Required for `xvfb-real-alice` and `gated-command-smoke`; only the checked-in Alice QA argv allowlist is accepted. |
 | `automation.timeoutSeconds` | positive integer | Default timeout for argv-backed automation. Required for `xvfb-real-alice` and `gated-command-smoke` except `save-menu-dialog-write-proof`, where workflow-level timeouts are invalid. |
@@ -441,6 +451,7 @@ select-project-atk-exec-smoke
 select-project-interaction-smoke
 select-project-tab-click-smoke
 select-project-widget-introspection-smoke
+silver-thread-launch-build-run
 tweedle-decoder-boundary-smoke
 tweedle-decoder-this-call-smoke
 wizard-palette-completion-smoke
@@ -631,4 +642,7 @@ When adding or changing scenarios:
 
 ```bash
 qa/outside-in/alice-desktop/runners/validate-scenarios.sh
+cd qa/outside-in/alice-desktop && gadugi-test validate scenarios/
 ```
+
+9. Include `name`, `steps`, and `agents` in every new scenario. Set `name` equal to `title`, `steps` to `["validate"]`, and `agents` to `["alice-desktop-qa"]`. These fields satisfy `gadugi-test validate` while the repo-owned validator remains the primary structural check.
