@@ -34,6 +34,12 @@ This reference describes the Alice desktop outside-in QA lane: file layout, runn
 | `qa/outside-in/alice-desktop/tests/test-accessibility-target-discovery-silver-thread.sh` | Focused executable contract that validates bounded launch, run/runtime, and Select Project accessibility target discovery evidence and structured blockers. |
 | `qa/outside-in/alice-desktop/evidence/` | Local generated evidence. Contents are ignored by Git except `.gitignore`. |
 
+The opt-in Java-side desktop Run evidence hook writes
+`desktop-run-execution-gap-report.json` after the existing Run-window evidence
+artifact writers complete their non-empty checks. It is documented separately
+because it is a bounded evidence report, not a scenario schema change. See [Desktop Run execution gap
+report](./desktop-run-execution-gap-report.md).
+
 ## Scenario catalog
 
 | Scenario ID | Workflow | Automation mode | Purpose |
@@ -61,6 +67,7 @@ This reference describes the Alice desktop outside-in QA lane: file layout, runn
 | `alice-desktop-file-loader-smoke` | `file-loader-smoke` | `gated-command-smoke` | Covers file-loader and recovery dispatch behavior at the command/test seam. |
 | `alice-desktop-first-lesson-live-procedure-target-observation` | `first-lesson-live-procedure-target-observation` | `xvfb-real-alice` | Action-seam contract for observing the post-Select-Project live `scene.eatmeFirstLesson` procedure/code-editor target and recording either edit-ready evidence or the named missing CodeEditor/CodeComposite edit-action contract blocker. |
 | `alice-desktop-failure-path-smoke` | `failure-path-smoke` | `gated-command-smoke` | Covers corrupt project input failure handling evidence. |
+| `alice-desktop-future-ui-smoke` | `future-ui-smoke` | `gated-command-smoke` | Covers controlled-display UI startup evidence; no-op unless gated on. |
 | `alice-desktop-future-ui-smoke` | `future-ui-smoke` | `gated-command-smoke` | Reserved controlled-display UI startup evidence lane; runs only when gated on. |
 | `alice-desktop-menu-action-smoke` | `menu-action-smoke` | `gated-command-smoke` | Covers launch-adjacent Alice desktop menu registration and controller lookup seams without display assumptions. |
 | `alice-desktop-future-ui-smoke` | `future-ui-smoke` | `gated-command-smoke` | Placeholder for controlled-display UI startup evidence; no-op unless gated on. |
@@ -80,6 +87,21 @@ correctness check, learner assessment, creative assessment, or full first-lesson
 completion proof. See [First-Lesson Live Procedure Target Action
 Seam](./first-lesson-live-procedure-target-observation.md).
 
+The desktop Run execution gap report is emitted only after existing Run-window
+artifact writers complete their non-empty checks for evidence such as
+`desktop-run-render-affordance.json` and
+`desktop-run-status-summary.json`. It names the executable evidence in this lane
+as bounded Run-window evidence and records the exact blocker to a stronger
+claim: missing deterministic proof that the world advances through full runtime
+execution rather than artifact presence alone. The report must not be used to
+claim full world execution, playback, visible rendering correctness, full UI
+automation, Save completion, grading, Sims validation, or deployed installer
+success. Its v1 `doesNotClaim` payload enforces only the implementation-backed
+tokens documented in the [Desktop Run execution gap report](./desktop-run-execution-gap-report.md).
+The `alice-desktop-run-debug` manual checklist also asks reviewers to collect or
+link `desktop-run-execution.json` and `desktop-run-runtime.log` when opt-in
+desktop Run execution evidence is enabled; those VM-listener artifacts support
+the manual handoff but are not v1 gap-report `executableToday` entries.
 The Run-window contract scenario is a non-executing creation/wiring lane: its
 default `--prepare-only` path records scenario wiring and checklist evidence, and
 its gated command runs only the focused `EatmeRunWindowEvidenceTest` seam test.
