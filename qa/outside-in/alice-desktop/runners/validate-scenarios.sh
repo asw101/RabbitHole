@@ -65,6 +65,7 @@ workflow_values = {
     "run-window-contract",
     "save-load",
     "save-menu-dialog-write-proof",
+    "save-negative-artifact-contract",
     "select-project-interaction-smoke",
     "select-project-widget-introspection-smoke",
     "select-project-atk-exec-smoke",

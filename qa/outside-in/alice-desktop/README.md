@@ -101,6 +101,8 @@ qa/outside-in/alice-desktop/runners/validate-scenarios.sh --dump-json
 qa/outside-in/alice-desktop/runners/run-scenario.sh list
 qa/outside-in/alice-desktop/runners/run-scenario.sh run alice-desktop-launch
 qa/outside-in/alice-desktop/runners/run-scenario.sh run qa/outside-in/alice-desktop/scenarios/launch.yaml
+bash qa/outside-in/alice-desktop/tests/test-save-menu-dialog-negative-artifact-contract.sh
+uvx --from git+https://github.com/rysweet/RabbitHole.git@<branch-or-commit> amplihack alice-qa save-negative-contract
 cd qa/outside-in/alice-desktop && gadugi-test validate scenarios/
 ```
 
@@ -131,6 +133,7 @@ run-debug
 run-window-contract
 save-load
 save-menu-dialog-write-proof
+save-negative-artifact-contract
 scene-creation
 select-project-atk-exec-smoke
 select-project-interaction-smoke
@@ -372,6 +375,7 @@ wiring and JavaFX handoff/no-go checks only; it does not prove visible
 rendering, save behavior, grading, creative assessment, or full lesson
 completion.
 
+For branch- or commit-installable outside-in checks, run the thin `amplihack` wrapper from the checkout under review:
 The Gadugi Run-window contract evidence scenario is also under `gadugi/`.
 Validate and run it with `gadugi-test` installed on `PATH`:
 
@@ -399,11 +403,12 @@ full reference, see
 For branch-installable outside-in checks, run the thin `amplihack` wrapper from a checkout of the branch:
 
 ```bash
-uvx --from git+https://github.com/rysweet/RabbitHole.git@<branch> amplihack alice-qa list
-uvx --from git+https://github.com/rysweet/RabbitHole.git@<branch> amplihack alice-qa run alice-desktop-save-load --evidence-dir qa/outside-in/alice-desktop/evidence/manual-runs
+uvx --from git+https://github.com/rysweet/RabbitHole.git@<branch-or-commit> amplihack alice-qa list
+uvx --from git+https://github.com/rysweet/RabbitHole.git@<branch-or-commit> amplihack alice-qa save-negative-contract
+uvx --from git+https://github.com/rysweet/RabbitHole.git@<branch-or-commit> amplihack alice-qa run alice-desktop-save-load --evidence-dir qa/outside-in/alice-desktop/evidence/manual-runs
 ```
 
-Replace `<branch>` with the PR branch or commit you are reviewing. The wrapper
+Replace `<branch-or-commit>` with the PR branch or commit you are reviewing. The wrapper
 delegates to the same repo-owned runners and intentionally requires an Alice
 checkout as the current working tree.
 
@@ -595,6 +600,7 @@ run-debug
 run-window-contract
 save-load
 save-menu-dialog-write-proof
+save-negative-artifact-contract
 scene-creation
 select-project-atk-exec-smoke
 select-project-interaction-smoke
@@ -631,3 +637,32 @@ If Maven reports missing generated Tweedle parser classes, first check:
 git submodule status tweedle-lang
 test -d tweedle-lang/Grammar
 ```
+
+## Save negative artifact contract
+
+The Save negative artifact contract is not a scenario and does not add a
+workflow. It calls `run-scenario.sh validate-save-proof-evidence` directly to
+prove missing validator context and missing, wrong-name, symlinked, malformed
+JSON, non-object JSON, stale, future-dated, identity-mismatched, blocked,
+partial, unknown-blocker, and internally inconsistent Save proof artifacts fail
+closed with explicit diagnostics. It does not run the desktop Save path or
+claim full desktop Save completion. It also does not claim Save As behavior,
+visible rendering correctness, grading, lesson completion, learner assessment,
+broad UI automation, or native dialog automation.
+
+For runnable reviewer steps, see [Run the Save Menu Dialog Negative Artifact
+Contract](../../../docs/howto/run-save-menu-dialog-negative-artifact-contract.md).
+For the complete rejection matrix, validator API, wrapper behavior, and review
+rules, see [Save Menu Dialog Negative Artifact
+Contract](../../../docs/reference/save-menu-dialog-negative-artifact-contract.md).
+
+Run the focused contract directly or through the branch-installable wrapper:
+
+```bash
+NODE_OPTIONS=--max-old-space-size=32768 bash qa/outside-in/alice-desktop/tests/test-save-menu-dialog-negative-artifact-contract.sh
+uvx --from git+https://github.com/rysweet/RabbitHole.git@<branch-or-commit> amplihack alice-qa save-negative-contract
+```
+
+Run the `uvx ... amplihack alice-qa save-negative-contract` command from the
+root, or a child directory, of the checkout under review so the installed
+wrapper delegates to that checkout's contract script.
