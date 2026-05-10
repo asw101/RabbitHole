@@ -58,6 +58,7 @@ workflow_values = {
     "project-io-smoke",
     "scene-creation",
     "run-debug",
+    "run-window-contract",
     "save-load",
     "save-menu-dialog-write-proof",
     "select-project-interaction-smoke",
@@ -117,6 +118,21 @@ allowed_automation = {
             "netbeans",
             "-am",
             "-Dtest=org.alice.netbeans.project.Alice3ProjectTemplateAntSmokeTest",
+            "test",
+        ),
+    ),
+    (
+        ".",
+        (
+            "mvn",
+            "-DincludeSims=false",
+            "-Dinstall4j.skip",
+            "-DfailIfNoTests=false",
+            "-Dsurefire.failIfNoSpecifiedTests=false",
+            "-pl",
+            "core/ide",
+            "-am",
+            "-Dtest=org.alice.tools.EatmeRunWindowEvidenceTest",
             "test",
         ),
     ),
@@ -561,9 +577,9 @@ def validate(path, scenario):
         for field in ("cwd", "argv", "readyWaitSeconds"):
             if field not in automation:
                 errors.append(f"automation must include {field} when present")
-        if workflow == "save-menu-dialog-write-proof":
+        if workflow in {"save-menu-dialog-write-proof", "run-window-contract"}:
             if "timeoutSeconds" in automation:
-                errors.append("save-menu-dialog-write-proof must not include automation.timeoutSeconds")
+                errors.append(f"{workflow} must not include automation.timeoutSeconds")
         elif "timeoutSeconds" not in automation:
             errors.append("automation must include timeoutSeconds when present")
         validate_automation_cwd(errors, automation.get("cwd"))
