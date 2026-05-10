@@ -51,6 +51,7 @@
         "issue-reporting-smoke",
         "launch",
         "menu-action-smoke",
+        "model-export-boundary-smoke",
         "migration-hotspot-characterization-smoke",
         "netbeans-package-smoke",
         "open-load-save",
@@ -781,6 +782,43 @@
                 },
                 {
                   "const": "-Dtest=org.alice.tools.EatmeEditProcedureTest#chainsObjectPlacementIntoProcedureEditAndRecordsPlacedProjectHandoff"
+                },
+                {
+                  "const": "test"
+                }
+              ],
+              "items": false,
+              "minItems": 10,
+              "maxItems": 10
+            },
+            {
+              "prefixItems": [
+                {
+                  "const": "mvn"
+                },
+                {
+                  "const": "-DincludeSims=false"
+                },
+                {
+                  "const": "-Dinstall4j.skip"
+                },
+                {
+                  "const": "-DfailIfNoTests=false"
+                },
+                {
+                  "const": "-Dsurefire.failIfNoSpecifiedTests=false"
+                },
+                {
+                  "const": "-pl"
+                },
+                {
+                  "const": "core/model-loading"
+                },
+                {
+                  "const": "-am"
+                },
+                {
+                  "const": "-Dtest=org.lgna.story.resourceutilities.ModelExportTest"
                 },
                 {
                   "const": "test"

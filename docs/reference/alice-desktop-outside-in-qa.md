@@ -78,6 +78,7 @@ report](./desktop-run-execution-gap-report.md).
 | `alice-desktop-wizard-palette-completion-smoke` | `wizard-palette-completion-smoke` | `gated-command-smoke` | Covers focused wizard, palette, and completion affordance checks where current NetBeans tests can observe them. |
 | `alice-desktop-silver-thread-launch-build-run` | `silver-thread-launch-build-run` | `gated-command-smoke` | Proves the core student journey headlessly: create→build→save→reopen→execute→verify round-trip plus real starter project load→inspect→copy→reopen through `SilverThreadLaunchBuildRunTest`. |
 | `alice-desktop-post-open-runtime-display-accessibility-evidence` | `post-open-runtime-display-accessibility-evidence` | `xvfb-real-alice` | Collects narrow read-only post-open runtime/display accessibility evidence, or a precise structured blocker. |
+| `alice-desktop-model-export-boundary-smoke` | `model-export-boundary-smoke` | `gated-command-smoke` | Covers model resource export boundary characterization: XML generation, enum naming, generated Java compilation, bounding-box metadata, and thumbnail handling. |
 
 The first-lesson live procedure target action seam is a read-only contract. It
 records only whether the live desktop exposes a stable `scene.eatmeFirstLesson`

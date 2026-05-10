@@ -401,6 +401,9 @@ validate_allowed_automation() {
     [ "$4" = -DfailIfNoTests=false ] &&
     [ "$5" = -Dsurefire.failIfNoSpecifiedTests=false ] &&
     [ "$6" = -pl ] &&
+    [ "$7" = core/model-loading ] &&
+    [ "$8" = -am ] &&
+    [ "$9" = -Dtest=org.lgna.story.resourceutilities.ModelExportTest ] &&
     [ "$7" = core/issue-reporting ] &&
     [ "$8" = -am ] &&
     [ "$9" = -Dtest=org.lgna.issue.IssueSubmissionProgressWorkerTest ] &&
