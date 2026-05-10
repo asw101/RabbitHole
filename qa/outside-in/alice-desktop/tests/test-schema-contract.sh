@@ -175,6 +175,7 @@ expected_argv = {
     ),
     (
         "mvn",
+        "-DfailIfNoTests=false",
         "-DincludeSims=false",
         "-Dinstall4j.skip",
         "-DfailIfNoTests=false",
