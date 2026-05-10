@@ -60,7 +60,7 @@ This reference describes the Alice desktop outside-in QA lane: file layout, runn
 | `alice-desktop-first-lesson-live-procedure-target-observation` | `first-lesson-live-procedure-target-observation` | `xvfb-real-alice` | Action-seam contract for observing the post-Select-Project live `scene.eatmeFirstLesson` procedure/code-editor target and recording either edit-ready evidence or the named missing CodeEditor/CodeComposite edit-action contract blocker. |
 | `alice-desktop-failure-path-smoke` | `failure-path-smoke` | `gated-command-smoke` | Covers corrupt project input failure handling evidence. |
 | `alice-desktop-future-ui-smoke` | `future-ui-smoke` | `gated-command-smoke` | Placeholder for controlled-display UI startup evidence; no-op unless gated on. |
-| `alice-desktop-menu-action-smoke` | `menu-action-smoke` | `gated-command-smoke` | Covers launch-adjacent Alice desktop menu registration and controller lookup seams without display assumptions. |
+| `alice-desktop-menu-action-smoke` | `menu-action-smoke` | `gated-command-smoke` | Covers bounded Window menu model registration and menu-bar membership lookup through `AliceMenuBarContractTest`, without display, rendering, Save, first-lesson, installer, or Sims claims. |
 | `alice-desktop-save-menu-dialog-write-proof` | `save-menu-dialog-write-proof` | `gated-command-smoke` | Attempts one bounded rendered File-menu Save -> controlled chooser -> written `.a3p` -> readback marker path through `RobotSaveMenuDialogWriteReadbackProofTest`; only a validated `status: "proven"` artifact completes it. |
 | `alice-desktop-tweedle-decoder-boundary-smoke` | `tweedle-decoder-boundary-smoke` | `gated-command-smoke` | Covers unsupported adjacent Tweedle method-call boundaries for the narrow decoder slice. |
 | `alice-desktop-tweedle-decoder-this-call-smoke` | `tweedle-decoder-this-call-smoke` | `gated-command-smoke` | Covers explicit same-type zero-argument `this.method()` decoder acceptance without claiming broader decode. |
@@ -76,6 +76,24 @@ correctness check, learner assessment, creative assessment, or full first-lesson
 completion proof. See [First-Lesson Live Procedure Target Action
 Seam](./first-lesson-live-procedure-target-observation.md).
 
+The menu/action smoke is a gated command contract for the headless-safe
+`AliceMenuBarContractTest` only. When `ALICE_QA_RUN_GATED_SMOKES=1`, the runner
+executes the checked-in scenario argv. With `NODE_OPTIONS` set in the
+environment, that argv is equivalent to:
+
+```bash
+mvn -DincludeSims=false -Dinstall4j.skip \
+  -Dsurefire.failIfNoSpecifiedTests=false \
+  -pl core/ide -am \
+  -Dtest=org.alice.ide.croquet.models.AliceMenuBarContractTest \
+  test
+```
+
+The accepted evidence is `status.txt`, `command.log`, and Maven/Surefire output
+naming `AliceMenuBarContractTest`. It proves only Window menu model registration
+and menu-bar membership lookup. It is not full UI automation, rendered menu
+verification, Save completion, first-lesson completion, deployed installer
+success, or Sims validation.
 The accessibility target discovery silver-thread contract is a focused shell
 contract over existing launch, run/debug, post-open runtime/display, and Select
 Project evidence paths. It validates target discovery signals, structured
