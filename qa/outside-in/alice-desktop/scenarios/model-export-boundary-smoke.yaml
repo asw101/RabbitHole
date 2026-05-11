@@ -1,4 +1,5 @@
 id: alice-desktop-model-export-boundary-smoke
+name: Model resource export boundary characterization smoke
 title: Model resource export boundary characterization smoke
 workflow: model-export-boundary-smoke
 automationMode: gated-command-smoke

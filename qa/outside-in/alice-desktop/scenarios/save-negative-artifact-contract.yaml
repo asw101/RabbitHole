@@ -1,4 +1,5 @@
 id: alice-desktop-save-negative-artifact-contract
+name: Save proof evidence negative artifact validation contract
 title: Save proof evidence negative artifact validation contract
 workflow: save-negative-artifact-contract
 automationMode: manual-evidence-required

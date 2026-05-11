@@ -1,10 +1,14 @@
 """Contract tests for issue #500: Mac platform detection in Robot menu tests.
 
-Verifies that JMenuBarRobotClickSaveProofTest and
-RobotSaveMenuDialogWriteReadbackProofTest have the required
-assumeFalse(SystemUtilities.isMac()) guards so AWT Robot
-screen-coordinate menu clicks skip on macOS where the menu bar
-is native and outside the JFrame.
+Originally verified that JMenuBarRobotClickSaveProofTest and
+RobotSaveMenuDialogWriteReadbackProofTest had assumeFalse(SystemUtilities.isMac())
+guards so AWT Robot screen-coordinate menu clicks skip on macOS.
+
+Issue #502 superseded the isMac() skip approach with a property-override pattern
+that sets apple.laf.useScreenMenuBar=false in @Before/@After, keeping the menu
+in the JFrame where Robot coordinates work on every platform. These tests now
+verify that the old isMac guards are REMOVED and the reference doc reflects
+both approaches (the original #500 guard and the #502 override).
 """
 import re
 import unittest
@@ -96,7 +100,8 @@ def _extract_method_body(source: str, method_name: str) -> str:
 
 
 class JMenuBarRobotClickSaveProofTestMacGuardContract(unittest.TestCase):
-    """Contract: JMenuBarRobotClickSaveProofTest must have the isMac guard."""
+    """Contract: JMenuBarRobotClickSaveProofTest must NOT have the isMac guard
+    (superseded by property override in issue #502)."""
 
     def test_file_exists(self) -> None:
         self.assertTrue(
@@ -104,74 +109,39 @@ class JMenuBarRobotClickSaveProofTestMacGuardContract(unittest.TestCase):
             f"Expected test file at {JMENUBAR_TEST_PATH.relative_to(REPO_ROOT)}",
         )
 
-    def test_imports_system_utilities(self) -> None:
+    def test_no_system_utilities_import(self) -> None:
+        """Issue #502 removed SystemUtilities — only used for isMac()."""
         source = _read(JMENUBAR_TEST_PATH)
-        self.assertIn(
+        self.assertNotIn(
             SYSTEM_UTILITIES_IMPORT,
             source,
-            "JMenuBarRobotClickSaveProofTest must import "
-            "edu.cmu.cs.dennisc.java.lang.SystemUtilities",
+            "JMenuBarRobotClickSaveProofTest must NOT import "
+            "SystemUtilities after issue #502 property-override",
         )
 
-    def test_imports_assume_false(self) -> None:
+    def test_no_is_mac_guard(self) -> None:
+        """Issue #502 replaced isMac() skip with property override."""
         source = _read(JMENUBAR_TEST_PATH)
-        self.assertIn(
-            ASSUME_FALSE_STATIC_IMPORT,
-            source,
-            "JMenuBarRobotClickSaveProofTest must static-import assumeFalse",
-        )
-
-    def test_has_is_mac_guard(self) -> None:
-        source = _read(JMENUBAR_TEST_PATH)
-        self.assertRegex(
+        self.assertNotRegex(
             source,
             IS_MAC_GUARD_PATTERN,
-            "JMenuBarRobotClickSaveProofTest must call "
-            "assumeFalse('macOS ...native...menu...bar...', SystemUtilities.isMac())",
+            "JMenuBarRobotClickSaveProofTest must NOT call "
+            "assumeFalse(isMac()) after issue #502",
         )
 
-    def test_is_mac_guard_after_headless_guard(self) -> None:
-        """The isMac guard must appear after the headless guard so CI
-        distinguishes 'skipped because headless' from 'skipped because macOS'."""
+    def test_headless_guard_still_present(self) -> None:
+        """The headless guard is independent of isMac and must survive."""
         source = _read(JMENUBAR_TEST_PATH)
-        headless_pos = source.find("GraphicsEnvironment.isHeadless()")
-        self.assertGreater(
-            headless_pos,
-            -1,
-            "Expected headless guard in JMenuBarRobotClickSaveProofTest",
-        )
-        mac_match = IS_MAC_GUARD_PATTERN.search(source)
-        self.assertIsNotNone(
-            mac_match, "Expected isMac guard in JMenuBarRobotClickSaveProofTest"
-        )
-        self.assertGreater(
-            mac_match.start(),
-            headless_pos,
-            "isMac guard must appear after the headless guard",
-        )
-
-    def test_single_test_method_has_both_guards(self) -> None:
-        """The single @Test method must contain both headless and isMac guards."""
-        source = _read(JMENUBAR_TEST_PATH)
-        method_body = _extract_method_body(
-            source,
-            "robotClickFileMenuInVisibleJMenuBarSelectsSaveDispatchesToSaveOperation",
-        )
         self.assertIn(
             "GraphicsEnvironment.isHeadless()",
-            method_body,
-            "Test method must have headless guard",
-        )
-        self.assertRegex(
-            method_body,
-            IS_MAC_GUARD_PATTERN,
-            "Test method must have isMac guard",
+            source,
+            "JMenuBarRobotClickSaveProofTest must keep the headless guard",
         )
 
 
 class RobotSaveMenuDialogWriteReadbackProofTestMacGuardContract(unittest.TestCase):
-    """Contract: RobotSaveMenuDialogWriteReadbackProofTest must have
-    the isMac guard only in the Robot-driven method."""
+    """Contract: RobotSaveMenuDialogWriteReadbackProofTest must NOT have
+    the isMac guard (superseded by property override in issue #502)."""
 
     def test_file_exists(self) -> None:
         self.assertTrue(
@@ -179,34 +149,28 @@ class RobotSaveMenuDialogWriteReadbackProofTestMacGuardContract(unittest.TestCas
             f"Expected test file at {ROBOT_SAVE_TEST_PATH.relative_to(REPO_ROOT)}",
         )
 
-    def test_imports_system_utilities(self) -> None:
+    def test_no_system_utilities_import(self) -> None:
+        """Issue #502 removed SystemUtilities — only used for isMac()."""
         source = _read(ROBOT_SAVE_TEST_PATH)
-        self.assertIn(
+        self.assertNotIn(
             SYSTEM_UTILITIES_IMPORT,
             source,
-            "RobotSaveMenuDialogWriteReadbackProofTest must import "
-            "edu.cmu.cs.dennisc.java.lang.SystemUtilities",
+            "RobotSaveMenuDialogWriteReadbackProofTest must NOT import "
+            "SystemUtilities after issue #502 property-override",
         )
 
-    def test_imports_assume_false(self) -> None:
-        source = _read(ROBOT_SAVE_TEST_PATH)
-        self.assertIn(
-            ASSUME_FALSE_STATIC_IMPORT,
-            source,
-            "RobotSaveMenuDialogWriteReadbackProofTest must static-import assumeFalse",
-        )
-
-    def test_robot_method_has_is_mac_guard(self) -> None:
+    def test_robot_method_no_is_mac_guard(self) -> None:
+        """Issue #502 replaced isMac() skip with property override."""
         source = _read(ROBOT_SAVE_TEST_PATH)
         method_body = _extract_method_body(source, ROBOT_METHOD)
-        self.assertRegex(
+        self.assertNotRegex(
             method_body,
             IS_MAC_GUARD_PATTERN,
-            f"Robot method {ROBOT_METHOD} must have isMac guard",
+            f"Robot method {ROBOT_METHOD} must NOT have isMac guard after issue #502",
         )
 
     def test_evidence_methods_do_not_have_is_mac_guard(self) -> None:
-        """The five evidence-contract methods must NOT have the isMac guard.
+        """The evidence-contract methods must NOT have the isMac guard.
         They validate artifact schemas, not Robot UI interactions."""
         source = _read(ROBOT_SAVE_TEST_PATH)
         for method_name in EVIDENCE_METHODS:
@@ -217,28 +181,10 @@ class RobotSaveMenuDialogWriteReadbackProofTestMacGuardContract(unittest.TestCas
                 f"Evidence method {method_name} must NOT have isMac guard",
             )
 
-    def test_is_mac_guard_placement_early_in_robot_method(self) -> None:
-        """The isMac guard must appear near the start of the Robot method,
-        before the proof root setup."""
-        source = _read(ROBOT_SAVE_TEST_PATH)
-        method_body = _extract_method_body(source, ROBOT_METHOD)
-        mac_match = IS_MAC_GUARD_PATTERN.search(method_body)
-        self.assertIsNotNone(
-            mac_match,
-            "Expected isMac guard in Robot method",
-        )
-        # Guard should appear before 'canonicalProofRoot()' call
-        proof_root_pos = method_body.find("canonicalProofRoot()")
-        if proof_root_pos > -1:
-            self.assertLess(
-                mac_match.start(),
-                proof_root_pos,
-                "isMac guard must appear before canonicalProofRoot() setup",
-            )
-
 
 class MacGuardDocumentationContract(unittest.TestCase):
-    """Contract: reference doc must describe the isMac guard correctly."""
+    """Contract: reference doc must describe the evolution from isMac guard (#500)
+    to property-override (#502)."""
 
     def test_reference_doc_exists(self) -> None:
         self.assertTrue(
@@ -264,64 +210,21 @@ class MacGuardDocumentationContract(unittest.TestCase):
         )
 
     def test_reference_doc_describes_system_utilities_api(self) -> None:
+        """Reference doc should still describe the original SystemUtilities
+        API for historical context."""
         text = _read(REFERENCE_DOC_PATH)
         self.assertIn(
             "SystemUtilities.isMac()",
             text,
             "Reference doc must describe SystemUtilities.isMac() API",
         )
-        self.assertIn(
-            "edu.cmu.cs.dennisc.java.lang.SystemUtilities",
-            text,
-            "Reference doc must name the fully qualified class",
-        )
 
-    def test_reference_doc_has_macos_native_menu_bar_section(self) -> None:
+    def test_reference_doc_mentions_robot_screen_coordinate(self) -> None:
         text = _read(REFERENCE_DOC_PATH)
-        self.assertIn(
-            "macOS native-menu-bar skip guard",
-            text,
-            "Reference doc must have the macOS native-menu-bar skip guard section",
-        )
-
-    def test_reference_doc_shows_guard_code_examples(self) -> None:
-        text = _read(REFERENCE_DOC_PATH)
-        self.assertIn(
-            "assumeFalse(",
-            text,
-            "Reference doc must show assumeFalse guard code example",
-        )
-        self.assertIn(
-            "SystemUtilities.isMac()",
-            text,
-            "Reference doc must show SystemUtilities.isMac() in guard example",
-        )
-
-    def test_reference_doc_expected_behavior_table(self) -> None:
-        """The reference doc must include an expected-behavior table that shows
-        macOS rows with Skip(isMac) for Robot tests and Pass for evidence tests."""
-        text = _read(REFERENCE_DOC_PATH)
-        self.assertIn(
-            "Skip",
-            text,
-            "Expected behavior table must show Skip entries",
-        )
-        self.assertIn(
-            "isMac",
-            text,
-            "Expected behavior table must reference isMac skip reason",
-        )
-
-    def test_reference_doc_compatibility_rule_for_mac_guard(self) -> None:
-        text = _read(REFERENCE_DOC_PATH)
-        self.assertIn(
-            "SystemUtilities.isMac()",
-            text,
-        )
         self.assertIn(
             "Robot screen-coordinate",
             text,
-            "Compatibility rules must mention Robot screen-coordinate clicks",
+            "Doc must mention Robot screen-coordinate clicks",
         )
 
 

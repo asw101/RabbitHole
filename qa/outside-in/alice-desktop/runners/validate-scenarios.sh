@@ -164,7 +164,6 @@ allowed_automation = {
         ".",
         (
             "mvn",
-            "-DfailIfNoTests=false",
             "-DincludeSims=false",
             "-Dinstall4j.skip",
             "-DfailIfNoTests=false",
@@ -182,6 +181,19 @@ allowed_automation = {
             "mvn",
             "-DincludeSims=false",
             "-Dinstall4j.skip",
+            "-Dsurefire.failIfNoSpecifiedTests=false",
+            "-pl",
+            "core/story-api-migration",
+            "-am",
+            "-Dtest=org.lgna.project.io.IoUtilitiesTest",
+            "test",
+        ),
+    ),
+    (
+        ".",
+        (
+            "mvn",
+            "-DfailIfNoTests=false",
             "-Dsurefire.failIfNoSpecifiedTests=false",
             "-pl",
             "core/story-api-migration",
@@ -739,8 +751,7 @@ def validate(path, scenario):
         for field in ("cwd", "argv", "readyWaitSeconds"):
             if field not in automation:
                 errors.append(f"automation must include {field} when present")
-        if workflow in no_timeout_workflows:
-        if workflow in {"save-menu-dialog-write-proof", "run-window-contract"}:
+        if workflow in no_timeout_workflows or workflow in {"run-window-contract"}:
             if "timeoutSeconds" in automation:
                 errors.append(f"{workflow} must not include automation.timeoutSeconds")
         elif "timeoutSeconds" not in automation:
