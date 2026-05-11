@@ -79,6 +79,35 @@ public class RobotSaveMenuDialogWriteReadbackProofTest {
   private static final String TARGET_FILE_NAME = "robot-save-menu-proof.a3p";
   private static final String SCREEN_MENU_BAR_PROPERTY = "apple.laf.useScreenMenuBar";
 
+  private static final Field SINGLETON_FIELD;
+  private static final Field SCENE_CAMERA_IMP_FIELD;
+  private static final Field URI_PROJECT_LOADER_FIELD;
+  static {
+    try {
+      SINGLETON_FIELD = Application.class.getDeclaredField("singleton");
+      SINGLETON_FIELD.setAccessible(true);
+      SCENE_CAMERA_IMP_FIELD = StorytellingSceneEditor.class.getDeclaredField("sceneCameraImp");
+      SCENE_CAMERA_IMP_FIELD.setAccessible(true);
+      Class<?> c = StageIDE.class;
+      Field loaderField = null;
+      while (c != null) {
+        try {
+          loaderField = c.getDeclaredField("uriProjectLoader");
+          loaderField.setAccessible(true);
+          break;
+        } catch (NoSuchFieldException e) {
+          c = c.getSuperclass();
+        }
+      }
+      if (loaderField == null) {
+        throw new NoSuchFieldException("uriProjectLoader not found in StageIDE class hierarchy");
+      }
+      URI_PROJECT_LOADER_FIELD = loaderField;
+    } catch (NoSuchFieldException e) {
+      throw new AssertionError("Required reflective field not found", e);
+    }
+  }
+
   private String previousDiscoveryEvidenceDir;
   private String previousSelectedPath;
   private String previousSaveEvidenceDir;
@@ -433,9 +462,9 @@ public class RobotSaveMenuDialogWriteReadbackProofTest {
 
   private static Robot createProofRobot() throws AWTException {
     Robot robot = new Robot();
-    robot.setAutoDelay(40);
+    robot.setAutoDelay(25);
     robot.waitForIdle();
-    robot.delay(250);
+    robot.delay(150);
     return robot;
   }
 
@@ -837,9 +866,7 @@ public class RobotSaveMenuDialogWriteReadbackProofTest {
   private static void disableThumbnailCameraRender() throws Exception {
     SwingUtilities.invokeAndWait(() -> {
       try {
-        Field sceneCameraImpField = StorytellingSceneEditor.class.getDeclaredField("sceneCameraImp");
-        sceneCameraImpField.setAccessible(true);
-        sceneCameraImpField.set(StorytellingSceneEditor.getInstance(), null);
+        SCENE_CAMERA_IMP_FIELD.set(StorytellingSceneEditor.getInstance(), null);
       } catch (Exception e) {
         throw new RuntimeException("failed to null sceneCameraImp on StorytellingSceneEditor", e);
       }
@@ -855,18 +882,7 @@ public class RobotSaveMenuDialogWriteReadbackProofTest {
   }
 
   private static void injectUriProjectLoader(StageIDE ide, UriProjectLoader loader) throws Exception {
-    Class<?> c = ide.getClass();
-    while (c != null) {
-      try {
-        Field f = c.getDeclaredField("uriProjectLoader");
-        f.setAccessible(true);
-        f.set(ide, loader);
-        return;
-      } catch (NoSuchFieldException e) {
-        c = c.getSuperclass();
-      }
-    }
-    throw new NoSuchFieldException("uriProjectLoader not found in class hierarchy");
+    URI_PROJECT_LOADER_FIELD.set(ide, loader);
   }
 
   private static Project minimalProject() {
@@ -895,9 +911,7 @@ public class RobotSaveMenuDialogWriteReadbackProofTest {
   }
 
   private static void resetActiveApplication() throws Exception {
-    Field singleton = Application.class.getDeclaredField("singleton");
-    singleton.setAccessible(true);
-    singleton.set(null, null);
+    SINGLETON_FIELD.set(null, null);
   }
 
   private void restoreLicensePreference() {

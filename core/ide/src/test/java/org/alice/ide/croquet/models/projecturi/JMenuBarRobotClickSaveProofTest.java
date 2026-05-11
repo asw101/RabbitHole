@@ -70,6 +70,16 @@ public class JMenuBarRobotClickSaveProofTest {
 
   private static final String SCREEN_MENU_BAR_PROPERTY = "apple.laf.useScreenMenuBar";
 
+  private static final Field SINGLETON_FIELD;
+  static {
+    try {
+      SINGLETON_FIELD = Application.class.getDeclaredField("singleton");
+      SINGLETON_FIELD.setAccessible(true);
+    } catch (NoSuchFieldException e) {
+      throw new AssertionError("Application.singleton field not found", e);
+    }
+  }
+
   private String previousEvidenceDir;
   private String previousProofOnly;
   private String previousScreenMenuBar;
@@ -153,7 +163,7 @@ public class JMenuBarRobotClickSaveProofTest {
 
     // Step 2: Wait for the Swing paint pass so the JMenu has stable screen bounds.
     robot.waitForIdle();
-    robot.delay(200);
+    robot.delay(150);
 
     // Step 3: Get the screen center of the "File" JMenu button (EDT only).
     AtomicReference<Point> fileMenuCenter = new AtomicReference<>();
@@ -215,7 +225,7 @@ public class JMenuBarRobotClickSaveProofTest {
     robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
     robot.waitForIdle();
     // Allow ActionEvent dispatch and evidence write on the EDT before reading artifact.
-    robot.delay(300);
+    robot.delay(200);
 
     // Step 8: Assert evidence artifact contents.
     Path artifact =
@@ -272,9 +282,7 @@ public class JMenuBarRobotClickSaveProofTest {
   }
 
   private static void resetActiveApplication() throws Exception {
-    Field singleton = Application.class.getDeclaredField("singleton");
-    singleton.setAccessible(true);
-    singleton.set(null, null);
+    SINGLETON_FIELD.set(null, null);
   }
 
   private static Path newTestDir() throws Exception {
