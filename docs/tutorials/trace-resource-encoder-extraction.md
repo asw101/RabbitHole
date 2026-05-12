@@ -76,11 +76,11 @@ void processResourceType(String jointedModelResource) {
     encoder.forwardGetCodeStringBuilder()
         .append("class ").append(resourceClass.getSimpleName())
         .append(" extends ").append(superclass);
-    encoder.openBlock();
+    encoder.forwardOpenBlock();
     appendResourceConstructor(superclass, resourceClass.getSimpleName());
     appendResourceFields(superclass, resourceClass);
     appendResourceInstances(resourceClass);
-    encoder.appendClassFooter(jointedModelResource);
+    encoder.forwardAppendClassFooter(jointedModelResource);
   } catch (ClassNotFoundException cnfe) {
     throw new RuntimeException("Unable to find class " + jointedModelResource
         + " which should have been the caller type. ...", cnfe);
@@ -93,44 +93,41 @@ The extraction consolidates all resource reflection in `ResourceEncoder` for
 focused security review. The class name originates from the Alice project AST,
 not from user-supplied freeform text.
 
-### Step 3: Bridge methods and direct @Override access
+### Step 3: Bridge methods for protected SourceCodeGenerator access
 
-The `ResourceEncoder` uses one bridge method for `SourceCodeGenerator`'s
-`getCodeStringBuilder()` (inherited protected, not overridden):
+The `ResourceEncoder` calls three new bridge methods:
 
 ```java
-// TweedleEncoder.java (package-private bridge)
+// TweedleEncoder.java (package-private bridges)
 StringBuilder forwardGetCodeStringBuilder() {
   return getCodeStringBuilder();
 }
+
+void forwardOpenBlock() {
+  openBlock();
+}
+
+void forwardAppendClassFooter(String resourceType) {
+  appendClassFooter(resourceType);
+}
 ```
 
-For `openBlock()` and `appendClassFooter(String)`, no bridge is needed — both
-are `@Override protected` on `TweedleEncoder`. Because the override is declared
-in the same package as `ResourceEncoder`, Java allows direct access:
-
-```java
-// ResourceEncoder calls these directly on the TweedleEncoder reference:
-encoder.openBlock();           // @Override protected — accessible from same package
-encoder.appendClassFooter(...); // @Override protected — accessible from same package
-```
-
-This distinction matters: `getCodeStringBuilder()` and `bracketize(Runnable)` are
-**not** overridden on `TweedleEncoder`, so they require bridge methods.
-`openBlock()`, `appendClassFooter()`, `appendAssignmentOperator()`,
-`appendSingleCodeLine()`, and `getListSeparator()` **are** overridden and are
-directly accessible.
+These exist because `getCodeStringBuilder()`, `openBlock()`, and
+`appendClassFooter(String)` are `protected` methods inherited from
+`SourceCodeGenerator` (in package `org.lgna.project.ast`). Java accessibility
+rules prevent `ResourceEncoder` (same package as `TweedleEncoder`, but not a
+subclass of `SourceCodeGenerator`) from calling `protected` methods directly.
 
 ### Step 4: Resource constructor with superclass-specific parameters
 
 ```java
 // ResourceEncoder.java
 private void appendResourceConstructor(String superclass, String resourceName) {
-  encoder.appendIndent();
+  encoder.forwardAppendIndent();
   encoder.forwardAppendString(resourceName);
   encoder.forwardAppendString("(TextString name)");
   encoder.forwardBracketize(() -> {
-    encoder.appendIndent();
+    encoder.forwardAppendIndent();
     encoder.forwardAppendString("super(name: name");
     if ("FlyerResource".equals(superclass)) {
       encoder.forwardAppendString(",\n"
@@ -149,12 +146,9 @@ The superclass-specific constructor bodies (FlyerResource with wing/tail/neck
 arrays, QuadrupedResource and SlithererResource with tail arrays) are preserved
 identically from the original `TweedleEncoder` implementation.
 
-**Key insight:** `appendIndent` is a `private` method on `TweedleEncoder`
-widened to package-private in step 3 — called directly as `encoder.appendIndent()`.
-`forwardAppendString` and `forwardBracketize` are bridge methods:
-`forwardAppendString` from step 1 and `forwardBracketize` new in step 3
-(because `bracketize(Runnable)` is inherited protected from `SourceCodeGenerator`
-and not overridden on `TweedleEncoder`).
+**Key insight:** `forwardAppendIndent`, `forwardAppendString`, and
+`forwardBracketize` are existing bridge methods from step 1. `ResourceEncoder`
+reuses them without needing new bridges.
 
 ### Step 5: Resource field reflection
 
@@ -226,7 +220,7 @@ void processDynamicResource(String dynamicResourceClass, String variant,
     }
     appendAddedJoints(superclass, jointNames);
     appendResourceInstance(variantName, "DEFAULT");
-    encoder.appendClassFooter(dynamicResourceClass);
+    encoder.forwardAppendClassFooter(dynamicResourceClass);
   } catch (ClassNotFoundException cnfe) {
     throw new RuntimeException("Unable to find class " + dynamicResourceClass
         + " ...", cnfe);
@@ -292,17 +286,16 @@ to package-private — they are methods defined directly on `TweedleEncoder`
 (not inherited from `SourceCodeGenerator`), so Java accessibility rules allow
 package-private access.
 
-This is different from `forwardAppendString` and `forwardBracketize`, which are
-bridges for `protected` methods *inherited* from `SourceCodeGenerator` and not
-overridden on `TweedleEncoder`.
+This is different from `forwardAppendString` and `forwardOpenBlock`, which are
+bridges for `protected` methods *inherited* from `SourceCodeGenerator`.
 
 ### Three categories of method access
 
 | Category | Example | Why needed |
 | --- | --- | --- |
-| Bridge (`forward*`) | `forwardGetCodeStringBuilder`, `forwardBracketize`, `forwardAppendString` | `protected` methods inherited from `SourceCodeGenerator` and **not overridden** on `TweedleEncoder` — Java prevents same-package non-subclass access to the inherited declaration |
-| Widened methods | `appendInstantiation`, `appendArg`, `appendIndent`, `tweedleTypeName` | Methods defined on `TweedleEncoder` itself — widened from `private` to package-private |
-| Already accessible (`@Override protected`) | `openBlock`, `appendClassFooter`, `appendAssignmentOperator`, `appendSingleCodeLine`, `getListSeparator`, `appendStatementCompletion` | `@Override protected` methods declared on `TweedleEncoder` — accessible from same package |
+| Bridge (`forward*`) | `forwardAppendString`, `forwardOpenBlock` | `protected` methods inherited from `SourceCodeGenerator` — Java prevents same-package non-subclass access |
+| Widened methods | `appendInstantiation`, `appendArg` | Methods defined on `TweedleEncoder` itself — widened from `private` to package-private |
+| Existing package-private | `appendStatementCompletion`, `tweedleTypeName` | Already package-private via `@Override` or step 1/2 widenings |
 
 ## Trace 4: Pose and transformation encoding
 
@@ -382,15 +375,15 @@ actually used.
 
 | ResourceEncoder method | Visibility | Calls back to |
 | --- | --- | --- |
-| `processResourceType` | package-private | `forwardGetCodeStringBuilder`, `encoder.openBlock()`, `encoder.appendClassFooter()`, plus private helpers |
-| `processDynamicResource` | package-private | `getUserJointIdentifier`, `appendStaticField`, `appendAddedJoints`, `appendResourceInstance`, `encoder.appendClassFooter()` |
+| `processResourceType` | package-private | `forwardGetCodeStringBuilder`, `forwardOpenBlock`, `forwardAppendClassFooter`, plus private helpers |
+| `processDynamicResource` | package-private | `getUserJointIdentifier`, `appendStaticField`, `appendAddedJoints`, `appendResourceInstance`, `forwardAppendClassFooter` |
 | `getUserJointIdentifier` | package-private | reads `TweedleEncoder.USER_PREFIX` |
-| `appendResourceConstructor` | private | `encoder.appendIndent()`, `forwardAppendString`, `forwardBracketize` |
+| `appendResourceConstructor` | private | `forwardAppendIndent`, `forwardAppendString`, `forwardBracketize` |
 | `appendResourceInstances` | private | `appendResourceInstance` |
-| `appendResourceInstance` | private | `forwardAppendNewLine`, `encoder.appendIndent()`, `forwardAppendString`, `forwardAppendSpace`, `encoder.appendAssignmentOperator()`, `encoder.appendInstantiation`, `encoder.appendStatementCompletion()` |
-| `appendResourceFields` | private | `appendStaticField`, `appendAddedJoints`, `forwardAppendString`, `encoder.appendList`, `encoder.getListSeparator()` |
-| `appendAddedJoints` | private | `forwardAppendNewLine`, `encoder.appendSingleCodeLine()`, `forwardAppendString`, `encoder.appendAssignmentOperator()`, `encoder.appendList`, `encoder.getListSeparator()`, `encoder.appendIndent()`, `forwardBracketize` |
-| `appendStaticField` (×2) | private | `encoder.appendSingleCodeLine()`, `encoder.appendVisibilityTag`, `forwardAppendString`, `forwardAppendSpace`, `encoder.appendAssignmentOperator()` |
+| `appendResourceInstance` | private | `forwardAppendNewLine`, `forwardAppendIndent`, `forwardAppendString`, `forwardAppendSpace`, `encoder.appendAssignmentOperator`, `encoder.appendInstantiation`, `encoder.appendStatementCompletion` |
+| `appendResourceFields` | private | `appendStaticField`, `appendAddedJoints`, `forwardAppendString`, `encoder.appendList`, `encoder.getListSeparator` |
+| `appendAddedJoints` | private | `forwardAppendNewLine`, `encoder.appendSingleCodeLine`, `forwardAppendString`, `encoder.appendAssignmentOperator`, `encoder.appendList`, `encoder.getListSeparator`, `forwardAppendIndent`, `forwardBracketize` |
+| `appendStaticField` (×2) | private | `encoder.appendSingleCodeLine`, `encoder.appendVisibilityTag`, `forwardAppendString`, `forwardAppendSpace`, `encoder.appendAssignmentOperator` |
 | `appendNewJointId` | package-private | `encoder.appendInstantiation`, `encoder.appendArg`, `encoder.appendAnotherArg`, `encoder.quoteString` |
 | `appendNewJointArrayId` | package-private | `encoder.appendInstantiation`, `encoder.appendArg`, `encoder.appendAnotherArg`, `encoder.quoteString` |
 | `getFieldReference` | package-private | `encoder.tweedleTypeName` |
@@ -415,12 +408,9 @@ actually used.
    `encoder.forwardAppendString(...)` and a call to
    `encoder.appendInstantiation(...)` in `ResourceEncoder`. Explain why one
    uses a bridge method and the other calls the method directly. (Answer:
-   `appendString` is `protected` on `SourceCodeGenerator` — inherited and not
-   overridden on `TweedleEncoder`. `appendInstantiation` is declared directly on
-   `TweedleEncoder` — widened from `private` to package-private. Also note
-   that `openBlock()` is `@Override protected` on `TweedleEncoder` and thus
-   accessible directly — no bridge needed despite being originally declared
-   on `SourceCodeGenerator`.)
+   `appendString` is `protected` on `SourceCodeGenerator` — inherited, not
+   declared on `TweedleEncoder`. `appendInstantiation` is declared directly on
+   `TweedleEncoder` — widened from `private` to package-private.)
 
 4. **Verify superclass-specific constructor branches.** Open
    `ResourceEncoder.appendResourceConstructor` and list the three superclass

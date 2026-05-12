@@ -48,7 +48,7 @@ This extraction follows the same delegate pattern established by
 
 ```text
 TweedleEncoderDecoder (public facade — unchanged)
-└── TweedleEncoder (coordinator, extends SourceCodeGenerator, ~988 lines → ~820 after)
+└── TweedleEncoder (coordinator, extends SourceCodeGenerator, ~820 lines → ~820 after)
     ├── StatementEncoder (package-private, ~46 lines — step 1)
     │   └── Statement completion, disabled markers, statement-end formatting
     ├── ExpressionEncoder (package-private, ~60 lines — step 2)
@@ -114,9 +114,9 @@ ResourceEncoder(TweedleEncoder encoder) {
 | `getFieldReference(String, String)` | Body delegates to `resourceEncoder.getFieldReference(type, field)` |
 | `appendNewPose(InstantiableTweedleNode[])` | Body delegates to `resourceEncoder.appendNewPose(jointTransformations)` |
 | `appendNewJointTransformation(String, AffineMatrix4x4)` | Body delegates to `resourceEncoder.appendNewJointTransformation(jointId, transformation)` |
-| 7 private resource methods removed | `appendResourceConstructor`, `appendResourceInstances`, `appendResourceInstance`, `appendResourceFields`, `appendAddedJoints`, `appendStaticField` (both overloads) — 7 method signatures moved entirely to `ResourceEncoder` |
-| Bridge methods added | `forwardGetCodeStringBuilder()`, `forwardBracketize(Runnable)` — package-private forwarding methods that bridge inherited `protected` methods not overridden on `TweedleEncoder` |
-| 10 private methods widened | `appendInstantiation`, `appendArg` (×2), `appendAnotherArg` (×2), `quoteString`, `appendVisibilityTag`, `appendList`, `tweedleTypeName`, `appendIndent` — changed from `private` to package-private so `ResourceEncoder` can call them directly |
+| 6 private methods removed | `appendResourceConstructor`, `appendResourceInstances`, `appendResourceInstance`, `appendResourceFields`, `appendAddedJoints`, `appendStaticField` (both overloads) — moved entirely to `ResourceEncoder` |
+| Bridge methods added | `forwardGetCodeStringBuilder()`, `forwardOpenBlock()`, `forwardAppendClassFooter(String)` — package-private forwarding methods that bridge inherited `protected` methods |
+| 10 private methods widened | `appendInstantiation`, `appendArg` (×2), `appendAnotherArg` (×2), `quoteString`, `appendAssignmentOperator`, `appendSingleCodeLine`, `appendVisibilityTag`, `appendList`, `getListSeparator` — changed from `private` to package-private so `ResourceEncoder` can call them directly |
 | 4 unused imports removed | `Tuple3`, `UnitQuaternion`, `java.lang.reflect.Field`, `IdentifiableTweedleNode` — no longer directly referenced in `TweedleEncoder` |
 
 The `@Override` annotations remain on `TweedleEncoder` for `processResourceType`
@@ -162,24 +162,24 @@ forwarding methods and widened package-private methods. The following methods on
 | `forwardAppendSpace()` | Append single space character (exists from step 1) |
 | `forwardAppendNewLine()` | Append platform newline (exists from step 1) |
 | `forwardAppendEscapedString(String)` | Write a quoted, escaped string (exists from step 2) |
-| `forwardGetCodeStringBuilder()` | Access the `StringBuilder` for direct `append` calls (new bridge — step 3) |
-| `forwardBracketize(Runnable)` | Write `{`, run body, write `}` (new bridge — step 3) |
-| `openBlock()` | Write `{` and increase indent (@Override protected — directly accessible) |
-| `appendClassFooter(String)` | Close the class block and write footer (@Override protected — directly accessible) |
-| `appendAssignmentOperator()` | Write ` <- ` (@Override protected — directly accessible) |
-| `appendSingleCodeLine(Runnable)` | Write indented single line (@Override protected — directly accessible) |
-| `getListSeparator()` | Get the list separator string (@Override protected — directly accessible) |
+| `forwardGetCodeStringBuilder()` | Access the `StringBuilder` for direct `append` calls (new bridge) |
+| `forwardOpenBlock()` | Write `{` and increase indent (new bridge) |
+| `forwardAppendClassFooter(String)` | Close the class block and write footer (new bridge) |
+| `forwardAppendIndent()` | Write current indentation (exists from step 1) |
+| `forwardBracketize(Runnable)` | Write `{`, run body, write `}` (exists from step 1) |
 | `appendInstantiation(String, Runnable)` | Write `new Type(`, run args, write `)` (widened to package-private) |
 | `appendArg(String, String)` | Write first labeled argument as string (widened to package-private) |
 | `appendArg(String, Runnable)` | Write first labeled argument as Runnable (widened to package-private) |
 | `appendAnotherArg(String, String)` | Write additional labeled argument as string (widened to package-private) |
 | `appendAnotherArg(String, Runnable)` | Write additional labeled argument as Runnable (widened to package-private) |
 | `quoteString(String)` | Write quoted string literal (widened to package-private) |
+| `appendAssignmentOperator()` | Write ` <- ` (widened to package-private) |
+| `appendSingleCodeLine(Runnable)` | Write indented single line (widened to package-private) |
 | `appendVisibilityTag(FieldTemplate)` | Write `@annotation ` prefix from template (widened to package-private) |
 | `appendList(T[], Consumer, String)` | Write comma-separated list (widened to package-private) |
-| `tweedleTypeName(String)` | Translate Java type name to Tweedle name (widened to package-private) |
-| `appendIndent()` | Write current indentation (widened to package-private) |
+| `getListSeparator()` | Get the list separator string (widened to package-private) |
 | `appendStatementCompletion()` | Write statement end — delegates to `statementEncoder` (already package-private via override) |
+| `tweedleTypeName(String)` | Translate Java type name to Tweedle name (already package-private via override) |
 | `USER_PREFIX` | Package-private static constant `"u_"` (was `private`) |
 
 No interfaces or inheritance are introduced. All collaboration uses direct
@@ -193,9 +193,8 @@ method calls within the same package, matching the
 Because `TweedleEncoder` extends `SourceCodeGenerator` (in a different package),
 `ResourceEncoder` cannot call inherited `protected` methods directly — Java
 accessibility rules prevent a same-package class from calling `protected`
-methods inherited from a class in a different package, unless the subclass
-overrides them. Two new forwarding methods are added for inherited `protected`
-methods that `TweedleEncoder` does **not** override:
+methods inherited from a class in a different package. Three new forwarding
+methods are added:
 
 ```java
 // TweedleEncoder.java — package-private bridges for ResourceEncoder
@@ -203,19 +202,18 @@ StringBuilder forwardGetCodeStringBuilder() {
   return getCodeStringBuilder();
 }
 
-void forwardBracketize(Runnable appender) {
-  bracketize(appender);
+void forwardOpenBlock() {
+  openBlock();
+}
+
+void forwardAppendClassFooter(String resourceType) {
+  appendClassFooter(resourceType);
 }
 ```
 
 These join the existing bridges from steps 1 and 2 (`forwardAppendString`,
-`forwardAppendSpace`, `forwardAppendNewLine`, `forwardAppendEscapedString`).
-
-Note that `openBlock()`, `appendClassFooter(String)`, `appendAssignmentOperator()`,
-`appendSingleCodeLine(Runnable)`, and `getListSeparator()` are all `@Override
-protected` on `TweedleEncoder`. Because the override is declared in
-`TweedleEncoder`'s package, `ResourceEncoder` (same package) can call them
-directly without a bridge.
+`forwardAppendSpace`, `forwardAppendNewLine`, `forwardAppendIndent`,
+`forwardBracketize`, `forwardAppendEscapedString`).
 
 Unlike the `StatementEncoder` bridges which call `super.method()` to invoke the
 parent implementation that the override would otherwise replace, the
@@ -275,10 +273,11 @@ public void appendNewJointTransformation(String jointId,
 | `appendAnotherArg(String, String)` | `private` | package-private | Called by `ResourceEncoder` for additional argument encoding |
 | `appendAnotherArg(String, Runnable)` | `private` | package-private | Called by `ResourceEncoder` for additional argument encoding |
 | `quoteString(String)` | `private` | package-private | Called by `ResourceEncoder.appendNewJointId`, `appendNewJointArrayId` |
+| `appendAssignmentOperator()` | `private` | package-private | Called by `ResourceEncoder.appendResourceInstance`, `appendAddedJoints` |
+| `appendSingleCodeLine(Runnable)` | `private` | package-private | Called by `ResourceEncoder.appendStaticField`, `appendAddedJoints` |
 | `appendVisibilityTag(FieldTemplate)` | `private` | package-private | Called by `ResourceEncoder.appendStaticField` |
 | `appendList(T[], Consumer, String)` | `private` | package-private | Called by `ResourceEncoder.appendResourceFields`, `appendAddedJoints`, `appendNewPose` |
-| `tweedleTypeName(String)` | `private` | package-private | Called by `ResourceEncoder.getFieldReference` |
-| `appendIndent()` | `private` | package-private | Called by `ResourceEncoder.appendResourceConstructor`, `appendResourceInstance`, `appendAddedJoints` |
+| `getListSeparator()` | `private` | package-private | Called by `ResourceEncoder.appendResourceFields`, `appendAddedJoints` |
 
 All widened members remain inaccessible outside the package. The `static final`
 constant `USER_PREFIX` is `"u_"` — a string literal with no security
@@ -374,8 +373,8 @@ All suites must pass with identical results before and after the extraction.
 | Constructor takes `TweedleEncoder` | `ResourceEncoder(TweedleEncoder encoder)` |
 | 14 methods extracted | `processResourceType`, `processDynamicResource`, `getUserJointIdentifier`, `appendResourceConstructor`, `appendResourceInstances`, `appendResourceInstance`, `appendResourceFields`, `appendAddedJoints`, `appendStaticField` (×2), `appendNewJointId`, `appendNewJointArrayId`, `getFieldReference`, `appendNewPose`, `appendNewJointTransformation` |
 | `USER_PREFIX` widened to package-private | No `private` modifier on the constant in `TweedleEncoder` |
-| 10 private methods widened to package-private | `appendInstantiation`, `appendArg` (×2), `appendAnotherArg` (×2), `quoteString`, `appendVisibilityTag`, `appendList`, `tweedleTypeName`, `appendIndent` |
-| 2 new bridge methods on TweedleEncoder | `forwardGetCodeStringBuilder`, `forwardBracketize` |
+| 10 private methods widened to package-private | `appendInstantiation`, `appendArg` (×2), `appendAnotherArg` (×2), `quoteString`, `appendAssignmentOperator`, `appendSingleCodeLine`, `appendVisibilityTag`, `appendList`, `getListSeparator` |
+| 3 new bridge methods on TweedleEncoder | `forwardGetCodeStringBuilder`, `forwardOpenBlock`, `forwardAppendClassFooter` |
 | `TweedleEncoder` delegates `@Override` bodies | `processResourceType`, `processDynamicResource` delegate to `resourceEncoder` |
 | Public method stubs delegate | `appendNewJointId`, `appendNewJointArrayId`, `getFieldReference`, `appendNewPose`, `appendNewJointTransformation`, `getUserJointIdentifier` delegate to `resourceEncoder` |
 | 6 private resource methods removed from TweedleEncoder | `appendResourceConstructor`, `appendResourceInstances`, `appendResourceInstance`, `appendResourceFields`, `appendAddedJoints`, `appendStaticField` (×2) — no longer present |
