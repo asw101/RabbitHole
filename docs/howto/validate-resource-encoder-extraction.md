@@ -56,15 +56,15 @@ grep 'USER_PREFIX' \
 
 Expected: `static final String USER_PREFIX = "u_";` — no `private` modifier.
 
-## Step 6: Verify 3 new bridge methods on TweedleEncoder
+## Step 6: Verify 2 new bridge methods on TweedleEncoder
 
 ```bash
-grep -E 'forwardGetCodeStringBuilder|forwardOpenBlock|forwardAppendClassFooter' \
+grep -E 'forwardGetCodeStringBuilder|forwardBracketize' \
   core/ast/src/main/java/org/alice/serialization/tweedle/TweedleEncoder.java
 ```
 
-Expected: three method declarations — `forwardGetCodeStringBuilder()`,
-`forwardOpenBlock()`, `forwardAppendClassFooter(String)`.
+Expected: two method declarations — `forwardGetCodeStringBuilder()`,
+`forwardBracketize(Runnable)`.
 
 ## Step 7: Verify TweedleEncoder delegates to ResourceEncoder
 
@@ -80,21 +80,25 @@ Expected: delegation calls in `processResourceType`, `processDynamicResource`,
 ## Step 8: Verify private resource methods are removed from TweedleEncoder
 
 ```bash
-grep -E 'private.*appendResourceConstructor|private.*appendResourceInstances|private.*appendResourceInstance|private.*appendResourceFields|private.*appendAddedJoints' \
+grep -E 'private.*appendResourceConstructor|private.*appendResourceInstances|private.*appendResourceInstance|private.*appendResourceFields|private.*appendAddedJoints|private.*appendStaticField' \
   core/ast/src/main/java/org/alice/serialization/tweedle/TweedleEncoder.java
 ```
 
-Expected: **zero matches**. All five private resource methods have moved
+Expected: **zero matches**. All seven private resource method signatures have moved
 entirely to `ResourceEncoder`.
 
 ## Step 9: Verify 10 methods widened to package-private on TweedleEncoder
 
 ```bash
-grep -cE '^\s+void appendInstantiation|^\s+void appendArg|^\s+void appendAnotherArg|^\s+void quoteString|^\s+void appendAssignmentOperator|^\s+void appendSingleCodeLine|^\s+void appendVisibilityTag|^\s+<T> void appendList|^\s+String getListSeparator' \
+grep -cE '^\s+void appendInstantiation|^\s+void appendArg|^\s+void appendAnotherArg|^\s+void quoteString|^\s+void appendVisibilityTag|^\s+<T> void appendList|^\s+String tweedleTypeName|^\s+void appendIndent\b' \
   core/ast/src/main/java/org/alice/serialization/tweedle/TweedleEncoder.java
 ```
 
 Expected: match count ≥ 10. None should have `private` modifier.
+
+Note: `appendAssignmentOperator`, `appendSingleCodeLine`, and `getListSeparator`
+are `@Override protected` on `TweedleEncoder` (overrides are accessible from
+same-package code) and do **not** need widening.
 
 ## Step 10: Verify unused imports are removed
 
@@ -162,9 +166,9 @@ Expected: all tests pass, exit code 0.
 - [ ] Constructor takes `TweedleEncoder` reference
 - [ ] 14 methods present (15 signatures including `appendStaticField` overload)
 - [ ] `USER_PREFIX` is package-private on `TweedleEncoder`
-- [ ] 3 new bridge methods on `TweedleEncoder`: `forwardGetCodeStringBuilder`, `forwardOpenBlock`, `forwardAppendClassFooter`
+- [ ] 2 new bridge methods on `TweedleEncoder`: `forwardGetCodeStringBuilder`, `forwardBracketize`
 - [ ] `TweedleEncoder` delegates via `resourceEncoder.` calls (8 delegation stubs)
-- [ ] Private resource methods removed from `TweedleEncoder`
+- [ ] 7 private resource method signatures removed from `TweedleEncoder`
 - [ ] 10 private methods widened to package-private
 - [ ] 4 unused imports removed from `TweedleEncoder`
 - [ ] `TweedleEncoder` is ~820 lines (was 988)
