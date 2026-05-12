@@ -177,6 +177,9 @@ repository.
 - [Encoder Delegate Decomposition](./reference/encoder-delegate-decomposition.md) - internal decomposition of the 959-line `TweedleEncoder` into a thin coordinator plus `StatementEncoder`, `ExpressionEncoder`, `EncoderMappings`, and `ResourceStructureEncoder` package-private delegates with preserved behavior.
 - [Validate the TweedleEncoder Extraction](./howto/validate-tweedle-encoder-extraction.md) - step-by-step validation for the TweedleEncoder extraction: delegate visibility, line counts, core AST tests, story-api-migration tests, silver-thread round-trip, and stale reference checks.
 - [Tutorial: Trace the Encoder Delegate Decomposition](./tutorials/trace-encoder-delegate-decomposition.md) - guided walkthrough of a Tweedle encode request flowing through TweedleEncoder, StatementEncoder, ExpressionEncoder, EncoderMappings, and ResourceStructureEncoder.
+- [ResourceEncoder Extraction](./reference/resource-encoder-extraction.md) - extraction of 14 resource-encoding methods (resource type/dynamic class generation, field reflection, constructors, instances, joint IDs, poses, transformations) from `TweedleEncoder` into a package-private `ResourceEncoder` delegate (issue #506 step 3), with bridge methods for inherited method access and 10 widened package-private methods.
+- [Validate the ResourceEncoder Extraction](./howto/validate-resource-encoder-extraction.md) - step-by-step validation for the `ResourceEncoder` extraction: file existence, visibility, bridge methods, delegation, widened methods, line counts, core AST tests, and story-api-migration tests.
+- [Tutorial: Trace the ResourceEncoder Extraction](./tutorials/trace-resource-encoder-extraction.md) - guided walkthrough of resource type class generation, dynamic resource variants, AST node callback chains, pose/transformation encoding, and the three categories of method access (bridge, widened, existing package-private).
 
 ## Formal specification lane
 
