@@ -56,7 +56,7 @@ mvn -pl core/glrender -am \
   test
 ```
 
-Expected outcome: 38 test methods total. 31 pass, 7 skipped (GL-dependent
+Expected outcome: 49 test methods total. 42 pass, 7 skipped (GL-dependent
 `Glyph`/`GlyphProducer` tests). 0 failures, 0 errors. BUILD SUCCESS.
 
 ## Run alongside all core/glrender tests
@@ -131,7 +131,7 @@ alongside any future tests without interference.
 
 ## Troubleshooting
 
-### All 38 tests are skipped
+### All 49 tests are skipped
 
 The test class uses reflection to access inner classes. If the reflection
 fails (e.g., due to a Java module system restriction or security manager),

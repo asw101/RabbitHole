@@ -49,7 +49,7 @@ This lane does not cover:
 | Artifact | Purpose |
 | --- | --- |
 | `core/glrender/src/main/java/edu/cmu/cs/dennisc/render/joglrenderer/NonCachingTextRenderer.java` | Production class (1842 lines). Contains all inner classes under test. |
-| `core/glrender/src/test/java/edu/cmu/cs/dennisc/render/joglrenderer/NonCachingTextRendererCharacterizationTest.java` | Characterization test suite (~466 lines, 38 test methods). First test file in `core/glrender`. |
+| `core/glrender/src/test/java/edu/cmu/cs/dennisc/render/joglrenderer/NonCachingTextRendererCharacterizationTest.java` | Characterization test suite (~479 lines, 49 test methods). First test file in `core/glrender`. |
 
 ## Inner class contracts
 
@@ -213,7 +213,7 @@ mvn -pl core/glrender -am \
   test
 ```
 
-Expected outcome: 38 test methods. 31 pass, 7 skipped (GL-dependent
+Expected outcome: 49 test methods. 42 pass, 7 skipped (GL-dependent
 `Glyph`/`GlyphProducer` tests guarded by `Assume.assumeTrue`). 0 failures, 0
 errors.
 

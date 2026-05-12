@@ -273,7 +273,7 @@ When the assumption fails, JUnit marks the test as **skipped** (not failed).
 The test output shows:
 
 ```text
-Tests run: 38, Failures: 0, Errors: 0, Skipped: 7
+Tests run: 49, Failures: 0, Errors: 0, Skipped: 7
 ```
 
 The 7 skipped tests are:
@@ -286,7 +286,7 @@ The 7 skipped tests are:
 6. `glyphProducerRegisterRoundTrip`
 7. `glyphProducerClearAllResetsUnicodes`
 
-In a full GL environment (desktop or Xvfb with JOGL natives), all 38 tests
+In a full GL environment (desktop or Xvfb with JOGL natives), all 49 tests
 pass.
 
 ## 8. Run the tests
