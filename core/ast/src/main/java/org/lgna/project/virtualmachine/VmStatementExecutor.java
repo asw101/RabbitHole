@@ -62,7 +62,6 @@ final class VmStatementExecutor {
   }
 
   private void executeBlockStatement(BlockStatement blockStatement, VirtualMachineListener[] listeners) throws ReturnException {
-    //todo?
     Statement[] array = new Statement[blockStatement.statements.size()];
     blockStatement.statements.toArray(array);
     for (Statement statement : array) {
@@ -126,7 +125,6 @@ final class VmStatementExecutor {
 
   private void executeDoTogether(DoTogether doTogether, VirtualMachineListener[] listeners) throws ReturnException {
     BlockStatement blockStatement = doTogether.body.getValue();
-    //todo?
     switch (blockStatement.statements.size()) {
     case 0:
       break;
@@ -141,12 +139,11 @@ final class VmStatementExecutor {
         runnables[i] = new Runnable() {
           @Override
           public void run() {
-            //edu.cmu.cs.dennisc.print.PrintUtilities.println( statementI );
             vm.pushCurrentThread(owner);
             try {
               execute(statementI);
             } catch (ReturnException re) {
-              //todo
+              // ReturnException cannot propagate across doTogether thread boundaries
             } finally {
               vm.popCurrentThread();
             }
@@ -262,7 +259,7 @@ final class VmStatementExecutor {
                 }
               }
             } catch (ReturnException re) {
-              //todo
+              // ReturnException cannot propagate across eachInTogether thread boundaries
             } finally {
               vm.popLocal(item);
             }
@@ -288,7 +285,6 @@ final class VmStatementExecutor {
 
   private void executeReturnStatement(ReturnStatement returnStatement, VirtualMachineListener[] listeners) throws ReturnException {
     Object returnValue = vm.expressionEvaluator.evaluate(returnStatement.expression.getValue());
-    //setReturnValue( returnValue );
     throw new ReturnException(returnValue);
   }
 

@@ -88,7 +88,6 @@ public abstract class VirtualMachine {
 
   protected abstract void popLocal(UserLocal local);
 
-  //  protected abstract Frame createCopyOfCurrentFrame();
   protected abstract Frame getFrameForThread(Thread thread);
 
   protected abstract void pushCurrentThread(Frame frame);
@@ -140,23 +139,16 @@ public abstract class VirtualMachine {
   }
 
   public void ACCEPTABLE_HACK_FOR_SCENE_EDITOR_initializeField(UserInstance instance, UserField field) {
-    //pushCurrentThread( null );
-    //try {
     this.pushBogusFrame(instance);
     try {
       createAndSetFieldInstance(instance, field);
     } finally {
       this.popFrame();
     }
-    //} finally {
-    //  popCurrentThread();
-    //}
   }
 
   public void ACCEPTABLE_HACK_FOR_SCENE_EDITOR_executeStatement(UserInstance instance, Statement statement) {
     assert (statement instanceof ReturnStatement) == false;
-    //pushCurrentThread( null );
-    //try {
     this.pushBogusFrame(instance);
     try {
       try {
@@ -167,9 +159,6 @@ public abstract class VirtualMachine {
     } finally {
       this.popFrame();
     }
-    //} finally {
-    //  popCurrentThread();
-    //}
   }
 
   final Map<Class<?>, Class<?>> mapAbstractClsToAdapterCls = Maps.newHashMap();
