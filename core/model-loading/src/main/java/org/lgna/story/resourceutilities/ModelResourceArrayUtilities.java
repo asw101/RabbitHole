@@ -27,10 +27,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.DataFormatException;
@@ -105,10 +107,11 @@ final class ModelResourceArrayUtilities {
   }
 
   static Map<String, List<String>> getArrayEntries(List<String> jointNames, Map<String, String> customArrayNameMap, List<String> jointsToSuppress, String[] arrayNamesToSkip) throws DataFormatException {
+    Set<String> suppressSet = (jointsToSuppress != null) ? new HashSet<>(jointsToSuppress) : Collections.emptySet();
     //Array name, joint name entries
     Map<String, List<String>> arrayEntries = new HashMap<String, List<String>>();
     for (String jointName : jointNames) {
-      if ((jointsToSuppress == null) || !jointsToSuppress.contains(jointName)) {
+      if (!suppressSet.contains(jointName)) {
         String arrayName = getArrayNameForJoint(jointName, customArrayNameMap, arrayNamesToSkip);
         if (arrayName != null) {
           if (arrayEntries.containsKey(arrayName)) {
