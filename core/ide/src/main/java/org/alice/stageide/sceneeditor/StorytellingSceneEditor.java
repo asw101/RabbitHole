@@ -106,6 +106,12 @@ public class StorytellingSceneEditor extends AbstractSceneEditor {
   private final SceneEditorInitializer initializer = new SceneEditorInitializer(this);
   private final SceneEditorLifecycleManager lifecycleManager = new SceneEditorLifecycleManager(this);
 
+  private final Runnable uiRefresher = () -> {
+    revalidateAndRepaint();
+    SideComposite.getInstance().getObjectPropertiesTab().getView().revalidateAndRepaint();
+    SideComposite.getInstance().getObjectMarkersTab().getView().revalidateAndRepaint();
+  };
+
   private StorytellingSceneEditor() {
   }
 
@@ -222,17 +228,8 @@ public class StorytellingSceneEditor extends AbstractSceneEditor {
       this.selectionIsFromMain = false;
     }
 
-    //TEST
-    Runnable refresher = new Runnable() {
-      @Override
-      public void run() {
-        StorytellingSceneEditor.this.revalidateAndRepaint();
-        SideComposite.getInstance().getObjectPropertiesTab().getView().revalidateAndRepaint();
-        SideComposite.getInstance().getObjectMarkersTab().getView().revalidateAndRepaint();
-      }
-    };
     try {
-      SwingUtilities.invokeLater(refresher);
+      SwingUtilities.invokeLater(uiRefresher);
     } catch (Throwable e) {
       e.printStackTrace();
     }
@@ -245,7 +242,7 @@ public class StorytellingSceneEditor extends AbstractSceneEditor {
             && !valueType.isAssignableFrom(SVRHeadset.class);
   }
 
-  public Boolean isVrActive() {
+  public boolean isVrActive() {
     return isVrScene;
   }
 

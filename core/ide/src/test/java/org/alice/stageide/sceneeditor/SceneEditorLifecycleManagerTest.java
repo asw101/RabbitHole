@@ -4,6 +4,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
@@ -115,6 +116,16 @@ public class SceneEditorLifecycleManagerTest {
   }
 
   @Test
+  public void handleAddField_takesUserField() {
+    Method method = findMethod("handleAddField");
+    assertNotNull("handleAddField method must exist", method);
+    Class<?>[] params = method.getParameterTypes();
+    assertEquals("handleAddField must take 1 parameter", 1, params.length);
+    assertEquals("handleAddField parameter must be UserField",
+        "org.lgna.project.ast.UserField", params[0].getName());
+  }
+
+  @Test
   public void handleAddField_isNotPrivate() {
     Method method = findMethod("handleAddField");
     assertNotNull("handleAddField method must exist", method);
@@ -180,7 +191,7 @@ public class SceneEditorLifecycleManagerTest {
   @Test
   public void showJointedModelVisualizationsKey_isStaticFinal() {
     try {
-      java.lang.reflect.Field f = clazz.getDeclaredField("SHOW_JOINTED_MODEL_VISUALIZATIONS_KEY");
+      Field f = clazz.getDeclaredField("SHOW_JOINTED_MODEL_VISUALIZATIONS_KEY");
       int mods = f.getModifiers();
       assertTrue("must be static", Modifier.isStatic(mods));
       assertTrue("must be final", Modifier.isFinal(mods));
