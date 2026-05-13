@@ -106,7 +106,7 @@ public class NullspaceProjectorTest {
     }
   }
 
-
+  @Test
   public void projectedJacobianInvalidatesSvdCache() {
     NullspaceProjector nsp = new NullspaceProjector(3, context);
     nsp.initializeToIdentity();
