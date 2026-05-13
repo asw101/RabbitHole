@@ -21,6 +21,7 @@ identically.
 - [Visibility rules](#visibility-rules)
 - [Import fixups](#import-fixups)
 - [Static constants](#static-constants)
+- [Method visibility widening: Jacobian.matrixWasUpdated](#method-visibility-widening-jacobianmatrixwasupdated)
 - [Self-reference fix: AngleDeltas.getForAxis](#self-reference-fix-angledeltasgetforaxis)
 - [Dead code preservation](#dead-code-preservation)
 - [Error handling contract](#error-handling-contract)
@@ -186,20 +187,33 @@ reference that non-static inner classes held.
 
 ### Jacobian
 
+Jacobian has three constructors, all of which must receive or propagate
+context after extraction:
+
 ```java
 public class Jacobian {
   private final IkEnforcerContext context;
 
+  // Row-dimension constructor — used by NullspaceProjector.createProjected()
   public Jacobian(int rowDimension, JacobianAxis[] inputColumns,
                   IkEnforcerContext context) {
     this.context = context;
     // ...
   }
 
-  // Augmenting constructor propagates context from first input Jacobian
+  // Augmenting constructor — used by PriorityLevel.augmentJacobians()
+  // Propagates context from first input Jacobian
   public Jacobian(Jacobian[] jacobians) {
     this.context = jacobians[0].context;
     // ...
+  }
+
+  // Matrix constructor — used by Constraint.updateJacobianUsingVelocityContributions()
+  public Jacobian(Matrix mj, JacobianAxis[] jacobianAxes,
+                  IkEnforcerContext context) {
+    this.context = context;
+    this.matrix = mj;
+    this.columnIndexToJacobianColumn = jacobianAxes;
   }
 }
 ```
@@ -207,6 +221,11 @@ public class Jacobian {
 The augmenting constructor (`Jacobian(Jacobian[])`) propagates context from
 the first input Jacobian. This is safe because all Jacobians in a single
 enforcer share the same context.
+
+Additionally, `Jacobian.multiplyDisplacementWithInverseForMoving()` (L268)
+creates `new AngleDeltas(indexToAxis.size())`. After extraction this becomes
+`new AngleDeltas(context.getIndexToAxis().size(), context)` — a secondary
+context propagation path from Jacobian into AngleDeltas.
 
 ### Constraint (and subclasses)
 
@@ -278,8 +297,9 @@ class AngleDeltas {
 | `NullspaceProjector` | `class` (package-private inner) | `class` (package-private top-level) | No external references |
 | `AngleDeltas` | `class` (package-private inner) | `class` (package-private top-level) | No external references |
 
-No visibility has been widened or narrowed. Each extracted class preserves the
-exact access level of its original inner-class declaration.
+Each extracted class preserves the exact access level of its original
+inner-class declaration (see table above). Member-level visibility changes
+are limited to the items listed in the next sections.
 
 ## Import fixups
 
@@ -328,6 +348,23 @@ allow this cross-class access within the same package.
 | `MIN_ANGLE_IN_RADIANS_BEFORE_CONSTRAINT_IS_MET` | `OrientationConstraint.isMet()` |
 | `MIN_DISTANCE_SQUARED_BEFORE_CONSTRAINT_IS_MET` | `PositionConstraint.isMet()` |
 | `MIN_DISTANCE_BEFORE_CONSTRAINT_IS_MET` | Only by the squared-distance computation above |
+
+## Method visibility widening: Jacobian.matrixWasUpdated
+
+`Jacobian.matrixWasUpdated()` is `private` in the original inner class (L322).
+It is called cross-class by:
+
+- `NullspaceProjector.createProjected()` (L803): `result.matrixWasUpdated()`
+- `Constraint.updateJacobianUsingVelocityContributions()` (L539): `jacobian.matrixWasUpdated()`
+
+In the original code, inner classes of the same enclosing class can access each
+other's `private` members. After extraction to separate top-level classes, this
+no longer works. `matrixWasUpdated()` must be widened from `private` to
+package-private.
+
+| Member | Original | Extracted | Callers |
+| --- | --- | --- | --- |
+| `Jacobian.matrixWasUpdated()` | `private` | package-private | `NullspaceProjector`, `Constraint` |
 
 ## Self-reference fix: AngleDeltas.getForAxis
 
@@ -482,7 +519,7 @@ with sequential indices.
 6. `IKCore.java` compiles with the updated import.
 7. All characterization tests pass.
 8. `mvn -pl core/story-api -am -DfailIfNoTests=false -Dcheckstyle.skip test` succeeds.
-9. No visibility widening beyond the three threshold constants.
+9. No visibility widening beyond the three threshold constants and `Jacobian.matrixWasUpdated()`.
 10. All `RuntimeException` messages preserved character-for-character.
 11. All `assert` statements preserved in their original locations.
 12. Dead code methods preserved exactly.
@@ -498,6 +535,7 @@ This decomposition claims:
 - **Only** the `AngleDeltas.getForAxis()` self-reference fix
   (`angleDeltas.getByGlobalIndex()` → `this.getByGlobalIndex()`).
 - **Only** the widening of 3 threshold constants from `private` to
+  package-private and `Jacobian.matrixWasUpdated()` from `private` to
   package-private.
 - **Only** the import change in `IKCore.java` line 50.
 
