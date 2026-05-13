@@ -220,8 +220,8 @@ class TextRendererPipeline {
     backingStore.draw3DRect(x - (scaleFactor * data.origOriginX()),
         y - (scaleFactor * ((float) origRect.getHeight() - data.origOriginY())), z,
         rect.x() + (data.origin().x - data.origOriginX()),
-        backingStore.getHeight() - rect.y() - (int) origRect.getHeight() -
-            (data.origin().y - data.origOriginY()),
+        backingStore.getHeight() - rect.y() - (int) origRect.getHeight()
+            - (data.origin().y - data.origOriginY()),
         (int) origRect.getWidth(), (int) origRect.getHeight(), scaleFactor);
   }
 

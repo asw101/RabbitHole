@@ -36,19 +36,27 @@ class TextRendererGlyphProducer {
 
   public List<TextRendererGlyph> getGlyphs(final CharSequence inString) {
     glyphsOutput.clear();
-    GlyphVector fullRunGlyphVector;
-    fullRunGlyphVector = fullGlyphVectorCache.get(inString.toString());
+
+    // Fast path: when glyph caching is disabled (the whole point of
+    // NonCachingTextRenderer), skip GlyphVector creation and HashMap
+    // lookups entirely — they were only needed for the per-glyph path.
+    if (NonCachingTextRenderer.DISABLE_GLYPH_CACHE) {
+      final String str = (inString instanceof String s) ? s : inString.toString();
+      glyphsOutput.add(new TextRendererGlyph(str, false, textRenderer));
+      return glyphsOutput;
+    }
+
+    final String inStr = (inString instanceof String s) ? s : inString.toString();
+    GlyphVector fullRunGlyphVector = fullGlyphVectorCache.get(inStr);
     if (fullRunGlyphVector == null) {
       iter.initFromCharSequence(inString);
       fullRunGlyphVector = textRenderer.font.createGlyphVector(textRenderer.getFontRenderContext(), iter);
-      fullGlyphVectorCache.put(inString.toString(), fullRunGlyphVector);
+      fullGlyphVectorCache.put(inStr, fullRunGlyphVector);
     }
     final boolean complex = (fullRunGlyphVector.getLayoutFlags() != 0);
 
-    // Copied entire class for this. Disabling the glyph cache
-    if (complex || NonCachingTextRenderer.DISABLE_GLYPH_CACHE) {
-      // Punt to the robust version of the renderer
-      glyphsOutput.add(new TextRendererGlyph(inString.toString(), false, textRenderer));
+    if (complex) {
+      glyphsOutput.add(new TextRendererGlyph(inStr, false, textRenderer));
       return glyphsOutput;
     }
 

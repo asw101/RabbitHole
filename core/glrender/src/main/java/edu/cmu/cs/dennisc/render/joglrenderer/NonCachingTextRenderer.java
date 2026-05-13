@@ -5,7 +5,6 @@ import com.jogamp.opengl.*;
 import com.jogamp.opengl.util.awt.TextRenderer;
 import com.jogamp.opengl.util.awt.TextureRenderer;
 import com.jogamp.opengl.util.packrect.Rect;
-import com.jogamp.opengl.util.packrect.RectVisitor;
 import com.jogamp.opengl.util.packrect.RectanglePacker;
 import jogamp.opengl.Debug;
 
@@ -65,6 +64,8 @@ public class NonCachingTextRenderer extends TextRenderer {
   final Font font;
   private final boolean antialiased;
   private final boolean useFractionalMetrics;
+  // Cached from font — avoids recomputing per normalize() call
+  final int normalizeBoundary;
 
   // Whether we're attempting to use automatic mipmap generation support
   boolean mipmap;
@@ -150,6 +151,7 @@ public class NonCachingTextRenderer extends TextRenderer {
     this.font = font;
     this.antialiased = antialiased;
     this.useFractionalMetrics = useFractionalMetrics;
+    this.normalizeBoundary = (int) Math.max(1, 0.015 * font.getSize());
     this.mipmap = mipmap;
 
     // FIXME: consider adjusting the size based on font size
@@ -459,7 +461,7 @@ public class NonCachingTextRenderer extends TextRenderer {
     // NOTE that this boundary is quite heuristic and is related
     // to how far away in 3D we may view the text --
     // heuristically, 1.5% of the font's height
-    final int boundary = (int) Math.max(1, 0.015 * font.getSize());
+    final int boundary = normalizeBoundary;
 
     return new Rectangle2D.Double((int) Math.floor(src.getMinX() - boundary),
         (int) Math.floor(src.getMinY() - boundary),
@@ -517,31 +519,26 @@ public class NonCachingTextRenderer extends TextRenderer {
   }
 
   void clearUnusedEntries() {
-    final java.util.List<Rect> deadRects = new ArrayList<Rect>();
+    final List<Rect> deadRects = new ArrayList<>();
 
     // Iterate through the contents of the backing store, removing
     // text strings that haven't been used recently
-    packer.visit(new RectVisitor() {
-      @Override
-      public void visit(final Rect rect) {
-        final TextData data = (TextData) rect.getUserData();
-
-        if (data.used()) {
-          data.clearUsed();
-        } else {
-          deadRects.add(rect);
-        }
+    packer.visit(rect -> {
+      final TextData data = (TextData) rect.getUserData();
+      if (data.used()) {
+        data.clearUsed();
+      } else {
+        deadRects.add(rect);
       }
     });
 
     for (final Rect r : deadRects) {
       packer.remove(r);
-      stringLocations.remove(((TextData) r.getUserData()).string());
+      final TextData data = (TextData) r.getUserData();
+      stringLocations.remove(data.string());
 
-      final int unicodeToClearFromCache = ((TextData) r.getUserData()).unicodeID;
-
-      if (unicodeToClearFromCache > 0) {
-        mGlyphProducer.clearCacheEntry(unicodeToClearFromCache);
+      if (data.unicodeID > 0) {
+        mGlyphProducer.clearCacheEntry(data.unicodeID);
       }
     }
 

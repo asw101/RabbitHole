@@ -145,17 +145,15 @@ class TextRendererGlyph {
       final float ty2 = yScale * (1.0f
           - ((float) (texturey + height) / (float) renderer.getHeight()));
 
-      textRenderer.mPipelinedQuadRenderer.glTexCoord2f(tx1, ty1);
-      textRenderer.mPipelinedQuadRenderer.glVertex3f(x, y, z);
-      textRenderer.mPipelinedQuadRenderer.glTexCoord2f(tx2, ty1);
-      textRenderer.mPipelinedQuadRenderer.glVertex3f(x + (width * scaleFactor), y,
-          z);
-      textRenderer.mPipelinedQuadRenderer.glTexCoord2f(tx2, ty2);
-      textRenderer.mPipelinedQuadRenderer.glVertex3f(x + (width * scaleFactor),
-          y + (height * scaleFactor), z);
-      textRenderer.mPipelinedQuadRenderer.glTexCoord2f(tx1, ty2);
-      textRenderer.mPipelinedQuadRenderer.glVertex3f(x,
-          y + (height * scaleFactor), z);
+      final TextRendererQuadRenderer qr = textRenderer.mPipelinedQuadRenderer;
+      qr.glTexCoord2f(tx1, ty1);
+      qr.glVertex3f(x, y, z);
+      qr.glTexCoord2f(tx2, ty1);
+      qr.glVertex3f(x + (width * scaleFactor), y, z);
+      qr.glTexCoord2f(tx2, ty2);
+      qr.glVertex3f(x + (width * scaleFactor), y + (height * scaleFactor), z);
+      qr.glTexCoord2f(tx1, ty2);
+      qr.glVertex3f(x, y + (height * scaleFactor), z);
     } catch (final Exception e) {
       e.printStackTrace();
     }
