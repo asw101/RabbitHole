@@ -36,7 +36,7 @@ class Manager implements BackingStoreManager {
     } else {
       renderer = new TextureRenderer(w, h, true, textRenderer.mipmap);
     }
-    renderer.setSmoothing(textRenderer.smoothing);
+    renderer.setSmoothing(textRenderer.properties.smoothing);
 
     if (NonCachingTextRenderer.DEBUG) {
       System.err.println(" TextRenderer allocating backing store "
@@ -176,29 +176,30 @@ class Manager implements BackingStoreManager {
     newRenderer.markDirty(0, 0, newRenderer.getWidth(),
         newRenderer.getHeight());
 
+    final TextRendererProperties props = textRenderer.properties;
+
     // Re-enter the begin / end pair if necessary
     if (textRenderer.inBeginEndPair) {
       if (textRenderer.isOrthoMode) {
-        ((TextureRenderer) newBackingStore).beginOrthoRendering(textRenderer.beginRenderingWidth,
+        newRenderer.beginOrthoRendering(textRenderer.beginRenderingWidth,
             textRenderer.beginRenderingHeight, textRenderer.beginRenderingDepthTestDisabled);
       } else {
-        ((TextureRenderer) newBackingStore).begin3DRendering();
+        newRenderer.begin3DRendering();
       }
 
       // Push client attrib bits used by the pipelined quad renderer
       final GL2 gl = GLContext.getCurrentGL().getGL2();
       gl.glPushClientAttrib((int) GL2.GL_ALL_CLIENT_ATTRIB_BITS);
 
-      if (textRenderer.haveCachedColor) {
-        if (textRenderer.cachedColor == null) {
-          ((TextureRenderer) newBackingStore).setColor(textRenderer.cachedR,
-              textRenderer.cachedG, textRenderer.cachedB, textRenderer.cachedA);
+      if (props.haveCachedColor) {
+        if (props.cachedColor == null) {
+          newRenderer.setColor(props.cachedR, props.cachedG, props.cachedB, props.cachedA);
         } else {
-          ((TextureRenderer) newBackingStore).setColor(textRenderer.cachedColor);
+          newRenderer.setColor(props.cachedColor);
         }
       }
     } else {
-      textRenderer.needToResetColor = true;
+      props.needToResetColor = true;
     }
   }
 }

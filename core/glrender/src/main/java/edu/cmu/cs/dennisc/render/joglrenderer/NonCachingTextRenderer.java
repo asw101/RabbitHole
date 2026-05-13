@@ -72,9 +72,9 @@ public class NonCachingTextRenderer extends TextRenderer {
   RectanglePacker packer;
   boolean haveMaxSize;
   final TextRenderer.RenderDelegate renderDelegate;
-  private TextureRenderer cachedBackingStore;
-  private Graphics2D cachedGraphics;
-  private FontRenderContext cachedFontRenderContext;
+  TextureRenderer cachedBackingStore;
+  Graphics2D cachedGraphics;
+  FontRenderContext cachedFontRenderContext;
   final Map<String, Rect> stringLocations = new HashMap<String, Rect>();
   final TextRendererGlyphProducer mGlyphProducer;
 
@@ -89,32 +89,16 @@ public class NonCachingTextRenderer extends TextRenderer {
   int beginRenderingHeight;
   boolean beginRenderingDepthTestDisabled;
 
-  // For resetting the color after disposal of the old backing store
-  boolean haveCachedColor;
-  float cachedR;
-  float cachedG;
-  float cachedB;
-  float cachedA;
-  Color cachedColor;
-  boolean needToResetColor;
-
-  // For debugging only
   Frame dbgFrame;
 
-  // Debugging purposes only
   boolean debugged;
   TextRendererQuadRenderer mPipelinedQuadRenderer;
   final TextRendererPipeline pipeline;
 
-  //emzic: added boolean flag
-  private boolean useVertexArrays = true;
-
-  //emzic: added boolean flag
   boolean isExtensionAvailable_GL_VERSION_1_5;
   private boolean checkFor_isExtensionAvailable_GL_VERSION_1_5;
 
-  // Whether GL_LINEAR filtering is enabled for the backing store
-  boolean smoothing = true;
+  final TextRendererProperties properties;
 
   /** Creates a new TextRenderer with the given font, using no
    antialiasing or fractional metrics, and the default
@@ -166,46 +150,15 @@ public class NonCachingTextRenderer extends TextRenderer {
 
     mGlyphProducer = new TextRendererGlyphProducer(font.getNumGlyphs(), this);
     pipeline = new TextRendererPipeline(this);
+    properties = new TextRendererProperties(this);
   }
 
-  /** Returns the bounding rectangle of the given String, assuming it
-   was rendered at the origin. See {@link #getBounds(CharSequence)
-  getBounds(CharSequence)}. */
   public Rectangle2D getBounds(final String str) {
-    return getBounds((CharSequence) str);
+    return properties.getBounds(str);
   }
 
-  /** Returns the bounding rectangle of the given CharSequence,
-   assuming it was rendered at the origin. The coordinate system of
-   the returned rectangle is Java 2D's, with increasing Y
-   coordinates in the downward direction. The relative coordinate
-   (0, 0) in the returned rectangle corresponds to the baseline of
-   the leftmost character of the rendered string, in similar
-   fashion to the results returned by, for example, {@link
-  java.awt.font.GlyphVector#getVisualBounds}. Most applications
-   will use only the width and height of the returned Rectangle for
-   the purposes of centering or justifying the String. It is not
-   specified which Java 2D bounds ({@link
-  java.awt.font.GlyphVector#getVisualBounds getVisualBounds},
-   {@link java.awt.font.GlyphVector#getPixelBounds getPixelBounds},
-   etc.) the returned bounds correspond to, although every effort
-   is made to ensure an accurate bound. */
   public Rectangle2D getBounds(final CharSequence str) {
-    // FIXME: this should be more optimized and use the glyph cache
-    final Rect r = stringLocations.get(str);
-
-    if (r != null) {
-      final TextData data = (TextData) r.getUserData();
-
-      // Reconstitute the Java 2D results based on the cached values
-      return new Rectangle2D.Double(-data.origin().x, -data.origin().y,
-          r.w(), r.h());
-    }
-
-    // Must return a Rectangle compatible with the layout algorithm --
-    // must be idempotent
-    return normalize(renderDelegate.getBounds(str, font,
-        getFontRenderContext()));
+    return properties.getBounds(str);
   }
 
   /** Returns the Font this renderer is using. */
@@ -282,57 +235,13 @@ public class NonCachingTextRenderer extends TextRenderer {
     pipeline.beginRendering(false, 0, 0, false);
   }
 
-  /** Changes the current color of this TextRenderer to the supplied
-   one. The default color is opaque white.
-
-   @param color the new color to use for rendering text
-   @throws GLException If an OpenGL context is not current when this method is called
-   */
   public void setColor(final Color color) throws GLException {
-    final boolean noNeedForFlush = (haveCachedColor && (cachedColor != null) &&
-        color.equals(cachedColor));
-
-    if (!noNeedForFlush) {
-      flushGlyphPipeline();
-    }
-
-    getBackingStore().setColor(color);
-    haveCachedColor = true;
-    cachedColor = color;
+    properties.setColor(color);
   }
 
-  /** Changes the current color of this TextRenderer to the supplied
-   one, where each component ranges from 0.0f - 1.0f. The alpha
-   component, if used, does not need to be premultiplied into the
-   color channels as described in the documentation for {@link
-  com.jogamp.opengl.util.texture.Texture Texture}, although
-   premultiplied colors are used internally. The default color is
-   opaque white.
-
-   @param r the red component of the new color
-   @param g the green component of the new color
-   @param b the blue component of the new color
-   @param a the alpha component of the new color, 0.0f = completely
-   transparent, 1.0f = completely opaque
-   @throws GLException If an OpenGL context is not current when this method is called
-   */
   public void setColor(final float r, final float g, final float b, final float a)
       throws GLException {
-    final boolean noNeedForFlush = (haveCachedColor && (cachedColor == null) &&
-        (r == cachedR) && (g == cachedG) && (b == cachedB) &&
-        (a == cachedA));
-
-    if (!noNeedForFlush) {
-      flushGlyphPipeline();
-    }
-
-    getBackingStore().setColor(r, g, b, a);
-    haveCachedColor = true;
-    cachedR = r;
-    cachedG = g;
-    cachedB = b;
-    cachedA = a;
-    cachedColor = null;
+    properties.setColor(r, g, b, a);
   }
 
   /** Draws the supplied CharSequence at the desired location using
@@ -382,9 +291,8 @@ public class NonCachingTextRenderer extends TextRenderer {
     pipeline.internal_draw3D(str, x, y, z, scaleFactor);
   }
 
-  /** Returns the pixel width of the given character. */
   public float getCharWidth(final char inChar) {
-    return mGlyphProducer.getGlyphPixelWidth(inChar);
+    return properties.getCharWidth(inChar);
   }
 
   /** Causes the TextRenderer to flush any internal caches it may be
@@ -416,29 +324,9 @@ public class NonCachingTextRenderer extends TextRenderer {
     pipeline.endRendering(false);
   }
 
-  /** Disposes of all resources this TextRenderer is using. It is not
-   valid to use the TextRenderer after this method is called.
-
-   @throws GLException If an OpenGL context is not current when this method is called
-   */
   public void dispose() throws GLException {
-    if( null != mPipelinedQuadRenderer ) {
-      mPipelinedQuadRenderer.dispose();
-    }
-    packer.dispose();
-    packer = null;
-    cachedBackingStore = null;
-    cachedGraphics = null;
-    cachedFontRenderContext = null;
-
-    if (dbgFrame != null) {
-      dbgFrame.dispose();
-    }
+    properties.dispose();
   }
-
-  //----------------------------------------------------------------------
-  // Internals only below this point
-  //
 
   static Rectangle2D preNormalize(final Rectangle2D src) {
     // Need to round to integer coordinates
@@ -451,7 +339,6 @@ public class NonCachingTextRenderer extends TextRenderer {
     final int maxY = (int) Math.ceil(src.getMaxY()) + 1;
     return new Rectangle2D.Double(minX, minY, maxX - minX, maxY - minY);
   }
-
 
   Rectangle2D normalize(final Rectangle2D src) {
     // Give ourselves a boundary around each entity on the backing
@@ -508,7 +395,6 @@ public class NonCachingTextRenderer extends TextRenderer {
     return cachedGraphics;
   }
 
-
   void flushGlyphPipeline() {
     pipeline.flushGlyphPipeline();
   }
@@ -556,57 +442,28 @@ public class NonCachingTextRenderer extends TextRenderer {
     }
 
     if (DEBUG) {
-      getBackingStore().markDirty(0, 0, getBackingStore().getWidth(),
-          getBackingStore().getHeight());
+      final TextureRenderer store = getBackingStore();
+      store.markDirty(0, 0, store.getWidth(), store.getHeight());
     }
   }
-
-  //----------------------------------------------------------------------
-  // Glyph-by-glyph rendering support
-  //
 
   // A temporary to prevent excessive garbage creation
   final char[] singleUnicode = new char[1];
 
-  /**
-   * Sets whether vertex arrays are being used internally for
-   * rendering, or whether text is rendered using the OpenGL
-   * immediate mode commands. This is provided as a concession for
-   * certain graphics cards which have poor vertex array
-   * performance. Defaults to true.
-   */
   public void setUseVertexArrays(final boolean useVertexArrays) {
-    this.useVertexArrays = useVertexArrays;
+    properties.setUseVertexArrays(useVertexArrays);
   }
 
-  /**
-   * Indicates whether vertex arrays are being used internally for
-   * rendering, or whether text is rendered using the OpenGL
-   * immediate mode commands. Defaults to true.
-   */
   public final boolean getMyUseVertexArrays() {
-    return useVertexArrays;
+    return properties.getMyUseVertexArrays();
   }
 
-  /**
-   * Sets whether smoothing (i.e., GL_LINEAR filtering) is enabled
-   * in the backing TextureRenderer of this NonCachingTextRenderer. A few
-   * graphics cards do not behave well when this is enabled,
-   * resulting in fuzzy text. Defaults to true.
-   */
   public void setSmoothing(final boolean smoothing) {
-    this.smoothing = smoothing;
-    getBackingStore().setSmoothing(smoothing);
+    properties.setSmoothing(smoothing);
   }
 
-  /**
-   * Indicates whether smoothing is enabled in the backing
-   * TextureRenderer of this NonCachingTextRenderer. A few graphics cards do
-   * not behave well when this is enabled, resulting in fuzzy text.
-   * Defaults to true.
-   */
   public boolean getSmoothing() {
-    return smoothing;
+    return properties.getSmoothing();
   }
 
   final boolean is15Available(final GL gl) {

@@ -42,11 +42,13 @@ class TextRendererPipeline {
     renderer.beginRenderingHeight = height;
     renderer.beginRenderingDepthTestDisabled = disableDepthTestForOrtho;
 
+    // Cache backing store — avoids repeated packer.getBackingStore() + cast + comparison
+    final TextureRenderer backingStore = renderer.getBackingStore();
+
     if (ortho) {
-      renderer.getBackingStore().beginOrthoRendering(width, height,
-          disableDepthTestForOrtho);
+      backingStore.beginOrthoRendering(width, height, disableDepthTestForOrtho);
     } else {
-      renderer.getBackingStore().begin3DRendering();
+      backingStore.begin3DRendering();
     }
 
     // Push client attrib bits used by the pipelined quad renderer
@@ -61,20 +63,20 @@ class TextRendererPipeline {
       renderer.haveMaxSize = true;
     }
 
-    if (renderer.needToResetColor && renderer.haveCachedColor) {
-      if (renderer.cachedColor == null) {
-        renderer.getBackingStore().setColor(renderer.cachedR, renderer.cachedG,
-            renderer.cachedB, renderer.cachedA);
+    final TextRendererProperties props = renderer.properties;
+    if (props.needToResetColor && props.haveCachedColor) {
+      if (props.cachedColor == null) {
+        backingStore.setColor(props.cachedR, props.cachedG, props.cachedB, props.cachedA);
       } else {
-        renderer.getBackingStore().setColor(renderer.cachedColor);
+        backingStore.setColor(props.cachedColor);
       }
 
-      renderer.needToResetColor = false;
+      props.needToResetColor = false;
     }
 
     // Disable future attempts to use mipmapping if TextureRenderer
     // doesn't support it
-    if (renderer.mipmap && !renderer.getBackingStore().isUsingAutoMipmapGeneration()) {
+    if (renderer.mipmap && !backingStore.isUsingAutoMipmapGeneration()) {
       if (NonCachingTextRenderer.DEBUG) {
         System.err.println("Disabled mipmapping in TextRenderer");
       }
@@ -111,10 +113,11 @@ class TextRendererPipeline {
       }
     }
 
+    final TextureRenderer backingStore = renderer.getBackingStore();
     if (ortho) {
-      renderer.getBackingStore().endOrthoRendering();
+      backingStore.endOrthoRendering();
     } else {
-      renderer.getBackingStore().end3DRendering();
+      backingStore.end3DRendering();
     }
 
     if (++renderer.numRenderCycles >= NonCachingTextRenderer.CYCLES_PER_FLUSH) {

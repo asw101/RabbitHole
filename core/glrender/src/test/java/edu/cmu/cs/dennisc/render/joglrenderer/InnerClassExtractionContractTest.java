@@ -3,6 +3,7 @@ package edu.cmu.cs.dennisc.render.joglrenderer;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.awt.Color;
 import java.awt.font.GlyphVector;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -40,6 +41,9 @@ import static org.junit.Assert.*;
  *  16. TextRendererPipeline – extracted delegate for rendering pipeline (#537)
  *  17. Pipeline integration on NonCachingTextRenderer (#537)
  *  18. Fields widened for pipeline delegate access (#537)
+ *  19. TextRendererProperties – extracted delegate for properties/dispose/bounds (#543)
+ *  20. Properties integration on NonCachingTextRenderer (#543)
+ *  21. Fields widened for properties delegate access (#543)
  */
 public class InnerClassExtractionContractTest {
 
@@ -55,6 +59,7 @@ public class InnerClassExtractionContractTest {
   private static Class<?> characterCacheClass;
   private static Class<?> debugListenerClass;
   private static Class<?> pipelineClass;
+  private static Class<?> propertiesClass;
 
   @BeforeClass
   public static void resolveExtractedClasses() {
@@ -68,6 +73,7 @@ public class InnerClassExtractionContractTest {
     characterCacheClass = tryLoad(PKG + ".CharacterCache");
     debugListenerClass = tryLoad(PKG + ".DebugListener");
     pipelineClass = tryLoad(PKG + ".TextRendererPipeline");
+    propertiesClass = tryLoad(PKG + ".TextRendererProperties");
   }
 
   private static Class<?> tryLoad(String fqcn) {
@@ -524,13 +530,13 @@ public class InnerClassExtractionContractTest {
             + "NonCachingTextRenderer.java");
     assertNotNull("Must find NonCachingTextRenderer.java", sourceFile);
     long lineCount = Files.lines(sourceFile).count();
-    // After extracting 9 inner classes (#514, #524) and rendering
-    // pipeline methods (#537), the file drops from ~1800 to ~626 lines.
-    // Under 650 validates both inner-class and pipeline extraction.
+    // After extracting 9 inner classes (#514, #524), rendering pipeline
+    // methods (#537), and property/dispose/bounds methods (#543), the file
+    // drops from ~1800 to under 500 lines.
     assertTrue(
-        "NonCachingTextRenderer.java must be under 650 lines (actual: "
+        "NonCachingTextRenderer.java must be under 500 lines (actual: "
             + lineCount + ")",
-        lineCount < 650);
+        lineCount < 500);
   }
 
   // ── 9. CharSequenceIterator — extracted top-level class ───────────
@@ -767,15 +773,13 @@ public class InnerClassExtractionContractTest {
   }
 
   // ── 15. Additional widened fields for Manager (#524) ──────────────
+  // Note: color cache fields (haveCachedColor, cachedR/G/B/A, cachedColor,
+  // needToResetColor) and smoothing were widened in #524 for Manager access.
+  // In #543 they moved to TextRendererProperties — see sections 19 and 20.
 
   @Test
   public void field_mipmap_isPackagePrivate() {
     assertFieldWidened("mipmap");
-  }
-
-  @Test
-  public void field_smoothing_isPackagePrivate() {
-    assertFieldWidened("smoothing");
   }
 
   @Test
@@ -801,41 +805,6 @@ public class InnerClassExtractionContractTest {
   @Test
   public void field_beginRenderingDepthTestDisabled_isPackagePrivate() {
     assertFieldWidened("beginRenderingDepthTestDisabled");
-  }
-
-  @Test
-  public void field_haveCachedColor_isPackagePrivate() {
-    assertFieldWidened("haveCachedColor");
-  }
-
-  @Test
-  public void field_cachedR_isPackagePrivate() {
-    assertFieldWidened("cachedR");
-  }
-
-  @Test
-  public void field_cachedG_isPackagePrivate() {
-    assertFieldWidened("cachedG");
-  }
-
-  @Test
-  public void field_cachedB_isPackagePrivate() {
-    assertFieldWidened("cachedB");
-  }
-
-  @Test
-  public void field_cachedA_isPackagePrivate() {
-    assertFieldWidened("cachedA");
-  }
-
-  @Test
-  public void field_cachedColor_isPackagePrivate() {
-    assertFieldWidened("cachedColor");
-  }
-
-  @Test
-  public void field_needToResetColor_isPackagePrivate() {
-    assertFieldWidened("needToResetColor");
   }
 
   @Test
@@ -1049,6 +1018,323 @@ public class InnerClassExtractionContractTest {
     assertFieldStatic("CYCLES_PER_FLUSH");
   }
 
+  // ── 19. TextRendererProperties — extracted delegate (#543) ────────
+
+  @Test
+  public void textRendererProperties_classExists() {
+    assertNotNull("TextRendererProperties must exist as a top-level class",
+        propertiesClass);
+  }
+
+  @Test
+  public void textRendererProperties_isPackagePrivate() {
+    assertNotNull("class must exist", propertiesClass);
+    assertTrue("must be package-private",
+        isPackagePrivate(propertiesClass.getModifiers()));
+  }
+
+  @Test
+  public void textRendererProperties_hasSuppressWarningsCheckStyle() throws Exception {
+    assertNotNull("class must exist", propertiesClass);
+    assertSourceContainsSuppressWarnings("TextRendererProperties.java");
+  }
+
+  @Test
+  public void textRendererProperties_sourceFileExists() throws Exception {
+    Path sourceFile = findSourceFile(
+        "core/glrender/src/main/java/edu/cmu/cs/dennisc/render/joglrenderer/"
+            + "TextRendererProperties.java");
+    assertNotNull("TextRendererProperties.java source file must exist", sourceFile);
+  }
+
+  @Test
+  public void textRendererProperties_hasRendererField() {
+    assertNotNull("class must exist", propertiesClass);
+    assertFieldExists(propertiesClass, "renderer", NonCachingTextRenderer.class);
+  }
+
+  @Test
+  public void textRendererProperties_rendererFieldIsFinal() {
+    assertNotNull("class must exist", propertiesClass);
+    try {
+      Field f = propertiesClass.getDeclaredField("renderer");
+      assertTrue("renderer field must be final",
+          Modifier.isFinal(f.getModifiers()));
+    } catch (NoSuchFieldException e) {
+      fail("renderer field must exist in TextRendererProperties");
+    }
+  }
+
+  @Test
+  public void textRendererProperties_hasRendererConstructor() {
+    assertNotNull("class must exist", propertiesClass);
+    assertConstructorExists(propertiesClass,
+        "constructor(NonCachingTextRenderer)",
+        NonCachingTextRenderer.class);
+  }
+
+  @Test
+  public void textRendererProperties_hasHaveCachedColorField() {
+    assertNotNull("class must exist", propertiesClass);
+    assertFieldExists(propertiesClass, "haveCachedColor", boolean.class);
+  }
+
+  @Test
+  public void textRendererProperties_hasCachedRField() {
+    assertNotNull("class must exist", propertiesClass);
+    assertFieldExists(propertiesClass, "cachedR", float.class);
+  }
+
+  @Test
+  public void textRendererProperties_hasCachedGField() {
+    assertNotNull("class must exist", propertiesClass);
+    assertFieldExists(propertiesClass, "cachedG", float.class);
+  }
+
+  @Test
+  public void textRendererProperties_hasCachedBField() {
+    assertNotNull("class must exist", propertiesClass);
+    assertFieldExists(propertiesClass, "cachedB", float.class);
+  }
+
+  @Test
+  public void textRendererProperties_hasCachedAField() {
+    assertNotNull("class must exist", propertiesClass);
+    assertFieldExists(propertiesClass, "cachedA", float.class);
+  }
+
+  @Test
+  public void textRendererProperties_hasCachedColorField() {
+    assertNotNull("class must exist", propertiesClass);
+    assertFieldExists(propertiesClass, "cachedColor", Color.class);
+  }
+
+  @Test
+  public void textRendererProperties_hasNeedToResetColorField() {
+    assertNotNull("class must exist", propertiesClass);
+    assertFieldExists(propertiesClass, "needToResetColor", boolean.class);
+  }
+
+  @Test
+  public void textRendererProperties_hasSmoothingField() {
+    assertNotNull("class must exist", propertiesClass);
+    assertFieldExists(propertiesClass, "smoothing", boolean.class);
+  }
+
+  @Test
+  public void textRendererProperties_colorFieldsArePackagePrivate() {
+    assertNotNull("class must exist", propertiesClass);
+    for (String fieldName : new String[]{"haveCachedColor", "cachedR", "cachedG",
+        "cachedB", "cachedA", "cachedColor", "needToResetColor"}) {
+      try {
+        Field f = propertiesClass.getDeclaredField(fieldName);
+        assertTrue(fieldName + " must be package-private",
+            isPackagePrivate(f.getModifiers()));
+      } catch (NoSuchFieldException e) {
+        fail("Field '" + fieldName + "' must exist in TextRendererProperties");
+      }
+    }
+  }
+
+  @Test
+  public void textRendererProperties_smoothingFieldIsPackagePrivate() {
+    assertNotNull("class must exist", propertiesClass);
+    try {
+      Field f = propertiesClass.getDeclaredField("smoothing");
+      assertTrue("smoothing must be package-private",
+          isPackagePrivate(f.getModifiers()));
+    } catch (NoSuchFieldException e) {
+      fail("smoothing field must exist in TextRendererProperties");
+    }
+  }
+
+  @Test
+  public void textRendererProperties_hasDisposeMethod() {
+    assertNotNull("class must exist", propertiesClass);
+    try {
+      Method m = propertiesClass.getDeclaredMethod("dispose");
+      assertTrue("dispose must be public",
+          Modifier.isPublic(m.getModifiers()));
+      assertEquals("dispose must return void", void.class, m.getReturnType());
+    } catch (NoSuchMethodException e) {
+      fail("TextRendererProperties must have dispose()");
+    }
+  }
+
+  @Test
+  public void textRendererProperties_hasSetColorWithColor() {
+    assertNotNull("class must exist", propertiesClass);
+    try {
+      Method m = propertiesClass.getDeclaredMethod("setColor", Color.class);
+      assertTrue("setColor(Color) must be public",
+          Modifier.isPublic(m.getModifiers()));
+    } catch (NoSuchMethodException e) {
+      fail("TextRendererProperties must have setColor(Color)");
+    }
+  }
+
+  @Test
+  public void textRendererProperties_hasSetColorWithFloats() {
+    assertNotNull("class must exist", propertiesClass);
+    try {
+      Method m = propertiesClass.getDeclaredMethod("setColor",
+          float.class, float.class, float.class, float.class);
+      assertTrue("setColor(float,float,float,float) must be public",
+          Modifier.isPublic(m.getModifiers()));
+    } catch (NoSuchMethodException e) {
+      fail("TextRendererProperties must have setColor(float,float,float,float)");
+    }
+  }
+
+  @Test
+  public void textRendererProperties_hasSetSmoothing() {
+    assertNotNull("class must exist", propertiesClass);
+    try {
+      Method m = propertiesClass.getDeclaredMethod("setSmoothing", boolean.class);
+      assertTrue("setSmoothing must be public",
+          Modifier.isPublic(m.getModifiers()));
+    } catch (NoSuchMethodException e) {
+      fail("TextRendererProperties must have setSmoothing(boolean)");
+    }
+  }
+
+  @Test
+  public void textRendererProperties_hasGetSmoothing() {
+    assertNotNull("class must exist", propertiesClass);
+    assertPublicMethod(propertiesClass, "getSmoothing", boolean.class);
+  }
+
+  @Test
+  public void textRendererProperties_hasSetUseVertexArrays() {
+    assertNotNull("class must exist", propertiesClass);
+    try {
+      Method m = propertiesClass.getDeclaredMethod("setUseVertexArrays", boolean.class);
+      assertTrue("setUseVertexArrays must be public",
+          Modifier.isPublic(m.getModifiers()));
+    } catch (NoSuchMethodException e) {
+      fail("TextRendererProperties must have setUseVertexArrays(boolean)");
+    }
+  }
+
+  @Test
+  public void textRendererProperties_hasGetMyUseVertexArrays() {
+    assertNotNull("class must exist", propertiesClass);
+    assertPublicMethod(propertiesClass, "getMyUseVertexArrays", boolean.class);
+  }
+
+  @Test
+  public void textRendererProperties_hasGetBoundsString() {
+    assertNotNull("class must exist", propertiesClass);
+    assertPublicMethodWithParams(propertiesClass, "getBounds",
+        java.awt.geom.Rectangle2D.class, String.class);
+  }
+
+  @Test
+  public void textRendererProperties_hasGetBoundsCharSequence() {
+    assertNotNull("class must exist", propertiesClass);
+    assertPublicMethodWithParams(propertiesClass, "getBounds",
+        java.awt.geom.Rectangle2D.class, CharSequence.class);
+  }
+
+  @Test
+  public void textRendererProperties_hasGetCharWidth() {
+    assertNotNull("class must exist", propertiesClass);
+    assertPublicMethodWithParams(propertiesClass, "getCharWidth",
+        float.class, char.class);
+  }
+
+  // ── 20. Properties integration on NonCachingTextRenderer (#543) ───
+
+  @Test
+  public void field_properties_existsOnRenderer() {
+    assertNotNull("TextRendererProperties must exist", propertiesClass);
+    assertFieldExists(NonCachingTextRenderer.class, "properties", propertiesClass);
+  }
+
+  @Test
+  public void field_properties_isPackagePrivate() {
+    try {
+      Field f = NonCachingTextRenderer.class.getDeclaredField("properties");
+      assertTrue("properties must be package-private",
+          isPackagePrivate(f.getModifiers()));
+    } catch (NoSuchFieldException e) {
+      fail("Field 'properties' must exist in NonCachingTextRenderer");
+    }
+  }
+
+  @Test
+  public void field_properties_isFinal() {
+    try {
+      Field f = NonCachingTextRenderer.class.getDeclaredField("properties");
+      assertTrue("properties must be final",
+          Modifier.isFinal(f.getModifiers()));
+    } catch (NoSuchFieldException e) {
+      fail("Field 'properties' must exist in NonCachingTextRenderer");
+    }
+  }
+
+  @Test
+  public void field_haveCachedColor_extractedToProperties() {
+    assertFieldAbsent("haveCachedColor");
+  }
+
+  @Test
+  public void field_cachedR_extractedToProperties() {
+    assertFieldAbsent("cachedR");
+  }
+
+  @Test
+  public void field_cachedG_extractedToProperties() {
+    assertFieldAbsent("cachedG");
+  }
+
+  @Test
+  public void field_cachedB_extractedToProperties() {
+    assertFieldAbsent("cachedB");
+  }
+
+  @Test
+  public void field_cachedA_extractedToProperties() {
+    assertFieldAbsent("cachedA");
+  }
+
+  @Test
+  public void field_cachedColor_extractedToProperties() {
+    assertFieldAbsent("cachedColor");
+  }
+
+  @Test
+  public void field_needToResetColor_extractedToProperties() {
+    assertFieldAbsent("needToResetColor");
+  }
+
+  @Test
+  public void field_smoothing_extractedToProperties() {
+    assertFieldAbsent("smoothing");
+  }
+
+  @Test
+  public void field_useVertexArrays_extractedToProperties() {
+    assertFieldAbsent("useVertexArrays");
+  }
+
+  // ── 21. Fields widened for properties delegate access (#543) ──────
+
+  @Test
+  public void field_cachedBackingStore_isPackagePrivate() {
+    assertFieldWidened("cachedBackingStore");
+  }
+
+  @Test
+  public void field_cachedGraphics_isPackagePrivate() {
+    assertFieldWidened("cachedGraphics");
+  }
+
+  @Test
+  public void field_cachedFontRenderContext_isPackagePrivate() {
+    assertFieldWidened("cachedFontRenderContext");
+  }
+
   // ── Assertion helpers ─────────────────────────────────────────────
 
   private void assertSourceContainsSuppressWarnings(String fileName) throws Exception {
@@ -1059,15 +1345,6 @@ public class InnerClassExtractionContractTest {
     String source = new String(Files.readAllBytes(sourceFile));
     assertTrue(fileName + " must have @SuppressWarnings(\"CheckStyle\")",
         source.contains("@SuppressWarnings(\"CheckStyle\")"));
-  }
-
-  private void assertContains(String[] values, String expected) {
-    for (String v : values) {
-      if (expected.equals(v)) {
-        return;
-      }
-    }
-    fail("Expected @SuppressWarnings to contain \"" + expected + "\"");
   }
 
   private void assertFieldExists(Class<?> clazz, String name, Class<?> expectedType) {
@@ -1116,16 +1393,6 @@ public class InnerClassExtractionContractTest {
             + "' must be extracted to a top-level class");
       }
     }
-  }
-
-  private void assertInnerClassPresent(String simpleName) {
-    for (Class<?> inner : NonCachingTextRenderer.class.getDeclaredClasses()) {
-      if (simpleName.equals(inner.getSimpleName())) {
-        return;
-      }
-    }
-    fail("Inner class '" + simpleName
-        + "' must be preserved in NonCachingTextRenderer");
   }
 
   private void assertFieldWidened(String fieldName) {
@@ -1193,5 +1460,16 @@ public class InnerClassExtractionContractTest {
       }
     }
     return null;
+  }
+
+  private void assertFieldAbsent(String fieldName) {
+    try {
+      NonCachingTextRenderer.class.getDeclaredField(fieldName);
+      fail("Field '" + fieldName
+          + "' should have been extracted from NonCachingTextRenderer"
+          + " to TextRendererProperties");
+    } catch (NoSuchFieldException e) {
+      // expected — field was successfully extracted
+    }
   }
 }
