@@ -773,15 +773,13 @@ public class InnerClassExtractionContractTest {
   }
 
   // ── 15. Additional widened fields for Manager (#524) ──────────────
+  // Note: color cache fields (haveCachedColor, cachedR/G/B/A, cachedColor,
+  // needToResetColor) and smoothing were widened in #524 for Manager access.
+  // In #543 they moved to TextRendererProperties — see sections 19 and 20.
 
   @Test
   public void field_mipmap_isPackagePrivate() {
     assertFieldWidened("mipmap");
-  }
-
-  @Test
-  public void field_smoothing_isPackagePrivate() {
-    assertFieldWidened("smoothing");
   }
 
   @Test
@@ -807,41 +805,6 @@ public class InnerClassExtractionContractTest {
   @Test
   public void field_beginRenderingDepthTestDisabled_isPackagePrivate() {
     assertFieldWidened("beginRenderingDepthTestDisabled");
-  }
-
-  @Test
-  public void field_haveCachedColor_isPackagePrivate() {
-    assertFieldWidened("haveCachedColor");
-  }
-
-  @Test
-  public void field_cachedR_isPackagePrivate() {
-    assertFieldWidened("cachedR");
-  }
-
-  @Test
-  public void field_cachedG_isPackagePrivate() {
-    assertFieldWidened("cachedG");
-  }
-
-  @Test
-  public void field_cachedB_isPackagePrivate() {
-    assertFieldWidened("cachedB");
-  }
-
-  @Test
-  public void field_cachedA_isPackagePrivate() {
-    assertFieldWidened("cachedA");
-  }
-
-  @Test
-  public void field_cachedColor_isPackagePrivate() {
-    assertFieldWidened("cachedColor");
-  }
-
-  @Test
-  public void field_needToResetColor_isPackagePrivate() {
-    assertFieldWidened("needToResetColor");
   }
 
   @Test
