@@ -226,46 +226,30 @@ public class TightPositionalIkEnforcer extends IkEnforcer implements IkEnforcerC
       List<JacobianAxis> axesForJoint = e.getValue();
 
       if (axesForJoint.size() == 3) {
+        // Accumulate rotation as primitive doubles to avoid intermediate Vector3 allocations
+        double rx = 0, ry = 0, rz = 0;
         int axisIndexInJoint = 0;
-        Vector3 combinedRotation = null;
 
         for (JacobianAxis axis : axesForJoint) {
           assert axis.isFree();
-
-          //need to get this axis so that I can merge
-          //they only need to be local axes
           double delta = angleDeltas.getForAxis(axis);
 
-          Vector3 rotationAroundThisAxis = switch (axisIndexInJoint) {
-            case 0 -> Vector3.POSITIVE_X_AXIS;
-            case 1 -> Vector3.POSITIVE_Y_AXIS;
-            case 2 -> Vector3.POSITIVE_Z_AXIS;
+          switch (axisIndexInJoint) {
+            case 0 -> rx = delta;
+            case 1 -> ry = delta;
+            case 2 -> rz = delta;
             default -> {
               assert false;
-              yield Vector3.POSITIVE_X_AXIS;
             }
-          };
-
-          rotationAroundThisAxis = rotationAroundThisAxis.times(delta);
-
-          //this is local rotation
-
-          if (combinedRotation == null) {
-            combinedRotation = rotationAroundThisAxis;
-          } else {
-            combinedRotation = combinedRotation.plus(rotationAroundThisAxis);
           }
-
           ++axisIndexInJoint;
         }
 
-        // magnitude() extracts angle; dividedBy() yields unit axis (differs from normalized() which discards magnitude)
-        double angleInRadians = combinedRotation.magnitude();
-        Vector3 axis = combinedRotation.dividedBy(angleInRadians);
+        double angleInRadians = Math.sqrt(rx * rx + ry * ry + rz * rz);
 
-        //local rotation
-        if (!axis.isNaN()) {
-          jointImp.applyRotationInRadians(axis, angleInRadians);
+        if (angleInRadians > 0) {
+          Vector3 rotAxis = new Vector3(rx / angleInRadians, ry / angleInRadians, rz / angleInRadians);
+          jointImp.applyRotationInRadians(rotAxis, angleInRadians);
         }
       } else {
         assert false : "Joint with other than three angles";

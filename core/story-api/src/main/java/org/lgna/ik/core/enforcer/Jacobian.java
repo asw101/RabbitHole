@@ -4,7 +4,9 @@ import Jama.Matrix;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 public class Jacobian {
@@ -33,36 +35,27 @@ public class Jacobian {
     columnIndexToJacobianColumn = resultantJacobianAxes;
 
     int resultantColumnCount = columnIndexToJacobianColumn.length;
+    // Matrix(int, int) zero-initializes — no explicit zeroing needed
     matrix = new Matrix(resultantRowCount, resultantColumnCount);
-
-    for (int rowi = 0; rowi < resultantRowCount; ++rowi) {
-      for (int coli = 0; coli < resultantColumnCount; ++coli) {
-        matrix.set(rowi, coli, 0.0);
-      }
-    }
 
     int resultantRowOffset = 0;
 
     for (Jacobian jacobian : jacobians) {
       int rowCount = jacobian.getRowCount();
 
+      // Pre-build axis→column map for O(1) lookup instead of O(n) linear scan
+      Map<JacobianAxis, Integer> axisToCol = new HashMap<>();
+      for (int jci = 0; jci < jacobian.columnIndexToJacobianColumn.length; ++jci) {
+        axisToCol.put(jacobian.columnIndexToJacobianColumn[jci], jci);
+      }
+
       for (int columnIndex = 0; columnIndex < resultantColumnCount; ++columnIndex) {
-
-        JacobianAxis jacobianAxis = columnIndexToJacobianColumn[columnIndex];
-
-        boolean found = false;
-
-        for (int jci = 0; jci < jacobian.columnIndexToJacobianColumn.length; ++jci) {
-          if (jacobian.columnIndexToJacobianColumn[jci] == jacobianAxis) {
-            found = true;
-
-            for (int rowi = 0; rowi < rowCount; ++rowi) {
-              matrix.set(resultantRowOffset + rowi, columnIndex, jacobian.matrix.get(rowi, jci));
-            }
+        Integer jci = axisToCol.get(columnIndexToJacobianColumn[columnIndex]);
+        if (jci != null) {
+          for (int rowi = 0; rowi < rowCount; ++rowi) {
+            matrix.set(resultantRowOffset + rowi, columnIndex, jacobian.matrix.get(rowi, jci));
           }
         }
-
-        // if the jacobian has this column, copy it from it; else leave it zero
       }
 
       resultantRowOffset += rowCount;
@@ -76,15 +69,22 @@ public class Jacobian {
   }
 
   public Displacement multiplyWithAngleDeltas(AngleDeltas angleDeltas) {
-    double[] d = new double[matrix.getRowDimension()];
+    int rows = matrix.getRowDimension();
+    int cols = matrix.getColumnDimension();
 
-    for (int rowi = 0; rowi < matrix.getRowDimension(); ++rowi) {
-      d[rowi] = 0.0;
-      for (int coli = 0; coli < matrix.getColumnDimension(); ++coli) {
-        JacobianAxis jacobianAxis = columnIndexToJacobianColumn[coli];
-        int globalIndex = context.getGlobalIndexForAxis(jacobianAxis);
-        d[rowi] += angleDeltas.getByGlobalIndex(globalIndex) * matrix.get(rowi, coli);
+    // Pre-compute global indices to avoid per-row HashMap lookups
+    int[] globalIndices = new int[cols];
+    for (int coli = 0; coli < cols; ++coli) {
+      globalIndices[coli] = context.getGlobalIndexForAxis(columnIndexToJacobianColumn[coli]);
+    }
+
+    double[] d = new double[rows];
+    for (int rowi = 0; rowi < rows; ++rowi) {
+      double sum = 0;
+      for (int coli = 0; coli < cols; ++coli) {
+        sum += angleDeltas.getByGlobalIndex(globalIndices[coli]) * matrix.get(rowi, coli);
       }
+      d[rowi] = sum;
     }
 
     return new Displacement(d);
@@ -93,21 +93,20 @@ public class Jacobian {
   public AngleDeltas multiplyDisplacementWithInverseForMoving(Displacement displacement) {
     Matrix inverseForMoving = createInverseMatrixForMoving();
 
+    int invRows = inverseForMoving.getRowDimension();
+    int invCols = inverseForMoving.getColumnDimension();
     double[] compactResult = new double[matrix.getColumnDimension()];
 
-    for (int rowi = 0; rowi < inverseForMoving.getRowDimension(); ++rowi) {
-      double val = 0;
-      for (int coli = 0; coli < inverseForMoving.getColumnDimension(); ++coli) {
-        val += inverseForMoving.get(rowi, coli) * displacement.storage[coli];
+    for (int rowi = 0; rowi < invRows; ++rowi) {
+      double sum = 0;
+      for (int coli = 0; coli < invCols; ++coli) {
+        sum += inverseForMoving.get(rowi, coli) * displacement.storage[coli];
       }
-      compactResult[rowi] = val;
+      compactResult[rowi] = sum;
     }
 
+    // Java zero-initializes arrays — no explicit zeroing needed
     AngleDeltas result = new AngleDeltas(context.getIndexToAxis().size(), context);
-
-    for (int i = 0; i < result.storage.length; ++i) {
-      result.storage[i] = 0;
-    }
 
     for (int ci = 0; ci < columnIndexToJacobianColumn.length; ++ci) {
       result.storage[context.getGlobalIndexForAxis(columnIndexToJacobianColumn[ci])] = compactResult[ci];

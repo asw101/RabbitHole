@@ -21,9 +21,7 @@ class AngleDeltas {
   }
 
   public double getForAxis(JacobianAxis axis) {
-    int globalIndex = context.getAxisToIndex().get(axis);
-    double delta = this.getByGlobalIndex(globalIndex);
-    return delta;
+    return getByGlobalIndex(context.getGlobalIndexForAxis(axis));
   }
 
   public void correctDeltaForAxis(int index, double correction) {

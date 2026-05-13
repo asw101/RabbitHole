@@ -1,5 +1,7 @@
 package org.lgna.ik.core.enforcer;
 
+import java.util.Arrays;
+
 class NullspaceProjector {
   double[][] matrix;
   private final int numAxes;
@@ -13,9 +15,7 @@ class NullspaceProjector {
 
   public void initializeToIdentity() {
     for (int row = 0; row < numAxes; ++row) {
-      for (int col = 0; col < numAxes; ++col) {
-        matrix[row][col] = 0.0;
-      }
+      Arrays.fill(matrix[row], 0.0);
       matrix[row][row] = 1.0;
     }
   }
@@ -23,19 +23,21 @@ class NullspaceProjector {
   public Jacobian createProjected(Jacobian input) {
     Jacobian result = new Jacobian(input.matrix.getRowDimension(), input.columnIndexToJacobianColumn, context);
 
-    int[] localToGlobal = new int[result.matrix.getColumnDimension()];
+    int colDim = result.matrix.getColumnDimension();
+    int rowDim = result.matrix.getRowDimension();
 
-    for (int ci = 0; ci < result.matrix.getColumnDimension(); ++ci) {
+    int[] localToGlobal = new int[colDim];
+    for (int ci = 0; ci < colDim; ++ci) {
       localToGlobal[ci] = context.getGlobalIndexForAxis(result.columnIndexToJacobianColumn[ci]);
     }
 
-    for (int outRowi = 0; outRowi < result.matrix.getRowDimension(); ++outRowi) {
-      for (int outColi = 0; outColi < result.matrix.getColumnDimension(); ++outColi) {
+    for (int outRowi = 0; outRowi < rowDim; ++outRowi) {
+      for (int outColi = 0; outColi < colDim; ++outColi) {
 
         int outColGlobali = localToGlobal[outColi];
 
         double val = 0;
-        for (int ci = 0; ci < result.matrix.getColumnDimension(); ++ci) {
+        for (int ci = 0; ci < colDim; ++ci) {
           val += input.matrix.get(outRowi, ci) * matrix[localToGlobal[ci]][outColGlobali];
         }
         result.matrix.set(outRowi, outColi, val);
@@ -50,19 +52,14 @@ class NullspaceProjector {
   public void subtractInverseTimesJacobian(InvertedJacobian inverse, Jacobian jacobian) {
     assert inverse.straight == jacobian;
 
-    int[] localToGlobal = new int[jacobian.matrix.getColumnDimension()];
-
-    for (int ci = 0; ci < jacobian.matrix.getColumnDimension(); ++ci) {
-      localToGlobal[ci] = context.getGlobalIndexForAxis(jacobian.columnIndexToJacobianColumn[ci]);
-    }
-
     int localDimension = jacobian.matrix.getColumnDimension();
+    int jacobianRows = jacobian.matrix.getRowDimension();
 
     for (int rowi = 0; rowi < localDimension; ++rowi) {
       for (int coli = 0; coli < localDimension; ++coli) {
 
         double val = 0;
-        for (int ri = 0; ri < jacobian.matrix.getRowDimension(); ++ri) {
+        for (int ri = 0; ri < jacobianRows; ++ri) {
           val += inverse.matrix.get(rowi, ri) * jacobian.matrix.get(ri, coli);
         }
 

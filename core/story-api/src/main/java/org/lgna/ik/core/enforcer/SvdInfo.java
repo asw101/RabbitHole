@@ -57,9 +57,10 @@ class SvdInfo {
 
   private void reduceAndInvertSofSvdByDamping(Matrix s, double svdDampingConstant) {
     assert (s.getRowDimension() == s.getColumnDimension());
+    double dampingSquared = svdDampingConstant * svdDampingConstant;
     for (int i = 0; i < s.getRowDimension(); ++i) {
       double d = s.get(i, i);
-      s.set(i, i, d / ((d * d) + (svdDampingConstant * svdDampingConstant)));
+      s.set(i, i, d / ((d * d) + dampingSquared));
     }
   }
 

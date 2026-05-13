@@ -5,8 +5,10 @@ import org.alice.math.immutable.Vector3;
 import org.lgna.ik.core.solver.Bone;
 import org.lgna.ik.core.solver.Bone.Axis;
 import org.lgna.ik.core.solver.Chain;
+import org.lgna.story.implementation.JointImp;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -38,29 +40,31 @@ public abstract class Constraint {
     List<JacobianAxis> indexToAxis = context.getIndexToAxis();
 
     if (!isJacobianInitialized) {
+      // Pre-index velocity contributions by JointImp for O(1) lookup
+      Map<JointImp, Map<Axis, Vector3>> byJoint = new HashMap<>();
+      for (Entry<Bone, Map<Axis, Vector3>> e : velocityContributions.entrySet()) {
+        byJoint.put(e.getKey().getA(), e.getValue());
+      }
+
       List<JacobianAxis> jacobianAxisList = new ArrayList<JacobianAxis>();
       List<Vector3> contributionsList = new ArrayList<Vector3>();
       List<Axis> axisList = new ArrayList<Axis>();
 
       for (int i = 0; i < indexToAxis.size(); ++i) {
         JacobianAxis jacobianAxis = indexToAxis.get(i);
+        Map<Axis, Vector3> axisMap = byJoint.get(jacobianAxis.jointImp);
 
-        for (Entry<Bone, Map<Axis, Vector3>> e : velocityContributions.entrySet()) {
-          Bone bone = e.getKey();
-          Map<Axis, Vector3> axisMap = e.getValue();
+        if (axisMap != null) {
+          for (Entry<Axis, Vector3> ea : axisMap.entrySet()) {
+            Axis axis = ea.getKey();
+            Vector3 contribution = ea.getValue();
 
-          if (bone.getA() == jacobianAxis.jointImp) {
-            for (Entry<Axis, Vector3> ea : axisMap.entrySet()) {
-              Axis axis = ea.getKey();
-              Vector3 contribution = ea.getValue();
+            if (axis.getOriginalIndexInJoint() == jacobianAxis.axisInBoneIndex) {
+              assert !jacobianAxisList.contains(jacobianAxis);
 
-              if (axis.getOriginalIndexInJoint() == jacobianAxis.axisInBoneIndex) {
-                assert !jacobianAxisList.contains(jacobianAxis);
-
-                jacobianAxisList.add(jacobianAxis);
-                contributionsList.add(contribution);
-                axisList.add(axis);
-              }
+              jacobianAxisList.add(jacobianAxis);
+              contributionsList.add(contribution);
+              axisList.add(axis);
             }
           }
         }
