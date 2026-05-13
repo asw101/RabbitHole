@@ -1,0 +1,208 @@
+/*******************************************************************************
+ * Copyright (c) 2006, 2015, Carnegie Mellon University. All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * 3. Products derived from the software may not be called "Alice", nor may
+ *    "Alice" appear in their name, without prior written permission of
+ *    Carnegie Mellon University.
+ *
+ * 4. All advertising materials mentioning features or use of this software must
+ *    display the following acknowledgement: "This product includes software
+ *    developed by Carnegie Mellon University"
+ *
+ * 5. The gallery of art assets and animations provided with this software is
+ *    contributed by Electronic Arts Inc. and may be used for personal,
+ *    non-commercial, and academic use only. Redistributions of any program
+ *    source code that utilizes The Sims 2 Assets must also retain the copyright
+ *    notice, list of conditions and the disclaimer contained in
+ *    The Alice 3.0 Art Gallery License.
+ *
+ * DISCLAIMER:
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
+ * ANY AND ALL EXPRESS, STATUTORY OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY,  FITNESS FOR A
+ * PARTICULAR PURPOSE, TITLE, AND NON-INFRINGEMENT ARE DISCLAIMED. IN NO EVENT
+ * SHALL THE AUTHORS, COPYRIGHT OWNERS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+ * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, PUNITIVE OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING FROM OR OTHERWISE RELATING TO
+ * THE USE OF OR OTHER DEALINGS WITH THE SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ *******************************************************************************/
+package org.alice.ide.croquet.models.project.find.core;
+
+import edu.cmu.cs.dennisc.java.util.Lists;
+import edu.cmu.cs.dennisc.java.util.Maps;
+import edu.cmu.cs.dennisc.pattern.Criterion;
+import org.alice.ide.croquet.models.project.find.core.astcrawler.FindCrawler;
+import org.lgna.project.ast.*;
+
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
+
+/**
+ * @author Matt May
+ */
+public class FindContentManager {
+
+  private final List<SearchResult> objectList = Lists.newArrayList();
+  private final List<Object> superTypeList = Lists.newArrayList();
+
+  public void initialize(UserType sceneType, List<Criterion> criteria) {
+    //    this.sceneType = sceneType;
+    tunnelField(sceneType);
+    FindCrawler crawler = new FindCrawler(criteria, objectList);
+    for (SearchResult object : objectList) {
+      if (object.getDeclaration() instanceof UserMethod) {
+        UserMethod method = (UserMethod) object.getDeclaration();
+        method.crawl(crawler, CrawlPolicy.EXCLUDE_REFERENCES_ENTIRELY);
+      }
+    }
+  }
+
+  private void tunnelField(UserType<?> type) {
+    tunnelSuper((AbstractType) type.superType.getValue());
+    for (UserField field : type.fields) {
+      if (!checkContains(field)) {
+        objectList.add(new SearchResult(field));
+        if (field.getValueType() instanceof UserType) {
+          tunnelField((UserType) field.getValueType());
+        }
+      }
+    }
+    for (UserMethod method : type.methods) {
+      if (!checkContains(method)) {
+        objectList.add(new SearchResult(method));
+        tunnelMethod(method);
+      }
+    }
+  }
+
+  private void tunnelSuper(AbstractType parent) {
+    if ((parent == null) || superTypeList.contains(parent)) {
+      return;
+    }
+    superTypeList.add(parent);
+    List<AbstractField> fields = parent.getDeclaredFields();
+    List<AbstractMethod> methods = parent.getDeclaredMethods();
+    for (AbstractField field : fields) {
+      if (!checkContains(field)) {
+        objectList.add(new SearchResult(field));
+      }
+    }
+    for (AbstractMethod method : methods) {
+      if (!checkContains(method)) {
+        objectList.add(new SearchResult(method));
+      }
+    }
+    if (parent != null) {
+      AbstractType grandparent = parent.getSuperType();
+      if ((grandparent != null) && grandparent.isFollowToSuperClassDesired()) {
+        tunnelSuper(grandparent);
+      }
+    }
+  }
+
+  private void tunnelMethod(UserMethod method) {
+    NodeListProperty<UserParameter> nodeListProperty = method.requiredParameters;
+    BlockStatement blockStatement = method.body.getValue();
+    for (UserParameter parameter : nodeListProperty) {
+      assert !checkContains(parameter);
+      objectList.add(new SearchResult(parameter));
+    }
+    for (Statement statement : blockStatement.statements) {
+      if (statement instanceof LocalDeclarationStatement declarationStatement) {
+        UserLocal local = declarationStatement.local.getValue();
+        assert !checkContains(local);
+        objectList.add(new SearchResult(local));
+      }
+    }
+  }
+
+  private boolean checkContains(Object searchObject) {
+    return checkFind(searchObject) != null;
+  }
+
+  private SearchResult checkFind(Object searchObject) {
+    for (SearchResult object : objectList) {
+      if (object.getDeclaration().equals(searchObject)) {
+        return object;
+      }
+    }
+    return null;
+  }
+
+  public List<SearchResult> getSearchResults(String[] terms) throws PatternSyntaxException {
+    List<SearchResult> matches = Lists.newArrayList();
+    List<Pattern> patterns = new ArrayList<>();
+    for (String term : terms) {
+      patterns.add(Pattern.compile(term.toLowerCase()));
+    }
+    for (SearchResult o : objectList) {
+      if (o.getReferences().isEmpty()) {
+        continue;
+      }
+      String toSearch = o.getName().toLowerCase();
+      boolean allMatch = true;
+      for (Pattern pattern : patterns) {
+        Matcher matcher = pattern.matcher(toSearch);
+        if (!matcher.find()) {
+          allMatch = false;
+          break;
+        }
+      }
+      if (allMatch) {
+        matches.add(o);
+      }
+    }
+    return sortByRelevance(terms, matches);
+  }
+
+  private List<SearchResult> sortByRelevance(String[] terms, List<SearchResult> searchResults) {
+    List<SearchResult> unsortedList = Lists.newArrayList(searchResults);
+    Map<SearchResult, Double> scoreMap = Maps.newHashMap();
+    for (SearchResult obj : unsortedList) {
+      scoreMap.put(obj, score(obj, terms));
+    }
+    unsortedList.sort(Comparator.comparing(scoreMap::get));
+    return unsortedList;
+  }
+
+  // Produce a zero or negative score.
+  // Hitting more criteria means a lower number, so it sorts to the front of the list.
+  private Double score(SearchResult obj, String[]terms) {
+    double score = 0;
+    for (String term : terms) {
+      if (obj.getName().equals(term)) {
+        score -= 2;
+      }
+      if (obj.getName().contains(term)) {
+        score -= 1;
+      }
+      if (obj.getName().toLowerCase().startsWith(term)) {
+        score -= 1;
+      }
+    }
+    score -= obj.getReferences().size() / 10.0;
+    return score;
+  }
+
+  public void refresh(UserType sceneType, List<Criterion> criteria) {
+    objectList.clear();
+    superTypeList.clear();
+    initialize(sceneType, criteria);
+  }
+}

@@ -1,0 +1,25 @@
+package org.lgna.ik.core.enforcer;
+
+import org.lgna.story.resources.JointId;
+
+import java.util.HashMap;
+import java.util.Map;
+
+public class Weights {
+
+  public void setDefaultJointWeight(double defaultJointWeight) {
+    this.defaultJointWeight = defaultJointWeight;
+  }
+
+  public void setJointWeight(JointId jointId, double weight) {
+    jointWeights.put(jointId, weight);
+  }
+
+  public double getEffectiveJointWeight(JointId jointId) {
+    return jointWeights.getOrDefault(jointId, defaultJointWeight);
+  }
+
+  Map<JointId, Double> jointWeights = new HashMap<JointId, Double>();
+  double defaultJointWeight = 1.0;
+
+}

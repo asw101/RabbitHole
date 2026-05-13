@@ -1,0 +1,51 @@
+id: alice-desktop-failure-path-smoke
+name: Project load failure path smoke
+title: Project load failure path smoke
+workflow: failure-path-smoke
+automationMode: gated-command-smoke
+preconditions:
+  - Java 21 is available.
+  - Maven dependencies are available.
+  - The tweedle-lang submodule is initialized.
+  - Failure-dispatch characterization tests are available in the checkout.
+userActions:
+  - Run the focused corrupt-project or project-load failure characterization smoke.
+  - Feed corrupt or unloadable project input through the checked-in failure path.
+  - Review the resulting failure classification or user-observable handling evidence.
+expectedOutcomes:
+  - The failure path smoke command exits successfully when the gate is enabled.
+  - Corrupt project input follows an expected failure handling path.
+  - The smoke records that the application does not silently treat corrupt input as a successful load.
+automation:
+  cwd: .
+  argv:
+    - mvn
+    - -DincludeSims=false
+    - -Dinstall4j.skip
+    - -Dsurefire.failIfNoSpecifiedTests=false
+    - -pl
+    - core/ide
+    - -am
+    - -Dtest=org.alice.ide.ProjectLoadFailureDispatchPlanTest
+    - test
+  timeoutSeconds: 600
+  readyWaitSeconds: 1
+evidence:
+  required:
+    - status.txt recording the gated command outcome.
+    - command.log from the failure path smoke command.
+    - Failure classification or dispatch-plan assertion output.
+    - Corrupt input fixture name or generated fixture notes when available.
+fallback:
+  mode: manual-evidence-required
+  notes:
+    - Keep the evidence at the user-observable failure path boundary instead of asserting private exception trivia.
+    - If the focused smoke cannot run, attach the failure log and the nearest characterization test reference.
+tags:
+  - immediate-qa-backlog
+  - failure-path
+  - command-smoke
+steps:
+  - validate
+agents:
+  - alice-desktop-qa

@@ -1,0 +1,247 @@
+import json
+import re
+import subprocess
+import tempfile
+import unittest
+from pathlib import Path
+
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+BOUNDARY_ARTIFACT = (
+    REPO_ROOT
+    / "qa"
+    / "outside-in"
+    / "alice-desktop"
+    / "contracts"
+    / "learner-world-assessment-boundary.json"
+)
+INSTRUCTOR_STUDENT_SCENARIO = (
+    REPO_ROOT
+    / "qa"
+    / "outside-in"
+    / "alice-desktop"
+    / "scenarios"
+    / "instructor-student-setup.yaml"
+)
+RUNNER = (
+    REPO_ROOT
+    / "qa"
+    / "outside-in"
+    / "alice-desktop"
+    / "runners"
+    / "run-scenario.sh"
+)
+BOUNDARY_DOCS = [
+    REPO_ROOT / "qa" / "outside-in" / "alice-desktop" / "README.md",
+    REPO_ROOT / "docs" / "reference" / "alice-desktop-outside-in-qa.md",
+    REPO_ROOT / "docs" / "howto" / "alice-desktop-outside-in-qa.md",
+    REPO_ROOT / "docs" / "tutorials" / "alice-desktop-outside-in-qa.md",
+]
+BOUNDARY_PHRASE = "rabbithole learner-world qa currently supports setup/open/save evidence review"
+NEXT_BLOCKER_ID = "define-reviewed-assessment-contract"
+NON_CAPABILITIES = [
+    "learner-world grading",
+    "rubric scoring",
+    "correctness assessment",
+    "creative assessment",
+]
+ASSESSMENT_LIMITS = [
+    "no automated grading",
+    "no rubric scoring",
+    "no correctness assessment",
+    "no creative assessment",
+]
+MANUAL_LIMITATION_SUMMARY = (
+    "Learner-world grading, rubric scoring, correctness assessment, and creative "
+    "assessment remain manual/unsupported until a reviewed assessment contract exists."
+)
+OVERCLAIM_TERMS = [
+    "learner-work grading",
+    "learner work grading",
+    "automated grading",
+    "rubric scoring",
+    "correctness assessment",
+    "creativity assessment",
+    "creative assessment",
+    "assess creativity",
+]
+NEGATION_MARKERS = [
+    "does not",
+    "do not",
+    "must not",
+    "not ",
+    "no ",
+    "noncapabilities",
+    "future ",
+    "requires",
+    "required before",
+    "only",
+    "blocker",
+    "cannot currently",
+    "before any",
+    "manual/unsupported",
+]
+
+
+def normalized_text(path: Path) -> str:
+    return re.sub(r"\s+", " ", path.read_text(encoding="utf-8").lower())
+
+
+class LearnerWorldAssessmentBoundaryContractTest(unittest.TestCase):
+    def test_boundary_artifact_is_declarative_and_names_next_blocker(self) -> None:
+        boundary = json.loads(BOUNDARY_ARTIFACT.read_text(encoding="utf-8"))
+
+        self.assertEqual("learner-world-assessment-boundary", boundary.get("id"))
+        self.assertEqual(
+            "instructor-student learner-world setup/open/save evidence",
+            boundary.get("scope"),
+        )
+        self.assertEqual(
+            "collects evidence for setup, open, and save workflow review",
+            boundary.get("currentCapability"),
+        )
+        self.assertEqual(
+            "alice-desktop-instructor-student-setup",
+            boundary.get("selectedScenario"),
+        )
+        self.assertEqual(
+            "manual-evidence-required",
+            boundary.get("automationMode"),
+        )
+        self.assertIn("setup/open/save evidence review only", boundary.get("supportedEvidence", []))
+        self.assertEqual(ASSESSMENT_LIMITS, boundary.get("assessmentLimits"))
+        self.assertEqual(NON_CAPABILITIES, boundary.get("nonCapabilities"))
+        self.assertEqual(NEXT_BLOCKER_ID, boundary.get("nextBoundary"))
+        self.assertEqual(MANUAL_LIMITATION_SUMMARY, boundary.get("manualLimitationSummary"))
+        self.assertEqual(
+            NON_CAPABILITIES,
+            boundary.get("requiresReviewedAssessmentContractBefore"),
+        )
+        self.assertEqual(NEXT_BLOCKER_ID, boundary.get("nextBlocker", {}).get("id"))
+        self.assertEqual(NEXT_BLOCKER_ID, boundary.get("blocker", {}).get("id"))
+
+        blocker_description = boundary.get("nextBlocker", {}).get("description", "")
+        extraction_blocker = boundary.get("blocker", {}).get("description", "")
+        self.assertIn("reviewed assessment contract", blocker_description)
+        self.assertIn("evidence mapping", blocker_description)
+        self.assertIn("learner-world state extraction", extraction_blocker.lower())
+        self.assertIn("blocked", extraction_blocker.lower())
+        for non_capability in NON_CAPABILITIES:
+            with self.subTest(non_capability=non_capability):
+                self.assertIn(non_capability, blocker_description)
+
+        behavior_fields = {
+            "assessmentAlgorithm",
+            "gradingAlgorithm",
+            "rubricSchema",
+            "scoreSchema",
+            "creativeAssessmentEngine",
+            "runnerIntegration",
+        }
+        self.assertFalse(
+            behavior_fields.intersection(boundary),
+            "Boundary artifact must stay declarative and must not configure assessment behavior.",
+        )
+
+    def test_instructor_student_scenario_remains_setup_open_save_evidence_only(self) -> None:
+        scenario_text = normalized_text(INSTRUCTOR_STUDENT_SCENARIO)
+
+        self.assertIn("automationmode: manual-evidence-required", scenario_text)
+        self.assertIn("setup/open/save evidence review only", scenario_text)
+        for non_capability in NON_CAPABILITIES:
+            with self.subTest(non_capability=non_capability):
+                self.assertIn(non_capability, scenario_text)
+        for assessment_limit in ASSESSMENT_LIMITS:
+            with self.subTest(assessment_limit=assessment_limit):
+                self.assertIn(assessment_limit, scenario_text)
+
+    def test_generated_manual_evidence_surfaces_assessment_limits(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            evidence_root = Path(tmp_dir) / "evidence"
+            subprocess.run(
+                [
+                    str(RUNNER),
+                    "run",
+                    "alice-desktop-instructor-student-setup",
+                    "--evidence-dir",
+                    str(evidence_root),
+                ],
+                cwd=REPO_ROOT,
+                check=True,
+                text=True,
+                capture_output=True,
+            )
+
+            run_dirs = list((evidence_root / "alice-desktop-instructor-student-setup").iterdir())
+            self.assertEqual(1, len(run_dirs))
+            checklist = run_dirs[0] / "manual-evidence-checklist.txt"
+            checklist_text = normalized_text(checklist)
+            status = run_dirs[0] / "status.txt"
+            status_text = normalized_text(status)
+
+        self.assertIn("assessment boundary", checklist_text)
+        self.assertIn("manual evidence required", checklist_text)
+        self.assertIn(MANUAL_LIMITATION_SUMMARY.lower(), checklist_text)
+        self.assertIn("setup/open/save evidence review only", checklist_text)
+        self.assertIn("learner-world state extraction", checklist_text)
+        self.assertIn("blocked", checklist_text)
+        self.assertIn(f"next boundary: {NEXT_BLOCKER_ID}", checklist_text)
+        self.assertIn(NEXT_BLOCKER_ID, checklist_text)
+        self.assertNotIn("correctness scoring", checklist_text)
+        for assessment_limit in ASSESSMENT_LIMITS:
+            with self.subTest(assessment_limit=assessment_limit):
+                self.assertIn(assessment_limit, checklist_text)
+        for non_capability in NON_CAPABILITIES:
+            with self.subTest(non_capability=non_capability):
+                self.assertIn(
+                    f"manual/unsupported until reviewed contract: {non_capability}",
+                    checklist_text,
+                )
+
+        self.assertIn(f"assessmentboundary={NEXT_BLOCKER_ID}", status_text)
+        self.assertIn("assessmentboundarymode=manual/unsupported", status_text)
+        self.assertIn(MANUAL_LIMITATION_SUMMARY.lower(), status_text)
+        self.assertIn("assessmentunsupporteduntilreviewedcontract=", status_text)
+        self.assertIn("learner-world state extraction", status_text)
+        self.assertIn("blocked", status_text)
+        self.assertNotIn("correctness scoring", status_text)
+        for assessment_limit in ASSESSMENT_LIMITS:
+            with self.subTest(status_assessment_limit=assessment_limit):
+                self.assertIn(assessment_limit, status_text)
+        for non_capability in NON_CAPABILITIES:
+            with self.subTest(status_non_capability=non_capability):
+                self.assertIn(non_capability, status_text)
+
+    def test_docs_name_boundary_and_blocker_without_overclaiming_assessment(self) -> None:
+        for path in BOUNDARY_DOCS:
+            text = normalized_text(path)
+            with self.subTest(path=path.relative_to(REPO_ROOT)):
+                self.assertIn(BOUNDARY_PHRASE, text)
+                self.assertIn(str(BOUNDARY_ARTIFACT.relative_to(REPO_ROOT)), text)
+                self.assertIn(NEXT_BLOCKER_ID, text)
+
+    def test_boundary_surfaces_do_not_make_unguarded_assessment_claims(self) -> None:
+        scanned_paths = [BOUNDARY_ARTIFACT, INSTRUCTOR_STUDENT_SCENARIO, *BOUNDARY_DOCS]
+
+        unguarded_claims = []
+        for path in scanned_paths:
+            text = path.read_text(encoding="utf-8")
+            normalized = re.sub(r"\n(?=\S)", " ", text)
+            for paragraph in re.split(r"\n\s*\n", normalized):
+                lower = paragraph.lower()
+                matches = [term for term in OVERCLAIM_TERMS if term in lower]
+                if matches and not any(marker in lower for marker in NEGATION_MARKERS):
+                    line_number = text.count("\n", 0, text.find(paragraph[:20])) + 1
+                    unguarded_claims.append(
+                        f"{path.relative_to(REPO_ROOT)}:{line_number}: {', '.join(matches)}"
+                    )
+
+        self.assertEqual(
+            [],
+            unguarded_claims,
+            "Learner-world boundary surfaces must not imply current grading or creative assessment.",
+        )
+
+
+if __name__ == "__main__":
+    unittest.main()

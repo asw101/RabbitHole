@@ -1,0 +1,40 @@
+*~*
+.metadata
+*.DS_Store
+.*.swp
+hs_*.log
+
+# m2eclipse
+/.classpath
+/.project
+/.settings
+target
+src_gen
+
+# zanata
+.zanata-cache
+
+# Ignore these projects from Looking Glass so that people don't add these files to the Alice repository by mistake.
+/lookingglass
+/nonfree/core/ide-nonfree/target/classes/org/alice/stageide/ast/sort/*.class
+*.class
+*.lst
+*.marker
+*.tokens
+bin/*
+
+# IntelliJ
+.idea/*
+*.iml
+out/*
+*.dae
+# Agent runtime/session artifacts
+.copilot/
+.claude/runtime/
+__pycache__/
+outputs/
+logs/
+
+# Test log artifacts
+logs/
+qa/outside-in/alice-desktop/logs/

@@ -1,0 +1,273 @@
+package org.lgna.project.migration.ast;
+
+import edu.cmu.cs.dennisc.java.util.logging.Logger;
+import edu.cmu.cs.dennisc.pattern.Crawlable;
+import org.alice.math.immutable.Angle;
+import org.alice.math.immutable.EulerAngles;
+import org.alice.math.immutable.UnitQuaternion;
+import org.lgna.project.ProjectVersion;
+import org.lgna.project.Version;
+import org.lgna.project.ast.*;
+import org.lgna.project.migration.AstMigration;
+import org.lgna.project.migration.MigrationManager;
+import org.lgna.project.virtualmachine.ReleaseVirtualMachine;
+import org.lgna.story.*;
+import org.lgna.story.Orientation;
+
+import java.util.ArrayList;
+import java.util.function.BiFunction;
+
+/*
+ * Used in OptionalMigrationManager when user requests to change SCamera into SVRUser.
+ */
+public class ReplaceCameraWithVR extends AstMigration {
+
+  AbstractType<?, ?, ?> cameraType = JavaType.getInstance(SCamera.class);
+  AbstractType<?, ?, ?> vrUserType = JavaType.getInstance(SVRUser.class);
+  AbstractType<?, ?, ?> cameraMarkerType = JavaType.getInstance(SCameraMarker.class);
+  ReleaseVirtualMachine vm = new ReleaseVirtualMachine();
+  private final String sCamera = SCamera.class.getSimpleName();
+  private final String getHeadset = "getHeadset";
+  private final String setPositionRelativeToVehicle = "setPositionRelativeToVehicle";
+  private final String setOrientationRelativeToVehicle = "setOrientationRelativeToVehicle";
+  private final double defaultHeight = 1.56;
+
+  public ReplaceCameraWithVR() {
+    super(ProjectVersion.getCurrentVersion());
+  }
+
+  // Since this migration is applied upon request it is always applicable
+  @Override
+  public boolean isApplicable(Version version) {
+    return true;
+  }
+
+  @Override
+  public final void migrate(Node root, final MigrationManager manager) {
+    root.crawl(crawlable -> migrateNode(crawlable, manager), CrawlPolicy.COMPLETE, null);
+  }
+
+  public void migrateNode(Crawlable node, MigrationManager manager) {
+    if (node instanceof UserField field) {
+      migrateField(field);
+    }
+    if (node instanceof UserLocal local) {
+      migrateType(local.valueType);
+    }
+    if (node instanceof UserParameter parameter) {
+      migrateType(parameter.valueType);
+    }
+    if (node instanceof MethodInvocation invocation) {
+      migrateMethod(invocation, manager);
+    }
+  }
+
+  protected void migrateField(UserField field) {
+    final AbstractType<?, ?, ?> oldFieldType = field.valueType.getValue();
+    if (oldFieldType == null || !sCamera.equals(oldFieldType.getName())) {
+      return;
+    }
+    field.valueType.setValue(vrUserType);
+    if (field.initializer.getValue() instanceof InstanceCreation) {
+      InstanceCreation instantiation = new InstanceCreation(vrUserType.getDeclaredConstructor());
+      field.initializer.setValue(instantiation);
+    }
+    if ("camera".equals(field.getName())) {
+      field.name.setValue("vrUser");
+    }
+    Logger.outln("Migrated field `%s` type from SCamera to SVRUser".formatted(field.getName()));
+  }
+
+  private void migrateType(DeclarationProperty<AbstractType<?, ?, ?>> property) {
+    final AbstractType<?, ?, ?> oldLocalType = property.getValue();
+    if (oldLocalType == null || !sCamera.equals(oldLocalType.getName())) {
+      return;
+    }
+    property.setValue(vrUserType);
+    Logger.outln("Converted type reference from SCamera to SVRUser");
+  }
+
+  private void migrateMethod(MethodInvocation invocation, MigrationManager manager) {
+    if (isMatchingMethod(invocation, vrUserType, setPositionRelativeToVehicle)) {
+      splitVrPositionStatement(invocation, manager);
+    }
+    if (isMatchingMethod(invocation, cameraMarkerType, setPositionRelativeToVehicle)) {
+      lowerMarkerPosition(invocation);
+    }
+    if (isMatchingMethod(invocation, vrUserType, setOrientationRelativeToVehicle)) {
+      splitVrOrientationStatement(invocation, manager);
+    }
+    if (isMatchingMethod(invocation, cameraMarkerType, setOrientationRelativeToVehicle)) {
+      levelMarkerOrientation(invocation);
+    }
+    AbstractMethod method = invocation.method.getValue();
+    if (!(method instanceof JavaMethod) || method.getDeclaringType() != cameraType) {
+      return;
+    }
+    AbstractType<?, ?, ?>[] paramTypes = getParameterTypes(method);
+    AbstractMethod vrUserMethod = vrUserType.findMethod(method.getName(), paramTypes);
+    invocation.method.setValue(vrUserMethod);
+    replaceRequiredParamReferences(method, vrUserMethod, invocation);
+    replaceKeyedParamReferences(method, vrUserMethod, invocation);
+    Logger.outln("Changed from SCamera.%s to SVRUser.%s".formatted(method.getName(), vrUserMethod.getName()));
+  }
+
+  private boolean isMatchingMethod(MethodInvocation invocation, AbstractType<?, ?, ?> type, String methodName) {
+    return methodName.equals(invocation.method.getValue().getName())
+        && type.equals(invocation.expression.getValue().getType());
+  }
+
+  private void splitVrOrientationStatement(MethodInvocation setOrientationCall, MigrationManager manager) {
+    // Get the ExpressionStatement holding the setOrientationCall
+    Node stmt = setOrientationCall.getParent();
+    // Get the block containing the statement
+    Node grandparent = stmt.getParent();
+    if (grandparent instanceof BlockStatement block) {
+      Expression orientationExp = setOrientationCall.requiredArguments.get(0).expression.getValue();
+      if (orientationExp instanceof InstanceCreation creation) {
+        final Object ori = creation.evaluate(vm);
+        if (ori instanceof Orientation cameraOrientation) {
+
+          UnitQuaternion vrUserOrientation = getLeveledOrientation(cameraOrientation);
+          replaceOrientationArgs(creation, vrUserOrientation);
+
+          UnitQuaternion headsetOrientation = SVRUser.HEADSET_ORIENTATION.asUnitQuaternion();
+          ExpressionStatement setHeadsetOrientation =
+              setHeadsetOrientationStatement(setOrientationCall.expression.getValue(), headsetOrientation);
+          manager.addFinalization(() -> block.statements.add(setHeadsetOrientation));
+
+          Logger.outln("Moved orientation from SCamera to SVRUser headset");
+        }
+      }
+    }
+
+  }
+
+  private UnitQuaternion getLeveledOrientation(Orientation orientation) {
+    return new EulerAngles(Angle.ZERO, orientation.asEulerAngles().yaw(), Angle.ZERO, EulerAngles.Order.YAW_PITCH_ROLL)
+        .asUnitQuaternion();
+  }
+
+  private static void replaceOrientationArgs(InstanceCreation creation, UnitQuaternion newOrientation) {
+    SimpleArgumentListProperty args = creation.requiredArguments;
+    args.get(0).expression.setValue(new DoubleLiteral(newOrientation.x()));
+    args.get(1).expression.setValue(new DoubleLiteral(newOrientation.y()));
+    args.get(2).expression.setValue(new DoubleLiteral(newOrientation.z()));
+    args.get(3).expression.setValue(new DoubleLiteral(newOrientation.w()));
+  }
+
+  private ExpressionStatement setHeadsetOrientationStatement(Expression userExpression, UnitQuaternion headsetOrientation) {
+    AbstractMethod headsetMethod = vrUserType.findMethod(getHeadset);
+    Expression getHeadsetExpression = new MethodInvocation(userExpression, headsetMethod);
+    AbstractMethod setOrientation = AstUtilities.lookupMethod(SVRHeadset.class, setOrientationRelativeToVehicle, Orientation.class, SetOrientationRelativeToVehicle.Detail[].class);
+
+    JavaConstructor constructor = JavaConstructor.getInstance(Orientation.class, Number.class, Number.class, Number.class, Number.class);
+    InstanceCreation headOrientation =
+        AstUtilities.createInstanceCreation(constructor,
+            new DoubleLiteral(headsetOrientation.x()),
+            new DoubleLiteral(headsetOrientation.y()),
+            new DoubleLiteral(headsetOrientation.z()),
+            new DoubleLiteral(headsetOrientation.w()));
+
+    return AstUtilities.createMethodInvocationStatement(getHeadsetExpression, setOrientation, headOrientation);
+  }
+
+  private void levelMarkerOrientation(MethodInvocation setOrientationCall) {
+    Expression orientationExp = setOrientationCall.requiredArguments.get(0).expression.getValue();
+    if (orientationExp instanceof InstanceCreation creation) {
+      final Object instance = creation.evaluate(vm);
+      if (instance instanceof Orientation orientation) {
+        UnitQuaternion leveledOrientation = getLeveledOrientation(orientation);
+        replaceOrientationArgs(creation, leveledOrientation);
+        Logger.outln("Leveled orientation of CameraMarker");
+      }
+    }
+  }
+
+  private void splitVrPositionStatement(MethodInvocation invocation, MigrationManager manager) {
+    // Individual ExpressionStatement holding the invocation
+    Node stmt = invocation.getParent();
+
+    Node grandparent = stmt.getParent();
+    if (grandparent instanceof BlockStatement block) {
+      Expression positionExp = invocation.requiredArguments.get(0).expression.getValue();
+      if (positionExp instanceof InstanceCreation creation) {
+        final Object pos = creation.evaluate(vm);
+        Runnable result;
+        if (pos instanceof Position cameraPosition) {
+
+          SimpleArgument arg = creation.requiredArguments.get(1);
+          arg.expression.setValue(new DoubleLiteral(cameraPosition.getUp() - defaultHeight));
+
+          AbstractMethod headsetMethod = vrUserType.findMethod(getHeadset);
+          Expression getHeadsetExpression = new MethodInvocation(invocation.expression.getValue(), headsetMethod);
+          AbstractMethod setPosition = AstUtilities.lookupMethod(SVRHeadset.class, setPositionRelativeToVehicle, Position.class, SetPositionRelativeToVehicle.Detail[].class);
+
+          JavaConstructor constructor = JavaConstructor.getInstance(Position.class, Number.class, Number.class, Number.class);
+          InstanceCreation headPosition = AstUtilities.createInstanceCreation(constructor, new DoubleLiteral(0.0), new DoubleLiteral(defaultHeight), new DoubleLiteral(0.0));
+
+          result = () -> block.statements.add(AstUtilities.createMethodInvocationStatement(getHeadsetExpression, setPosition, headPosition));
+          manager.addFinalization(result);
+          Logger.outln("Split position on SCamera between SVRUser and headset");
+        }
+      }
+    }
+  }
+
+  private void lowerMarkerPosition(MethodInvocation setPositionCall) {
+    Expression positionExp = setPositionCall.requiredArguments.get(0).expression.getValue();
+    if (positionExp instanceof InstanceCreation creation) {
+      final Object pos = creation.evaluate(vm);
+      if (pos instanceof Position markerPosition) {
+        SimpleArgument arg = creation.requiredArguments.get(1);
+        arg.expression.setValue(new DoubleLiteral(markerPosition.getUp() - defaultHeight));
+        Logger.outln("Lowered position on CameraMarker");
+      }
+    }
+  }
+
+  private static AbstractType<?, ?, ?>[] getParameterTypes(AbstractMethod method) {
+    AbstractParameter[] parameters = method.getAllParameters();
+    AbstractType<?, ?, ?>[] paramTypes = new AbstractType<?, ?, ?>[parameters.length];
+    for (int i = 0; i < parameters.length; i++) {
+      paramTypes[i] = parameters[i].getValueType();
+    }
+    return paramTypes;
+  }
+
+  private void replaceRequiredParamReferences(AbstractMethod oldMethod, AbstractMethod newMethod, MethodInvocation invocation) {
+    replaceParamReferences(oldMethod, newMethod, invocation.getRequiredArgumentsProperty().getValue(), this::findNewRequiredParam);
+  }
+
+  private void replaceKeyedParamReferences(AbstractMethod oldMethod, AbstractMethod newMethod, MethodInvocation invocation) {
+    replaceParamReferences(oldMethod, newMethod, invocation.getKeyedArgumentsProperty().getValue(), this::findNewKeyedParam);
+  }
+
+  private void replaceParamReferences(AbstractMethod oldMethod, AbstractMethod newMethod, ArrayList<? extends AbstractArgument> args, BiFunction<JavaMethodParameter, AbstractMethod, AbstractParameter> filter) {
+    for (AbstractArgument argument : args) {
+      if (argument.parameter.getValue() instanceof JavaMethodParameter javaParam) {
+        if (oldMethod == javaParam.getCode()) {
+          argument.parameter.setValue(filter.apply(javaParam, newMethod));
+        }
+      }
+    }
+  }
+
+  private JavaMethodParameter findNewRequiredParam(JavaMethodParameter oldJavaParam, AbstractMethod newMethod) {
+    for (AbstractParameter parameter : newMethod.getRequiredParameters()) {
+      final JavaMethodParameter newJavaParam = (JavaMethodParameter) parameter;
+      if (oldJavaParam.getIndex() == newJavaParam.getIndex()) {
+        return newJavaParam;
+      }
+    }
+    return null;
+  }
+
+  private AbstractParameter findNewKeyedParam(JavaMethodParameter oldJavaParam, AbstractMethod newMethod) {
+    AbstractParameter keyParam = newMethod.getKeyedParameter();
+    if (keyParam.getValueType() == oldJavaParam.getValueType()) {
+      return keyParam;
+    }
+    return null;
+  }
+}

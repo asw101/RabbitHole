@@ -1,0 +1,907 @@
+package org.lgna.story.resourceutilities;
+
+import edu.cmu.cs.dennisc.pattern.Tuple2;
+import org.alice.math.immutable.AxisAlignedBox;
+import org.lgna.story.implementation.alice.AliceResourceClassUtilities;
+import org.lgna.story.implementation.alice.AliceResourceUtilities;
+import org.lgna.story.resources.BipedResource;
+import org.lgna.story.resources.JointedModelResource;
+import org.lgna.story.resources.PropResource;
+import org.junit.Test;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
+
+import javax.imageio.ImageIO;
+import javax.tools.JavaCompiler;
+import javax.tools.ToolProvider;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.StringReader;
+import java.io.UncheckedIOException;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.List;
+import java.util.stream.Stream;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+public class ModelExportTest {
+
+  @Test
+  public void modelExporterCreatesXmlForClassAndDefaultResource() throws Exception {
+    ModelResourceExporter exporter = createSyntheticPropExporter();
+
+    Document xml = parseXml(exporter.createXMLString());
+
+    Element root = xml.getDocumentElement();
+    assertEquals("AliceModel", root.getNodeName());
+    assertEquals("TestProp", root.getAttribute("name"));
+    assertEquals("Alice Test", root.getAttribute("creator"));
+    assertEquals("2026", root.getAttribute("creationYear"));
+    assertEquals("TRUE", root.getAttribute("placeOnGround"));
+    assertEquals("class-tag", root.getElementsByTagName("Tag").item(0).getTextContent());
+    assertEquals("class-group", root.getElementsByTagName("GroupTag").item(0).getTextContent());
+    assertEquals("class-theme", root.getElementsByTagName("ThemeTag").item(0).getTextContent());
+
+    Element resource = (Element) root.getElementsByTagName("Resource").item(0);
+    assertNotNull(resource);
+    assertEquals("DEFAULT", resource.getAttribute("resourceName"));
+    assertEquals("TestProp", resource.getAttribute("modelName"));
+    assertEquals("DEFAULT", resource.getAttribute("textureName"));
+    assertEquals("Resource Artist", resource.getAttribute("creator"));
+    assertEquals("2025", resource.getAttribute("creationYear"));
+  }
+
+  @Test
+  public void addResourceOmitsRedundantAndBlankAttributionFromXml() throws Exception {
+    ModelResourceExporter exporter = new ModelResourceExporter("TestProp", ModelClassData.PROP_CLASS_DATA);
+    exporter.addAttribution("Alice Test", "2026");
+    exporter.addResource("MatchingAttributionProp", "Default", "ALICE", "Alice Test", "2026");
+    exporter.addResource("BlankAttributionProp", "Default", "ALICE", "", "");
+
+    Document xml = parseXml(exporter.createXMLString());
+    Element root = xml.getDocumentElement();
+    assertEquals("Alice Test", root.getAttribute("creator"));
+    assertEquals("2026", root.getAttribute("creationYear"));
+
+    NodeList resources = root.getElementsByTagName("Resource");
+    assertEquals(2, resources.getLength());
+    assertResourceWithoutAttribution(findResourceByModelName(resources, "MatchingAttributionProp"));
+    assertResourceWithoutAttribution(findResourceByModelName(resources, "BlankAttributionProp"));
+  }
+
+  @Test
+  public void modelExporterCreatesCompilableResourceJavaCode() throws Exception {
+    ModelResourceExporter exporter = createSyntheticPropExporter();
+
+    String javaCode = exporter.createJavaCode();
+
+    assertTrue(javaCode.contains("package org.lgna.story.resources.prop;"));
+    assertTrue(javaCode.contains("public enum TestPropResource implements org.lgna.story.resources.PropResource"));
+    assertTrue(javaCode.contains("DEFAULT;"));
+    assertTrue(javaCode.contains("createImplementation"));
+    assertCompiles("org/lgna/story/resources/prop/TestPropResource.java", javaCode);
+  }
+
+  @Test
+  public void modelExporterPreservesDeprecatedMetadataInXmlAndGeneratedJava() throws Exception {
+    ModelResourceExporter exporter = createSyntheticPropExporter();
+    exporter.setIsDeprecated(true);
+
+    Document xml = parseXml(exporter.createXMLString());
+    String javaCode = exporter.createJavaCode();
+
+    assertEquals("TRUE", xml.getDocumentElement().getAttribute("deprecated"));
+    assertFalse(((Element) xml.getDocumentElement().getElementsByTagName("Resource").item(0)).hasAttribute("deprecated"));
+    assertTrue(javaCode.contains("@Deprecated"));
+    assertAppearsBefore(javaCode, "@Deprecated", "public enum TestPropResource");
+    assertTrue(javaCode.contains("public enum TestPropResource implements org.lgna.story.resources.PropResource"));
+    assertCompiles("org/lgna/story/resources/prop/TestPropResource.java", javaCode);
+  }
+
+  @Test
+  public void modelExporterKeepsGeneratedEnumConstantsAndResourceTypes() throws Exception {
+    ModelResourceExporter exporter = createSyntheticPropExporter();
+    exporter.addResource("VariantProp", "Default", "SIMS2", null, null);
+
+    String javaCode = exporter.createJavaCode();
+
+    assertTrue(javaCode.contains("DEFAULT,"));
+    assertTrue(javaCode.contains("VARIANT_PROP( ImplementationAndVisualType.SIMS2 )"));
+    assertCompiles("org/lgna/story/resources/prop/TestPropResource.java", javaCode);
+  }
+
+  @Test
+  public void createResourceEnumNameCombinesModelAndNonDefaultTextureNames() {
+    assertEquals(
+        "VARIANT_PROP_BLUE_STRIPE",
+        new ModelResourceExporter("TestProp", ModelClassData.PROP_CLASS_DATA).createResourceEnumName("VariantProp", "blueStripe")
+    );
+  }
+
+  @Test
+  public void modelExporterNamesClassResourceVariantsByTextureOnly() throws Exception {
+    ModelResourceExporter exporter = new ModelResourceExporter("TestProp", ModelClassData.PROP_CLASS_DATA);
+    exporter.setBoundingBox("TestProp", AxisAlignedBox.createAxisAlignedBox(-1.0, 0.0, -2.0, 1.0, 3.0, 2.0));
+    exporter.addResource("TestProp", "Default", "ALICE", null, null);
+    exporter.addResource("TestProp", "BlueStripe", "ALICE", null, null);
+
+    assertEquals("BLUE_STRIPE", exporter.createResourceEnumName("TestProp", "BlueStripe"));
+
+    Document xml = parseXml(exporter.createXMLString());
+    NodeList resources = xml.getDocumentElement().getElementsByTagName("Resource");
+
+    assertEquals(2, resources.getLength());
+    Element defaultResource = (Element) resources.item(0);
+    assertResourceIdentity(defaultResource, "DEFAULT", "TestProp", "DEFAULT");
+    Element blueStripe = (Element) resources.item(1);
+    assertResourceIdentity(blueStripe, "BLUE_STRIPE", "TestProp", "BLUE_STRIPE");
+    assertFalse(defaultResource.getAttribute("resourceName").equals(blueStripe.getAttribute("resourceName")));
+
+    String javaCode = exporter.createJavaCode();
+    assertTrue(javaCode.contains("\tDEFAULT,"));
+    assertTrue(javaCode.contains("\tBLUE_STRIPE;"));
+    assertFalse(javaCode.contains("TEST_PROP_BLUE_STRIPE"));
+  }
+
+  @Test
+  public void modelExporterHonorsForcedEnumNamesWithoutTrailingComma() throws Exception {
+    ModelResourceExporter exporter = createSyntheticPropExporter();
+    exporter.addResource("VariantProp", "Default", "SIMS2", null, null);
+    exporter.addForcedEnumNames(null, Collections.singletonList("DEFAULT"));
+
+    String javaCode = exporter.createJavaCode();
+
+    assertTrue(javaCode.contains("\tDEFAULT;"));
+    assertFalse(javaCode.contains("VARIANT_PROP"));
+    assertCompiles("org/lgna/story/resources/prop/TestPropResource.java", javaCode);
+  }
+
+  @Test
+  public void modelExporterWritesJointFieldsInParentReadyOrder() throws Exception {
+    ModelResourceExporter exporter = createSyntheticPropExporter();
+    exporter.setJointMap(Arrays.asList(
+        Tuple2.createInstance("hand", "arm"),
+        Tuple2.createInstance("root", null),
+        Tuple2.createInstance("finger", "hand"),
+        Tuple2.createInstance("arm", "root")));
+
+    String javaCode = exporter.createJavaCode();
+
+    assertAppearsBefore(javaCode, "JointId root =", "JointId arm =");
+    assertAppearsBefore(javaCode, "JointId arm =", "JointId hand =");
+    assertAppearsBefore(javaCode, "JointId hand =", "JointId finger =");
+    assertCompiles("org/lgna/story/resources/prop/TestPropResource.java", javaCode);
+  }
+
+  @Test
+  public void modelExporterOnlyWritesSubResourceTagsUniqueFromParent() throws Exception {
+    ModelResourceExporter exporter = new ModelResourceExporter("TestProp", ModelClassData.PROP_CLASS_DATA);
+    exporter.addTags("shared-tag");
+    exporter.addGroupTags("shared-group");
+    exporter.addThemeTags("shared-theme");
+    exporter.setBoundingBox("TestProp", AxisAlignedBox.createAxisAlignedBox(-1.0, 0.0, -2.0, 1.0, 3.0, 2.0));
+    exporter.addResource("VariantProp", "Default", "ALICE", null, null);
+    exporter.setBoundingBox("VariantProp", AxisAlignedBox.createAxisAlignedBox(-0.5, 0.0, -0.5, 0.5, 1.0, 0.5));
+    exporter.addSubResourceTags("VariantProp", "Default", "shared-tag", "variant-tag");
+    exporter.addSubResourceGroupTags("VariantProp", "Default", "shared-group", "variant-group");
+    exporter.addSubResourceThemeTags("VariantProp", "Default", "shared-theme", "variant-theme");
+
+    Document xml = parseXml(exporter.createXMLString());
+
+    Element resource = (Element) xml.getDocumentElement().getElementsByTagName("Resource").item(0);
+    assertOnlyChildText(resource, "Tag", "variant-tag");
+    assertOnlyChildText(resource, "GroupTag", "variant-group");
+    assertOnlyChildText(resource, "ThemeTag", "variant-theme");
+  }
+
+  @Test
+  public void subResourceTagsWithNullTextureApplyToEveryMatchingModel() throws Exception {
+    ModelResourceExporter exporter = new ModelResourceExporter("TestProp", ModelClassData.PROP_CLASS_DATA);
+    exporter.setBoundingBox("TestProp", AxisAlignedBox.createAxisAlignedBox(-1.0, 0.0, -2.0, 1.0, 3.0, 2.0));
+    exporter.addResource("VariantProp", "Default", "ALICE", null, null);
+    exporter.addResource("VariantProp", "Blue", "ALICE", null, null);
+    exporter.setBoundingBox("VariantProp", AxisAlignedBox.createAxisAlignedBox(-0.5, 0.0, -0.5, 0.5, 1.0, 0.5));
+
+    exporter.addSubResourceTags("VariantProp", null, "variant-tag");
+
+    Document xml = parseXml(exporter.createXMLString());
+    NodeList resources = xml.getDocumentElement().getElementsByTagName("Resource");
+
+    assertEquals(2, resources.getLength());
+    assertOnlyChildText((Element) resources.item(0), "Tag", "variant-tag");
+    assertOnlyChildText((Element) resources.item(1), "Tag", "variant-tag");
+  }
+
+  @Test
+  public void modelExporterComputesClassBoundingBoxFromSubResourceBounds() throws Exception {
+    ModelResourceExporter exporter = new ModelResourceExporter("TestProp", ModelClassData.PROP_CLASS_DATA);
+    exporter.addResource("FirstProp", "Default", "ALICE", null, null);
+    exporter.addResource("SecondProp", "Default", "ALICE", null, null);
+    exporter.setBoundingBox("FirstProp", AxisAlignedBox.createAxisAlignedBox(-1.0, 0.0, -2.0, 1.0, 3.0, 2.0));
+    exporter.setBoundingBox("SecondProp", AxisAlignedBox.createAxisAlignedBox(-3.0, -1.0, -4.0, 2.0, 4.0, 5.0));
+
+    Document xml = parseXml(exporter.createXMLString());
+    Element classBox = (Element) xml.getDocumentElement().getElementsByTagName("BoundingBox").item(0);
+    Element min = (Element) classBox.getElementsByTagName("Min").item(0);
+    Element max = (Element) classBox.getElementsByTagName("Max").item(0);
+
+    assertEquals("-3.0", min.getAttribute("x"));
+    assertEquals("-1.0", min.getAttribute("y"));
+    assertEquals("-4.0", min.getAttribute("z"));
+    assertEquals("2.0", max.getAttribute("x"));
+    assertEquals("4.0", max.getAttribute("y"));
+    assertEquals("5.0", max.getAttribute("z"));
+  }
+
+  @Test
+  public void modelResourceExporterDoesNotExposeLiveBoundingBoxMap() {
+    for (Method method : ModelResourceExporter.class.getDeclaredMethods()) {
+      assertFalse(
+          "Bounding box state must be updated through explicit exporter methods: " + method,
+          "getBoundingBoxes".equals(method.getName()));
+    }
+  }
+
+  @Test
+  public void createXmlStringPersistsComputedClassBoundingBoxInExporterState() throws Exception {
+    ModelResourceExporter exporter = new ModelResourceExporter("TestProp", ModelClassData.PROP_CLASS_DATA);
+    exporter.addResource("FirstProp", "Default", "ALICE", null, null);
+    exporter.addResource("SecondProp", "Default", "ALICE", null, null);
+    exporter.setBoundingBox("FirstProp", AxisAlignedBox.createAxisAlignedBox(-1.0, 0.0, -2.0, 1.0, 3.0, 2.0));
+    exporter.setBoundingBox("SecondProp", AxisAlignedBox.createAxisAlignedBox(-3.0, -1.0, -4.0, 2.0, 4.0, 5.0));
+
+    assertNull(exporter.getBoundingBox("TestProp"));
+
+    assertNotNull(exporter.createXMLString());
+
+    assertBoundingBox(exporter.getBoundingBox("TestProp"), -3.0, -1.0, -4.0, 2.0, 4.0, 5.0);
+  }
+
+  @Test
+  public void createXmlStringPersistsRegisteredSubResourceBoundingBoxInExporterState() throws Exception {
+    ModelResourceExporter exporter = new ModelResourceExporter("TestProp", ModelClassData.PROP_CLASS_DATA);
+    exporter.addResource("VariantProp", "Default", "ALICE", null, null);
+    AxisAlignedBox variantBox = AxisAlignedBox.createAxisAlignedBox(-0.5, 0.0, -0.5, 0.5, 1.0, 0.5);
+    exporter.setBoundingBox("VariantProp", variantBox);
+    ModelSubResourceExporter subResource = exporter.getSubResources().get(0);
+
+    assertNull(subResource.getBbox());
+
+    assertNotNull(exporter.createXMLString());
+
+    assertEquals(variantBox, subResource.getBbox());
+  }
+
+  @Test
+  public void createXmlStringRefreshesSubResourceBoundingBoxFromExporterState() throws Exception {
+    ModelResourceExporter exporter = new ModelResourceExporter("TestProp", ModelClassData.PROP_CLASS_DATA);
+    exporter.addResource("VariantProp", "Default", "ALICE", null, null);
+    AxisAlignedBox staleBox = AxisAlignedBox.createAxisAlignedBox(10.0, 10.0, 10.0, 11.0, 11.0, 11.0);
+    AxisAlignedBox registeredBox = AxisAlignedBox.createAxisAlignedBox(-0.5, 0.0, -0.5, 0.5, 1.0, 0.5);
+    ModelSubResourceExporter subResource = exporter.getSubResources().get(0);
+    subResource.setBbox(staleBox);
+    exporter.setBoundingBox("VariantProp", registeredBox);
+
+    assertNotNull(exporter.createXMLString());
+
+    assertEquals(registeredBox, subResource.getBbox());
+  }
+
+  @Test
+  public void createXmlFileWithFreshGenerationPersistsMissingBoundingBoxes() throws Exception {
+    ModelResourceExporter exporter = new ModelResourceExporter("TestProp", ModelClassData.PROP_CLASS_DATA);
+    exporter.addResource("VariantProp", "Default", "ALICE", null, null);
+    AxisAlignedBox variantBox = AxisAlignedBox.createAxisAlignedBox(-0.5, 0.0, -0.5, 0.5, 1.0, 0.5);
+    exporter.setBoundingBox("VariantProp", variantBox);
+    ModelSubResourceExporter subResource = exporter.getSubResources().get(0);
+    Path root = newTestWorkDir("xml-file-bounding-box-state");
+
+    assertNull(exporter.getBoundingBox("TestProp"));
+    assertNull(subResource.getBbox());
+
+    File xmlFile = exporter.createXMLFile(root.toString(), true);
+
+    assertTrue(Files.isRegularFile(xmlFile.toPath()));
+    assertEquals(variantBox, exporter.getBoundingBox("TestProp"));
+    assertEquals(variantBox, subResource.getBbox());
+  }
+
+  @Test
+  public void createXmlFileWritesPackageResourcePathAndGeneratedXml() throws Exception {
+    ModelResourceExporter exporter = createSyntheticPropExporter();
+    Path root = newTestWorkDir("xml-file");
+
+    File xmlFile = exporter.createXMLFile(root.toString(), true);
+
+    assertEquals(root.resolve("org/lgna/story/resources/prop/TestProp.xml"), xmlFile.toPath());
+    Document xml = parseXml(Files.readString(xmlFile.toPath(), StandardCharsets.UTF_8));
+    assertEquals("TestProp", xml.getDocumentElement().getAttribute("name"));
+    assertEquals("DEFAULT", ((Element) xml.getDocumentElement().getElementsByTagName("Resource").item(0)).getAttribute("resourceName"));
+  }
+
+  @Test
+  public void createXmlFileSurfacesOutputFailures() throws Exception {
+    ModelResourceExporter exporter = createSyntheticPropExporter();
+    Path rootFile = newTestWorkDir("xml-output-failure").resolve("not-a-directory");
+    Files.writeString(rootFile, "blocks child paths", StandardCharsets.UTF_8);
+
+    assertThrows(IOException.class, () -> exporter.createXMLFile(rootFile.toString(), true));
+
+    assertTrue(Files.isRegularFile(rootFile));
+  }
+
+  @Test
+  public void saveThumbnailsSurfacesBadThumbnailWithoutDeletingIt() throws Exception {
+    ModelResourceExporter exporter = createSyntheticPropExporter();
+    Path root = newTestWorkDir("bad-thumbnail");
+    String thumbnailName = AliceResourceUtilities.getThumbnailResourceFileName("TestProp", "Default");
+    Path thumbnailPath = Path.of(exporter.getThumbnailPath(root.toString(), thumbnailName));
+    Files.createDirectories(thumbnailPath.getParent());
+    Files.writeString(thumbnailPath, "not an image", StandardCharsets.UTF_8);
+    exporter.addExistingThumbnail(thumbnailName, thumbnailPath.toFile());
+
+    IOException error = assertThrows(IOException.class, () -> exporter.saveThumbnailsToDir(root.toString()));
+
+    assertTrue(error.getMessage().contains("Failed to create class thumbnail"));
+    assertTrue("Bad thumbnail should be preserved for diagnosis", Files.exists(thumbnailPath));
+  }
+
+  @Test
+  public void saveThumbnailsFailsWhenNoSubResourcesWereRegistered() throws Exception {
+    ModelResourceExporter exporter = new ModelResourceExporter("TestProp", ModelClassData.PROP_CLASS_DATA);
+    Path root = newTestWorkDir("no-subresources");
+
+    IOException error = assertThrows(IOException.class, () -> exporter.saveThumbnailsToDir(root.toString()));
+
+    assertTrue(error.getMessage().contains("no sub resources were registered"));
+  }
+
+  @Test
+  public void saveThumbnailsFailsWhenRegisteredThumbnailDisappearsBeforeSave() throws Exception {
+    ModelResourceExporter exporter = createSyntheticPropExporter();
+    Path root = newTestWorkDir("deleted-thumbnail");
+    String thumbnailName = AliceResourceUtilities.getThumbnailResourceFileName("TestProp", "Default");
+    Path thumbnailPath = Path.of(exporter.getThumbnailPath(root.toString(), thumbnailName));
+    Files.createDirectories(thumbnailPath.getParent());
+    Files.writeString(thumbnailPath, "removed before save", StandardCharsets.UTF_8);
+    exporter.addExistingThumbnail(thumbnailName, thumbnailPath.toFile());
+    Files.delete(thumbnailPath);
+
+    FileNotFoundException error = assertThrows(FileNotFoundException.class, () -> exporter.saveThumbnailsToDir(root.toString()));
+
+    assertTrue(error.getMessage().contains(thumbnailPath.toString()));
+  }
+
+  @Test
+  public void saveThumbnailsCreatesClassThumbnailFromFirstResourceThumbnail() throws Exception {
+    ModelResourceExporter exporter = createSyntheticPropExporter();
+    Path root = newTestWorkDir("valid-thumbnail");
+    String thumbnailName = AliceResourceUtilities.getThumbnailResourceFileName("TestProp", "Default");
+    Path thumbnailPath = Path.of(exporter.getThumbnailPath(root.toString(), thumbnailName));
+    Files.createDirectories(thumbnailPath.getParent());
+    BufferedImage thumbnail = new BufferedImage(3, 2, BufferedImage.TYPE_INT_ARGB);
+    thumbnail.setRGB(0, 0, 0xFFFF0000);
+    ImageIO.write(thumbnail, "png", thumbnailPath.toFile());
+    exporter.addExistingThumbnail(thumbnailName, thumbnailPath.toFile());
+
+    List<File> savedThumbnails = exporter.saveThumbnailsToDir(root.toString());
+
+    String classThumbnailName = AliceResourceUtilities.getThumbnailResourceFileName("TestProp", null);
+    Path classThumbnailPath = Path.of(exporter.getThumbnailPath(root.toString(), classThumbnailName));
+    assertEquals(2, savedThumbnails.size());
+    assertTrue(savedThumbnails.contains(thumbnailPath.toFile()));
+    assertTrue(savedThumbnails.contains(classThumbnailPath.toFile()));
+    BufferedImage classThumbnail = ImageIO.read(classThumbnailPath.toFile());
+    assertNotNull(classThumbnail);
+    assertEquals(3, classThumbnail.getWidth());
+    assertEquals(2, classThumbnail.getHeight());
+  }
+
+  private static ModelResourceExporter createSyntheticPropExporter() {
+    ModelResourceExporter exporter = new ModelResourceExporter("TestProp", ModelClassData.PROP_CLASS_DATA);
+    exporter.addAttribution("Alice Test", "2026");
+    exporter.setPlaceOnGround(true);
+    exporter.addTags("class-tag");
+    exporter.addGroupTags("class-group");
+    exporter.addThemeTags("class-theme");
+    exporter.setBoundingBox("TestProp", AxisAlignedBox.createAxisAlignedBox(-1.0, 0.0, -2.0, 1.0, 3.0, 2.0));
+    exporter.addResource("TestProp", "Default", "ALICE", "Resource Artist", "2025");
+    return exporter;
+  }
+
+  private static Document parseXml(String xml) throws Exception {
+    return javax.xml.parsers.DocumentBuilderFactory.newInstance()
+        .newDocumentBuilder()
+        .parse(new InputSource(new StringReader(xml)));
+  }
+
+  private static void assertOnlyChildText(Element parent, String childTag, String expectedText) {
+    NodeList nodes = parent.getElementsByTagName(childTag);
+    assertEquals(1, nodes.getLength());
+    assertEquals(expectedText, nodes.item(0).getTextContent());
+  }
+
+  private static void assertResourceWithoutAttribution(Element resource) {
+    assertFalse(resource.hasAttribute("creator"));
+    assertFalse(resource.hasAttribute("creationYear"));
+  }
+
+  private static void assertResourceIdentity(Element resource, String resourceName, String modelName, String textureName) {
+    assertEquals(resourceName, resource.getAttribute("resourceName"));
+    assertEquals(modelName, resource.getAttribute("modelName"));
+    assertEquals(textureName, resource.getAttribute("textureName"));
+  }
+
+  private static Element findResourceByModelName(NodeList resources, String modelName) {
+    for (int i = 0; i < resources.getLength(); i++) {
+      Element resource = (Element) resources.item(i);
+      if (modelName.equals(resource.getAttribute("modelName"))) {
+        return resource;
+      }
+    }
+    throw new AssertionError("Resource not found for modelName " + modelName);
+  }
+
+  private static void assertAppearsBefore(String text, String first, String second) {
+    int firstIndex = text.indexOf(first);
+    int secondIndex = text.indexOf(second);
+    assertTrue(first + " should be present", firstIndex >= 0);
+    assertTrue(second + " should be present", secondIndex >= 0);
+    assertTrue(first + " should appear before " + second, firstIndex < secondIndex);
+  }
+
+  private static void assertBoundingBox(AxisAlignedBox boundingBox, double xMinimum, double yMinimum, double zMinimum, double xMaximum, double yMaximum, double zMaximum) {
+    assertNotNull(boundingBox);
+    assertEquals(xMinimum, boundingBox.getXMinimum(), 0.0);
+    assertEquals(yMinimum, boundingBox.getYMinimum(), 0.0);
+    assertEquals(zMinimum, boundingBox.getZMinimum(), 0.0);
+    assertEquals(xMaximum, boundingBox.getXMaximum(), 0.0);
+    assertEquals(yMaximum, boundingBox.getYMaximum(), 0.0);
+    assertEquals(zMaximum, boundingBox.getZMaximum(), 0.0);
+  }
+
+  private static void assertCompiles(String sourcePath, String source) throws Exception {
+    JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+    assertNotNull("Tests must run on a JDK, not a JRE", compiler);
+
+    Path workRoot = newTestWorkDir("compiler");
+    Path sourceRoot = workRoot.resolve("source");
+    Path classRoot = workRoot.resolve("classes");
+    Path sourceFile = sourceRoot.resolve(sourcePath);
+    Files.createDirectories(sourceFile.getParent());
+    Files.createDirectories(classRoot);
+    Files.writeString(sourceFile, source, StandardCharsets.UTF_8);
+
+    ByteArrayOutputStream compilerOutput = new ByteArrayOutputStream();
+    int result = compiler.run(
+        null,
+        compilerOutput,
+        compilerOutput,
+        "-classpath",
+        System.getProperty("java.class.path"),
+        "-d",
+        classRoot.toString(),
+        sourceFile.toString()
+    );
+
+    assertEquals(compilerOutput.toString(StandardCharsets.UTF_8), 0, result);
+  }
+
+  private static Path newTestWorkDir(String name) throws IOException {
+    Path workRoot = Path.of("target", "test-work", ModelExportTest.class.getSimpleName(), name).toAbsolutePath();
+    deleteRecursively(workRoot);
+    Files.createDirectories(workRoot);
+    return workRoot;
+  }
+
+  private static void deleteRecursively(Path path) throws IOException {
+    if (Files.notExists(path)) {
+      return;
+    }
+    try (Stream<Path> paths = Files.walk(path)) {
+      paths.sorted(Comparator.reverseOrder()).forEach(ModelExportTest::deleteIfExists);
+    } catch (UncheckedIOException e) {
+      throw e.getCause();
+    }
+  }
+
+  private static void deleteIfExists(Path path) {
+    try {
+      Files.deleteIfExists(path);
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
+  }
+
+  // ── Joint suppression/hiding characterization ────────────────────
+
+  @Test
+  public void shouldHideJointsOfArrayReturnsTrueForHiddenArray() {
+    ModelResourceExporter exporter = new ModelResourceExporter("TestBiped", ModelClassData.BIPED_CLASS_DATA);
+    exporter.addArrayNamesToHideElementsOf(Collections.singletonList("TAIL"));
+    assertTrue("TAIL should be hidden", exporter.shouldHideJointsOfArray("TAIL"));
+  }
+
+  @Test
+  public void shouldHideJointsOfArrayReturnsFalseForNonHiddenArray() {
+    ModelResourceExporter exporter = new ModelResourceExporter("TestBiped", ModelClassData.BIPED_CLASS_DATA);
+    assertFalse("ARM should not be hidden", exporter.shouldHideJointsOfArray("ARM"));
+  }
+
+  @Test
+  public void addJointToSuppressAffectsGeneratedJavaCode() throws Exception {
+    ModelResourceExporter exporter = new ModelResourceExporter("TestProp", ModelClassData.PROP_CLASS_DATA);
+    exporter.addAttribution("Alice Test", "2026");
+    exporter.addResource("TestProp", "Default", "ALICE", "Resource Artist", "2025");
+    exporter.addJointIdsToSuppress(Collections.singletonList("SPINE_UPPER"));
+    String javaCode = exporter.createJavaCode();
+    assertFalse("Suppressed joint should not appear in generated code",
+        javaCode.contains("SPINE_UPPER"));
+  }
+
+  @Test
+  public void accessorMethodNameFollowsCamelCaseConvention() {
+    String enumName = "LEFT_ARM";
+    String expected = "getLeftArm";
+    String actual = "get" + org.lgna.story.implementation.alice.AliceResourceUtilities.enumToCamelCase(enumName);
+    assertEquals("Accessor method name should be camelCase", expected, actual);
+  }
+
+  @Test
+  public void createResourceEnumNameUsesTextureEnumWhenModelMatchesClassName() {
+    ModelResourceExporter exporter = new ModelResourceExporter("TestModel", ModelClassData.PROP_CLASS_DATA);
+    String result = exporter.createResourceEnumName("TestModel", "TestModel");
+    assertEquals("TEST_MODEL", result);
+  }
+
+  @Test
+  public void createResourceEnumNameUsesTextureNameWhenDifferent() {
+    ModelResourceExporter exporter = new ModelResourceExporter("TestModel", ModelClassData.PROP_CLASS_DATA);
+    String result = exporter.createResourceEnumName("TestModel", "BLUE");
+    assertEquals("BLUE", result);
+  }
+
+  // ── Dead code removal contracts (#524) ───────────────────────────
+  // These tests verify that dead code has been removed from ModelResourceExporter.
+  // They FAIL until the dead code is actually removed.
+
+  @Test
+  public void exporterDoesNotContainIsMoreRecentThanDateFile() {
+    for (Method m : ModelResourceExporter.class.getDeclaredMethods()) {
+      if ("isMoreRecentThan".equals(m.getName())
+          && m.getParameterCount() == 2
+          && m.getParameterTypes()[0] == Date.class
+          && m.getParameterTypes()[1] == File.class) {
+        fail("isMoreRecentThan(Date, File) is dead code and must be removed");
+      }
+    }
+  }
+
+  @Test
+  public void exporterDoesNotContainIsMoreRecentThanDateDate() {
+    for (Method m : ModelResourceExporter.class.getDeclaredMethods()) {
+      if ("isMoreRecentThan".equals(m.getName())
+          && m.getParameterCount() == 2
+          && m.getParameterTypes()[0] == Date.class
+          && m.getParameterTypes()[1] == Date.class) {
+        fail("isMoreRecentThan(Date, Date) is dead code and must be removed");
+      }
+    }
+  }
+
+  @Test
+  public void exporterDoesNotContainGetBestClassDataForJointList() {
+    for (Method m : ModelResourceExporter.class.getDeclaredMethods()) {
+      assertFalse("getBestClassDataForJointList is dead code and must be removed",
+          "getBestClassDataForJointList".equals(m.getName()));
+    }
+  }
+
+  @Test
+  public void exporterDoesNotContainPotentialModelClassDataOptionsField() {
+    for (Field f : ModelResourceExporter.class.getDeclaredFields()) {
+      assertFalse("POTENTIAL_MODEL_CLASS_DATA_OPTIONS is dead code and must be removed",
+          "POTENTIAL_MODEL_CLASS_DATA_OPTIONS".equals(f.getName()));
+    }
+  }
+
+  @Test
+  public void exporterDoesNotContainGetExistingJointIdPairs() {
+    for (Method m : ModelResourceExporter.class.getDeclaredMethods()) {
+      assertFalse("getExistingJointIdPairs is dead code and must be removed",
+          "getExistingJointIdPairs".equals(m.getName()));
+    }
+  }
+
+  // ── Extraction contracts (#524) ──────────────────────────────────
+  // These tests verify methods have been extracted to ModelResourceJavaGenerator.
+  // They FAIL until the extraction is complete.
+
+  @Test
+  public void generatorContainsGetExistingJointIds() throws NoSuchMethodException {
+    Method m = ModelResourceJavaGenerator.class.getDeclaredMethod("getExistingJointIds", Class.class);
+    assertNotNull("getExistingJointIds should exist on ModelResourceJavaGenerator", m);
+    assertEquals(List.class, m.getReturnType());
+  }
+
+  @Test
+  public void generatorContainsGetAccessorMethodsForResourceClass() throws NoSuchMethodException {
+    Method m = ModelResourceJavaGenerator.class.getDeclaredMethod(
+        "getAccessorMethodsForResourceClass", Class.class);
+    assertNotNull("getAccessorMethodsForResourceClass should exist on ModelResourceJavaGenerator", m);
+    assertEquals(String.class, m.getReturnType());
+  }
+
+  @Test
+  public void generatorContainsGetJointAccessCodeForClass() throws NoSuchMethodException {
+    Method m = ModelResourceJavaGenerator.class.getDeclaredMethod(
+        "getJointAccessCodeForClass", Class.class);
+    assertNotNull("getJointAccessCodeForClass should exist on ModelResourceJavaGenerator", m);
+    assertEquals(String.class, m.getReturnType());
+  }
+
+  @Test
+  public void exporterDoesNotContainGetJointAccessCodeForClass() {
+    for (Method m : ModelResourceExporter.class.getDeclaredMethods()) {
+      assertFalse("getJointAccessCodeForClass should be extracted to ModelResourceJavaGenerator",
+          "getJointAccessCodeForClass".equals(m.getName()));
+    }
+  }
+
+  @Test
+  public void exporterDoesNotContainGetAccessorMethodsForResourceClass() {
+    for (Method m : ModelResourceExporter.class.getDeclaredMethods()) {
+      assertFalse("getAccessorMethodsForResourceClass should be extracted to ModelResourceJavaGenerator",
+          "getAccessorMethodsForResourceClass".equals(m.getName()));
+    }
+  }
+
+  // ── Behavioral characterization for extracted methods (#524) ─────
+  // These test the behavior of methods extracted to ModelResourceJavaGenerator.
+
+  @Test
+  public void getExistingJointIdsReturnsBipedJointNames() {
+    List<String> ids = ModelResourceJavaGenerator.getExistingJointIds(BipedResource.class);
+    assertNotNull(ids);
+    assertTrue("BipedResource should have many joint IDs", ids.size() > 20);
+    assertTrue("Should include ROOT", ids.contains("ROOT"));
+    assertTrue("Should include LEFT_KNEE", ids.contains("LEFT_KNEE"));
+    assertTrue("Should include RIGHT_WRIST", ids.contains("RIGHT_WRIST"));
+    assertTrue("Should include HEAD", ids.contains("HEAD"));
+    // JOINT_ID_ROOTS is JointId[] (array), not JointId — getExistingJointIds correctly skips it
+    assertFalse("Should NOT include JOINT_ID_ROOTS (it is JointId[], not JointId)",
+        ids.contains("JOINT_ID_ROOTS"));
+  }
+
+  @Test
+  public void getExistingJointIdsReturnsEmptyForPropResource() {
+    List<String> ids = ModelResourceJavaGenerator.getExistingJointIds(PropResource.class);
+    assertNotNull(ids);
+    assertTrue("PropResource (no joints defined directly) should return empty or inherited IDs only",
+        ids.isEmpty());
+  }
+
+  @Test
+  public void getExistingJointIdsIncludesInterfaceJointIds() {
+    // BasicResource extends JointedModelResource; PropResource extends BasicResource.
+    // BipedResource declares all its own joints — verify interface traversal picks them up.
+    List<String> bipedIds = ModelResourceJavaGenerator.getExistingJointIds(BipedResource.class);
+    assertTrue("Should contain PELVIS_LOWER_BODY from BipedResource",
+        bipedIds.contains("PELVIS_LOWER_BODY"));
+    assertTrue("Should contain SPINE_BASE from BipedResource",
+        bipedIds.contains("SPINE_BASE"));
+  }
+
+  @Test
+  public void getAccessorMethodsForResourceClassContainsGetterForKnownJoint() {
+    String code = ModelResourceJavaGenerator.getAccessorMethodsForResourceClass(BipedResource.class);
+    assertNotNull(code);
+    // Should contain accessor methods like "public Joint getRightWrist()"
+    assertTrue("Should contain getRightWrist accessor",
+        code.contains("getRightWrist"));
+    assertTrue("Should contain getHead accessor",
+        code.contains("getHead"));
+    assertTrue("Should contain getLeftKnee accessor",
+        code.contains("getLeftKnee"));
+    // Uses short "Joint" type name
+    assertTrue("Should use short Joint type name",
+        code.contains("public Joint get"));
+  }
+
+  @Test
+  public void getAccessorMethodsForResourceClassReturnsEmptyForNoJoints() {
+    String code = ModelResourceJavaGenerator.getAccessorMethodsForResourceClass(PropResource.class);
+    assertNotNull(code);
+    assertEquals("PropResource has no joints, so accessor code should be empty", "", code);
+  }
+
+  @Test
+  public void getJointAccessCodeForClassContainsFullyQualifiedTypes() {
+    String code = ModelResourceJavaGenerator.getJointAccessCodeForClass(BipedResource.class);
+    assertNotNull(code);
+    // Uses fully-qualified type names
+    assertTrue("Should use fully-qualified org.lgna.story.Joint type",
+        code.contains("public org.lgna.story.Joint get"));
+    assertTrue("Should reference BipedResource class",
+        code.contains("BipedResource"));
+    assertTrue("Should contain getRightWrist accessor",
+        code.contains("getRightWrist"));
+  }
+
+  @Test
+  public void getJointAccessCodeForClassReturnsEmptyForNoJoints() {
+    String code = ModelResourceJavaGenerator.getJointAccessCodeForClass(PropResource.class);
+    assertNotNull(code);
+    assertEquals("PropResource has no joints, so accessor code should be empty", "", code);
+  }
+
+  @Test
+  public void getJointAccessCodeAndAccessorMethodsProduceSameJointSet() {
+    // Both methods generate getters for the same set of joints, just with different type qualification.
+    String shortCode = ModelResourceJavaGenerator.getAccessorMethodsForResourceClass(BipedResource.class);
+    String fullCode = ModelResourceJavaGenerator.getJointAccessCodeForClass(BipedResource.class);
+
+    // Count the number of "get" method declarations in each — they should match.
+    long shortCount = shortCode.lines().filter(l -> l.contains("public") && l.contains("get")).count();
+    long fullCount = fullCode.lines().filter(l -> l.contains("public") && l.contains("get")).count();
+    assertEquals("Both methods should produce the same number of accessors",
+        shortCount, fullCount);
+  }
+
+  @Test
+  public void exporterLineCountIsUnder550AfterRefactoring() throws IOException {
+    Path exporterPath = Path.of("src/main/java/org/lgna/story/resourceutilities/ModelResourceExporter.java");
+    assertTrue("ModelResourceExporter.java must exist at " + exporterPath, Files.exists(exporterPath));
+    long lineCount = Files.lines(exporterPath).count();
+    assertTrue("ModelResourceExporter should be under 550 lines after extraction, actual: " + lineCount,
+        lineCount < 550);
+  }
+
+  // ── Dead inner class removal contract (#524) ────────────────────
+  // NamedFile is never referenced anywhere in the module.
+
+  @Test
+  public void exporterDoesNotContainNamedFileInnerClass() {
+    for (Class<?> inner : ModelResourceExporter.class.getDeclaredClasses()) {
+      assertFalse("NamedFile inner class is dead code and must be removed",
+          "NamedFile".equals(inner.getSimpleName()));
+    }
+  }
+
+  // ── Wrapper removal contracts (#524) ────────────────────────────
+  // shouldSuppressJoint, shouldSuppressJointInArray, shouldHideJointInArray
+  // are thin wrappers that delegate to static methods on ModelResourceJavaGenerator.
+  // After inlining the static calls in buildJavaCodeBody, remove the wrappers.
+
+  @Test
+  public void exporterDoesNotContainShouldSuppressJoint() {
+    for (Method m : ModelResourceExporter.class.getDeclaredMethods()) {
+      assertFalse("shouldSuppressJoint wrapper is dead after inlining and must be removed",
+          "shouldSuppressJoint".equals(m.getName()));
+    }
+  }
+
+  @Test
+  public void exporterDoesNotContainShouldSuppressJointInArray() {
+    for (Method m : ModelResourceExporter.class.getDeclaredMethods()) {
+      assertFalse("shouldSuppressJointInArray wrapper is dead after inlining and must be removed",
+          "shouldSuppressJointInArray".equals(m.getName()));
+    }
+  }
+
+  @Test
+  public void exporterDoesNotContainShouldHideJointInArray() {
+    for (Method m : ModelResourceExporter.class.getDeclaredMethods()) {
+      assertFalse("shouldHideJointInArray wrapper is dead after inlining and must be removed",
+          "shouldHideJointInArray".equals(m.getName()));
+    }
+  }
+
+  // ── New getter contract (#524) ──────────────────────────────────
+  // buildJavaCodeBody needs access to arraysToExposeFirstElementOf after
+  // wrapper removal. A package-private getter must be added.
+
+  @Test
+  public void exporterProvidesArraysToExposeFirstElementOfGetter() throws NoSuchMethodException {
+    Method m = ModelResourceExporter.class.getDeclaredMethod("getArraysToExposeFirstElementOf");
+    assertNotNull("getArraysToExposeFirstElementOf getter must exist", m);
+    assertEquals(List.class, m.getReturnType());
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  public void getArraysToExposeFirstElementOfReturnsRegisteredArrayNames() throws Exception {
+    ModelResourceExporter exporter = new ModelResourceExporter("TestBiped", ModelClassData.BIPED_CLASS_DATA);
+    exporter.addArrayNamesToExposeFirstElementOf(Arrays.asList("LEFT_FINGER", "RIGHT_FINGER"));
+
+    Method getter = ModelResourceExporter.class.getDeclaredMethod("getArraysToExposeFirstElementOf");
+    getter.setAccessible(true);
+    List<String> result = (List<String>) getter.invoke(exporter);
+
+    assertEquals(2, result.size());
+    assertTrue(result.contains("LEFT_FINGER"));
+    assertTrue(result.contains("RIGHT_FINGER"));
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  public void getArraysToExposeFirstElementOfReturnsEmptyByDefault() throws Exception {
+    ModelResourceExporter exporter = new ModelResourceExporter("TestProp", ModelClassData.PROP_CLASS_DATA);
+
+    Method getter = ModelResourceExporter.class.getDeclaredMethod("getArraysToExposeFirstElementOf");
+    getter.setAccessible(true);
+    List<String> result = (List<String>) getter.invoke(exporter);
+
+    assertNotNull(result);
+    assertTrue(result.isEmpty());
+  }
+
+  // ── Behavioral preservation after wrapper inlining (#524) ───────
+  // The generated Java code must be identical whether wrappers exist or not.
+  // This test captures the exact code output from a joint-suppression scenario
+  // so any regression in buildJavaCodeBody is detected.
+
+  @Test
+  public void jointSuppressionBehaviorPreservedAfterWrapperInlining() throws Exception {
+    ModelResourceExporter exporter = new ModelResourceExporter("TestProp", ModelClassData.PROP_CLASS_DATA);
+    exporter.addAttribution("Alice Test", "2026");
+    exporter.addResource("TestProp", "Default", "ALICE", null, null);
+    exporter.addJointIdsToSuppress(Collections.singletonList("SPINE_UPPER"));
+    exporter.setJointMap(Arrays.asList(
+        Tuple2.createInstance("ROOT", null),
+        Tuple2.createInstance("SPINE_BASE", "ROOT"),
+        Tuple2.createInstance("SPINE_UPPER", "SPINE_BASE"),
+        Tuple2.createInstance("HEAD", "SPINE_UPPER")));
+
+    String javaCode = exporter.createJavaCode();
+
+    // SPINE_UPPER exists but is hidden
+    assertTrue("SPINE_UPPER should be COMPLETELY_HIDDEN",
+        javaCode.contains("@FieldTemplate(visibility=Visibility.COMPLETELY_HIDDEN)")
+        && javaCode.contains("SPINE_UPPER"));
+    // HEAD and SPINE_BASE are visible
+    assertTrue("HEAD should appear as PRIME_TIME", javaCode.contains("HEAD"));
+    assertTrue("SPINE_BASE should appear as PRIME_TIME", javaCode.contains("SPINE_BASE"));
+    assertCompiles("org/lgna/story/resources/prop/TestPropResource.java", javaCode);
+  }
+
+  @Test
+  public void arrayHidingBehaviorPreservedAfterWrapperInlining() throws Exception {
+    ModelResourceExporter exporter = new ModelResourceExporter("TestBiped", "TestBiped", ModelClassData.BIPED_CLASS_DATA);
+    exporter.addAttribution("Alice Test", "2026");
+    exporter.addResource("TestBiped", "Default", "ALICE", null, null);
+    exporter.addArrayNamesToHideElementsOf(Collections.singletonList("TAIL"));
+    exporter.setJointMap(Arrays.asList(
+        Tuple2.createInstance("ROOT", null),
+        Tuple2.createInstance("PELVIS", "ROOT"),
+        Tuple2.createInstance("TAIL_0", "PELVIS"),
+        Tuple2.createInstance("TAIL_1", "TAIL_0")));
+
+    String javaCode = exporter.createJavaCode();
+
+    // TAIL array joints should be completely hidden (not present as JointId fields)
+    assertFalse("TAIL_0 should be hidden from generated code", javaCode.contains("JointId TAIL_0"));
+    assertFalse("TAIL_1 should be hidden from generated code", javaCode.contains("JointId TAIL_1"));
+    // Non-array joints are still present
+    assertTrue("PELVIS should be present", javaCode.contains("PELVIS"));
+  }
+}

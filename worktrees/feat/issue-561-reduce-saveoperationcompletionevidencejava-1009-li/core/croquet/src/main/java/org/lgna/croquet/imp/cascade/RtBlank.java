@@ -1,0 +1,213 @@
+/*******************************************************************************
+ * Copyright (c) 2006, 2015, Carnegie Mellon University. All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * 3. Products derived from the software may not be called "Alice", nor may
+ *    "Alice" appear in their name, without prior written permission of
+ *    Carnegie Mellon University.
+ *
+ * 4. All advertising materials mentioning features or use of this software must
+ *    display the following acknowledgement: "This product includes software
+ *    developed by Carnegie Mellon University"
+ *
+ * 5. The gallery of art assets and animations provided with this software is
+ *    contributed by Electronic Arts Inc. and may be used for personal,
+ *    non-commercial, and academic use only. Redistributions of any program
+ *    source code that utilizes The Sims 2 Assets must also retain the copyright
+ *    notice, list of conditions and the disclaimer contained in
+ *    The Alice 3.0 Art Gallery License.
+ *
+ * DISCLAIMER:
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
+ * ANY AND ALL EXPRESS, STATUTORY OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY,  FITNESS FOR A
+ * PARTICULAR PURPOSE, TITLE, AND NON-INFRINGEMENT ARE DISCLAIMED. IN NO EVENT
+ * SHALL THE AUTHORS, COPYRIGHT OWNERS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+ * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, PUNITIVE OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING FROM OR OTHERWISE RELATING TO
+ * THE USE OF OR OTHER DEALINGS WITH THE SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ *******************************************************************************/
+
+package org.lgna.croquet.imp.cascade;
+
+import edu.cmu.cs.dennisc.java.lang.ArrayUtilities;
+import edu.cmu.cs.dennisc.java.util.Lists;
+import edu.cmu.cs.dennisc.java.util.logging.Logger;
+import org.lgna.croquet.*;
+
+import java.util.List;
+
+/**
+ * @author Dennis Cosgrove
+ */
+class RtBlank<B> extends RtNode<CascadeBlank<B>, BlankNode<B>> {
+  public static class ItemChildrenAndComboOffsetsPair {
+    private final RtItem[] rtItems;
+    private final List<Integer> comboOffsets;
+
+    public ItemChildrenAndComboOffsetsPair(List<RtItem> baseRtItems, List<Integer> comboOffsets) {
+      this.rtItems = ArrayUtilities.createArray(baseRtItems, RtItem.class);
+      if (!comboOffsets.isEmpty()) {
+        this.comboOffsets = comboOffsets;
+      } else {
+        this.comboOffsets = null;
+      }
+    }
+
+    public RtItem[] getItemChildren() {
+      return this.rtItems;
+    }
+
+    public boolean isComboOffset(int index) {
+      return this.comboOffsets != null ? this.comboOffsets.contains(index) : false;
+    }
+  }
+
+  private ItemChildrenAndComboOffsetsPair itemChildrenAndComboOffsetsPair;
+
+  private boolean isAutomaticallyDetermined;
+  private RtItem<B, ?, ?, ?> rtSelectedFillIn;
+
+  public RtBlank(CascadeBlank<B> element) {
+    super(element, BlankNode.createInstance(element));
+    this.getNode().setRtBlank(this);
+  }
+
+  @Override
+  public RtBlank<?> getNearestBlank() {
+    return this;
+  }
+
+  public boolean isAutomaticallyDetermined() {
+    this.getItemChildrenAndComboOffsets();
+    return this.isAutomaticallyDetermined;
+  }
+
+  public AbstractItemNode getSelectedFillInNode() {
+    if (this.rtSelectedFillIn != null) {
+      return this.rtSelectedFillIn.getNode();
+    } else {
+      return null;
+    }
+  }
+
+  private RtFillIn getOneAndOnlyOneFillInIfAppropriate() {
+    RtFillIn rv = null;
+    RtItem[] children = this.getItemChildrenAndComboOffsets().rtItems;
+    for (RtItem child : children) {
+      if (child instanceof RtFillIn in) {
+        if (rv != null) {
+          return null;
+        } else {
+          rv = in;
+        }
+      } else if (child instanceof RtCancel) {
+        return null;
+      } else if (child instanceof RtMenu) {
+        return null;
+      } else if (child instanceof RtRoot) {
+        //??
+        return null;
+      } else if (!(child instanceof RtSeparator)) {
+        Logger.severe("unhandled child", child);
+        return null;
+      }
+    }
+    return rv;
+  }
+
+  protected ItemChildrenAndComboOffsetsPair getItemChildrenAndComboOffsets() {
+    if (this.itemChildrenAndComboOffsetsPair == null) {
+      List<Integer> comboOffsets = Lists.newLinkedList();
+      List<RtItem> baseRtItems = Lists.newLinkedList();
+      for (CascadeBlankChild blankChild : this.getElement().getFilteredChildren(this.getNode())) {
+        final int N = blankChild.getItemCount();
+        switch (N) {
+        case 1:
+          break;
+        case 2:
+          comboOffsets.add(baseRtItems.size());
+          break;
+        default:
+          Logger.severe(N, blankChild);
+        }
+        for (int i = 0; i < N; i++) {
+          CascadeItem item = blankChild.getItemAt(i);
+          RtItem rtItem;
+          if (item instanceof AbstractCascadeMenuModel menu) {
+            rtItem = new RtMenu(menu, blankChild, i);
+          } else if (item instanceof CascadeFillIn fillIn) {
+            rtItem = new RtFillIn(fillIn, blankChild, i);
+            //        } else if( item instanceof CascadeRoot ) {
+            //          CascadeRoot root = (CascadeRoot)item;
+            //          rtItem = new RtRoot( root );
+          } else if (item instanceof CascadeSeparator separator) {
+            rtItem = new RtSeparator(separator, blankChild, i);
+          } else if (item instanceof CascadeCancel cancel) {
+            rtItem = new RtCancel(cancel, blankChild, i);
+          } else {
+            rtItem = null;
+          }
+          baseRtItems.add(rtItem);
+        }
+      }
+
+      boolean isDevoidOfNonSeparators = true;
+      for (RtItem rtItem : baseRtItems) {
+        if (!(rtItem instanceof RtSeparator)) {
+          isDevoidOfNonSeparators = false;
+        }
+      }
+      if (isDevoidOfNonSeparators) {
+        baseRtItems.add(new RtCancel(CascadeUnfilledInCancel.getInstance(), null, -1));
+      }
+
+      this.itemChildrenAndComboOffsetsPair = new ItemChildrenAndComboOffsetsPair(baseRtItems, comboOffsets);
+
+      this.updateParentsAndNextSiblings(this.itemChildrenAndComboOffsetsPair.rtItems);
+
+      RtFillIn rtFillIn = this.getOneAndOnlyOneFillInIfAppropriate();
+      if ((rtFillIn != null) && rtFillIn.isAutomaticallySelectedWhenSoleOption()) {
+        this.rtSelectedFillIn = rtFillIn;
+        this.isAutomaticallyDetermined = true;
+      } else {
+        this.isAutomaticallyDetermined = false;
+      }
+    }
+    return this.itemChildrenAndComboOffsetsPair;
+  }
+
+  public void setSelectedFillIn(RtItem<B, ?, ?, ?> item) {
+    this.rtSelectedFillIn = item;
+    RtNode parent = this.getParent();
+    if (parent instanceof RtFillIn<?, ?> parentFillIn) {
+      for (RtBlank blank : parentFillIn.getBlankChildren()) {
+        if (blank.rtSelectedFillIn == null) {
+          return;
+        }
+      }
+      parentFillIn.select();
+    }
+  }
+
+  public B createValue() {
+    if (this.rtSelectedFillIn != null) {
+      return this.rtSelectedFillIn.createValue();
+    } else {
+      throw new RuntimeException();
+    }
+  }
+}

@@ -1,0 +1,62 @@
+id: alice-desktop-select-project-atk-exec
+name: Select Project live Swing widget introspection via AT-SPI with exec:exec ATK remediation
+title: Select Project live Swing widget introspection via AT-SPI with exec:exec ATK remediation
+workflow: select-project-atk-exec-smoke
+automationMode: xvfb-real-alice
+preconditions:
+  - Java 21 is available.
+  - Maven dependencies are available.
+  - The tweedle-lang submodule is initialized.
+  - Controlled QA license acceptance is explicitly enabled with an isolated java.util.prefs.userRoot.
+  - python3-pyatspi is installed (sudo apt-get install -y python3-pyatspi).
+  - libatk-wrapper-java is installed at /usr/share/java/java-atk-wrapper.jar.
+  - The AT-SPI2 accessibility bus is running for the current user session.
+  - alice-ide/pom.xml declares the alice-ide-atk exec:exec execution with -Xbootclasspath/a:/usr/share/java/java-atk-wrapper.jar.
+userActions:
+  - Prepare core/resources/target/distribution, then start Alice using exec:exec@alice-ide-atk which spawns a fresh JVM with java-atk-wrapper.jar on the bootstrap classpath (-Xbootclasspath/a:) and javax.accessibility.assistive_technologies=org.GNOME.Accessibility.AtkWrapper set before AWT initialises.
+  - Launch with ALICE_QA_ACCEPT_LICENSES_FOR_TESTS=1 so first-run license dialogs are bypassed only inside the evidence directory.
+  - Wait for the Select Project chooser to become visible.
+  - While Alice is still running, use pyatspi to enumerate the Select Project frame accessible children via AT-SPI2.
+  - Record the observed widget roles and names via AT-SPI. If status=observed, the Java process and Swing widgets are visible through AT-SPI; note that tab labels were not enumerated by searching for page-tab roles (tabLabels was empty in PR #272); they are now found as toggle-button nodes (tabLabelSource=toggle-button, tabLabelMatch=true). If status=blocked, record the exact blocker and blockerDetail.
+expectedOutcomes:
+  - The first-run license dialog is not observed after isolated test opt-in.
+  - A Java window titled Select Project is visible after launch readiness.
+  - swing-widget-observation.json records status=observed confirming the Java process and Swing widgets are visible through AT-SPI (widgetCount>0, dialog role observed). Tab labels (Blank Slates, Starters, My Projects, Recent, File System) are found as toggle-button nodes (tabLabelSource=toggle-button) after the depth limit was increased from 8 to 12; tabLabelMatch=true.
+  - If the remediation is not yet effective, swing-widget-observation.json records a precise machine-readable blocker naming the exact condition still unmet.
+  - The proof does not claim starter selection, project opening, world execution, grading, or full lesson completion.
+automation:
+  cwd: alice-ide
+  argv:
+    - mvn
+    - -DincludeSims=false
+    - -Dinstall4j.skip
+    - -Dcheckstyle.skip
+    - -DskipTests
+    - compile
+    - exec:exec@alice-ide-atk
+  timeoutSeconds: 180
+  readyWaitSeconds: 60
+evidence:
+  required:
+    - root-directory-prep.json confirming org.alice.ide.rootDirectory resolves to core/resources/target/distribution, or naming the exact missing distribution/Maven phase blocker.
+    - license-acceptance.json recording the isolated java.util.prefs.userRoot state used only when ALICE_QA_ACCEPT_LICENSES_FOR_TESTS=1 is set.
+    - license-dialog.json recording not-observed; if observed, it names the exact first-run License Agreement blocker.
+    - x-window-inventory.json naming Alice-related visible X window title, class, process, and geometry after launch readiness wait.
+    - select-project-window.json recording observed Select Project title/class/process/geometry, or the exact missing-window blocker.
+    - swing-widget-observation.json recording status=observed with widgetCount>0 and Swing widget introspection data from the live AT-SPI tree (tab labels are not enumerated by AT-SPI; tabLabels is expected to be empty and tabLabelMatch false), or a precise machine-readable blocker naming the exact classpath, wrapper, process, widget, or fixture condition still unmet after exec:exec remediation.
+    - Screenshot of the Alice desktop and Select Project chooser state.
+    - Environment summary with Java version, Maven version, and DISPLAY value.
+fallback:
+  mode: manual-evidence-required
+  notes:
+    - If the Select Project window is not visible, preserve x-window-inventory.json and select-project-window.json; do not substitute generic launch or pixel status.
+    - If the ATK wrapper is still not loaded with exec:exec, swing-widget-observation.json must record the exact blocker with the remaining classpath or property condition missing.
+    - If pyatspi is not installed, swing-widget-observation.json must record blocker pyatspi-not-installed.
+    - Do not claim starter selection, project opening, or world execution unless separate evidence observes those actions.
+supportingEvidence:
+  - alice-desktop-select-project-inventory
+  - alice-desktop-select-project-widget-introspection
+steps:
+  - validate
+agents:
+  - alice-desktop-qa

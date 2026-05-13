@@ -1,0 +1,38 @@
+id: alice-desktop-procedure-edit-seam-smoke
+name: First lesson procedure edit seam smoke
+title: First lesson procedure edit seam smoke
+workflow: procedure-edit-seam-smoke
+automationMode: manual-evidence-required
+preconditions:
+  - Java 21 is available.
+  - Maven dependencies are available.
+  - The tweedle-lang submodule is initialized.
+  - Focused Eat Me procedure edit seam tests are available in the checkout.
+userActions:
+  - Run the focused procedure edit seam command from the linked documentation.
+  - Review command evidence for a deterministic first-lesson code-editor action proof artifact.
+expectedOutcomes:
+  - The focused procedure edit seam test exits successfully when run manually.
+  - Command evidence covers only the deterministic project/procedure action proof; it does not claim full lesson completion, grading, creative assessment, Save completion, broad UI automation, or visible rendering correctness.
+evidence:
+  required:
+    - status.txt recording the gated command outcome.
+    - command.log from the focused procedure edit seam smoke command.
+    - Test output or surefire report naming editsSceneProcedureAndWritesEatmeProofArtifacts.
+    - Procedure action proof artifacts named by the focused test include first-lesson-code-editor-action-proof.json and do not include procedure-ui-action-no-go.json.
+fallback:
+  mode: manual-evidence-required
+  notes:
+    - If focused core IDE tests are unavailable, attach the nearest deterministic procedure edit evidence and record the missing seam assertion.
+    - Do not substitute active Save proof, model exporter/hotspot proof, Select Project PID proof, launcher/rendering proof, lesson completion, grading, or creative assessment evidence.
+supportingEvidence:
+  - alice-desktop-post-project-open-window-state
+tags:
+  - immediate-qa-backlog
+  - first-lesson
+  - procedure-edit
+  - command-smoke
+steps:
+  - validate
+agents:
+  - alice-desktop-qa

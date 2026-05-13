@@ -1,0 +1,48 @@
+id: alice-desktop-package-install-smoke
+name: Package and install smoke path
+title: Package and install smoke path
+workflow: package-install-smoke
+automationMode: gated-command-smoke
+preconditions:
+  - Java 21 is available.
+  - Maven dependencies are available.
+  - The tweedle-lang submodule is initialized.
+  - The checkout can package Alice without Sims assets in the current environment.
+  - Install smoke execution uses a disposable user profile or machine image.
+userActions:
+  - Enable gated smokes in a packaging-capable workspace.
+  - Run the package smoke wrapper from the repository root.
+  - Inspect installer or package artifacts produced by the build.
+  - Install the produced package in a disposable environment when an installer artifact is available.
+  - Launch Alice once from the installed entry point and record the result.
+expectedOutcomes:
+  - Without the gate the scenario records a gated-not-run status and exits non-success unless --prepare-only is requested.
+  - When the gate is enabled, the package command exits successfully and records artifact listings.
+  - Any install attempt uses a disposable environment and either launches Alice or fails with a captured install log.
+automation:
+  cwd: .
+  argv:
+    - qa/outside-in/alice-desktop/runners/package-install-smoke.sh
+  timeoutSeconds: 1200
+  readyWaitSeconds: 1
+evidence:
+  required:
+    - status.txt recording the gated command outcome.
+    - command.log from the package/install smoke wrapper.
+    - Installer or package artifact listing from installer/target or installer/media when produced.
+    - Install log, launch log, or explicit not-produced note for disposable install verification.
+fallback:
+  mode: manual-evidence-required
+  notes:
+    - Leave this scenario gated on developer machines without install4j or packaging credentials.
+    - Attach CI package artifacts and a disposable install transcript when local packaging is not practical.
+supportingEvidence:
+  - alice-desktop-launch
+tags:
+  - immediate-qa-backlog
+  - package-install
+  - command-smoke
+steps:
+  - validate
+agents:
+  - alice-desktop-qa

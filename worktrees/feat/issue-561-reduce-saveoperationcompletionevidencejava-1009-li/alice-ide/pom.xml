@@ -1,0 +1,254 @@
+<!--
+    Copyright (c) 2006, 2015, Carnegie Mellon University. All rights reserved.
+
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions are met:
+
+    1. Redistributions of source code must retain the above copyright notice,
+       this list of conditions and the following disclaimer.
+
+    2. Redistributions in binary form must reproduce the above copyright notice,
+       this list of conditions and the following disclaimer in the documentation
+       and/or other materials provided with the distribution.
+
+    3. Products derived from the software may not be called "Alice", nor may
+       "Alice" appear in their name, without prior written permission of
+       Carnegie Mellon University.
+
+    4. All advertising materials mentioning features or use of this software must
+       display the following acknowledgement: "This product includes software
+       developed by Carnegie Mellon University"
+
+    5. The gallery of art assets and animations provided with this software is
+       contributed by Electronic Arts Inc. and may be used for personal,
+       non-commercial, and academic use only. Redistributions of any program
+       source code that utilizes The Sims 2 Assets must also retain the copyright
+       notice, list of conditions and the disclaimer contained in
+       The Alice 3.0 Art Gallery License.
+
+    DISCLAIMER:
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
+    ANY AND ALL EXPRESS, STATUTORY OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY,  FITNESS FOR A
+    PARTICULAR PURPOSE, TITLE, AND NON-INFRINGEMENT ARE DISCLAIMED. IN NO EVENT
+    SHALL THE AUTHORS, COPYRIGHT OWNERS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+    INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, PUNITIVE OR CONSEQUENTIAL DAMAGES
+    (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+    LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+    ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING FROM OR OTHERWISE RELATING TO
+    THE USE OF OR OTHER DEALINGS WITH THE SOFTWARE, EVEN IF ADVISED OF THE
+    POSSIBILITY OF SUCH DAMAGE.
+ -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.alice</groupId>
+    <artifactId>parent</artifactId>
+    <version>9.1.0-SNAPSHOT</version>
+  </parent>
+
+  <name>Alice IDE</name>
+  <artifactId>alice-ide</artifactId>
+  <packaging>jar</packaging>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.alice</groupId>
+      <artifactId>ide</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.google.gdata</groupId>
+      <artifactId>core</artifactId>
+      <version>1.47.1</version>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/com.github.weisj/jsvg -->
+    <dependency>
+      <groupId>com.github.weisj</groupId>
+      <artifactId>jsvg</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.formdev</groupId>
+      <artifactId>flatlaf</artifactId>
+      <classifier>no-natives</classifier>
+    </dependency>
+    <dependency>
+      <groupId>com.formdev</groupId>
+      <artifactId>flatlaf</artifactId>
+      <classifier>linux-x86_64</classifier>
+      <type>so</type>
+    </dependency>
+    <dependency>
+      <groupId>com.formdev</groupId>
+      <artifactId>flatlaf</artifactId>
+      <classifier>macos-arm64</classifier>
+      <type>dylib</type>
+    </dependency>
+    <dependency>
+      <groupId>com.formdev</groupId>
+      <artifactId>flatlaf</artifactId>
+      <classifier>macos-x86_64</classifier>
+      <type>dylib</type>
+    </dependency>
+    <dependency>
+      <groupId>com.formdev</groupId>
+      <artifactId>flatlaf</artifactId>
+      <classifier>windows-x86_64</classifier>
+      <type>dll</type>
+    </dependency>
+    <!-- Using other FlatLaf libraries, it is required to exclude "com.formdev:flatlaf" -->
+    <dependency>
+      <groupId>com.formdev</groupId>
+      <artifactId>flatlaf-extras</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>com.formdev</groupId>
+          <artifactId>flatlaf</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <profiles>
+    <profile>
+      <id>includeSims</id>
+      <activation>
+        <property>
+          <name>includeSims</name>
+          <value>!false</value>
+        </property>
+      </activation>
+      <dependencies>
+        <dependency>
+          <groupId>org.alice.nonfree</groupId>
+          <artifactId>ide-nonfree</artifactId>
+        </dependency>
+      </dependencies>
+    </profile>
+  </profiles>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>3.8.1</version>
+        <executions>
+          <execution>
+            <id>copy-dependencies</id>
+            <phase>package</phase>
+            <goals>
+              <goal>copy-dependencies</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/lib</outputDirectory>
+              <overWriteReleases>false</overWriteReleases>
+              <overWriteSnapshots>false</overWriteSnapshots>
+              <overWriteIfNewer>true</overWriteIfNewer>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>alice-ide</id>
+            <goals>
+              <goal>java</goal>
+            </goals>
+          </execution>
+          <!--
+            alice-ide-atk: run Alice as a separate JVM process so the AT-SPI Java ATK wrapper
+            jar is visible to the system classloader at JVM startup.
+
+            exec:java shares the Maven JVM (AWT already initialised, AppClassLoader does not
+            contain the ATK jar, so Toolkit.loadAssistiveTechnologies() cannot find
+            org.GNOME.Accessibility.AtkWrapper).
+
+            exec:exec spawns a fresh JVM where:
+              -Xbootclasspath/a: prepends java-atk-wrapper.jar to the bootstrap classpath, making
+              the class visible to ClassLoader.getSystemClassLoader() when AWT calls
+              loadAssistiveTechnologies() for the first time.
+
+              JavaFX modules (javafx.graphics, javafx.media) must be on the module-path rather than
+              -classpath in Java 21; EntryPoint extends javafx.application.Application so the
+              launcher requires named JavaFX modules.  The three platform-independent + Linux jars
+              for javafx-graphics, javafx-media, and javafx-base cover the application launch path.
+
+            Run: mvn ... compile exec:exec@alice-ide-atk
+          -->
+          <execution>
+            <id>alice-ide-atk</id>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+              <executable>java</executable>
+              <!--
+                longModulepath defaults to true in exec-maven-plugin 3.5.0. When true,
+                the plugin creates an argfile for the module-path value, but the
+                implementation silently drops the value from the command line when
+                invoked via a named execution (exec:exec@alice-ide-atk). Setting
+                longModulepath=false passes the module path directly as an argument.
+              -->
+              <longModulepath>false</longModulepath>
+              <!--
+                NO_AT_BRIDGE=1: the successful run of this scenario observed 35 Swing widgets
+                via AT-SPI with this variable set. Whether it is strictly necessary has not
+                been A/B validated separately; it is included because it was present in the
+                confirmed working configuration.
+                Hypothesis (unvalidated): without it, gtk_init() (loaded by JavaFX) may load
+                the atk-bridge GTK module and replace the Java ATK wrapper's ATK utility layer.
+              -->
+              <environmentVariables>
+                <NO_AT_BRIDGE>1</NO_AT_BRIDGE>
+              </environmentVariables>
+              <arguments>
+                <!-- Linux/Debian-only: this path is specific to the libatk-wrapper-java Debian package.
+                     This execution (alice-ide-atk) is an explicit Linux-only scenario requirement;
+                     it is not intended to be portable across operating systems. -->
+                <argument>-Xbootclasspath/a:/usr/share/java/java-atk-wrapper.jar</argument>
+                <!-- Trigger AWT assistive-technology loading for the wrapper class -->
+                <argument>-Djavax.accessibility.assistive_technologies=org.GNOME.Accessibility.AtkWrapper</argument>
+                <argument>-Dorg.alice.ide.rootDirectory=../core/resources/target/distribution</argument>
+                <!-- JavaFX named modules required by EntryPoint extends Application in Java 21 -->
+                <argument>--module-path</argument>
+                <!-- JavaFX module jars from the local Maven repository.
+                     ${settings.localRepository} resolves to the active local repo (honours
+                     -Dmaven.repo.local and custom settings.xml localRepository). -->
+                <argument>${settings.localRepository}/org/openjfx/javafx-graphics/${javafx.version}/javafx-graphics-${javafx.version}-linux.jar:${settings.localRepository}/org/openjfx/javafx-graphics/${javafx.version}/javafx-graphics-${javafx.version}.jar:${settings.localRepository}/org/openjfx/javafx-media/${javafx.version}/javafx-media-${javafx.version}-linux.jar:${settings.localRepository}/org/openjfx/javafx-media/${javafx.version}/javafx-media-${javafx.version}.jar:${settings.localRepository}/org/openjfx/javafx-base/${javafx.version}/javafx-base-${javafx.version}-linux.jar:${settings.localRepository}/org/openjfx/javafx-base/${javafx.version}/javafx-base-${javafx.version}.jar</argument>
+                <argument>--add-modules</argument>
+                <argument>javafx.graphics,javafx.media</argument>
+                <argument>-classpath</argument>
+                <!-- exec-maven-plugin <classpath/> element expands to the Maven project runtime classpath -->
+                <classpath/>
+                <argument>org.alice.stageide.EntryPoint</argument>
+              </arguments>
+            </configuration>
+          </execution>
+        </executions>
+        <configuration>
+          <!-- systemProperties and mainClass are for exec:java only. They will not work with exec:exec. -->
+          <systemProperties>
+            <systemProperty>
+              <key>org.alice.ide.rootDirectory</key>
+              <value>../core/resources/target/distribution</value>
+            </systemProperty>
+          </systemProperties>
+          <mainClass>org.alice.stageide.EntryPoint</mainClass>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.alice</groupId>
+    <artifactId>parent</artifactId>
+    <version>9.1.0-SNAPSHOT</version>
+  </parent>
+
+  <name>Alice Core</name>
+  <description>Core modules for Alice</description>
+  <artifactId>core</artifactId>
+  <packaging>pom</packaging>
+
+  <properties>
+    <platform.win64.label>win64</platform.win64.label>
+    <platform.macosx.label>macosx</platform.macosx.label>
+    <platform.linux-amd64.label>linux-amd64</platform.linux-amd64.label>
+    <platform.linux-armv6hf.label>linux-armv6hf</platform.linux-armv6hf.label>
+
+    <platform.jogl.label>jogl</platform.jogl.label>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+</project>

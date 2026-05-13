@@ -1,0 +1,151 @@
+/*******************************************************************************
+ * Copyright (c) 2006, 2015, Carnegie Mellon University. All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * 3. Products derived from the software may not be called "Alice", nor may
+ *    "Alice" appear in their name, without prior written permission of
+ *    Carnegie Mellon University.
+ *
+ * 4. All advertising materials mentioning features or use of this software must
+ *    display the following acknowledgement: "This product includes software
+ *    developed by Carnegie Mellon University"
+ *
+ * 5. The gallery of art assets and animations provided with this software is
+ *    contributed by Electronic Arts Inc. and may be used for personal,
+ *    non-commercial, and academic use only. Redistributions of any program
+ *    source code that utilizes The Sims 2 Assets must also retain the copyright
+ *    notice, list of conditions and the disclaimer contained in
+ *    The Alice 3.0 Art Gallery License.
+ *
+ * DISCLAIMER:
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
+ * ANY AND ALL EXPRESS, STATUTORY OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY,  FITNESS FOR A
+ * PARTICULAR PURPOSE, TITLE, AND NON-INFRINGEMENT ARE DISCLAIMED. IN NO EVENT
+ * SHALL THE AUTHORS, COPYRIGHT OWNERS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+ * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, PUNITIVE OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING FROM OR OTHERWISE RELATING TO
+ * THE USE OF OR OTHER DEALINGS WITH THE SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ *******************************************************************************/
+package org.lgna.croquet.views.imp;
+
+import javax.swing.JMenu;
+import javax.swing.JPopupMenu;
+import javax.swing.MenuElement;
+import javax.swing.event.MenuKeyEvent;
+import javax.swing.event.MenuKeyListener;
+import javax.swing.event.PopupMenuEvent;
+import javax.swing.event.PopupMenuListener;
+import java.awt.Component;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseWheelEvent;
+import java.awt.event.MouseWheelListener;
+import java.util.Stack;
+
+/**
+ * @author Dennis Cosgrove
+ */
+public class ScrollingPopupMenuUtilities {
+  private ScrollingPopupMenuUtilities() {
+    throw new AssertionError();
+  }
+
+  private static final MouseWheelListener mouseWheelListener = new MouseWheelListener() {
+    @Override
+    public void mouseWheelMoved(MouseWheelEvent e) {
+      if (e.getComponent() instanceof JPopupMenu jPopupMenu) {
+        if (jPopupMenu.getLayout() instanceof ScrollingPopupMenuLayout scrollingPopupMenuLayout) {
+          scrollingPopupMenuLayout.adjustIndex(e.getWheelRotation());
+        }
+      }
+      e.consume();
+    }
+  };
+
+  private static final MenuKeyListener menuKeyListener = new MenuKeyListener() {
+    @Override
+    public void menuKeyTyped(MenuKeyEvent e) {
+    }
+
+    @Override
+    public void menuKeyPressed(MenuKeyEvent e) {
+      MenuElement[] menus = e.getPath();
+      if (menus.length > 0 && menus[menus.length - 1] instanceof JPopupMenu jPopupMenu) {
+        if (isFrontMenu(jPopupMenu) && jPopupMenu.getLayout() instanceof ScrollingPopupMenuLayout scrollingPopupMenuLayout) {
+          if (e.getKeyCode() == KeyEvent.VK_UP) {
+            scrollingPopupMenuLayout.adjustIndex(-1);
+          }  else if (e.getKeyCode() == KeyEvent.VK_DOWN) {
+            scrollingPopupMenuLayout.adjustIndex(1);
+          }
+        }
+      }
+    }
+
+    @Override
+    public void menuKeyReleased(MenuKeyEvent e) {
+    }
+  };
+
+  private static final PopupMenuListener frontMenuListener = new PopupMenuListener() {
+    @Override
+    public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
+      if (e.getSource() instanceof JPopupMenu menu) {
+        openMenus.push(menu);
+      }
+    }
+
+    @Override
+    public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
+      if (!openMenus.empty()) {
+        openMenus.pop();
+      }
+    }
+
+    @Override
+    public void popupMenuCanceled(PopupMenuEvent e) {
+    }
+  };
+
+  public static void initializeScrollingCapability(JPopupMenu jPopupMenu) {
+    ScrollingPopupMenuLayout layout = new ScrollingPopupMenuLayout(jPopupMenu);
+    jPopupMenu.setLayout(layout);
+    jPopupMenu.addMouseWheelListener(mouseWheelListener);
+    jPopupMenu.addMenuKeyListener(menuKeyListener);
+    jPopupMenu.addPopupMenuListener(frontMenuListener);
+    jPopupMenu.add(new JScrollMenuItem(layout, ScrollDirection.UP), ScrollingPopupMenuLayout.ScrollConstraint.PAGE_START);
+    jPopupMenu.add(new JScrollMenuItem(layout, ScrollDirection.DOWN), ScrollingPopupMenuLayout.ScrollConstraint.PAGE_END);
+  }
+
+  public static void addSideMenu(JPopupMenu jPopupMenu, JMenu jSideMenu) {
+    jPopupMenu.add(jSideMenu, ScrollingPopupMenuLayout.ColumnConstraint.SIDE);
+  }
+
+  public static void removeAllNonScrollComponents(JPopupMenu jPopupMenu) {
+    for (Component component : jPopupMenu.getComponents()) {
+      if (!(component instanceof JScrollMenuItem)) {
+        jPopupMenu.remove(component);
+      }
+    }
+  }
+
+  private static boolean isFrontMenu(JPopupMenu menu) {
+    return !openMenus.empty() && menu == openMenus.peek();
+  }
+
+  // Top of the stack is the most recently opened menu.
+  // Used to check if a menu is in front.
+  private static final Stack<JPopupMenu> openMenus = new Stack<>();
+}

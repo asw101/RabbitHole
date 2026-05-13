@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "alice3-modernization-qa"
+version = "0.13.3"
+description = "Branch-installable Alice 3 outside-in QA command wrapper."
+requires-python = ">=3.9"
+
+[project.scripts]
+amplihack = "alice_qa_amplihack:main"
+
+[tool.setuptools]
+py-modules = ["alice_qa_amplihack"]

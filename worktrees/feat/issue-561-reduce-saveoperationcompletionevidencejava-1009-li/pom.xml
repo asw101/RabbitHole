@@ -1,0 +1,862 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>org.alice</groupId>
+  <artifactId>parent</artifactId>
+  <packaging>pom</packaging>
+  <version>9.1.0-SNAPSHOT</version>
+
+  <name>Alice</name>
+  <url>http://www.alice.org/</url>
+
+  <distributionManagement>
+    <site>
+      <name>Alice 3</name>
+      <id>alice3</id>
+      <url>https://www.alice.org/</url>
+    </site>
+  </distributionManagement>
+
+  <licenses>
+    <license>
+      <name>Alice 3 End User License Agreement</name>
+      <!-- TODO Correct and restore this element when the plain text license is publicly available at a static URL.-->
+      <!--<url>License.txt</url>-->
+      <distribution>repo</distribution>
+      <!--
+        Alice 3 End User License Agreement
+
+        Copyright (c) 2006-2014, Carnegie Mellon University. All rights reserved.
+
+        Redistribution and use in source and binary forms, with or without modification,
+        are permitted provided that the following conditions are met:
+
+        1. Redistributions of source code must retain the above copyright notice,
+        this list of conditions and the following disclaimer.
+
+        2. Redistributions in binary form must reproduce the above copyright notice,
+        this list of conditions and the following disclaimer in the documentation
+        and/or other materials provided with the distribution.
+
+        3. Products derived from the software may not be called "Alice", nor may
+        "Alice" appear in their name, without prior written permission of Carnegie
+        Mellon University.
+
+        4. All advertising materials mentioning features or use of this software
+        must display the following acknowledgement: "This product includes software
+        developed by Carnegie Mellon University"
+
+        5. The gallery of art assets and animations provided with this software is
+        contributed by Electronic Arts Inc. and may be used for personal, non-commercial,
+        and academic use only. Redistributions of any program source code that utilizes
+        The Sims 2 Assets must also retain the copyright notice, list of conditions
+        and the disclaimer contained in The Alice 3.0 Art Gallery License.
+
+        DISCLAIMER:
+
+        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND. ANY AND ALL
+        EXPRESS, STATUTORY OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+        THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE,
+        TITLE, AND NON-INFRINGEMENT ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHORS,
+        COPYRIGHT OWNERS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+        SPECIAL, EXEMPLARY, PUNITIVE OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+        LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+        OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+        LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+        OR OTHERWISE) ARISING FROM OR OTHERWISE RELATING TO THE USE OF OR OTHER DEALINGS
+        WITH THE SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+      -->
+    </license>
+  </licenses>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <java.version>21</java.version>
+
+    <jogl.version>2.5.0</jogl.version>
+    <gluegen.version>2.5.0</gluegen.version>
+    <!-- flatlaf, flatlaf extras, and jsvg are version sensitive, so these two identifier should change together. -->
+    <flatlaf.version>3.6.2</flatlaf.version>
+    <weisj.version>2.0.0</weisj.version>
+
+    <!--  The first digit is from Alice 3, followed by SemVer identifier: major.minor.patch  -->
+    <alice.build.version>3.9.1.0</alice.build.version>
+    <alice.build.prerelease>-alpha</alice.build.prerelease>
+    <!--  The build system will replace local with a build #  -->
+    <alice.build.metadata>+build.local</alice.build.metadata>
+
+    <netbeans.version>RELEASE180</netbeans.version> 
+    <guava.version>30.1.1-jre</guava.version>
+    <commons.discovery.version>0.5</commons.discovery.version>
+    <openhtml.version>1.0.0</openhtml.version>
+    <javax.activation.version>1.2.0</javax.activation.version>
+    <jakarta.api.version>2.3.3</jakarta.api.version>
+    <install4j.version>10.0.6</install4j.version>
+    <jacoco.version>0.8.13</jacoco.version>
+    <argLine></argLine>
+
+    <javafx.version>21.0.7</javafx.version>
+  </properties>
+
+  <modules>
+    <module>core</module>
+    <module>core/ast</module>
+    <module>core/croquet</module>
+    <module>core/i18n</module>
+    <module>core/ide</module>
+    <module>core/image-editor</module>
+    <module>core/issue-reporting</module>
+    <module>core/resources</module>
+    <module>core/scenegraph</module>
+    <module>core/glrender</module>
+    <module>core/story-api-migration</module>
+    <module>core/story-api</module>
+    <module>core/util</module>
+    <module>core/model-loading</module>
+    <module>core/tweedle</module>
+    <module>core/models</module>
+
+    <module>external</module>
+    <module>external/collada</module>
+    <module>external/collada-schema-1-4-1</module>
+    <module>external/wrapped-flow-layout</module>
+
+    <module>alice-ide</module>
+    <module>netbeans</module>
+  </modules>
+
+  <dependencyManagement>
+    <dependencies>
+      <!-- Modules -->
+      <dependency>
+        <groupId>org.alice</groupId>
+        <artifactId>util</artifactId>
+        <version>9.1.0-SNAPSHOT</version>
+      </dependency>
+      <dependency>
+        <groupId>org.alice</groupId>
+        <artifactId>ast</artifactId>
+        <version>9.1.0-SNAPSHOT</version>
+      </dependency>
+      <dependency>
+        <groupId>org.alice</groupId>
+        <artifactId>croquet</artifactId>
+        <version>9.1.0-SNAPSHOT</version>
+      </dependency>
+      <dependency>
+        <groupId>org.alice</groupId>
+        <artifactId>image-editor</artifactId>
+        <version>9.1.0-SNAPSHOT</version>
+      </dependency>
+      <dependency>
+        <groupId>org.alice</groupId>
+        <artifactId>scenegraph</artifactId>
+        <version>9.1.0-SNAPSHOT</version>
+      </dependency>
+      <dependency>
+        <groupId>org.alice</groupId>
+        <artifactId>glrender</artifactId>
+        <version>9.1.0-SNAPSHOT</version>
+      </dependency>
+      <dependency>
+        <groupId>org.alice</groupId>
+        <artifactId>issue-reporting</artifactId>
+        <version>9.1.0-SNAPSHOT</version>
+      </dependency>
+      <dependency>
+        <groupId>org.alice</groupId>
+        <artifactId>story-api</artifactId>
+        <version>9.1.0-SNAPSHOT</version>
+      </dependency>
+      <dependency>
+        <groupId>org.alice</groupId>
+        <artifactId>story-api-migration</artifactId>
+        <version>9.1.0-SNAPSHOT</version>
+      </dependency>
+      <dependency>
+        <groupId>org.alice</groupId>
+        <artifactId>resources</artifactId>
+        <version>9.1.0-SNAPSHOT</version>
+      </dependency>
+      <dependency>
+        <groupId>org.alice</groupId>
+        <artifactId>ide</artifactId>
+        <version>9.1.0-SNAPSHOT</version>
+      </dependency>
+      <dependency>
+        <groupId>org.alice</groupId>
+        <artifactId>i18n</artifactId>
+        <version>9.1.0-SNAPSHOT</version>
+      </dependency>
+      <dependency>
+        <groupId>org.alice</groupId>
+        <artifactId>alice-ide</artifactId>
+        <version>9.1.0-SNAPSHOT</version>
+      </dependency>
+      <dependency>
+        <groupId>org.alice</groupId>
+        <artifactId>model-loading</artifactId>
+        <version>9.1.0-SNAPSHOT</version>
+      </dependency>
+      <dependency>
+        <groupId>org.alice</groupId>
+        <artifactId>tweedle</artifactId>
+        <version>9.1.0-SNAPSHOT</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.alice</groupId>
+        <artifactId>netbeans</artifactId>
+        <version>9.1.0-SNAPSHOT</version>
+      </dependency>
+
+      <!-- Gallery/Models -->
+      <dependency>
+        <groupId>org.alice</groupId>
+        <artifactId>models</artifactId>
+        <version>9.1.0-SNAPSHOT</version>
+      </dependency>
+
+      <!-- Third Party Libraries in project-->
+      <dependency>
+        <groupId>org.alice.external</groupId>
+        <artifactId>collada-schema-1-4-1</artifactId>
+        <version>1.4.1</version>
+      </dependency>
+      <dependency>
+        <groupId>org.alice.external</groupId>
+        <artifactId>wrapped-flow-layout</artifactId>
+        <version>1.0</version>
+      </dependency>
+      <dependency>
+        <groupId>com.dddviewr</groupId>
+        <artifactId>collada</artifactId>
+        <version>1.0</version>
+      </dependency>
+      <!-- Third Party Libraries from maven-->
+      <dependency>
+        <groupId>jakarta.xml.bind</groupId>
+        <artifactId>jakarta.xml.bind-api</artifactId>
+        <version>${jakarta.api.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>junit</groupId>
+        <artifactId>junit</artifactId>
+        <version>4.13.1</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.jogamp.jogl</groupId>
+        <artifactId>jogl-all</artifactId>
+        <version>${jogl.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.jogamp.gluegen</groupId>
+        <artifactId>gluegen-rt</artifactId>
+        <version>${gluegen.version}</version>
+      </dependency>
+      <!-- https://mvnrepository.com/artifact/de.javagl/jgltf-model -->
+      <dependency>
+        <groupId>de.javagl</groupId>
+        <artifactId>jgltf-model</artifactId>
+        <version>2.0.0</version>
+      </dependency>
+
+      <!-- https://mvnrepository.com/artifact/com.github.weisj/jsvg -->
+      <dependency>
+        <groupId>com.github.weisj</groupId>
+        <artifactId>jsvg</artifactId>
+        <version>${weisj.version}</version>
+      </dependency>
+      <!-- https://www.formdev.com/flatlaf/native-libraries/-->
+      <dependency>
+        <groupId>com.formdev</groupId>
+        <artifactId>flatlaf</artifactId>
+        <version>${flatlaf.version}</version>
+        <classifier>no-natives</classifier>
+      </dependency>
+      <dependency>
+        <groupId>com.formdev</groupId>
+        <artifactId>flatlaf</artifactId>
+        <version>${flatlaf.version}</version>
+        <classifier>linux-x86_64</classifier>
+        <type>so</type>
+      </dependency>
+      <dependency>
+        <groupId>com.formdev</groupId>
+        <artifactId>flatlaf</artifactId>
+        <version>${flatlaf.version}</version>
+        <classifier>macos-arm64</classifier>
+        <type>dylib</type>
+      </dependency>
+      <dependency>
+        <groupId>com.formdev</groupId>
+        <artifactId>flatlaf</artifactId>
+        <version>${flatlaf.version}</version>
+        <classifier>macos-x86_64</classifier>
+        <type>dylib</type>
+      </dependency>
+      <dependency>
+        <groupId>com.formdev</groupId>
+        <artifactId>flatlaf</artifactId>
+        <version>${flatlaf.version}</version>
+        <classifier>windows-x86_64</classifier>
+        <type>dll</type>
+      </dependency>
+      <!-- Using other FlatLaf libraries, it is required to exclude "com.formdev:flatlaf" -->
+      <dependency>
+        <groupId>com.formdev</groupId>
+        <artifactId>flatlaf-extras</artifactId>
+        <version>${flatlaf.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>com.formdev</groupId>
+            <artifactId>flatlaf</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+
+      <!-- https://mvnrepository.com/artifact/com.sun.media/jai-codec -->
+      <dependency>
+        <groupId>com.sun.media</groupId>
+        <artifactId>jai-codec</artifactId>
+        <version>1.1.3</version>
+      </dependency>
+      <!-- https://mvnrepository.com/artifact/javax.media/jai-core -->
+      <dependency>
+        <groupId>javax.media</groupId>
+        <artifactId>jai-core</artifactId>
+        <version>1.1.3</version>
+      </dependency>
+      <!-- https://mvnrepository.com/artifact/org.apache.xmlgraphics/batik-all -->
+      <dependency>
+        <groupId>org.apache.xmlgraphics</groupId>
+        <artifactId>batik-all</artifactId>
+        <version>1.11</version>
+        <type>pom</type>
+      </dependency>
+      <!-- https://mvnrepository.com/artifact/org.apache.xmlgraphics/batik-svggen -->
+      <dependency>
+        <groupId>org.apache.xmlgraphics</groupId>
+        <artifactId>batik-svggen</artifactId>
+        <version>1.11</version>
+      </dependency>
+
+      <dependency>
+        <!-- ALWAYS required. -->
+        <groupId>com.openhtmltopdf</groupId>
+        <artifactId>openhtmltopdf-core</artifactId>
+        <version>${openhtml.version}</version>
+      </dependency>
+      <dependency>
+        <!-- Required for PDF output. -->
+        <groupId>com.openhtmltopdf</groupId>
+        <artifactId>openhtmltopdf-pdfbox</artifactId>
+        <version>${openhtml.version}</version>
+      </dependency>
+      <dependency>
+        <!-- Optional, leave out if you do not need right-to-left or bi-directional text support. -->
+        <groupId>com.openhtmltopdf</groupId>
+        <artifactId>openhtmltopdf-rtl-support</artifactId>
+        <version>${openhtml.version}</version>
+      </dependency>
+      <dependency>
+        <!-- Optional, leave out if you do not need SVG support. -->
+        <groupId>com.openhtmltopdf</groupId>
+        <artifactId>openhtmltopdf-svg-support</artifactId>
+        <version>${openhtml.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>com.miglayout</groupId>
+        <artifactId>miglayout-swing</artifactId>
+        <version>4.2</version>
+      </dependency>
+      <dependency>
+        <groupId>org.openjfx</groupId>
+        <artifactId>javafx-media</artifactId>
+        <version>${javafx.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.openjfx</groupId>
+        <artifactId>javafx-graphics</artifactId>
+        <version>${javafx.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.openjfx</groupId>
+        <artifactId>javafx-base</artifactId>
+        <version>${javafx.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.antlr</groupId>
+        <artifactId>antlr4-runtime</artifactId>
+        <version>4.9.3</version>
+      </dependency>
+      <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-core -->
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-core</artifactId>
+        <version>2.18.6</version>
+      </dependency>
+      <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind -->
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-databind</artifactId>
+        <version>2.17.1</version>
+      </dependency>
+      <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.datatype/jackson-datatype-jdk8 -->
+      <dependency>
+        <groupId>com.fasterxml.jackson.datatype</groupId>
+        <artifactId>jackson-datatype-jdk8</artifactId>
+        <version>2.17.1</version>
+      </dependency>
+      <dependency>
+        <groupId>com.fasterxml.jackson.datatype</groupId>
+        <artifactId>jackson-datatype-jsr310</artifactId>
+        <version>2.17.1</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.5.3</version>
+        <scope>test</scope>
+      </dependency>
+      <!-- https://mvnrepository.com/artifact/com.twelvemonkeys.imageio/imageio-webp -->
+      <dependency>
+        <groupId>com.twelvemonkeys.imageio</groupId>
+        <artifactId>imageio-webp</artifactId>
+        <version>3.8.2</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-assembly-plugin</artifactId>
+          <version>3.7.1</version>
+        </plugin>
+        <plugin>
+          <inherited>true</inherited>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-enforcer-plugin</artifactId>
+          <version>3.5.0</version>
+          <executions>
+            <execution>
+              <id>enforce-maven-3</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+              <requireMavenVersion>
+                <version>[3.9.9,4)</version>
+                <message>The build requires maven version 3.9.9.
+  If you want to try another use:
+           mvn -Denforcer.skip</message>
+              </requireMavenVersion>
+              </rules>
+              <fail>true</fail>
+            </configuration>
+            </execution>
+          </executions>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <version>3.14.1</version>
+          <configuration>
+            <encoding>UTF-8</encoding>
+            <includes>
+              <include>**/*.java</include>
+            </includes>
+            <fork>true</fork>
+            <release>${java.version}</release>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-dependency-plugin</artifactId>
+          <version>3.8.1</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-resources-plugin</artifactId>
+          <version>3.3.1</version>
+        </plugin>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>build-helper-maven-plugin</artifactId>
+          <version>3.6.0</version>
+        </plugin>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>versions-maven-plugin</artifactId>
+          <version>2.18.0</version>
+        </plugin>
+        <plugin>
+          <groupId>org.commonjava.maven.plugins</groupId>
+          <artifactId>directory-maven-plugin</artifactId>
+          <version>1.0</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>3.5.3</version>
+          <dependencies>
+            <dependency>
+              <groupId>org.apache.maven.surefire</groupId>
+              <artifactId>surefire-junit47</artifactId>
+              <version>3.5.2</version>
+            </dependency>
+          </dependencies>
+        </plugin>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>exec-maven-plugin</artifactId>
+          <version>3.5.0</version>
+        </plugin>
+        <plugin>
+          <groupId>net.nicoulaj.maven.plugins</groupId>
+          <artifactId>checksum-maven-plugin</artifactId>
+          <version>1.11</version>
+        </plugin>
+        <plugin>
+          <groupId>org.openrewrite.maven</groupId>
+          <artifactId>rewrite-maven-plugin</artifactId>
+          <version>6.23.0</version>
+          <configuration>
+            <exportDatatables>true</exportDatatables>
+            <activeRecipes>
+              <recipe>org.openrewrite.staticanalysis.IsEmptyCallOnCollections</recipe>
+            </activeRecipes>
+          </configuration>
+          <dependencies>
+            <dependency>
+              <groupId>org.openrewrite.recipe</groupId>
+              <artifactId>rewrite-static-analysis</artifactId>
+              <version>2.21.0</version>
+            </dependency>
+          </dependencies>
+        </plugin>
+        <plugin>
+          <groupId>org.jacoco</groupId>
+          <artifactId>jacoco-maven-plugin</artifactId>
+          <version>${jacoco.version}</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <version>3.6.0</version>
+        <executions>
+          <execution>
+            <id>checkstyle</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>check</goal>
+            </goals>
+            <configuration>
+              <configLocation>checkstyle.xml</configLocation>
+            </configuration>
+          </execution>
+        </executions>
+        <dependencies>
+          <dependency>
+            <groupId>com.puppycrawl.tools</groupId>
+            <artifactId>checkstyle</artifactId>
+            <version>12.1.2</version> <!-- Checkstyle version -->
+          </dependency>
+        </dependencies>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>3.11.2</version>
+        <configuration>
+          <encoding>UTF-8</encoding>
+          <docencoding>UTF-8</docencoding>
+          <doctitle>Alice 3</doctitle>
+          <outputDirectory>${project.build.directory}</outputDirectory>
+          <detectOfflineLinks>false</detectOfflineLinks>
+        </configuration>
+        <executions>
+          <execution>
+            <id>aggregate</id>
+            <goals>
+              <goal>aggregate</goal>
+            </goals>
+            <phase>site</phase>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-site-plugin</artifactId>
+        <version>3.20.0</version>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-project-info-reports-plugin</artifactId>
+        <version>3.9.0</version>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>license-maven-plugin</artifactId>
+        <version>2.5.0</version>
+        <executions>
+          <execution>
+            <id>aggregate-download-licenses</id>
+            <goals>
+              <goal>aggregate-download-licenses</goal>
+            </goals>
+            <configuration>
+              <excludedGroups>org.alice</excludedGroups>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+
+    <resources>
+      <resource>
+        <directory>src/main/java</directory>
+        <includes>
+          <include>**/*.properties</include>
+        </includes>
+      </resource>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>true</filtering>
+        <includes>
+          <include>**/*.txt</include>
+        </includes>
+        <excludes>
+          <exclude>**/*.gitkeep</exclude>
+        </excludes>
+      </resource>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>false</filtering>
+        <excludes>
+          <exclude>**/*.gitkeep</exclude>
+          <exclude>**/*.txt</exclude>
+        </excludes>
+      </resource>
+
+      <!-- generated i18n translation files -->
+      <resource>
+        <directory>src/l10n-alice/java</directory>
+        <excludes>
+          <exclude>**/*.gitkeep</exclude>
+        </excludes>
+      </resource>
+      <resource>
+        <directory>src/l10n-alice/resources</directory>
+        <excludes>
+          <exclude>**/*.gitkeep</exclude>
+        </excludes>
+      </resource>
+    </resources>
+  </build>
+
+  <profiles>
+
+    <profile>
+      <id>coverage</id>
+      <modules>
+        <module>coverage-report</module>
+      </modules>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.jacoco</groupId>
+            <artifactId>jacoco-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>prepare-agent</id>
+                <goals>
+                  <goal>prepare-agent</goal>
+                </goals>
+              </execution>
+              <execution>
+                <id>report</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>report</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <profile>
+      <id>includeSims</id>
+      <activation>
+        <property>
+          <name>includeSims</name>
+          <value>!false</value>
+        </property>
+      </activation>
+
+      <modules>
+        <module>core-nonfree</module>
+        <module>core-nonfree/ide-nonfree</module>
+        <module>core-nonfree/resources-nonfree</module>
+        <module>core-nonfree/story-api-nonfree</module>
+        <module>core-nonfree/models-nonfree</module>
+      </modules>
+
+      <dependencyManagement>
+        <dependencies>
+          <dependency>
+            <groupId>org.alice.nonfree</groupId>
+            <artifactId>models-nonfree</artifactId>
+            <version>9.1.0-SNAPSHOT</version>
+          </dependency>
+          <dependency>
+            <groupId>org.alice.nonfree</groupId>
+            <artifactId>resources-nonfree</artifactId>
+            <version>9.1.0-SNAPSHOT</version>
+          </dependency>
+          <dependency>
+            <groupId>org.alice.nonfree</groupId>
+            <artifactId>story-api-nonfree</artifactId>
+            <version>9.1.0-SNAPSHOT</version>
+          </dependency>
+          <dependency>
+            <groupId>org.alice.nonfree</groupId>
+            <artifactId>ide-nonfree</artifactId>
+            <version>9.1.0-SNAPSHOT</version>
+          </dependency>
+        </dependencies>
+      </dependencyManagement>
+    </profile>
+
+    <profile>
+      <id>only-eclipse</id>
+      <activation>
+        <property>
+          <name>m2e.version</name>
+        </property>
+      </activation>
+      <build>
+        <pluginManagement>
+          <plugins>
+            <!--This plugin's configuration is used to store Eclipse m2e settings
+              only. It has no influence on the Maven build itself. -->
+            <plugin>
+              <groupId>org.eclipse.m2e</groupId>
+              <artifactId>lifecycle-mapping</artifactId>
+              <version>1.0.0</version>
+              <configuration>
+                <lifecycleMappingMetadata>
+                  <pluginExecutions>
+                    <pluginExecution>
+                      <pluginExecutionFilter>
+                        <groupId>org.commonjava.maven.plugins</groupId>
+                        <artifactId>directory-maven-plugin</artifactId>
+                        <versionRange>[0.1,)</versionRange>
+                        <goals>
+                          <goal>highest-basedir</goal>
+                        </goals>
+                      </pluginExecutionFilter>
+                      <action>
+                        <ignore/>
+                      </action>
+                    </pluginExecution>
+                  </pluginExecutions>
+                </lifecycleMappingMetadata>
+              </configuration>
+            </plugin>
+          </plugins>
+        </pluginManagement>
+      </build>
+    </profile>
+
+    <profile>
+      <id>buildInstaller</id>
+      <activation>
+        <property>
+          <name>buildInstaller</name>
+          <value>true</value>
+        </property>
+      </activation>
+
+      <modules>
+        <module>installer</module>
+      </modules>
+    </profile>
+
+  </profiles>
+
+  <pluginRepositories>
+    <pluginRepository>
+      <id>ej-technologies</id>
+      <url>https://maven.ej-technologies.com/repository</url>
+    </pluginRepository>
+  </pluginRepositories>
+
+  <repositories>
+    <repository>
+      <id>jogamp.org</id>
+      <name>JogAmp</name>
+      <url>https://jogamp.org/deployment/maven/</url>
+    </repository>
+
+    <repository>
+      <id>org.alice</id>
+      <name>Alice Repository</name>
+      <url>https://maven.alice.org/alice</url>
+    </repository>
+    <repository>
+      <id>org.alice.external</id>
+      <name>Alice External Repository</name>
+      <url>https://maven.alice.org/external</url>
+    </repository>
+
+    <repository>
+      <id>thirdparty-releases</id>
+      <name>JBoss Thirdparty Releases</name>
+      <url>https://repository.jboss.org/nexus/content/repositories/thirdparty-releases</url>
+    </repository>
+
+    <repository>
+      <id>atlassian-public</id>
+      <name>Atlassian Public Repository</name>
+      <layout>default</layout>
+      <url>https://maven.atlassian.com/maven-external</url>
+    </repository>
+
+    <repository>
+      <id>netbeans</id>
+      <name>Netbeans</name>
+      <url>http://netbeans.apidesign.org/maven2/</url>
+    </repository>
+  </repositories>
+</project>

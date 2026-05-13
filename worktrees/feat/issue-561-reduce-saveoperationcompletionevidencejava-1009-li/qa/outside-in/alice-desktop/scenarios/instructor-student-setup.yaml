@@ -1,0 +1,44 @@
+id: alice-desktop-instructor-student-setup
+name: Instructor and student setup workflow
+title: Instructor and student setup workflow
+workflow: instructor-student-setup
+automationMode: manual-evidence-required
+preconditions:
+  - Java 21 is available.
+  - Maven dependencies are available.
+  - The tweedle-lang submodule is initialized.
+  - Alice has no separate instructor or student mode requirement for this scenario.
+userActions:
+  - As an instructor, launch Alice from the documented Maven path.
+  - Create or prepare a starter project through the baseline Alice project flow.
+  - Save the starter project as a distributable a3p file and record its location.
+  - As a student, launch Alice from the documented Maven path.
+  - Open the provided starter a3p project.
+  - Verify the starter project loads, make a small visible change if practical, and save a student copy.
+expectedOutcomes:
+  - The instructor can prepare and save a starter project without uncaught application errors.
+  - The starter a3p file is available as an artifact for student use.
+  - The student can open the starter project and save a separate copy.
+  - RabbitHole learner-world QA currently supports setup/open/save evidence review only.
+evidence:
+  required:
+    - Instructor launch log.
+    - Screenshot of the starter project open in Alice.
+    - Saved starter a3p project file.
+    - Student launch or open log.
+    - Screenshot of the loaded starter project.
+    - Saved student copy a3p project file.
+    - review-notes.txt summarizing reviewed artifacts and the acceptance decision.
+fallback:
+  mode: manual-evidence-required
+  notes:
+    - If Xvfb launch validation is unavailable, capture the failure log and provide screenshots from a supported desktop environment.
+    - Manual notes must identify where the starter and student copy files were saved.
+    - Do not use this scenario to claim learner-world grading, rubric scoring, correctness assessment, or creative assessment.
+    - Assessment limits are no automated grading, no rubric scoring, no correctness assessment, and no creative assessment.
+supportingEvidence:
+  - alice-desktop-launch
+steps:
+  - validate
+agents:
+  - alice-desktop-qa

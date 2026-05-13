@@ -1,0 +1,87 @@
+/*******************************************************************************
+ * Copyright (c) 2006, 2015, Carnegie Mellon University. All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * 3. Products derived from the software may not be called "Alice", nor may
+ *    "Alice" appear in their name, without prior written permission of
+ *    Carnegie Mellon University.
+ *
+ * 4. All advertising materials mentioning features or use of this software must
+ *    display the following acknowledgement: "This product includes software
+ *    developed by Carnegie Mellon University"
+ *
+ * 5. The gallery of art assets and animations provided with this software is
+ *    contributed by Electronic Arts Inc. and may be used for personal,
+ *    non-commercial, and academic use only. Redistributions of any program
+ *    source code that utilizes The Sims 2 Assets must also retain the copyright
+ *    notice, list of conditions and the disclaimer contained in
+ *    The Alice 3.0 Art Gallery License.
+ *
+ * DISCLAIMER:
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
+ * ANY AND ALL EXPRESS, STATUTORY OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY,  FITNESS FOR A
+ * PARTICULAR PURPOSE, TITLE, AND NON-INFRINGEMENT ARE DISCLAIMED. IN NO EVENT
+ * SHALL THE AUTHORS, COPYRIGHT OWNERS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+ * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, PUNITIVE OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING FROM OR OTHERWISE RELATING TO
+ * THE USE OF OR OTHER DEALINGS WITH THE SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ *******************************************************************************/
+
+package edu.cmu.cs.dennisc.scenegraph;
+
+import edu.cmu.cs.dennisc.property.InstanceProperty;
+import edu.cmu.cs.dennisc.scenegraph.bound.BoundUtilities;
+import org.alice.math.immutable.*;
+
+/**
+ * @author Dennis Cosgrove
+ */
+public class OldMesh extends Geometry {
+  @Override
+  protected AxisAlignedBox updateBoundingBox() {
+    return BoundUtilities.getBoundingBox(xyzs.getValue());
+  }
+
+  @Override
+  public AffineMatrix4x4 getPlane() {
+    double[] xyzs = this.xyzs.getValue();
+    float[] ijks = this.ijks.getValue();
+    assert xyzs.length >= 6;
+    assert ijks.length >= 3;
+
+    Vector3 forward = (new Vector3(ijks[0], ijks[1], ijks[2])).normalized().negate();
+    Point3 translation = new Point3(xyzs[0], xyzs[1], xyzs[2]);
+    Vector3 upGuide = (new Vector3(translation.x() - xyzs[3], translation.y() - xyzs[4], translation.z() - xyzs[5])).normalized();
+
+    return new AffineMatrix4x4(new ForwardAndUpGuide(forward, upGuide).asMatrix3x3(), translation);
+  }
+
+  @Override
+  public void transform(Matrix4x4 trans) {
+    //todo
+  }
+
+  public final InstanceProperty<double[]> xyzs = new InstanceProperty<double[]>(this, null);
+  public final InstanceProperty<float[]> ijks = new InstanceProperty<float[]>(this, null);
+  public final InstanceProperty<float[]> uvs = new InstanceProperty<float[]>(this, null);
+  public final InstanceProperty<short[]> xyzTriangleIndices = new InstanceProperty<short[]>(this, null);
+  public final InstanceProperty<short[]> ijkTriangleIndices = new InstanceProperty<short[]>(this, null);
+  public final InstanceProperty<short[]> uvTriangleIndices = new InstanceProperty<short[]>(this, null);
+  public final InstanceProperty<short[]> xyzQuadrangleIndices = new InstanceProperty<short[]>(this, null);
+  public final InstanceProperty<short[]> ijkQuadrangleIndices = new InstanceProperty<short[]>(this, null);
+  public final InstanceProperty<short[]> uvQuadrangleIndices = new InstanceProperty<short[]>(this, null);
+}

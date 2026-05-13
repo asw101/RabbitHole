@@ -1,0 +1,148 @@
+/*******************************************************************************
+ * Copyright (c) 2006, 2015, Carnegie Mellon University. All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * 3. Products derived from the software may not be called "Alice", nor may
+ *    "Alice" appear in their name, without prior written permission of
+ *    Carnegie Mellon University.
+ *
+ * 4. All advertising materials mentioning features or use of this software must
+ *    display the following acknowledgement: "This product includes software
+ *    developed by Carnegie Mellon University"
+ *
+ * 5. The gallery of art assets and animations provided with this software is
+ *    contributed by Electronic Arts Inc. and may be used for personal,
+ *    non-commercial, and academic use only. Redistributions of any program
+ *    source code that utilizes The Sims 2 Assets must also retain the copyright
+ *    notice, list of conditions and the disclaimer contained in
+ *    The Alice 3.0 Art Gallery License.
+ *
+ * DISCLAIMER:
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
+ * ANY AND ALL EXPRESS, STATUTORY OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY,  FITNESS FOR A
+ * PARTICULAR PURPOSE, TITLE, AND NON-INFRINGEMENT ARE DISCLAIMED. IN NO EVENT
+ * SHALL THE AUTHORS, COPYRIGHT OWNERS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+ * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, PUNITIVE OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING FROM OR OTHERWISE RELATING TO
+ * THE USE OF OR OTHER DEALINGS WITH THE SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ *******************************************************************************/
+package org.alice.ide.declarationseditor.events.components;
+
+import edu.cmu.cs.dennisc.java.awt.font.TextPosture;
+import edu.cmu.cs.dennisc.java.awt.font.TextWeight;
+import edu.cmu.cs.dennisc.java.util.ResourceBundleUtilities;
+import org.alice.ide.codeeditor.ArgumentListPropertyPane;
+import org.alice.ide.common.BodyPane;
+import org.alice.ide.common.ThisPane;
+import org.alice.ide.croquet.models.ui.formatter.FormatterState;
+import org.alice.ide.eventseditor.components.EventAccessorMethodsPanel;
+import org.alice.ide.formatter.Formatter;
+import org.alice.ide.x.ProjectEditorAstI18nFactory;
+import org.alice.ide.x.components.KeyedArgumentListPropertyView;
+import org.alice.ide.x.components.StatementListPropertyView;
+import org.lgna.croquet.views.*;
+import org.lgna.project.ast.*;
+
+import javax.swing.BorderFactory;
+import javax.swing.JPanel;
+import javax.swing.UIManager;
+import java.awt.Color;
+import java.awt.GridLayout;
+
+/**
+ * @author Matt May
+ */
+public class EventListenerComponent extends BorderPanel {
+
+  public EventListenerComponent(MethodInvocation methodInvocation) {
+    int bottom = 0;
+    this.addPageStartComponent(createHeader(methodInvocation));
+    if (methodInvocation.requiredArguments.size() > 0) {
+      SimpleArgument argument0 = methodInvocation.requiredArguments.get(0);
+      AbstractMethod singleAbstractMethod = argument0.parameter.getValue().getValueType().getDeclaredMethods().getFirst();
+      if (argument0.expression.getValue() instanceof LambdaExpression) {
+        LambdaExpression lambdaExpression = (LambdaExpression) argument0.expression.getValue();
+        if (lambdaExpression.value.getValue() instanceof UserLambda) {
+          UserLambda lambda = (UserLambda) lambdaExpression.value.getValue();
+          //ParametersPane parametersPane = new ParametersPane( org.alice.ide.x.ProjectEditorAstI18nFactory.getInstance(), lambda );
+          Formatter formatter = FormatterState.getInstance().getValue();
+          LineAxisPanel singleAbstractMethodHeader = new LineAxisPanel(getDeclareProcedureLabel(), BoxUtilities.createHorizontalSliver(4), new Label(formatter.getNameForDeclaration(singleAbstractMethod), 1.5f, TextWeight.BOLD), BoxUtilities.createHorizontalSliver(8), new EventAccessorMethodsPanel(lambda));
+
+          StatementListPropertyView putCodeHere = new StatementListPropertyView(ProjectEditorAstI18nFactory.getInstance(), lambda.body.getValue().statements);
+          BodyPane bodyPane = new BodyPane(putCodeHere);
+//          bodyPane.setBorder(BorderFactory.createLineBorder(Color.PINK, 3, true));
+
+          BorderPanel codeContainer = new BorderPanel.Builder().pageStart(singleAbstractMethodHeader).center(bodyPane).build();
+          Color c = UIManager.getColor("Alice.Event.color").darker();
+          codeContainer.setBackgroundColor(c);
+          codeContainer.setBorder(BorderFactory.createEmptyBorder(2, 6, 4, 6));
+
+          //Round the corners
+          JPanel codeContainerContainer = new JPanel(new GridLayout(1, 1));
+          codeContainerContainer.setBorder(BorderFactory.createLineBorder(c, 8, true));
+          codeContainerContainer.add(codeContainer.getAwtComponent());
+
+          this.addCenterComponent(AwtComponentView.lookup(codeContainerContainer));
+          bottom = 8;
+        }
+      }
+    }
+    this.setBorder(BorderFactory.createEmptyBorder(4, 4, bottom, 4));
+  }
+
+  private SwingComponentView<?> createHeader(MethodInvocation methodInvocation) {
+    Formatter formatter = FormatterState.getInstance().getValue();
+    AbstractMethod method = methodInvocation.method.getValue();
+    LineAxisPanel rv = new LineAxisPanel();
+    rv.setBorder(BorderFactory.createEmptyBorder(0, 0, 4, 0));
+    rv.addComponent(new ThisPane());
+    rv.addComponent(BoxUtilities.createHorizontalSliver(4));
+    Label label = new Label(formatter.getNameForDeclaration(method), TextWeight.BOLD);
+    rv.addComponent(label);
+    if (method.getRequiredParameters() != null) {
+      SimpleArgumentListProperty requiredArgumentsProperty = methodInvocation.getRequiredArgumentsProperty();
+      ArgumentListPropertyPane requiredParametersListView = new ArgumentListPropertyPane(ProjectEditorAstI18nFactory.getInstance(), requiredArgumentsProperty) {
+        @Override
+        protected AwtComponentView<?> createComponent(SimpleArgument argument) {
+          if (argument.expression.getValue() instanceof LambdaExpression) {
+            return null;
+          } else {
+            return super.createComponent(argument);
+          }
+        }
+      };
+      //      if(requiredParametersListView.getComposite() != null){
+      //      requiredParametersListView.
+      rv.addComponent(requiredParametersListView);
+      //      }
+      //      System.out.println(requiredParametersListView);
+    }
+    if (method.getKeyedParameter() != null) {
+      SwingComponentView<?> keyedArgumentListView = new KeyedArgumentListPropertyView(ProjectEditorAstI18nFactory.getInstance(), methodInvocation.getKeyedArgumentsProperty());
+      rv.addComponent(keyedArgumentListView);
+    }
+    return rv;
+  }
+
+  private Label getDeclareProcedureLabel() {
+    return new Label(localize("declare") + " " + localize("procedure"), TextPosture.OBLIQUE);
+  }
+
+  private String localize(String key) {
+    return ResourceBundleUtilities.getStringForKey(key, "org.alice.ide.codeeditor.CodeEditor");
+  }
+}
