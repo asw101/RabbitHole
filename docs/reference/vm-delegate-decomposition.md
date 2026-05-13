@@ -6,7 +6,7 @@ delegate classes: `VmExpressionEvaluator` (~400 lines) and
 `VmStatementExecutor` (~340 lines).
 
 The decomposition is a pure internal refactor. The public API surface —
-`VirtualMachine`'s 19 public methods and 16 abstract methods — is unchanged.
+`VirtualMachine`'s 20 public methods and 16 abstract methods — is unchanged.
 All existing execution behavior, listener dispatch, error messages, and
 exception semantics are preserved identically. A reflection-based contract test
 (`VmContractTest`) guards the API surface before and after extraction.
@@ -382,7 +382,7 @@ wc -l core/ast/src/main/java/org/lgna/project/virtualmachine/VirtualMachine.java
 
 ## Acceptance criteria
 
-1. **VmContractTest passes** — all 19 public methods and 16 abstract methods
+1. **VmContractTest passes** — all 20 public methods and 16 abstract methods
    verified via reflection with correct parameter types and return types.
 
 2. **All 8 existing test classes pass** — zero behavioral regressions.

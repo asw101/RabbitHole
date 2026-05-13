@@ -85,7 +85,7 @@ public void virtualMachineHasEntryPointEvaluate() throws Exception {
 }
 ```
 
-This pattern repeats for all 19 public methods. Each test:
+This pattern repeats for all 20 public methods. Each test:
 
 1. Calls `getDeclaredMethod` with exact parameter types
 2. Asserts the method is `public`
@@ -383,7 +383,7 @@ is file-level comprehensibility, not total line reduction.
 | Method category | Before (owner) | After (owner) |
 | --- | --- | --- |
 | 16 abstract methods | VirtualMachine | VirtualMachine (unchanged) |
-| 19 public methods | VirtualMachine | VirtualMachine (unchanged) |
+| 20 public methods | VirtualMachine | VirtualMachine (unchanged) |
 | 26 evaluate* dispatch methods | VirtualMachine | VmExpressionEvaluator |
 | evaluate() dispatch | VirtualMachine | VmExpressionEvaluator |
 | evaluateBoolean/Int | VirtualMachine | VmExpressionEvaluator |
