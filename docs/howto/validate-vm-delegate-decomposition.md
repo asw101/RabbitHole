@@ -132,7 +132,7 @@ mvn -pl core/ast -am \
 
 Expected outcome: all test methods pass. The contract test verifies:
 
-- 20 public methods exist with correct parameter types and return types
+- 19 public methods exist with correct parameter types and return types
 - 16 abstract methods exist with correct parameter types and return types
 - `VirtualMachine` is abstract
 - `ReleaseVirtualMachine` extends `VirtualMachine`

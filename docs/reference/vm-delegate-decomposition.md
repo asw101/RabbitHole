@@ -52,11 +52,14 @@ extend independently.
 ```text
 VirtualMachine (abstract coordinator, ~470 lines)
 ├── VmExpressionEvaluator (package-private final, ~400 lines)
-│   └── 28 evaluate* methods, evaluate() dispatch switch,
-│       evaluateBoolean, evaluateInt, evaluateArgument,
-│       EPIC_HACK_evaluateLambdaExpression, evaluate(Expression, Class<E>)
+│   └── evaluate() dispatch switch (27 expression types),
+│       26 evaluateXxx dispatch-target methods,
+│       evaluateArgument, EPIC_HACK_evaluateLambdaExpression,
+│       evaluateBoolean, evaluateInt, evaluate(Expression, Class<E>),
+│       evaluateArguments (delegated from VM's public wrapper)
 └── VmStatementExecutor (package-private final, ~340 lines)
-    └── 17 execute* methods, execute() dispatch switch,
+    └── execute() dispatch switch (14 statement types),
+        14 executeXxx dispatch-target methods,
         excecuteForEachLoop, excecuteEachInTogether shared helpers
 ```
 
@@ -146,7 +149,7 @@ Reflection-based contract test verifying the public API surface of
 
 | Category | Count | Examples |
 | --- | --- | --- |
-| Public methods | 20 | `ENTRY_POINT_evaluate`, `ENTRY_POINT_invoke`, `ENTRY_POINT_createInstance`, `get`, `set`, `invokeUserMethod`, `invokeMethodDeclaredInJava`, `evaluateArguments`, `getItemAtIndex`, `setItemAtIndex`, `stopExecution`, `addVirtualMachineListener`, `removeVirtualMachineListener`, `getVirtualMachineListeners`, `registerAbstractClassAdapter`, `createAndSetFieldInstance`, `ACCEPTABLE_HACK_FOR_SCENE_EDITOR_initializeField`, `ACCEPTABLE_HACK_FOR_SCENE_EDITOR_executeStatement`, `setForSceneEditor` |
+| Public methods | 19 | `ENTRY_POINT_evaluate`, `ENTRY_POINT_invoke`, `ENTRY_POINT_createInstance`, `get`, `set`, `invokeUserMethod`, `invokeMethodDeclaredInJava`, `evaluateArguments`, `getItemAtIndex`, `setItemAtIndex`, `stopExecution`, `addVirtualMachineListener`, `removeVirtualMachineListener`, `getVirtualMachineListeners`, `registerAbstractClassAdapter`, `createAndSetFieldInstance`, `ACCEPTABLE_HACK_FOR_SCENE_EDITOR_initializeField`, `ACCEPTABLE_HACK_FOR_SCENE_EDITOR_executeStatement`, `setForSceneEditor` |
 | Abstract methods | 16 | `getStackTrace`, `getThis`, `pushBogusFrame`, `pushConstructorFrame`, `setConstructorFrameUserInstance`, `pushMethodFrame`, `pushLambdaFrame`, `popFrame`, `lookup`, `pushLocal`, `getLocal`, `setLocal`, `popLocal`, `getFrameForThread`, `pushCurrentThread`, `popCurrentThread` |
 
 The test uses `java.lang.reflect` to verify method existence, parameter types,
@@ -283,9 +286,13 @@ Listener events are dispatched by the delegates directly:
   `vm.virtualMachineListeners` with the existing `synchronized` block for
   snapshot.
 
-The listener snapshot pattern is preserved exactly: a `VirtualMachineListener[]`
-array is captured under the lock before dispatch, then iterated outside the
-lock.
+The two delegates use different dispatch patterns, both preserved from the
+original code:
+
+- **Expression evaluator**: Iterates `vm.virtualMachineListeners` directly
+  inside the `synchronized` block (no snapshot array).
+- **Statement executor**: Captures a `VirtualMachineListener[]` snapshot array
+  under the lock, then iterates outside the lock.
 
 ## Thread safety
 
@@ -373,7 +380,7 @@ wc -l core/ast/src/main/java/org/lgna/project/virtualmachine/VirtualMachine.java
 
 ## Acceptance criteria
 
-1. **VmContractTest passes** — all 20 public methods and 16 abstract methods
+1. **VmContractTest passes** — all 19 public methods and 16 abstract methods
    verified via reflection with correct parameter types and return types.
 
 2. **All 8 existing test classes pass** — zero behavioral regressions.

@@ -53,9 +53,9 @@ Lines   1–100:   License, imports, 16 abstract method declarations
 Lines 103–178:   Public entry points (ENTRY_POINT_*)
 Lines 180–412:   Field/array/invocation operations
 Lines 413–510:   invokeUserMethod, invokeMethodDeclaredInJava, invoke
-Lines 513–808:   28 evaluate* methods + evaluate() dispatch switch
+Lines 513–808:   26 evaluate* dispatch methods + evaluate() dispatch switch
 Lines 810–845:   evaluateBoolean, evaluateInt type coercion helpers
-Lines 847–1157:  17 execute* methods + execute() dispatch switch
+Lines 847–1157:  14 execute* dispatch methods + execute() dispatch switch
 Lines 1160–1193: stopExecution, listeners, isStopped, isForRunning fields
 ```
 
@@ -85,7 +85,7 @@ public void virtualMachineHasEntryPointEvaluate() throws Exception {
 }
 ```
 
-This pattern repeats for all 20 public methods. Each test:
+This pattern repeats for all 19 public methods. Each test:
 
 1. Calls `getDeclaredMethod` with exact parameter types
 2. Asserts the method is `public`
@@ -384,12 +384,12 @@ is file-level comprehensibility, not total line reduction.
 | --- | --- | --- |
 | 16 abstract methods | VirtualMachine | VirtualMachine (unchanged) |
 | 20 public methods | VirtualMachine | VirtualMachine (unchanged) |
-| 28 evaluate* methods | VirtualMachine | VmExpressionEvaluator |
+| 26 evaluate* dispatch methods | VirtualMachine | VmExpressionEvaluator |
 | evaluate() dispatch | VirtualMachine | VmExpressionEvaluator |
 | evaluateBoolean/Int | VirtualMachine | VmExpressionEvaluator |
 | evaluateArgument | VirtualMachine | VmExpressionEvaluator |
 | EPIC_HACK_evaluateLambdaExpression | VirtualMachine | VmExpressionEvaluator |
-| 17 execute* methods | VirtualMachine | VmStatementExecutor |
+| 14 execute* dispatch methods | VirtualMachine | VmStatementExecutor |
 | execute() dispatch | VirtualMachine | VmStatementExecutor |
 | excecuteForEachLoop | VirtualMachine | VmStatementExecutor |
 | excecuteEachInTogether | VirtualMachine | VmStatementExecutor |
