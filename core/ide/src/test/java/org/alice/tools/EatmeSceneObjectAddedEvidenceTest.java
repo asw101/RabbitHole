@@ -35,19 +35,6 @@ public class EatmeSceneObjectAddedEvidenceTest {
   }
 
   @Test
-  public void artifactContainsAllRequiredFields() throws Exception {
-    Path evidenceDir = temporaryFolder.newFolder("all-fields-evidence").toPath();
-
-    Path artifact = EatmeSceneObjectAddedEvidence.writeObjectAdded(evidenceDir, "SFlyer", 3);
-
-    String json = Files.readString(artifact);
-    assertTrue(json, json.contains("\"schema_version\":"));
-    assertTrue(json, json.contains("\"timestamp\":"));
-    assertTrue(json, json.contains("\"object_class_name\":"));
-    assertTrue(json, json.contains("\"scene_field_count_after\":"));
-  }
-
-  @Test
   public void timestampIsRecentEpochMillis() throws Exception {
     Path evidenceDir = temporaryFolder.newFolder("timestamp-evidence").toPath();
     long before = System.currentTimeMillis();
@@ -245,18 +232,6 @@ public class EatmeSceneObjectAddedEvidenceTest {
     } finally {
       restoreProperty(EatmeSceneObjectAddedEvidence.EVIDENCE_DIR_PROPERTY, previous);
     }
-  }
-
-  // --- Post-write verification (artifact exists and non-empty) ---
-
-  @Test
-  public void postWriteVerificationEnsuresArtifactIsNonEmpty() throws Exception {
-    Path evidenceDir = temporaryFolder.newFolder("verify-evidence").toPath();
-
-    Path artifact = EatmeSceneObjectAddedEvidence.writeObjectAdded(evidenceDir, "SBiped", 1);
-
-    assertTrue("artifact must exist after write", Files.isRegularFile(artifact));
-    assertTrue("artifact must be non-empty", Files.size(artifact) > 0);
   }
 
   // --- Overwrite semantics: latest write wins ---

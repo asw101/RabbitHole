@@ -34,7 +34,7 @@ mvn -DincludeSims=false -Dinstall4j.skip \
 Expected output includes:
 
 ```text
-Tests run: 8, Failures: 0, Errors: 0, Skipped: 0
+Tests run: 16, Failures: 0, Errors: 0, Skipped: 0
 ```
 
 This command does not use a QA workflow timeout. Do not add `--timeout-seconds`,
@@ -65,7 +65,7 @@ Review the test class `EatmeSceneObjectAddedEvidenceTest` for these assertions:
 | Path traversal rejection | Artifact paths containing `../` are rejected with `IllegalArgumentException`. |
 | Symlink rejection | Symlinked evidence directories are rejected with `IOException`. |
 | Missing directory | A non-existent evidence directory is rejected with `IOException`. |
-| No-op when unconfigured | When `org.alice.eatme.evidenceDir` is not set, `recordObjectAdded()` returns silently and writes nothing. |
+| No-op when unconfigured | When `org.alice.eatme.evidenceDir` is not set, `recordSceneObjectAdded()` returns silently and writes nothing. |
 | Invalid path surfacing | Malformed evidence directory paths produce clear error messages. |
 
 ## Review the wiring
@@ -76,7 +76,9 @@ Verify that `StorytellingSceneEditor.addField()` calls the hook:
 @Override
 public void addField(UserType<?> declaringType, UserField field, int index, Statement... statements) {
   super.addField(declaringType, field, index, statements);
-  EatmeSceneObjectAddedEvidence.recordObjectAdded(declaringType, field);
+  String objectClassName = field.getValueType() != null ? field.getValueType().getName() : null;
+  int fieldCountAfter = declaringType.getDeclaredFields().size();
+  EatmeSceneObjectAddedEvidence.recordSceneObjectAdded(objectClassName, fieldCountAfter);
   lifecycleManager.handleAddField(field);
 }
 ```
@@ -97,7 +99,7 @@ The artifact `scene-object-added.json` must contain:
 schema_version=eatme.alice-scene-object-added/v1
 object_class_name=<value type name>
 scene_field_count_after=<positive integer>
-timestamp=<ISO-8601 UTC>
+timestamp=<epoch milliseconds>
 ```
 
 Validate a generated artifact:

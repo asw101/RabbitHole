@@ -34,7 +34,7 @@ Gallery drag-drop
   -> GalleryDragModel.drop()
   -> StorytellingSceneEditor.addField(declaringType, field, index, statements)
   -> super.addField() [field committed to declaringType.getDeclaredFields()]
-  -> EatmeSceneObjectAddedEvidence.recordObjectAdded(declaringType, field)
+  -> EatmeSceneObjectAddedEvidence.recordSceneObjectAdded(objectClassName, fieldCountAfter)
   -> scene-object-added.json
   -> lifecycleManager.handleAddField(field)
 ```
@@ -93,7 +93,7 @@ Required fields:
 | Field | Type | Meaning |
 | --- | --- | --- |
 | `schema_version` | string | `eatme.alice-scene-object-added/v1`. |
-| `timestamp` | string | ISO-8601 UTC timestamp of the add event. |
+| `timestamp` | number | Epoch milliseconds (`System.currentTimeMillis()`) of the add event. |
 | `object_class_name` | string | JSON-escaped value type name of the added field (e.g., `"SBiped"`). Empty string if the type or name is null. |
 | `scene_field_count_after` | number | Count of `declaringType.getDeclaredFields()` after `super.addField()` committed the new field. |
 
@@ -106,13 +106,13 @@ package with a private constructor.
 
 | Method | Signature | Purpose |
 | --- | --- | --- |
-| `recordObjectAdded` | `public static void recordObjectAdded(UserType<?> declaringType, UserField field)` | Entry point called from `StorytellingSceneEditor.addField()`. Reads `org.alice.eatme.evidenceDir`, returns silently if unset/blank, otherwise writes the evidence artifact. Throws `IllegalStateException` wrapping any `IOException`, `SecurityException`, or `IllegalArgumentException` on write failure. |
+| `recordSceneObjectAdded` | `public static void recordSceneObjectAdded(String objectClassName, int sceneFieldCountAfter)` | Entry point called from `StorytellingSceneEditor.addField()`. Reads `org.alice.eatme.evidenceDir`, returns silently if unset/blank, otherwise writes the evidence artifact. Throws `IllegalStateException` wrapping any `IOException`, `SecurityException`, or `IllegalArgumentException` on write failure. |
 
 ### Package-visible API
 
 | Method | Signature | Purpose |
 | --- | --- | --- |
-| `writeObjectAdded` | `static Path writeObjectAdded(Path evidenceDir, String objectClassName, int fieldCountAfter)` | Testable core that validates the directory, builds the JSON, and writes atomically. After the atomic write, performs a post-write verification: checks `Files.isRegularFile(artifact, NOFOLLOW_LINKS)` and `Files.size(artifact) > 0`. Throws `IOException` if verification fails. Returns the artifact path on success. |
+| `writeObjectAdded` | `static Path writeObjectAdded(Path evidenceDir, String objectClassName, int fieldCountAfter)` | Testable core that validates the directory, builds the JSON, and writes atomically. After the atomic write, performs a post-write verification via `Files.readAttributes()` (single syscall): checks `isRegularFile()` and `size() > 0`. Throws `IOException` if verification fails. Returns the artifact path on success. |
 
 The class reuses package-visible helpers from `EatmeRunWindowEvidence`:
 
@@ -179,7 +179,7 @@ Representative artifact:
 ```json
 {
   "schema_version": "eatme.alice-scene-object-added/v1",
-  "timestamp": "2026-05-13T16:45:00.123Z",
+  "timestamp": 1747156700123,
   "object_class_name": "SBiped",
   "scene_field_count_after": 4
 }
@@ -188,8 +188,8 @@ Representative artifact:
 Field semantics:
 
 - `schema_version` is always `eatme.alice-scene-object-added/v1`.
-- `timestamp` is generated at write time via `java.time.Instant.now()` formatted
-  as ISO-8601 UTC.
+- `timestamp` is generated at write time via `System.currentTimeMillis()` as
+  epoch milliseconds (a JSON number, not a string).
 - `object_class_name` comes from `field.getValueType().getName()`. When
   `field`, `field.getValueType()`, or the name is null, the value is an empty
   string `""`.
@@ -205,7 +205,9 @@ The hook is wired in `StorytellingSceneEditor.addField()`:
 @Override
 public void addField(UserType<?> declaringType, UserField field, int index, Statement... statements) {
   super.addField(declaringType, field, index, statements);
-  EatmeSceneObjectAddedEvidence.recordObjectAdded(declaringType, field);
+  String objectClassName = field.getValueType() != null ? field.getValueType().getName() : null;
+  int fieldCountAfter = declaringType.getDeclaredFields().size();
+  EatmeSceneObjectAddedEvidence.recordSceneObjectAdded(objectClassName, fieldCountAfter);
   lifecycleManager.handleAddField(field);
 }
 ```
@@ -218,7 +220,7 @@ The call is placed after `super.addField()` so that:
    — this is acceptable because evidence write failure in an eatme-configured
    environment should surface immediately rather than be silently swallowed.
 
-When `org.alice.eatme.evidenceDir` is not set, `recordObjectAdded` returns
+When `org.alice.eatme.evidenceDir` is not set, `recordSceneObjectAdded` returns
 immediately without reading any AST state, making the production overhead zero.
 
 ## Evidence boundaries
@@ -281,7 +283,7 @@ Expected shape:
 ```json
 {
   "schema_version": "eatme.alice-scene-object-added/v1",
-  "timestamp": "2026-05-13T16:45:00.123Z",
+  "timestamp": 1747156700123,
   "object_class_name": "SBiped",
   "scene_field_count_after": 4
 }
@@ -324,6 +326,7 @@ with open("scene-object-added.json") as f:
     evidence = json.load(f)
 
 assert evidence["schema_version"] == "eatme.alice-scene-object-added/v1"
+assert isinstance(evidence["timestamp"], int)  # epoch millis
 assert evidence["object_class_name"]  # non-empty
 assert evidence["scene_field_count_after"] >= 1
 ```

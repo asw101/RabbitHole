@@ -40,7 +40,9 @@ Inside `StorytellingSceneEditor.addField()`:
 
 ```java
 super.addField(declaringType, field, index, statements);
-EatmeSceneObjectAddedEvidence.recordObjectAdded(declaringType, field);
+String objectClassName = field.getValueType() != null ? field.getValueType().getName() : null;
+int fieldCountAfter = declaringType.getDeclaredFields().size();
+EatmeSceneObjectAddedEvidence.recordSceneObjectAdded(objectClassName, fieldCountAfter);
 lifecycleManager.handleAddField(field);
 ```
 
@@ -58,7 +60,7 @@ Why this position matters:
 
 ## Step 3: Trace the property gate
 
-`recordObjectAdded()` reads `org.alice.eatme.evidenceDir`:
+`recordSceneObjectAdded()` reads `org.alice.eatme.evidenceDir`:
 
 ```java
 String evidenceDir = System.getProperty("org.alice.eatme.evidenceDir");
@@ -73,13 +75,11 @@ exception can be thrown. The hook is invisible in production.
 
 ## Step 3b: Trace the delegation to writeObjectAdded
 
-When the property is set, `recordObjectAdded` extracts the data and delegates
-to the testable core method:
+When the property is set, `recordSceneObjectAdded` delegates to the testable
+core method:
 
 ```java
-String objectClassName = typeName(field);
-int fieldCountAfter = declaringType.getDeclaredFields().size();
-writeObjectAdded(Path.of(evidenceDir), objectClassName, fieldCountAfter);
+writeObjectAdded(Path.of(evidenceDir), objectClassName, sceneFieldCountAfter);
 ```
 
 `Path.of(evidenceDir)` converts the string property to a `Path`.
@@ -89,16 +89,16 @@ atomic writing happen inside `writeObjectAdded`.
 
 ## Step 4: Trace the data extraction
 
-The two values passed to `writeObjectAdded` are:
+The two values extracted in `StorytellingSceneEditor.addField()` are:
 
 ```java
-String objectClassName = typeName(field);
+String objectClassName = field.getValueType() != null ? field.getValueType().getName() : null;
 int fieldCountAfter = declaringType.getDeclaredFields().size();
 ```
 
 - **`objectClassName`**: Derived from `field.getValueType().getName()`. Null-safe:
-  if `field` is null, `field.getValueType()` is null, or the name is null, the
-  result is an empty string `""`.
+  if `field.getValueType()` is null, `objectClassName` is null and
+  `escapeJson(null)` returns `""`.
 
 - **`fieldCountAfter`**: The count of all declared fields on the scene type
   *after* `super.addField()` committed the new field. This includes built-in
@@ -106,17 +106,21 @@ int fieldCountAfter = declaringType.getDeclaredFields().size();
 
 ## Step 5: Trace the directory validation
 
-The evidence directory is validated identically to `EatmeRunWindowEvidence`:
+The evidence directory is validated identically to `EatmeRunWindowEvidence`,
+using a single `readAttributes` call (one lstat syscall) to check both
+symlink status and directory type:
 
 ```java
 Path evidencePath = evidenceDir.toAbsolutePath().normalize();
-if (Files.isSymbolicLink(evidencePath)) {
-  throw new IOException("evidence path must not be a symbolic link");
+BasicFileAttributes dirAttrs = Files.readAttributes(
+    evidencePath, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+if (dirAttrs.isSymbolicLink()) {
+  throw new IOException("Scene-object-added evidence path must not be a symbolic link: " + evidenceDir);
 }
-Path evidenceRoot = evidencePath.toRealPath();
-if (!Files.isDirectory(evidenceRoot)) {
-  throw new IOException("evidence path is not a directory");
+if (!dirAttrs.isDirectory()) {
+  throw new IOException("Scene-object-added evidence path is not a directory: " + evidenceDir);
 }
+return evidencePath.toRealPath();
 ```
 
 Symlinks are rejected to prevent evidence from being redirected outside the
@@ -150,7 +154,7 @@ pattern — no JSON library dependency):
 ```json
 {
   "schema_version": "eatme.alice-scene-object-added/v1",
-  "timestamp": "2026-05-13T16:45:00.123Z",
+  "timestamp": 1747156700123,
   "object_class_name": "SBiped",
   "scene_field_count_after": 4
 }
@@ -176,10 +180,11 @@ symlinks. The temp file is created in the same directory to ensure
 file if the move fails.
 
 After the atomic move, a post-write verification confirms the artifact exists
-and is non-empty:
+and is non-empty using a single `readAttributes` call:
 
 ```java
-if (!Files.isRegularFile(artifact, LinkOption.NOFOLLOW_LINKS) || Files.size(artifact) == 0) {
+BasicFileAttributes postAttrs = Files.readAttributes(artifact, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+if (!postAttrs.isRegularFile() || postAttrs.size() == 0) {
   throw new IOException("Scene-object-added evidence artifact was not written: " + artifact);
 }
 ```
@@ -194,7 +199,7 @@ detect — for example, a filesystem that reports success but writes zero bytes.
 
 | Test | What it proves |
 | --- | --- |
-| Happy path | Writes valid JSON with correct schema version, class name, field count, and ISO timestamp. |
+| Happy path | Writes valid JSON with correct schema version, class name, field count, and epoch-millis timestamp. |
 | JSON escaping | Characters like `"`, `\`, `\t`, `\n` in type names are escaped. |
 | Null handling | Null value type name produces empty string, not crash. |
 | Path traversal | `../malicious.json` is rejected by `artifactPath()`. |
@@ -211,7 +216,7 @@ The data flow:
 Gallery drag-drop
   └─> StorytellingSceneEditor.addField()
         ├─> super.addField()           [field committed to AST]
-        ├─> EatmeSceneObjectAddedEvidence.recordObjectAdded()
+        ├─> EatmeSceneObjectAddedEvidence.recordSceneObjectAdded()
         │     ├─> Check system property (no-op if unset)
         │     ├─> Extract object_class_name + field count
         │     ├─> Validate evidence directory (no symlinks)
