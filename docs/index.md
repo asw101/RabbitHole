@@ -152,6 +152,9 @@ repository.
 - [CI efficiency and no-op validation skips](./reference/ci-efficiency.md) - conservative docs-only CI skip rules, event-aware Maven gates, and preserved validation surfaces.
 - [Mac-compatible test guards](./reference/mac-compatible-test-guards.md) - platform-tolerant render-target dimension assertions (#496), JUnit `Assume` headless-skip guards (#497), and macOS screen menu bar property override (#500, #502) for cross-platform CI compatibility.
 - [Review Mac-compatible test guards](./howto/review-mac-compatible-test-guards.md) - how to verify, extend, or add platform-tolerant assertions, headless-skip guards, and macOS menu bar property overrides for desktop proof tests.
+- [Scene-Object-Added Evidence](./reference/scene-object-added-evidence.md) - Reference for the property-gated proof hook that records JSON evidence when a student adds a scene object via gallery drag-drop, enabling eatme harness verification of the Building a Scene lesson step.
+- [Run the Scene-Object-Added Evidence Proof](./howto/run-scene-object-added-evidence-proof.md) - How to run and review the unit tests for the scene-object-added evidence hook.
+- [Tutorial: Trace the Scene-Object-Added Evidence Hook](./tutorials/trace-scene-object-added-evidence.md) - Guided walkthrough from gallery drag-drop trigger through property gate, data extraction, directory validation, and atomic JSON write.
 
 ## Modernization evidence and scorecards
 
