@@ -97,22 +97,6 @@ public class AngleDeltasTest {
   }
 
   @Test
-  public void correctDeltaForAxisSubtractsCorrection() {
-    AngleDeltas ad = new AngleDeltas(4, context);
-    ad.storage[2] = 5.0;
-    ad.correctDeltaForAxis(2, 1.5);
-    assertEquals(3.5, ad.storage[2], DELTA);
-  }
-
-  @Test
-  public void correctDeltaForAxisWithNegativeCorrection() {
-    AngleDeltas ad = new AngleDeltas(3, context);
-    ad.storage[1] = 2.0;
-    ad.correctDeltaForAxis(1, -1.0);
-    assertEquals(3.0, ad.storage[1], DELTA);
-  }
-
-  @Test
   public void multipleAddsAccumulate() {
     AngleDeltas base = new AngleDeltas(3, context);
     for (int i = 0; i < 5; i++) {

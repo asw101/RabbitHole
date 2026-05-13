@@ -16,7 +16,5 @@ class JacobianAxis {
     return isFree;
   }
 
-  public void setFree(boolean isFree) {
-    this.isFree = isFree;
-  }
+
 }

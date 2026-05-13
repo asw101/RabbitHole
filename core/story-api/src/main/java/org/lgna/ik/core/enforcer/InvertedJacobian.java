@@ -2,7 +2,7 @@ package org.lgna.ik.core.enforcer;
 
 import Jama.Matrix;
 
-public class InvertedJacobian {
+class InvertedJacobian {
 
   public InvertedJacobian(Matrix inverse, Jacobian jacobian) {
     matrix = inverse;

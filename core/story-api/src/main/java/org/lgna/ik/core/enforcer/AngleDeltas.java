@@ -24,7 +24,5 @@ class AngleDeltas {
     return getByGlobalIndex(context.getGlobalIndexForAxis(axis));
   }
 
-  public void correctDeltaForAxis(int index, double correction) {
-    storage[index] -= correction;
-  }
+
 }

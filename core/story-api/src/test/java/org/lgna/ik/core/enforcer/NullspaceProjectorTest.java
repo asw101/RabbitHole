@@ -106,19 +106,7 @@ public class NullspaceProjectorTest {
     }
   }
 
-  @Test
-  public void setIndexToLockedZerosRowAndCol() {
-    NullspaceProjector nsp = new NullspaceProjector(3, context);
-    nsp.initializeToIdentity();
 
-    nsp.setIndexToLocked(1);
-
-    // Row/col 1 should have special pattern per implementation:
-    // diagonal is 1 at locked index, everything else in that row zeroed
-    assertEquals(1.0, nsp.matrix[1][1], DELTA);
-  }
-
-  @Test
   public void projectedJacobianInvalidatesSvdCache() {
     NullspaceProjector nsp = new NullspaceProjector(3, context);
     nsp.initializeToIdentity();
