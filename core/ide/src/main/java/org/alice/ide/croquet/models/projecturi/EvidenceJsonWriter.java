@@ -45,8 +45,6 @@ final class EvidenceJsonWriter {
 
   // ── Core utilities ────────────────────────────────────────────────
 
-  private static final char[] HEX = "0123456789abcdef".toCharArray();
-
   static String escapeJson(String value) {
     int len = value.length();
     // Fast path: skip StringBuilder allocation when no escaping is needed
@@ -74,9 +72,7 @@ final class EvidenceJsonWriter {
         case '\t' -> escaped.append("\\t");
         default -> {
           if (ch < 0x20) {
-            escaped.append("\\u00");
-            escaped.append(HEX[(ch >> 4) & 0xF]);
-            escaped.append(HEX[ch & 0xF]);
+            escaped.append(String.format("\\u%04x", (int) ch));
           } else {
             escaped.append(ch);
           }

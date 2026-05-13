@@ -112,15 +112,14 @@ final class EvidenceFileOperations {
     }
   }
 
-  private static final Path CWD = Path.of("").toAbsolutePath().normalize();
-
   static String redactedSavedPath(Path savedPath) {
     Path path = savedPath.normalize();
     if (!path.isAbsolute()) {
       return path.toString();
     }
-    if (path.startsWith(CWD)) {
-      return CWD.relativize(path).toString();
+    Path cwd = Path.of("").toAbsolutePath().normalize();
+    if (path.startsWith(cwd)) {
+      return cwd.relativize(path).toString();
     }
     Path fileName = path.getFileName();
     return "[redacted]/" + (fileName == null ? "" : fileName.toString());
