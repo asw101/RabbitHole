@@ -366,11 +366,12 @@ final class ModelResourceJavaGenerator {
           arrayEntries = new HashMap<>();
         }
 
-        // Pre-compute reverse lookup: joint name → array name (O(1) instead of O(n) per query)
+        // Pre-compute reverse lookup: joint name → array name (O(1) instead of O(n) per query).
+        // putIfAbsent preserves the original first-found semantics of getArrayNameFromMapForJoint.
         Map<String, String> jointToArrayName = new HashMap<>();
         for (Map.Entry<String, List<String>> ae : arrayEntries.entrySet()) {
           for (String joint : ae.getValue()) {
-            jointToArrayName.put(joint, ae.getKey());
+            jointToArrayName.putIfAbsent(joint, ae.getKey());
           }
         }
         Set<String> suppressJointIds = new HashSet<>(exporter.getJointIdsToSuppress());
