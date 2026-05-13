@@ -87,7 +87,7 @@ declarations for rendering state, and constructor logic.
 | File | Role | Approx lines |
 | --- | --- | --- |
 | `NonCachingTextRenderer.java` | Public API surface, thin delegators, rendering state fields, constructor. | <500 |
-| `TextRendererProperties.java` | Package-private delegate. Owns color state, property accessors, bounds, dispose. | ~120 |
+| `TextRendererProperties.java` | Package-private delegate. Owns color state, property accessors, bounds, dispose. | ~190 |
 | `TextRendererPipeline.java` | Package-private delegate. Owns 6 rendering pipeline methods (Phase 3). | ~253 |
 | `Manager.java` | Extracted `Manager` (Phase 2). Updated field paths for color state. | ~205 |
 | `TextRendererGlyph.java` | Extracted `Glyph` (Phase 1). | ~200 |
@@ -167,28 +167,35 @@ two-level access through the `properties` delegate:
 
 ### Manager.java (8 unique fields, 9 code locations)
 
+In `endMovement()`, the code uses a local alias `props = textRenderer.properties`
+to avoid repeating the two-level path. In `allocateBackingStore()`, the direct
+path is used once.
+
 | Before | After | Method |
 | --- | --- | --- |
 | `textRenderer.smoothing` | `textRenderer.properties.smoothing` | `allocateBackingStore()` |
-| `textRenderer.haveCachedColor` | `textRenderer.properties.haveCachedColor` | `endMovement()` |
-| `textRenderer.cachedColor` | `textRenderer.properties.cachedColor` | `endMovement()` (×2) |
-| `textRenderer.cachedR` | `textRenderer.properties.cachedR` | `endMovement()` |
-| `textRenderer.cachedG` | `textRenderer.properties.cachedG` | `endMovement()` |
-| `textRenderer.cachedB` | `textRenderer.properties.cachedB` | `endMovement()` |
-| `textRenderer.cachedA` | `textRenderer.properties.cachedA` | `endMovement()` |
-| `textRenderer.needToResetColor` | `textRenderer.properties.needToResetColor` | `endMovement()` |
+| `textRenderer.haveCachedColor` | `props.haveCachedColor` | `endMovement()` |
+| `textRenderer.cachedColor` | `props.cachedColor` | `endMovement()` (×2) |
+| `textRenderer.cachedR` | `props.cachedR` | `endMovement()` |
+| `textRenderer.cachedG` | `props.cachedG` | `endMovement()` |
+| `textRenderer.cachedB` | `props.cachedB` | `endMovement()` |
+| `textRenderer.cachedA` | `props.cachedA` | `endMovement()` |
+| `textRenderer.needToResetColor` | `props.needToResetColor` | `endMovement()` |
 
 ### TextRendererPipeline.java (7 unique fields, 9 code locations)
 
+In `beginRendering()`, the code uses a local alias `props = renderer.properties`
+to avoid repeating the two-level path.
+
 | Before | After | Method |
 | --- | --- | --- |
-| `renderer.needToResetColor` | `renderer.properties.needToResetColor` | `beginRendering()` (×2: read + write) |
-| `renderer.haveCachedColor` | `renderer.properties.haveCachedColor` | `beginRendering()` |
-| `renderer.cachedColor` | `renderer.properties.cachedColor` | `beginRendering()` (×2) |
-| `renderer.cachedR` | `renderer.properties.cachedR` | `beginRendering()` |
-| `renderer.cachedG` | `renderer.properties.cachedG` | `beginRendering()` |
-| `renderer.cachedB` | `renderer.properties.cachedB` | `beginRendering()` |
-| `renderer.cachedA` | `renderer.properties.cachedA` | `beginRendering()` |
+| `renderer.needToResetColor` | `props.needToResetColor` | `beginRendering()` (×2: read + write) |
+| `renderer.haveCachedColor` | `props.haveCachedColor` | `beginRendering()` |
+| `renderer.cachedColor` | `props.cachedColor` | `beginRendering()` (×2) |
+| `renderer.cachedR` | `props.cachedR` | `beginRendering()` |
+| `renderer.cachedG` | `props.cachedG` | `beginRendering()` |
+| `renderer.cachedB` | `props.cachedB` | `beginRendering()` |
+| `renderer.cachedA` | `props.cachedA` | `beginRendering()` |
 
 ## Visibility changes
 
@@ -295,7 +302,7 @@ wc -l core/glrender/src/main/java/edu/cmu/cs/dennisc/render/joglrenderer/NonCach
 # Expected: under 500 lines
 
 wc -l core/glrender/src/main/java/edu/cmu/cs/dennisc/render/joglrenderer/TextRendererProperties.java
-# Expected: ~120 lines
+# Expected: ~190 lines
 ```
 
 ### File existence check
@@ -321,9 +328,11 @@ test -f core/glrender/src/main/java/edu/cmu/cs/dennisc/render/joglrenderer/TextR
    changes, reorderings, or optimizations.
 
 4. **Two-level field paths.** `Manager` and `TextRendererPipeline` access
-   color state through `textRenderer.properties.fieldName` instead of
-   `textRenderer.fieldName`. This is a compile-time path change only — the
-   JIT inlines these single-hop field accesses.
+   color state through a local alias (`props = textRenderer.properties`)
+   and then `props.fieldName`, or directly as
+   `textRenderer.properties.fieldName` for single accesses. This is a
+   compile-time path change only — the JIT inlines these single-hop
+   field accesses.
 
 5. **Contract test threshold tightened.** The `InnerClassExtractionContractTest`
    line-count assertion in `nonCachingTextRenderer_lineCount_under500()` is
@@ -364,9 +373,10 @@ To understand the call chain for `setColor(Color.RED)`:
 
 When `Manager.endMovement()` restores colors after backing store compaction:
 
-1. `textRenderer.properties.haveCachedColor` — two-level field access
-2. `textRenderer.properties.cachedColor` — checks Color vs RGBA
-3. `textRenderer.properties.cachedR/G/B/A` — RGBA components
+1. `final TextRendererProperties props = textRenderer.properties` — local alias
+2. `props.haveCachedColor` — checks if color was cached
+3. `props.cachedColor` — checks Color vs RGBA
+4. `props.cachedR/G/B/A` — RGBA components
 
 ### Adding a new property to TextRendererProperties
 

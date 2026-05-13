@@ -65,7 +65,7 @@ public void setColor(final Color color) throws GLException {
 }
 
 // AFTER (in TextRendererProperties)
-void setColor(final Color color) {
+public void setColor(final Color color) throws GLException {
     final boolean noNeedForFlush = (haveCachedColor && (cachedColor != null) &&
         color.equals(cachedColor));
     if (!noNeedForFlush) {
@@ -78,12 +78,12 @@ void setColor(final Color color) {
 ```
 
 Key differences:
-- Visibility changed from `public` to package-private (public API stays on
-  `NonCachingTextRenderer` as a thin delegator)
 - `flushGlyphPipeline()` is qualified as `renderer.flushGlyphPipeline()`
 - `getBackingStore()` is qualified as `renderer.getBackingStore()`
 - Fields (`haveCachedColor`, `cachedColor`) are local — they live on
   `TextRendererProperties` itself
+- The class is package-private so `public` methods are only accessible
+  within the package
 
 ## 3. Trace the public API delegation
 
@@ -144,12 +144,12 @@ if (textRenderer.haveCachedColor) {
 }
 
 // AFTER (in endMovement)
-if (textRenderer.properties.haveCachedColor) {
-    if (textRenderer.properties.cachedColor == null) {
-        ...setColor(textRenderer.properties.cachedR, textRenderer.properties.cachedG,
-            textRenderer.properties.cachedB, textRenderer.properties.cachedA);
+final TextRendererProperties props = textRenderer.properties;
+if (props.haveCachedColor) {
+    if (props.cachedColor == null) {
+        ...setColor(props.cachedR, props.cachedG, props.cachedB, props.cachedA);
     } else {
-        ...setColor(textRenderer.properties.cachedColor);
+        ...setColor(props.cachedColor);
     }
 }
 ```
@@ -169,21 +169,21 @@ if (renderer.needToResetColor && renderer.haveCachedColor) {
 }
 
 // AFTER
-if (renderer.properties.needToResetColor && renderer.properties.haveCachedColor) {
-    if (renderer.properties.cachedColor == null) {
-        renderer.getBackingStore().setColor(renderer.properties.cachedR,
-            renderer.properties.cachedG,
-            renderer.properties.cachedB, renderer.properties.cachedA);
+final TextRendererProperties props = renderer.properties;
+if (props.needToResetColor && props.haveCachedColor) {
+    if (props.cachedColor == null) {
+        backingStore.setColor(props.cachedR, props.cachedG,
+            props.cachedB, props.cachedA);
     } else {
-        renderer.getBackingStore().setColor(renderer.properties.cachedColor);
+        backingStore.setColor(props.cachedColor);
     }
-    renderer.properties.needToResetColor = false;
+    props.needToResetColor = false;
 }
 ```
 
-The two-level path `renderer.properties.cachedR` adds one pointer hop at the
-source level, but the JIT compiler inlines this into a single field load since
-`properties` is a `final` field.
+The local alias `props = renderer.properties` avoids repeating the
+two-level path. Since `properties` is a `final` field, the JIT compiler
+inlines the alias into a direct field load.
 
 ## 5. Understand the dispose delegation
 
@@ -243,7 +243,7 @@ wc -l core/glrender/src/main/java/edu/cmu/cs/dennisc/render/joglrenderer/NonCach
 # Expected: under 500
 
 wc -l core/glrender/src/main/java/edu/cmu/cs/dennisc/render/joglrenderer/TextRendererProperties.java
-# Expected: ~120
+# Expected: ~190
 ```
 
 ## 8. Non-claims
@@ -266,7 +266,7 @@ This extraction does **not**:
 | --- | --- | --- |
 | `NonCachingTextRenderer.java` lines | 619 | <500 |
 | Property methods in NCTR | 10 (full bodies) | 10 thin delegators |
-| `TextRendererProperties.java` | — | ~120 lines |
+| `TextRendererProperties.java` | — | ~190 lines |
 | Color/property fields on NCTR | 9 | 0 (moved to properties) |
 | Two-level field paths | 0 | 8 unique fields, 18 code locations (9 in Manager, 9 in Pipeline) |
 | Dead comments removed | 0 | ~14 lines |

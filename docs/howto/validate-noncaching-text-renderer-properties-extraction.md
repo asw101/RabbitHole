@@ -52,7 +52,7 @@ wc -l core/glrender/src/main/java/edu/cmu/cs/dennisc/render/joglrenderer/TextRen
 ```
 
 - `NonCachingTextRenderer.java` must be under 500 lines.
-- `TextRendererProperties.java` should be approximately 120 lines.
+- `TextRendererProperties.java` should be approximately 190 lines.
 
 ## Step 4: Verify fields moved
 
@@ -77,23 +77,27 @@ Expected: all 9 fields declared.
 
 ## Step 5: Verify caller path updates
 
-Check that `Manager.java` uses two-level paths:
+Check that `Manager.java` accesses properties through a local alias or
+direct two-level path:
 
 ```bash
-grep -n 'properties\.' \
+grep -n 'properties\.\|props\.' \
   core/glrender/src/main/java/edu/cmu/cs/dennisc/render/joglrenderer/Manager.java
 ```
 
-Expected: 9 occurrences of `textRenderer.properties.fieldName`.
+Expected: `textRenderer.properties.smoothing` in `allocateBackingStore()`,
+a `props = textRenderer.properties` local alias in `endMovement()`, and
+8 `props.fieldName` accesses.
 
-Check that `TextRendererPipeline.java` uses two-level paths:
+Check that `TextRendererPipeline.java` uses the same pattern:
 
 ```bash
-grep -n 'properties\.' \
+grep -n 'properties\.\|props\.' \
   core/glrender/src/main/java/edu/cmu/cs/dennisc/render/joglrenderer/TextRendererPipeline.java
 ```
 
-Expected: 9 occurrences of `renderer.properties.fieldName`.
+Expected: a `props = renderer.properties` local alias in `beginRendering()`
+and 9 `props.fieldName` accesses.
 
 ## Step 6: Run the contract tests
 

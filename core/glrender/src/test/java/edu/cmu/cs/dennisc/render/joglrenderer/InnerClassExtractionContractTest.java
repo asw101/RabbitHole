@@ -1347,15 +1347,6 @@ public class InnerClassExtractionContractTest {
         source.contains("@SuppressWarnings(\"CheckStyle\")"));
   }
 
-  private void assertContains(String[] values, String expected) {
-    for (String v : values) {
-      if (expected.equals(v)) {
-        return;
-      }
-    }
-    fail("Expected @SuppressWarnings to contain \"" + expected + "\"");
-  }
-
   private void assertFieldExists(Class<?> clazz, String name, Class<?> expectedType) {
     try {
       Field f = clazz.getDeclaredField(name);
@@ -1402,16 +1393,6 @@ public class InnerClassExtractionContractTest {
             + "' must be extracted to a top-level class");
       }
     }
-  }
-
-  private void assertInnerClassPresent(String simpleName) {
-    for (Class<?> inner : NonCachingTextRenderer.class.getDeclaredClasses()) {
-      if (simpleName.equals(inner.getSimpleName())) {
-        return;
-      }
-    }
-    fail("Inner class '" + simpleName
-        + "' must be preserved in NonCachingTextRenderer");
   }
 
   private void assertFieldWidened(String fieldName) {
