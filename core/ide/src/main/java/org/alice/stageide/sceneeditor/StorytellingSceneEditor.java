@@ -45,12 +45,8 @@ package org.alice.stageide.sceneeditor;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 import edu.cmu.cs.dennisc.animation.Animator;
 import edu.cmu.cs.dennisc.animation.ClockBasedAnimator;
-import edu.cmu.cs.dennisc.java.lang.ArrayUtilities;
 import edu.cmu.cs.dennisc.java.lang.SystemUtilities;
-import edu.cmu.cs.dennisc.java.util.Lists;
-import edu.cmu.cs.dennisc.java.util.Maps;
 import edu.cmu.cs.dennisc.java.util.logging.Logger;
-import edu.cmu.cs.dennisc.pattern.IsInstanceCrawler;
 import edu.cmu.cs.dennisc.render.OnscreenRenderTarget;
 import edu.cmu.cs.dennisc.render.RenderCapabilities;
 import edu.cmu.cs.dennisc.render.event.*;
@@ -61,7 +57,6 @@ import edu.cmu.cs.dennisc.scenegraph.Element;
 import org.alice.ide.IDE;
 import org.alice.ide.ProjectDocumentFrame;
 import org.alice.ide.ReasonToDisableSomeAmountOfRendering;
-import org.alice.ide.croquet.models.gallerybrowser.GalleryDragModel;
 import org.alice.ide.icons.Icons;
 import org.alice.ide.instancefactory.InstanceFactory;
 import org.alice.ide.instancefactory.ThisFieldAccessFactory;
@@ -81,10 +76,8 @@ import org.alice.math.immutable.*;
 import org.alice.nonfree.NebulousIde;
 import org.alice.stageide.StageIDE;
 import org.alice.stageide.croquet.models.sceneditor.ViewListSelectionState;
-import org.alice.stageide.modelresource.ClassResourceKey;
 import org.alice.stageide.oneshot.DynamicOneShotMenuModel;
 import org.alice.stageide.run.RunComposite;
-import org.alice.stageide.sceneeditor.draganddrop.SceneDropSite;
 import org.alice.stageide.sceneeditor.interact.CameraNavigatorWidget;
 import org.alice.stageide.sceneeditor.interact.GlobalDragAdapter;
 import org.alice.stageide.sceneeditor.side.SideComposite;
@@ -93,9 +86,6 @@ import org.alice.stageide.sceneeditor.viewmanager.*;
 import org.alice.stageide.sceneeditor.views.InstanceFactorySelectionPanel;
 import org.alice.stageide.sceneeditor.views.SceneObjectPropertyManagerPanel;
 import org.lgna.croquet.*;
-import org.lgna.croquet.event.ValueEvent;
-import org.lgna.croquet.event.ValueListener;
-import org.lgna.croquet.history.DragStep;
 import org.lgna.croquet.history.UserActivity;
 import org.lgna.croquet.triggers.InputEventTrigger;
 import org.lgna.croquet.views.*;
@@ -106,96 +96,20 @@ import org.lgna.project.ast.*;
 import org.lgna.project.virtualmachine.UserInstance;
 import org.lgna.story.*;
 import org.lgna.story.implementation.*;
-import org.lgna.story.implementation.alice.AliceResourceClassUtilities;
-import org.lgna.story.resources.ModelResource;
+
 
 import javax.swing.Icon;
-import javax.swing.JPanel;
-import javax.swing.SpringLayout;
 import javax.swing.SwingUtilities;
 import java.awt.Dimension;
 import java.awt.Graphics;
-import java.awt.Point;
 import java.awt.event.MouseEvent;
 import java.util.*;
-import java.util.List;
 
 /**
  * @author dculyba
  */
 public class StorytellingSceneEditor extends AbstractSceneEditor implements RenderTargetListener {
   private boolean isVrScene;
-
-  private class SceneEditorDropReceptor extends AbstractDropReceptor {
-    @Override
-    public boolean isPotentiallyAcceptingOf(DragModel dragModel) {
-      return dragModel instanceof GalleryDragModel;
-    }
-
-    @Override
-    public void dragStarted(DragStep step) {
-      DragComponent dragSource = step.getDragSource();
-      dragSource.showDragProxy();
-    }
-
-    @Override
-    public void dragEntered(DragStep dragAndDropContext) {
-    }
-
-    private boolean isDropLocationOverLookingGlass(DragStep dragAndDropContext) {
-      MouseEvent eSource = dragAndDropContext.getLatestMouseEvent();
-      Point pointInLookingGlass = SwingUtilities.convertPoint(eSource.getComponent(), eSource.getPoint(), lookingGlassPanel.getAwtComponent());
-      return lookingGlassPanel.getAwtComponent().contains(pointInLookingGlass);
-    }
-
-    private boolean overLookingGlass = false;
-
-    @Override
-    public DropSite dragUpdated(DragStep dragStep) {
-      if (isDropLocationOverLookingGlass(dragStep)) {
-        if (!overLookingGlass) {
-          overLookingGlass = true;
-          globalDragAdapter.dragEntered(dragStep);
-        }
-        globalDragAdapter.dragUpdated(dragStep);
-      } else {
-        if (overLookingGlass) {
-          overLookingGlass = false;
-          globalDragAdapter.dragExited(dragStep);
-        }
-      }
-      AffineMatrix4x4 t = globalDragAdapter.getDropTargetTransformation();
-      return t != null ? new SceneDropSite(t) : null;
-    }
-
-    @Override
-    protected Triggerable dragDroppedPostRejectorCheck(DragStep dragStep) {
-      if (isDropLocationOverLookingGlass(dragStep)) {
-        DropSite dropSite = new SceneDropSite(globalDragAdapter.getDropTargetTransformation());
-        return dragStep.getModel().getDropOperation(dragStep, dropSite);
-      }
-      return null;
-    }
-
-    @Override
-    public void dragExited(DragStep dragAndDropContext, boolean isDropRecipient) {
-    }
-
-    @Override
-    public void dragStopped(DragStep dragStep) {
-      globalDragAdapter.dragExited(dragStep);
-    }
-
-    @Override
-    public TrackableShape getTrackableShape(DropSite potentialDropSite) {
-      return StorytellingSceneEditor.this;
-    }
-
-    @Override
-    public SwingComponentView<?> getViewController() {
-      return StorytellingSceneEditor.this;
-    }
-  }
 
   private static final String SHOW_JOINTED_MODEL_VISUALIZATIONS_KEY = StorytellingSceneEditor.class.getName() + ".showJointedModelVisualizations";
 
@@ -207,7 +121,8 @@ public class StorytellingSceneEditor extends AbstractSceneEditor implements Rend
     return SingletonHolder.instance;
   }
 
-  private final SceneEditorDropReceptor dropReceptor = new SceneEditorDropReceptor();
+  private final SceneEditorDropReceptor dropReceptor = new SceneEditorDropReceptor(this);
+  private final SceneFieldCodeGenerator codeGenerator = new SceneFieldCodeGenerator(this);
 
   private StorytellingSceneEditor() {
   }
@@ -227,76 +142,12 @@ public class StorytellingSceneEditor extends AbstractSceneEditor implements Rend
   };
   private OnscreenRenderTarget onscreenRenderTarget = GlrRenderFactory.getInstance().createOnscreenRenderTarget(new RenderCapabilities.Builder().stencilBits(0).build());
 
-  private class LookingGlassPanel extends CompassPointSpringPanel {
-    @Override
-    protected JPanel createJPanel() {
-      return StorytellingSceneEditor.this.onscreenRenderTarget.getAwtComponent();
-    }
-
-    @Override
-    public void setNorthWestComponent(AwtComponentView<?> northWestComponent) {
-      super.setNorthWestComponent(northWestComponent);
-      if (northWestComponent != null) {
-        SpringLayout springLayout = (SpringLayout) this.getAwtComponent().getLayout();
-        springLayout.putConstraint(SpringLayout.SOUTH, northWestComponent.getAwtComponent(), -this.getPad(), SpringLayout.SOUTH, this.getAwtComponent());
-      }
-    }
-  }
-
-  private final ValueListener<Boolean> showSnapGridListener = new ValueListener<Boolean>() {
-    @Override
-    public void valueChanged(ValueEvent<Boolean> e) {
-      StorytellingSceneEditor.this.setShowSnapGrid(e.getNextValue());
-    }
-  };
-
-  private final ValueListener<Boolean> snapEnabledListener = new ValueListener<Boolean>() {
-    @Override
-    public void valueChanged(ValueEvent<Boolean> e) {
-      if (SnapState.getInstance().isShowSnapGridEnabled()) {
-        StorytellingSceneEditor.this.setShowSnapGrid(e.getNextValue());
-      }
-    }
-  };
-
-  private final ValueListener<Double> snapGridSpacingListener = new ValueListener<Double>() {
-    @Override
-    public void valueChanged(ValueEvent<Double> e) {
-      StorytellingSceneEditor.this.setSnapGridSpacing(e.getNextValue());
-    }
-  };
-
-  private final ValueListener<UserField> cameraMarkerFieldSelectionListener = new ValueListener<UserField>() {
-    @Override
-    public void valueChanged(ValueEvent<UserField> e) {
-      StorytellingSceneEditor.this.handleCameraMarkerFieldSelection(e.getNextValue());
-    }
-  };
-
-  private final ValueListener<UserField> objectMarkerFieldSelectionListener = new ValueListener<UserField>() {
-    @Override
-    public void valueChanged(ValueEvent<UserField> e) {
-      StorytellingSceneEditor.this.handleObjectMarkerFieldSelection(e.getNextValue());
-    }
-  };
-
-  private final ValueListener<InstanceFactory> instanceFactorySelectionListener = new ValueListener<InstanceFactory>() {
-    @Override
-    public void valueChanged(ValueEvent<InstanceFactory> e) {
-      StorytellingSceneEditor.this.selectionIsFromInstanceSelector = true;
-      StorytellingSceneEditor.this.setSelectedInstance(e.getNextValue());
-      StorytellingSceneEditor.this.selectionIsFromInstanceSelector = false;
-    }
-  };
-
-  private final ValueListener<CameraOption> mainCameraViewSelectionObserver =
-      e -> StorytellingSceneEditor.this.handleMainCameraViewSelection();
-
   private boolean isInitialized = false;
 
   private ClockBasedAnimator animator = new ClockBasedAnimator();
-  private LookingGlassPanel lookingGlassPanel = new LookingGlassPanel();
-  private GlobalDragAdapter globalDragAdapter;
+  LookingGlassPanel lookingGlassPanel = new LookingGlassPanel(onscreenRenderTarget);
+  GlobalDragAdapter globalDragAdapter;
+  final SceneEditorListeners listeners = new SceneEditorListeners(this);
   // The location of the Camera or VR user ground. Same as sceneCameraImp for non VR scenes.
   private TransformableImp movableSceneCameraImp;
   // The camera or VR headset. Same as movableSceneCameraImp for non VR scenes.
@@ -317,7 +168,7 @@ public class StorytellingSceneEditor extends AbstractSceneEditor implements Rend
 
   private ImmutableDataSingleSelectListState<CameraOption> mainCameraMarkerList = ViewListSelectionState.getInstance();
 
-  private boolean selectionIsFromInstanceSelector = false;
+  boolean selectionIsFromInstanceSelector = false;
   private boolean selectionIsFromMain = false;
 
   protected SnapGrid snapGrid;
@@ -375,7 +226,7 @@ public class StorytellingSceneEditor extends AbstractSceneEditor implements Rend
     }
   }
 
-  private void setSelectedInstance(InstanceFactory instanceFactory) {
+  void setSelectedInstance(InstanceFactory instanceFactory) {
     Expression expression = instanceFactory != null ? instanceFactory.createExpression() : null;
     if (expression instanceof FieldAccess fa) {
       AbstractField field = fa.field.getValue();
@@ -533,14 +384,14 @@ public class StorytellingSceneEditor extends AbstractSceneEditor implements Rend
     return SideComposite.getInstance().getObjectPropertiesTab().getView();
   }
 
-  private void handleCameraMarkerFieldSelection(UserField cameraMarkerField) {
+  void handleCameraMarkerFieldSelection(UserField cameraMarkerField) {
     CameraMarkerImp newMarker = (CameraMarkerImp) this.getMarkerForField(cameraMarkerField);
     this.globalDragAdapter.setSelectedCameraMarker(newMarker);
     MoveActiveCameraToMarkerActionOperation.getInstance().setMarkerField(cameraMarkerField);
     MoveMarkerToActiveCameraActionOperation.getInstance().setMarkerField(cameraMarkerField);
   }
 
-  private void handleObjectMarkerFieldSelection(UserField objectMarkerField) {
+  void handleObjectMarkerFieldSelection(UserField objectMarkerField) {
     ObjectMarkerImp newMarker = (ObjectMarkerImp) this.getMarkerForField(objectMarkerField);
     this.globalDragAdapter.setSelectedObjectMarker(newMarker);
     MoveSelectedObjectToMarkerActionOperation.getInstance().setMarkerField(objectMarkerField);
@@ -601,7 +452,7 @@ public class StorytellingSceneEditor extends AbstractSceneEditor implements Rend
     }
   }
 
-  private void handleMainCameraViewSelection() {
+  void handleMainCameraViewSelection() {
     StageIDE ide = StageIDE.getActiveInstance();
     InstanceFactoryState instanceFactoryState = ide.getDocumentFrame().getInstanceFactoryState();
     UserField field = getSelectedField();
@@ -638,12 +489,12 @@ public class StorytellingSceneEditor extends AbstractSceneEditor implements Rend
       return;
     }
     this.snapGrid = new SnapGrid();
-    SnapState.getInstance().getShowSnapGridState().addAndInvokeNewSchoolValueListener(this.showSnapGridListener);
-    SnapState.getInstance().getIsSnapEnabledState().addAndInvokeNewSchoolValueListener(this.snapEnabledListener);
-    SnapState.getInstance().getSnapGridSpacingState().addAndInvokeNewSchoolValueListener(this.snapGridSpacingListener);
+    SnapState.getInstance().getShowSnapGridState().addAndInvokeNewSchoolValueListener(this.listeners.showSnapGridListener);
+    SnapState.getInstance().getIsSnapEnabledState().addAndInvokeNewSchoolValueListener(this.listeners.snapEnabledListener);
+    SnapState.getInstance().getSnapGridSpacingState().addAndInvokeNewSchoolValueListener(this.listeners.snapGridSpacingListener);
 
     ProjectDocumentFrame docFrame = IDE.getActiveInstance().getDocumentFrame();
-    docFrame.getInstanceFactoryState().addAndInvokeNewSchoolValueListener(this.instanceFactorySelectionListener);
+    docFrame.getInstanceFactoryState().addAndInvokeNewSchoolValueListener(this.listeners.instanceFactorySelectionListener);
 
     this.globalDragAdapter = new GlobalDragAdapter(this);
     this.globalDragAdapter.setOnscreenRenderTarget(onscreenRenderTarget);
@@ -690,11 +541,11 @@ public class StorytellingSceneEditor extends AbstractSceneEditor implements Rend
     this.mainCameraViewSelector.setRenderer(new CameraViewCellRenderer());
     this.mainCameraViewSelector.setFontSize(15);
     this.mainCameraMarkerList.addAndInvokeNewSchoolValueListener(this.mainCameraViewTracker);
-    this.mainCameraMarkerList.addAndInvokeNewSchoolValueListener(this.mainCameraViewSelectionObserver);
+    this.mainCameraMarkerList.addAndInvokeNewSchoolValueListener(this.listeners.mainCameraViewSelectionObserver);
     this.lookingGlassPanel.addComponent(this.mainCameraViewSelector, Horizontal.CENTER, 0, Vertical.NORTH, 20);
 
-    SideComposite.getInstance().getCameraMarkersTab().getMarkerListState().addAndInvokeNewSchoolValueListener(this.cameraMarkerFieldSelectionListener);
-    SideComposite.getInstance().getObjectMarkersTab().getMarkerListState().addAndInvokeNewSchoolValueListener(this.objectMarkerFieldSelectionListener);
+    SideComposite.getInstance().getCameraMarkersTab().getMarkerListState().addAndInvokeNewSchoolValueListener(this.listeners.cameraMarkerFieldSelectionListener);
+    SideComposite.getInstance().getObjectMarkersTab().getMarkerListState().addAndInvokeNewSchoolValueListener(this.listeners.objectMarkerFieldSelectionListener);
 
     this.isInitialized = true;
   }
@@ -829,7 +680,7 @@ public class StorytellingSceneEditor extends AbstractSceneEditor implements Rend
 
   private void useSceneAsVehicleForDisconnectedModels(UserMethod generatedSetupMethod) {
     for (Statement statement : generatedSetupMethod.body.getValue().statements.getValue()) {
-      MethodInvocation setVehicleCall = asSetVehicleCall(statement);
+      MethodInvocation setVehicleCall = SceneFieldCodeGenerator.asSetVehicleCall(statement);
       if (setVehicleCall == null) {
         continue;
       }
@@ -838,23 +689,6 @@ public class StorytellingSceneEditor extends AbstractSceneEditor implements Rend
         args.getFirst().expression.setValue(new ThisExpression());
       }
     }
-  }
-
-  private MethodInvocation asSetVehicleCall(Statement statement) {
-    if (statement instanceof ExpressionStatement expressionStatement) {
-      Expression expression = expressionStatement.expression.getValue();
-      if (expression instanceof MethodInvocation mi) {
-        Method method = mi.method.getValue();
-        if (method.getName().equalsIgnoreCase("setVehicle")) {
-          return mi;
-        }
-      }
-    }
-    return null;
-  }
-
-  private boolean isSetVehicleInvocation(Statement statement) {
-    return asSetVehicleCall(statement) != null;
   }
 
   @Override
@@ -881,10 +715,6 @@ public class StorytellingSceneEditor extends AbstractSceneEditor implements Rend
     this.globalDragAdapter.setHandleVisibility(true);
   }
 
-  private void fillInAutomaticSetUpMethod(StatementListProperty bodyStatementsProperty, boolean isThis, AbstractField field, boolean getFullFieldState) {
-    SetUpMethodGenerator.fillInAutomaticSetUpMethod(bodyStatementsProperty, isThis, field, this.getInstanceInJavaVMForField(field), this.getActiveSceneInstance(), getFullFieldState);
-  }
-
   @Override
   public void setFieldToState(UserField field, Statement... statements) {
     EntityImp fieldImp = getImplementation(field);
@@ -897,223 +727,41 @@ public class StorytellingSceneEditor extends AbstractSceneEditor implements Rend
 
   @Override
   public Statement getCurrentStateCodeForField(UserField field) {
-    Statement rv = null;
-    BlockStatement bs = new BlockStatement();
-    fillInAutomaticSetUpMethod(bs.statements, false, field, true);
-
-    Statement setVehicleStatement = null;
-    for (Statement statement : bs.statements.getValue()) {
-      if (isSetVehicleInvocation(statement)) {
-        setVehicleStatement = statement;
-        break;
-      }
-    }
-    if (setVehicleStatement != null) {
-      bs.statements.getValue().remove(setVehicleStatement);
-    }
-    DoTogether dt = new DoTogether(bs);
-    if (setVehicleStatement != null) {
-      DoInOrder dio = new DoInOrder(new BlockStatement(setVehicleStatement, dt));
-      rv = dio;
-    } else {
-      rv = dt;
-    }
-
-    return rv;
+    return codeGenerator.getCurrentStateCodeForField(field);
   }
 
   @Override
   public void generateCodeForSetUp(StatementListProperty bodyStatementsProperty) {
-    AbstractField sceneField = this.getActiveSceneField();
-    this.fillInAutomaticSetUpMethod(bodyStatementsProperty, true, sceneField, false);
-    for (UserField userField : this.getActiveSceneType().getDeclaredFields()) {
-      if (userField != null) {
-        if (userField.getManagementLevel() == ManagementLevel.MANAGED) {
-          this.fillInAutomaticSetUpMethod(bodyStatementsProperty, false, userField, false);
-        }
-      }
-    }
-  }
-
-  private Statement replaceReferencesInExpression(UserField fieldToReplace, UserField replacement, Statement statement) {
-    IsInstanceCrawler<FieldAccess> crawler = IsInstanceCrawler.createInstance(FieldAccess.class);
-    statement.crawl(crawler, CrawlPolicy.COMPLETE, null);
-
-    Map<AbstractField, AbstractField> map = Maps.newHashMap();
-    for (FieldAccess fieldAccess : crawler.getList()) {
-      AbstractField field = fieldAccess.field.getValue();
-      if (field == fieldToReplace) {
-        fieldAccess.field.setValue(replacement);
-      }
-    }
-    return statement;
+    codeGenerator.generateCodeForSetUp(bodyStatementsProperty);
   }
 
   @Override
   public Statement[] getDoStatementsForCopyField(UserField fieldToCopy, UserField newField, AffineMatrix4x4 initialTransform) {
-    Statement stateCodeStatement = this.getCurrentStateCodeForField(fieldToCopy);
-    stateCodeStatement = replaceReferencesInExpression(fieldToCopy, newField, stateCodeStatement);
-
-    //Remove the setVehicle and setTransform statements from the setup code, so we can replace them with custom ones based on the fieldToCopy's vehicle and the initial transform
-    List<BlockStatement> blockStatements = new LinkedList<BlockStatement>();
-    if (stateCodeStatement instanceof BlockStatement statement) {
-      blockStatements.add(statement);
-    } else if (stateCodeStatement instanceof AbstractStatementWithBody body) {
-      blockStatements.add(body.body.getValue());
-    }
-    while (!blockStatements.isEmpty()) {
-      BlockStatement bs = blockStatements.removeFirst();
-      Statement setVehicleStatement = null;
-      Statement setPositionStatement = null;
-      Statement setOrientationStatement = null;
-      for (Statement s : bs.statements.getValue()) {
-        if (s instanceof BlockStatement block) {
-          blockStatements.add(block);
-        } else if (s instanceof AbstractStatementWithBody body) {
-          blockStatements.add(body.body.getValue());
-        } else if (s instanceof ExpressionStatement expressionStatement) {
-          Expression expression = expressionStatement.expression.getValue();
-          if (expression instanceof MethodInvocation mi) {
-            Method method = mi.method.getValue();
-            //Look for the setVehicle, setOrientation, and setPositions for the field. Note that we need to make sure these calls are being called on the field and not the joints, hence the check for FieldAccess (joints are called off of getJoint and resolve as a MethodInvocation)
-            if (method.getName().equalsIgnoreCase("setVehicle") && (mi.expression.getValue() instanceof FieldAccess)) {
-              setVehicleStatement = s;
-            } else if (method.getName().equalsIgnoreCase("setOrientationRelativeToVehicle") && (mi.expression.getValue() instanceof FieldAccess)) {
-              setOrientationStatement = s;
-            } else if (method.getName().equalsIgnoreCase("setPositionRelativeToVehicle") && (mi.expression.getValue() instanceof FieldAccess)) {
-              setPositionStatement = s;
-            }
-          }
-        }
-      }
-      if (setVehicleStatement != null) {
-        bs.statements.getValue().remove(setVehicleStatement);
-      }
-      if (setPositionStatement != null) {
-        bs.statements.getValue().remove(setPositionStatement);
-      }
-      if (setOrientationStatement != null) {
-        bs.statements.getValue().remove(setOrientationStatement);
-      }
-    }
-
-    Object toCopyInstance = this.getInstanceInJavaVMForField(fieldToCopy);
-    AbstractField toCopyVehicleField = null;
-    if (toCopyInstance instanceof Rider rider) {
-      SThing vehicleInstance = rider.getVehicle();
-      toCopyVehicleField = this.getFieldForInstanceInJavaVM(vehicleInstance);
-    }
-    Statement[] initializeStatements = SetUpMethodGenerator.getSetupStatementsForField(false, newField, this.getActiveSceneInstance(), toCopyVehicleField, initialTransform);
-    Statement[] statementsToReturn = new Statement[initializeStatements.length + 1];
-    for (int i = 0; i < initializeStatements.length; i++) {
-      statementsToReturn[i] = initializeStatements[i];
-    }
-    statementsToReturn[initializeStatements.length] = stateCodeStatement;
-    return statementsToReturn;
+    return codeGenerator.getDoStatementsForCopyField(fieldToCopy, newField, initialTransform);
   }
 
   @Override
   public Statement[] getDoStatementsForAddField(UserField field, AffineMatrix4x4 initialTransform) {
-    if ((initialTransform == null) && field.getValueType().isAssignableTo(SModel.class)) {
-      AbstractType<?, ?, ?> type = field.getValueType();
-      JavaType javaType = type.getFirstEncounteredJavaType();
-      Class<?> cls = javaType.getClassReflectionProxy().getReification();
-      Class<? extends ModelResource> resourceCls = null;
-      if (SModel.class.isAssignableFrom(cls)) {
-        resourceCls = AliceResourceClassUtilities.getResourceClassForModelClass((Class<? extends SModel>) cls);
-      }
-      Point3 location;
-      if (resourceCls != null) {
-        ClassResourceKey childKey = new ClassResourceKey((Class<? extends ModelResource>) cls);
-        AxisAlignedBox box = childKey.getBoundingBox();
-        boolean shouldPlaceOnGround = childKey.getPlaceOnGround();
-        double y = (box != null) && shouldPlaceOnGround ? -box.getXMinimum() : 0;
-        location = new Point3(0, y, 0);
-      } else {
-        location = Point3.ORIGIN;
-      }
-
-      initialTransform = new AffineMatrix4x4(OrthogonalMatrix3x3.IDENTITY, location);
-    }
-    return SetUpMethodGenerator.getSetupStatementsForField(false, field, this.getActiveSceneInstance(), null, initialTransform);
+    return codeGenerator.getDoStatementsForAddField(field, initialTransform);
   }
 
   @Override
   public Statement[] getUndoStatementsForAddField(UserField field) {
-    List<Statement> undoStatements = Lists.newLinkedList();
-
-    undoStatements.add(SetUpMethodGenerator.createSetVehicleNullStatement(field));
-
-    return ArrayUtilities.createArray(undoStatements, Statement.class);
+    return codeGenerator.getUndoStatementsForAddField(field);
   }
 
   public Map<AbstractField, Statement> getRiders(UserField vehicle) {
-    IDE.getActiveInstance().ensureProjectCodeUpToDate();
-    UserInstance sceneAliceInstance = getActiveSceneInstance();
-    UserMethod generatedSetupMethod = sceneAliceInstance.getType().getDeclaredMethod(StageIDE.PERFORM_GENERATED_SET_UP_METHOD_NAME);
-    Map<AbstractField, Statement> riders = new HashMap<>();
-    for (Statement statement : generatedSetupMethod.body.getValue().statements.getValue()) {
-      MethodInvocation setVehicleCall = asSetVehicleCall(statement);
-      if (setVehicleCall != null && doesSetVehicleImplyVehicle(setVehicleCall, vehicle)) {
-        FieldAccess riderAccess = (FieldAccess) setVehicleCall.expression.getValue();
-        riders.put(riderAccess.field.getValue(), statement);
-      }
-    }
-    return riders;
-  }
-
-  private boolean doesSetVehicleImplyVehicle(MethodInvocation setVehicleCall, UserField vehicle) {
-    ArrayList<SimpleArgument> args = setVehicleCall.requiredArguments.getValue();
-    if (args.size() == 1 && setVehicleCall.expression.getValue() instanceof FieldAccess) {
-      Expression vehicleExpr = args.getFirst().expression.getValue();
-      return isDirectRider(vehicle, vehicleExpr) || isJointRider(vehicle, vehicleExpr);
-    }
-    return false;
-  }
-
-  private boolean isDirectRider(UserField vehicle, Expression vehicleExpr) {
-    return vehicleExpr instanceof FieldAccess fa && fa.field.getValue() == vehicle;
-  }
-
-  private boolean isJointRider(UserField vehicle, Expression vehicleExpr) {
-    if (vehicleExpr instanceof MethodInvocation vehicleMethod) {
-      if (vehicleMethod.expression.getValue() instanceof FieldAccess) {
-        FieldAccess target = (FieldAccess) vehicleMethod.expression.getValue();
-        return target.field.getValue() == vehicle;
-      }
-    }
-    return false;
+    return codeGenerator.getRiders(vehicle);
   }
 
   @Override
   public Statement[] getDoStatementsForRemoveField(UserField field, Map<AbstractField, Statement> riders) {
-    List<Statement> doStatements = Lists.newLinkedList();
-    for (AbstractField rider : riders.keySet()) {
-      doStatements.add(SetUpMethodGenerator.createSetVehicleSceneStatement(rider));
-    }
-    doStatements.add(SetUpMethodGenerator.createSetVehicleNullStatement(field));
-    return ArrayUtilities.createArray(doStatements, Statement.class);
+    return codeGenerator.getDoStatementsForRemoveField(field, riders);
   }
 
   @Override
   public Statement[] getUndoStatementsForRemoveField(UserField field, Map<AbstractField, Statement> riders) {
-    Object instance = this.getInstanceInJavaVMForField(field);
-    AbstractField vehicleField = null;
-    if (instance instanceof Rider rider) {
-      SThing vehicleInstance = rider.getVehicle();
-      vehicleField = this.getFieldForInstanceInJavaVM(vehicleInstance);
-    }
-    Statement[] setupStatements = SetUpMethodGenerator.getSetupStatementsForInstance(false, instance, this.getActiveSceneInstance(), false);
-    Statement vehicleStatement = SetUpMethodGenerator.createSetVehicleFieldStatement(field, vehicleField);
-    Statement[] statements = new Statement[setupStatements.length + 1 + riders.size()];
-    statements[0] = vehicleStatement;
-    System.arraycopy(setupStatements, 0, statements, 1, setupStatements.length);
-
-    int i = setupStatements.length + 1;
-    for (Statement setVehicleStatement : riders.values()) {
-      statements[i++] = setVehicleStatement;
-    }
-    return statements;
+    return codeGenerator.getUndoStatementsForRemoveField(field, riders);
   }
 
   @Override
