@@ -82,6 +82,7 @@ import org.alice.stageide.sceneeditor.viewmanager.MoveActiveCameraToMarkerAction
 import org.alice.stageide.sceneeditor.viewmanager.MoveMarkerToActiveCameraActionOperation;
 import org.alice.stageide.sceneeditor.viewmanager.MoveMarkerToSelectedObjectActionOperation;
 import org.alice.stageide.sceneeditor.viewmanager.MoveSelectedObjectToMarkerActionOperation;
+import org.alice.tools.EatmeSceneObjectAddedEvidence;
 
 import javax.swing.SwingUtilities;
 import java.util.Map;
@@ -338,6 +339,9 @@ public class StorytellingSceneEditor extends AbstractSceneEditor {
   @Override
   public void addField(UserType<?> declaringType, UserField field, int index, Statement... statements) {
     super.addField(declaringType, field, index, statements);
+    String objectClassName = field.getValueType() != null ? field.getValueType().getName() : null;
+    int fieldCountAfter = declaringType.getDeclaredFields().size();
+    EatmeSceneObjectAddedEvidence.recordSceneObjectAdded(objectClassName, fieldCountAfter);
     lifecycleManager.handleAddField(field);
   }
 
