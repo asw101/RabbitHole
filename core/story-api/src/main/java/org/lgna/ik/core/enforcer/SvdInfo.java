@@ -45,7 +45,7 @@ class SvdInfo {
 
     Matrix pseudoInverseForMotion = v.times(sForDamped).times(u.transpose());
 
-    if (isTransposed) { //TODO perhaps record the fact that matrices are transposed and act accordingly.
+    if (isTransposed) {
       pseudoInverseForMotion = pseudoInverseForMotion.transpose();
     }
 
@@ -72,7 +72,7 @@ class SvdInfo {
 
     Matrix pseudoInverseForNullspace = v.times(sForRegular).times(u.transpose());
 
-    if (isTransposed) { //TODO perhaps record the fact that matrices are transposed and act accordingly.
+    if (isTransposed) {
       pseudoInverseForNullspace = pseudoInverseForNullspace.transpose();
     }
 

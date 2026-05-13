@@ -19,16 +19,4 @@ class JacobianAxis {
   public void setFree(boolean isFree) {
     this.isFree = isFree;
   }
-
-  public void applyCorrespondingSingleDelta(double delta) {
-    throw new RuntimeException("Not completed method"); // TODO Auto-generated method stub
-  }
-
-  public boolean wentOverLimit() {
-    throw new RuntimeException("Not implemented method"); // TODO Auto-generated method stub
-  }
-
-  public double setToLimitAndReturnTheDifference() {
-    throw new RuntimeException("Not implemented method"); // TODO Auto-generated method stub
-  }
 }

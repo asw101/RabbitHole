@@ -36,7 +36,7 @@ public class PriorityLevelTest {
     private final boolean met;
 
     TestConstraint(Jacobian jacobian, Displacement displacement, boolean met) {
-      super(null); // no Chain needed for this test
+      super(null, null); // no Chain or context needed for this test
       this.fixedJacobian = jacobian;
       this.fixedDisplacement = displacement;
       this.met = met;

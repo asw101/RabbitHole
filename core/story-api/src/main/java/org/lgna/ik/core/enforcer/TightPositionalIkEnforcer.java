@@ -1,6 +1,5 @@
 package org.lgna.ik.core.enforcer;
 
-import org.alice.math.immutable.OrthogonalMatrix3x3;
 import org.alice.math.immutable.Point3;
 import org.alice.math.immutable.Vector3;
 import org.lgna.ik.core.solver.Chain;
@@ -14,17 +13,15 @@ import java.util.Map.Entry;
 
 public class TightPositionalIkEnforcer extends IkEnforcer implements IkEnforcerContext {
 
-  //TODO keep this ordered by priority
+  // Ordered by priority
   private List<PriorityLevel> priorityLevels = new ArrayList<PriorityLevel>();
-  //but also have pointers to them separately like this for easy access
   private List<PositionConstraint> activePositionConstraints = new ArrayList<PositionConstraint>();
   private List<OrientationConstraint> activeOrientationConstraints = new ArrayList<OrientationConstraint>();
 
-  //are these all the joints? yes.
-  //TODO make sure that it's the assumption everywhere
+  // All joints in the model, indexed for Jacobian construction
   List<JacobianAxis> indexToAxis;
   Map<JointImp, List<JacobianAxis>> axesByIndexInJoint;
-  Map<JacobianAxis, Integer> axisToIndex; //TODO the contents of this is wrong!
+  Map<JacobianAxis, Integer> axisToIndex;
 
   NullspaceProjector nullspaceProjector;
 
@@ -50,7 +47,6 @@ public class TightPositionalIkEnforcer extends IkEnforcer implements IkEnforcerC
 
   @Override
   public int getGlobalIndexForAxis(JacobianAxis jacobianAxis) {
-    //TODO ideally, the axis should know this index
     Integer globalIndex = axisToIndex.get(jacobianAxis);
     assert globalIndex != null;
     return globalIndex;
@@ -213,9 +209,7 @@ public class TightPositionalIkEnforcer extends IkEnforcer implements IkEnforcerC
   }
 
   private void makeCloserToNaturalPose() {
-    // TODO use the current nullspace projector to find an additional angle delta
-    // that would move us closer to a natural pose
-    // TODO for now I'm ignoring this. TBD
+    // No-op: natural pose attraction via nullspace projector not yet implemented.
   }
 
   // --- Angle application ---
@@ -265,8 +259,7 @@ public class TightPositionalIkEnforcer extends IkEnforcer implements IkEnforcerC
           ++axisIndexInJoint;
         }
 
-        // TODO Justify how this is different from normalized()
-        //apply
+        // magnitude() extracts angle; dividedBy() yields unit axis (differs from normalized() which discards magnitude)
         double angleInRadians = combinedRotation.magnitude();
         Vector3 axis = combinedRotation.dividedBy(angleInRadians);
 
@@ -279,94 +272,6 @@ public class TightPositionalIkEnforcer extends IkEnforcer implements IkEnforcerC
       }
     }
 
-    //return true if clamped
     return clamped;
-  }
-
-  private boolean applyAngleChangesAndClampingIfNecessary_originalEffort() {
-    boolean clamped = false;
-
-    for (Entry<JointImp, List<JacobianAxis>> e : axesByIndexInJoint.entrySet()) {
-      JointImp jointImp = e.getKey();
-      List<JacobianAxis> axesForJoint = e.getValue();
-
-      if (axesForJoint.size() == 3) {
-        int axisIndexInJoint = 0;
-        Vector3 combinedRotation = null;
-
-        for (JacobianAxis axis : axesForJoint) {
-          assert axis.isFree();
-
-          int globalIndex = axisToIndex.get(axis);
-          double delta = angleDeltas.getByGlobalIndex(globalIndex);
-
-          Vector3 rotationAroundThisAxis = switch (axisIndexInJoint) {
-            case 0 -> Vector3.POSITIVE_X_AXIS;
-            case 1 -> Vector3.POSITIVE_Y_AXIS;
-            case 2 -> Vector3.POSITIVE_Z_AXIS;
-            default -> {
-              assert false;
-              yield Vector3.POSITIVE_X_AXIS;
-            }
-          };
-
-          rotationAroundThisAxis = rotationAroundThisAxis.times(delta);
-
-          if (combinedRotation == null) {
-            combinedRotation = rotationAroundThisAxis;
-          } else {
-            combinedRotation = combinedRotation.plus(rotationAroundThisAxis);
-          }
-
-          ++axisIndexInJoint;
-        }
-
-        // TODO Justify how this is different from normalized()
-        double angleInRadians = combinedRotation.magnitude();
-        Vector3 axis = combinedRotation.dividedBy(angleInRadians);
-
-        OrthogonalMatrix3x3 initialOrientation = jointImp.getLocalOrientation();
-        jointImp.applyRotationInRadians(axis, angleInRadians);
-
-        IndependentBallJointLimit violatedBallJointLimits = getViolatedBallJointLimits(jointImp);
-
-        if (violatedBallJointLimits != null) {
-          turnJointBackToLimits(jointImp, initialOrientation, violatedBallJointLimits);
-        }
-
-        boolean isNewLocksFound = lockViolatedBallJointLimits(jointImp, violatedBallJointLimits);
-
-        clamped = isNewLocksFound;
-
-      } else {
-        for (JacobianAxis axis : axesForJoint) {
-          int globalIndex = axisToIndex.get(axis);
-          axis.applyCorrespondingSingleDelta(angleDeltas.getByGlobalIndex(globalIndex));
-
-          if (axis.wentOverLimit()) {
-            axis.setFree(false);
-            double correction = axis.setToLimitAndReturnTheDifference();
-            angleDeltas.correctDeltaForAxis(globalIndex, correction);
-            nullspaceProjector.setIndexToLocked(globalIndex);
-            clamped = true;
-          }
-        }
-      }
-    }
-
-    //return true if clamped
-    return clamped;
-  }
-
-  private boolean lockViolatedBallJointLimits(JointImp jointImp, IndependentBallJointLimit violatedBallJointLimits) {
-    throw new RuntimeException("Not implemented method"); // TODO Auto-generated method stub
-  }
-
-  private void turnJointBackToLimits(JointImp jointImp, OrthogonalMatrix3x3 initialOrientation, IndependentBallJointLimit violatedBallJointLimits) {
-    throw new RuntimeException("Not implemented method"); // TODO Auto-generated method stub
-  }
-
-  private IndependentBallJointLimit getViolatedBallJointLimits(JointImp jointImp) {
-    throw new RuntimeException("Not implemented method"); // TODO Auto-generated method stub
   }
 }

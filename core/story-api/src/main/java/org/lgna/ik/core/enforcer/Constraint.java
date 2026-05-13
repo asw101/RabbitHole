@@ -21,10 +21,6 @@ public abstract class Constraint {
   static final double MIN_DISTANCE_BEFORE_CONSTRAINT_IS_MET = .0001;
   static final double MIN_DISTANCE_SQUARED_BEFORE_CONSTRAINT_IS_MET = MIN_DISTANCE_BEFORE_CONSTRAINT_IS_MET * MIN_DISTANCE_BEFORE_CONSTRAINT_IS_MET;
 
-  protected Constraint(Chain chain) {
-    this(chain, null);
-  }
-
   protected Constraint(Chain chain, IkEnforcerContext context) {
     this.chain = chain;
     this.context = context;
