@@ -150,26 +150,27 @@ Object evaluate(Expression expression) {
     // ... 24 more cases ...
     default -> throw new RuntimeException(expression.getClass().getName());
   };
-  synchronized (vm.virtualMachineListeners) {
-    if (!vm.virtualMachineListeners.isEmpty()) {
-      ExpressionEvaluationEvent event = new ExpressionEvaluationEvent(vm, expression, rv);
-      for (VirtualMachineListener listener : vm.virtualMachineListeners) {
-        listener.expressionEvaluated(event);
-      }
+  if (!vm.virtualMachineListeners.isEmpty()) {
+    ExpressionEvaluationEvent event = new ExpressionEvaluationEvent(vm, expression, rv);
+    VirtualMachineListener[] listeners = vm.virtualMachineListeners.toArray(new VirtualMachineListener[0]);
+    for (VirtualMachineListener listener : listeners) {
+      listener.expressionEvaluated(event);
     }
   }
   return rv;
 }
 ```
 
-**What changed:** The method body is identical to the original
-`VirtualMachine.evaluate()`. The only changes are:
+**What changed:** The method body is largely identical to the original
+`VirtualMachine.evaluate()`. The changes are:
 
 1. `this.evaluate(...)` → `evaluate(...)` (same class now)
 2. `this.set(...)` → `vm.set(...)` (VM coordinator method)
 3. `this.getLocal(...)` → `vm.getLocal(...)` (abstract method on VM)
 4. `this.virtualMachineListeners` → `vm.virtualMachineListeners` (widened field)
 5. Access modifier changed from `protected` to package-private (default)
+6. Listener list changed from `synchronized` `LinkedList` to `CopyOnWriteArrayList`
+   with `toArray()` snapshot — equivalent thread safety without explicit locking
 
 **On VirtualMachine, the delegation wrapper:**
 
@@ -195,8 +196,12 @@ void execute(Statement statement) throws ReturnException {
   if (statement.isEnabled.getValue()) {
     StatementExecutionEvent statementEvent;
     VirtualMachineListener[] listeners;
-    synchronized (vm.virtualMachineListeners) {
-      // ... snapshot listeners ...
+    if (!vm.virtualMachineListeners.isEmpty()) {
+      statementEvent = new StatementExecutionEvent(vm, statement);
+      listeners = vm.virtualMachineListeners.toArray(new VirtualMachineListener[0]);
+    } else {
+      statementEvent = null;
+      listeners = null;
     }
     // ... fire executing, dispatch, fire executed ...
   }
@@ -210,6 +215,8 @@ void execute(Statement statement) throws ReturnException {
 3. `this.evaluateBoolean(...)` → `vm.expressionEvaluator.evaluateBoolean(...)`
 4. `this.evaluate(...)` → `vm.expressionEvaluator.evaluate(...)`
 5. `this.pushLocal(...)` → `vm.pushLocal(...)`
+6. `synchronized` `LinkedList` listener snapshot → `CopyOnWriteArrayList` `toArray()`
+   snapshot — equivalent thread safety
 
 The statement dispatch switch is identical:
 
@@ -277,12 +284,15 @@ Four members changed from `private` to package-private:
 ### `virtualMachineListeners`
 
 ```java
-// Before: private final List<VirtualMachineListener> virtualMachineListeners = ...
-// After:  final List<VirtualMachineListener> virtualMachineListeners = ...
+// Before: private final List<VirtualMachineListener> virtualMachineListeners = Lists.newLinkedList();
+// After:  final CopyOnWriteArrayList<VirtualMachineListener> virtualMachineListeners = new CopyOnWriteArrayList<>();
 ```
 
-Both delegates read this list to fire events. The existing `synchronized` blocks
-are preserved in the delegates.
+Both delegates read this list to fire events. The collection type was changed
+from `LinkedList` (with explicit `synchronized` blocks) to
+`CopyOnWriteArrayList` (inherently thread-safe). This eliminates the need for
+the five `synchronized(virtualMachineListeners)` blocks that existed in the
+original code while preserving equivalent thread safety guarantees.
 
 ### `isStopped`
 

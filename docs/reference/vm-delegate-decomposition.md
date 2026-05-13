@@ -118,7 +118,7 @@ delegate to the appropriate delegate class.
 `VmExpressionEvaluator` calls back to `VirtualMachine` for `get()`, `set()`,
 `getItemAtIndex()`, `setItemAtIndex()`, `setLocal()`, `getLocal()`, `lookup()`,
 `getThis()`, `invoke()`, `createArrayInstance()`, `getArrayLength()`,
-`pushLambdaFrame()`, `popFrame()`, `isStopped`, `getListenerList()`,
+`pushLambdaFrame()`, `popFrame()`, `isStopped`, `virtualMachineListeners`,
 `checkNotNull()`, and `mapAbstractClsToAdapterCls`. It has no mutable state
 beyond the `VirtualMachine` reference.
 
@@ -140,7 +140,7 @@ beyond the `VirtualMachine` reference.
 
 `VmStatementExecutor` calls back to `VirtualMachine` for `pushLocal()`,
 `setLocal()`, `popLocal()`, `getFrameForThread()`, `pushCurrentThread()`,
-`popCurrentThread()`, `isStopped`, and `getListenerList()`. It accesses the
+`popCurrentThread()`, `isStopped`, and `virtualMachineListeners`. It accesses the
 expression evaluator through `vm.expressionEvaluator` for `evaluate()`,
 `evaluateBoolean()`, `evaluateInt()`, and `evaluate(Expression, Class<E>)`.
 
@@ -151,7 +151,7 @@ Reflection-based contract test verifying the public API surface of
 
 | Category | Count | Examples |
 | --- | --- | --- |
-| Public methods | 19 | `ENTRY_POINT_evaluate`, `ENTRY_POINT_invoke`, `ENTRY_POINT_createInstance`, `get`, `set`, `invokeUserMethod`, `invokeMethodDeclaredInJava`, `evaluateArguments`, `getItemAtIndex`, `setItemAtIndex`, `stopExecution`, `addVirtualMachineListener`, `removeVirtualMachineListener`, `getVirtualMachineListeners`, `registerAbstractClassAdapter`, `createAndSetFieldInstance`, `ACCEPTABLE_HACK_FOR_SCENE_EDITOR_initializeField`, `ACCEPTABLE_HACK_FOR_SCENE_EDITOR_executeStatement`, `setForSceneEditor` |
+| Public methods | 20 | `getStackTrace`, `ENTRY_POINT_evaluate`, `ENTRY_POINT_invoke`, `ENTRY_POINT_createInstance`, `get`, `set`, `invokeUserMethod`, `invokeMethodDeclaredInJava`, `evaluateArguments`, `getItemAtIndex`, `setItemAtIndex`, `stopExecution`, `addVirtualMachineListener`, `removeVirtualMachineListener`, `getVirtualMachineListeners`, `registerAbstractClassAdapter`, `createAndSetFieldInstance`, `ACCEPTABLE_HACK_FOR_SCENE_EDITOR_initializeField`, `ACCEPTABLE_HACK_FOR_SCENE_EDITOR_executeStatement`, `setForSceneEditor` |
 | Abstract methods | 16 | `getStackTrace`, `getThis`, `pushBogusFrame`, `pushConstructorFrame`, `setConstructorFrameUserInstance`, `pushMethodFrame`, `pushLambdaFrame`, `popFrame`, `lookup`, `pushLocal`, `getLocal`, `setLocal`, `popLocal`, `getFrameForThread`, `pushCurrentThread`, `popCurrentThread` |
 
 The test uses `java.lang.reflect` to verify method existence, parameter types,
@@ -242,9 +242,9 @@ public abstract class VirtualMachine {
 Four fields on `VirtualMachine` are widened from `private` to package-private to
 allow delegate access without accessor methods:
 
-| Field | Original visibility | New visibility | Used by |
+| Field | Original | New | Used by |
 | --- | --- | --- | --- |
-| `virtualMachineListeners` | `private` | package-private | Both delegates (listener dispatch) |
+| `virtualMachineListeners` | `private` `LinkedList` with `synchronized` | package-private `CopyOnWriteArrayList` | Both delegates (listener dispatch) |
 | `isStopped` | `private` | package-private | Both delegates (stop check) |
 | `mapAbstractClsToAdapterCls` | `private` | package-private | Evaluator (lambda adapter lookup) |
 | `checkNotNull` | `private` method | package-private method | Both delegates (null guard) |
@@ -278,37 +278,38 @@ There is no circular instantiation — both delegates are created on the same
 Listener events are dispatched by the delegates directly:
 
 - **Expression evaluation events**: `VmExpressionEvaluator.evaluate()` fires
-  `ExpressionEvaluationEvent` after each evaluation, using
-  `vm.virtualMachineListeners` with the existing `synchronized` block.
+  `ExpressionEvaluationEvent` after each evaluation, reading
+  `vm.virtualMachineListeners` and creating a snapshot array via `toArray()`.
 
 - **Statement execution events**: `VmStatementExecutor.execute()` fires
   `StatementExecutionEvent` (executing/executed pair) and per-iteration events
   (`CountLoopIterationEvent`, `ForEachLoopIterationEvent`,
-  `WhileLoopIterationEvent`, `EachInTogetherItemEvent`), using
-  `vm.virtualMachineListeners` with the existing `synchronized` block for
-  snapshot.
+  `WhileLoopIterationEvent`, `EachInTogetherItemEvent`), reading
+  `vm.virtualMachineListeners` and creating a snapshot array via `toArray()`.
 
-The two delegates use different dispatch patterns, both preserved from the
-original code:
-
-- **Expression evaluator**: Iterates `vm.virtualMachineListeners` directly
-  inside the `synchronized` block (no snapshot array).
-- **Statement executor**: Captures a `VirtualMachineListener[]` snapshot array
-  under the lock, then iterates outside the lock.
+Both delegates use the same dispatch pattern: check `isEmpty()`, create a
+`toArray()` snapshot, iterate the snapshot. Thread safety is provided by
+`CopyOnWriteArrayList` without explicit synchronization.
 
 ## Thread safety
 
-Thread safety is unchanged:
+The `virtualMachineListeners` field was changed from a `synchronized`
+`LinkedList` to a `CopyOnWriteArrayList`. This preserves equivalent thread
+safety guarantees through the inherent thread safety of `CopyOnWriteArrayList`:
 
-- `virtualMachineListeners` uses `synchronized` blocks for add/remove/snapshot,
-  exactly as before.
+- **Original**: `Lists.newLinkedList()` with `synchronized` blocks around every
+  access (add, remove, isEmpty, iteration, snapshot).
+- **After extraction**: `CopyOnWriteArrayList` with no `synchronized` blocks.
+  `CopyOnWriteArrayList` provides thread-safe reads (snapshot iterators) and
+  thread-safe writes (copy-on-write semantics) without external synchronization.
+
+Other thread safety properties are unchanged:
+
 - `isStopped` is written only from `stopExecution()` and read from delegates.
   The existing single-writer pattern is preserved.
 - `DoTogether` and `EachInTogether` thread spawning calls
   `vm.pushCurrentThread()`/`vm.popCurrentThread()` through the same delegation
   path as before.
-
-No new synchronization is added. No existing synchronization is removed.
 
 ## Subclass compatibility
 
