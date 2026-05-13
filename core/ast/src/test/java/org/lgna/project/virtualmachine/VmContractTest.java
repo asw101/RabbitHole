@@ -388,6 +388,16 @@ public class VmContractTest {
     assertDeclaredField("mapAbstractClsToAdapterCls", Map.class);
   }
 
+  @Test
+  public void field_expressionEvaluator_exists() {
+    assertDeclaredField("expressionEvaluator", VmExpressionEvaluator.class);
+  }
+
+  @Test
+  public void field_statementExecutor_exists() {
+    assertDeclaredField("statementExecutor", VmStatementExecutor.class);
+  }
+
   // ──────────────────────────────────────────────────────────
   //  Varargs verification
   // ──────────────────────────────────────────────────────────

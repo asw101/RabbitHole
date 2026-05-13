@@ -411,7 +411,8 @@ final class VmExpressionEvaluator {
     };
     if (!vm.virtualMachineListeners.isEmpty()) {
       ExpressionEvaluationEvent expressionEvaluationEvent = new ExpressionEvaluationEvent(vm, expression, rv);
-      for (VirtualMachineListener virtualMachineListener : vm.virtualMachineListeners) {
+      VirtualMachineListener[] listeners = vm.virtualMachineListeners.toArray(new VirtualMachineListener[0]);
+      for (VirtualMachineListener virtualMachineListener : listeners) {
         virtualMachineListener.expressionEvaluated(expressionEvaluationEvent);
       }
     }
