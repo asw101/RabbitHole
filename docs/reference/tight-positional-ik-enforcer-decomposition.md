@@ -18,6 +18,7 @@ identically.
 - [File inventory](#file-inventory)
 - [IkEnforcerContext interface](#ikenforcercontext-interface)
 - [Context injection pattern](#context-injection-pattern)
+- [Enforcer call-site changes](#enforcer-call-site-changes)
 - [Visibility rules](#visibility-rules)
 - [Import fixups](#import-fixups)
 - [Static constants](#static-constants)
@@ -179,6 +180,13 @@ public class TightPositionalIkEnforcer extends IkEnforcer
 The interface is package-private — it exists solely to decouple the extracted
 classes from the concrete enforcer, not to create a public extension point.
 
+However, Java interface methods are implicitly `public`. The enforcer's three
+implementing methods (`getIndexToAxis()`, `getAxisToIndex()`,
+`getGlobalIndexForAxis()`) must be declared `public` on the concrete class.
+`getGlobalIndexForAxis()` was previously `private` (L747); the other two are
+new methods exposing existing package-private fields. These methods provide
+read-only access to axis-mapping state that was already package-private.
+
 ## Context injection pattern
 
 Context-dependent classes receive `IkEnforcerContext` through their
@@ -227,6 +235,15 @@ creates `new AngleDeltas(indexToAxis.size())`. After extraction this becomes
 `new AngleDeltas(context.getIndexToAxis().size(), context)` — a secondary
 context propagation path from Jacobian into AngleDeltas.
 
+Beyond constructors, these Jacobian methods access the enforcer through
+context after extraction:
+
+| Method | Original outer reference | Extracted form |
+| --- | --- | --- |
+| `multiplyWithAngleDeltas()` (L260) | `getGlobalIndexForAxis(axis)` | `context.getGlobalIndexForAxis(axis)` |
+| `multiplyDisplacementWithInverseForMoving()` (L285) | `indexToAxis.size()` | `context.getIndexToAxis().size()` |
+| `multiplyDisplacementWithInverseForMoving()` (L293) | `getGlobalIndexForAxis(axis)` | `context.getGlobalIndexForAxis(axis)` |
+
 ### Constraint (and subclasses)
 
 ```java
@@ -252,6 +269,11 @@ Constraint subclasses pass context through `super(chain, context)`. Their
 own methods access `context.getIndexToAxis()` where they previously
 accessed `indexToAxis` directly.
 
+Specifically, `Constraint.updateJacobianUsingVelocityContributions()` (L466)
+iterates over `context.getIndexToAxis()` to build the Jacobian matrix columns,
+and creates `new Jacobian(mj, jacobianAxes, context)` at L519 — a context
+propagation path from Constraint into Jacobian.
+
 ### NullspaceProjector
 
 ```java
@@ -265,6 +287,14 @@ class NullspaceProjector {
 }
 ```
 
+NullspaceProjector methods also use context both directly and for propagation:
+
+- `createProjected()` (L775) calls `context.getGlobalIndexForAxis()` for
+  index mapping and creates `new Jacobian(..., context)` — a context
+  propagation path from NullspaceProjector into Jacobian.
+- `subtractInverseTimesJacobian()` (L808) calls
+  `context.getGlobalIndexForAxis()` for local-to-global index conversion.
+
 ### AngleDeltas
 
 ```java
@@ -276,6 +306,22 @@ class AngleDeltas {
     // ...
   }
 }
+```
+
+### Enforcer call-site changes
+
+The enforcer passes `this` as `IkEnforcerContext` when constructing
+context-dependent objects:
+
+```java
+// initializeListOfAxes() — L880
+nullspaceProjector = new NullspaceProjector(indexToAxis.size(), this);
+
+// convergenceLoop() — L930
+angleDeltas = new AngleDeltas(indexToAxis.size(), this);
+
+// createPositionConstraint() — L896
+PositionConstraint positionConstraint = new PositionConstraint(chain, endPosition, this);
 ```
 
 ## Visibility rules
@@ -299,7 +345,12 @@ class AngleDeltas {
 
 Each extracted class preserves the exact access level of its original
 inner-class declaration (see table above). Member-level visibility changes
-are limited to the items listed in the next sections.
+are limited to:
+
+- 3 threshold constants (`private` → package-private) — see [Static constants](#static-constants)
+- `Jacobian.matrixWasUpdated()` (`private` → package-private) — see [Method visibility widening](#method-visibility-widening-jacobianmatrixwasupdated)
+- `TightPositionalIkEnforcer.getGlobalIndexForAxis()` (`private` → `public`) — required by `IkEnforcerContext` implementation
+- 2 new `public` methods on the enforcer (`getIndexToAxis()`, `getAxisToIndex()`) — exposing existing package-private fields to satisfy the `IkEnforcerContext` interface
 
 ## Import fixups
 
@@ -519,7 +570,7 @@ with sequential indices.
 6. `IKCore.java` compiles with the updated import.
 7. All characterization tests pass.
 8. `mvn -pl core/story-api -am -DfailIfNoTests=false -Dcheckstyle.skip test` succeeds.
-9. No visibility widening beyond the three threshold constants and `Jacobian.matrixWasUpdated()`.
+9. Visibility widening limited to: three threshold constants (`private` → package-private), `Jacobian.matrixWasUpdated()` (`private` → package-private), and 3 `IkEnforcerContext` implementation methods on the enforcer (`getGlobalIndexForAxis` from `private` to `public`; `getIndexToAxis` and `getAxisToIndex` as new `public` methods).
 10. All `RuntimeException` messages preserved character-for-character.
 11. All `assert` statements preserved in their original locations.
 12. Dead code methods preserved exactly.
@@ -535,8 +586,11 @@ This decomposition claims:
 - **Only** the `AngleDeltas.getForAxis()` self-reference fix
   (`angleDeltas.getByGlobalIndex()` → `this.getByGlobalIndex()`).
 - **Only** the widening of 3 threshold constants from `private` to
-  package-private and `Jacobian.matrixWasUpdated()` from `private` to
-  package-private.
+  package-private, `Jacobian.matrixWasUpdated()` from `private` to
+  package-private, and 3 `IkEnforcerContext` implementation methods on the
+  enforcer (`getGlobalIndexForAxis` from `private` to `public`;
+  `getIndexToAxis` and `getAxisToIndex` as new `public` methods exposing
+  existing package-private fields).
 - **Only** the import change in `IKCore.java` line 50.
 
 This decomposition does **not** claim:
@@ -545,6 +599,7 @@ This decomposition does **not** claim:
 - Any removal of dead code or TODO comments.
 - Any changes to `IkEnforcer`, `JointedModelIkEnforcer`, `Chain`, `Bone`,
   `Solver`, or any other class outside `org.lgna.ik.core.enforcer`.
-- Any new public API beyond the existing public inner-class surfaces.
+- Any new public API beyond the existing public inner-class surfaces and
+  the 3 `IkEnforcerContext` implementation methods.
 - Any performance optimizations.
 - Any thread-safety changes.
