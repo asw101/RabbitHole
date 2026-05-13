@@ -1,10 +1,7 @@
 package edu.cmu.cs.dennisc.render.joglrenderer;
 
-import com.jogamp.common.util.InterruptSource;
 import com.jogamp.common.util.PropertyAccess;
 import com.jogamp.opengl.*;
-import com.jogamp.opengl.awt.GLCanvas;
-import com.jogamp.opengl.util.FPSAnimator;
 import com.jogamp.opengl.util.awt.TextRenderer;
 import com.jogamp.opengl.util.awt.TextureRenderer;
 import com.jogamp.opengl.util.packrect.Rect;
@@ -13,10 +10,7 @@ import com.jogamp.opengl.util.packrect.RectanglePacker;
 import jogamp.opengl.Debug;
 
 import java.awt.*;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.awt.font.FontRenderContext;
-import java.awt.font.GlyphVector;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -52,7 +46,7 @@ public class NonCachingTextRenderer extends TextRenderer {
 
   // Every certain number of render cycles, flush the strings which
   // haven't been used recently
-  private static final int CYCLES_PER_FLUSH = 100;
+  static final int CYCLES_PER_FLUSH = 100;
 
   // The amount of vertical dead space on the backing store before we
   // force a compaction
@@ -75,7 +69,7 @@ public class NonCachingTextRenderer extends TextRenderer {
   // Whether we're attempting to use automatic mipmap generation support
   boolean mipmap;
   RectanglePacker packer;
-  private boolean haveMaxSize;
+  boolean haveMaxSize;
   final TextRenderer.RenderDelegate renderDelegate;
   private TextureRenderer cachedBackingStore;
   private Graphics2D cachedGraphics;
@@ -83,7 +77,7 @@ public class NonCachingTextRenderer extends TextRenderer {
   final Map<String, Rect> stringLocations = new HashMap<String, Rect>();
   final TextRendererGlyphProducer mGlyphProducer;
 
-  private int numRenderCycles;
+  int numRenderCycles;
 
   // Need to keep track of whether we're in a beginRendering() /
   // endRendering() cycle so we can re-enter the exact same state if
@@ -104,11 +98,12 @@ public class NonCachingTextRenderer extends TextRenderer {
   boolean needToResetColor;
 
   // For debugging only
-  private Frame dbgFrame;
+  Frame dbgFrame;
 
   // Debugging purposes only
-  private boolean debugged;
+  boolean debugged;
   TextRendererQuadRenderer mPipelinedQuadRenderer;
+  final TextRendererPipeline pipeline;
 
   //emzic: added boolean flag
   private boolean useVertexArrays = true;
@@ -168,6 +163,7 @@ public class NonCachingTextRenderer extends TextRenderer {
     this.renderDelegate = renderDelegate;
 
     mGlyphProducer = new TextRendererGlyphProducer(font.getNumGlyphs(), this);
+    pipeline = new TextRendererPipeline(this);
   }
 
   /** Returns the bounding rectangle of the given String, assuming it
@@ -265,7 +261,7 @@ public class NonCachingTextRenderer extends TextRenderer {
    */
   public void beginRendering(final int width, final int height, final boolean disableDepthTest)
       throws GLException {
-    beginRendering(true, width, height, disableDepthTest);
+    pipeline.beginRendering(true, width, height, disableDepthTest);
   }
 
   /** Begins rendering of 2D text in 3D with this {@link TextRenderer
@@ -281,7 +277,7 @@ public class NonCachingTextRenderer extends TextRenderer {
    @throws GLException If an OpenGL context is not current when this method is called
    */
   public void begin3DRendering() throws GLException {
-    beginRendering(false, 0, 0, false);
+    pipeline.beginRendering(false, 0, 0, false);
   }
 
   /** Changes the current color of this TextRenderer to the supplied
@@ -373,7 +369,7 @@ public class NonCachingTextRenderer extends TextRenderer {
    */
   public void draw3D(final CharSequence str, final float x, final float y, final float z,
                      final float scaleFactor) {
-    internal_draw3D(str, x, y, z, scaleFactor);
+    pipeline.internal_draw3D(str, x, y, z, scaleFactor);
   }
 
   /** Draws the supplied String at the desired 3D location using the
@@ -381,7 +377,7 @@ public class NonCachingTextRenderer extends TextRenderer {
       float, float, float, float) draw3D(CharSequence, float, float,
   float, float)}. */
   public void draw3D(final String str, final float x, final float y, final float z, final float scaleFactor) {
-    internal_draw3D(str, x, y, z, scaleFactor);
+    pipeline.internal_draw3D(str, x, y, z, scaleFactor);
   }
 
   /** Returns the pixel width of the given character. */
@@ -405,7 +401,7 @@ public class NonCachingTextRenderer extends TextRenderer {
    @throws GLException If an OpenGL context is not current when this method is called
    */
   public void endRendering() throws GLException {
-    endRendering(true);
+    pipeline.endRendering(true);
   }
 
   /** Ends a 3D render cycle with this {@link TextRenderer TextRenderer}.
@@ -415,7 +411,7 @@ public class NonCachingTextRenderer extends TextRenderer {
    @throws GLException If an OpenGL context is not current when this method is called
    */
   public void end3DRendering() throws GLException {
-    endRendering(false);
+    pipeline.endRendering(false);
   }
 
   /** Disposes of all resources this TextRenderer is using. It is not
@@ -510,103 +506,14 @@ public class NonCachingTextRenderer extends TextRenderer {
     return cachedGraphics;
   }
 
-  private void beginRendering(final boolean ortho, final int width, final int height,
-                              final boolean disableDepthTestForOrtho) {
-    final GL2 gl = GLContext.getCurrentGL().getGL2();
 
-    if (DEBUG && !debugged) {
-      debug(gl);
-    }
-
-    inBeginEndPair = true;
-    isOrthoMode = ortho;
-    beginRenderingWidth = width;
-    beginRenderingHeight = height;
-    beginRenderingDepthTestDisabled = disableDepthTestForOrtho;
-
-    if (ortho) {
-      getBackingStore().beginOrthoRendering(width, height,
-          disableDepthTestForOrtho);
-    } else {
-      getBackingStore().begin3DRendering();
-    }
-
-    // Push client attrib bits used by the pipelined quad renderer
-    gl.glPushClientAttrib((int) GL2.GL_ALL_CLIENT_ATTRIB_BITS);
-
-    if (!haveMaxSize) {
-      // Query OpenGL for the maximum texture size and set it in the
-      // RectanglePacker to keep it from expanding too large
-      final int[] sz = new int[1];
-      gl.glGetIntegerv(GL.GL_MAX_TEXTURE_SIZE, sz, 0);
-      packer.setMaxSize(sz[0], sz[0]);
-      haveMaxSize = true;
-    }
-
-    if (needToResetColor && haveCachedColor) {
-      if (cachedColor == null) {
-        getBackingStore().setColor(cachedR, cachedG, cachedB, cachedA);
-      } else {
-        getBackingStore().setColor(cachedColor);
-      }
-
-      needToResetColor = false;
-    }
-
-    // Disable future attempts to use mipmapping if TextureRenderer
-    // doesn't support it
-    if (mipmap && !getBackingStore().isUsingAutoMipmapGeneration()) {
-      if (DEBUG) {
-        System.err.println("Disabled mipmapping in TextRenderer");
-      }
-
-      mipmap = false;
-    }
+  void flushGlyphPipeline() {
+    pipeline.flushGlyphPipeline();
   }
 
-  /**
-   * emzic: here the call to glBindBuffer crashes on certain graphicscard/driver combinations
-   * this is why the ugly try-catch block has been added, which falls back to the old textrenderer
-   *
-   * @param ortho
-   * @throws GLException
-   */
-  private void endRendering(final boolean ortho) throws GLException {
-    flushGlyphPipeline();
-
-    inBeginEndPair = false;
-
-    final GL2 gl = GLContext.getCurrentGL().getGL2();
-
-    // Pop client attrib bits used by the pipelined quad renderer
-    gl.glPopClientAttrib();
-
-    // The OpenGL spec is unclear about whether this changes the
-    // buffer bindings, so preemptively zero out the GL_ARRAY_BUFFER
-    // binding
-    if (getMyUseVertexArrays() && is15Available(gl)) {
-      try {
-        gl.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
-      } catch (final Exception e) {
-        isExtensionAvailable_GL_VERSION_1_5 = false;
-      }
-    }
-
-    if (ortho) {
-      getBackingStore().endOrthoRendering();
-    } else {
-      getBackingStore().end3DRendering();
-    }
-
-    if (++numRenderCycles >= CYCLES_PER_FLUSH) {
-      numRenderCycles = 0;
-
-      if (DEBUG) {
-        System.err.println("Clearing unused entries in endRendering()");
-      }
-
-      clearUnusedEntries();
-    }
+  void draw3D_ROBUST(final CharSequence str, final float x, final float y, final float z,
+                             final float scaleFactor) {
+    pipeline.draw3D_ROBUST(str, x, y, z, scaleFactor);
   }
 
   void clearUnusedEntries() {
@@ -655,133 +562,6 @@ public class NonCachingTextRenderer extends TextRenderer {
       getBackingStore().markDirty(0, 0, getBackingStore().getWidth(),
           getBackingStore().getHeight());
     }
-  }
-
-  private void internal_draw3D(final CharSequence str, float x, final float y, final float z,
-                               final float scaleFactor) {
-    for (final TextRendererGlyph glyph : mGlyphProducer.getGlyphs(str)) {
-      final float advance = glyph.draw3D(x, y, z, scaleFactor);
-      x += advance * scaleFactor;
-    }
-  }
-
-  void flushGlyphPipeline() {
-    if (mPipelinedQuadRenderer != null) {
-      mPipelinedQuadRenderer.draw();
-    }
-  }
-
-  void draw3D_ROBUST(final CharSequence str, final float x, final float y, final float z,
-                             final float scaleFactor) {
-    String curStr;
-    if (str instanceof String string) {
-      curStr = string;
-    } else {
-      curStr = str.toString();
-    }
-
-    // Look up the string on the backing store
-    Rect rect = stringLocations.get(curStr);
-
-    if (rect == null) {
-      // Rasterize this string and place it on the backing store
-      Graphics2D g = getGraphics2D();
-      final Rectangle2D origBBox = preNormalize(renderDelegate.getBounds(curStr, font, getFontRenderContext()));
-      final Rectangle2D bbox = normalize(origBBox);
-      final Point origin = new Point((int) -bbox.getMinX(),
-          (int) -bbox.getMinY());
-      rect = new Rect(0, 0, (int) bbox.getWidth(),
-          (int) bbox.getHeight(),
-          new TextData(curStr, origin, origBBox, -1));
-
-      packer.add(rect);
-      stringLocations.put(curStr, rect);
-
-      // Re-fetch the Graphics2D in case the addition of the rectangle
-      // caused the old backing store to be thrown away
-      g = getGraphics2D();
-
-      // OK, should now have an (x, y) for this rectangle; rasterize
-      // the String
-      final int strx = rect.x() + origin.x;
-      final int stry = rect.y() + origin.y;
-
-      // Clear out the area we're going to draw into
-      g.setComposite(AlphaComposite.Clear);
-      g.fillRect(rect.x(), rect.y(), rect.w(), rect.h());
-      g.setComposite(AlphaComposite.Src);
-
-      // Draw the string
-      renderDelegate.draw(g, curStr, strx, stry);
-
-      if (DRAW_BBOXES) {
-        final TextData data = (TextData) rect.getUserData();
-        // Draw a bounding box on the backing store
-        g.drawRect(strx - data.origOriginX(),
-            stry - data.origOriginY(),
-            (int) data.origRect().getWidth(),
-            (int) data.origRect().getHeight());
-        g.drawRect(strx - data.origin().x,
-            stry - data.origin().y,
-            rect.w(),
-            rect.h());
-      }
-
-      // Mark this region of the TextureRenderer as dirty
-      getBackingStore().markDirty(rect.x(), rect.y(), rect.w(),
-          rect.h());
-    }
-
-    // OK, now draw the portion of the backing store to the screen
-    final TextureRenderer renderer = getBackingStore();
-
-    // NOTE that the rectangles managed by the packer have their
-    // origin at the upper-left but the TextureRenderer's origin is
-    // at its lower left!!!
-    final TextData data = (TextData) rect.getUserData();
-    data.markUsed();
-
-    final Rectangle2D origRect = data.origRect();
-
-    // Align the leftmost point of the baseline to the (x, y, z) coordinate requested
-    renderer.draw3DRect(x - (scaleFactor * data.origOriginX()),
-        y - (scaleFactor * ((float) origRect.getHeight() - data.origOriginY())), z,
-        rect.x() + (data.origin().x - data.origOriginX()),
-        renderer.getHeight() - rect.y() - (int) origRect.getHeight() -
-            (data.origin().y - data.origOriginY()),
-        (int) origRect.getWidth(), (int) origRect.getHeight(), scaleFactor);
-  }
-
-  //----------------------------------------------------------------------
-  // Debugging functionality
-  //
-  private void debug(final GL gl) {
-    dbgFrame = new Frame("TextRenderer Debug Output");
-
-    final GLCanvas dbgCanvas = new GLCanvas(new GLCapabilities(gl.getGLProfile()));
-    dbgCanvas.setSharedContext(GLContext.getCurrent());
-    dbgCanvas.addGLEventListener(new DebugListener(this, gl, dbgFrame));
-    dbgFrame.add(dbgCanvas);
-
-    final FPSAnimator anim = new FPSAnimator(dbgCanvas, 10);
-    dbgFrame.addWindowListener(new WindowAdapter() {
-      @Override
-      public void windowClosing(final WindowEvent e) {
-        // Run this on another thread than the AWT event queue to
-        // make sure the call to Animator.stop() completes before
-        // exiting
-        new InterruptSource.Thread(null, new Runnable() {
-          @Override
-          public void run() {
-            anim.stop();
-          }
-        }).start();
-      }
-    });
-    dbgFrame.setSize(kSize, kSize);
-    dbgFrame.setVisible(true);
-    anim.start();
-    debugged = true;
   }
 
   //----------------------------------------------------------------------
