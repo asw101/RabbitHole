@@ -37,6 +37,9 @@ import static org.junit.Assert.*;
  *  13. CharacterCache – extracted top-level class (#524)
  *  14. DebugListener – extracted top-level class (#524)
  *  15. Additional widened fields for Manager back-references (#524)
+ *  16. TextRendererPipeline – extracted delegate for rendering pipeline (#537)
+ *  17. Pipeline integration on NonCachingTextRenderer (#537)
+ *  18. Fields widened for pipeline delegate access (#537)
  */
 public class InnerClassExtractionContractTest {
 
@@ -51,6 +54,7 @@ public class InnerClassExtractionContractTest {
   private static Class<?> defaultRenderDelegateClass;
   private static Class<?> characterCacheClass;
   private static Class<?> debugListenerClass;
+  private static Class<?> pipelineClass;
 
   @BeforeClass
   public static void resolveExtractedClasses() {
@@ -63,6 +67,7 @@ public class InnerClassExtractionContractTest {
     defaultRenderDelegateClass = tryLoad(PKG + ".DefaultRenderDelegate");
     characterCacheClass = tryLoad(PKG + ".CharacterCache");
     debugListenerClass = tryLoad(PKG + ".DebugListener");
+    pipelineClass = tryLoad(PKG + ".TextRendererPipeline");
   }
 
   private static Class<?> tryLoad(String fqcn) {
@@ -519,14 +524,13 @@ public class InnerClassExtractionContractTest {
             + "NonCachingTextRenderer.java");
     assertNotNull("Must find NonCachingTextRenderer.java", sourceFile);
     long lineCount = Files.lines(sourceFile).count();
-    // After extracting all 9 inner classes (3 from #514, 6 from #524),
-    // the file drops from ~1800 to ~850 lines. Under 850 validates
-    // the extraction is complete. Further reduction requires method
-    // refactoring beyond inner class extraction scope.
+    // After extracting 9 inner classes (#514, #524) and rendering
+    // pipeline methods (#537), the file drops from ~1800 to ~626 lines.
+    // Under 650 validates both inner-class and pipeline extraction.
     assertTrue(
-        "NonCachingTextRenderer.java must be under 850 lines (actual: "
+        "NonCachingTextRenderer.java must be under 650 lines (actual: "
             + lineCount + ")",
-        lineCount < 850);
+        lineCount < 650);
   }
 
   // ── 9. CharSequenceIterator — extracted top-level class ───────────
@@ -854,6 +858,197 @@ public class InnerClassExtractionContractTest {
     assertMethodWidened("flushGlyphPipeline");
   }
 
+  // ── 16. TextRendererPipeline — extracted delegate class (#537) ────
+
+  @Test
+  public void textRendererPipeline_classExists() {
+    assertNotNull("TextRendererPipeline must exist as a top-level class",
+        pipelineClass);
+  }
+
+  @Test
+  public void textRendererPipeline_isPackagePrivate() {
+    assertNotNull("class must exist", pipelineClass);
+    assertTrue("must be package-private",
+        isPackagePrivate(pipelineClass.getModifiers()));
+  }
+
+  @Test
+  public void textRendererPipeline_hasSuppressWarningsCheckStyle() throws Exception {
+    assertNotNull("class must exist", pipelineClass);
+    assertSourceContainsSuppressWarnings("TextRendererPipeline.java");
+  }
+
+  @Test
+  public void textRendererPipeline_sourceFileExists() throws Exception {
+    Path sourceFile = findSourceFile(
+        "core/glrender/src/main/java/edu/cmu/cs/dennisc/render/joglrenderer/"
+            + "TextRendererPipeline.java");
+    assertNotNull("TextRendererPipeline.java source file must exist", sourceFile);
+  }
+
+  @Test
+  public void textRendererPipeline_hasRendererConstructor() {
+    assertNotNull("class must exist", pipelineClass);
+    assertConstructorExists(pipelineClass,
+        "constructor(NonCachingTextRenderer)",
+        NonCachingTextRenderer.class);
+  }
+
+  @Test
+  public void textRendererPipeline_hasBeginRenderingMethod() {
+    assertNotNull("class must exist", pipelineClass);
+    assertPackagePrivateMethodWithParams(pipelineClass, "beginRendering",
+        boolean.class, int.class, int.class, boolean.class);
+  }
+
+  @Test
+  public void textRendererPipeline_hasEndRenderingMethod() {
+    assertNotNull("class must exist", pipelineClass);
+    assertPackagePrivateMethodWithParams(pipelineClass, "endRendering",
+        boolean.class);
+  }
+
+  @Test
+  public void textRendererPipeline_hasInternalDraw3DMethod() {
+    assertNotNull("class must exist", pipelineClass);
+    assertPackagePrivateMethodWithParams(pipelineClass, "internal_draw3D",
+        CharSequence.class, float.class, float.class, float.class, float.class);
+  }
+
+  @Test
+  public void textRendererPipeline_hasFlushGlyphPipelineMethod() {
+    assertNotNull("class must exist", pipelineClass);
+    try {
+      Method m = pipelineClass.getDeclaredMethod("flushGlyphPipeline");
+      assertTrue("flushGlyphPipeline must be package-private",
+          isPackagePrivate(m.getModifiers()));
+    } catch (NoSuchMethodException e) {
+      fail("TextRendererPipeline must have flushGlyphPipeline()");
+    }
+  }
+
+  @Test
+  public void textRendererPipeline_hasDraw3D_ROBUSTMethod() {
+    assertNotNull("class must exist", pipelineClass);
+    assertPackagePrivateMethodWithParams(pipelineClass, "draw3D_ROBUST",
+        CharSequence.class, float.class, float.class, float.class, float.class);
+  }
+
+  @Test
+  public void textRendererPipeline_hasDebugMethod() {
+    assertNotNull("class must exist", pipelineClass);
+    try {
+      Class<?> glClass = Class.forName("com.jogamp.opengl.GL");
+      Method m = pipelineClass.getDeclaredMethod("debug", glClass);
+      assertTrue("debug must be package-private",
+          isPackagePrivate(m.getModifiers()));
+    } catch (ClassNotFoundException e) {
+      fail("com.jogamp.opengl.GL must be on classpath");
+    } catch (NoSuchMethodException e) {
+      fail("TextRendererPipeline must have debug(GL)");
+    }
+  }
+
+  @Test
+  public void textRendererPipeline_beginRendering_returnsVoid() {
+    assertNotNull("class must exist", pipelineClass);
+    try {
+      Method m = pipelineClass.getDeclaredMethod("beginRendering",
+          boolean.class, int.class, int.class, boolean.class);
+      assertEquals("beginRendering must return void", void.class, m.getReturnType());
+    } catch (NoSuchMethodException e) {
+      fail("beginRendering(boolean,int,int,boolean) must exist");
+    }
+  }
+
+  @Test
+  public void textRendererPipeline_endRendering_returnsVoid() {
+    assertNotNull("class must exist", pipelineClass);
+    try {
+      Method m = pipelineClass.getDeclaredMethod("endRendering", boolean.class);
+      assertEquals("endRendering must return void", void.class, m.getReturnType());
+    } catch (NoSuchMethodException e) {
+      fail("endRendering(boolean) must exist");
+    }
+  }
+
+  @Test
+  public void textRendererPipeline_hasRendererField() {
+    assertNotNull("class must exist", pipelineClass);
+    assertFieldExists(pipelineClass, "renderer", NonCachingTextRenderer.class);
+  }
+
+  @Test
+  public void textRendererPipeline_rendererFieldIsFinal() {
+    assertNotNull("class must exist", pipelineClass);
+    try {
+      Field f = pipelineClass.getDeclaredField("renderer");
+      assertTrue("renderer field must be final",
+          Modifier.isFinal(f.getModifiers()));
+    } catch (NoSuchFieldException e) {
+      fail("renderer field must exist in TextRendererPipeline");
+    }
+  }
+
+  // ── 17. Pipeline integration on NonCachingTextRenderer (#537) ─────
+
+  @Test
+  public void field_pipeline_existsOnRenderer() {
+    assertNotNull("TextRendererPipeline must exist", pipelineClass);
+    assertFieldExists(NonCachingTextRenderer.class, "pipeline", pipelineClass);
+  }
+
+  @Test
+  public void field_pipeline_isPackagePrivate() {
+    try {
+      Field f = NonCachingTextRenderer.class.getDeclaredField("pipeline");
+      assertTrue("pipeline must be package-private",
+          isPackagePrivate(f.getModifiers()));
+    } catch (NoSuchFieldException e) {
+      fail("Field 'pipeline' must exist in NonCachingTextRenderer");
+    }
+  }
+
+  @Test
+  public void field_pipeline_isFinal() {
+    try {
+      Field f = NonCachingTextRenderer.class.getDeclaredField("pipeline");
+      assertTrue("pipeline must be final",
+          Modifier.isFinal(f.getModifiers()));
+    } catch (NoSuchFieldException e) {
+      fail("Field 'pipeline' must exist in NonCachingTextRenderer");
+    }
+  }
+
+  // ── 18. Fields widened for pipeline delegate access (#537) ────────
+
+  @Test
+  public void field_haveMaxSize_isPackagePrivate() {
+    assertFieldWidened("haveMaxSize");
+  }
+
+  @Test
+  public void field_numRenderCycles_isPackagePrivate() {
+    assertFieldWidened("numRenderCycles");
+  }
+
+  @Test
+  public void field_dbgFrame_isPackagePrivate() {
+    assertFieldWidened("dbgFrame");
+  }
+
+  @Test
+  public void field_debugged_isPackagePrivate() {
+    assertFieldWidened("debugged");
+  }
+
+  @Test
+  public void field_CYCLES_PER_FLUSH_isPackagePrivateStatic() {
+    assertFieldWidened("CYCLES_PER_FLUSH");
+    assertFieldStatic("CYCLES_PER_FLUSH");
+  }
+
   // ── Assertion helpers ─────────────────────────────────────────────
 
   private void assertSourceContainsSuppressWarnings(String fileName) throws Exception {
@@ -972,6 +1167,17 @@ public class InnerClassExtractionContractTest {
       }
     }
     fail("Method '" + methodName + "' must exist in NonCachingTextRenderer");
+  }
+
+  private void assertPackagePrivateMethodWithParams(Class<?> clazz, String name,
+      Class<?>... params) {
+    try {
+      Method m = clazz.getDeclaredMethod(name, params);
+      assertTrue(clazz.getSimpleName() + "." + name + " must be package-private",
+          isPackagePrivate(m.getModifiers()));
+    } catch (NoSuchMethodException e) {
+      fail(clazz.getSimpleName() + " must have method " + name + "(...)");
+    }
   }
 
   private Path findSourceFile(String relativePath) {
