@@ -39,7 +39,7 @@ extraction series.
 The extraction timeline:
 
 1. **PR #534** — Extracted `SceneEditorDropReceptor`, `LookingGlassPanel`, and
-   `SceneEditorListeners` from `StorytellingSceneEditor` (1259 → 1116 lines).
+   `SceneEditorListeners` from `StorytellingSceneEditor` (1259 → 1124 lines).
 2. **PR #539** — Extracted `SceneEditorFieldManager` and
    `SceneRenderTargetListener` (907 → 695 lines). The `RenderTargetListener`
    callback methods (`resized`, `displayChanged`, `init`, `display`,
