@@ -29,7 +29,7 @@ import static org.junit.Assert.*;
  *   5. Remaining inner classes preserved (none after #524)
  *   6. NonCachingTextRenderer members widened from private → package-private
  *   7. Field type changes for mGlyphProducer / mPipelinedQuadRenderer
- *   8. NonCachingTextRenderer line count under 500
+ *   8. NonCachingTextRenderer line count under 650
  *   9. CharSequenceIterator – extracted top-level class (#524)
  *  10. TextData – extracted top-level class (#524)
  *  11. Manager – extracted top-level class (#524)
