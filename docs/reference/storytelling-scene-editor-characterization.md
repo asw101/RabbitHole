@@ -19,10 +19,13 @@ reflection without GUI instantiation.
 ## Scope
 
 This lane characterizes the structural contract of `StorytellingSceneEditor`
-(1259 lines), the 3D scene editor in the Alice IDE. The class is a singleton
+(~1072 lines after [delegate extraction](./storytelling-scene-editor-delegate-extraction.md)),
+the 3D scene editor in the Alice IDE. The class is a singleton
 that extends `AbstractSceneEditor`, implements `RenderTargetListener`, and
 manages camera views, drag adapters, snap grids, object markers, and field
-management for the scene graph.
+management for the scene graph. Field-management and camera/marker helper
+logic is delegated to `SceneEditorFieldManager` and `SceneEditorCameraHelper`
+respectively.
 
 All 80 tests use pure reflection (`Class.forName`, `getDeclaredMethods`,
 `getDeclaredFields`, `getDeclaredClasses`). No instance of
@@ -57,13 +60,17 @@ This lane does not cover:
 
 | Artifact | Purpose |
 | --- | --- |
-| `StorytellingSceneEditor.java` | Production class (~1259 lines). 4 inner classes, 37+ public methods, 21+ fields. |
+| `StorytellingSceneEditor.java` | Production class (~1072 lines). 4 inner classes, 37+ public methods, 21+ fields. Field-management and camera helpers delegated to companion classes. |
+| `SceneEditorFieldManager.java` | Package-private delegate (~257 lines). Field add/copy/remove statement generation, rider detection, vehicle call construction. |
+| `SceneEditorCameraHelper.java` | Package-private static utility (~91 lines). Camera/marker transforms, colors, point-of-view calculation, marker lookup. |
 | `StorytellingSceneEditorCharacterizationTest.java` | Characterization test suite (575 lines, 80 test methods). |
 
 Source locations:
 
 ```text
 core/ide/src/main/java/org/alice/stageide/sceneeditor/StorytellingSceneEditor.java
+core/ide/src/main/java/org/alice/stageide/sceneeditor/SceneEditorFieldManager.java
+core/ide/src/main/java/org/alice/stageide/sceneeditor/SceneEditorCameraHelper.java
 core/ide/src/test/java/org/alice/stageide/sceneeditor/StorytellingSceneEditorCharacterizationTest.java
 ```
 
