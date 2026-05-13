@@ -158,9 +158,7 @@ public class ImportCleanupContractTest {
   }
 
   @Test
-  public void editor_retains_RenderTargetListener() {
-    // After SceneRenderTargetListener extraction, SSE no longer needs this import
-    // RenderTargetListener is now imported by SceneRenderTargetListener instead
+  public void editor_retains_AutomaticDisplayListener() {
     assertImportPresent(editorImports, "AutomaticDisplayListener",
         "StorytellingSceneEditor declares automaticDisplayListener field");
   }

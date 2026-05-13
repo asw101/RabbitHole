@@ -93,7 +93,6 @@ import org.lgna.project.virtualmachine.UserInstance;
 import org.lgna.story.*;
 import org.lgna.story.implementation.*;
 
-
 import javax.swing.Icon;
 import javax.swing.SwingUtilities;
 import java.awt.event.MouseEvent;
