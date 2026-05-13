@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
@@ -369,7 +370,7 @@ public class VmContractTest {
 
   @Test
   public void field_virtualMachineListeners_exists() {
-    assertDeclaredField("virtualMachineListeners", List.class);
+    assertDeclaredField("virtualMachineListeners", CopyOnWriteArrayList.class);
   }
 
   @Test

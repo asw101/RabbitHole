@@ -43,7 +43,6 @@
 package org.lgna.project.virtualmachine;
 
 import edu.cmu.cs.dennisc.java.lang.reflect.ReflectionUtilities;
-import edu.cmu.cs.dennisc.java.util.Lists;
 import edu.cmu.cs.dennisc.java.util.Maps;
 import edu.cmu.cs.dennisc.java.util.logging.Logger;
 import org.lgna.project.ast.*;
@@ -57,6 +56,7 @@ import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * @author Dennis Cosgrove
@@ -433,28 +433,22 @@ public abstract class VirtualMachine {
   }
 
   public void addVirtualMachineListener(VirtualMachineListener virtualMachineListener) {
-    synchronized (this.virtualMachineListeners) {
-      this.virtualMachineListeners.add(virtualMachineListener);
-    }
+    this.virtualMachineListeners.add(virtualMachineListener);
   }
 
   public void removeVirtualMachineListener(VirtualMachineListener virtualMachineListener) {
-    synchronized (this.virtualMachineListeners) {
-      this.virtualMachineListeners.remove(virtualMachineListener);
-    }
+    this.virtualMachineListeners.remove(virtualMachineListener);
   }
 
   public List<VirtualMachineListener> getVirtualMachineListeners() {
-    synchronized (this.virtualMachineListeners) {
-      return Collections.unmodifiableList(this.virtualMachineListeners);
-    }
+    return Collections.unmodifiableList(this.virtualMachineListeners);
   }
 
   public void setForSceneEditor() {
     isForRunning = false;
   }
 
-  final List<VirtualMachineListener> virtualMachineListeners = Lists.newLinkedList();
+  final CopyOnWriteArrayList<VirtualMachineListener> virtualMachineListeners = new CopyOnWriteArrayList<>();
   boolean isStopped = false;
 
   // Marks this VM for use in running worlds. When true it allows errors to be thrown that interrupt execution.

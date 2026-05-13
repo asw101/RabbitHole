@@ -171,10 +171,8 @@ final class VmExpressionEvaluator {
 
   private Object evaluateFieldAccess(FieldAccess fieldAccess) {
     Object o = fieldAccess.field.getValue();
-    if (o instanceof AbstractField) {
-      AbstractField field = fieldAccess.field.getValue();
-      Expression expression = fieldAccess.expression.getValue();
-      Object value = this.evaluate(expression);
+    if (o instanceof AbstractField field) {
+      Object value = this.evaluate(fieldAccess.expression.getValue());
       return vm.get(field, value);
     } else {
       Logger.errln("field access field is not a field", o);
@@ -261,23 +259,23 @@ final class VmExpressionEvaluator {
 
   private Object evaluateMethodInvocation(MethodInvocation methodInvocation) {
     if (methodInvocation.isValid()) {
-      Object[] allArguments = this.evaluateArguments(methodInvocation.method.getValue(), methodInvocation.requiredArguments, methodInvocation.variableArguments, methodInvocation.keyedArguments);
-      int parameterCount = methodInvocation.method.getValue().getRequiredParameters().size();
-      if (methodInvocation.method.getValue().getVariableLengthParameter() != null) {
+      AbstractMethod method = methodInvocation.method.getValue();
+      Object[] allArguments = this.evaluateArguments(method, methodInvocation.requiredArguments, methodInvocation.variableArguments, methodInvocation.keyedArguments);
+      int parameterCount = method.getRequiredParameters().size();
+      if (method.getVariableLengthParameter() != null) {
         parameterCount += 1;
       }
-      if (methodInvocation.method.getValue().getKeyedParameter() != null) {
+      if (method.getKeyedParameter() != null) {
         parameterCount += 1;
       }
-      assert parameterCount == allArguments.length : methodInvocation.method.getValue().getName();
-      Expression targetExpression = methodInvocation.expression.getValue();
-      Object target = this.evaluate(targetExpression);
+      assert parameterCount == allArguments.length : method.getName();
+      Object target = this.evaluate(methodInvocation.expression.getValue());
 
       try {
-        return vm.invoke(target, methodInvocation.method.getValue(), allArguments);
+        return vm.invoke(target, method, allArguments);
       } catch (Throwable e) {
         if (!vm.isStopped) {
-          Logger.severe("The method invocation threw an error. Continuing past.", methodInvocation.method.getValue(), e);
+          Logger.severe("The method invocation threw an error. Continuing past.", method, e);
         }
         return null;
       }
@@ -411,12 +409,10 @@ final class VmExpressionEvaluator {
       case LambdaExpression lambdaExpression -> evaluateLambdaExpression(lambdaExpression);
       default -> throw new RuntimeException(expression.getClass().getName());
     };
-    synchronized (vm.virtualMachineListeners) {
-      if (!vm.virtualMachineListeners.isEmpty()) {
-        ExpressionEvaluationEvent expressionEvaluationEvent = new ExpressionEvaluationEvent(vm, expression, rv);
-        for (VirtualMachineListener virtualMachineListener : vm.virtualMachineListeners) {
-          virtualMachineListener.expressionEvaluated(expressionEvaluationEvent);
-        }
+    if (!vm.virtualMachineListeners.isEmpty()) {
+      ExpressionEvaluationEvent expressionEvaluationEvent = new ExpressionEvaluationEvent(vm, expression, rv);
+      for (VirtualMachineListener virtualMachineListener : vm.virtualMachineListeners) {
+        virtualMachineListener.expressionEvaluated(expressionEvaluationEvent);
       }
     }
     return rv;

@@ -42,7 +42,6 @@
  *******************************************************************************/
 package org.lgna.project.virtualmachine;
 
-import edu.cmu.cs.dennisc.java.lang.ArrayUtilities;
 import edu.cmu.cs.dennisc.java.lang.IterableUtilities;
 import org.lgna.common.EachInTogetherRunnable;
 import org.lgna.common.ThreadUtilities;
@@ -323,14 +322,12 @@ final class VmStatementExecutor {
     if (statement.isEnabled.getValue()) {
       StatementExecutionEvent statementEvent;
       VirtualMachineListener[] listeners;
-      synchronized (vm.virtualMachineListeners) {
-        if (!vm.virtualMachineListeners.isEmpty()) {
-          statementEvent = new StatementExecutionEvent(vm, statement);
-          listeners = ArrayUtilities.createArray(vm.virtualMachineListeners, VirtualMachineListener.class);
-        } else {
-          statementEvent = null;
-          listeners = null;
-        }
+      if (!vm.virtualMachineListeners.isEmpty()) {
+        statementEvent = new StatementExecutionEvent(vm, statement);
+        listeners = vm.virtualMachineListeners.toArray(new VirtualMachineListener[0]);
+      } else {
+        statementEvent = null;
+        listeners = null;
       }
       if ((statementEvent != null) && (listeners != null)) {
         for (VirtualMachineListener virtualMachineListener : listeners) {
