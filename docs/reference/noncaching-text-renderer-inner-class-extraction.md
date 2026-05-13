@@ -7,6 +7,11 @@ extracted the 3 largest non-static inner classes. Phase 2 (issue #524)
 extracted the 6 remaining inner classes, bringing `NonCachingTextRenderer`
 under 900 lines.
 
+Phase 3 (issue #537) further reduces `NonCachingTextRenderer` by extracting
+6 rendering pipeline methods into a `TextRendererPipeline` delegate class.
+See [NonCachingTextRenderer Pipeline Extraction](./noncaching-text-renderer-pipeline-extraction.md)
+for the Phase 3 reference.
+
 ## Contents
 
 - [Motivation](#motivation)
