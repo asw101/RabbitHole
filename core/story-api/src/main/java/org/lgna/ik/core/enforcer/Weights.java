@@ -16,11 +16,7 @@ public class Weights {
   }
 
   public double getEffectiveJointWeight(JointId jointId) {
-    if (jointWeights.containsKey(jointId)) {
-      return jointWeights.get(jointId);
-    } else {
-      return defaultJointWeight;
-    }
+    return jointWeights.getOrDefault(jointId, defaultJointWeight);
   }
 
   Map<JointId, Double> jointWeights = new HashMap<JointId, Double>();
