@@ -36,12 +36,12 @@ state management with glyph caching and texture rendering.
 Open `TextRendererPipeline.java`. Observe:
 
 - **Package-private visibility** — `class TextRendererPipeline` (no `public`).
-- **Constructor** — Takes a `NonCachingTextRenderer textRenderer` parameter
+- **Constructor** — Takes a `NonCachingTextRenderer renderer` parameter
   and stores it as a `final` field.
 - **@SuppressWarnings("CheckStyle")** — Matches the parent class convention
   to ease JOGL source comparison.
 - **Method bodies** — Verbatim copies from `NonCachingTextRenderer`, with
-  `this.` references replaced by `textRenderer.` references.
+  `this.` references replaced by `renderer.` references.
 
 Example — `beginRendering` before and after:
 
@@ -61,10 +61,10 @@ private void beginRendering(boolean ortho, int width, int height,
 void beginRendering(boolean ortho, int width, int height,
                     boolean disableDepthTestForOrtho) {
     GL2 gl = GLContext.getCurrentGL().getGL2();
-    if (NonCachingTextRenderer.DEBUG && !textRenderer.debugged) {
+    if (NonCachingTextRenderer.DEBUG && !renderer.debugged) {
         debug(gl);
     }
-    textRenderer.inBeginEndPair = true;
+    renderer.inBeginEndPair = true;
     // ...
 }
 ```
@@ -72,7 +72,7 @@ void beginRendering(boolean ortho, int width, int height,
 Key differences:
 - Visibility changed from `private` to package-private
 - `DEBUG` is qualified as `NonCachingTextRenderer.DEBUG` (static field)
-- Instance fields use `textRenderer.` prefix
+- Instance fields use `renderer.` prefix
 - `debug(gl)` calls the pipeline's own copy (also extracted)
 
 ## 3. Trace the public API delegation

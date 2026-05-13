@@ -69,8 +69,8 @@ backing store, glyph producer) go through this reference.
 
 ```java
 // TextRendererPipeline constructor
-TextRendererPipeline(NonCachingTextRenderer textRenderer) {
-    this.textRenderer = textRenderer;
+TextRendererPipeline(NonCachingTextRenderer renderer) {
+    this.renderer = renderer;
 }
 ```
 
@@ -96,33 +96,33 @@ end3DRendering()                   → pipeline.endRendering(false)
 
 ### Back-reference access
 
-The pipeline accesses enclosing state through its `textRenderer` reference:
+The pipeline accesses enclosing state through its `renderer` reference:
 
 | Pipeline usage | Field/method accessed |
 | --- | --- |
-| `textRenderer.inBeginEndPair` | Render cycle flag |
-| `textRenderer.isOrthoMode` | Ortho vs 3D mode |
-| `textRenderer.beginRenderingWidth` | Cached render width |
-| `textRenderer.beginRenderingHeight` | Cached render height |
-| `textRenderer.beginRenderingDepthTestDisabled` | Depth test flag |
-| `textRenderer.haveMaxSize` | Max texture size queried flag |
-| `textRenderer.packer` | Rectangle packer |
-| `textRenderer.needToResetColor` | Color reset flag |
-| `textRenderer.haveCachedColor` | Color cached flag |
-| `textRenderer.cachedR/G/B/A` | Cached RGBA components |
-| `textRenderer.cachedColor` | Cached Color object |
-| `textRenderer.mipmap` | Mipmap flag |
-| `textRenderer.mGlyphProducer` | Glyph producer |
-| `textRenderer.mPipelinedQuadRenderer` | Quad renderer |
-| `textRenderer.stringLocations` | String→Rect cache |
-| `textRenderer.renderDelegate` | Render delegate |
-| `textRenderer.font` | Font reference |
-| `textRenderer.getBackingStore()` | Backing TextureRenderer |
-| `textRenderer.getGraphics2D()` | Cached Graphics2D |
-| `textRenderer.getFontRenderContext()` | Font render context |
-| `textRenderer.getMyUseVertexArrays()` | Vertex array flag |
-| `textRenderer.is15Available(gl)` | GL 1.5 check |
-| `textRenderer.clearUnusedEntries()` | Cache eviction |
+| `renderer.inBeginEndPair` | Render cycle flag |
+| `renderer.isOrthoMode` | Ortho vs 3D mode |
+| `renderer.beginRenderingWidth` | Cached render width |
+| `renderer.beginRenderingHeight` | Cached render height |
+| `renderer.beginRenderingDepthTestDisabled` | Depth test flag |
+| `renderer.haveMaxSize` | Max texture size queried flag |
+| `renderer.packer` | Rectangle packer |
+| `renderer.needToResetColor` | Color reset flag |
+| `renderer.haveCachedColor` | Color cached flag |
+| `renderer.cachedR/G/B/A` | Cached RGBA components |
+| `renderer.cachedColor` | Cached Color object |
+| `renderer.mipmap` | Mipmap flag |
+| `renderer.mGlyphProducer` | Glyph producer |
+| `renderer.mPipelinedQuadRenderer` | Quad renderer |
+| `renderer.stringLocations` | String→Rect cache |
+| `renderer.renderDelegate` | Render delegate |
+| `renderer.font` | Font reference |
+| `renderer.getBackingStore()` | Backing TextureRenderer |
+| `renderer.getGraphics2D()` | Cached Graphics2D |
+| `renderer.getFontRenderContext()` | Font render context |
+| `renderer.getMyUseVertexArrays()` | Vertex array flag |
+| `renderer.is15Available(gl)` | GL 1.5 check |
+| `renderer.clearUnusedEntries()` | Cache eviction |
 
 ## Visibility changes
 
@@ -223,7 +223,7 @@ test -f core/glrender/src/main/java/edu/cmu/cs/dennisc/render/joglrenderer/TextR
    invisible to code outside `edu.cmu.cs.dennisc.render.joglrenderer`.
 
 3. **Behavioral equivalence.** Every extracted method body is moved verbatim
-   (with `this.` references replaced by `textRenderer.`). No logic changes,
+   (with `this.` references replaced by `renderer.`). No logic changes,
    reorderings, or optimizations.
 
 4. **Existing delegator contracts preserved.** `flushGlyphPipeline()` and
@@ -259,7 +259,7 @@ To understand the call chain for `beginRendering(800, 600)`:
 2. Calls `pipeline.beginRendering(true, 800, 600, true)`
 3. `TextRendererPipeline.beginRendering(...)` — pushes GL state, queries max
    texture size, resets cached color, initializes ortho backing store rendering
-4. Accesses `textRenderer.packer`, `textRenderer.getBackingStore()`, etc.
+4. Accesses `renderer.packer`, `renderer.getBackingStore()`, etc.
    through the back-reference
 
 ### Adding a new pipeline method
@@ -267,7 +267,7 @@ To understand the call chain for `beginRendering(800, 600)`:
 If future refactoring moves another method into the pipeline:
 
 1. Move the method body to `TextRendererPipeline.java`
-2. Replace `this.` field/method references with `textRenderer.` references
+2. Replace `this.` field/method references with `renderer.` references
 3. If the moved method was private, widen any accessed fields to package-private
 4. If other extracted classes call the method on `textRenderer`, retain a thin
    delegator on `NonCachingTextRenderer`
