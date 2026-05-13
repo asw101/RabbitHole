@@ -6,7 +6,7 @@ delegate classes: `VmExpressionEvaluator` (~400 lines) and
 `VmStatementExecutor` (~340 lines).
 
 The decomposition is a pure internal refactor. The public API surface —
-`VirtualMachine`'s 20 public methods and 16 abstract methods — is unchanged.
+`VirtualMachine`'s 19 public methods and 16 abstract methods — is unchanged.
 All existing execution behavior, listener dispatch, error messages, and
 exception semantics are preserved identically. A reflection-based contract test
 (`VmContractTest`) guards the API surface before and after extraction.
@@ -36,8 +36,10 @@ exception semantics are preserved identically. A reflection-based contract test
 ## Motivation
 
 The original `VirtualMachine.java` contained 1193 lines mixing five distinct
-concerns: expression evaluation dispatch (28 `evaluate*` methods + switch),
-statement execution dispatch (17 `execute*` methods + switch), public entry
+concerns: expression evaluation dispatch (26 `evaluate*` dispatch methods, type-coercion
+helpers, and `evaluate()` switch over 27 expression types), statement execution
+dispatch (14 `execute*` dispatch methods, 2 shared helpers, and `execute()`
+switch over 14 statement types), public entry
 points (`ENTRY_POINT_*`), field access/invocation operations, and listener
 management. This made the class difficult to navigate, review, and extend
 safely.

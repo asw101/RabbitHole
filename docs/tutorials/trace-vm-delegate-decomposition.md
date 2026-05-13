@@ -53,9 +53,9 @@ Lines   1–100:   License, imports, 16 abstract method declarations
 Lines 103–178:   Public entry points (ENTRY_POINT_*)
 Lines 180–412:   Field/array/invocation operations
 Lines 413–510:   invokeUserMethod, invokeMethodDeclaredInJava, invoke
-Lines 513–808:   26 evaluate* dispatch methods + evaluate() dispatch switch
-Lines 810–845:   evaluateBoolean, evaluateInt type coercion helpers
-Lines 847–1157:  14 execute* dispatch methods + execute() dispatch switch
+Lines 513–808:   26 evaluate* dispatch methods + evaluate() dispatch switch (27 expression types)
+Lines 810–845:   evaluate(Expression, Class<E>) typed wrapper, evaluateBoolean, evaluateInt helpers
+Lines 847–1157:  14 execute* dispatch methods + 2 shared loop helpers + execute() dispatch switch
 Lines 1160–1193: stopExecution, listeners, isStopped, isForRunning fields
 ```
 
@@ -383,7 +383,7 @@ is file-level comprehensibility, not total line reduction.
 | Method category | Before (owner) | After (owner) |
 | --- | --- | --- |
 | 16 abstract methods | VirtualMachine | VirtualMachine (unchanged) |
-| 20 public methods | VirtualMachine | VirtualMachine (unchanged) |
+| 19 public methods | VirtualMachine | VirtualMachine (unchanged) |
 | 26 evaluate* dispatch methods | VirtualMachine | VmExpressionEvaluator |
 | evaluate() dispatch | VirtualMachine | VmExpressionEvaluator |
 | evaluateBoolean/Int | VirtualMachine | VmExpressionEvaluator |
