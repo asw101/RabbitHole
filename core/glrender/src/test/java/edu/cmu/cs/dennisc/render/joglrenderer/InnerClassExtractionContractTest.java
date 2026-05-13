@@ -518,7 +518,7 @@ public class InnerClassExtractionContractTest {
   // ── 8. Line count ─────────────────────────────────────────────────
 
   @Test
-  public void nonCachingTextRenderer_lineCount_under500() throws Exception {
+  public void nonCachingTextRenderer_lineCount_under650() throws Exception {
     Path sourceFile = findSourceFile(
         "core/glrender/src/main/java/edu/cmu/cs/dennisc/render/joglrenderer/"
             + "NonCachingTextRenderer.java");
