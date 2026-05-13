@@ -14,13 +14,20 @@ import java.util.stream.Collectors;
 import static org.junit.Assert.*;
 
 /**
- * Import-cleanup contract tests for issue #528.
+ * Import-cleanup contract tests for issues #528 and #543.
  *
  * After extracting SceneEditorDropReceptor, LookingGlassPanel, and
  * SceneEditorListeners from StorytellingSceneEditor, the 8 imports that
  * were only used by the extracted inner classes must be:
  *   1. ABSENT from StorytellingSceneEditor.java
  *   2. PRESENT in the extracted file(s) that need them
+ *
+ * Issue #543 (NonCachingTextRenderer extraction): java.awt.Dimension and
+ * java.awt.Graphics were orphaned in StorytellingSceneEditor after the
+ * NonCachingTextRenderer logic moved to SceneRenderTargetListener.
+ * These imports must be:
+ *   1. ABSENT from StorytellingSceneEditor.java
+ *   2. PRESENT in SceneRenderTargetListener.java
  *
  * These tests read source files directly — they verify import hygiene
  * at the source level, complementing the reflection-based structural
@@ -37,6 +44,7 @@ public class ImportCleanupContractTest {
   private static Set<String> dropReceptorImports;
   private static Set<String> lookingGlassPanelImports;
   private static Set<String> listenersImports;
+  private static Set<String> renderTargetListenerImports;
 
   @BeforeClass
   public static void loadImports() throws IOException {
@@ -44,6 +52,7 @@ public class ImportCleanupContractTest {
     dropReceptorImports = readImports(SRC_ROOT + "SceneEditorDropReceptor.java");
     lookingGlassPanelImports = readImports(SRC_ROOT + "LookingGlassPanel.java");
     listenersImports = readImports(SRC_ROOT + "SceneEditorListeners.java");
+    renderTargetListenerImports = readImports(SRC_ROOT + "SceneRenderTargetListener.java");
   }
 
   // ── 1. Removed imports must NOT be in StorytellingSceneEditor ─────
@@ -210,6 +219,49 @@ public class ImportCleanupContractTest {
         fail(fqcn + " must compile and load: " + e.getMessage());
       }
     }
+  }
+
+  // ── 6. Issue #543: Dimension/Graphics orphaned by NonCachingTextRenderer extraction ──
+
+  @Test
+  public void editor_noImport_Dimension() {
+    assertImportAbsent(editorImports, "Dimension",
+        "orphaned after NonCachingTextRenderer moved to SceneRenderTargetListener (issue #543)");
+  }
+
+  @Test
+  public void editor_noImport_Graphics() {
+    assertImportAbsent(editorImports, "Graphics",
+        "orphaned after NonCachingTextRenderer moved to SceneRenderTargetListener (issue #543)");
+  }
+
+  @Test
+  public void renderTargetListener_imports_Dimension() {
+    assertImportPresent(renderTargetListenerImports, "Dimension",
+        "SceneRenderTargetListener uses Dimension in NonCachingTextRenderer logic");
+  }
+
+  @Test
+  public void renderTargetListener_imports_Graphics() {
+    assertImportPresent(renderTargetListenerImports, "Graphics",
+        "SceneRenderTargetListener uses Graphics in paintHorizonLine");
+  }
+
+  @Test
+  public void renderTargetListenerClass_loadsSuccessfully() {
+    try {
+      Class<?> c = Class.forName(
+          "org.alice.stageide.sceneeditor.SceneRenderTargetListener");
+      assertNotNull("SceneRenderTargetListener must compile and load", c);
+    } catch (ClassNotFoundException e) {
+      fail("SceneRenderTargetListener must compile and load: " + e.getMessage());
+    }
+  }
+
+  @Test
+  public void editor_noWildcard_javaAwt() {
+    assertNoWildcardImport(editorImports, "java.awt.*",
+        "Dimension/Graphics must not sneak in via java.awt.* wildcard (issue #543)");
   }
 
   // ── Helpers ───────────────────────────────────────────────────────
