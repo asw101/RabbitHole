@@ -404,8 +404,10 @@ final class SaveOperationCompletionEvidence {
       this.awtSourceClass = awtSourceClass;
     }
 
+    private static final InvocationTrigger NONE = new InvocationTrigger(null, null, null);
+
     static InvocationTrigger none() {
-      return new InvocationTrigger(null, null, null);
+      return NONE;
     }
 
     String triggerClass() {

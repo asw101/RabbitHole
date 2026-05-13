@@ -45,9 +45,24 @@ final class EvidenceJsonWriter {
 
   // ── Core utilities ────────────────────────────────────────────────
 
+  private static final char[] HEX = "0123456789abcdef".toCharArray();
+
   static String escapeJson(String value) {
-    StringBuilder escaped = new StringBuilder(value.length());
-    for (int i = 0; i < value.length(); i++) {
+    int len = value.length();
+    // Fast path: skip StringBuilder allocation when no escaping is needed
+    boolean needsEscaping = false;
+    for (int i = 0; i < len; i++) {
+      char ch = value.charAt(i);
+      if (ch == '\\' || ch == '"' || ch < 0x20) {
+        needsEscaping = true;
+        break;
+      }
+    }
+    if (!needsEscaping) {
+      return value;
+    }
+    StringBuilder escaped = new StringBuilder(len + 16);
+    for (int i = 0; i < len; i++) {
       char ch = value.charAt(i);
       switch (ch) {
         case '\\' -> escaped.append("\\\\");
@@ -59,7 +74,9 @@ final class EvidenceJsonWriter {
         case '\t' -> escaped.append("\\t");
         default -> {
           if (ch < 0x20) {
-            escaped.append(String.format("\\u%04x", (int) ch));
+            escaped.append("\\u00");
+            escaped.append(HEX[(ch >> 4) & 0xF]);
+            escaped.append(HEX[ch & 0xF]);
           } else {
             escaped.append(ch);
           }
@@ -339,8 +356,9 @@ final class EvidenceJsonWriter {
     String blockerObserved = snap.blockerObserved();
     String blockerRequired = snap.blockerRequired();
     if (!proven && blockerKind == null) {
-      blockerKind = inferBlockerKind(snap, observedWrite);
-      blockerObserved = inferBlockerObserved(snap, observedWrite);
+      InferredBlocker inferred = inferBlocker(snap, observedWrite);
+      blockerKind = inferred.kind();
+      blockerObserved = inferred.observed();
       blockerRequired =
           "A complete Robot File menu Save activation, rendered dialog approval, write, readback, and marker path";
     }
@@ -529,59 +547,43 @@ final class EvidenceJsonWriter {
         + "  ]\n";
   }
 
-  private static String inferBlockerKind(SaveProofSnapshot snap, boolean observedWrite) {
-    if (!snap.robotFileMenuOpened()) {
-      return "file_menu_not_showing";
-    }
-    if (!snap.robotSaveItemClicked() || !snap.saveActionIdentityMatched()) {
-      return "save_item_not_attributed";
-    }
-    if (!snap.chooserObserved()) {
-      return "dialog_not_observed";
-    }
-    if (snap.ambiguousChooserDiscovery()) {
-      return "ambiguous_chooser_discovery";
-    }
-    if (!snap.dialogShowing() || !snap.selectedFileVerified() || !snap.approvedSelection()) {
-      return "chooser_control_failed";
-    }
-    if (!snap.targetInsideProofRoot() || !snap.targetFileName().endsWith(".a3p")) {
-      return "target_path_rejected";
-    }
-    if (!observedWrite) {
-      return "write_not_observed";
-    }
-    if (!snap.projectReadable()) {
-      return "readback_failed";
-    }
-    return "marker_missing";
+  private record InferredBlocker(String kind, String observed) {
   }
 
-  private static String inferBlockerObserved(SaveProofSnapshot snap, boolean observedWrite) {
+  private static InferredBlocker inferBlocker(SaveProofSnapshot snap, boolean observedWrite) {
     if (!snap.robotFileMenuOpened()) {
-      return "The rendered File menu was not opened by Robot";
+      return new InferredBlocker("file_menu_not_showing",
+          "The rendered File menu was not opened by Robot");
     }
     if (!snap.robotSaveItemClicked() || !snap.saveActionIdentityMatched()) {
-      return "The production Save item click was not attributed to Robot";
+      return new InferredBlocker("save_item_not_attributed",
+          "The production Save item click was not attributed to Robot");
     }
     if (!snap.chooserObserved()) {
-      return "No live Swing JFileChooser was observed";
+      return new InferredBlocker("dialog_not_observed",
+          "No live Swing JFileChooser was observed");
     }
     if (snap.ambiguousChooserDiscovery()) {
-      return "Multiple live Swing JFileChoosers were observed";
+      return new InferredBlocker("ambiguous_chooser_discovery",
+          "Multiple live Swing JFileChoosers were observed");
     }
     if (!snap.dialogShowing() || !snap.selectedFileVerified() || !snap.approvedSelection()) {
-      return "The live Save chooser could not be safely controlled";
+      return new InferredBlocker("chooser_control_failed",
+          "The live Save chooser could not be safely controlled");
     }
     if (!snap.targetInsideProofRoot() || !snap.targetFileName().endsWith(".a3p")) {
-      return "The selected Save target was outside the proof root or not an .a3p file";
+      return new InferredBlocker("target_path_rejected",
+          "The selected Save target was outside the proof root or not an .a3p file");
     }
     if (!observedWrite) {
-      return "No non-empty .a3p write was observed at the controlled target";
+      return new InferredBlocker("write_not_observed",
+          "No non-empty .a3p write was observed at the controlled target");
     }
     if (!snap.projectReadable()) {
-      return "The written .a3p file could not be read back as an Alice project";
+      return new InferredBlocker("readback_failed",
+          "The written .a3p file could not be read back as an Alice project");
     }
-    return "The readback project did not contain " + SaveOperationCompletionEvidence.SAVE_PROOF_MARKER;
+    return new InferredBlocker("marker_missing",
+        "The readback project did not contain " + SaveOperationCompletionEvidence.SAVE_PROOF_MARKER);
   }
 }
