@@ -85,18 +85,18 @@ public class ModelResourceExporter {
 
   private String resourceName;
   private String className;
-  private List<String> tags = new LinkedList<String>();
-  private List<String> groupTags = new LinkedList<String>();
-  private List<String> themeTags = new LinkedList<String>();
-  private Map<String, AxisAlignedBox> boundingBoxes = new HashMap<String, AxisAlignedBox>();
+  private List<String> tags = new ArrayList<>();
+  private List<String> groupTags = new ArrayList<>();
+  private List<String> themeTags = new ArrayList<>();
+  private Map<String, AxisAlignedBox> boundingBoxes = new HashMap<>();
   private File xmlFile;
   private File javaFile;
-  private List<String> jointIdsToSuppress = new ArrayList<String>();
-  private List<String> arraysToExposeFirstElementOf = new ArrayList<String>();
-  private List<String> arraysToHideElementsOf = new ArrayList<String>();
-  private Map<ModelSubResourceExporter, Image> thumbnails = new HashMap<ModelSubResourceExporter, Image>();
+  private List<String> jointIdsToSuppress = new ArrayList<>();
+  private List<String> arraysToExposeFirstElementOf = new ArrayList<>();
+  private List<String> arraysToHideElementsOf = new ArrayList<>();
+  private Map<ModelSubResourceExporter, Image> thumbnails = new HashMap<>();
   private Map<String, File> existingThumbnails = null;
-  private List<ModelSubResourceExporter> subResources = new LinkedList<ModelSubResourceExporter>();
+  private List<ModelSubResourceExporter> subResources = new ArrayList<>();
   private boolean isSims = false;
   private boolean hasNewData = false;
   private boolean forceRebuildCode = false;
@@ -105,10 +105,10 @@ public class ModelResourceExporter {
   private boolean shouldRecenter = false;
   private boolean recenterXZ = false;
   private boolean moveCenterToBottom = true;
-  private List<String> forcedOverridingEnumNames = new ArrayList<String>();
-  private Map<String, List<String>> forcedEnumNamesMap = new HashMap<String, List<String>>();
-  private Map<String, String> customArrayNameMap = new HashMap<String, String>();
-  private Map<String, Map<String, AffineMatrix4x4>> poses = new HashMap<String, Map<String, AffineMatrix4x4>>();
+  private List<String> forcedOverridingEnumNames = new ArrayList<>();
+  private Map<String, List<String>> forcedEnumNamesMap = new HashMap<>();
+  private Map<String, String> customArrayNameMap = new HashMap<>();
+  private Map<String, Map<String, AffineMatrix4x4>> poses = new HashMap<>();
   private String[] arrayNamesToSkip = null;
   private boolean exportGalleryResources = true;
   private boolean isDeprecated = false;
@@ -244,22 +244,6 @@ public class ModelResourceExporter {
     return this.exportGalleryResources;
   }
 
-  public static boolean isMoreRecentThan(Date dataDate, File file) {
-    if (dataDate == null) {
-      return false;
-    }
-    Date fileDate = new Date(file.lastModified());
-    boolean isNewer = dataDate.after(fileDate);
-    return isNewer;
-  }
-
-  public static boolean isMoreRecentThan(Date dataData, Date otherDate) {
-    if (dataData == null) {
-      return false;
-    }
-    return dataData.after(otherDate);
-  }
-
   public String getResourceName() {
     return this.resourceName;
   }
@@ -359,10 +343,6 @@ public class ModelResourceExporter {
 
   public void setJointMap(List<Tuple2<String, String>> jointList) {
     this.jointList = jointList;
-    //    if (this.classData == null)
-    //    {
-    //      this.classData = ModelResourceExporter.getBestClassDataForJointList(jointList);
-    //    }
   }
 
   public void addSubResource(ModelSubResourceExporter subResource) {
@@ -470,15 +450,10 @@ public class ModelResourceExporter {
     return superBox;
   }
 
-  //  public void addThumbnail( String modelName, String textureName, String resourceType, String attributionName, String attributionYear, Image thumbnail )
-  //  {
-  //    this.thumbnails.put( new ModelSubResourceExporter( modelName, textureName, resourceType, attributionName, attributionYear ), thumbnail );
-  //  }
-
   public void addExistingThumbnail(String name, File thumbnailFile) {
     if ((thumbnailFile != null) && thumbnailFile.exists()) {
       if (this.existingThumbnails == null) {
-        this.existingThumbnails = new HashMap<String, File>();
+        this.existingThumbnails = new HashMap<>();
       }
       this.existingThumbnails.put(name, thumbnailFile);
     } else {
@@ -526,93 +501,6 @@ public class ModelResourceExporter {
     return this.subResources;
   }
 
-  private static List<ModelClassData> POTENTIAL_MODEL_CLASS_DATA_OPTIONS = null;
-
-  public static ModelClassData getBestClassDataForJointList(List<Tuple2<String, String>> jointList) {
-    if (POTENTIAL_MODEL_CLASS_DATA_OPTIONS == null) {
-      POTENTIAL_MODEL_CLASS_DATA_OPTIONS = new LinkedList<ModelClassData>();
-      Field[] dataFields = AliceResourceClassUtilities.getFieldsOfType(ModelClassData.class, ModelClassData.class);
-      for (Field f : dataFields) {
-        ModelClassData data = null;
-        try {
-          Object o = f.get(null);
-          if ((o != null) && (o instanceof ModelClassData modelClassData)) {
-            data = modelClassData;
-          }
-        } catch (Exception e) {
-        }
-        if (data != null) {
-          POTENTIAL_MODEL_CLASS_DATA_OPTIONS.add(data);
-        }
-      }
-    }
-
-    int highScore = Integer.MIN_VALUE;
-    ModelClassData bestFit = null;
-    for (ModelClassData mcd : POTENTIAL_MODEL_CLASS_DATA_OPTIONS) {
-      List<Tuple2<String, String>> modelDataJoints = getExistingJointIdPairs(mcd.superClass);
-      int score = -Math.abs(modelDataJoints.size() - jointList.size());
-      for (Tuple2<String, String> inputPair : jointList) {
-        for (Tuple2<String, String> testPair : modelDataJoints) {
-          if (inputPair.equals(testPair)) {
-            score++;
-            break;
-          }
-        }
-      }
-      if (score > highScore) {
-        highScore = score;
-        bestFit = mcd;
-      }
-    }
-    return bestFit;
-  }
-
-  static List<Tuple2<String, String>> getExistingJointIdPairs(Class<?> resourceClass) {
-    List<Tuple2<String, String>> ids = new LinkedList<Tuple2<String, String>>();
-    Field[] fields = resourceClass.getDeclaredFields();
-    for (Field f : fields) {
-      if (JointId.class.isAssignableFrom(f.getType())) {
-        String fieldName = f.getName();
-        String parentName = null;
-        JointId fieldData = null;
-        try {
-          Object o = f.get(null);
-          if ((o != null) && (o instanceof JointId id)) {
-            fieldData = id;
-          }
-        } catch (Exception e) {
-        }
-        if ((fieldData != null) && (fieldData.getParent() != null)) {
-          parentName = fieldData.getParent().toString();
-        }
-
-        ids.add(Tuple2.createInstance(fieldName, parentName));
-      }
-    }
-    Class<?>[] interfaces = resourceClass.getInterfaces();
-    for (Class<?> i : interfaces) {
-      ids.addAll(getExistingJointIdPairs(i));
-    }
-    return ids;
-  }
-
-  static List<String> getExistingJointIds(Class<?> resourceClass) {
-    List<String> ids = new LinkedList<String>();
-    Field[] fields = resourceClass.getDeclaredFields();
-    for (Field f : fields) {
-      if (JointId.class.isAssignableFrom(f.getType())) {
-        String fieldName = f.getName();
-        ids.add(fieldName);
-      }
-    }
-    Class<?>[] interfaces = resourceClass.getInterfaces();
-    for (Class<?> i : interfaces) {
-      ids.addAll(getExistingJointIds(i));
-    }
-    return ids;
-  }
-
   Field getJointRootsField(Class<?> cls) {
     if (cls == null) {
       return null;
@@ -650,17 +538,6 @@ public class ModelResourceExporter {
       }
     }
     return false;
-  }
-
-  public static String getAccessorMethodsForResourceClass(Class<? extends JointedModelResource> resourceClass) {
-    StringBuilder sb = new StringBuilder();
-    List<String> jointIds = getExistingJointIds(resourceClass);
-    for (String id : jointIds) {
-      sb.append("public Joint get" + AliceResourceClassUtilities.getAliceMethodNameForEnum(id) + "() {\n");
-      sb.append("\t return org.lgna.story.Joint.getJoint( this, " + resourceClass.getCanonicalName() + "." + id + ");\n");
-      sb.append("}\n");
-    }
-    return sb.toString();
   }
 
   private static String createResourceEnumName(ModelResourceExporter parentExporter, String modelName, String textureName) {
@@ -704,16 +581,6 @@ public class ModelResourceExporter {
     return ModelResourceJavaGenerator.getAccessorMethodName(arrayName);
   }
 
-  private String getAccessorMethodName(String arrayName) {
-    return "get" + AliceResourceUtilities.enumToCamelCase(arrayName);
-  }
-
-  //If a parent interface has declared an accessor for a given field, return true
-  // otherwisse return false
-  private boolean needsAccessorMethodForFieldName(ModelClassData classData, String fieldName) {
-    return ModelResourceJavaGenerator.needsAccessorMethodForFieldName(classData, fieldName);
-  }
-
   public String createJavaCode() throws DataFormatException {
     return ModelResourceJavaGenerator.buildJavaCodeBody(this);
   }
@@ -752,11 +619,7 @@ public class ModelResourceExporter {
 
 
   private File createJavaCode(String root) throws DataFormatException {
-    String packageDirectory = JavaCodeUtilities.getDirectoryStringForPackage(this.classData.packageString);
-    System.out.println(packageDirectory);
     String javaCode = createJavaCode();
-    System.out.println(javaCode);
-    System.out.println(System.getProperty("java.class.path"));
     File javaFile = ModelResourceFileUtilities.getJavaFile(root, this.classData.packageString, getJavaClassName());
     TextFileUtilities.write(javaFile, javaCode);
     return javaFile;
@@ -773,11 +636,6 @@ public class ModelResourceExporter {
       FileUtilities.copyFile(this.xmlFile, outputFile);
       return outputFile;
     } else {
-      //This path does not indent the xml
-      //            Document doc = this.createXMLDocument();
-      //            XMLUtilities.write(doc, outputFile);
-
-      //This path does indenting
       String xmlString = this.createXMLString();
       try (FileWriter fw = new FileWriter(outputFile)) {
         fw.write(xmlString);
@@ -851,7 +709,7 @@ public class ModelResourceExporter {
       } else {
         List<String> nameList;
         if (!this.forcedEnumNamesMap.containsKey(resourceName)) {
-          nameList = new ArrayList<String>();
+          nameList = new ArrayList<>();
           this.forcedEnumNamesMap.put(resourceName, nameList);
         } else {
           nameList = this.forcedEnumNamesMap.get(resourceName);
@@ -861,26 +719,4 @@ public class ModelResourceExporter {
     }
   }
 
-  /*
-   * public Joint getRightWrist() {
-   * return org.lgna.story.Joint.getJoint( this, org.lgna.story.resources.BipedResource.RIGHT_WRIST );
-   * }
-   */
-
-  public static String getJointAccessCodeForClass(Class<?> resourceClass) {
-    List<String> ids = getExistingJointIds(resourceClass);
-    StringBuilder sb = new StringBuilder();
-    for (String id : ids) {
-      sb.append("public org.lgna.story.Joint get" + AliceResourceClassUtilities.getAliceMethodNameForEnum(id) + "() {\n");
-      sb.append("\treturn org.lgna.story.Joint.getJoint( this, " + resourceClass.getName() + "." + id + " );\n");
-      sb.append("}\n");
-    }
-
-    return sb.toString();
-
-  }
-
-  public static void main(String[] args) {
-    System.out.println(getJointAccessCodeForClass(BipedResource.class));
-  }
 }

@@ -61,22 +61,26 @@ import org.lgna.story.SlithererPose;
 import org.lgna.story.SlithererPoseBuilder;
 import org.lgna.story.SwimmerPose;
 import org.lgna.story.SwimmerPoseBuilder;
+import org.lgna.story.implementation.alice.AliceResourceClassUtilities;
 import org.lgna.story.implementation.alice.AliceResourceUtilities;
 import org.lgna.story.resources.BipedResource;
 import org.lgna.story.resources.FlyerResource;
 import org.lgna.story.resources.ImplementationAndVisualType;
 import org.lgna.story.resources.JointArrayId;
 import org.lgna.story.resources.JointId;
+import org.lgna.story.resources.JointedModelResource;
 import org.lgna.story.resources.QuadrupedResource;
 import org.lgna.story.resources.SlithererResource;
 import org.lgna.story.resources.SwimmerResource;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.LinkedList;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.HashMap;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.zip.DataFormatException;
 import java.util.Map;
 
@@ -101,7 +105,7 @@ final class ModelResourceJavaGenerator {
   }
 
   static List<Method> getMandatoryMethods(Class<?> superClass, Class<?> returnType) {
-    List<Method> methods = new LinkedList<Method>();
+    List<Method> methods = new ArrayList<>();
     for (Method method : superClass.getMethods()) {
       if (returnType.isAssignableFrom(method.getReturnType()) && method.getDeclaringClass().isInterface()) {
         methods.add(method);
@@ -111,11 +115,11 @@ final class ModelResourceJavaGenerator {
   }
 
   static List<String> getMandatoryJointArrayNames(Class<?> superClass) {
-    List<String> methodNames = new LinkedList<String>();
+    List<String> methodNames = new ArrayList<>();
     for (Method method : getMandatoryMethods(superClass, JointId[].class)) {
       methodNames.add(method.getName());
     }
-    List<String> arrayNames = new LinkedList<String>();
+    List<String> arrayNames = new ArrayList<>();
     for (String methodName : methodNames) {
       int index = methodName.indexOf("get");
       if ((index == 0)) {
@@ -137,11 +141,11 @@ final class ModelResourceJavaGenerator {
   }
 
   static List<String> getMandatoryPoseNames(Class<?> superClass) {
-    List<String> methodNames = new LinkedList<String>();
+    List<String> methodNames = new ArrayList<>();
     for (Method method : getMandatoryMethods(superClass, Pose.class)) {
       methodNames.add(method.getName());
     }
-    List<String> poseNames = new LinkedList<String>();
+    List<String> poseNames = new ArrayList<>();
     for (String methodName : methodNames) {
       int index = methodName.indexOf("get");
       if ((index == 0)) {
@@ -191,7 +195,7 @@ final class ModelResourceJavaGenerator {
   }
 
   static List<String> getAlreadyDeclaredJointArrayNames(Class<?> superClass) {
-    List<String> fieldNames = new LinkedList<String>();
+    List<String> fieldNames = new ArrayList<>();
     for (Field field : ReflectionUtilities.getPublicStaticFinalFields(superClass, JointArrayId.class)) {
       fieldNames.add(field.getName());
     }
@@ -284,7 +288,7 @@ final class ModelResourceJavaGenerator {
       StringBuilder sb = new StringBuilder();
 
       ModelResourceJavaGenerator.appendPreambleAndEnumConstants(sb, exporter);
-      List<String> existingIds = ModelResourceExporter.getExistingJointIds(exporter.getClassData().superClass);
+      Set<String> existingIds = new HashSet<>(getExistingJointIds(exporter.getClassData().superClass));
       boolean addedRoots = false;
       List<Tuple2<String, String>> trimmedSkeleton = exporter.makeCodeReadyTree(exporter.getJointList());
       if (trimmedSkeleton != null) {
@@ -292,11 +296,11 @@ final class ModelResourceJavaGenerator {
         if (exporter.isEnableArraySupport()) {
           arrayEntries = ModelResourceArrayUtilities.getArrayEntriesFromJointList(trimmedSkeleton, exporter.getCustomArrayNameMap(), exporter.getJointIdsToSuppress(), exporter.getArrayNamesToSkip());
         } else {
-          arrayEntries = new HashMap<String, List<String>>();
+          arrayEntries = new HashMap<>();
         }
 
-        Map<String, Map<String, AffineMatrix4x4>> poseEntries = new HashMap<String, Map<String, AffineMatrix4x4>>(exporter.getPoses());
-        List<String> rootJoints = new LinkedList<String>();
+        Map<String, Map<String, AffineMatrix4x4>> poseEntries = new HashMap<>(exporter.getPoses());
+        List<String> rootJoints = new ArrayList<>();
         sb.append(JavaCodeUtilities.LINE_RETURN);
         for (Tuple2<String, String> entry : trimmedSkeleton) {
           String jointString = entry.getA();
@@ -398,7 +402,7 @@ final class ModelResourceJavaGenerator {
             }
           }
           for (String mandatoryArray : mandatoryArrayNames) {
-            arrayEntries.put(mandatoryArray, new LinkedList<String>());
+            arrayEntries.put(mandatoryArray, new ArrayList<>());
           }
           for (Entry<String, List<String>> arrayEntry : arrayEntries.entrySet()) {
             List<String> arrayElements = arrayEntry.getValue();
@@ -480,5 +484,43 @@ final class ModelResourceJavaGenerator {
       sb.append("}" + JavaCodeUtilities.LINE_RETURN);
 
       return sb.toString();
+  }
+
+  static List<String> getExistingJointIds(Class<?> resourceClass) {
+    List<String> ids = new ArrayList<>();
+    Field[] fields = resourceClass.getDeclaredFields();
+    for (Field f : fields) {
+      if (JointId.class.isAssignableFrom(f.getType())) {
+        String fieldName = f.getName();
+        ids.add(fieldName);
+      }
+    }
+    Class<?>[] interfaces = resourceClass.getInterfaces();
+    for (Class<?> i : interfaces) {
+      ids.addAll(getExistingJointIds(i));
+    }
+    return ids;
+  }
+
+  static String getAccessorMethodsForResourceClass(Class<? extends JointedModelResource> resourceClass) {
+    StringBuilder sb = new StringBuilder();
+    List<String> jointIds = getExistingJointIds(resourceClass);
+    for (String id : jointIds) {
+      sb.append("public Joint get" + AliceResourceClassUtilities.getAliceMethodNameForEnum(id) + "() {\n");
+      sb.append("\t return org.lgna.story.Joint.getJoint( this, " + resourceClass.getCanonicalName() + "." + id + ");\n");
+      sb.append("}\n");
+    }
+    return sb.toString();
+  }
+
+  static String getJointAccessCodeForClass(Class<?> resourceClass) {
+    List<String> ids = getExistingJointIds(resourceClass);
+    StringBuilder sb = new StringBuilder();
+    for (String id : ids) {
+      sb.append("public org.lgna.story.Joint get" + AliceResourceClassUtilities.getAliceMethodNameForEnum(id) + "() {\n");
+      sb.append("\treturn org.lgna.story.Joint.getJoint( this, " + resourceClass.getName() + "." + id + " );\n");
+      sb.append("}\n");
+    }
+    return sb.toString();
   }
 }
