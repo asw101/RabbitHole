@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.BasicFileAttributes;
 
 public final class EatmeSceneObjectAddedEvidence {
   public static final String EVIDENCE_DIR_PROPERTY = "org.alice.eatme.evidenceDir";
@@ -39,7 +40,8 @@ public final class EatmeSceneObjectAddedEvidence {
         + "  \"scene_field_count_after\": " + sceneFieldCountAfter + "\n"
         + "}\n";
     writeArtifactAtomically(evidenceRoot, artifact, content);
-    if (!Files.isRegularFile(artifact, LinkOption.NOFOLLOW_LINKS) || Files.size(artifact) == 0) {
+    BasicFileAttributes postAttrs = Files.readAttributes(artifact, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+    if (!postAttrs.isRegularFile() || postAttrs.size() == 0) {
       throw new IOException("Scene-object-added evidence artifact was not written: " + artifact);
     }
     return artifact;
@@ -64,13 +66,14 @@ public final class EatmeSceneObjectAddedEvidence {
 
   private static Path validateEvidenceDir(Path evidenceDir) throws IOException {
     Path evidencePath = evidenceDir.toAbsolutePath().normalize();
-    if (Files.isSymbolicLink(evidencePath)) {
+    // Single lstat: checks both symlink status and file type in one syscall
+    BasicFileAttributes dirAttrs = Files.readAttributes(evidencePath, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+    if (dirAttrs.isSymbolicLink()) {
       throw new IOException("Scene-object-added evidence path must not be a symbolic link: " + evidenceDir);
     }
-    Path evidenceRoot = evidencePath.toRealPath();
-    if (!Files.isDirectory(evidenceRoot)) {
+    if (!dirAttrs.isDirectory()) {
       throw new IOException("Scene-object-added evidence path is not a directory: " + evidenceDir);
     }
-    return evidenceRoot;
+    return evidencePath.toRealPath();
   }
 }
