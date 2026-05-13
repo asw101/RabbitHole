@@ -103,7 +103,6 @@ public class StorytellingSceneEditor extends AbstractSceneEditor {
   private final SceneEditorDropReceptor dropReceptor = new SceneEditorDropReceptor(this);
   final SceneEditorFieldManager fieldManager = new SceneEditorFieldManager(this);
   final SceneRenderTargetListener renderTargetListener = new SceneRenderTargetListener(this);
-  private final SceneEditorInitializer initializer = new SceneEditorInitializer(this);
   private final SceneEditorLifecycleManager lifecycleManager = new SceneEditorLifecycleManager(this);
 
   private final Runnable uiRefresher = () -> {
@@ -331,7 +330,7 @@ public class StorytellingSceneEditor extends AbstractSceneEditor {
     if (this.isInitialized) {
       return;
     }
-    this.initializer.initialize();
+    new SceneEditorInitializer(this).initialize();
     this.isInitialized = true;
   }
 

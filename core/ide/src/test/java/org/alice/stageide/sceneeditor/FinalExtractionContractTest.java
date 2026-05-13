@@ -334,7 +334,7 @@ public class FinalExtractionContractTest {
   public void declaredFieldCount_atLeast20() {
     int count = sseClazz.getDeclaredFields().length;
     // Removed 3 (EXPAND_ICON, CONTRACT_ICON, SHOW_JOINTED_MODEL_VISUALIZATIONS_KEY)
-    // Added 1 (lifecycleManager)
+    // Added 1 (lifecycleManager); initializer is ephemeral (local variable)
     // Net: -2 from baseline; should still be ≥ 20
     assertTrue("Expected ≥20 declared fields after extraction, found " + count,
         count >= 20);
