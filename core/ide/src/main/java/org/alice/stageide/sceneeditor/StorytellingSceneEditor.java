@@ -125,8 +125,8 @@ public class StorytellingSceneEditor extends AbstractSceneEditor {
     return this.dropReceptor;
   }
 
-  private static Icon EXPAND_ICON = new FlatSVGIcon(Icons.class.getResource("images/expand.svg")).derive(24, 24);
-  private static Icon CONTRACT_ICON = new FlatSVGIcon(Icons.class.getResource("images/contract.svg")).derive(24, 24);
+  private static final Icon EXPAND_ICON = new FlatSVGIcon(Icons.class.getResource("images/expand.svg")).derive(24, 24);
+  private static final Icon CONTRACT_ICON = new FlatSVGIcon(Icons.class.getResource("images/contract.svg")).derive(24, 24);
 
   AutomaticDisplayListener automaticDisplayListener = new AutomaticDisplayListener() {
     @Override
@@ -150,6 +150,12 @@ public class StorytellingSceneEditor extends AbstractSceneEditor {
   private Button expandButton;
   private Button contractButton;
   private InstanceFactorySelectionPanel instanceFactorySelectionPanel = null;
+
+  private final Runnable selectionRefresher = () -> {
+    revalidateAndRepaint();
+    SideComposite.getInstance().getObjectPropertiesTab().getView().revalidateAndRepaint();
+    SideComposite.getInstance().getObjectMarkersTab().getView().revalidateAndRepaint();
+  };
 
   private final Button runButton = IsToolBarShowing.getValue() ? null : RunComposite.getInstance().getLaunchOperation().createButton();
 
@@ -237,20 +243,7 @@ public class StorytellingSceneEditor extends AbstractSceneEditor {
       this.selectionIsFromMain = false;
     }
 
-    //TEST
-    Runnable refresher = new Runnable() {
-      @Override
-      public void run() {
-        StorytellingSceneEditor.this.revalidateAndRepaint();
-        SideComposite.getInstance().getObjectPropertiesTab().getView().revalidateAndRepaint();
-        SideComposite.getInstance().getObjectMarkersTab().getView().revalidateAndRepaint();
-      }
-    };
-    try {
-      SwingUtilities.invokeLater(refresher);
-    } catch (Throwable e) {
-      e.printStackTrace();
-    }
+    SwingUtilities.invokeLater(selectionRefresher);
   }
 
   private boolean isSelectableType(AbstractType<?, ?, ?> valueType) {
@@ -470,7 +463,8 @@ public class StorytellingSceneEditor extends AbstractSceneEditor {
       getPropertyPanel().setSceneInstance(sceneAliceInstance);
 
       this.instanceFactorySelectionPanel.setType(sceneAliceInstance.getType());
-      for (AbstractField field : sceneField.getValueType().getDeclaredFields()) {
+      java.util.List<? extends AbstractField> declaredFields = sceneField.getValueType().getDeclaredFields();
+      for (AbstractField field : declaredFields) {
         if (field.getValueType().isAssignableTo(SCamera.class)) {
           sceneCameraImp = getImplementation(field);
           movableSceneCameraImp = sceneCameraImp;
@@ -516,7 +510,7 @@ public class StorytellingSceneEditor extends AbstractSceneEditor {
       this.fieldManager.setSelectedCameraMarker(null);
       this.fieldManager.setSelectedObjectMarker(null);
 
-      for (AbstractField field : sceneField.getValueType().getDeclaredFields()) {
+      for (AbstractField field : declaredFields) {
         // Turn markers on, so they're visible in the scene editor (note: markers are hidden by default so that when a world runs they aren't seen.
         // we have to manually make them visible to see them in the scene editor)
         if (field.getValueType() != null && field.getValueType().isAssignableTo(SMarker.class)) {
