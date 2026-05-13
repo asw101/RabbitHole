@@ -335,7 +335,7 @@ the delegates:
 | `mainCameraMarkerList` | field | Camera view state |
 | `lookingGlassPanel` | field | Camera view combo box placement |
 | `isInitialized` | field | Set to `true` at end of initialization |
-| `getSelectedField()` | method (inherited) | Check for pre-existing selection |
+| `getSelectedField()` | method (inherited, public) | Check for pre-existing selection |
 
 ### SceneEditorLifecycleManager accesses
 
@@ -353,12 +353,12 @@ the delegates:
 | `fieldManager` | field | Marker selection |
 | `layoutCameraImp` | field | Camera setup |
 | `onscreenRenderTarget` | field | Cache clearing |
-| `isInitialized` | field | Guard check |
 | `getPropertyPanel()` | method | Scene instance assignment |
 | `setCameras()` | method | Camera initialization |
 | `setIsVrActive(boolean)` | method | VR mode detection |
 | `getProgramInstanceInJavaForDelegate()` | forwarding method | Program access |
 | `setInitialCodeStateForFieldForDelegate(...)` | forwarding method | Field code state |
+| `getCurrentStateCodeForField(UserField)` | method (public on SSE) | Field code state input for `setInitialCodeStateForField` |
 | `getActiveSceneInstance()` | method (inherited, public) | Scene instance access |
 | `getInstanceInJavaVMForField(...)` | method (inherited, public) | Field instance lookup |
 | `getActiveSceneImplementation()` | method (inherited, public) | Scene implementation |
