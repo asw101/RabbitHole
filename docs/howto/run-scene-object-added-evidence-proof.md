@@ -25,6 +25,7 @@ Run the unit tests for the evidence hook:
 NODE_OPTIONS=--max-old-space-size=32768 \
 mvn -DincludeSims=false -Dinstall4j.skip \
   -DfailIfNoTests=false \
+  -Dsurefire.failIfNoSpecifiedTests=false \
   -Dcheckstyle.skip \
   -pl core/ide -am \
   -Dtest=org.alice.tools.EatmeSceneObjectAddedEvidenceTest \
