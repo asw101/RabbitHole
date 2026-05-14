@@ -12,6 +12,11 @@
   <suppress files="core[/\\]ast[/\\]src[/\\]main[/\\]java[/\\]org[/\\]lgna[/\\]project[/\\]ast[/\\]SourceCodeGenerator.java" checks=".*"/>
   <suppress files="core[/\\]story-api[/\\]src[/\\]main[/\\]java[/\\]org[/\\]lgna[/\\]story[/\\]implementation[/\\]GroundMeshData.java" checks=".*"/>
   <suppress files="core[/\\]model-loading[/\\]src[/\\]main[/\\]java[/\\]org[/\\]lgna[/\\]story[/\\]resourceutilities[/\\]GltfMeshBuilder.java" checks=".*"/>
+  <!-- Extracted delegate files from refactoring PRs #600-#613 -->
+  <suppress files="core[/\\]ide[/\\]src[/\\]main[/\\]java[/\\]org[/\\]alice[/\\]ide[/\\]ProjectBackupManager.java" checks=".*"/>
+  <suppress files="core[/\\]ide[/\\]src[/\\]main[/\\]java[/\\]org[/\\]alice[/\\]ide[/\\]ProjectUndoRedoManager.java" checks=".*"/>
+  <suppress files="core[/\\]ide[/\\]src[/\\]main[/\\]java[/\\]org[/\\]alice[/\\]stageide[/\\]sceneeditor[/\\]viewmanager[/\\]CameraMarkerTracker.java" checks=".*"/>
+  <suppress files="core[/\\]ide[/\\]src[/\\]main[/\\]java[/\\]org[/\\]alice[/\\]stageide[/\\]sceneeditor[/\\]viewmanager[/\\]OrthographicCameraMarkerConfiguration.java" checks=".*"/>
   <suppress files="external[/\\]" checks=".*"/>
   <suppress files="target[/\\]" checks=".*"/>
 </suppressions>
