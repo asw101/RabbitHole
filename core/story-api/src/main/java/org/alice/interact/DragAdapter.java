@@ -137,8 +137,12 @@ public abstract class DragAdapter {
   private Animator animator;
   private boolean isInStageChange = false;
 
-  public void addListeners(Component component) { this.eventHandler.addListeners(component); }
-  public void removeListeners(Component component) { this.eventHandler.removeListeners(component); }
+  public void addListeners(Component component) {
+    this.eventHandler.addListeners(component);
+  }
+  public void removeListeners(Component component) {
+    this.eventHandler.removeListeners(component);
+  }
 
   public void addManipulationListener(ManipulationListener listener) {
     this.manipulationEventManager.addManipulationListener(listener);
@@ -154,8 +158,12 @@ public abstract class DragAdapter {
     this.manipulators.add(manipulator);
     manipulator.getManipulator().setDragAdapter(this);
   }
-  protected Iterable<ManipulatorConditionSet> getManipulatorConditionSets() { return this.manipulators; }
-  public OnscreenRenderTarget getOnscreenRenderTarget() { return this.onscreenRenderTarget; }
+  protected Iterable<ManipulatorConditionSet> getManipulatorConditionSets() {
+    return this.manipulators;
+  }
+  public OnscreenRenderTarget getOnscreenRenderTarget() {
+    return this.onscreenRenderTarget;
+  }
 
   public void setOnscreenRenderTarget(OnscreenRenderTarget target) {
     if (this.onscreenRenderTarget != null) {
@@ -170,7 +178,9 @@ public abstract class DragAdapter {
     }
   }
 
-  protected Component getAWTComponent() { return this.lookingGlassComponent; }
+  protected Component getAWTComponent() {
+    return this.lookingGlassComponent;
+  }
 
   private void setAWTComponent(Component awtComponent) {
     if (this.lookingGlassComponent != null) {
@@ -182,7 +192,9 @@ public abstract class DragAdapter {
     }
   }
 
-  public Animator getAnimator() { return this.animator; }
+  public Animator getAnimator() {
+    return this.animator;
+  }
 
   public void setAnimator(Animator animator) {
     this.animator = animator;
@@ -215,16 +227,24 @@ public abstract class DragAdapter {
     setCurrentInteractionState(this.mapHandleStyleToInteractionGroup.get(handleStyle));
   }
 
-  public void makeCameraActive(AbstractCamera camera) { this.cameraController.makeCameraActive(camera); }
-  public AbstractCamera getActiveCamera() { return this.cameraController.getActiveCamera(); }
+  public void makeCameraActive(AbstractCamera camera) {
+    this.cameraController.makeCameraActive(camera);
+  }
+  public AbstractCamera getActiveCamera() {
+    return this.cameraController.getActiveCamera();
+  }
 
   public void setCameraOnManipulator(CameraInformedManipulator manipulator) {
     this.cameraController.setCameraOnManipulator(manipulator, this.currentInputState);
   }
 
-  protected void addCameraMouseControl() { this.cameraController.addCameraMouseControl(this); }
+  protected void addCameraMouseControl() {
+    this.cameraController.addCameraMouseControl(this);
+  }
 
-  public void addSelectionListener(SelectionListener selectionListener) { this.selectionListeners.add(selectionListener); }
+  public void addSelectionListener(SelectionListener selectionListener) {
+    this.selectionListeners.add(selectionListener);
+  }
 
   private void fireSelecting(SelectionEvent e) {
     for (SelectionListener selectionListener : this.selectionListeners) {
@@ -237,8 +257,12 @@ public abstract class DragAdapter {
     }
   }
 
-  public void pushHandleSet(HandleSet handleSet) { this.handleManager.pushNewHandleSet(handleSet); }
-  public void popHandleSet() { this.handleManager.popHandleSet(); }
+  public void pushHandleSet(HandleSet handleSet) {
+    this.handleManager.pushNewHandleSet(handleSet);
+  }
+  public void popHandleSet() {
+    this.handleManager.popHandleSet();
+  }
 
   private void setToBeSelected(AbstractTransformableImp toBeSelected) {
     this.toBeSelected = toBeSelected;
@@ -246,14 +270,18 @@ public abstract class DragAdapter {
   }
 
   protected void updateHandleSelection(AbstractTransformableImp selected) {}
-  public boolean hasSceneEditor() { return false; }
+  public boolean hasSceneEditor() {
+    return false;
+  }
 
   public void clear() {
     this.cameraController.clearCameraViews();
     this.handleManager.clear();
   }
 
-  public void clearCameraViews() { this.cameraController.clearCameraViews(); }
+  public void clearCameraViews() {
+    this.cameraController.clearCameraViews();
+  }
   public void addCameraView(CameraView viewType, SymmetricPerspectiveCamera mainCamera) {
     this.cameraController.addCameraView(viewType, mainCamera);
   }
@@ -375,7 +403,9 @@ public abstract class DragAdapter {
     }
   }
 
-  public void setHandleVisibility(boolean isVisible) { this.handleManager.setHandlesShowing(isVisible); }
+  public void setHandleVisibility(boolean isVisible) {
+    this.handleManager.setHandlesShowing(isVisible);
+  }
 
   public void triggerImplementationSelection(AbstractTransformableImp selected) {
     if (this.selectedObject != selected) {
@@ -386,7 +416,9 @@ public abstract class DragAdapter {
     triggerImplementationSelection(EntityImp.getInstance(selected, AbstractTransformableImp.class));
   }
 
-  protected void setSgSilhouette(Silhouette sgSilhouette) { this.sgSilhouette = sgSilhouette; }
+  protected void setSgSilhouette(Silhouette sgSilhouette) {
+    this.sgSilhouette = sgSilhouette;
+  }
 
   AbstractCamera getSGCamera() {
     OnscreenRenderTarget rt = this.getOnscreenRenderTarget();
@@ -396,13 +428,27 @@ public abstract class DragAdapter {
     return null;
   }
 
-  public void addHandle(ManipulationHandle handle) { this.handleManager.addHandle(handle); }
-  private HandleStyle getDefaultJointHandleStyle() { return HandleStyle.ROTATION; }
-  public boolean shouldSnapToGround() { return false; }
-  public boolean shouldSnapToGrid() { return false; }
-  public boolean shouldSnapToRotation() { return false; }
-  public double getGridSpacing() { return 1.0; }
-  public Angle getRotationSnapAngle() { return new AngleInRadians(Math.PI / 16.0); }
+  public void addHandle(ManipulationHandle handle) {
+    this.handleManager.addHandle(handle);
+  }
+  private HandleStyle getDefaultJointHandleStyle() {
+    return HandleStyle.ROTATION;
+  }
+  public boolean shouldSnapToGround() {
+    return false;
+  }
+  public boolean shouldSnapToGrid() {
+    return false;
+  }
+  public boolean shouldSnapToRotation() {
+    return false;
+  }
+  public double getGridSpacing() {
+    return 1.0;
+  }
+  public Angle getRotationSnapAngle() {
+    return new AngleInRadians(Math.PI / 16.0);
+  }
   public void undoRedoEndManipulation(AbstractManipulator manipulator, AffineMatrix4x4 originalTransformation) {}
 
   public void clearMouseAndKeyboardState() {
@@ -412,8 +458,12 @@ public abstract class DragAdapter {
     this.fireStateChange();
   }
 
-  protected void handleMouseEntered(MouseEvent e) { this.eventHandler.handleMouseEntered(e); }
-  protected void handleMouseMoved(MouseEvent e) { this.eventHandler.handleMouseMoved(e); }
+  protected void handleMouseEntered(MouseEvent e) {
+    this.eventHandler.handleMouseEntered(e);
+  }
+  protected void handleMouseMoved(MouseEvent e) {
+    this.eventHandler.handleMouseMoved(e);
+  }
   public void setSGCamera(AbstractCamera camera) {}
 
   protected void update(double timeDelta) {
@@ -426,10 +476,18 @@ public abstract class DragAdapter {
   }
 
   // Package-private accessors for DragEventHandler and DragCameraController
-  List<ManipulatorConditionSet> getManipulators() { return this.manipulators; }
-  InputState getPreviousInputState() { return this.previousInputState; }
-  HandleManager getHandleManager() { return this.handleManager; }
-  boolean getHasObjectToBeSelected() { return this.hasObjectToBeSelected; }
+  List<ManipulatorConditionSet> getManipulators() {
+    return this.manipulators;
+  }
+  InputState getPreviousInputState() {
+    return this.previousInputState;
+  }
+  HandleManager getHandleManager() {
+    return this.handleManager;
+  }
+  boolean getHasObjectToBeSelected() {
+    return this.hasObjectToBeSelected;
+  }
 
   public enum ObjectType {
     JOINT, MODEL, CAMERA_MARKER, OBJECT_MARKER, MAIN_CAMERA, UNKNOWN, ANY;

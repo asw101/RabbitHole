@@ -212,8 +212,12 @@ class DragCameraController {
       this.orthographicCamera = orthographicCamera;
     }
 
-    void setActiveCamera(AbstractCamera camera) { this.activeCamera = camera; }
-    AbstractCamera getActiveCamera() { return this.activeCamera; }
+    void setActiveCamera(AbstractCamera camera) {
+      this.activeCamera = camera;
+    }
+    AbstractCamera getActiveCamera() {
+      return this.activeCamera;
+    }
 
     boolean hasCamera(AbstractCamera camera) {
       return mainCamera == camera || layoutCamera == camera || orthographicCamera == camera;

@@ -88,27 +88,43 @@ class DragEventHandler {
   private final MouseWheelListener mouseWheelListener = this::handleMouseWheelMoved;
   private final MouseMotionListener mouseMotionListener = new MouseMotionListener() {
     @Override
-    public void mouseMoved(MouseEvent e) { dragAdapter.handleMouseMoved(e); }
+    public void mouseMoved(MouseEvent e) {
+      dragAdapter.handleMouseMoved(e);
+    }
     @Override
-    public void mouseDragged(MouseEvent e) { handleMouseDragged(e); }
+    public void mouseDragged(MouseEvent e) {
+      handleMouseDragged(e);
+    }
   };
   private final MouseListener mouseListener = new MouseListener() {
     @Override
-    public void mouseEntered(MouseEvent e) { dragAdapter.handleMouseEntered(e); }
+    public void mouseEntered(MouseEvent e) {
+      dragAdapter.handleMouseEntered(e);
+    }
     @Override
-    public void mouseExited(MouseEvent e) { handleMouseExited(e); }
+    public void mouseExited(MouseEvent e) {
+      handleMouseExited(e);
+    }
     @Override
-    public void mousePressed(MouseEvent e) { handleMousePressed(e); }
+    public void mousePressed(MouseEvent e) {
+      handleMousePressed(e);
+    }
     @Override
-    public void mouseReleased(MouseEvent e) { handleMouseReleased(e); }
+    public void mouseReleased(MouseEvent e) {
+      handleMouseReleased(e);
+    }
     @Override
     public void mouseClicked(MouseEvent e) {}
   };
   private final KeyListener keyListener = new KeyListener() {
     @Override
-    public void keyPressed(KeyEvent e) { handleKeyPressed(e); }
+    public void keyPressed(KeyEvent e) {
+      handleKeyPressed(e);
+    }
     @Override
-    public void keyReleased(KeyEvent e) { handleKeyReleased(e); }
+    public void keyReleased(KeyEvent e) {
+      handleKeyReleased(e);
+    }
     @Override
     public void keyTyped(KeyEvent e) {}
   };
@@ -192,7 +208,9 @@ class DragEventHandler {
 
   // --- Mouse wheel state ---
 
-  boolean isMouseWheelActive() { return this.mouseWheelTimeoutTime > 0; }
+  boolean isMouseWheelActive() {
+    return this.mouseWheelTimeoutTime > 0;
+  }
 
   void stopMouseWheel(InputState inputState) {
     this.mouseWheelTimeoutTime = 0;
@@ -422,14 +440,28 @@ class DragEventHandler {
 
   // --- Listener getters ---
 
-  MouseListener getMouseListener() { return this.mouseListener; }
-  MouseMotionListener getMouseMotionListener() { return this.mouseMotionListener; }
-  KeyListener getKeyListener() { return this.keyListener; }
-  MouseWheelListener getMouseWheelListener() { return this.mouseWheelListener; }
+  MouseListener getMouseListener() {
+    return this.mouseListener;
+  }
+  MouseMotionListener getMouseMotionListener() {
+    return this.mouseMotionListener;
+  }
+  KeyListener getKeyListener() {
+    return this.keyListener;
+  }
+  MouseWheelListener getMouseWheelListener() {
+    return this.mouseWheelListener;
+  }
 
   // --- Test accessors ---
 
-  void setMouseWheelTimeoutForTest(double timeout) { this.mouseWheelTimeoutTime = timeout; }
-  void setMouseWheelStartLocationForTest(Point location) { this.mouseWheelStartLocation = location; }
-  Point getMouseWheelStartLocationForTest() { return this.mouseWheelStartLocation; }
+  void setMouseWheelTimeoutForTest(double timeout) {
+    this.mouseWheelTimeoutTime = timeout;
+  }
+  void setMouseWheelStartLocationForTest(Point location) {
+    this.mouseWheelStartLocation = location;
+  }
+  Point getMouseWheelStartLocationForTest() {
+    return this.mouseWheelStartLocation;
+  }
 }
