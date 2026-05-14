@@ -114,7 +114,7 @@ class DragEventHandler {
       handleMouseReleased(e);
     }
     @Override
-    public void mouseClicked(MouseEvent e) {}
+    public void mouseClicked(MouseEvent e) { }
   };
   private final KeyListener keyListener = new KeyListener() {
     @Override
@@ -126,7 +126,7 @@ class DragEventHandler {
       handleKeyReleased(e);
     }
     @Override
-    public void keyTyped(KeyEvent e) {}
+    public void keyTyped(KeyEvent e) { }
   };
 
   DragEventHandler(DragAdapter dragAdapter) {

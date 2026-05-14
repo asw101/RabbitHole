@@ -8,6 +8,7 @@
               files=".*FlatLaf.properties" />
   <suppress files="core[/\\]story-api[/\\]src[/\\]main[/\\]java[/\\]Jama[/\\]*" checks=".*"/>
   <suppress files="core[/\\]glrender[/\\]src[/\\]main[/\\]java[/\\]edu[/\\]cmu[/\\]cs[/\\]dennisc[/\\]render[/\\]joglrenderer[/\\]NonCachingTextRenderer.java" checks=".*"/>
+  <suppress files="core[/\\]glrender[/\\]src[/\\]main[/\\]java[/\\]edu[/\\]cmu[/\\]cs[/\\]dennisc[/\\]render[/\\]gl[/\\]imp[/\\]Graphics2D.java" checks=".*"/>
   <suppress files="external[/\\]" checks=".*"/>
   <suppress files="target[/\\]" checks=".*"/>
 </suppressions>

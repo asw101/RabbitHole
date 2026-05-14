@@ -269,7 +269,7 @@ public abstract class DragAdapter {
     this.hasObjectToBeSelected = true;
   }
 
-  protected void updateHandleSelection(AbstractTransformableImp selected) {}
+  protected void updateHandleSelection(AbstractTransformableImp selected) { }
   public boolean hasSceneEditor() {
     return false;
   }
@@ -449,7 +449,7 @@ public abstract class DragAdapter {
   public Angle getRotationSnapAngle() {
     return new AngleInRadians(Math.PI / 16.0);
   }
-  public void undoRedoEndManipulation(AbstractManipulator manipulator, AffineMatrix4x4 originalTransformation) {}
+  public void undoRedoEndManipulation(AbstractManipulator manipulator, AffineMatrix4x4 originalTransformation) { }
 
   public void clearMouseAndKeyboardState() {
     this.currentInputState.clearKeyState();
@@ -464,7 +464,7 @@ public abstract class DragAdapter {
   protected void handleMouseMoved(MouseEvent e) {
     this.eventHandler.handleMouseMoved(e);
   }
-  public void setSGCamera(AbstractCamera camera) {}
+  public void setSGCamera(AbstractCamera camera) { }
 
   protected void update(double timeDelta) {
     this.eventHandler.updateMouseWheelTimeout(timeDelta, fired -> this.fireStateChange());
