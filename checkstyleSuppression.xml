@@ -9,6 +9,9 @@
   <suppress files="core[/\\]story-api[/\\]src[/\\]main[/\\]java[/\\]Jama[/\\]*" checks=".*"/>
   <suppress files="core[/\\]glrender[/\\]src[/\\]main[/\\]java[/\\]edu[/\\]cmu[/\\]cs[/\\]dennisc[/\\]render[/\\]joglrenderer[/\\]NonCachingTextRenderer.java" checks=".*"/>
   <suppress files="core[/\\]glrender[/\\]src[/\\]main[/\\]java[/\\]edu[/\\]cmu[/\\]cs[/\\]dennisc[/\\]render[/\\]gl[/\\]imp[/\\]Graphics2D.java" checks=".*"/>
+  <suppress files="core[/\\]ast[/\\]src[/\\]main[/\\]java[/\\]org[/\\]lgna[/\\]project[/\\]ast[/\\]SourceCodeGenerator.java" checks=".*"/>
+  <suppress files="core[/\\]story-api[/\\]src[/\\]main[/\\]java[/\\]org[/\\]lgna[/\\]story[/\\]implementation[/\\]GroundMeshData.java" checks=".*"/>
+  <suppress files="core[/\\]model-loading[/\\]src[/\\]main[/\\]java[/\\]org[/\\]lgna[/\\]story[/\\]resourceutilities[/\\]GltfMeshBuilder.java" checks=".*"/>
   <suppress files="external[/\\]" checks=".*"/>
   <suppress files="target[/\\]" checks=".*"/>
 </suppressions>
