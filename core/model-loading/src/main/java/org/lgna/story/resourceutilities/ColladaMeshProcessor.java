@@ -25,8 +25,6 @@ import java.util.function.Function;
  */
 class ColladaMeshProcessor {
 
-  private static final boolean FLIP_COORDINATE_SPACE = true;
-
   private static final double[] IDENTITY_BIND_SHAPE_MATRIX = AffineMatrix4x4.IDENTITY.asRowMajorArray16();
 
   private final ObjectFactory factory;
@@ -180,11 +178,11 @@ class ColladaMeshProcessor {
   private Mesh createMesh(edu.cmu.cs.dennisc.scenegraph.Mesh sgMesh, Integer textureId, String meshName) {
     Mesh mesh = factory.createMesh();
     String positionName = meshName + "-POSITION";
-    Source positionSource = createFloatArraySource(v -> initFromDoubleBuffer(v, sgMesh.vertexBuffer.getValue()), positionName, 3, FLIP_COORDINATE_SPACE);
+    Source positionSource = createFloatArraySource(v -> initFromDoubleBuffer(v, sgMesh.vertexBuffer.getValue()), positionName, 3, ColladaTransformUtilities.FLIP_COORDINATE_SPACE);
     mesh.getSource().add(positionSource);
 
     String normalName = meshName + "-NORMAL";
-    Source normalSource = createFloatArraySource(v -> initFromFloatBuffer(v, sgMesh.normalBuffer.getValue()), normalName, 3, FLIP_COORDINATE_SPACE);
+    Source normalSource = createFloatArraySource(v -> initFromFloatBuffer(v, sgMesh.normalBuffer.getValue()), normalName, 3, ColladaTransformUtilities.FLIP_COORDINATE_SPACE);
     mesh.getSource().add(normalSource);
 
     String uvName = meshName + "-UV";
@@ -324,7 +322,7 @@ class ColladaMeshProcessor {
       InverseAbsoluteTransformationWeightsPair iatwp = entry.getValue();
       AffineMatrix4x4 inverseBindMatrix = iatwp.getInverseAbsoluteTransformation();
       double[] matrix = inverseBindMatrix.asRowMajorArray16();
-      if (FLIP_COORDINATE_SPACE) {
+      if (ColladaTransformUtilities.FLIP_COORDINATE_SPACE) {
         matrix = ColladaTransformUtilities.createFlippedRowMajorTransform(matrix);
       }
       for (double element : matrix) {

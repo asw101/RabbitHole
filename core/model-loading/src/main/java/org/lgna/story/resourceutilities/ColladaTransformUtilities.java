@@ -16,6 +16,8 @@ import java.util.Arrays;
  */
 public class ColladaTransformUtilities {
 
+  static final boolean FLIP_COORDINATE_SPACE = true;
+
   public static double[] createFlippedRowMajorTransform(double transform[]) {
     double[] flippedTransform = Arrays.copyOf(transform, transform.length);
 

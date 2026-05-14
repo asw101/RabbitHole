@@ -15,8 +15,6 @@ import java.util.Map;
  */
 class ColladaJointExtractor {
 
-  private static final boolean FLIP_COORDINATE_SPACE = true;
-
   private final ObjectFactory factory;
   private final Map<String, String> renamedJoints;
 
@@ -36,7 +34,7 @@ class ColladaJointExtractor {
     Matrix matrix = factory.createMatrix();
     matrix.setSid("matrix");
     double[] matrixValues = joint.localTransformation.getValue().asRowMajorArray16();
-    if (FLIP_COORDINATE_SPACE) {
+    if (ColladaTransformUtilities.FLIP_COORDINATE_SPACE) {
       matrixValues = ColladaTransformUtilities.createFlippedRowMajorTransform(matrixValues);
     }
     for (double matrixValue : matrixValues) {

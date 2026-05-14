@@ -53,7 +53,8 @@ import org.lgna.project.io.JointedModelExporter;
 import org.lgna.story.implementation.ImageFactory;
 import org.lgna.story.implementation.JointedModelImp.VisualData;
 import org.lgna.story.implementation.alice.AliceResourceUtilities;
-import org.lgna.story.resources.ImplementationAndVisualType;import org.lgna.story.resources.JointedModelResource;
+import org.lgna.story.resources.ImplementationAndVisualType;
+import org.lgna.story.resources.JointedModelResource;
 import org.lgna.story.resourceutilities.exporterutils.collada.*;
 import org.lgna.story.resourceutilities.exporterutils.collada.COLLADA.Scene;
 
