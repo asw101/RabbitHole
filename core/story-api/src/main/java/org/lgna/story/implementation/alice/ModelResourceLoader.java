@@ -95,7 +95,7 @@ class ModelResourceLoader {
       BinaryDecoder decoder = new InputStreamBinaryDecoder(is);
       return decoder.decodeReferenceableBinaryEncodableAndDecodable(new HashMap<Integer, ReferenceableBinaryEncodableAndDecodable>());
     } catch (Exception e) {
-      e.printStackTrace();
+      Logger.throwable(e, "Failed to decode visual from " + url);
     }
     return null;
   }
@@ -110,7 +110,7 @@ class ModelResourceLoader {
       }
       return rv;
     } catch (Exception e) {
-      e.printStackTrace();
+      Logger.throwable(e, "Failed to decode texture from " + url);
       return null;
     }
   }
