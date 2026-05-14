@@ -235,12 +235,12 @@ public class JointedModelGltfExporter implements JointedModelExporter {
       edu.cmu.cs.dennisc.texture.Texture diffuseColorTexture = texture.diffuseColorTexture.getValue();
 
       // Embed diffuse texture
-      if (diffuseColorTexture != null) {
+      if (diffuseColorTexture instanceof BufferedImageTexture bufferedImageTexture) {
         Image image = new de.javagl.jgltf.impl.v2.Image();
         final String uri = getImageFileName(textureId);
         image.setUri(uri);
         final Path imageFile = tempDir.resolve(uri);
-        BufferedImage bufferedImage = ((BufferedImageTexture) diffuseColorTexture).getBufferedImage();
+        BufferedImage bufferedImage = bufferedImageTexture.getBufferedImage();
         writeTexture(bufferedImage, Files.newOutputStream(imageFile));
 
         int imageIndex = Optionals.of(gltf.getImages()).size();
