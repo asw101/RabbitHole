@@ -46,3 +46,8 @@ tags:
   - runtime-event-dispatch
   - generated-listener-source
   - command-smoke
+
+steps:
+  - Run the focused smoke and review command output.
+agents:
+  - role: smoke-runner

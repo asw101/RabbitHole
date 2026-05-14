@@ -449,6 +449,14 @@ format_argv() {
   local IFS=' '
   printf '%s' "$*"
 }
+validate_scenario_automation_cwd() {
+  local scenario_json=$1
+  local cwd
+  cwd=$(json_fields "$scenario_json" "automation.cwd" 2>/dev/null) || return 0
+  if [ -n "$cwd" ]; then
+    resolve_automation_cwd "$cwd" > /dev/null
+  fi
+}
 resolve_automation_cwd() {
   local cwd=$1
   python3 - "$REPO_ROOT" "$cwd" <<'PY'
@@ -3885,8 +3893,6 @@ PY
   write_environment "$run_dir"
   save_proof_artifact=
   save_proof_run_id=
-  if [ "$scenario_id" = alice-desktop-save-menu-dialog-write-proof ] ||
-    [ "$scenario_id" = alice-desktop-project-io-smoke ]; then
   run_window_artifact=
   if [ "$scenario_id" = alice-desktop-save-menu-dialog-write-proof ]; then
     if [ -n "$timeout_override" ]; then
@@ -3932,12 +3938,11 @@ PY
       fi
       if [ "$scenario_id" = alice-desktop-save-menu-dialog-write-proof ]; then
         printf 'saveProofEvidence=%s\n' robot-save-menu-dialog-write-readback-proof.json
-      elif [ "$scenario_id" != alice-desktop-project-io-smoke ]; then
       elif [ "$scenario_id" = "$RUN_WINDOW_CONTRACT_SCENARIO" ]; then
         printf 'timeoutPolicy=none\n'
         printf 'runWindowEvidence=%s\n' "$RUN_WINDOW_CONTRACT_ARTIFACT"
         printf 'runWindowEvidenceStatus=not-run\n'
-      else
+      elif [ "$scenario_id" != alice-desktop-project-io-smoke ]; then
         printf 'timeoutSeconds=%s\n' "$run_timeout"
       fi
     } > "$run_dir/status.txt"

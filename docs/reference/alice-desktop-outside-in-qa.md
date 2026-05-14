@@ -224,8 +224,8 @@ Run commands from the repository root.
 | `uvx --from git+<repo>@<branch-or-commit> amplihack alice-qa run <scenario-id-or-path>` | Install the QA wrapper from a branch or commit and create evidence in the current checkout. | Delegates to `run-scenario.sh run`. |
 | `gadugi-test validate -f qa/outside-in/alice-desktop/gadugi/archive-fixture-evidence.yaml` | Validate the Gadugi archive fixture evidence scenario. | Confirms the scenario uses the Gadugi CLI schema. |
 | `gadugi-test run -d qa/outside-in/alice-desktop/gadugi -s archive-fixture-evidence --timeout 600000` | Run the Gadugi archive fixture evidence scenario. | Delegates to the outside-in archive-fixture smoke runner and contract test suite. |
-| `uvx --from git+<repo>@<branch> amplihack alice-qa list` | Install the QA wrapper from a branch and list scenarios in the current checkout. | Prints the same user-facing list as the runner. |
-| `uvx --from git+<repo>@<branch> amplihack alice-qa run <scenario-id-or-path>` | Install the QA wrapper from a branch and create evidence in the current checkout. | Delegates to `run-scenario.sh run`. |
+| `uvx --from git+<repo>@<branch-or-commit> amplihack alice-qa list` | Install the QA wrapper from a branch or commit and list scenarios in the current checkout. | Prints the same user-facing list as the runner. |
+| `uvx --from git+<repo>@<branch-or-commit> amplihack alice-qa run <scenario-id-or-path>` | Install the QA wrapper from a branch or commit and create evidence in the current checkout. | Delegates to `run-scenario.sh run`. |
 
 ### Validate all scenarios
 

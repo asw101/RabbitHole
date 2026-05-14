@@ -45,3 +45,8 @@ tags:
   - immediate-qa-backlog
   - runtime-event-dispatch
   - command-smoke
+
+steps:
+  - Run the focused smoke and review command output.
+agents:
+  - role: smoke-runner
