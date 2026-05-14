@@ -397,7 +397,9 @@ public class JointedModelColladaExporter implements JointedModelExporter {
 
   private File saveColladaToDirectory(File directory) throws IOException {
     File colladaOutputFile = new File(directory, getColladaFileName());
-    writeCollada(new FileOutputStream(colladaOutputFile));
+    try (FileOutputStream fos = new FileOutputStream(colladaOutputFile)) {
+      writeCollada(fos);
+    }
     return colladaOutputFile;
   }
 
