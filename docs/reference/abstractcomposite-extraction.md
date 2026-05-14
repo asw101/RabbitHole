@@ -7,19 +7,20 @@
 ## Overview
 
 `AbstractComposite<V>` was a 1113-line god class responsible for view lifecycle,
-tab/card management, 11 inner state classes, 15 keyed maps, 14+ factory methods,
-localization, and model containment checks. Three cohesive helper classes were
-extracted to bring `AbstractComposite` down to ~390 lines of focused coordination
-logic.
+tab/card management, 24 inner types (17 inner classes + 7 interfaces/abstract
+classes), 15 keyed maps, 24 factory/creation methods (including 4 convenience
+overloads), localization, and model containment checks. Three cohesive helper
+classes were extracted to bring `AbstractComposite` down to ~420 lines of focused
+coordination logic.
 
 ### After Extraction
 
 | Class | Responsibility | Approx. Lines |
 |---|---|---|
-| `AbstractComposite<V>` | Key, externally-referenced inner types, `synchronized` monitors, thin delegation wrappers | ~390 |
-| `CompositeResourceManager` | 11 Internal\* state classes + 3 operation/cascade/item classes, 15 keyed maps, `create*` factories, `contains()`, `localize()` | ~700 |
+| `AbstractComposite<V>` | Key, externally-referenced inner types (incl. 3 retained `Internal*` classes), `synchronized` monitors, thin delegation wrappers | ~420 |
+| `CompositeResourceManager` | 11 Internal\* state class defs + factory/map logic for 3 more, 15 keyed maps, `create*` factories, `contains()`, `localize()` | ~650 |
 | `CompositeTabManager` | `InternalTabState`, `InternalSplitComposite`, `InternalCardOwnerComposite`, tab activation loops | ~170 |
-| `CompositeViewLifecycle<V>` | View field, `ScrollPane`, `cardId`, lazy init (view/cardId), eager init (scrollPane) | ~90 |
+| `CompositeViewLifecycle<V>` | View field, `ScrollPane`, `cardId`; lazy init (view, cardId), eager init (scrollPane) | ~90 |
 
 All three helper classes are **package-private** (no `public` modifier). They are
 internal implementation details of the croquet composite framework and are not
@@ -45,8 +46,11 @@ The central composite abstraction. After extraction, it retains:
   implemented by subclasses
 - `synchronized getView()` and `synchronized getCardId()` — thread-safe monitors
   that stay on the `AbstractComposite` instance (not delegated)
-- All `protected create*()` factory wrappers — thin one-liners that forward to
-  `CompositeResourceManager` or `CompositeTabManager`
+- All `protected create*()` factory wrappers (20 primary + 4 convenience
+  overloads) — thin one-liners that forward to `CompositeResourceManager` or
+  `CompositeTabManager`. Convenience overloads (e.g., `createStringState(String)`
+  → `createStringState(String, "")`) stay as AC wrappers and delegate to the
+  primary variant.
 - `registerStringValue()` — delegation wrapper, called by
   `AbstractSeverityStatusComposite` subclass
 - `handlePreActivation()` / `handlePostDeactivation()` — orchestration methods
@@ -64,7 +68,7 @@ package.
 
 Owns the keyed registries of internal state objects and their factory methods.
 
-**Inner classes moved here:**
+**Inner class definitions moved here (11):**
 - `InternalStringValue`
 - `InternalStringState`
 - `InternalPreferenceStringState`
@@ -76,14 +80,18 @@ Owns the keyed registries of internal state objects and their factory methods.
 - `InternalMutableDataSingleSelectListState<T>`
 - `InternalBoundedIntegerState`
 - `InternalBoundedDoubleState`
-- `InternalActionOperation` — constructor becomes package-private (was `private`);
-  the **class definition** stays in `AbstractComposite` because `Action.perform()`
-  references it in its signature. `CompositeResourceManager` instantiates via
-  same-package access.
+
+**Factory methods and maps moved here (class definition stays in AC) (3):**
+- `InternalActionOperation` — class definition stays in `AbstractComposite`
+  because `Action.perform()` references it in its signature; constructor widens
+  from `private` → package-private. `CompositeResourceManager` owns the factory
+  method and `mapKeyToActionOperation` map, instantiating via same-package access.
 - `InternalCascadeWithInternalBlank<T>` — same pattern; class stays in AC,
-  constructor becomes package-private.
-- `InternalCustomItemState<T>` — same pattern; class stays in AC,
-  constructor becomes package-private.
+  constructor widens from `private` → package-private. RM owns factory and
+  `mapKeyToCascade`.
+- `InternalCustomItemState<T>` — same pattern; class stays in AC, constructor
+  widens from `private` → package-private. RM owns factory and
+  `mapKeyToItemState`.
 
 **Maps moved here (15 total):**
 - `mapKeyToStringValue`
@@ -151,7 +159,9 @@ Owns tab-related inner classes and the tab activation/deactivation iteration
 loops.
 
 **Inner classes moved here:**
-- `InternalTabState<T extends SimpleTabComposite<?>>`
+- `InternalTabState<T extends SimpleTabComposite<?>>` — note: constructor is
+  already `public` in the original source (unlike other `Internal*` classes which
+  are `private`), so no visibility change is needed
 - `InternalSplitComposite`
 - `InternalCardOwnerComposite`
 
@@ -168,9 +178,11 @@ void registerTabState(TabState<?, ?> tabState)
 void unregisterTabState(TabState<?, ?> tabState)
 
 // Tab activation iteration — called by AbstractComposite.handlePreActivation()
+// Order: mapKeyToTabState values first, then registeredTabStates
 void activateAllTabs()
 
 // Tab deactivation iteration — called by AbstractComposite.handlePostDeactivation()
+// Order: registeredTabStates first, then mapKeyToTabState values (reverse of activation — LIFO)
 void deactivateAllTabs()
 
 // Tab state factory — creates InternalTabState instances
@@ -434,8 +446,8 @@ If you are writing a **new** subclass of `AbstractComposite`:
 
 ```
 core/croquet/src/main/java/org/lgna/croquet/
-├── AbstractComposite.java           (~390 lines, down from 1113)
-├── CompositeResourceManager.java    (~650 lines, NEW)
+├── AbstractComposite.java           (~420 lines, down from 1113)
+├── CompositeResourceManager.java    (~650 lines, NEW — 11 inner class defs + 3 factory/map sets)
 ├── CompositeTabManager.java         (~170 lines, NEW)
 ├── CompositeViewLifecycle.java      (~90 lines, NEW)
 └── ... (all other files unchanged)
