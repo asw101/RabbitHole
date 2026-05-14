@@ -214,6 +214,12 @@ repository.
 - [TightPositionalIkEnforcer Inner Class Extraction](./reference/tight-positional-ik-enforcer-decomposition.md) - Reference for extraction of all 14 inner classes from `TightPositionalIkEnforcer` (1328 lines) into top-level files in `org.lgna.ik.core.enforcer`, with `IkEnforcerContext` interface replacing implicit outer-class references.
 - [IK Enforcer Downstream Import Fixups](./reference/ik-enforcer-downstream-import-fixups.md) - Reference for mechanical import fixups in `IKCore.java` and `IkProgram.java` after inner classes were promoted to top-level classes (issue #557).
 
+## JointedModelImp decomposition
+
+- [JointedModelImp Decomposition](./reference/jointed-model-imp-decomposition.md) - Reference for the extraction of joint hierarchy management, resource binding, and visual/skin operations from `JointedModelImp` (955 lines) into `JointedModelResourceBinder`, `JointedModelVisualManager`, and `JointHierarchyManager` delegate classes (issue #577), reducing the facade under 500 lines.
+- [Validate JointedModelImp Decomposition](./howto/validate-jointed-model-imp-decomposition.md) - How to verify compilation, line counts, package-private visibility, and test pass/fail after the `JointedModelImp` decomposition.
+- [Tutorial: Trace the JointedModelImp Decomposition](./tutorials/jointed-model-imp-decomposition.md) - Guided walkthrough of the resource binder, visual manager, and hierarchy manager delegation patterns, `setNewResource()` orchestration, and `setScale()` coordination.
+
 ## Formal specification lane
 
 The formal-spec lane documents Alice project archive and backup-recovery
