@@ -53,8 +53,7 @@ import org.lgna.project.io.JointedModelExporter;
 import org.lgna.story.implementation.ImageFactory;
 import org.lgna.story.implementation.JointedModelImp.VisualData;
 import org.lgna.story.implementation.alice.AliceResourceUtilities;
-import org.lgna.story.resources.ImplementationAndVisualType;
-import org.lgna.story.resources.JointedModelResource;
+import org.lgna.story.resources.ImplementationAndVisualType;import org.lgna.story.resources.JointedModelResource;
 import org.lgna.story.resourceutilities.exporterutils.collada.*;
 import org.lgna.story.resourceutilities.exporterutils.collada.COLLADA.Scene;
 
@@ -72,6 +71,8 @@ import java.io.OutputStream;
 import java.util.*;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 
 /**
@@ -79,6 +80,7 @@ import java.util.Map;
  */
 public class JointedModelColladaExporter implements JointedModelExporter {
 
+  private static final Logger logger = Logger.getLogger(JointedModelColladaExporter.class.getName());
   private static final String COLLADA_EXTENSION = "dae";
   private static final String IMAGE_EXTENSION = "png";
 
@@ -377,7 +379,7 @@ public class JointedModelColladaExporter implements JointedModelExporter {
         writeTexture(texture, fos);
         textureFiles.add(textureFile);
       } catch (IOException e) {
-        e.printStackTrace();
+        logger.log(Level.WARNING, "Failed to save texture: " + textureFile.getName(), e);
       }
     }
     return textureFiles;

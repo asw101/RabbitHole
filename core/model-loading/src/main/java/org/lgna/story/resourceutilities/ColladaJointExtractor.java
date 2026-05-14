@@ -3,7 +3,6 @@ package org.lgna.story.resourceutilities;
 import edu.cmu.cs.dennisc.scenegraph.Component;
 import edu.cmu.cs.dennisc.scenegraph.Joint;
 import edu.cmu.cs.dennisc.scenegraph.SkeletonVisual;
-import org.alice.math.immutable.AffineMatrix4x4;
 import org.lgna.story.resourceutilities.exporterutils.collada.Matrix;
 import org.lgna.story.resourceutilities.exporterutils.collada.Node;
 import org.lgna.story.resourceutilities.exporterutils.collada.NodeType;
@@ -17,8 +16,6 @@ import java.util.Map;
 class ColladaJointExtractor {
 
   private static final boolean FLIP_COORDINATE_SPACE = true;
-  private static final boolean SCALE_MODEL = false;
-  private static final double MODEL_SCALE = 1.0;
 
   private final ObjectFactory factory;
   private final Map<String, String> renamedJoints;
@@ -38,11 +35,7 @@ class ColladaJointExtractor {
 
     Matrix matrix = factory.createMatrix();
     matrix.setSid("matrix");
-    AffineMatrix4x4 newTransform = joint.localTransformation.getValue();
-    if (SCALE_MODEL) {
-      newTransform = newTransform.scaleTranslation(MODEL_SCALE);
-    }
-    double[] matrixValues = newTransform.asRowMajorArray16();
+    double[] matrixValues = joint.localTransformation.getValue().asRowMajorArray16();
     if (FLIP_COORDINATE_SPACE) {
       matrixValues = ColladaTransformUtilities.createFlippedRowMajorTransform(matrixValues);
     }

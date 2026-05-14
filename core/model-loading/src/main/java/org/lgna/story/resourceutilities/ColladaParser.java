@@ -37,7 +37,7 @@ class ColladaParser {
       asset.setCreated(createdDateTime);
       asset.setModified(createdDateTime);
     } catch (DatatypeConfigurationException e) {
-      e.printStackTrace();
+      throw new RuntimeException("Failed to create XML date for COLLADA asset", e);
     }
 
     Unit unit = factory.createAssetUnit();

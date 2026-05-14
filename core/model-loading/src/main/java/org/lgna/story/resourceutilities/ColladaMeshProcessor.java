@@ -26,8 +26,6 @@ import java.util.function.Function;
 class ColladaMeshProcessor {
 
   private static final boolean FLIP_COORDINATE_SPACE = true;
-  private static final boolean SCALE_MODEL = false;
-  private static final double MODEL_SCALE = 1.0;
 
   private final ObjectFactory factory;
   private final Map<edu.cmu.cs.dennisc.scenegraph.Geometry, String> meshNameMap;
@@ -41,46 +39,25 @@ class ColladaMeshProcessor {
     this.materialNameMap = materialNameMap;
   }
 
-  // ── ListInitializer hierarchy ──────────────────────────────────
+  // ── List initialization helpers ─────────────────────────────────
 
-  private interface ListInitializer {
-    void initializeList(List<Double> toInitialize);
-  }
-
-  private static class DoubleBufferInitializeList implements ListInitializer {
-    private final DoubleBuffer db;
-    DoubleBufferInitializeList(DoubleBuffer db) { this.db = db; }
-    @Override
-    public void initializeList(List<Double> toInitialize) {
-      db.rewind();
-      final int N = db.limit();
-      for (int i = 0; i < N; i++) {
-        toInitialize.add(db.get(i));
-      }
+  private static void initFromDoubleBuffer(List<Double> dest, DoubleBuffer db) {
+    db.rewind();
+    for (int i = 0, N = db.limit(); i < N; i++) {
+      dest.add(db.get(i));
     }
   }
 
-  private static class FloatBufferInitializeList implements ListInitializer {
-    private final FloatBuffer fb;
-    FloatBufferInitializeList(FloatBuffer fb) { this.fb = fb; }
-    @Override
-    public void initializeList(List<Double> toInitialize) {
-      fb.rewind();
-      final int N = fb.limit();
-      for (int i = 0; i < N; i++) {
-        toInitialize.add(Double.valueOf(fb.get(i)));
-      }
+  private static void initFromFloatBuffer(List<Double> dest, FloatBuffer fb) {
+    fb.rewind();
+    for (int i = 0, N = fb.limit(); i < N; i++) {
+      dest.add((double) fb.get(i));
     }
   }
 
-  private static class FloatListInitializeList implements ListInitializer {
-    private final List<Float> fl;
-    FloatListInitializeList(List<Float> fl) { this.fl = fl; }
-    @Override
-    public void initializeList(List<Double> toInitialize) {
-      for (int i = 0; i < fl.size(); i++) {
-        toInitialize.add(fl.get(i).doubleValue());
-      }
+  private static void initFromFloatList(List<Double> dest, List<Float> fl) {
+    for (Float f : fl) {
+      dest.add(f.doubleValue());
     }
   }
 
@@ -121,19 +98,17 @@ class ColladaMeshProcessor {
     return accessorTechnique;
   }
 
-  private Source createFloatArraySourceFromInitializer(ListInitializer initializer, String name, int stride, double scale, boolean flipXandZ) {
+  private Source createFloatArraySource(java.util.function.Consumer<List<Double>> initializer, String name, int stride, boolean flipXandZ) {
     Source source = factory.createSource();
     source.setId(name);
     FloatArray floatArray = factory.createFloatArray();
     floatArray.setId(name + "-array");
     List<Double> values = floatArray.getValue();
-    initializer.initializeList(values);
-    if (flipXandZ || scale != 1.0) {
-      double flipScale = flipXandZ ? scale * -1.0 : scale;
+    initializer.accept(values);
+    if (flipXandZ) {
       for (int i = 0; i < values.size(); i += 3) {
-        values.set(i, values.get(i) * flipScale);
-        values.set(i + 1, values.get(i + 1) * scale);
-        values.set(i + 2, values.get(i + 2) * flipScale);
+        values.set(i, values.get(i) * -1.0);
+        values.set(i + 2, values.get(i + 2) * -1.0);
       }
     }
     int valueCount = values.size();
@@ -203,16 +178,15 @@ class ColladaMeshProcessor {
   private Mesh createMesh(edu.cmu.cs.dennisc.scenegraph.Mesh sgMesh, Integer textureId, String meshName) {
     Mesh mesh = factory.createMesh();
     String positionName = meshName + "-POSITION";
-    double scale = SCALE_MODEL ? MODEL_SCALE : 1.0;
-    Source positionSource = createFloatArraySourceFromInitializer(new DoubleBufferInitializeList(sgMesh.vertexBuffer.getValue()), positionName, 3, scale, FLIP_COORDINATE_SPACE);
+    Source positionSource = createFloatArraySource(v -> initFromDoubleBuffer(v, sgMesh.vertexBuffer.getValue()), positionName, 3, FLIP_COORDINATE_SPACE);
     mesh.getSource().add(positionSource);
 
     String normalName = meshName + "-NORMAL";
-    Source normalSource = createFloatArraySourceFromInitializer(new FloatBufferInitializeList(sgMesh.normalBuffer.getValue()), normalName, 3, 1.0, FLIP_COORDINATE_SPACE);
+    Source normalSource = createFloatArraySource(v -> initFromFloatBuffer(v, sgMesh.normalBuffer.getValue()), normalName, 3, FLIP_COORDINATE_SPACE);
     mesh.getSource().add(normalSource);
 
     String uvName = meshName + "-UV";
-    Source uvSource = createFloatArraySourceFromInitializer(new FloatBufferInitializeList(sgMesh.textCoordBuffer.getValue()), uvName, 2, 1.0, false);
+    Source uvSource = createFloatArraySource(v -> initFromFloatBuffer(v, sgMesh.textCoordBuffer.getValue()), uvName, 2, false);
     mesh.getSource().add(uvSource);
 
     String vertexName = meshName + "-VERTEX";
@@ -308,7 +282,7 @@ class ColladaMeshProcessor {
     }
 
     String weightsSourceName = controllerName + "-Weights";
-    Source weightsSource = createFloatArraySourceFromInitializer(new FloatListInitializeList(weightArray), weightsSourceName, 1, 1.0, false);
+    Source weightsSource = createFloatArraySource(v -> initFromFloatList(v, weightArray), weightsSourceName, 1, false);
     skin.getSourceAttribute2().add(weightsSource);
 
     vw.getInput().add(createInputLocalOffset("JOINT", jointSourceName, 0));
@@ -345,9 +319,6 @@ class ColladaMeshProcessor {
     for (Entry<String, InverseAbsoluteTransformationWeightsPair> entry : wi.getMap().entrySet()) {
       InverseAbsoluteTransformationWeightsPair iatwp = entry.getValue();
       AffineMatrix4x4 inverseBindMatrix = iatwp.getInverseAbsoluteTransformation();
-      if (SCALE_MODEL) {
-        inverseBindMatrix = inverseBindMatrix.scaleTranslation(MODEL_SCALE);
-      }
       double[] matrix = inverseBindMatrix.asRowMajorArray16();
       if (FLIP_COORDINATE_SPACE) {
         matrix = ColladaTransformUtilities.createFlippedRowMajorTransform(matrix);
