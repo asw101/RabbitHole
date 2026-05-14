@@ -261,10 +261,18 @@ public class AliceResourceUtilities {
   private static String THEME_TAGS_LOCALIZATION_BUNDLE = ModelResource.class.getPackage().getName() + ".GalleryTags";
   private static String TAGS_LOCALIZATION_BUNDLE = ModelResource.class.getPackage().getName() + ".GalleryTags";
 
-  private static String getClassNameLocalizationBundleName() { return CLASS_NAME_LOCALIZATION_BUNDLE; }
-  private static String getGroupTagsLocalizationBundleName() { return GROUP_TAGS_LOCALIZATION_BUNDLE; }
-  private static String getThemeTagsLocalizationBundleName() { return THEME_TAGS_LOCALIZATION_BUNDLE; }
-  private static String getTagsLocalizationBundleName() { return TAGS_LOCALIZATION_BUNDLE; }
+  private static String getClassNameLocalizationBundleName() {
+    return CLASS_NAME_LOCALIZATION_BUNDLE;
+  }
+  private static String getGroupTagsLocalizationBundleName() {
+    return GROUP_TAGS_LOCALIZATION_BUNDLE;
+  }
+  private static String getThemeTagsLocalizationBundleName() {
+    return THEME_TAGS_LOCALIZATION_BUNDLE;
+  }
+  private static String getTagsLocalizationBundleName() {
+    return TAGS_LOCALIZATION_BUNDLE;
+  }
 
   public static ModelResourceInfo getModelResourceInfo(Class<?> modelResource, String resourceName) {
     if (modelResource == null) {
