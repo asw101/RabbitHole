@@ -45,6 +45,7 @@ package org.lgna.story.resourceutilities;
 
 import edu.cmu.cs.dennisc.print.PrintUtilities;
 import edu.cmu.cs.dennisc.render.gl.imp.adapters.GlrSkeletonVisual;
+import edu.cmu.cs.dennisc.render.gl.imp.adapters.WeightedMeshControl;
 import edu.cmu.cs.dennisc.scenegraph.Component;
 import edu.cmu.cs.dennisc.scenegraph.Composite;
 import edu.cmu.cs.dennisc.scenegraph.Joint;
@@ -64,10 +65,10 @@ public class UtilitySkeletonVisualAdapter extends GlrSkeletonVisual {
     synchronized (appearanceIdToMeshControllersMap) {
       appearanceIdToMeshControllersMap.clear();
       for (TexturedAppearance ta : this.owner.textures.getValue()) {
-        List<GlrSkeletonVisual.WeightedMeshControl> controls = new LinkedList<GlrSkeletonVisual.WeightedMeshControl>();
+        List<WeightedMeshControl> controls = new LinkedList<>();
         for (WeightedMesh weightedMesh : this.owner.weightedMeshes.getValue()) {
           if (weightedMesh.textureId.getValue() == ta.textureId.getValue()) {
-            GlrSkeletonVisual.WeightedMeshControl control = new UtilityWeightedMeshControl();
+            WeightedMeshControl control = new UtilityWeightedMeshControl();
             control.initialize(weightedMesh);
             controls.add(control);
           }
@@ -78,9 +79,9 @@ public class UtilitySkeletonVisualAdapter extends GlrSkeletonVisual {
   }
 
   protected List<UtilityWeightedMeshControl> getUtilityWeightedMeshControls() {
-    List<UtilityWeightedMeshControl> controlList = new LinkedList<UtilityWeightedMeshControl>();
-    for (Entry<Integer, GlrSkeletonVisual.WeightedMeshControl[]> entry : this.appearanceIdToMeshControllersMap.entrySet()) {
-      for (GlrSkeletonVisual.WeightedMeshControl w : entry.getValue()) {
+    List<UtilityWeightedMeshControl> controlList = new LinkedList<>();
+    for (Entry<Integer, WeightedMeshControl[]> entry : this.appearanceIdToMeshControllersMap.entrySet()) {
+      for (WeightedMeshControl w : entry.getValue()) {
         if (!controlList.contains(w)) {
           assert w instanceof UtilityWeightedMeshControl;
           controlList.add((UtilityWeightedMeshControl) w);

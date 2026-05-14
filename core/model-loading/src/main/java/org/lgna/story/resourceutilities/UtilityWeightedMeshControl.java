@@ -43,14 +43,14 @@
 
 package org.lgna.story.resourceutilities;
 
-import edu.cmu.cs.dennisc.render.gl.imp.adapters.GlrSkeletonVisual;
+import edu.cmu.cs.dennisc.render.gl.imp.adapters.WeightedMeshControl;
 import edu.cmu.cs.dennisc.scenegraph.InverseAbsoluteTransformationWeightsPair;
 import edu.cmu.cs.dennisc.scenegraph.Joint;
 import org.alice.math.immutable.AffineMatrix4x4;
 import org.alice.math.immutable.AxisAlignedBox;
 import org.alice.math.immutable.Point3;
 
-class UtilityWeightedMeshControl extends GlrSkeletonVisual.WeightedMeshControl {
+class UtilityWeightedMeshControl extends WeightedMeshControl {
   AxisAlignedBox getAbsoluteBoundingBox() {
     AxisAlignedBox box = AxisAlignedBox.NaN;
     this.indexBuffer.rewind();
