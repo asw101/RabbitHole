@@ -27,6 +27,8 @@ class ColladaMeshProcessor {
 
   private static final boolean FLIP_COORDINATE_SPACE = true;
 
+  private static final double[] IDENTITY_BIND_SHAPE_MATRIX = AffineMatrix4x4.IDENTITY.asRowMajorArray16();
+
   private final ObjectFactory factory;
   private final Map<edu.cmu.cs.dennisc.scenegraph.Geometry, String> meshNameMap;
   private final Map<Integer, String> materialNameMap;
@@ -215,15 +217,18 @@ class ColladaMeshProcessor {
     int count = 0;
     for (int i = 0; i < N; i += 3) {
       if (sgMesh.getTextureId(i).equals(textureId)) {
-        triangleList.add(BigInteger.valueOf(ib.get(i + 0)));
-        triangleList.add(BigInteger.valueOf(ib.get(i + 0)));
-        triangleList.add(BigInteger.valueOf(ib.get(i + 0)));
-        triangleList.add(BigInteger.valueOf(ib.get(i + 1)));
-        triangleList.add(BigInteger.valueOf(ib.get(i + 1)));
-        triangleList.add(BigInteger.valueOf(ib.get(i + 1)));
-        triangleList.add(BigInteger.valueOf(ib.get(i + 2)));
-        triangleList.add(BigInteger.valueOf(ib.get(i + 2)));
-        triangleList.add(BigInteger.valueOf(ib.get(i + 2)));
+        BigInteger v0 = BigInteger.valueOf(ib.get(i));
+        BigInteger v1 = BigInteger.valueOf(ib.get(i + 1));
+        BigInteger v2 = BigInteger.valueOf(ib.get(i + 2));
+        triangleList.add(v0);
+        triangleList.add(v0);
+        triangleList.add(v0);
+        triangleList.add(v1);
+        triangleList.add(v1);
+        triangleList.add(v1);
+        triangleList.add(v2);
+        triangleList.add(v2);
+        triangleList.add(v2);
         count++;
       }
     }
@@ -250,8 +255,7 @@ class ColladaMeshProcessor {
   private Skin createSkin(WeightedMesh sgWeightedMesh, String controllerName, Function<String, String> jointIdentifier) {
     Skin skin = factory.createSkin();
 
-    double[] bindShapeMatrix = AffineMatrix4x4.IDENTITY.asRowMajorArray16();
-    for (double element : bindShapeMatrix) {
+    for (double element : IDENTITY_BIND_SHAPE_MATRIX) {
       skin.getBindShapeMatrix().add(element);
     }
 

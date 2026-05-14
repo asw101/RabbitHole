@@ -84,6 +84,15 @@ public class JointedModelColladaExporter implements JointedModelExporter {
   private static final String COLLADA_EXTENSION = "dae";
   private static final String IMAGE_EXTENSION = "png";
 
+  private static final JAXBContext JAXB_CONTEXT;
+  static {
+    try {
+      JAXB_CONTEXT = JAXBContext.newInstance("org.lgna.story.resourceutilities.exporterutils.collada");
+    } catch (JAXBException e) {
+      throw new ExceptionInInitializerError(e);
+    }
+  }
+
   private final ObjectFactory factory;
   private final SkeletonVisual visual;
   private final ModelManifest.ModelVariant modelVariant;
@@ -93,6 +102,7 @@ public class JointedModelColladaExporter implements JointedModelExporter {
 
   private final HashMap<edu.cmu.cs.dennisc.scenegraph.Geometry, String> meshNameMap = new HashMap<>();
   private final HashMap<Integer, String> materialNameMap = new HashMap<>();
+  private final HashMap<Integer, TexturedAppearance> textureAppearanceMap = new HashMap<>();
 
   private final ColladaJointExtractor jointExtractor;
   private final ColladaMeshProcessor meshProcessor;
@@ -144,8 +154,11 @@ public class JointedModelColladaExporter implements JointedModelExporter {
 
   private void initializeMaterialNameMap() {
     materialNameMap.clear();
+    textureAppearanceMap.clear();
     for (TexturedAppearance texture : visual.textures.getValue()) {
-      materialNameMap.put(texture.textureId.getValue(), "material_" + texture.textureId.getValue());
+      Integer id = texture.textureId.getValue();
+      materialNameMap.put(id, "material_" + id);
+      textureAppearanceMap.put(id, texture);
     }
   }
 
@@ -238,10 +251,8 @@ public class JointedModelColladaExporter implements JointedModelExporter {
 
   public void writeCollada(OutputStream os) throws IOException {
     COLLADA collada = createCollada();
-    JAXBContext jc;
     try {
-      jc = JAXBContext.newInstance("org.lgna.story.resourceutilities.exporterutils.collada");
-      final Marshaller marshaller = jc.createMarshaller();
+      final Marshaller marshaller = JAXB_CONTEXT.createMarshaller();
       marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
       marshaller.marshal(collada, os);
     } catch (JAXBException e) {
@@ -292,12 +303,7 @@ public class JointedModelColladaExporter implements JointedModelExporter {
   }
 
   private TexturedAppearance getTextureAppearance(Integer textureId) {
-    for (TexturedAppearance texture : visual.textures.getValue()) {
-      if (textureId.equals(texture.textureId.getValue())) {
-        return texture;
-      }
-    }
-    return null;
+    return textureAppearanceMap.get(textureId);
   }
 
   public ImageResource createImageResourceForTexture(Integer textureId) throws IOException {
@@ -375,8 +381,9 @@ public class JointedModelColladaExporter implements JointedModelExporter {
       try {
         FileUtilities.createParentDirectoriesIfNecessary(textureFile);
         textureFile.createNewFile();
-        FileOutputStream fos = new FileOutputStream(textureFile);
-        writeTexture(texture, fos);
+        try (FileOutputStream fos = new FileOutputStream(textureFile)) {
+          writeTexture(texture, fos);
+        }
         textureFiles.add(textureFile);
       } catch (IOException e) {
         logger.log(Level.WARNING, "Failed to save texture: " + textureFile.getName(), e);
