@@ -17,9 +17,9 @@ logic.
 | Class | Responsibility | Approx. Lines |
 |---|---|---|
 | `AbstractComposite<V>` | Key, externally-referenced inner types, `synchronized` monitors, thin delegation wrappers | ~390 |
-| `CompositeResourceManager` | 11 Internal\* inner classes, 15 keyed maps, all `create*` factories, `contains()`, `localize()` | ~650 |
+| `CompositeResourceManager` | 11 Internal\* state classes + 3 operation/cascade/item classes, 15 keyed maps, `create*` factories, `contains()`, `localize()` | ~700 |
 | `CompositeTabManager` | `InternalTabState`, `InternalSplitComposite`, `InternalCardOwnerComposite`, tab activation loops | ~170 |
-| `CompositeViewLifecycle<V>` | View field, `ScrollPane`, `cardId`, lazy init, release | ~90 |
+| `CompositeViewLifecycle<V>` | View field, `ScrollPane`, `cardId`, lazy init (view/cardId), eager init (scrollPane) | ~90 |
 
 All three helper classes are **package-private** (no `public` modifier). They are
 internal implementation details of the croquet composite framework and are not
@@ -43,12 +43,12 @@ The central composite abstraction. After extraction, it retains:
   referenced by at least 4 external files
 - **Action / ItemStateCustomizer / CascadeCustomizer** — protected interfaces
   implemented by subclasses
-- **InternalActionOperation / InternalCustomItemState /
-  InternalCascadeWithInternalBlank** — used via the protected interfaces above
 - `synchronized getView()` and `synchronized getCardId()` — thread-safe monitors
   that stay on the `AbstractComposite` instance (not delegated)
 - All `protected create*()` factory wrappers — thin one-liners that forward to
   `CompositeResourceManager` or `CompositeTabManager`
+- `registerStringValue()` — delegation wrapper, called by
+  `AbstractSeverityStatusComposite` subclass
 - `handlePreActivation()` / `handlePostDeactivation()` — orchestration methods
   that delegate tab iteration to `CompositeTabManager`
 - `subComposites` list and `registerSubComposite()`/`unregisterSubComposite()`
@@ -76,6 +76,14 @@ Owns the keyed registries of internal state objects and their factory methods.
 - `InternalMutableDataSingleSelectListState<T>`
 - `InternalBoundedIntegerState`
 - `InternalBoundedDoubleState`
+- `InternalActionOperation` — constructor becomes package-private (was `private`);
+  the **class definition** stays in `AbstractComposite` because `Action.perform()`
+  references it in its signature. `CompositeResourceManager` instantiates via
+  same-package access.
+- `InternalCascadeWithInternalBlank<T>` — same pattern; class stays in AC,
+  constructor becomes package-private.
+- `InternalCustomItemState<T>` — same pattern; class stays in AC,
+  constructor becomes package-private.
 
 **Maps moved here (15 total):**
 - `mapKeyToStringValue`
@@ -121,7 +129,9 @@ ActionOperation createActionOperation(AbstractComposite.Key key,
     AbstractComposite.Key key, ListData<T> data, int selectionIndex)
 // ... and enum/refreshable/mutable/tab variants
 
-// Containment check — iterates all 14 maps
+// Containment check — iterates 13 of 15 maps (excludes mapKeyToStringValue
+// since PlainStringValue is not a Model, and mapKeyToSingleSelectListState
+// which was omitted in the original code)
 boolean contains(Model model)
 
 // Localization — localizes string values and sidekick labels
@@ -167,11 +177,19 @@ void deactivateAllTabs()
 <C extends SimpleTabComposite<?>> ImmutableDataTabState<C> createImmutableTabState(
     AbstractComposite.Key key, int selectionIndex, Class<C> cls, C... tabComposites)
 
-// Split/Card factories
+// Split/Card factories — return instances, NOT registered here.
+// AC wrappers call registerSubComposite() when needed.
 SplitComposite createSplitComposite(Composite<?> leading, Composite<?> trailing,
     boolean isHorizontal, double resizeWeight)
 CardOwnerComposite createCardOwnerComposite(Composite<?>... cards)
 ```
+
+**Note:** The original has two card owner creation methods:
+`createAndRegisterCardOwnerComposite` (registers with subComposites) and
+`createCardOwnerCompositeButDoNotRegister` (does not). Both stay as AC wrappers;
+both delegate construction to `TabManager.createCardOwnerComposite()`, but only
+the first calls `this.registerSubComposite()`. Same pattern for the
+`createHorizontalSplitComposite`/`createVerticalSplitComposite` wrappers.
 
 ### CompositeViewLifecycle\<V extends CompositeView\<?, ?\>\>
 
@@ -180,9 +198,10 @@ CardOwnerComposite createCardOwnerComposite(Composite<?>... cards)
 Manages the view instance, scroll pane wrapper, and card identity.
 
 **Fields moved here:**
-- `cardId` (`UUID`)
-- `view` (`V`)
-- `scrollPane` (`ScrollPane`)
+- `cardId` (`UUID`) — lazy, created on first `getOrCreateCardId()` call
+- `view` (`V`) — lazy, created on first `getOrCreateView()` call
+- `scrollPane` (`ScrollPane`) — **eager**, passed at construction time
+  (created via `AC.createScrollPaneIfDesired()` in the AC constructor)
 
 **Key methods:**
 
@@ -318,11 +337,16 @@ outside the class:
 - `AbstractComposite.CascadeCustomizer<T>` — implemented by subclass anonymous
   classes
 - `AbstractComposite.InternalActionOperation` — referenced by `Action.perform()`
-  signature
+  signature; class definition stays in AC, constructor widened to package-private
 - `AbstractComposite.InternalCustomItemState<T>` — exposed via
-  `ItemStateCustomizer` pattern
+  `ItemStateCustomizer` pattern; same treatment
 - `AbstractComposite.InternalCascadeWithInternalBlank<T>` — exposed via
-  `CascadeCustomizer` pattern
+  `CascadeCustomizer` pattern; same treatment
+
+> **Visibility change:** The above three inner classes have their constructors
+> widened from `private` to package-private so that `CompositeResourceManager`
+> (same package) can instantiate them. The classes themselves remain nested inside
+> `AbstractComposite` to preserve external type references.
 
 ---
 
@@ -351,6 +375,10 @@ thread safety is required.
   string.
 - All three new classes are **package-private** — no visibility escalation from
   the original `private` inner classes.
+- Three inner class constructors (`InternalActionOperation`,
+  `InternalCascadeWithInternalBlank`, `InternalCustomItemState`) are widened from
+  `private` to package-private. This is strictly within the same package and does
+  not affect the public API surface.
 - No new network surface, file I/O, or external process spawning is introduced.
 - This is a desktop GUI framework; there is no authentication or authorization
   surface affected.
