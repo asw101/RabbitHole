@@ -35,3 +35,8 @@ tags:
   - immediate-qa-backlog
   - save-menu
   - negative-contract
+
+steps:
+  - Run the focused smoke and review command output.
+agents:
+  - role: smoke-runner

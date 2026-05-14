@@ -1,8 +1,6 @@
 id: alice-desktop-archive-fixture-smoke
-title: Archive/player fixture boundary smoke
-title: Generated legacy fixture and player resource-recovery boundary smoke
-name: Legacy player resource-recovery boundary smoke
 title: Legacy player resource-recovery boundary smoke
+name: Legacy player resource-recovery boundary smoke
 workflow: archive-fixture-smoke
 automationMode: gated-command-smoke
 preconditions:
@@ -14,19 +12,15 @@ userActions:
   - Run the focused historical archive fixture boundary characterization smoke from the command line.
   - Exercise generated LFS-independent .a3p, .a3c, and .a3w archive boundaries.
   - Confirm JSON .a3w manifest routing, generated fixture handling, unsupported Tweedle diagnostics, legacy player resource-recovery failures, and missing-entry failures stay explicit.
+  - Exercise generated LFS-independent .a3p, .a3c, and .a3w archive boundaries, including JSON .a3w archives with manifest-declared image resources.
+  - Confirm unsupported method calls, complex or mixed initializers, resource initializer binding gaps, unresolved parent cases, and unsupported manifest-declared program and sibling Tweedle types fail explicitly.
 expectedOutcomes:
   - Without the gate the scenario records a gated-not-run status and exits non-success unless --prepare-only is requested.
   - The historical archive fixture boundary smoke command exits successfully when the gate is enabled.
   - Generated JSON .a3c and .a3w fixtures report explicit decode failures for unsupported type boundaries.
   - Generated XML fallback .a3p fixtures write, read, and preserve resources through IoUtilities archive I/O.
   - Command evidence does not prove full Tweedle/player decode, historical archive migration completeness, full UI automation, visible rendering correctness, grading, Save/Open guarantees, or lesson completion.
-  - Run the focused generated legacy fixture and legacy player resource-recovery boundary characterization smoke from the command line.
-  - Exercise generated LFS-independent .a3p, .a3c, and .a3w archive boundaries, including JSON .a3w archives with manifest-declared image resources.
-  - Confirm unsupported method calls, complex or mixed initializers, resource initializer binding gaps, unresolved parent cases, and unsupported manifest-declared program and sibling Tweedle types fail explicitly.
-expectedOutcomes:
   - The generated legacy fixture boundary smoke command exits successfully when the gate is enabled and covers legacy player resource-recovery boundaries.
-  - Generated JSON .a3c and .a3w fixtures report explicit decode failures for unsupported type boundaries.
-  - Generated XML fallback .a3p fixtures write, read, and preserve resources through IoUtilities archive I/O.
   - Generated XML fallback .a3c fixtures write, read, and preserve type resources through IoUtilities archive I/O.
   - Simple supported .a3w fixtures export, read, re-export, and reread through IoUtilities with manifest-routed Tweedle source.
   - Generated JSON .a3w fixtures with unsupported resource initializers report explicit archive readback failures.
@@ -67,7 +61,6 @@ tags:
   - command-smoke
   - archive-io
   - archive-player-boundary
-  - archive-io
 steps:
   - validate
 agents:

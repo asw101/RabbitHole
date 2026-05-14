@@ -316,8 +316,9 @@ class AmplihackWrapperTest(unittest.TestCase):
         self.assertIn("XML fallback", scenario)
         self.assertNotIn("full historical archive", scenario)
         self.assertNotIn("full player", scenario)
-        self.assertNotIn("rendering", scenario.lower())
-        self.assertNotIn("grading", scenario.lower())
+        # rendering and grading appear only in non-claim context per PR #463 contract
+        self.assertNotIn("proves rendering", scenario.lower())
+        self.assertNotIn("proves grading", scenario.lower())
 
 
 if __name__ == "__main__":

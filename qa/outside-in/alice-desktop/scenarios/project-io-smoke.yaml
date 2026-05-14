@@ -15,7 +15,7 @@ userActions:
   - Write, reopen, edit project-owned data, write again, reopen again, and export through IoUtilities.
 expectedOutcomes:
   - The allowlisted archive seam command exits successfully when the gate is enabled.
-  - The scenario runner command is an allowlisted equivalent of the canonical direct archive seam validation command and runs the same IoUtilitiesTest class.
+  - The scenario validates the full workflow of saving, reopening, editing, saving again, reopening again, and exporting through the IoUtilitiesTest class.
   - Saved project artifacts can be reopened by the current Alice project reader.
   - The reopened edited archive preserves the edited project data and readable manifest/export structure.
   - Coverage is limited to repository-owned archive read/write/export APIs, not desktop Save-menu behavior, Save dialog completion, visible rendering correctness, grading, full lesson automation, or full UI automation.

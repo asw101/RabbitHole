@@ -47,3 +47,8 @@ tags:
   - immediate-qa-backlog
   - model-export
   - command-smoke
+
+steps:
+  - Run the focused smoke and review command output.
+agents:
+  - role: smoke-runner
