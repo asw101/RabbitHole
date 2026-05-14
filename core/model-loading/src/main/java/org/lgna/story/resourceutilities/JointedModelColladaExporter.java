@@ -227,7 +227,9 @@ public class JointedModelColladaExporter implements JointedModelExporter {
     visualScene.setName(sceneName);
 
     Node skeletonNodes = jointExtractor.createSkeletonNodes(visual);
-    visualScene.getNode().add(skeletonNodes);
+    if (skeletonNodes != null) {
+      visualScene.getNode().add(skeletonNodes);
+    }
 
     Scene scene = factory.createCOLLADAScene();
     InstanceWithExtra sceneInstance = factory.createInstanceWithExtra();
@@ -274,7 +276,9 @@ public class JointedModelColladaExporter implements JointedModelExporter {
   }
 
   private static void writeTexture(TexturedAppearance texture, OutputStream os) throws IOException {
-    BufferedImageTexture bufferedTexture = (BufferedImageTexture) texture.diffuseColorTexture.getValue();
+    if (!(texture.diffuseColorTexture.getValue() instanceof BufferedImageTexture bufferedTexture)) {
+      return;
+    }
     BufferedImage flippedImage = createFlippedImage(bufferedTexture.getBufferedImage());
     ImageIO.write(flippedImage, IMAGE_EXTENSION, os);
   }
@@ -309,7 +313,9 @@ public class JointedModelColladaExporter implements JointedModelExporter {
 
   public ImageResource createImageResourceForTexture(Integer textureId) throws IOException {
     TexturedAppearance texturedAppearance = getTextureAppearance(textureId);
-    BufferedImageTexture bufferedTexture = (BufferedImageTexture) texturedAppearance.diffuseColorTexture.getValue();
+    if (!(texturedAppearance.diffuseColorTexture.getValue() instanceof BufferedImageTexture bufferedTexture)) {
+      return null;
+    }
     return ImageFactory.createImageResource(bufferedTexture.getBufferedImage(), getImageFileNameForIndex(textureId));
   }
 
