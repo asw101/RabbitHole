@@ -20,7 +20,7 @@ point.
 
 ```
 ┌──────────────────────────────────────────┐
-│       JointedModelColladaExporter        │  ~350 lines
+│       JointedModelColladaExporter        │  426 lines
 │  (coordinator, public API, texture I/O)  │
 │                                          │
 │  implements JointedModelExporter         │
@@ -44,7 +44,7 @@ point.
 │  │      ColladaMeshProcessor        │    │
 │  │                                  │    │
 │  │ geometry, skins, controllers,    │    │
-│  │ visual-scene nodes, ListInit     │    │
+│  │ visual-scene nodes               │    │
 │  └──────────────────────────────────┘    │
 └──────────────────────────────────────────┘
 ```
@@ -54,71 +54,63 @@ point.
 ### JointedModelColladaExporter
 
 **Role:** Thin coordinator. Owns construction state (`meshNameMap`,
-`materialNameMap`), implements `JointedModelExporter`, and handles texture
-file I/O and JAXB serialization.
+`materialNameMap`, `textureAppearanceMap`), implements `JointedModelExporter`,
+and handles texture file I/O and JAXB serialization. Uses a static
+`JAXBContext` to avoid expensive per-export context creation.
 
 | Visibility | Member | Purpose |
 |---|---|---|
 | `public` | `JointedModelColladaExporter(SkeletonVisual, ModelVariant, String, String, Map)` | Full constructor |
 | `public` | `JointedModelColladaExporter(SkeletonVisual, ModelVariant, String)` | Convenience constructor (empty resource path, no renamed joints) |
-| `public` | `writeCollada(OutputStream)` | JAXB-marshals COLLADA document to stream |
+| `public` | `writeCollada(OutputStream)` | JAXB-marshals COLLADA document to stream via cached `JAXB_CONTEXT` |
 | `public` | `getTextureFileNames()` | Lists PNG texture file names |
 | `public` | `createTextureIdToImageMap()` | Maps texture IDs → unique image names |
 | `public` | `createImageResourceForTexture(Integer)` | Creates `ImageResource` for a texture ID |
 | `public` | `getTextureIdForName(String)` | Reverse-lookup: image filename → texture ID |
 | `public` | `createImageDataSources()` | Wraps textures as `DataSource` list |
-| `public` | `saveTexturesToDirectory(File)` | Writes texture PNGs to disk |
+| `public` | `saveTexturesToDirectory(File)` | Writes texture PNGs to disk (try-with-resources) |
 | `protected` | `createCollada()` | Assembles full COLLADA document; delegates to parser, joint extractor, mesh processor |
 | `@Override` | `createStructureDataSource()` | `JointedModelExporter` — wraps `writeCollada` as `DataSource` |
 | `@Override` | `getStructureFileName(DataSource)` | `JointedModelExporter` — relative `.dae` path |
 | `@Override` | `getStructureExtension()` | `JointedModelExporter` — returns `"png"` |
 | `@Override` | `addImageDataSources(List, ModelManifest, Map)` | `JointedModelExporter` — appends texture data sources and manifest refs |
 
-**Naming helpers** (widened from private to package-private for delegate access,
-except `getUserJointIdentifier` which is already `public`):
+**Naming helpers** (private, called by delegates via method references):
 
 | Method | Returns |
 |---|---|
-| `getUserJointIdentifier(String)` | Joint name after rename-map lookup (public) |
-| `getMeshIdForMeshName(String)` | `meshName + "-id"` |
-| `getMeshTextureId(Mesh, Integer)` | Mesh name, suffixed with texture ID when multi-textured |
+| `getUserJointIdentifier(String)` | Joint name after rename-map lookup (public, delegates to `ColladaJointExtractor`) |
 | `getImageNameForIndex(Integer)` | `"material_N_diffuseMap"` |
 | `getExternallyUniqueImageNameForID(Integer)` | `fullResourceName + "_" + imageName` (without extension) |
 | `getImageFileNameForIndex(Integer)` | `getExternallyUniqueImageNameForID(index) + ".png"` |
 | `getImageIDForIndex(Integer)` | Image name + `"-image"` |
 | `getMaterialIDForIndex(Integer)` | `"material_N_shader"` |
-| `getInstanceMaterialSymbolForIndex(Integer)` | Same as material ID (Alice constraint) |
 | `getEffectIDForIndex(Integer)` | `"material_N_fx"` |
 | `getFullResourceName()` | Model variant texture set or model name |
 
-**Private helpers** (stay private, not listed exhaustively):
+**Private helpers:**
 `initializeMeshNameMap`, `initializeMaterialNameMap`, `addMeshToNameMap`,
 `createFlippedImage`, `writeTexture`, `getColladaFileName`,
-`getTextureAppearance`, `addTextureIds`.
+`getTextureAppearance` (O(1) HashMap lookup), `addTextureIds`,
+`createAndAddMeshComponents`.
 
 **Local testing code** (private static, retained for developer convenience):
-`saveColladaToDirectory`, `exportAliceModelToDir`, `loadAliceModel`,
-`exportAliceModelResourceToDir`.
+`saveColladaToDirectory` (try-with-resources), `exportAliceModelToDir`,
+`loadAliceModel`, `exportAliceModelResourceToDir`.
 
 ### ColladaParser
 
 **Role:** Assembles the COLLADA XML document structure — `Asset` metadata,
-`LibraryImages`, `LibraryMaterials`, `LibraryEffects`, `VisualScene`,
-and the top-level `COLLADA` element.
+`LibraryImages`, `LibraryMaterials`, `LibraryEffects`.
 
 **Visibility:** Package-private (no `public` keyword on class).
 
 | Method | Purpose |
 |---|---|
-| `ColladaParser(ObjectFactory, JointedModelColladaExporter)` | Constructor; receives factory and back-reference for naming helpers |
+| `ColladaParser(ObjectFactory)` | Constructor; receives shared JAXB factory |
 | `createAsset()` | Builds `Asset` with current timestamp, meter units, Y-up axis |
-| `createCollada(SkeletonVisual, ColladaJointExtractor, ColladaMeshProcessor)` | Orchestrates full document: asset → texture libs → mesh/controller libs → visual scene |
-| `createAndAddTextureComponents(COLLADA, SkeletonVisual)` | Populates `library_images`, `library_materials`, `library_effects` |
-| `createEffect(TexturedAppearance)` | Builds Lambert effect with diffuse texture or color, optional transparency |
-| `createCommonColor(String, double, double, double, double)` | Creates a COLLADA `Color` element with RGBA values |
-| `createCommonColorType(String, double, double, double, double)` | Wraps `createCommonColor` in a `CommonColorOrTextureType` |
-| `createSurfaceParam(Integer)` | `<newparam>` for surface initialization |
-| `createSamplerParam(Integer, String)` | `<newparam>` for 2D texture sampler |
+| `createAndAddTextureComponents(COLLADA, SkeletonVisual, Map, Function×6)` | Populates `library_images`, `library_materials`, `library_effects` using naming callbacks |
+| `createEffect(TexturedAppearance, Map)` | Builds Lambert effect with diffuse texture or color, optional transparency |
 
 ### ColladaJointExtractor
 
@@ -130,60 +122,39 @@ matrices flipped from Alice coordinate space to COLLADA space.
 
 | Method | Purpose |
 |---|---|
-| `ColladaJointExtractor(ObjectFactory, JointedModelColladaExporter)` | Constructor |
+| `ColladaJointExtractor(ObjectFactory, Map<String, String>)` | Constructor; receives factory and joint rename map |
 | `createSkeletonNodes(SkeletonVisual)` | Entry point: returns root `Node` for the skeleton, or `null` if no skeleton |
 | `createNodeForJoint(Joint)` | Recursive: builds `Node` with SID, matrix, and child joints |
+| `getUserJointIdentifier(String)` | Applies rename map to joint identifier |
 
 **Coordinate-space behavior:** When `FLIP_COORDINATE_SPACE` is true (default),
 all joint matrices are flipped via `ColladaTransformUtilities.createFlippedRowMajorTransform`.
-When `SCALE_MODEL` is true, translation components are scaled by `MODEL_SCALE`.
 
 ### ColladaMeshProcessor
 
 **Role:** Converts Alice `Mesh` and `WeightedMesh` geometry into COLLADA
-`Geometry`, `Controller`, and visual-scene `Node` elements. Contains the
-`ListInitializer` hierarchy for converting Java NIO buffers to COLLADA
-float arrays.
+`Geometry`, `Controller`, and visual-scene `Node` elements. Uses lambda-based
+`Consumer<List<Double>>` initializers (replacing the former `ListInitializer`
+class hierarchy) for converting Java NIO buffers to COLLADA float arrays.
 
 **Visibility:** Package-private.
 
 | Method | Purpose |
 |---|---|
-| `ColladaMeshProcessor(ObjectFactory, JointedModelColladaExporter)` | Constructor |
-| `createAndAddMeshComponents(COLLADA, VisualScene, SkeletonVisual)` | Top-level: builds `library_geometries` + `library_controllers`, adds visual-scene nodes |
+| `ColladaMeshProcessor(ObjectFactory, Map<Geometry, String>, Map<Integer, String>)` | Constructor; receives factory, mesh name map, material name map |
 | `addGeometriesForMesh(List<Geometry>, Mesh)` | Adds one `Geometry` per referenced texture ID |
-| `geometryForMeshAndTexture(Mesh, Integer)` | Builds single `Geometry` containing positions, normals, UVs, triangles |
-| `createMesh(Mesh, Integer, String)` | Constructs COLLADA `Mesh` with sources and triangle indices |
-| `createTriangles(Mesh, String, String, String, Integer)` | Builds `Triangles` element from index buffer, filtering by texture ID |
-| `createVertices(String, String)` | `Vertices` element referencing position source |
-| `createFloatArraySourceFromInitializer(ListInitializer, String, int, double, boolean)` | Builds `Source` from a `ListInitializer`, optionally flipping X/Z and scaling |
-| `createParam(String, String)` | Creates an `Accessor` `Param` (name + type) |
-| `createAccessorForArray(String, String, int, int)` | Builds `Accessor` for a float/name array with stride |
-| `createTechniqueCommonForArray(String, String, int, int)` | Wraps `createAccessorForArray` in a `TechniqueCommon` |
-| `createInputLocal(String, String)` | `InputLocal` element (semantic + source ref) |
-| `createInputLocalOffset(String, String, int)` | `InputLocalOffset` element (semantic + source ref + offset) |
-| `getBindShapeMatrix(WeightedMesh)` | Returns identity bind-shape (Alice convention) |
-| `createJointSource(WeightInfo, String)` | `Source` with joint name array |
-| `createMatrixSource(WeightInfo, String)` | `Source` with inverse-bind matrices (flipped if `FLIP_COORDINATE_SPACE`) |
-| `createWeightList(WeightedMesh)` | Flat `List<Float>` of all per-vertex weights |
-| `createSkinWeights(WeightedMesh)` | Per-vertex `ColladaSkinWeights[]` mapping joint/weight indices |
-| `addControllersForMesh(List<Controller>, WeightedMesh)` | Builds `Controller` with `Skin` for each texture ID |
-| `createSkin(WeightedMesh, String)` | Full skin: bind-shape matrix, joint source, inverse-bind matrices, vertex weights |
-| `createBindMaterialForMaterialIndex(Integer)` | `BindMaterial` wiring `instance_material` → `library_materials` |
-| `createVisualSceneNode(String)` | Factory for a named visual-scene `Node` |
+| `addControllersForMesh(List<Controller>, WeightedMesh, Function)` | Builds `Controller` with `Skin` for each texture ID |
 | `addVisualSceneNodesForMesh(List<Node>, Mesh)` | Adds `instance_geometry` nodes to visual scene |
 | `addVisualSceneNodesForWeightedMesh(List<Node>, WeightedMesh)` | Adds `instance_controller` nodes to visual scene |
 
-**Inner types (static, package-private):**
+**Performance:** Uses a static `IDENTITY_BIND_SHAPE_MATRIX` (avoids
+per-skin `AffineMatrix4x4.IDENTITY` allocation) and caches per-vertex
+`BigInteger` values in the triangle loop (3× fewer allocations per triangle).
+
+**Inner types:**
 
 | Type | Purpose |
 |---|---|
-| `ListInitializer` | Interface: `initializeList(List<Double>)` |
-| `DoubleArrayInitializeList` | Wraps `double[]` |
-| `DoubleListInitializeList` | Wraps `List<Double>` |
-| `FloatListInitializeList` | Wraps `List<Float>`, widens to double |
-| `DoubleBufferInitializeList` | Wraps `DoubleBuffer` |
-| `FloatBufferInitializeList` | Wraps `FloatBuffer`, widens to double |
 | `ColladaSkinWeights` | Pairs `jointIndices` and `weightIndices` per vertex |
 
 ## Existing Related Classes
@@ -215,27 +186,23 @@ for 4×4 matrices and by negating X/Z in stride-3 vertex data.
 
 ## Constants
 
-All constants live on `JointedModelColladaExporter` and are shared via
-package-private access:
-
-| Constant | Value | Purpose |
-|---|---|---|
-| `COLLADA_EXTENSION` | `"dae"` | Output file extension |
-| `IMAGE_EXTENSION` | `"png"` | Texture image format |
-| `FLIP_COORDINATE_SPACE` | `true` | Enable Alice→COLLADA coordinate flip |
-| `SCALE_MODEL` | `false` | Enable model scaling |
-| `MODEL_SCALE` | `1.0` | Scale factor (when enabled) |
+| Constant | Location | Value | Purpose |
+|---|---|---|---|
+| `COLLADA_EXTENSION` | `JointedModelColladaExporter` | `"dae"` | Output file extension |
+| `IMAGE_EXTENSION` | `JointedModelColladaExporter` | `"png"` | Texture image format |
+| `JAXB_CONTEXT` | `JointedModelColladaExporter` | (static) | Cached JAXBContext — avoids expensive per-export creation |
+| `FLIP_COORDINATE_SPACE` | `ColladaTransformUtilities` | `true` | Enable Alice→COLLADA coordinate flip |
+| `IDENTITY_BIND_SHAPE_MATRIX` | `ColladaMeshProcessor` | (static) | Cached identity bind-shape matrix — avoids per-skin allocation |
 
 ## Line Counts
 
 | File | Lines | Role |
 |---|---|---|
-| `JointedModelColladaExporter.java` | ~350 | Coordinator + public API |
-| `ColladaMeshProcessor.java` | ~500 | Geometry, skins, controllers, visual-scene nodes |
-| `ColladaParser.java` | ~250 | XML document assembly + texture/material/effect builders |
-| `ColladaJointExtractor.java` | ~110 | Skeleton tree traversal |
-| **Total** | **~1210** | Slightly more than original 1181 due to new-file overhead (package, imports, class declarations) |
+| `JointedModelColladaExporter.java` | 426 | Coordinator + public API |
+| `ColladaMeshProcessor.java` | 430 | Geometry, skins, controllers, visual-scene nodes |
+| `ColladaParser.java` | 174 | XML document assembly + texture/material/effect builders |
+| `ColladaJointExtractor.java` | 67 | Skeleton tree traversal |
+| `ColladaTransformUtilities.java` | 56 | Shared coordinate-flip utilities + `FLIP_COORDINATE_SPACE` constant |
+| **Total** | **1153** | Slightly less than original 1181 |
 
-The exporter itself drops from 1181 to ~350 lines — well under the 500-line target.
-The total line count is slightly higher than the original because each new file
-carries its own copyright header, package statement, imports, and class declaration.
+The exporter itself drops from 1181 to 426 lines — well under the 500-line target.
