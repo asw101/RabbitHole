@@ -2,7 +2,7 @@
 
 This reference describes the extraction of XXE-hardened XML parsing and resource
 creation utilities from `XmlProjectIo.java` (566 lines) into a new
-package-private helper class `SecureXmlParser.java` (169 lines), reducing
+package-private helper class `SecureXmlParser.java` (178 lines), reducing
 `XmlProjectIo` to 447 lines.
 
 The extraction is a pure internal refactor. The public API surface —
@@ -50,7 +50,7 @@ XmlProjectIo (package-private coordinator, 447 lines)
 │   └── delegates XML parsing to SecureXmlParser
 ├── XmlProjectWriter (inner class)
 │   └── writeVersion(), writeXML(), writeType(), writeResources()
-└── SecureXmlParser (package-private static helper, 169 lines)
+└── SecureXmlParser (package-private static helper, 178 lines)
     ├── readArchiveXml()       — XXE-hardened DocumentBuilder
     ├── readXML()              — version-aware migration + parse
     ├── removeWhitespaceNodes() — DOM whitespace cleanup
