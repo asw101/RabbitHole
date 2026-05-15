@@ -74,19 +74,28 @@ class SecureXmlParser {
   private SecureXmlParser() {
   }
 
-  // OWASP XXE Prevention — 7-layer defense. Do not refactor or simplify.
+  // OWASP XXE Prevention — 7-layer defense applied once at class load.
+  private static final DocumentBuilderFactory SECURE_FACTORY = createSecureFactory();
+
+  private static DocumentBuilderFactory createSecureFactory() {
+    try {
+      DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+      factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+      factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+      factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+      factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+      factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+      factory.setXIncludeAware(false);
+      factory.setExpandEntityReferences(false);
+      return factory;
+    } catch (ParserConfigurationException e) {
+      throw new ExceptionInInitializerError(e);
+    }
+  }
+
   static Document readArchiveXml(InputStream is, String entryName) throws IOException {
     try {
-      DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
-      documentBuilderFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-      documentBuilderFactory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-      documentBuilderFactory.setFeature("http://xml.org/sax/features/external-general-entities", false);
-      documentBuilderFactory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
-      documentBuilderFactory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-      documentBuilderFactory.setXIncludeAware(false);
-      documentBuilderFactory.setExpandEntityReferences(false);
-
-      DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
+      DocumentBuilder documentBuilder = SECURE_FACTORY.newDocumentBuilder();
       Document document = documentBuilder.parse(is);
       removeWhitespaceNodes(document.getDocumentElement());
       return document;

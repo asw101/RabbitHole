@@ -368,7 +368,7 @@ public class XmlProjectIo implements ProjectIo {
       Document xmlDocument = XMLUtilities.createDocument();
       Element xmlRootElement = xmlDocument.createElement("root");
       xmlDocument.appendChild(xmlRootElement);
-      List<DataSource> resourceDataSources = new ArrayList<>();
+      List<DataSource> resourceDataSources = new ArrayList<>(resources.size());
       synchronized (resources) {
         Set<String> usedEntryNames = new HashSet<>();
         for (Resource resource : resources) {
@@ -402,49 +402,46 @@ public class XmlProjectIo implements ProjectIo {
 
     @Override
     public void writeProject(OutputStream os, final Project project, DataSource... dataSources) throws IOException {
-      ZipOutputStream zos = new ZipOutputStream(os);
-      writeVersion(zos);
-      writeManifest(project, zos, dataSources);
-      NamedUserType programType = project.getProgramType();
-      writeType(programType, zos, PROGRAM_TYPE_ENTRY_NAME);
-      writeDataSources(zos, dataSources);
-      Set<Resource> resources = project.getResources();
+      try (ZipOutputStream zos = new ZipOutputStream(os)) {
+        writeVersion(zos);
+        writeManifest(project, zos, dataSources);
+        NamedUserType programType = project.getProgramType();
+        writeType(programType, zos, PROGRAM_TYPE_ENTRY_NAME);
+        writeDataSources(zos, dataSources);
+        Set<Resource> resources = project.getResources();
 
-      IsInstanceCrawler<ResourceExpression> crawler = resourceExpressionCrawler();
-      programType.crawl(crawler, CrawlPolicy.COMPLETE);
+        IsInstanceCrawler<ResourceExpression> crawler = resourceExpressionCrawler();
+        programType.crawl(crawler, CrawlPolicy.COMPLETE);
 
-      for (ResourceExpression resourceExpression : crawler.getList()) {
-        Resource resource = resourceExpression.resource.getValue();
-        if (!resources.contains(resource)) {
-          PrintUtilities.println(
-              "WARNING: adding missing resource",
-              ResourceExportNames.diagnosticName(resource));
-          resources.add(resource);
+        for (ResourceExpression resourceExpression : crawler.getList()) {
+          Resource resource = resourceExpression.resource.getValue();
+          if (!resources.contains(resource)) {
+            PrintUtilities.println(
+                "WARNING: adding missing resource",
+                ResourceExportNames.diagnosticName(resource));
+            resources.add(resource);
+          }
         }
-      }
 
-      writeResources(zos, resources);
-      zos.flush();
-      zos.close();
+        writeResources(zos, resources);
+      }
     }
 
     @Override
     public void writeType(OutputStream os, NamedUserType type, DataSource... dataSources) throws IOException {
-      ZipOutputStream zos = new ZipOutputStream(os);
-      writeVersion(zos);
-      writeType(type, zos, TYPE_ENTRY_NAME);
-      writeDataSources(zos, dataSources);
+      try (ZipOutputStream zos = new ZipOutputStream(os)) {
+        writeVersion(zos);
+        writeType(type, zos, TYPE_ENTRY_NAME);
+        writeDataSources(zos, dataSources);
 
-      IsInstanceCrawler<ResourceExpression> crawler = resourceExpressionCrawler();
-      type.crawl(crawler, CrawlPolicy.EXCLUDE_REFERENCES_ENTIRELY);
-      Set<Resource> resources = new HashSet<>();
-      for (ResourceExpression resourceExpression : crawler.getList()) {
-        resources.add(resourceExpression.resource.getValue());
+        IsInstanceCrawler<ResourceExpression> crawler = resourceExpressionCrawler();
+        type.crawl(crawler, CrawlPolicy.EXCLUDE_REFERENCES_ENTIRELY);
+        Set<Resource> resources = new HashSet<>();
+        for (ResourceExpression resourceExpression : crawler.getList()) {
+          resources.add(resourceExpression.resource.getValue());
+        }
+        writeResources(zos, resources);
       }
-      writeResources(zos, resources);
-
-      zos.flush();
-      zos.close();
     }
   }
 }
