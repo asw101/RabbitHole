@@ -43,16 +43,12 @@
 
 package org.lgna.story.implementation;
 
-import edu.cmu.cs.dennisc.java.util.Lists;
 import edu.cmu.cs.dennisc.java.util.Maps;
 import edu.cmu.cs.dennisc.java.util.logging.Logger;
-import edu.cmu.cs.dennisc.render.gl.imp.adapters.AdapterFactory;
-import edu.cmu.cs.dennisc.scenegraph.*;
-import edu.cmu.cs.dennisc.scenegraph.bound.CumulativeBound;
-import org.alice.math.immutable.*;
+import edu.cmu.cs.dennisc.scenegraph.AbstractTransformable;
+import org.alice.math.immutable.Dimension3;
+import org.alice.math.immutable.UnitQuaternion;
 import org.lgna.ik.core.solver.Bone;
-import org.lgna.ik.core.solver.Bone.Direction;
-import org.lgna.story.SJoint;
 import org.lgna.story.implementation.JointedModelImp.TreeWalkObserver;
 import org.lgna.story.resources.JointArrayId;
 import org.lgna.story.resources.JointId;
@@ -83,190 +79,6 @@ class JointHierarchyManager<R extends JointedModelResource> {
   }
 
   // ════════════════════════════════════════════════════════════════════════════
-  //  JointImpWrapper — wraps an inner JointImp for resource swapping
-  // ════════════════════════════════════════════════════════════════════════════
-
-  private class JointImpWrapper extends JointImp {
-    public JointImpWrapper(JointedModelImp<?, ?> jointedModelImp, JointImp joint) {
-      super(jointedModelImp);
-      this.internalJointImp = joint;
-    }
-
-    @Override
-    public final void setAbstraction(SJoint abstraction) {
-      super.setAbstraction(abstraction);
-      if (this.internalJointImp != null) {
-        this.internalJointImp.setAbstraction(abstraction);
-      }
-    }
-
-    @Override
-    public JointImp getJointParent() {
-      return jointParentWrapper;
-    }
-
-    @Override
-    public List<JointImp> getJointChildren() {
-      return jointChildrenWrapper;
-    }
-
-    @Override
-    void setJointParent(JointImp jointParent) {
-      if (this.jointParentWrapper != null) {
-        this.jointParentWrapper.getJointChildren().remove(this);
-      }
-      this.jointParentWrapper = jointParent;
-      if (this.jointParentWrapper != null) {
-        jointParent.getJointChildren().add(this);
-      }
-    }
-
-    @Override
-    public void setScale(Dimension3 scale) {
-      internalJointImp.setScale(scale);
-    }
-
-    @Override
-    public boolean isReoriented() {
-      return internalJointImp.isReoriented();
-    }
-
-    @Override
-    public boolean isRelocated() {
-      return internalJointImp.isRelocated();
-    }
-
-    @Override
-    protected void copyOnto(JointImp newJoint) {
-      internalJointImp.copyOnto(newJoint);
-      if (JointHierarchyManager.this.resourceBinder.isSims()) {
-        // Alice models reuse joints, but Sims regenerate them.
-        // Creating the adapter is the public mechanism to rebuild internal listeners and show joint changes
-        AdapterFactory.getAdapterFor(newJoint.getSgComposite());
-      }
-      if (getAbstraction() != null) {
-        newJoint.setAbstraction(getAbstraction());
-      }
-    }
-
-    @Override
-    public String getName() {
-      return internalJointImp.getJointId().toString();
-    }
-
-    @Override
-    public SceneImp getScene() {
-      return this.internalJointImp.getScene();
-    }
-
-    @Override
-    public JointId getJointId() {
-      return internalJointImp.getJointId();
-    }
-
-    @Override
-    public boolean isFreeInX() {
-      return internalJointImp.isFreeInX();
-    }
-
-    @Override
-    public boolean isFreeInY() {
-      return internalJointImp.isFreeInY();
-    }
-
-    @Override
-    public boolean isFreeInZ() {
-      return internalJointImp.isFreeInZ();
-    }
-
-    void replaceWithJoint(JointImp newJoint) {
-      copyOnto(newJoint);
-      AbstractTransformable oldSgComposite = internalJointImp.getSgComposite();
-      AbstractTransformable newSgComposite = newJoint.getSgComposite();
-      for (Component child : oldSgComposite.getComponents()) {
-        if (!(child instanceof ModelJoint)) {
-          child.setParent(newJoint.getSgComposite());
-        }
-      }
-      // Sims models, with regenerated joints, need to be reconnected at their root, indicated by a null parent.
-      if (newSgComposite.getParent() == null) {
-        // Without this, things riding on the Sim or its joints when the resource changes will go out of the scene graph and disappear.
-        newSgComposite.setParent(oldSgComposite.getParent());
-      }
-      internalJointImp = newJoint;
-    }
-
-    @Override
-    public AxisAlignedBox getAxisAlignedMinimumBoundingBox(ReferenceFrame asSeenBy) {
-      return internalJointImp.getAxisAlignedMinimumBoundingBox(asSeenBy);
-    }
-
-    @Override
-    public AbstractTransformable getSgComposite() {
-      return internalJointImp.getSgComposite();
-    }
-
-    @Override
-    protected void updateCumulativeBound(CumulativeBound rv, AffineMatrix4x4 trans) {
-      internalJointImp.updateCumulativeBound(rv, trans);
-    }
-
-    @Override
-    public UnitQuaternion getOriginalOrientation() {
-      return internalJointImp.getOriginalOrientation();
-    }
-
-    @Override
-    public AffineMatrix4x4 getScaledOriginalTransformation() {
-      return internalJointImp.getScaledOriginalTransformation();
-    }
-
-    @Override
-    public AffineMatrix4x4 getLocalTransformation() {
-      return internalJointImp.getLocalTransformation();
-    }
-
-    @Override
-    public void setLocalTransformation(AffineMatrix4x4 transformation) {
-      internalJointImp.setLocalTransformation(transformation);
-    }
-
-    @Override
-    protected void postCheckSetVehicle(EntityImp vehicle) {
-      internalJointImp.postCheckSetVehicle(vehicle);
-    }
-
-    @Override
-    public boolean isFacing(EntityImp other) {
-      return this.internalJointImp.isFacing(other);
-    }
-
-    @Override
-    public void applyTranslation(double x, double y, double z, ReferenceFrame asSeenBy) {
-      this.internalJointImp.applyTranslation(x, y, z, asSeenBy);
-    }
-
-    @Override
-    public void applyRotationInRadians(Vector3 axis, double angleInRadians, ReferenceFrame asSeenBy) {
-      this.internalJointImp.applyRotationInRadians(axis, angleInRadians, asSeenBy);
-    }
-
-    @Override
-    public boolean isPivotVisible() {
-      return internalJointImp.isPivotVisible();
-    }
-
-    @Override
-    public void setPivotVisible(boolean isPivotVisible) {
-      internalJointImp.setPivotVisible(isPivotVisible);
-    }
-
-    private JointImp internalJointImp;
-    private JointImp jointParentWrapper;
-    private final List<JointImp> jointChildrenWrapper = new ArrayList<>();
-  }
-
-  // ════════════════════════════════════════════════════════════════════════════
   //  Hierarchy construction and update
   // ════════════════════════════════════════════════════════════════════════════
 
@@ -274,7 +86,7 @@ class JointHierarchyManager<R extends JointedModelResource> {
     Map<JointId, JointImp> jointMap = createJointImps(owner);
     //Make all the joint wrappers and put them in the map
     for (Map.Entry<JointId, JointImp> entry : jointMap.entrySet()) {
-      JointImpWrapper wrapper = new JointImpWrapper(owner, entry.getValue());
+      JointImpWrapper wrapper = new JointImpWrapper(owner, entry.getValue(), resourceBinder);
       mapIdToJoint.put(entry.getKey(), wrapper);
     }
     fillInJointArrays();
@@ -330,7 +142,7 @@ class JointHierarchyManager<R extends JointedModelResource> {
     //Make joint wrappers for new entries and put them in the map
     for (Map.Entry<JointId, JointImp> entry : newJoints.entrySet()) {
       if (!mapIdToJoint.containsKey(entry.getKey())) {
-        mapIdToJoint.put(entry.getKey(), new JointImpWrapper(owner, entry.getValue()));
+        mapIdToJoint.put(entry.getKey(), new JointImpWrapper(owner, entry.getValue(), resourceBinder));
       }
     }
     mapArrayIdToJointIdArray.clear();
@@ -467,127 +279,11 @@ class JointHierarchyManager<R extends JointedModelResource> {
   }
 
   // ════════════════════════════════════════════════════════════════════════════
-  //  IK chain computation
+  //  IK chain computation (delegated to IkChainHelper)
   // ════════════════════════════════════════════════════════════════════════════
 
-  private enum AddOp {
-    PREPEND {
-      @Override
-      public List<JointImp> add(List<JointImp> rv, JointImp joint, List<Bone.Direction> directions, Bone.Direction direction) {
-        rv.addFirst(joint);
-        if (directions != null) {
-          directions.addFirst(direction);
-        }
-        return rv;
-      }
-    }, APPEND {
-      @Override
-      public List<JointImp> add(List<JointImp> rv, JointImp joint, List<Bone.Direction> directions, Bone.Direction direction) {
-        rv.add(joint);
-        if (directions != null) {
-          directions.add(direction);
-        }
-        return rv;
-      }
-    };
-
-    public abstract List<JointImp> add(List<JointImp> rv, JointImp joint, List<Bone.Direction> directions, Bone.Direction direction);
-  }
-
-  private List<JointImp> updateJointsBetween(List<JointImp> rv, List<Bone.Direction> directions, JointImp joint, EntityImp ancestorToReach, AddOp addOp) {
-    if (joint != ancestorToReach) {
-      JointId parentId = joint.getJointId().getParent();
-      if (parentId != null) {
-        JointImp parent = this.getJointImplementation(parentId);
-        this.updateJointsBetween(rv, directions, parent, ancestorToReach, addOp);
-      }
-    }
-    Bone.Direction direction;
-    if (addOp == AddOp.APPEND) {
-      direction = Bone.Direction.DOWNSTREAM;
-    } else {
-      direction = Bone.Direction.UPSTREAM;
-    }
-    addOp.add(rv, joint, directions, direction);
-    return rv;
-  }
-
   List<JointImp> getInclusiveListOfJointsBetween(JointImp jointA, JointImp jointB, List<Bone.Direction> directions, EntityImp owner) {
-    assert jointA != null : this;
-    assert jointB != null : this;
-    List<JointImp> rv = Lists.newLinkedList();
-    if (jointA == jointB) {
-      rv.add(jointA);
-      directions.add(Bone.Direction.DOWNSTREAM);
-    } else {
-      if (jointA.isDescendantOf(jointB)) {
-        this.updateJointsBetween(rv, directions, jointA, jointB, AddOp.PREPEND);
-      } else if (jointB.isDescendantOf(jointA)) {
-        this.updateJointsBetween(rv, directions, jointB, jointA, AddOp.APPEND);
-      } else {
-        //It shouldn't even use the joint on which direction is changed (the common ancestor)
-        //that's what the below call does
-        this.updateJointsUpToAndExcludingCommonAncestor(rv, directions, jointA, jointB, owner);
-      }
-    }
-    return rv;
-  }
-
-  private void updateJointsUpToAndExcludingCommonAncestor(List<JointImp> rvPath, List<Direction> rvDirections, JointImp jointA, JointImp jointB, EntityImp owner) {
-    List<JointImp> pathA = Lists.newLinkedList();
-    List<JointImp> pathB = Lists.newLinkedList();
-
-    List<Direction> directionsA = new ArrayList<Direction>();
-    List<Direction> directionsB = new ArrayList<Direction>();
-
-    this.updateJointsBetween(pathA, directionsA, jointA, owner, AddOp.PREPEND);
-    this.updateJointsBetween(pathB, directionsB, jointB, owner, AddOp.APPEND);
-
-    JointImp commonAncestor = null;
-
-    for (JointImp jointInA : pathA) {
-      if (pathB.contains(jointInA)) {
-        commonAncestor = jointInA;
-        break;
-      }
-    }
-
-    if (commonAncestor == null) {
-      throw new RuntimeException("Probably not connected with a chain.");
-    }
-
-    ListIterator<JointImp> pathAIterator = pathA.listIterator(pathA.size());
-    ListIterator<Direction> directionsAIterator = directionsA.listIterator(directionsA.size());
-    for (; pathAIterator.hasPrevious(); ) {
-      JointImp jointImp = pathAIterator.previous();
-      directionsAIterator.previous();
-
-      pathAIterator.remove();
-      directionsAIterator.remove();
-
-      if (jointImp == commonAncestor) {
-        break;
-      }
-    }
-
-    ListIterator<JointImp> pathBIterator = pathB.listIterator();
-    ListIterator<Direction> directionsBIterator = directionsB.listIterator();
-    for (; pathBIterator.hasNext(); ) {
-      JointImp jointImp = pathBIterator.next();
-      directionsBIterator.next();
-
-      pathBIterator.remove();
-      directionsBIterator.remove();
-
-      if (jointImp == commonAncestor) {
-        break;
-      }
-    }
-
-    rvPath.addAll(pathA);
-    rvPath.addAll(pathB);
-    rvDirections.addAll(directionsA);
-    rvDirections.addAll(directionsB);
+    return IkChainHelper.getInclusiveListOfJointsBetween(jointA, jointB, directions, owner, this::getJointImplementation);
   }
 
   // ════════════════════════════════════════════════════════════════════════════
