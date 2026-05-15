@@ -45,14 +45,13 @@ package org.alice.interact.handle;
 import edu.cmu.cs.dennisc.animation.Style;
 import edu.cmu.cs.dennisc.animation.interpolation.DoubleAnimation;
 
-public abstract class DoubleInterruptibleAnimation extends DoubleAnimation {
+abstract class DoubleInterruptibleAnimation extends DoubleAnimation {
   private boolean doEpilogue = true;
   private boolean isActive = true;
   private double target;
 
   public DoubleInterruptibleAnimation(Number duration, Style style, Double d0, Double d1) {
     super(duration, style, d0, d1);
-    this.isActive = true;
     this.target = d1;
   }
 
