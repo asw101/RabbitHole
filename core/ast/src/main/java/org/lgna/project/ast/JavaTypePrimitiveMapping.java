@@ -82,20 +82,13 @@ final class JavaTypePrimitiveMapping {
   }
 
   static AbstractType<?, ?, ?> getWrapperTypeIfNecessary(AbstractType<?, ?, ?> type) {
-    if (type instanceof JavaType javaType) {
-      if (javaType.isPrimitive()) {
-        JavaType wrapperType = mapPrimitiveToWrapper.get(javaType);
-        if (wrapperType != null) {
-          return wrapperType;
-        } else {
-          Logger.severe(type);
-          return type;
-        }
-      } else {
-        return type;
+    if (type instanceof JavaType javaType && javaType.isPrimitive()) {
+      JavaType wrapperType = mapPrimitiveToWrapper.get(javaType);
+      if (wrapperType != null) {
+        return wrapperType;
       }
-    } else {
-      return type;
+      Logger.severe(type);
     }
+    return type;
   }
 }

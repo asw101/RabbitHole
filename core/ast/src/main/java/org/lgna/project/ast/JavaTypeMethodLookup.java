@@ -71,10 +71,6 @@ final class JavaTypeMethodLookup {
     throw new AssertionError("non-instantiable");
   }
 
-  private static boolean isMask(int modifiers, int required) {
-    return (modifiers & required) != 0;
-  }
-
   private static Class<?>[] trimLast(Class<?>[] src) {
     Class<?>[] rv = new Class<?>[src.length - 1];
     System.arraycopy(src, 0, rv, 0, rv.length);
@@ -104,7 +100,7 @@ final class JavaTypeMethodLookup {
 
   private static void handleMthd(Method mthd, List<JavaMethod> methods) {
     int modifiers = mthd.getModifiers();
-    if (isMask(modifiers, Modifier.PUBLIC) || isMask(modifiers, Modifier.PROTECTED)) {
+    if ((modifiers & (Modifier.PUBLIC | Modifier.PROTECTED)) != 0) {
       JavaMethod methodDeclaredInJava = JavaMethod.getInstance(mthd);
       if (mthd.isAnnotationPresent(MethodTemplate.class)) {
         MethodTemplate methodTemplate = mthd.getAnnotation(MethodTemplate.class);
