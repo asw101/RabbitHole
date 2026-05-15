@@ -59,7 +59,7 @@ SaveProofJsonDelegate (new, ~175 lines)
 | **Delegate to `EvidenceJsonWriter.escapeJson()`** | Zero duplicated escaping logic; the delegate never has its own escape implementation |
 | **`SaveProofSnapshot` stays on `EvidenceJsonWriter`** | The record is shared with `saveProofJson()` and future callers; moving it would create a circular reference |
 | **`java.time.Instant` moves to delegate** | Only `headerJson()` calls `Instant.now()`; removing the import from `EvidenceJsonWriter` keeps its import list minimal |
-| **Preserve `String.format("\\u%04x")` escaping** | Main-branch behavior; no performance optimization applied during extraction |
+| **Preserve `String.format("\\u%04x")` escaping** | Main-branch `String.format` approach kept (not the worktree's `HEX` char-array variant); a fast-path early-return was added for strings that need no escaping |
 
 ---
 
