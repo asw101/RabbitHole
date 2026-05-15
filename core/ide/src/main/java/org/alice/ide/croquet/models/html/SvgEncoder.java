@@ -78,12 +78,15 @@ class SvgEncoder {
     activeSVG.setSVGCanvasSize(new Dimension(0, 0));
     useCommonIdGenerator();
 
-    content.run();
+    try {
+      content.run();
 
-    final Element svgRoot = activeSVG.getRoot();
-    svgRoot.setAttribute("class", "alice-generated-svg");
-    parentNode.appendChild(svgRoot);
-    activeSVG = null;
+      final Element svgRoot = activeSVG.getRoot();
+      svgRoot.setAttribute("class", "alice-generated-svg");
+      parentNode.appendChild(svgRoot);
+    } finally {
+      activeSVG = null;
+    }
   }
 
   private void useCommonIdGenerator() {

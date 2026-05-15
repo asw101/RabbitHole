@@ -14,8 +14,9 @@ relevant to their purpose.
 
 ### 1. Implement the required methods
 
-`AstProcessor` has four required methods — one returning `CodeOrganizer` and
-three structural void methods:
+`AstProcessor` has one required method — `getNewCodeOrganizerForTypeName`,
+which returns a `CodeOrganizer`. All void visitor methods (50 total) have
+`default {}` bodies:
 
 ```java
 import org.lgna.project.code.CodeOrganizer;
@@ -27,28 +28,35 @@ public class MyProcessor implements AstProcessor {
   public CodeOrganizer getNewCodeOrganizerForTypeName(String typeName) {
     return new CodeOrganizer(CodeOrganizer.defaultCodeOrganizer);
   }
-
-  @Override
-  public void processClass(CodeOrganizer codeOrganizer, NamedUserType userType) {
-    // Iterate codeOrganizer.getOrderedSections() and call process() on nodes
-  }
-
-  @Override
-  public void processField(UserField field) {
-    // Your field-processing logic
-  }
-
-  @Override
-  public void processMethod(UserMethod method) {
-    // Your method-processing logic
-  }
 }
 ```
 
-This compiles immediately. All other void visitor methods (47 total, including
-2 pre-existing defaults) are no-ops.
+This compiles immediately. All void visitor methods are no-ops by default.
+Most implementations will also override `processClass`, `processField`, and
+`processMethod` for structural traversal:
 
-### 2. Override additional methods as needed
+### 2. Override structural methods
+
+Most processors need `processClass`, `processField`, and `processMethod`:
+
+```java
+@Override
+public void processClass(CodeOrganizer codeOrganizer, NamedUserType userType) {
+  // Iterate codeOrganizer.getOrderedSections() and call process() on nodes
+}
+
+@Override
+public void processField(UserField field) {
+  // Your field-processing logic
+}
+
+@Override
+public void processMethod(UserMethod method) {
+  // Your method-processing logic
+}
+```
+
+### 3. Override additional methods as needed
 
 Override additional `process*` methods for your specific traversal needs.
 All other AST nodes (statements, expressions, primitives, comments) will be
@@ -63,7 +71,7 @@ public void processConstructor(NamedUserConstructor constructor) {
 }
 ```
 
-### 3. Dispatch through ProcessableNode
+### 4. Dispatch through ProcessableNode
 
 ```java
 ProcessableNode node = ...; // e.g., a NamedUserType
@@ -98,9 +106,10 @@ nodes (types, methods, blocks) recursively call `process` on their children.
 
 ## Tips
 
-- **Start minimal.** The four required methods (`getNewCodeOrganizerForTypeName`,
-  `processClass`, `processField`, `processMethod`) are the minimum. Override
-  additional methods as needed — the defaults are safe no-ops.
+- **Start minimal.** Only `getNewCodeOrganizerForTypeName` is required at
+  compile time. Override `processClass`, `processField`, and `processMethod`
+  for structural traversal, then add other methods as needed — the defaults
+  are safe no-ops.
 - **Check `isPublicStaticFinalFieldGetterDesired()`.** This optional method
   defaults to `true`. Override it to `false` if your processor should skip
   generated field getters.

@@ -67,12 +67,12 @@ HtmlProjectWriter (public facade — unchanged)
 AstProcessor (interface, core/ast)
 ├── getNewCodeOrganizerForTypeName(String) — required (returns CodeOrganizer)
 ├── isPublicStaticFinalFieldGetterDesired() — default true
-├── processClass(...)    — required (abstract)
-├── processField(...)    — required (abstract)
-├── processMethod(...)   — required (abstract)
+├── processClass(...)    — default {} (commonly overridden)
+├── processField(...)    — default {} (commonly overridden)
+├── processMethod(...)   — default {} (commonly overridden)
 ├── processBlock(...)    — default {}
 ├── processExpression(...)— default {}
-├── ... (45 of 48 void methods — default {}; 3 stay abstract)
+├── ... (all 50 void methods — default {})
 ```
 
 ## Changes by component
@@ -81,32 +81,32 @@ AstProcessor (interface, core/ast)
 
 **File:** `core/ast/src/main/java/org/lgna/project/ast/AstProcessor.java`
 
-45 of the 48 abstract void methods now have `default {}` bodies. Three
-structural methods — `processClass`, `processField`, `processMethod` — remain
-abstract alongside the non-void `getNewCodeOrganizerForTypeName`. This gives the
-interface four required methods total (one returning `CodeOrganizer`, three void)
-while making all visitor-leaf methods optional.
+All 50 abstract void methods (48 original + 2 pre-existing defaults) now have
+`default {}` bodies. Only the non-void `getNewCodeOrganizerForTypeName` remains
+abstract. This gives the interface one required method while making all visitor
+methods optional. Three structural methods — `processClass`, `processField`,
+`processMethod` — are commonly overridden but are not required at compile time.
 
 **Before (48 abstract void methods):**
 ```java
-void processClass(CodeOrganizer codeOrganizer, NamedUserType userType); // stays abstract
-void processField(UserField field);                                      // stays abstract
-void processMethod(UserMethod method);                                   // stays abstract
-void processBlock(BlockStatement blockStatement);   // becomes default {}
-void processExpression(Expression expression);      // becomes default {}
-void processNull();                                 // becomes default {}
-// ... 42 more abstract void methods → default {}
+void processClass(CodeOrganizer codeOrganizer, NamedUserType userType); // abstract
+void processField(UserField field);                                      // abstract
+void processMethod(UserMethod method);                                   // abstract
+void processBlock(BlockStatement blockStatement);   // abstract
+void processExpression(Expression expression);      // abstract
+void processNull();                                 // abstract
+// ... 42 more abstract void methods
 ```
 
-**After (3 abstract + 45 default void methods):**
+**After (all 50 void methods default):**
 ```java
-void processClass(CodeOrganizer codeOrganizer, NamedUserType userType); // required
-void processField(UserField field);                                      // required
-void processMethod(UserMethod method);                                   // required
+default void processClass(CodeOrganizer codeOrganizer, NamedUserType userType) { }
+default void processField(UserField field) { }
+default void processMethod(UserMethod method) { }
 default void processBlock(BlockStatement blockStatement) { }
 default void processExpression(Expression expression) { }
 default void processNull() { }
-// ... 42 more default void methods
+// ... 44 more default void methods
 ```
 
 **Impact on existing implementors:**
@@ -120,12 +120,12 @@ default void processNull() { }
 
 **Impact on future implementors:**
 
-New `AstProcessor` implementations must override four methods at compile time:
-`getNewCodeOrganizerForTypeName`, `processClass`, `processField`, and
-`processMethod`. All other visitor methods default to no-ops, which is
-acceptable for a visitor interface where partial processing is the common case.
-The three required void methods ensure that every implementor makes an explicit
-decision about the core structural traversal.
+New `AstProcessor` implementations must override one method at compile time:
+`getNewCodeOrganizerForTypeName`. All void visitor methods default to no-ops,
+which is acceptable for a visitor interface where partial processing is the
+common case. Most implementations will also override `processClass`,
+`processField`, and `processMethod` for structural traversal, but this is a
+design convention rather than a compiler-enforced requirement.
 
 ### HtmlEncoder (coordinator)
 
@@ -180,7 +180,7 @@ indirection without improving cohesion.
 
 Three AST processing methods that contain real logic — `processClass`,
 `processField`, `processMethod` — remain as explicit `@Override` methods.
-These correspond to the three void methods that stay abstract in `AstProcessor`.
+These correspond to the three void methods that are commonly overridden in `AstProcessor`.
 
 The six formerly-empty stubs with documentation comments (`processGetter`,
 `processIndexedGetter`, `processSetter`, `processIndexedSetter`,
@@ -303,12 +303,11 @@ wc -l core/ide/src/main/java/org/alice/ide/croquet/models/html/SvgEncoder.java
 ### Interface contract verification
 
 ```bash
-# Confirm AstProcessor has exactly 4 required (abstract) methods
-# 1 non-void: getNewCodeOrganizerForTypeName
-# 3 void: processClass, processField, processMethod
-grep -c '^\s\+void\|^\s\+CodeOrganizer' \
+# Confirm AstProcessor has exactly 1 required (abstract) method
+# 1 non-void: getNewCodeOrganizerForTypeName (all void methods are default)
+grep -c 'default void\|default boolean\|default CodeOrganizer' \
   core/ast/src/main/java/org/lgna/project/ast/AstProcessor.java
-# Expected: 4 (lines without 'default' keyword)
+# Expected: 52 (50 default void + 1 default boolean + 1 note: only getNewCodeOrganizerForTypeName is abstract)
 ```
 
 ## Acceptance criteria
@@ -317,8 +316,8 @@ grep -c '^\s\+void\|^\s\+CodeOrganizer' \
 |---|-----------|--------------|
 | 1 | `HtmlEncoder.java` < 500 lines | `wc -l` check |
 | 2 | `SvgEncoder.java` exists and is package-private | `grep 'class SvgEncoder'` has no `public` modifier |
-| 3 | `AstProcessor` has 45 `default void` methods (+ 2 pre-existing) | `grep -c 'default void'` = 47 |
-| 4 | Four methods remain required (no `default` keyword) | `getNewCodeOrganizerForTypeName`, `processClass`, `processField`, `processMethod` |
+| 3 | `AstProcessor` has 50 `default void` methods | `grep -c 'default void'` = 50 |
+| 4 | One method remains required (no `default` keyword) | `getNewCodeOrganizerForTypeName` |
 | 5 | `mvn compile -pl core/ast,core/ide -am` succeeds | Zero compilation errors |
 | 6 | `mvn test -pl core/ide` passes | All tests green |
 | 7 | `HtmlProjectWriter.java` unchanged | `git diff` shows no changes |
@@ -328,7 +327,7 @@ grep -c '^\s\+void\|^\s\+CodeOrganizer' \
 
 | Risk | Likelihood | Mitigation |
 |------|-----------|------------|
-| Future `AstProcessor` implementors get silent no-ops | Medium | Four methods stay required as compile-time signals (`getNewCodeOrganizerForTypeName`, `processClass`, `processField`, `processMethod`). Javadoc on `AstProcessor` notes that leaf visitor methods are optional. |
+| Future `AstProcessor` implementors get silent no-ops | Medium | `getNewCodeOrganizerForTypeName` stays required as a compile-time signal. The three structural methods (`processClass`, `processField`, `processMethod`) are default but documented as conventionally required. Javadoc on `AstProcessor` notes that leaf visitor methods are optional. |
 | No dedicated `HtmlEncoder` unit tests | Known | Compilation verification + full `core/ide` test suite. HTML export is exercised by integration tests through `HtmlProjectWriter`. |
 | `SvgEncoder` parent-node supplier returns stale node | Low | `parentNode()` reads from the live element stack; `Supplier<Node>` is called at render time, not captured early. |
 | SVG ID collisions across documents | None | `firstIDGenerator` sharing is preserved identically in `SvgEncoder`. |
