@@ -71,9 +71,6 @@ class GlResourceCache {
   private final List<Integer> toBeForgottenDisplayLists = Lists.newCopyOnWriteArrayList();
   private final List<ForgettableBinding> toBeForgottenTextures = Lists.newCopyOnWriteArrayList();
 
-  GlResourceCache() {
-  }
-
   static void addUnusedTexturesListener(RenderContext.UnusedTexturesListener listener) {
     unusedTexturesListeners.add(listener);
   }
@@ -121,8 +118,7 @@ class GlResourceCache {
   }
 
   void actuallyForgetDisplayListsIfNecessary(RenderContext renderContext) {
-    final int N = this.toBeForgottenDisplayLists.size();
-    if (N > 0) {
+    if (!this.toBeForgottenDisplayLists.isEmpty()) {
       synchronized (this.toBeForgottenDisplayLists) {
         for (Integer toBeForgottenDisplayList : this.toBeForgottenDisplayLists) {
           renderContext.gl.glDeleteLists(toBeForgottenDisplayList, 1);
@@ -156,8 +152,7 @@ class GlResourceCache {
   }
 
   void actuallyForgetTexturesIfNecessary(RenderContext renderContext) {
-    final int N = this.toBeForgottenTextures.size();
-    if (N > 0) {
+    if (!this.toBeForgottenTextures.isEmpty()) {
       synchronized (this.toBeForgottenTextures) {
         for (ForgettableBinding toBeForgottenTexture : this.toBeForgottenTextures) {
           toBeForgottenTexture.forget(renderContext);
@@ -190,8 +185,4 @@ class GlResourceCache {
     this.forgetAllTextureAdapters(renderContext);
   }
 
-  //  //todo: better name
-  //  public void put( TextureAdapter< ? extends edu.cmu.cs.dennisc.texture.Texture > textureAdapter, com.sun.opengl.util.texture.Texture glTexture ) {
-  //    this.textureBindingMap.put( textureAdapter, glTexture );
-  //  }
 }
