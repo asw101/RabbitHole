@@ -109,12 +109,21 @@ public class ModelSizePropertyController extends AbstractAdapterController<Dimen
   private boolean isUpdatingState = false;
   private boolean doUpdateOnAdapter = true;
 
-  private final int GLUE_X_POS = 8;
-  private final int RESET_X_POS = 7;
-  private final int SCALE_ALL_X_POS = 6;
-  private final int SCALE_XZ_X_POS = 5;
-  private final int SCALE_YZ_X_POS = 4;
-  private final int SCALE_XY_X_POS = 3;
+  private static final int GLUE_X_POS = 8;
+  private static final int RESET_X_POS = 7;
+  private static final int SCALE_ALL_X_POS = 6;
+  private static final int SCALE_XZ_X_POS = 5;
+  private static final int SCALE_YZ_X_POS = 4;
+  private static final int SCALE_XY_X_POS = 3;
+
+  private static final Insets INSETS_2 = new Insets(2, 2, 2, 2);
+  private static final Insets INSETS_0 = new Insets(0, 0, 0, 0);
+  private static final Insets INSETS_XY_OFFSET = new Insets(16, 2, 2, 2);
+  private static final Insets INSETS_YZ_OFFSET = new Insets(48, 2, 2, 2);
+
+  private static GridBagConstraints gbc(int gridX, int gridY, int gridHeight, int anchor, Insets insets) {
+    return new GridBagConstraints(gridX, gridY, 1, gridHeight, 0.0, 0.0, anchor, GridBagConstraints.NONE, insets, 0, 0);
+  }
 
   public ModelSizePropertyController(ModelSizeAdapter propertyAdapter) {
     super(propertyAdapter);
@@ -156,87 +165,17 @@ public class ModelSizePropertyController extends AbstractAdapterController<Dimen
     this.depthField = new DoubleTextField(3);
     this.depthField.addActionListener(this.valueChangeListener);
 
-    //    this.linkXYButton = new LinkScaleButton( IsXYScaleLinkedState.getInstance(), IsXYScaleLinkedState.class.getResource( "images/subScaleLinked.png" ), IsXYScaleLinkedState.class.getResource( "images/subScaleUnlinked.png" ) );
-    //    this.linkXZButton = new LinkScaleButton( IsXZScaleLinkedState.getInstance(), IsXZScaleLinkedState.class.getResource( "images/subScaleLinked_long.png" ), IsXZScaleLinkedState.class.getResource( "images/subScaleUnlinked_long.png" ) );
-    //    this.linkYZButton = new LinkScaleButton( IsYZScaleLinkedState.getInstance(), IsYZScaleLinkedState.class.getResource( "images/subScaleLinked.png" ), IsYZScaleLinkedState.class.getResource( "images/subScaleUnlinked.png" ) );
-    //    this.linkAllButton = new LinkScaleButton( IsAllScaleLinkedState.getInstance() );
     this.linkXYButton = new LinkScaleButton(IsXYScaleLinkedState.getInstance());
     this.linkXZButton = new LinkScaleButton(IsXZScaleLinkedState.getInstance());
     this.linkYZButton = new LinkScaleButton(IsYZScaleLinkedState.getInstance());
     this.linkAllButton = new LinkScaleButton(IsAllScaleLinkedState.getInstance());
 
-    this.addComponent(this.widthLabel, new GridBagConstraints(0, //gridX
-                                                              0, //gridY
-                                                              1, //gridWidth
-                                                              1, //gridHeight
-                                                              0.0, //weightX
-                                                              0.0, //weightY
-                                                              GridBagConstraints.EAST, //anchor
-                                                              GridBagConstraints.NONE, //fill
-                                                              new Insets(2, 2, 2, 2), //insets
-                                                              0, //ipadX
-                                                              0) //ipadY
-    );
-    this.addComponent(new SwingAdapter(this.widthField), new GridBagConstraints(1, //gridX
-                                                                                0, //gridY
-                                                                                1, //gridWidth
-                                                                                1, //gridHeight
-                                                                                0.0, //weightX
-                                                                                0.0, //weightY
-                                                                                GridBagConstraints.WEST, //anchor
-                                                                                GridBagConstraints.NONE, //fill
-                                                                                new Insets(2, 2, 2, 2), //insets
-                                                                                0, //ipadX
-                                                                                0) //ipadY
-    );
-    this.addComponent(this.heightLabel, new GridBagConstraints(0, //gridX
-                                                               1, //gridY
-                                                               1, //gridWidth
-                                                               1, //gridHeight
-                                                               0.0, //weightX
-                                                               0.0, //weightY
-                                                               GridBagConstraints.EAST, //anchor
-                                                               GridBagConstraints.NONE, //fill
-                                                               new Insets(2, 2, 2, 2), //insets
-                                                               0, //ipadX
-                                                               0) //ipadY
-    );
-    this.addComponent(new SwingAdapter(this.heightField), new GridBagConstraints(1, //gridX
-                                                                                 1, //gridY
-                                                                                 1, //gridWidth
-                                                                                 1, //gridHeight
-                                                                                 0.0, //weightX
-                                                                                 0.0, //weightY
-                                                                                 GridBagConstraints.WEST, //anchor
-                                                                                 GridBagConstraints.NONE, //fill
-                                                                                 new Insets(2, 2, 2, 2), //insets
-                                                                                 0, //ipadX
-                                                                                 0) //ipadY
-    );
-    this.addComponent(this.depthLabel, new GridBagConstraints(0, //gridX
-                                                              2, //gridY
-                                                              1, //gridWidth
-                                                              1, //gridHeight
-                                                              0.0, //weightX
-                                                              0.0, //weightY
-                                                              GridBagConstraints.EAST, //anchor
-                                                              GridBagConstraints.NONE, //fill
-                                                              new Insets(2, 2, 2, 2), //insets
-                                                              0, //ipadX
-                                                              0) //ipadY
-    );
-    this.addComponent(new SwingAdapter(this.depthField), new GridBagConstraints(1, //gridX
-                                                                                2, //gridY
-                                                                                1, //gridWidth
-                                                                                1, //gridHeight
-                                                                                0.0, //weightX
-                                                                                0.0, //weightY
-                                                                                GridBagConstraints.WEST, //anchor
-                                                                                GridBagConstraints.NONE, //fill
-                                                                                new Insets(2, 2, 2, 2), //insets
-                                                                                0, //ipadX
-                                                                                0) //ipadY
-    );
+    this.addComponent(this.widthLabel, gbc(0, 0, 1, GridBagConstraints.EAST, INSETS_2));
+    this.addComponent(new SwingAdapter(this.widthField), gbc(1, 0, 1, GridBagConstraints.WEST, INSETS_2));
+    this.addComponent(this.heightLabel, gbc(0, 1, 1, GridBagConstraints.EAST, INSETS_2));
+    this.addComponent(new SwingAdapter(this.heightField), gbc(1, 1, 1, GridBagConstraints.WEST, INSETS_2));
+    this.addComponent(this.depthLabel, gbc(0, 2, 1, GridBagConstraints.EAST, INSETS_2));
+    this.addComponent(new SwingAdapter(this.depthField), gbc(1, 2, 1, GridBagConstraints.WEST, INSETS_2));
     this.addComponent(BoxUtilities.createHorizontalGlue(), new GridBagConstraints(GLUE_X_POS, //gridX
                                                                                   0, //gridY
                                                                                   1, //gridWidth
@@ -245,7 +184,7 @@ public class ModelSizePropertyController extends AbstractAdapterController<Dimen
                                                                                   1.0, //weightY
                                                                                   GridBagConstraints.CENTER, //anchor
                                                                                   GridBagConstraints.BOTH, //fill
-                                                                                  new Insets(0, 0, 0, 0), //insets
+                                                                                  INSETS_0, //insets
                                                                                   0, //ipadX
                                                                                   0) //ipadY
     );
@@ -306,60 +245,16 @@ public class ModelSizePropertyController extends AbstractAdapterController<Dimen
     }
 
     if (hasLinkAll) {
-      this.addComponent(this.linkAllButton, new GridBagConstraints(SCALE_ALL_X_POS, //gridX
-                                                                   0, //gridY
-                                                                   1, //gridWidth
-                                                                   3, //gridHeight
-                                                                   0.0, //weightX
-                                                                   0.0, //weightY
-                                                                   GridBagConstraints.WEST, //anchor
-                                                                   GridBagConstraints.NONE, //fill
-                                                                   new Insets(2, 2, 2, 2), //insets
-                                                                   0, //ipadX
-                                                                   0) //ipadY
-      );
+      this.addComponent(this.linkAllButton, gbc(SCALE_ALL_X_POS, 0, 3, GridBagConstraints.WEST, INSETS_2));
     }
     if (hasLinkXY) {
-      this.addComponent(this.linkXYButton, new GridBagConstraints(SCALE_XY_X_POS, //gridX
-                                                                  0, //gridY
-                                                                  1, //gridWidth
-                                                                  3, //gridHeight
-                                                                  0.0, //weightX
-                                                                  0.0, //weightY
-                                                                  GridBagConstraints.NORTHWEST, //anchor
-                                                                  GridBagConstraints.NONE, //fill
-                                                                  new Insets(16, 2, 2, 2), //insets //16
-                                                                  0, //ipadX
-                                                                  0) //ipadY
-      );
+      this.addComponent(this.linkXYButton, gbc(SCALE_XY_X_POS, 0, 3, GridBagConstraints.NORTHWEST, INSETS_XY_OFFSET));
     }
     if (hasLinkXZ) {
-      this.addComponent(this.linkXZButton, new GridBagConstraints(SCALE_XZ_X_POS, //gridX
-                                                                  0, //gridY
-                                                                  1, //gridWidth
-                                                                  3, //gridHeight
-                                                                  0.0, //weightX
-                                                                  0.0, //weightY
-                                                                  GridBagConstraints.WEST, //anchor
-                                                                  GridBagConstraints.NONE, //fill
-                                                                  new Insets(2, 2, 2, 2), //insets
-                                                                  0, //ipadX
-                                                                  0) //ipadY
-      );
+      this.addComponent(this.linkXZButton, gbc(SCALE_XZ_X_POS, 0, 3, GridBagConstraints.WEST, INSETS_2));
     }
     if (hasLinkYZ) {
-      this.addComponent(this.linkYZButton, new GridBagConstraints(SCALE_YZ_X_POS, //gridX
-                                                                  0, //gridY
-                                                                  1, //gridWidth
-                                                                  3, //gridHeight
-                                                                  0.0, //weightX
-                                                                  0.0, //weightY
-                                                                  GridBagConstraints.NORTHWEST, //anchor
-                                                                  GridBagConstraints.NONE, //fill
-                                                                  new Insets(48, 2, 2, 2), //insets
-                                                                  0, //ipadX
-                                                                  0) //ipadY
-      );
+      this.addComponent(this.linkYZButton, gbc(SCALE_YZ_X_POS, 0, 3, GridBagConstraints.NORTHWEST, INSETS_YZ_OFFSET));
     }
     isUpdatingState = true;
 
@@ -394,34 +289,18 @@ public class ModelSizePropertyController extends AbstractAdapterController<Dimen
     if ((this.resetButton != null) && (this.resetButton.getAwtComponent().getParent() != null)) {
       this.removeComponent(this.resetButton);
     }
-    if (this.propertyAdapter != null) {
-
-      Operation operation = new ModelSizePropertyValueOperation(this.propertyAdapter, getOriginalSize());
-      operation.setName(AbstractPropertyAdapter.getLocalizedString("Reset"));
-      this.resetButton = operation.createButton();
-
+    this.resetButton = null;
+    if ((this.propertyAdapter == null) || (this.propertyAdapter.getInstance() == null)) {
+      return;
     }
-    boolean usesReset = false;
-    if ((this.propertyAdapter != null) && (this.propertyAdapter.getInstance() != null)) {
-      ModelImp baseModel = (ModelImp) this.propertyAdapter.getInstance();
-      if ((baseModel instanceof JointedModelImp) || (baseModel instanceof BillboardImp)) {
-        usesReset = true;
-      }
+    ModelImp baseModel = (ModelImp) this.propertyAdapter.getInstance();
+    if (!(baseModel instanceof JointedModelImp) && !(baseModel instanceof BillboardImp)) {
+      return;
     }
-    if ((this.resetButton != null) && usesReset) {
-      this.addComponent(this.resetButton, new GridBagConstraints(RESET_X_POS, //gridX
-                                                                 0, //gridY
-                                                                 1, //gridWidth
-                                                                 3, //gridHeight
-                                                                 0.0, //weightX
-                                                                 0.0, //weightY
-                                                                 GridBagConstraints.WEST, //anchor
-                                                                 GridBagConstraints.NONE, //fill
-                                                                 new Insets(2, 2, 2, 2), //insets
-                                                                 0, //ipadX
-                                                                 0) //ipadY
-      );
-    }
+    Operation operation = new ModelSizePropertyValueOperation(this.propertyAdapter, getOriginalSize());
+    operation.setName(AbstractPropertyAdapter.getLocalizedString("Reset"));
+    this.resetButton = operation.createButton();
+    this.addComponent(this.resetButton, gbc(RESET_X_POS, 0, 3, GridBagConstraints.WEST, INSETS_2));
   }
 
   private Dimension3 getOriginalSize() {
@@ -496,8 +375,7 @@ public class ModelSizePropertyController extends AbstractAdapterController<Dimen
         }
       }
     }
-    Dimension3 newSize = new Dimension3(width, height, depth);
-    return newSize;
+    return new Dimension3(width, height, depth);
   }
 
   private void updateUIFromLinkState(State<Boolean> state, Boolean prevValue, Boolean nextValue) {
@@ -533,29 +411,24 @@ public class ModelSizePropertyController extends AbstractAdapterController<Dimen
   }
 
   protected void updateAdapterFromUI(ActionEvent e) {
-    if (this.doUpdateOnAdapter) {
-      Dimension3 newScale = getSizeFromUI(e.getSource());
-      if (newScale != null) {
-        if (!newScale.equals(this.propertyAdapter.getValue())) {
-          if ((this.propertyAdapter.getLastSetValue() == null) || !this.propertyAdapter.getLastSetValue().equals(newScale)) {
-            if (newScale.hasNegativeComponents()) {
-              String modelName = this.propertyAdapter.getInstance().getClass().getSimpleName();
-              Logger.outln("Restricting size for " + modelName + " to a near-zero non-negative value");
-
-              Dimension3 oldScale = propertyAdapter.getValue();
-
-              double maxDim = Math.max(oldScale.x(), Math.max(oldScale.y(), oldScale.z()));
-
-              double scaleFactor = .01; // set the size close to zero, instead of negative
-
-              newScale = oldScale.times(scaleFactor / maxDim);
-            }
-
-            Operation operation = new ModelSizePropertyValueOperation(this.propertyAdapter, newScale);
-            operation.fire(ActionEventTrigger.createUserActivity(e));
-          }
-        }
-      }
+    if (!this.doUpdateOnAdapter) {
+      return;
     }
+    Dimension3 newScale = getSizeFromUI(e.getSource());
+    if (newScale == null || newScale.equals(this.propertyAdapter.getValue())) {
+      return;
+    }
+    if ((this.propertyAdapter.getLastSetValue() != null) && this.propertyAdapter.getLastSetValue().equals(newScale)) {
+      return;
+    }
+    if (newScale.hasNegativeComponents()) {
+      String modelName = this.propertyAdapter.getInstance().getClass().getSimpleName();
+      Logger.outln("Restricting size for " + modelName + " to a near-zero non-negative value");
+      Dimension3 oldScale = propertyAdapter.getValue();
+      double maxDim = Math.max(oldScale.x(), Math.max(oldScale.y(), oldScale.z()));
+      newScale = oldScale.times(0.01 / maxDim);
+    }
+    Operation operation = new ModelSizePropertyValueOperation(this.propertyAdapter, newScale);
+    operation.fire(ActionEventTrigger.createUserActivity(e));
   }
 }
