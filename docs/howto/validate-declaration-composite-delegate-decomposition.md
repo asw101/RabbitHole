@@ -120,11 +120,13 @@ grep -rn 'super\.getStatusPreRejectorCheck\|super\.handlePreShowDialog\|super\.h
   core/ide/src/main/java/org/alice/ide/ast/declaration/
 ```
 
-Expected: existing `super` calls in `AddParameterComposite`,
-`AddPredeterminedValueTypeManagedFieldComposite`,
-and `InsertLocalDeclarationStatementComposite` are unchanged. Note that
-`AddUnmanagedFieldComposite` overrides `isNullAllowedForInitializer()`, not
-the dialog lifecycle methods.
+Expected: existing `super` calls in `AddParameterComposite`
+(`super.getStatusPreRejectorCheck()`) and
+`AddPredeterminedValueTypeManagedFieldComposite`
+(`super.handlePreShowDialog()`, `super.handlePostHideDialog()`) are unchanged.
+Note that `AddUnmanagedFieldComposite` and
+`InsertLocalDeclarationStatementComposite` override
+`isNullAllowedForInitializer()` only — they have no `super` lifecycle calls.
 
 ## Troubleshooting
 

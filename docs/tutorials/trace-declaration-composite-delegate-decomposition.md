@@ -129,8 +129,9 @@ listener wiring (step 8), so listeners don't fire on the programmatic reset;
 7.           └── Remove valueComponentTypeListener // delegate (if editable)
 ```
 
-Listener removal mirrors listener addition in reverse order, maintaining
-symmetry.
+Listener removal follows the same structural grouping as addition:
+initializer listener first, then type listeners — matching the original code.
+(Within the type listener group, the sub-order is preserved, not reversed.)
 
 ## Tracing validation after extraction
 

@@ -117,6 +117,15 @@ Owns the explanation-text computation and the `computeStatus()` method that
 assembles the final validation status from value-type, name, and initializer
 explanations.
 
+> **Note on `protected` explanation methods:** The three explanation methods
+> (`getValueTypeExplanation`, `getNameExplanation`, `getInitializerExplanation`)
+> are `protected` in the original code. No subclass overrides any of them — this
+> was verified by grep across the entire `declaration/` package. Moving them to
+> the delegate drops `protected` visibility, which is safe because there are no
+> overrides to preserve. The private helper
+> `isNullAllowedForInitializerUnderAnyCircumstances()` also has no subclass
+> overrides (it is `private`, so it cannot be overridden).
+
 | Responsibility | Methods |
 | --- | --- |
 | Value type explanation | `getValueTypeExplanation(AbstractType<?,?,?>)` |
@@ -222,9 +231,11 @@ and the initializer listener — this ordering matches the original code exactly
 
 **`unwireListeners()` contract:**
 
-Called by the composite's `handlePostHideDialog()` before `super`. Removes all
-listeners in the reverse order they were added — matching the original
-symmetry.
+Called by the composite's `handlePostHideDialog()` *after* `super` — the
+grandparent's `handlePostHideDialog()` executes first, then listener removal
+happens. Listeners are removed in the same structural grouping as addition:
+initializer listener first, then type listeners (matching the original code at
+lines 604–616).
 
 ## Public API
 
@@ -321,6 +332,14 @@ exactly the same points in the methods, preserving the ordering contract:
 3. `lifecycleDelegate.wireListeners()` adds listeners and clears cache
 4. `super.handlePreShowDialog(dialog)` calls the grandparent
 
+For `handlePostHideDialog()`, the coordinator calls grandparent first, then
+unwires listeners — matching the original code order:
+
+1. Subclass calls `super.handlePostHideDialog()`
+2. Coordinator calls `super.handlePostHideDialog()` (grandparent)
+3. `lifecycleDelegate.unwireListeners()` removes listeners
+4. Returns to subclass post-work
+
 ### Pattern 3: `isNullAllowedForInitializer()` callback
 
 `InsertLocalDeclarationStatementComposite` and `AddUnmanagedFieldComposite`
@@ -399,7 +418,8 @@ Both commands must pass with zero failures.
 | `mvn -pl core/ide -am test` passes | Zero test failures |
 | Characterization tests written before extraction | Tests committed before extraction commits |
 | Subclass `super` call chains work | `AddParameterComposite.getStatusPreRejectorCheck()` continues to delegate correctly |
-| Listener symmetry preserved | `wireListeners()` and `unwireListeners()` add/remove the same listeners in matching order |
+| Listener symmetry preserved | `wireListeners()` and `unwireListeners()` add/remove the same listeners in matching structural grouping |
+| `protected` explanation methods safe to move | `getValueTypeExplanation`, `getNameExplanation`, `getInitializerExplanation` have no subclass overrides |
 
 ## Claim boundaries
 
