@@ -42,11 +42,7 @@
  *******************************************************************************/
 package org.alice.interact.handle;
 
-import edu.cmu.cs.dennisc.animation.Style;
-import edu.cmu.cs.dennisc.animation.interpolation.DoubleAnimation;
 import edu.cmu.cs.dennisc.color.Color4f;
-import edu.cmu.cs.dennisc.color.animation.Color4fAnimation;
-import edu.cmu.cs.dennisc.java.util.logging.Logger;
 import edu.cmu.cs.dennisc.pattern.Criterion;
 import edu.cmu.cs.dennisc.property.event.PropertyListener;
 import edu.cmu.cs.dennisc.scenegraph.AbstractCamera;
@@ -60,7 +56,6 @@ import edu.cmu.cs.dennisc.scenegraph.Transformable;
 import edu.cmu.cs.dennisc.scenegraph.Visual;
 import edu.cmu.cs.dennisc.scenegraph.event.AbsoluteTransformationEvent;
 import edu.cmu.cs.dennisc.scenegraph.event.AbsoluteTransformationListener;
-import edu.cmu.cs.dennisc.scenegraph.scale.Scalable;
 import org.alice.interact.DragAdapter;
 import org.alice.interact.InputState;
 import org.alice.interact.PickHint;
@@ -70,12 +65,9 @@ import org.alice.interact.event.ManipulationEventCriteria;
 import org.alice.interact.event.ManipulationListener;
 import org.alice.interact.manipulator.AbstractManipulator;
 import org.alice.math.immutable.AffineMatrix4x4;
-import org.alice.math.immutable.AngleInRadians;
 import org.alice.math.immutable.AxisAlignedBox;
-import org.alice.math.immutable.OrthogonalMatrix3x3;
 import org.alice.math.immutable.Point3;
 import org.alice.math.immutable.Vector3;
-import org.lgna.story.implementation.BoundingBoxUtilities;
 
 /**
  * @author David Culyba
@@ -86,103 +78,7 @@ public abstract class ManipulationHandle3D extends Transformable implements Mani
 
   protected static final double ANIMATION_DURATION = .25;
 
-  public static final Criterion<Component> NOT_3D_HANDLE_CRITERION = new Criterion<Component>() {
-    protected boolean isHandle(Component c) {
-      if (c == null) {
-        return false;
-      }
-      Object bonusData = c.getBonusDataFor(PickHint.PICK_HINT_KEY);
-      if ((bonusData instanceof PickHint hint) && hint.intersects(PickHint.PickType.THREE_D_HANDLE.pickHint())) {
-        return true;
-      } else {
-        return isHandle(c.getParent());
-      }
-    }
-
-    @Override
-    public boolean accept(Component c) {
-      return !isHandle(c);
-    }
-  };
-
-  protected abstract static class Color4fInterruptibleAnimation extends Color4fAnimation {
-    private boolean doEpilogue = true;
-    private boolean isActive = true;
-    private Color4f target;
-
-    public Color4fInterruptibleAnimation(Number duration, Style style, Color4f d0, Color4f d1) {
-      super(duration, style, d0, d1);
-      this.isActive = true;
-      this.target = d1;
-    }
-
-    @Override
-    protected void epilogue() {
-      if (this.doEpilogue) {
-        super.epilogue();
-      }
-      this.isActive = false;
-      this.target = null;
-    }
-
-    public boolean isActive() {
-      return this.isActive;
-    }
-
-    public Color4f getTarget() {
-      return this.target;
-    }
-
-    public boolean matchesTarget(Color4f target) {
-      return ((this.target != null) && this.target.equals(target));
-    }
-
-    public void cancel() {
-      this.doEpilogue = false;
-      this.complete(null);
-      this.doEpilogue = true;
-    }
-  }
-
-  protected abstract static class DoubleInterruptibleAnimation extends DoubleAnimation {
-    private boolean doEpilogue = true;
-    private boolean isActive = true;
-    private double target;
-
-    public DoubleInterruptibleAnimation(Number duration, Style style, Double d0, Double d1) {
-      super(duration, style, d0, d1);
-      this.isActive = true;
-      this.target = d1;
-    }
-
-    @Override
-    protected void epilogue() {
-      if (this.doEpilogue) {
-        super.epilogue();
-      }
-      this.isActive = false;
-      this.target = -1;
-    }
-
-    public boolean isActive() {
-      return this.isActive;
-    }
-
-    public double getTarget() {
-      return this.target;
-    }
-
-    public boolean matchesTarget(double target) {
-      return this.target == target;
-      //      return edu.cmu.cs.dennisc.math.EpsilonUtilities.isWithinReasonableEpsilon(this.target, target);
-    }
-
-    public void cancel() {
-      this.doEpilogue = false;
-      this.complete(null);
-      this.doEpilogue = true;
-    }
-  }
+  public static final Criterion<Component> NOT_3D_HANDLE_CRITERION = HandleGeometryHelper.NOT_3D_HANDLE_CRITERION;
 
   public ManipulationHandle3D() {
     sgVisual.frontFacingAppearance.setValue(sgFrontFacingAppearance);
@@ -207,16 +103,6 @@ public abstract class ManipulationHandle3D extends Transformable implements Mani
     this.manipulation = handle.manipulation;
   }
 
-  private Scalable getScalable(AbstractTransformable object) {
-    if (object instanceof Scalable scalable) {
-      return scalable;
-    }
-    if (object != null) {
-      return object.getBonusDataFor(Scalable.KEY);
-    }
-    return null;
-  }
-
   @Override
   public void clear() {
     this.setManipulatedObject(null);
@@ -225,7 +111,7 @@ public abstract class ManipulationHandle3D extends Transformable implements Mani
 
   public void setManipulatedObject(AbstractTransformable manipulatedObjectIn) {
     if (this.manipulatedObject != null) {
-      Scalable s = getScalable(this.manipulatedObject);
+      edu.cmu.cs.dennisc.scenegraph.scale.Scalable s = HandleGeometryHelper.getScalable(this.manipulatedObject);
       if (s != null) {
         s.removeScaleListener(this.scaleListener);
       }
@@ -242,7 +128,7 @@ public abstract class ManipulationHandle3D extends Transformable implements Mani
       }
     }
     if (this.manipulatedObject != null) {
-      Scalable s = getScalable(this.manipulatedObject);
+      edu.cmu.cs.dennisc.scenegraph.scale.Scalable s = HandleGeometryHelper.getScalable(this.manipulatedObject);
       if (s != null) {
         s.addScaleListener(this.scaleListener);
       }
@@ -298,17 +184,7 @@ public abstract class ManipulationHandle3D extends Transformable implements Mani
   }
 
   private void invertParentScale(Composite parent) {
-    // Normalized to remove previous scale
-    OrthogonalMatrix3x3 local = localTransformation.getValue().orientation().normalized();
-    if (parent != null) {
-      OrthogonalMatrix3x3 parentOrientation = parent.getAbsoluteTransformation().orientation();
-      local = new OrthogonalMatrix3x3(
-          local.getRight().times(1 / parentOrientation.getRight().magnitude()),
-          local.getUp().times(1 / parentOrientation.getUp().magnitude()),
-          local.getBackward().times(1 / parentOrientation.getBackward().magnitude()));
-    }
-    // Write changed orientation into local transformation
-    localTransformation.setValue(new AffineMatrix4x4(local, localTransformation.getValue().translation()));
+    localTransformation.setValue(HandleGeometryHelper.invertParentScale(localTransformation.getValue(), parent));
   }
 
   @Override
@@ -449,16 +325,7 @@ public abstract class ManipulationHandle3D extends Transformable implements Mani
   }
 
   public float calculateCameraRelativeOpacity(Point3 cameraPosition) {
-    if ((this.getParentTransformable() != null) && (cameraPosition != null)) {
-      Point3 handlePosition = this.getParentTransformable().getAbsoluteTransformation().translation();
-      double distance = cameraPosition.distanceFrom(handlePosition);
-      if (distance < .2) {
-        return 0.0f;
-      } else if (distance < .5) {
-        return (float) ((distance - .2f) / (.5 - .2));
-      }
-    }
-    return 1;
+    return HandleGeometryHelper.calculateCameraRelativeOpacity(this.getParentTransformable(), cameraPosition);
   }
 
   public void setCameraRelativeOpacity(float cameraRelativeOpacity) {
@@ -481,17 +348,7 @@ public abstract class ManipulationHandle3D extends Transformable implements Mani
   }
 
   public AffineMatrix4x4 getTransformationForAxis(Vector3 axis) {
-    double upDot = axis.dotProduct(Vector3.POSITIVE_Y_AXIS);
-    OrthogonalMatrix3x3 orientation = OrthogonalMatrix3x3.IDENTITY;
-    if (Math.abs(upDot) != 1.0d) {
-      Vector3 rightAxis = axis.crossProduct(Vector3.POSITIVE_Y_AXIS).normalized();
-      Vector3 upAxis = axis;
-      Vector3 backwardAxis = rightAxis.crossProduct(upAxis).normalized();
-      orientation = new OrthogonalMatrix3x3(rightAxis, upAxis, backwardAxis);
-    } else if (upDot == -1.0d) {
-      orientation = orientation.applyRotationAboutArbitraryAxis(Vector3.POSITIVE_X_AXIS, (new AngleInRadians(Math.PI)));
-    }
-    return AffineMatrix4x4.createOrientation(orientation);
+    return HandleGeometryHelper.getTransformationForAxis(axis);
   }
 
   @Override
@@ -537,49 +394,15 @@ public abstract class ManipulationHandle3D extends Transformable implements Mani
     if (this.getManipulatedObject() == null) {
       return 1.0d;
     }
-    final double VOLUME_NORMALIZER = 1d;
-    AxisAlignedBox bbox = this.getManipulatedObjectBox();
-    if ((bbox == null) || bbox.isNaN()) {
-      return 1.0d;
-    }
-    Point3 max = bbox.maximum().withY(0);
-    Point3 min = bbox.minimum().withY(0);
-    double scale = max.distanceFrom(min) / VOLUME_NORMALIZER;
-    if (Double.isNaN(scale)) {
-      return 1;
-    }
-    if (scale < .25d) {
-      scale = .25d;
-    }
-    if (scale > 2.0d) {
-      scale = 2.0d;
-    }
-    return scale;
-
+    return HandleGeometryHelper.computeObjectScale(this.getManipulatedObjectBox());
   }
 
   protected AbstractTransformable getParentTransformable() {
-    if (this.manipulatedObject == null) {
-      return null;
-    }
-    Composite parent = this.getParent();
-    if (parent instanceof AbstractTransformable transformable) {
-      return transformable;
-    }
-    if (parent != null) {
-      Logger.severe("Unknown parent type for handle: " + parent);
-    }
-    Logger.severe("NULL parent for handle.");
-    return null;
+    return HandleGeometryHelper.resolveParentTransformable(this.manipulatedObject, this.getParent());
   }
 
   protected AxisAlignedBox getManipulatedObjectBox() {
-    AbstractTransformable manipulatedObject = this.getManipulatedObject();
-    AxisAlignedBox boundingBox = BoundingBoxUtilities.getSGTransformableScaledBBox(manipulatedObject, false);
-    if (boundingBox == null) {
-      boundingBox = new AxisAlignedBox(new Point3(-1, 0, -1), new Point3(1, 1, 1));
-    }
-    return boundingBox;
+    return HandleGeometryHelper.computeManipulatedObjectBox(this.getManipulatedObject());
   }
 
   public void setPickable(boolean isPickable) {
