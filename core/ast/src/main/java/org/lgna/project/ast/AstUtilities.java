@@ -43,13 +43,8 @@
 
 package org.lgna.project.ast;
 
-import edu.cmu.cs.dennisc.java.lang.ArrayUtilities;
-import edu.cmu.cs.dennisc.java.lang.reflect.ReflectionUtilities;
 import edu.cmu.cs.dennisc.java.util.Lists;
-import edu.cmu.cs.dennisc.java.util.Sets;
 import edu.cmu.cs.dennisc.java.util.logging.Logger;
-import edu.cmu.cs.dennisc.pattern.Criterion;
-import edu.cmu.cs.dennisc.pattern.IsInstanceCrawler;
 import edu.cmu.cs.dennisc.property.PropertyUtilities;
 import org.alice.serialization.xml.XmlEncoderDecoder;
 import org.lgna.project.VersionNotSupportedException;
@@ -94,12 +89,7 @@ public class AstUtilities {
 
   public static boolean isKeywordExpression(Expression expression) {
     if (expression != null) {
-      //      if( expression instanceof MethodInvocation ) {
-      //      MethodInvocation methodInvocation = (MethodInvocation)expression;
-      //      if( methodInvocation.method.getValue().isStatic() ) {
       return expression.getParent() instanceof JavaKeyedArgument;
-      //      }
-      //    }
     } else {
       return false;
     }
@@ -197,17 +187,9 @@ public class AstUtilities {
     return rv;
   }
 
-  public static DoInOrder createDoInOrder() {
-    return new DoInOrder(new BlockStatement());
-  }
-
-  public static DoTogether createDoTogether() {
-    return new DoTogether(new BlockStatement());
-  }
-
-  public static Comment createComment() {
-    return new Comment();
-  }
+  public static DoInOrder createDoInOrder() { return new DoInOrder(new BlockStatement()); }
+  public static DoTogether createDoTogether() { return new DoTogether(new BlockStatement()); }
+  public static Comment createComment() { return new Comment(); }
 
   public static LocalDeclarationStatement createLocalDeclarationStatement(UserLocal local, Expression initializerExpression) {
     return new LocalDeclarationStatement(local, initializerExpression);
@@ -236,211 +218,130 @@ public class AstUtilities {
   }
 
   public static MethodInvocation createStaticMethodInvocation(AbstractMethod method, Expression... argumentExpressions) {
-    return AstUtilities.createMethodInvocation(new TypeExpression(method.getDeclaringType()), method, argumentExpressions);
+    return ExpressionFactory.createStaticMethodInvocation(method, argumentExpressions);
   }
-
   public static FieldAccess createStaticFieldAccess(AbstractField field) {
-    assert field.isStatic();
-    return new FieldAccess(new TypeExpression(field.getDeclaringType()), field);
+    return ExpressionFactory.createStaticFieldAccess(field);
   }
-
   public static FieldAccess createStaticFieldAccess(Field fld) {
-    return createStaticFieldAccess(JavaField.getInstance(fld));
+    return ExpressionFactory.createStaticFieldAccess(fld);
   }
-
   public static FieldAccess createStaticFieldAccess(Class<?> cls, String fieldName) {
-    return createStaticFieldAccess(ReflectionUtilities.getDeclaredField(cls, fieldName));
+    return ExpressionFactory.createStaticFieldAccess(cls, fieldName);
   }
-
   public static MethodInvocation createNextMethodInvocation(MethodInvocation prevMethodInvocation, Expression expression, AbstractMethod nextMethod) {
-    MethodInvocation rv = new MethodInvocation();
-    rv.expression.setValue(prevMethodInvocation.expression.getValue());
-    rv.method.setValue(nextMethod);
-    List<? extends AbstractParameter> parameters = nextMethod.getRequiredParameters();
-    final int N = parameters.size();
-    for (int i = 0; i < (N - 1); i++) {
-      AbstractArgument argument = prevMethodInvocation.requiredArguments.get(i);
-      if (argument instanceof SimpleArgument simpleArgument) {
-        rv.requiredArguments.add(new SimpleArgument(parameters.get(i), simpleArgument.expression.getValue()));
-      } else {
-        throw new RuntimeException();
-      }
-    }
-    rv.requiredArguments.add(new SimpleArgument(parameters.get(N - 1), expression));
-    return rv;
+    return ExpressionFactory.createNextMethodInvocation(prevMethodInvocation, expression, nextMethod);
   }
-
   public static MethodInvocation completeMethodInvocation(MethodInvocation rv, Expression instanceExpression, Expression... argumentExpressions) {
-    rv.expression.setValue(instanceExpression);
-    int i = 0;
-    for (AbstractArgument argument : rv.requiredArguments) {
-      if (argument instanceof SimpleArgument simpleArgument) {
-        simpleArgument.expression.setValue(argumentExpressions[i]);
-      } else {
-        throw new RuntimeException();
-      }
-      i++;
-    }
-    return rv;
+    return ExpressionFactory.completeMethodInvocation(rv, instanceExpression, argumentExpressions);
   }
-
   public static MethodInvocation createMethodInvocation(Expression instanceExpression, AbstractMethod method, Expression... argumentExpressions) {
-    List<? extends AbstractParameter> requiredParameters = method.getRequiredParameters();
-    assert requiredParameters.size() == argumentExpressions.length : method;
-
-    MethodInvocation rv = new MethodInvocation();
-    rv.expression.setValue(instanceExpression);
-    rv.method.setValue(method);
-    int i = 0;
-    for (AbstractParameter parameter : requiredParameters) {
-      SimpleArgument argument = new SimpleArgument(parameter, argumentExpressions[i]);
-      rv.requiredArguments.add(argument);
-      i++;
-    }
-    return rv;
+    return ExpressionFactory.createMethodInvocation(instanceExpression, method, argumentExpressions);
   }
-
   public static ExpressionStatement createMethodInvocationStatement(Expression instanceExpression, AbstractMethod method, Expression... argumentExpressions) {
-    return new ExpressionStatement(createMethodInvocation(instanceExpression, method, argumentExpressions));
+    return ExpressionFactory.createMethodInvocationStatement(instanceExpression, method, argumentExpressions);
   }
-
   public static TypeExpression createTypeExpression(AbstractType<?, ?, ?> type) {
-    return new TypeExpression(type);
+    return ExpressionFactory.createTypeExpression(type);
   }
-
   public static TypeExpression createTypeExpression(Class<?> cls) {
-    return createTypeExpression(JavaType.getInstance(cls));
+    return ExpressionFactory.createTypeExpression(cls);
   }
-
   public static InstanceCreation createInstanceCreation(AbstractConstructor constructor, Expression... argumentExpressions) {
-    InstanceCreation rv = new InstanceCreation(constructor);
-    int i = 0;
-    for (AbstractParameter parameter : constructor.getRequiredParameters()) {
-      SimpleArgument argument = new SimpleArgument(parameter, argumentExpressions[i]);
-      rv.requiredArguments.add(argument);
-      i++;
-    }
-    return rv;
+    return ExpressionFactory.createInstanceCreation(constructor, argumentExpressions);
   }
-
   public static InstanceCreation createInstanceCreation(AbstractType<?, ?, ?> type) {
-    return createInstanceCreation(type.getDeclaredConstructor());
+    return ExpressionFactory.createInstanceCreation(type);
   }
-
   public static InstanceCreation createInstanceCreation(Class<?> cls, Class<?>[] parameterClses, Expression... argumentExpressions) {
-    return createInstanceCreation(JavaConstructor.getInstance(cls, parameterClses), argumentExpressions);
+    return ExpressionFactory.createInstanceCreation(cls, parameterClses, argumentExpressions);
   }
-
   public static InstanceCreation createInstanceCreation(Class<?> cls) {
-    return createInstanceCreation(JavaType.getInstance(cls));
+    return ExpressionFactory.createInstanceCreation(cls);
   }
-
   public static ArrayInstanceCreation createArrayInstanceCreation(AbstractType<?, ?, ?> arrayType, Expression... expressions) {
-    Integer[] lengths = {expressions.length};
-    return new ArrayInstanceCreation(arrayType, lengths, expressions);
+    return ExpressionFactory.createArrayInstanceCreation(arrayType, expressions);
   }
-
   public static ArrayInstanceCreation createArrayInstanceCreation(Class<?> arrayCls, Expression... expressions) {
-    return createArrayInstanceCreation(JavaType.getInstance(arrayCls), expressions);
+    return ExpressionFactory.createArrayInstanceCreation(arrayCls, expressions);
   }
-
   public static ArrayInstanceCreation createArrayInstanceCreation(AbstractType<?, ?, ?> arrayType, Collection<Expression> expressions) {
-    return createArrayInstanceCreation(arrayType, ArrayUtilities.createArray(expressions, Expression.class));
+    return ExpressionFactory.createArrayInstanceCreation(arrayType, expressions);
   }
-
   public static ArrayInstanceCreation createArrayInstanceCreation(Class<?> arrayCls, Collection<Expression> expressions) {
-    return createArrayInstanceCreation(JavaType.getInstance(arrayCls), ArrayUtilities.createArray(expressions, Expression.class));
+    return ExpressionFactory.createArrayInstanceCreation(arrayCls, expressions);
   }
-
   public static JavaMethod lookupMethod(Class<?> cls, String methodName, Class<?>... parameterTypes) {
-    return JavaMethod.getInstance(cls, methodName, parameterTypes);
+    return ExpressionFactory.lookupMethod(cls, methodName, parameterTypes);
   }
-
   public static ReturnStatement createReturnStatement(AbstractType<?, ?, ?> type, Expression expression) {
-    return new ReturnStatement(type, expression);
+    return ExpressionFactory.createReturnStatement(type, expression);
+  }
+  public static ReturnStatement createReturnStatement(Class<?> cls, Expression expression) {
+    return ExpressionFactory.createReturnStatement(cls, expression);
+  }
+  public static StringConcatenation createStringConcatenation(Expression left, Expression right) {
+    return ExpressionFactory.createStringConcatenation(left, right);
+  }
+  public static UserLambda createUserLambda(AbstractType<?, ?, ?> type) {
+    return ExpressionFactory.createUserLambda(type);
+  }
+  public static UserLambda createUserLambda(Class<?> cls) {
+    return ExpressionFactory.createUserLambda(cls);
+  }
+  public static LambdaExpression createLambdaExpression(AbstractType<?, ?, ?> type) {
+    return ExpressionFactory.createLambdaExpression(type);
+  }
+  public static LambdaExpression createLambdaExpression(Class<?> cls) {
+    return ExpressionFactory.createLambdaExpression(cls);
   }
 
-  public static ReturnStatement createReturnStatement(Class<?> cls, Expression expression) {
-    return createReturnStatement(JavaType.getInstance(cls), expression);
+  public static <M extends AbstractMethod> M getSingleAbstractMethod(AbstractType<?, M, ?> type) {
+    return ExpressionFactory.getSingleAbstractMethod(type);
   }
 
   public static AssignmentExpression createFieldAssignment(Expression expression, UserField field, Expression valueExpression) {
-    assert field.isFinal() == false : field;
-    Expression fieldAccess = new FieldAccess(expression, field);
-    return new AssignmentExpression(field.valueType.getValue(), fieldAccess, AssignmentExpression.Operator.ASSIGN, valueExpression);
+    return AssignmentFactory.createFieldAssignment(expression, field, valueExpression);
   }
-
   public static ExpressionStatement createFieldAssignmentStatement(Expression expression, UserField field, Expression valueExpression) {
-    return new ExpressionStatement(createFieldAssignment(expression, field, valueExpression));
+    return AssignmentFactory.createFieldAssignmentStatement(expression, field, valueExpression);
   }
-
   public static AssignmentExpression createFieldAssignment(UserField field, Expression valueExpression) {
-    return createFieldAssignment(new ThisExpression(), field, valueExpression);
+    return AssignmentFactory.createFieldAssignment(field, valueExpression);
   }
-
   public static ExpressionStatement createFieldAssignmentStatement(UserField field, Expression valueExpression) {
-    return new ExpressionStatement(createFieldAssignment(field, valueExpression));
+    return AssignmentFactory.createFieldAssignmentStatement(field, valueExpression);
   }
-
   public static AssignmentExpression createFieldArrayAssignment(Expression expression, UserField field, Expression indexExpression, Expression valueExpression) {
-    Expression fieldAccess = new FieldAccess(expression, field);
-    ArrayAccess arrayAccess = new ArrayAccess(field.valueType.getValue(), fieldAccess, indexExpression);
-    return new AssignmentExpression(field.valueType.getValue().getComponentType(), arrayAccess, AssignmentExpression.Operator.ASSIGN, valueExpression);
+    return AssignmentFactory.createFieldArrayAssignment(expression, field, indexExpression, valueExpression);
   }
-
   public static ExpressionStatement createFieldArrayAssignmentStatement(Expression expression, UserField field, Expression indexExpression, Expression valueExpression) {
-    return new ExpressionStatement(createFieldArrayAssignment(expression, field, indexExpression, valueExpression));
+    return AssignmentFactory.createFieldArrayAssignmentStatement(expression, field, indexExpression, valueExpression);
   }
-
   public static AssignmentExpression createFieldArrayAssignment(UserField field, Expression indexExpression, Expression valueExpression) {
-    return createFieldArrayAssignment(new ThisExpression(), field, indexExpression, valueExpression);
+    return AssignmentFactory.createFieldArrayAssignment(field, indexExpression, valueExpression);
   }
-
   public static ExpressionStatement createFieldArrayAssignmentStatement(UserField field, Expression indexExpression, Expression valueExpression) {
-    return new ExpressionStatement(createFieldArrayAssignment(field, indexExpression, valueExpression));
+    return AssignmentFactory.createFieldArrayAssignmentStatement(field, indexExpression, valueExpression);
   }
-
   public static AssignmentExpression createLocalAssignment(UserLocal local, Expression valueExpression) {
-    assert local.isFinal.getValue() == false : local;
-    Expression localAccess = new LocalAccess(local);
-    return new AssignmentExpression(local.valueType.getValue(), localAccess, AssignmentExpression.Operator.ASSIGN, valueExpression);
+    return AssignmentFactory.createLocalAssignment(local, valueExpression);
   }
-
   public static ExpressionStatement createLocalAssignmentStatement(UserLocal local, Expression valueExpression) {
-    return new ExpressionStatement(createLocalAssignment(local, valueExpression));
+    return AssignmentFactory.createLocalAssignmentStatement(local, valueExpression);
   }
-
   public static AssignmentExpression createLocalArrayAssignment(UserLocal local, Expression indexExpression, Expression valueExpression) {
-    Expression localAccess = new LocalAccess(local);
-    ArrayAccess arrayAccess = new ArrayAccess(local.valueType.getValue(), localAccess, indexExpression);
-    return new AssignmentExpression(local.valueType.getValue().getComponentType(), arrayAccess, AssignmentExpression.Operator.ASSIGN, valueExpression);
+    return AssignmentFactory.createLocalArrayAssignment(local, indexExpression, valueExpression);
   }
-
   public static ExpressionStatement createLocalArrayAssignmentStatement(UserLocal local, Expression indexExpression, Expression valueExpression) {
-    return new ExpressionStatement(createLocalArrayAssignment(local, indexExpression, valueExpression));
+    return AssignmentFactory.createLocalArrayAssignmentStatement(local, indexExpression, valueExpression);
   }
-
   public static AssignmentExpression createParameterArrayAssignment(UserParameter parameter, Expression indexExpression, Expression valueExpression) {
-    Expression parameterAccess = new ParameterAccess(parameter);
-    ArrayAccess arrayAccess = new ArrayAccess(parameter.valueType.getValue(), parameterAccess, indexExpression);
-    return new AssignmentExpression(parameter.valueType.getValue().getComponentType(), arrayAccess, AssignmentExpression.Operator.ASSIGN, valueExpression);
+    return AssignmentFactory.createParameterArrayAssignment(parameter, indexExpression, valueExpression);
   }
-
   public static ExpressionStatement createParameterArrayAssignmentStatement(UserParameter parameter, Expression indexExpression, Expression valueExpression) {
-    return new ExpressionStatement(createParameterArrayAssignment(parameter, indexExpression, valueExpression));
+    return AssignmentFactory.createParameterArrayAssignmentStatement(parameter, indexExpression, valueExpression);
   }
-
-  public static StringConcatenation createStringConcatenation(Expression left, Expression right) {
-    return new StringConcatenation(left, right);
-  }
-
-  //  public static AbstractParameter getNextParameter( MethodInvocation methodInvocation ) {
-  //    AbstractMethod method = methodInvocation.method.getValue();
-  //    final AbstractMethod nextLongerMethod = (AbstractMethod)method.getNextLongerInChain();
-  //
-  //    java.util.ArrayList< ? extends AbstractParameter > parameters = nextLongerMethod.getParameters();
-  //    return parameters.get( parameters.size()-1 );
-  //  }
 
   public static Map<SimpleArgumentListProperty, SimpleArgument> removeParameter(Map<SimpleArgumentListProperty, SimpleArgument> rv, NodeListProperty<UserParameter> parametersProperty, UserParameter userParameter, int index, List<SimpleArgumentListProperty> argumentListProperties) {
     assert rv != null;
@@ -469,51 +370,7 @@ public class AstUtilities {
   }
 
   public static AbstractType<?, ?, ?>[] getParameterValueTypes(AbstractMethod method) {
-    List<? extends AbstractParameter> parameters = method.getRequiredParameters();
-    AbstractType<?, ?, ?>[] rv = new AbstractType[parameters.size()];
-    int i = 0;
-    for (AbstractParameter parameter : parameters) {
-      rv[i] = parameter.getValueType();
-      i++;
-    }
-    return rv;
-  }
-
-  public static <M extends AbstractMethod> M getSingleAbstractMethod(AbstractType<?, M, ?> type) {
-    List<M> methods = type.getDeclaredMethods();
-    assert methods.size() == 1 : type;
-    M singleAbstractMethod = methods.getFirst();
-    assert singleAbstractMethod.isAbstract() : singleAbstractMethod;
-    return singleAbstractMethod;
-  }
-
-  public static UserLambda createUserLambda(AbstractType<?, ?, ?> type) {
-    AbstractMethod singleAbstractMethod = getSingleAbstractMethod(type);
-    List<? extends AbstractParameter> srcRequiredParameters = singleAbstractMethod.getRequiredParameters();
-    UserParameter[] dstRequiredParameters = new UserParameter[srcRequiredParameters.size()];
-    for (int i = 0; i < dstRequiredParameters.length; i++) {
-      AbstractParameter srcRequiredParameter = srcRequiredParameters.get(i);
-      String name = srcRequiredParameter.getName();
-      if (name == null || name.isEmpty()) {
-        name = "p" + i;
-      }
-      dstRequiredParameters[i] = new UserParameter(name, srcRequiredParameter.getValueType());
-    }
-    UserLambda rv = new UserLambda(singleAbstractMethod.getReturnType(), dstRequiredParameters, new BlockStatement());
-    rv.isSignatureLocked.setValue(true);
-    return rv;
-  }
-
-  public static UserLambda createUserLambda(Class<?> cls) {
-    return createUserLambda(JavaType.getInstance(cls));
-  }
-
-  public static LambdaExpression createLambdaExpression(AbstractType<?, ?, ?> type) {
-    return new LambdaExpression(createUserLambda(type));
-  }
-
-  public static LambdaExpression createLambdaExpression(Class<?> cls) {
-    return createLambdaExpression(JavaType.getInstance(cls));
+    return TypeAnalysisHelper.getParameterValueTypes(method);
   }
 
   public static boolean isAddEventListenerMethodInvocationStatement(Statement statement) {
@@ -543,107 +400,26 @@ public class AstUtilities {
     return null;
   }
 
-  private static AbstractType<?, ?, ?>[] getParameterTypes(AbstractMethod method) {
-    AbstractParameter[] parameters = method.getAllParameters();
-    AbstractType<?, ?, ?>[] rv = new AbstractType<?, ?, ?>[parameters.length];
-    for (int i = 0; i < parameters.length; i++) {
-      rv[i] = parameters[i].getValueType();
-    }
-    return rv;
-  }
-
-  private static AbstractMethod getOverridenMethod(AbstractType<?, ?, ?> type, String methodName, AbstractType<?, ?, ?>[] parameterTypes) {
-    if (type != null) {
-      AbstractMethod rv = type.getDeclaredMethod(methodName, parameterTypes);
-      if (rv != null) {
-        return rv;
-      } else {
-        //edu.cmu.cs.dennisc.java.util.logging.Logger.outln( type, methodName, java.util.Arrays.toString( parameterTypes ) );
-        return getOverridenMethod(type.getSuperType(), methodName, parameterTypes);
-      }
-    } else {
-      return null;
-    }
-  }
-
   public static AbstractMethod getOverridenMethod(AbstractMethod method) {
-    AbstractType<?, ?, ?> type = method.getDeclaringType();
-    return getOverridenMethod(type.getSuperType(), method.getName(), getParameterTypes(method));
+    return TypeAnalysisHelper.getOverridenMethod(method);
   }
-
-  private static void addInvokedMethods(Set<UserMethod> set, UserMethod from) {
-    IsInstanceCrawler<MethodInvocation> crawler = new IsInstanceCrawler<MethodInvocation>(MethodInvocation.class) {
-      @Override
-      protected boolean isAcceptable(MethodInvocation methodInvocation) {
-        return true;
-      }
-    };
-    from.body.getValue().crawl(crawler, CrawlPolicy.EXCLUDE_REFERENCES_ENTIRELY);
-    for (MethodInvocation methodInvocation : crawler.getList()) {
-      AbstractMethod m = methodInvocation.method.getValue();
-      if (m instanceof UserMethod userMethod) {
-        if (!set.contains(userMethod)) {
-          set.add(userMethod);
-          addInvokedMethods(set, userMethod);
-        }
-      }
-    }
-  }
-
   public static Set<UserMethod> getAllInvokedMethods(UserMethod seed) {
-    Set<UserMethod> set = Sets.newHashSet();
-    addInvokedMethods(set, seed);
-    return set;
+    return TypeAnalysisHelper.getAllInvokedMethods(seed);
   }
 
   public static void fixRequiredArgumentsIfNecessary(MethodInvocation methodInvocation) {
-    AbstractMethod method = methodInvocation.method.getValue();
-    List<? extends AbstractParameter> requiredParameters = method.getRequiredParameters();
-
-    assert requiredParameters.size() == methodInvocation.requiredArguments.size() : method;
-
-    final int N = requiredParameters.size();
-    for (int i = 0; i < N; i++) {
-      SimpleArgument argumentI = methodInvocation.requiredArguments.get(i);
-      AbstractParameter parameterI = requiredParameters.get(i);
-      if (argumentI.parameter.getValue() != parameterI) {
-        methodInvocation.requiredArguments.set(i, new SimpleArgument(parameterI, argumentI.expression.getValue()));
-      }
-    }
+    TypeAnalysisHelper.fixRequiredArgumentsIfNecessary(methodInvocation);
   }
 
   public static Collection<NamedUserType> getNamedUserTypes(Node node) {
-    Criterion<Declaration> declarationFilter = null;
-    IsInstanceCrawler<NamedUserType> crawler = IsInstanceCrawler.createInstance(NamedUserType.class);
-    node.crawl(crawler, CrawlPolicy.COMPLETE, declarationFilter);
-    return crawler.getList();
+    return TypeAnalysisHelper.getNamedUserTypes(node);
   }
 
   public static AbstractType<?, ?, ?> getDeclaringTypeIfMemberOrTypeItselfIfType(AbstractDeclaration declaration) {
-    if (declaration != null) {
-      if (declaration instanceof AbstractType<?, ?, ?> type) {
-        return type;
-      } else if (declaration instanceof AbstractMember member) {
-        return member.getDeclaringType();
-      } else {
-        throw new UnsupportedOperationException();
-      }
-    } else {
-      return null;
-    }
-  }
-
-  private static void updateAllMethods(List<AbstractMethod> allMethods, AbstractType<?, ?, ?> type) {
-    allMethods.addAll(type.getDeclaredMethods());
-    AbstractType<?, ?, ?> superType = type.getSuperType();
-    if (superType != null) {
-      updateAllMethods(allMethods, superType);
-    }
+    return TypeAnalysisHelper.getDeclaringTypeIfMemberOrTypeItselfIfType(declaration);
   }
 
   public static List<AbstractMethod> getAllMethods(AbstractType<?, ?, ?> type) {
-    List<AbstractMethod> rv = Lists.newLinkedList();
-    updateAllMethods(rv, type);
-    return rv;
+    return TypeAnalysisHelper.getAllMethods(type);
   }
 }
