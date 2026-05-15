@@ -54,6 +54,11 @@ import org.lgna.common.ThreadUtilities;
  */
 class JavaConcurrencyEmitter {
 
+  private static final JavaType THREAD_UTILITIES_TYPE = JavaType.getInstance(ThreadUtilities.class);
+  private static final JavaMethod DO_TOGETHER_METHOD = THREAD_UTILITIES_TYPE.getDeclaredMethod("doTogether", Runnable[].class);
+  private static final JavaMethod EACH_IN_TOGETHER_METHOD = THREAD_UTILITIES_TYPE.getDeclaredMethod("eachInTogether", EachInTogetherRunnable.class, Object[].class);
+  private static final JavaType EACH_IN_TOGETHER_RUNNABLE_TYPE = JavaType.getInstance(EachInTogetherRunnable.class);
+
   private final JavaCodeGenerator generator;
 
   JavaConcurrencyEmitter(JavaCodeGenerator generator) {
@@ -61,10 +66,8 @@ class JavaConcurrencyEmitter {
   }
 
   void processDoTogether(DoTogether doTogether) {
-    JavaType threadUtilitiesType = JavaType.getInstance(ThreadUtilities.class);
-    JavaMethod doTogetherMethod = threadUtilitiesType.getDeclaredMethod("doTogether", Runnable[].class);
-    TypeExpression target = new TypeExpression(threadUtilitiesType);
-    generator.appendTargetAndMethodName(target, doTogetherMethod);
+    TypeExpression target = new TypeExpression(THREAD_UTILITIES_TYPE);
+    generator.appendTargetAndMethodName(target, DO_TOGETHER_METHOD);
     generator.appendString("(");
     String prefix = "";
     for (Statement statement : doTogether.body.getValue().statements) {
@@ -93,10 +96,8 @@ class JavaConcurrencyEmitter {
   }
 
   void processEachInTogether(AbstractEachInTogether eachInTogether) {
-    JavaType threadUtilitiesType = JavaType.getInstance(ThreadUtilities.class);
-    JavaMethod eachInTogetherMethod = threadUtilitiesType.getDeclaredMethod("eachInTogether", EachInTogetherRunnable.class, Object[].class);
-    TypeExpression target = new TypeExpression(threadUtilitiesType);
-    generator.appendTargetAndMethodName(target, eachInTogetherMethod);
+    TypeExpression target = new TypeExpression(THREAD_UTILITIES_TYPE);
+    generator.appendTargetAndMethodName(target, EACH_IN_TOGETHER_METHOD);
     generator.appendString("(");
 
     UserLocal itemValue = eachInTogether.item.getValue();
@@ -109,7 +110,7 @@ class JavaConcurrencyEmitter {
       generator.appendString(")->");
     } else {
       generator.appendString("new ");
-      generator.processTypeName(JavaType.getInstance(EachInTogetherRunnable.class));
+      generator.processTypeName(EACH_IN_TOGETHER_RUNNABLE_TYPE);
       generator.appendString("<");
       generator.processTypeName(itemType);
       generator.appendString(">() { public void run(");

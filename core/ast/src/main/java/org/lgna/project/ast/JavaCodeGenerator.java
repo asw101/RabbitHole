@@ -51,7 +51,6 @@ import org.lgna.project.code.ProcessableNode;
 import org.lgna.project.resource.ResourcesTypeWrapper;
 
 import java.lang.reflect.Modifier;
-import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -115,8 +114,8 @@ public class JavaCodeGenerator extends SourceCodeGenerator {
     private boolean isLambdaSupported;
     private boolean isPublicStaticFinalFieldGetterDesired;
     private ResourcesTypeWrapper resourcesTypeWrapper;
-    private final List<JavaPackage> importOnDemandPackages = Lists.newLinkedList();
-    private final List<JavaMethod> importStaticMethods = Lists.newLinkedList();
+    private final List<JavaPackage> importOnDemandPackages = Lists.newArrayList();
+    private final List<JavaMethod> importStaticMethods = Lists.newArrayList();
     private final Map<String, CodeOrganizer.CodeOrganizerDefinition> codeOrganizerDefinitionMap = Maps.newHashMap();
     private CodeOrganizer.CodeOrganizerDefinition defaultCodeDefinitionOrganizer;
     private String commentsLocalizationBundleName;
@@ -128,8 +127,8 @@ public class JavaCodeGenerator extends SourceCodeGenerator {
     this.isPublicStaticFinalFieldGetterDesired = builder.isPublicStaticFinalFieldGetterDesired;
     this.resourcesTypeWrapper = builder.resourcesTypeWrapper;
     this.importCollector = new JavaImportCollector(
-        Collections.unmodifiableList(builder.importOnDemandPackages),
-        Collections.unmodifiableList(builder.importStaticMethods));
+        builder.importOnDemandPackages,
+        builder.importStaticMethods);
     this.commentFormatter = new JavaCommentFormatter(builder.commentsLocalizationBundleName);
     this.concurrencyEmitter = new JavaConcurrencyEmitter(this);
   }
@@ -181,9 +180,7 @@ public class JavaCodeGenerator extends SourceCodeGenerator {
       if (resourcesTypeWrapper != null) {
         UserField field = resourcesTypeWrapper.getFieldForResource(resource);
         if (field != null) {
-          getCodeStringBuilder().append(field.getDeclaringType().getName());
-          getCodeStringBuilder().append(".");
-          getCodeStringBuilder().append(field.getName());
+          getCodeStringBuilder().append(field.getDeclaringType().getName()).append(".").append(field.getName());
         } else {
           appendResource(resource);
         }

@@ -44,6 +44,7 @@ package org.lgna.project.ast;
 
 import edu.cmu.cs.dennisc.java.util.Sets;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -56,8 +57,8 @@ import java.util.Set;
  */
 class JavaImportCollector {
 
-  private final List<JavaPackage> packagesMarkedForOnDemandImport;
-  private final List<JavaMethod> staticMethodsMarkedForImport;
+  private final Set<JavaPackage> packagesMarkedForOnDemandImport;
+  private final Set<JavaMethod> staticMethodsMarkedForImport;
 
   private final Set<JavaPackage> packagesToImportOnDemand = Sets.newHashSet();
   private final Set<JavaType> typesToImport = Sets.newHashSet();
@@ -65,8 +66,8 @@ class JavaImportCollector {
 
   JavaImportCollector(List<JavaPackage> packagesMarkedForOnDemandImport,
                       List<JavaMethod> staticMethodsMarkedForImport) {
-    this.packagesMarkedForOnDemandImport = packagesMarkedForOnDemandImport;
-    this.staticMethodsMarkedForImport = staticMethodsMarkedForImport;
+    this.packagesMarkedForOnDemandImport = new HashSet<>(packagesMarkedForOnDemandImport);
+    this.staticMethodsMarkedForImport = new HashSet<>(staticMethodsMarkedForImport);
   }
 
   void trackType(JavaType javaType) {
@@ -107,7 +108,7 @@ class JavaImportCollector {
       JavaPackage pack = typeToImport.getPackage();
       if (!"java.lang".contentEquals(pack.getName())) {
         sb.append("import ");
-        sb.append(typeToImport.getPackage().getName());
+        sb.append(pack.getName());
         sb.append('.');
         JavaType enclosingType = typeToImport.getEnclosingType();
         if (enclosingType != null) {

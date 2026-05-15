@@ -100,8 +100,8 @@ class JavaCommentFormatter {
         }
       } while (!done);
       if (returnVal != null) {
-        returnVal = returnVal.replaceAll("<classname>", type.getName());
-        returnVal = returnVal.replaceAll("<objectname>", itemName);
+        returnVal = returnVal.replace("<classname>", type.getName());
+        returnVal = returnVal.replace("<objectname>", itemName);
       }
       return returnVal;
     }
