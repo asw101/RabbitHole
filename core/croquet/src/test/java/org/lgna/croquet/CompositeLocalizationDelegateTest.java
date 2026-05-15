@@ -3,10 +3,7 @@ package org.lgna.croquet;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Map;
 import java.util.UUID;
-
-import edu.cmu.cs.dennisc.java.util.Maps;
 
 import static org.junit.Assert.*;
 
