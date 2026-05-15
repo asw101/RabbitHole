@@ -61,7 +61,10 @@ import java.util.zip.DataFormatException;
  * Package-private helper containing code-generation templates extracted from
  * {@link ModelResourceJavaGenerator#buildJavaCodeBody}. Each static method
  * appends a logical section of the generated Java enum to the supplied
- * {@link StringBuilder}. All methods are stateless and side-effect free.
+ * {@link StringBuilder}. All methods are stateless. Note:
+ * {@link #appendArrayFields} mutates its {@code mandatoryArrayNames} and
+ * {@code arrayEntries} parameters (inherited behavior from the original
+ * monolithic method where these were local variables in the same scope).
  */
 final class ResourceCodeTemplates {
 

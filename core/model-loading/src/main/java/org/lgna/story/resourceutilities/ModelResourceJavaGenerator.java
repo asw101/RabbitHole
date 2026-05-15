@@ -255,6 +255,7 @@ final class ModelResourceJavaGenerator {
     return poseNames;
   }
 
+  // Retained for test coverage — called by 7 tests in ModelResourceJavaGeneratorTest.
   static Class<?> getPoseBuilderTypeForSuperClass(Class<?> superClass) {
     if (FlyerResource.class.isAssignableFrom(superClass)) {
       return FlyerPoseBuilder.class;
