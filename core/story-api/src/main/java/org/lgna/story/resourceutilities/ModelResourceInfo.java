@@ -55,7 +55,7 @@ import org.w3c.dom.Element;
 import java.time.Year;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -72,7 +72,7 @@ public class ModelResourceInfo {
   private final boolean isDeprecated;
   private final Boolean placeOnGround;
   private ModelResourceInfo parentInfo = null;
-  private final List<ModelResourceInfo> subResources = new LinkedList<>();
+  private final List<ModelResourceInfo> subResources = new ArrayList<>();
 
   private final String[] tags;
   private final String[] groupTags;
@@ -199,12 +199,8 @@ public class ModelResourceInfo {
   public String[] getTags() {
     if (this.parentInfo != null) {
       String[] allTags = new String[this.tags.length + this.parentInfo.tags.length];
-      if (this.parentInfo.tags.length > 0) {
-        System.arraycopy(this.parentInfo.tags, 0, allTags, 0, this.parentInfo.tags.length);
-      }
-      if (this.tags.length > 0) {
-        System.arraycopy(this.tags, 0, allTags, this.parentInfo.tags.length, this.tags.length);
-      }
+      System.arraycopy(this.parentInfo.tags, 0, allTags, 0, this.parentInfo.tags.length);
+      System.arraycopy(this.tags, 0, allTags, this.parentInfo.tags.length, this.tags.length);
       return allTags;
     }
     return tags;
@@ -213,12 +209,8 @@ public class ModelResourceInfo {
   public String[] getGroupTags() {
     if (this.parentInfo != null) {
       String[] allTags = new String[this.groupTags.length + this.parentInfo.groupTags.length];
-      if (this.parentInfo.groupTags.length > 0) {
-        System.arraycopy(this.parentInfo.groupTags, 0, allTags, 0, this.parentInfo.groupTags.length);
-      }
-      if (this.groupTags.length > 0) {
-        System.arraycopy(this.groupTags, 0, allTags, this.parentInfo.groupTags.length, this.groupTags.length);
-      }
+      System.arraycopy(this.parentInfo.groupTags, 0, allTags, 0, this.parentInfo.groupTags.length);
+      System.arraycopy(this.groupTags, 0, allTags, this.parentInfo.groupTags.length, this.groupTags.length);
       return allTags;
     }
     return groupTags;
@@ -227,12 +219,8 @@ public class ModelResourceInfo {
   public String[] getThemeTags() {
     if (this.parentInfo != null) {
       String[] allTags = new String[this.themeTags.length + this.parentInfo.themeTags.length];
-      if (this.parentInfo.themeTags.length > 0) {
-        System.arraycopy(this.parentInfo.themeTags, 0, allTags, 0, this.parentInfo.themeTags.length);
-      }
-      if (this.themeTags.length > 0) {
-        System.arraycopy(this.themeTags, 0, allTags, this.parentInfo.themeTags.length, this.themeTags.length);
-      }
+      System.arraycopy(this.parentInfo.themeTags, 0, allTags, 0, this.parentInfo.themeTags.length);
+      System.arraycopy(this.themeTags, 0, allTags, this.parentInfo.themeTags.length, this.themeTags.length);
       return allTags;
     }
     return themeTags;
@@ -254,17 +242,16 @@ public class ModelResourceInfo {
   }
 
   public ModelResourceInfo getSubResource(String modelName, String textureName) {
+    ModelResourceInfo modelOnlyMatch = null;
     for (ModelResourceInfo mri : this.subResources) {
       if (mri.matchesModelAndTexture(modelName, textureName)) {
         return mri;
       }
-    }
-    for (ModelResourceInfo subResource : this.subResources) {
-      if (subResource.matchesModel(modelName)) {
-        return subResource;
+      if (modelOnlyMatch == null && mri.matchesModel(modelName)) {
+        modelOnlyMatch = mri;
       }
     }
-    return null;
+    return modelOnlyMatch;
   }
 
   private boolean matchesModel(String modelName) {
@@ -314,13 +301,14 @@ public class ModelResourceInfo {
   }
 
   private ModelManifest.BoundingBox createManifestBoundingBox() {
-    if (getBoundingBox() == null) {
+    AxisAlignedBox box = getBoundingBox();
+    if (box == null) {
       return null;
     }
-    ModelManifest.BoundingBox boundingBox = new ModelManifest.BoundingBox();
-    boundingBox.max = getBoundingBox().maximum().asFloatList();
-    boundingBox.min = getBoundingBox().minimum().asFloatList();
-    return boundingBox;
+    ModelManifest.BoundingBox result = new ModelManifest.BoundingBox();
+    result.max = box.maximum().asFloatList();
+    result.min = box.minimum().asFloatList();
+    return result;
   }
 
   private void addModelVariantInfo(ModelManifest manifest) {

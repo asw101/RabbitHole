@@ -47,7 +47,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -125,7 +125,7 @@ final class ModelResourceXmlParser {
   }
 
   static String[] getResourceTags(Element resourceElement, String containerTagName, String tagName) {
-    LinkedList<String> tagList = new LinkedList<>();
+    List<String> tagList = new ArrayList<>();
     addImmediateChildTextContent(resourceElement, tagName, tagList);
     for (Element container : getImmediateChildElementsByTagName(resourceElement, containerTagName)) {
       addImmediateChildTextContent(container, tagName, tagList);
@@ -133,14 +133,14 @@ final class ModelResourceXmlParser {
     return tagList.toArray(new String[0]);
   }
 
-  static void addImmediateChildTextContent(Element parent, String tagName, LinkedList<String> textContent) {
+  static void addImmediateChildTextContent(Element parent, String tagName, List<String> textContent) {
     for (Element child : getImmediateChildElementsByTagName(parent, tagName)) {
       textContent.add(child.getTextContent());
     }
   }
 
   static List<Element> getImmediateChildElementsByTagName(Element node, String tagName) {
-    List<Element> elements = new LinkedList<>();
+    List<Element> elements = new ArrayList<>();
     NodeList children = node.getChildNodes();
     for (int i = 0; i < children.getLength(); i++) {
       Node child = children.item(i);
