@@ -52,15 +52,13 @@ final class Not3dHandleCriterion implements Criterion<Component> {
   }
 
   private boolean isHandle(Component c) {
-    if (c == null) {
-      return false;
+    for (Component current = c; current != null; current = current.getParent()) {
+      Object bonusData = current.getBonusDataFor(PickHint.PICK_HINT_KEY);
+      if ((bonusData instanceof PickHint hint) && hint.intersects(PickHint.PickType.THREE_D_HANDLE.pickHint())) {
+        return true;
+      }
     }
-    Object bonusData = c.getBonusDataFor(PickHint.PICK_HINT_KEY);
-    if ((bonusData instanceof PickHint hint) && hint.intersects(PickHint.PickType.THREE_D_HANDLE.pickHint())) {
-      return true;
-    } else {
-      return isHandle(c.getParent());
-    }
+    return false;
   }
 
   @Override

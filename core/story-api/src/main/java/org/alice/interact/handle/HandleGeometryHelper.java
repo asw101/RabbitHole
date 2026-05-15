@@ -100,13 +100,7 @@ final class HandleGeometryHelper {
     if (Double.isNaN(scale)) {
       return 1.0d;
     }
-    if (scale < .25d) {
-      scale = .25d;
-    }
-    if (scale > 2.0d) {
-      scale = 2.0d;
-    }
-    return scale;
+    return Math.max(.25d, Math.min(2.0d, scale));
   }
 
   static float calculateCameraRelativeOpacity(Point3 handlePosition, Point3 cameraPosition) {

@@ -112,28 +112,28 @@ public abstract class ManipulationHandle3D extends Transformable implements Mani
   }
 
   public void setManipulatedObject(AbstractTransformable manipulatedObjectIn) {
+    if (this.manipulatedObject == manipulatedObjectIn) {
+      this.resizeToObject();
+      return;
+    }
     if (this.manipulatedObject != null) {
       Scalable s = HandleGeometryHelper.getScalable(this.manipulatedObject);
       if (s != null) {
         s.removeScaleListener(this.scaleListener);
       }
     }
-    if (this.manipulatedObject != manipulatedObjectIn) {
-      this.manipulatedObject = manipulatedObjectIn;
-      this.criteriaManager.setTargetTransformable(this.manipulatedObject);
-      this.setParent(this.manipulatedObject);
-      if (this.manipulatedObject != null) {
-        this.setScale(HandleGeometryHelper.computeObjectScale(this.getManipulatedObjectBox()));
-        this.setVisualsShowing(true);
-      } else {
-        this.setVisualsShowing(false);
-      }
-    }
+    this.manipulatedObject = manipulatedObjectIn;
+    this.criteriaManager.setTargetTransformable(this.manipulatedObject);
+    this.setParent(this.manipulatedObject);
     if (this.manipulatedObject != null) {
       Scalable s = HandleGeometryHelper.getScalable(this.manipulatedObject);
       if (s != null) {
         s.addScaleListener(this.scaleListener);
       }
+      this.setScale(HandleGeometryHelper.computeObjectScale(this.getManipulatedObjectBox()));
+      this.setVisualsShowing(true);
+    } else {
+      this.setVisualsShowing(false);
     }
     this.resizeToObject();
   }
@@ -271,8 +271,9 @@ public abstract class ManipulationHandle3D extends Transformable implements Mani
   protected void updateVisibleState(HandleRenderState renderState) {
     double targetOpacity = this.isRenderable() ? this.getDesiredOpacity(renderState) : 0.0;
     this.setOpacity((float) targetOpacity);
-    Color4f targetColor = this.getDesiredColor(renderState);
-    this.setColor(targetColor);
+    if (targetOpacity > 0.0) {
+      this.setColor(this.getDesiredColor(renderState));
+    }
   }
 
   @Override
@@ -305,15 +306,7 @@ public abstract class ManipulationHandle3D extends Transformable implements Mani
   }
 
   protected Color4f getDesiredColor(HandleRenderState renderState) {
-    Color4f baseColor = this.getBaseColor();
-    return switch (renderState) {
-    case NOT_VISIBLE -> baseColor;
-    case VISIBLE_BUT_SIBLING_IS_ACTIVE -> baseColor;
-    case VISIBLE_AND_ACTIVE -> baseColor;
-    case VISIBLE_AND_ROLLOVER -> baseColor;
-    case JUST_VISIBLE -> baseColor;
-    default -> baseColor;
-    };
+    return this.getBaseColor();
   }
 
   @Override
@@ -398,8 +391,9 @@ public abstract class ManipulationHandle3D extends Transformable implements Mani
     }
     if (parent != null) {
       Logger.severe("Unknown parent type for handle: " + parent);
+    } else {
+      Logger.severe("NULL parent for handle.");
     }
-    Logger.severe("NULL parent for handle.");
     return null;
   }
 
