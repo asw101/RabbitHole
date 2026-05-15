@@ -53,28 +53,22 @@ import org.lgna.project.code.ProcessableNode;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.Deque;
 import java.util.List;
 import java.util.Map;
-import java.util.Stack;
+import java.util.Set;
 
 public class HtmlEncoder implements AstProcessor {
 
   private final Document document;
   private final SvgEncoder svgEncoder;
-  private final Stack<org.w3c.dom.Element> activeElements = new Stack<>();
-  private static final Map<String, CodeOrganizer.CodeOrganizerDefinition> codeOrganizerDefinitionMap = new HashMap<>();
-  private final Map<String, CodeOrganizer.CodeOrganizerDefinition> codeOrganizerDefinitions = codeOrganizerDefinitionMap;
-  private static final Collection<String> sectionsToSkip = Collections.unmodifiableList(Arrays.asList("ConstructorSection", "GettersAndSettersSection", "StaticMethodsSection"));
-
-  static {
-    codeOrganizerDefinitionMap.put("Scene", CodeOrganizer.sceneClassCodeOrganizer);
-    codeOrganizerDefinitionMap.put("Program", CodeOrganizer.programClassCodeOrganizer);
-  }
+  private final Deque<org.w3c.dom.Element> activeElements = new ArrayDeque<>();
+  private static final Map<String, CodeOrganizer.CodeOrganizerDefinition> codeOrganizerDefinitionMap = Map.of(
+      "Scene", CodeOrganizer.sceneClassCodeOrganizer,
+      "Program", CodeOrganizer.programClassCodeOrganizer);
+  private static final Set<String> sectionsToSkip = Set.of("ConstructorSection", "GettersAndSettersSection", "StaticMethodsSection");
 
   HtmlEncoder(Document doc) {
     document = doc;
@@ -153,12 +147,13 @@ public class HtmlEncoder implements AstProcessor {
 
   @Override
   public CodeOrganizer getNewCodeOrganizerForTypeName(String typeName) {
-    return new CodeOrganizer(codeOrganizerDefinitions.getOrDefault(typeName, CodeOrganizer.defaultCodeOrganizer));
+    return new CodeOrganizer(codeOrganizerDefinitionMap.getOrDefault(typeName, CodeOrganizer.defaultCodeOrganizer));
   }
 
   @Override
   public void processClass(CodeOrganizer codeOrganizer, NamedUserType userType) {
-    if (isClassEmpty(codeOrganizer)) {
+    Map<String, List<ProcessableNode>> sections = codeOrganizer.getOrderedSections();
+    if (isClassEmpty(sections)) {
       return;
     }
     pushDiv("alice-class", () -> {
@@ -167,7 +162,7 @@ public class HtmlEncoder implements AstProcessor {
         addSpan("alice-code-header-detail", "extends");
         addSpan("alice-class-superType", userType.getSuperType().getName());
       });
-      for (Map.Entry<String, List<ProcessableNode>> entry : codeOrganizer.getOrderedSections().entrySet()) {
+      for (Map.Entry<String, List<ProcessableNode>> entry : sections.entrySet()) {
           if (isSectionToInclude(entry.getKey()) && !entry.getValue().isEmpty()) {
             appendSection(entry.getValue());
         }
@@ -175,8 +170,8 @@ public class HtmlEncoder implements AstProcessor {
     });
   }
 
-  private boolean isClassEmpty(CodeOrganizer codeOrganizer) {
-    for (Map.Entry<String, List<ProcessableNode>> entry : codeOrganizer.getOrderedSections().entrySet()) {
+  private boolean isClassEmpty(Map<String, List<ProcessableNode>> sections) {
+    for (Map.Entry<String, List<ProcessableNode>> entry : sections.entrySet()) {
       if (isSectionToInclude(entry.getKey()) && !entry.getValue().isEmpty()) {
         for (ProcessableNode item : entry.getValue()) {
           if (!(item instanceof UserMethod) || !((UserMethod) item).getManagementLevel().isGenerated()) {
