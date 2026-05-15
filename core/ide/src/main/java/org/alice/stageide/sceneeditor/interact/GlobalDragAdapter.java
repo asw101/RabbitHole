@@ -43,7 +43,6 @@
 
 package org.alice.stageide.sceneeditor.interact;
 
-import edu.cmu.cs.dennisc.color.Color4f;
 import edu.cmu.cs.dennisc.java.util.logging.Logger;
 import edu.cmu.cs.dennisc.render.RenderCapabilities;
 import edu.cmu.cs.dennisc.scenegraph.AbstractTransformable;
@@ -52,8 +51,6 @@ import edu.cmu.cs.dennisc.scenegraph.scale.Resizer;
 import org.alice.interact.*;
 import org.alice.interact.ModifierMask.ModifierKey;
 import org.alice.interact.condition.*;
-import org.alice.interact.event.ManipulationEvent;
-import org.alice.interact.event.ManipulationEventCriteria;
 import org.alice.interact.handle.*;
 import org.alice.interact.manipulator.*;
 import org.alice.math.immutable.AffineMatrix4x4;
@@ -216,7 +213,7 @@ public class GlobalDragAdapter extends CroquetSupportingDragAdapter {
     // right click is defined in the scene editor, for reasons I suppose
 
     // ux handles
-    setupHandles();
+    HandleSetupDelegate.setupHandles(this);
 
     // Interaction groups
     final InteractionGroup.PossibleObjects notJointObjects = new InteractionGroup.PossibleObjects(ObjectType.MODEL, ObjectType.OBJECT_MARKER, ObjectType.CAMERA_MARKER, ObjectType.MAIN_CAMERA);
@@ -251,203 +248,6 @@ public class GlobalDragAdapter extends CroquetSupportingDragAdapter {
       //sgSilhouette.width.setValue( 1.5f );
       this.setSgSilhouette(sgSilhouette);
     }
-  }
-
-  // Creates all the visual handles that show up when we select an object in various modes
-  private void setupHandles() {
-    ManipulationAxes handleAxis = new ManipulationAxes();
-    handleAxis.addToGroup(HandleSet.HandleGroup.VISUALIZATION);
-    handleAxis.addCondition(new ManipulationEventCriteria(ManipulationEvent.EventType.Rotate, null, PickHint.getAnythingHint()));
-    handleAxis.addCondition(new ManipulationEventCriteria(ManipulationEvent.EventType.Translate, null, PickHint.getAnythingHint()));
-    this.addManipulationListener(handleAxis);
-    handleAxis.setDragAdapterAndAddHandle(this);
-    handleAxis.setName("handleAxis");
-
-    StoodUpRotationRingHandle rotateAboutYAxisStoodUp = new StoodUpRotationRingHandle(MovementDirection.UP, RotationRingHandle.HandlePosition.BOTTOM);
-    rotateAboutYAxisStoodUp.setManipulation(new ObjectRotateDragManipulator() {
-      @Override
-      protected HandleSet getHandleSetToEnable() {
-        return new HandleSet(HandleSet.HandleGroup.Y_AXIS, HandleSet.HandleGroup.VISUALIZATION, HandleSet.HandleGroup.STOOD_UP_ROTATION);
-      }
-    });
-    rotateAboutYAxisStoodUp.addToSet(HandleSet.DEFAULT_INTERACTION);
-    rotateAboutYAxisStoodUp.addToGroups(HandleSet.HandleGroup.DEFAULT, HandleSet.HandleGroup.Y_AXIS, HandleSet.HandleGroup.VISUALIZATION, HandleSet.HandleGroup.STOOD_UP_ROTATION);
-    rotateAboutYAxisStoodUp.addCondition(new ManipulationEventCriteria(ManipulationEvent.EventType.Rotate, new MovementDescription(MovementDirection.UP, MovementType.STOOD_UP), PickHint.PickType.TURNABLE.pickHint()));
-    rotateAboutYAxisStoodUp.addCondition(new ManipulationEventCriteria(ManipulationEvent.EventType.Rotate, new MovementDescription(MovementDirection.DOWN, MovementType.STOOD_UP), PickHint.PickType.TURNABLE.pickHint()));
-    this.addManipulationListener(rotateAboutYAxisStoodUp);
-    rotateAboutYAxisStoodUp.setDragAdapterAndAddHandle(this);
-    rotateAboutYAxisStoodUp.setName("rotateAboutYAxisStoodUp");
-
-    RotationRingHandle rotateAboutYAxis = new RotationRingHandle(MovementDirection.UP, Color4f.RED);
-    rotateAboutYAxis.setManipulation(new ObjectRotateDragManipulator());
-    rotateAboutYAxis.addToSet(HandleSet.ROTATION_INTERACTION);
-    rotateAboutYAxis.addToGroups(HandleSet.HandleGroup.Y_AXIS, HandleSet.HandleGroup.VISUALIZATION);
-    rotateAboutYAxis.setDragAdapterAndAddHandle(this);
-    rotateAboutYAxis.setName("rotateAboutYAxis");
-
-    RotationRingHandle rotateAboutXAxis = new RotationRingHandle(MovementDirection.LEFT, Color4f.BLUE);
-    rotateAboutXAxis.setManipulation(new ObjectRotateDragManipulator());
-    rotateAboutXAxis.addToSet(HandleSet.ROTATION_INTERACTION);
-    rotateAboutXAxis.addToGroups(HandleSet.HandleGroup.X_AXIS, HandleSet.HandleGroup.VISUALIZATION);
-    rotateAboutXAxis.setDragAdapterAndAddHandle(this);
-    rotateAboutXAxis.setName("rotateAboutXAxis");
-
-    RotationRingHandle rotateAboutZAxis = new RotationRingHandle(MovementDirection.BACKWARD, Color4f.WHITE);
-    rotateAboutZAxis.setManipulation(new ObjectRotateDragManipulator());
-    rotateAboutZAxis.addToSet(HandleSet.ROTATION_INTERACTION);
-    rotateAboutZAxis.addToGroups(HandleSet.HandleGroup.Z_AXIS, HandleSet.HandleGroup.VISUALIZATION);
-    rotateAboutZAxis.setDragAdapterAndAddHandle(this);
-    rotateAboutZAxis.setName("rotateAboutZAxis");
-
-    JointRotationRingHandle rotateJointAboutZAxis = new JointRotationRingHandle(MovementDirection.BACKWARD, Color4f.WHITE);
-    rotateJointAboutZAxis.setManipulation(new ObjectRotateDragManipulator());
-    rotateJointAboutZAxis.addToSet(HandleSet.JOINT_ROTATION_INTERACTION);
-    rotateJointAboutZAxis.addToGroups(HandleSet.HandleGroup.Z_AXIS, HandleSet.HandleGroup.VISUALIZATION, HandleSet.HandleGroup.JOINT);
-    rotateJointAboutZAxis.setDragAdapterAndAddHandle(this);
-    rotateJointAboutZAxis.setName("rotateJointAboutZAxis");
-
-    JointRotationRingHandle rotateJointAboutYAxis = new JointRotationRingHandle(MovementDirection.UP, Color4f.RED);
-    rotateJointAboutYAxis.setManipulation(new ObjectRotateDragManipulator());
-    rotateJointAboutYAxis.addToSet(HandleSet.JOINT_ROTATION_INTERACTION);
-    rotateJointAboutYAxis.addToGroups(HandleSet.HandleGroup.Y_AXIS, HandleSet.HandleGroup.VISUALIZATION, HandleSet.HandleGroup.JOINT);
-    rotateJointAboutYAxis.setDragAdapterAndAddHandle(this);
-    rotateJointAboutYAxis.setName("rotateJointAboutYAxis");
-
-    JointRotationRingHandle rotateJointAboutXAxis = new JointRotationRingHandle(MovementDirection.LEFT, Color4f.BLUE);
-    rotateJointAboutXAxis.setManipulation(new ObjectRotateDragManipulator());
-    rotateJointAboutXAxis.addToSet(HandleSet.JOINT_ROTATION_INTERACTION);
-    rotateJointAboutXAxis.addToGroups(HandleSet.HandleGroup.X_AXIS, HandleSet.HandleGroup.VISUALIZATION, HandleSet.HandleGroup.JOINT);
-    rotateJointAboutXAxis.setDragAdapterAndAddHandle(this);
-    rotateJointAboutXAxis.setName("rotateJointAboutXAxis");
-
-    LinearTranslateHandle translateJointYAxis = new LinearTranslateHandle(new MovementDescription(MovementDirection.UP, MovementType.LOCAL), Color4f.GREEN);
-    translateJointYAxis.setManipulation(new LinearDragManipulator());
-    translateJointYAxis.addToGroups(HandleSet.HandleGroup.LOCAL, HandleSet.HandleGroup.Y_AXIS, HandleSet.HandleGroup.VISUALIZATION, HandleSet.HandleGroup.JOINT);
-    translateJointYAxis.addToSet(HandleSet.JOINT_TRANSLATION_INTERACTION);
-    translateJointYAxis.setDragAdapterAndAddHandle(this);
-    translateJointYAxis.setName("translateJointYAxis");
-
-    LinearTranslateHandle translateJointXAxis = new LinearTranslateHandle(new MovementDescription(MovementDirection.RIGHT, MovementType.LOCAL), Color4f.RED);
-    translateJointXAxis.setManipulation(new LinearDragManipulator());
-    translateJointXAxis.addToGroups(HandleSet.HandleGroup.LOCAL, HandleSet.HandleGroup.X_AXIS, HandleSet.HandleGroup.VISUALIZATION, HandleSet.HandleGroup.JOINT);
-    translateJointXAxis.addToSet(HandleSet.JOINT_TRANSLATION_INTERACTION);
-    translateJointXAxis.setDragAdapterAndAddHandle(this);
-    translateJointXAxis.setName("translateJointXAxis");
-
-    LinearTranslateHandle translateJointZAxis = new LinearTranslateHandle(new MovementDescription(MovementDirection.FORWARD, MovementType.LOCAL), Color4f.WHITE);
-    translateJointZAxis.setManipulation(new LinearDragManipulator());
-    translateJointZAxis.addToGroups(HandleSet.HandleGroup.LOCAL, HandleSet.HandleGroup.Z_AXIS, HandleSet.HandleGroup.VISUALIZATION, HandleSet.HandleGroup.JOINT);
-    translateJointZAxis.addToSet(HandleSet.JOINT_TRANSLATION_INTERACTION);
-    translateJointZAxis.setDragAdapterAndAddHandle(this);
-    translateJointZAxis.setName("translateJointZAxis");
-
-    LinearTranslateHandle translateUp = new LinearTranslateHandle(new MovementDescription(MovementDirection.UP, MovementType.ABSOLUTE), Color4f.YELLOW);
-    LinearTranslateHandle translateDown = new LinearTranslateHandle(new MovementDescription(MovementDirection.DOWN, MovementType.ABSOLUTE), Color4f.YELLOW);
-    translateUp.setManipulation(new LinearDragManipulator());
-    translateUp.addToGroups(HandleSet.HandleGroup.ABSOLUTE_TRANSLATION, HandleSet.HandleGroup.Y_AXIS, HandleSet.HandleGroup.VISUALIZATION);
-    translateDown.addToGroups(HandleSet.HandleGroup.ABSOLUTE_TRANSLATION, HandleSet.HandleGroup.Y_AXIS, HandleSet.HandleGroup.VISUALIZATION);
-    translateUp.addToGroup(HandleSet.HandleGroup.INTERACTION);
-    translateUp.addToGroup(HandleSet.HandleGroup.VISUALIZATION);
-    translateDown.addToGroup(HandleSet.HandleGroup.VISUALIZATION);
-    translateDown.addCondition(new ManipulationEventCriteria(ManipulationEvent.EventType.Translate, new MovementDescription(MovementDirection.DOWN, MovementType.ABSOLUTE), PickHint.PickType.MOVEABLE.pickHint()));
-    translateUp.addCondition(new ManipulationEventCriteria(ManipulationEvent.EventType.Translate, new MovementDescription(MovementDirection.UP, MovementType.ABSOLUTE), PickHint.PickType.MOVEABLE.pickHint()));
-    this.addManipulationListener(translateUp);
-    this.addManipulationListener(translateDown);
-    translateDown.setDragAdapterAndAddHandle(this);
-    translateUp.setDragAdapterAndAddHandle(this);
-    translateDown.setName("translateDown");
-    translateUp.setName("translateUp");
-
-    LinearTranslateHandle translateXAxisRight = new LinearTranslateHandle(new MovementDescription(MovementDirection.RIGHT, MovementType.ABSOLUTE), Color4f.YELLOW);
-    LinearTranslateHandle translateXAxisLeft = new LinearTranslateHandle(new MovementDescription(MovementDirection.LEFT, MovementType.ABSOLUTE), Color4f.YELLOW);
-    translateXAxisLeft.setManipulation(new LinearDragManipulator());
-    //Add the left handle to the group to be shown by the system
-    translateXAxisLeft.addToGroups(HandleSet.HandleGroup.ABSOLUTE_TRANSLATION, HandleSet.HandleGroup.X_AXIS, HandleSet.HandleGroup.X_AND_Z_AXIS);
-    translateXAxisRight.addToGroups(HandleSet.HandleGroup.ABSOLUTE_TRANSLATION, HandleSet.HandleGroup.X_AXIS, HandleSet.HandleGroup.X_AND_Z_AXIS);
-    translateXAxisLeft.addToGroup(HandleSet.HandleGroup.INTERACTION);
-    translateXAxisLeft.addToGroup(HandleSet.HandleGroup.VISUALIZATION);
-    translateXAxisRight.addToGroup(HandleSet.HandleGroup.VISUALIZATION);
-    translateXAxisLeft.addCondition(new ManipulationEventCriteria(ManipulationEvent.EventType.Translate, new MovementDescription(MovementDirection.LEFT, MovementType.ABSOLUTE), PickHint.PickType.MOVEABLE.pickHint()));
-    translateXAxisRight.addCondition(new ManipulationEventCriteria(ManipulationEvent.EventType.Translate, new MovementDescription(MovementDirection.RIGHT, MovementType.ABSOLUTE), PickHint.PickType.MOVEABLE.pickHint()));
-    this.addManipulationListener(translateXAxisRight);
-    this.addManipulationListener(translateXAxisLeft);
-    translateXAxisRight.setDragAdapterAndAddHandle(this);
-    translateXAxisLeft.setDragAdapterAndAddHandle(this);
-    translateXAxisRight.setName("translateXAxisRight");
-    translateXAxisLeft.setName("translateXAxisLeft");
-
-    LinearTranslateHandle translateForward = new LinearTranslateHandle(new MovementDescription(MovementDirection.FORWARD, MovementType.ABSOLUTE), Color4f.YELLOW);
-    LinearTranslateHandle translateBackward = new LinearTranslateHandle(new MovementDescription(MovementDirection.BACKWARD, MovementType.ABSOLUTE), Color4f.YELLOW);
-    translateForward.setManipulation(new LinearDragManipulator());
-    translateForward.addToGroups(HandleSet.HandleGroup.ABSOLUTE_TRANSLATION, HandleSet.HandleGroup.Z_AXIS, HandleSet.HandleGroup.X_AND_Z_AXIS, HandleSet.HandleGroup.VISUALIZATION);
-    translateBackward.addToGroups(HandleSet.HandleGroup.ABSOLUTE_TRANSLATION, HandleSet.HandleGroup.Z_AXIS, HandleSet.HandleGroup.X_AND_Z_AXIS, HandleSet.HandleGroup.VISUALIZATION);
-    translateForward.addToGroup(HandleSet.HandleGroup.INTERACTION);
-    translateForward.addToGroup(HandleSet.HandleGroup.VISUALIZATION);
-    translateBackward.addToGroup(HandleSet.HandleGroup.VISUALIZATION);
-    translateBackward.addCondition(new ManipulationEventCriteria(ManipulationEvent.EventType.Translate, new MovementDescription(MovementDirection.BACKWARD, MovementType.ABSOLUTE), PickHint.PickType.MOVEABLE.pickHint()));
-    translateForward.addCondition(new ManipulationEventCriteria(ManipulationEvent.EventType.Translate, new MovementDescription(MovementDirection.FORWARD, MovementType.ABSOLUTE), PickHint.PickType.MOVEABLE.pickHint()));
-    this.addManipulationListener(translateForward);
-    this.addManipulationListener(translateBackward);
-    translateForward.setDragAdapterAndAddHandle(this);
-    translateBackward.setDragAdapterAndAddHandle(this);
-    translateForward.setName("translateForward");
-    translateBackward.setName("translateBackward");
-
-    LinearScaleHandle scaleAxisUniform = LinearScaleHandle.createFromResizer(Resizer.UNIFORM);
-    scaleAxisUniform.setManipulation(new ScaleDragManipulator());
-    scaleAxisUniform.addToSet(HandleSet.RESIZE_INTERACTION);
-    scaleAxisUniform.addToGroups(HandleSet.HandleGroup.RESIZE_AXIS, HandleSet.HandleGroup.VISUALIZATION);
-    scaleAxisUniform.addCondition(new ManipulationEventCriteria(ManipulationEvent.EventType.Scale, scaleAxisUniform.getMovementDescription(), PickHint.PickType.RESIZABLE.pickHint()));
-    scaleAxisUniform.setDragAdapterAndAddHandle(this);
-    scaleAxisUniform.setName("scaleAxisUniform");
-
-    LinearScaleHandle scaleAxisX = LinearScaleHandle.createFromResizer(Resizer.X_AXIS);
-    scaleAxisX.setManipulation(new ScaleDragManipulator());
-    scaleAxisX.addToSet(HandleSet.RESIZE_INTERACTION);
-    scaleAxisX.addToGroups(HandleSet.HandleGroup.X_AXIS, HandleSet.HandleGroup.VISUALIZATION);
-    scaleAxisX.addCondition(new ManipulationEventCriteria(ManipulationEvent.EventType.Scale, scaleAxisX.getMovementDescription(), PickHint.PickType.RESIZABLE.pickHint()));
-    scaleAxisX.setDragAdapterAndAddHandle(this);
-    scaleAxisX.setName("scaleAxisX");
-
-    LinearScaleHandle scaleAxisY = LinearScaleHandle.createFromResizer(Resizer.Y_AXIS);
-    scaleAxisY.setManipulation(new ScaleDragManipulator());
-    scaleAxisY.addToSet(HandleSet.RESIZE_INTERACTION);
-    scaleAxisY.addToGroups(HandleSet.HandleGroup.Y_AXIS, HandleSet.HandleGroup.VISUALIZATION);
-    scaleAxisY.addCondition(new ManipulationEventCriteria(ManipulationEvent.EventType.Scale, scaleAxisY.getMovementDescription(), PickHint.PickType.RESIZABLE.pickHint()));
-    scaleAxisY.setDragAdapterAndAddHandle(this);
-    scaleAxisY.setName("scaleAxisY");
-
-    LinearScaleHandle scaleAxisZ = LinearScaleHandle.createFromResizer(Resizer.Z_AXIS);
-    scaleAxisZ.setManipulation(new ScaleDragManipulator());
-    scaleAxisZ.addToSet(HandleSet.RESIZE_INTERACTION);
-    scaleAxisZ.addToGroups(HandleSet.HandleGroup.Z_AXIS, HandleSet.HandleGroup.VISUALIZATION);
-    scaleAxisZ.addCondition(new ManipulationEventCriteria(ManipulationEvent.EventType.Scale, scaleAxisZ.getMovementDescription(), PickHint.PickType.RESIZABLE.pickHint()));
-    scaleAxisZ.setDragAdapterAndAddHandle(this);
-    scaleAxisZ.setName("scaleAxisZ");
-
-    LinearScaleHandle scaleAxisXY = LinearScaleHandle.createFromResizer(Resizer.XY_PLANE);
-    scaleAxisXY.setManipulation(new ScaleDragManipulator());
-    scaleAxisXY.addToSet(HandleSet.RESIZE_INTERACTION);
-    scaleAxisXY.addToGroups(HandleSet.HandleGroup.X_AND_Y_AXIS, HandleSet.HandleGroup.VISUALIZATION);
-    scaleAxisXY.addCondition(new ManipulationEventCriteria(ManipulationEvent.EventType.Scale, scaleAxisXY.getMovementDescription(), PickHint.PickType.RESIZABLE.pickHint()));
-    scaleAxisXY.setDragAdapterAndAddHandle(this);
-    scaleAxisXY.setName("scaleAxisXY");
-
-    LinearScaleHandle scaleAxisXZ = LinearScaleHandle.createFromResizer(Resizer.XZ_PLANE);
-    scaleAxisXZ.setManipulation(new ScaleDragManipulator());
-    scaleAxisXZ.addToSet(HandleSet.RESIZE_INTERACTION);
-    scaleAxisXZ.addToGroups(HandleSet.HandleGroup.X_AND_Z_AXIS, HandleSet.HandleGroup.VISUALIZATION);
-    scaleAxisXZ.addCondition(new ManipulationEventCriteria(ManipulationEvent.EventType.Scale, scaleAxisXZ.getMovementDescription(), PickHint.PickType.RESIZABLE.pickHint()));
-    scaleAxisXZ.setDragAdapterAndAddHandle(this);
-    scaleAxisXZ.setName("scaleAxisXZ");
-
-    LinearScaleHandle scaleAxisYZ = LinearScaleHandle.createFromResizer(Resizer.YZ_PLANE);
-    scaleAxisYZ.setManipulation(new ScaleDragManipulator());
-    scaleAxisYZ.addToSet(HandleSet.RESIZE_INTERACTION);
-    scaleAxisYZ.addToGroups(HandleSet.HandleGroup.Y_AND_Z_AXIS, HandleSet.HandleGroup.VISUALIZATION);
-    scaleAxisYZ.addCondition(new ManipulationEventCriteria(ManipulationEvent.EventType.Scale, scaleAxisYZ.getMovementDescription(), PickHint.PickType.RESIZABLE.pickHint()));
-    scaleAxisYZ.setDragAdapterAndAddHandle(this);
-    scaleAxisYZ.setName("scaleAxisYZ");
   }
 
   public void addClickAdapter(ManipulatorClickAdapter clickAdapter, InputCondition... conditions) {

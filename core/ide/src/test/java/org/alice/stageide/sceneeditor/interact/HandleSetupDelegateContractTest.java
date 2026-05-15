@@ -65,7 +65,8 @@ import static org.junit.Assert.*;
  *   - HandleSetupDelegate class exists and is package-private
  *   - setupHandles is a static method accepting DragAdapter
  *   - GlobalDragAdapter line count is under 500
- *   - Unused Color4f and Resizer imports removed from GlobalDragAdapter
+ *   - Unused Color4f import removed from GlobalDragAdapter
+ *   - Resizer import retained in GlobalDragAdapter (still used in setUpControls)
  *   - Private setupHandles() method removed from GlobalDragAdapter
  *   - GlobalDragAdapter delegates to HandleSetupDelegate.setupHandles(this)
  *   - HandleSetupDelegate has correct copyright header
@@ -190,9 +191,9 @@ public class HandleSetupDelegateContractTest {
   }
 
   @Test
-  public void gdaNoResizerImport() throws IOException {
+  public void gdaStillImportsResizer() throws IOException {
     Set<String> imports = readImports(GDA_SRC);
-    assertFalse("GlobalDragAdapter should not import Resizer after extraction",
+    assertTrue("GlobalDragAdapter must still import Resizer (used in ResizeDragManipulator at line 173)",
         imports.stream().anyMatch(i -> i.contains("Resizer")));
   }
 
@@ -260,13 +261,17 @@ public class HandleSetupDelegateContractTest {
   }
 
   private static Path findSourceDir() {
-    Path candidate = Paths.get(
-        "core/ide/src/main/java/org/alice/stageide/sceneeditor/interact");
-    if (Files.isDirectory(candidate)) {
-      return candidate;
+    Path relative = Paths.get(
+        "src/main/java/org/alice/stageide/sceneeditor/interact");
+    if (Files.isDirectory(relative)) {
+      return relative;
     }
-    candidate = Paths.get(System.getProperty("user.dir"))
-        .resolve("core/ide/src/main/java/org/alice/stageide/sceneeditor/interact");
-    return candidate;
+    Path fromCoreIde = Paths.get(
+        "core/ide/src/main/java/org/alice/stageide/sceneeditor/interact");
+    if (Files.isDirectory(fromCoreIde)) {
+      return fromCoreIde;
+    }
+    return Paths.get(System.getProperty("user.dir"))
+        .resolve("src/main/java/org/alice/stageide/sceneeditor/interact");
   }
 }
