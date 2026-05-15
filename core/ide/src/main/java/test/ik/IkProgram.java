@@ -55,17 +55,11 @@ import org.lgna.ik.core.enforcer.JointedModelIkEnforcer;
 import org.lgna.ik.core.enforcer.TightPositionalIkEnforcer;
 import org.lgna.ik.core.enforcer.PositionConstraint;
 import org.lgna.ik.core.solver.Bone;
-import org.lgna.story.Color;
-import org.lgna.story.MoveDirection;
 import org.lgna.story.Position;
 import org.lgna.story.SBiped;
 import org.lgna.story.SCamera;
-import org.lgna.story.SCone;
-import org.lgna.story.SModel;
 import org.lgna.story.SProgram;
 import org.lgna.story.SSphere;
-import org.lgna.story.Turn;
-import org.lgna.story.TurnDirection;
 import org.lgna.story.implementation.AsSeenBy;
 import org.lgna.story.implementation.JointImp;
 import org.lgna.story.implementation.JointedModelImp;
@@ -75,8 +69,7 @@ import org.lgna.story.resources.DynamicBipedResource;
 import org.lgna.story.resources.JointId;
 import test.ik.croquet.*;
 
-import java.util.HashMap;
-import java.util.Map;
+
 
 /**
  * @author Dennis Cosgrove
@@ -126,51 +119,14 @@ class IkProgram extends SProgram {
       IkProgram.this.handleTargetTransformChanged();
     }
   };
-  //  private org.lgna.ik.solver.Chain chain;
-  //  private org.lgna.ik.solver.Solver solver;
   private JointedModelIkEnforcer ikEnforcer;
   private TightPositionalIkEnforcer tightIkEnforcer;
-
-  //  class Constraints {
-  ////    List<Constraint> allActiveConstraints = new ArrayList<Constraint>();
-  //    List<PositionConstraint> activePositionConstraints = new ArrayList<PositionConstraint>();
-  //    List<OrientationConstraint> activeOrientationConstraints = new ArrayList<OrientationConstraint>();
-  //  }
-  ////  private List<Constraint> activeConstraints = new ArrayList<Constraint>();
-  //  Constraints constraints = new Constraints();
 
   private boolean useTightIkEnforcer = false;
   private PositionConstraint myPositionConstraint;
 
-  //  protected java.util.Map<org.lgna.ik.solver.Bone.Axis, Double> currentSpeeds;
-
   private SphereImp getTargetImp() {
     return target.getImplementation();
-  }
-
-  private SModel createDragProp() {
-    SSphere mainSphere = new SSphere();
-
-    mainSphere.setRadius(0.13);
-    mainSphere.setPaint(Color.RED);
-    mainSphere.setOpacity(0.5);
-
-    mainSphere.resizeHeight(.7);
-    mainSphere.resizeWidth(.5);
-
-    SCone cone = new SCone();
-    cone.setBaseRadius(.07);
-    cone.setLength(.2);
-    cone.setPaint(Color.ORANGE);
-    //    cone.setOpacity(.5);
-    cone.resizeWidth(.5);
-    cone.resize(.8);
-    cone.setVehicle(mainSphere);
-    cone.move(MoveDirection.DOWN, .1);
-    cone.move(MoveDirection.RIGHT, .05);
-    cone.turn(TurnDirection.FORWARD, .25, Turn.asSeenBy(cone.getVehicle()));
-
-    return mainSphere;
   }
 
   private JointedModelImp<?, ?> getSubjectImp() {
@@ -197,7 +153,7 @@ class IkProgram extends SProgram {
   private void updateInfo() {
     Bone bone = BonesState.getInstance().getValue();
 
-    StringBuilder sb = new StringBuilder();
+    StringBuilder sb = new StringBuilder(256);
     if (bone != null) {
       JointImp a = bone.getA();
       //      org.lgna.story.implementation.JointImp b = bone.getB();
@@ -216,12 +172,6 @@ class IkProgram extends SProgram {
 
     InfoState.getInstance().setValueTransactionlessly(sb.toString());
   }
-
-  //  private org.lgna.ik.solver.Chain createChain() {
-  //    org.lgna.story.resources.JointId anchorId = test.ik.croquet.AnchorJointIdState.getInstance().getValue();
-  //    org.lgna.story.resources.JointId endId = test.ik.croquet.EndJointIdState.getInstance().getValue();
-  //    return org.lgna.ik.solver.Chain.createInstance( this.getSubjectImp(), anchorId, endId );
-  //  }
 
   protected void handleChainChanging() {
     JointId endId = EndJointIdState.getInstance().getValue();
@@ -263,35 +213,6 @@ class IkProgram extends SProgram {
     //    updateInfo();
   }
 
-  //  private void handleChainChanged_old() {
-  //    //this does not race with the thread. this creates a new one, it might use the old one one more time, which is fine.
-  //
-  //    if(chain != null) {
-  //      ikEnforcer.removeChain(chain);
-  //    }
-  //    chain = createChain();
-  //
-  //    if(chain != null) {
-  //      setDragAdornmentsVisible(true);
-  //      JointImp lastJointImp = chain.getLastJointImp();
-  //
-  //      edu.cmu.cs.dennisc.math.AffineMatrix4x4 ltrans = lastJointImp.getTransformation(org.lgna.story.implementation.AsSeenBy.SCENE);
-  //
-  //      edu.cmu.cs.dennisc.math.Point3 eePos = new edu.cmu.cs.dennisc.math.Point3(ltrans.translation);
-  //      eePos.add(edu.cmu.cs.dennisc.math.Point3.createMultiplication(ltrans.orientation.backward, -.2)); //can do something like this to drag fingertips. right now it results in jumping.
-  //      chain.setEndEffectorPosition(eePos);
-  //
-  //      //assuming that all are parented to scene...
-  //      this.getTargetImp().setLocalTransformation( new edu.cmu.cs.dennisc.math.AffineMatrix4x4(chain.getEndEffectorOrientation(), chain.getEndEffectorPosition()) );
-  //      ikEnforcer.addChain(chain);
-  //    } else {
-  //      setDragAdornmentsVisible(false);
-  //    }
-  //
-  //    test.ik.croquet.BonesState.getInstance().setChain( chain );
-  //    this.updateInfo();
-  //  }
-
   protected void targetDragStarted() {
   }
 
@@ -305,7 +226,7 @@ class IkProgram extends SProgram {
     }
   }
 
-  private void initializeTest() {
+  void initializeTest() {
     this.setActiveScene(this.scene);
     this.modelManipulationDragAdapter.setOnClickRunnable(new Runnable() {
       @Override
@@ -338,6 +259,7 @@ class IkProgram extends SProgram {
 
     this.handleChainChanged();
 
+    calculateThread.setDaemon(true);
     calculateThread.start();
   }
 
@@ -352,16 +274,14 @@ class IkProgram extends SProgram {
 
     //using ikEnforcer's methods rather than dealing with chains.
 
-    Thread calculateThread = new Thread() {
+    Thread calculateThread = new Thread("IK-OldEnforcer") {
       @Override
       public void run() {
+        final double maxLinearSpeedForEe = IkConstants.MAX_LINEAR_SPEED_FOR_EE;
+        final double maxAngularSpeedForEe = IkConstants.MAX_ANGULAR_SPEED_FOR_EE;
+        final double deltaTime = IkConstants.DESIRED_DELTA_TIME;
+
         while (!interrupted()) {
-          //solver has the chain. can also have multiple chains.
-          //I can tell solver, for this chain this is the linear target, etc.
-          //it actually only needs the velocity, etc. then, I should say for this chain this is the desired velocity. ok.
-
-          Map<Bone.Axis, Double> desiredSpeedForAxis = new HashMap<Bone.Axis, Double>();
-
           //not bad concurrent programming practice
           boolean isLinearEnabled = IsLinearEnabledState.getInstance().getValue();
           boolean isAngularEnabled = IsAngularEnabledState.getInstance().getValue();
@@ -369,11 +289,6 @@ class IkProgram extends SProgram {
           //these could be multiple. in this app it is one pair.
           final JointId eeId = EndJointIdState.getInstance().getValue();
           final JointId anchorId = AnchorJointIdState.getInstance().getValue();
-
-          double maxLinearSpeedForEe = IkConstants.MAX_LINEAR_SPEED_FOR_EE;
-          double maxAngularSpeedForEe = IkConstants.MAX_ANGULAR_SPEED_FOR_EE;
-
-          double deltaTime = IkConstants.DESIRED_DELTA_TIME;
 
           if (ikEnforcer.hasActiveChain() && (isLinearEnabled || isAngularEnabled)) {
             //I could make chain setter not race with this
@@ -394,17 +309,6 @@ class IkProgram extends SProgram {
             Point3 ap = ikEnforcer.getAnchorPosition(anchorId);
             scene.anchor.setPositionRelativeToVehicle(new Position(ap));
             scene.ee.setPositionRelativeToVehicle(new Position(ep));
-
-            //force bone reprint
-            //this should be fine even if the chain is not valid anymore.
-            //            javax.swing.SwingUtilities.invokeLater(new Runnable() {
-            //              public void run() {
-            //                //this would prevent me from selecting the list
-            ////                test.ik.croquet.BonesState.getInstance().setChain( ikEnforcer.getChainForPrinting(anchorId, eeId) );
-            //                //this would throw java.lang.IllegalStateException: Attempt to mutate in notification
-            ////                updateInfo();
-            //              }
-            //            });
           }
 
           try {
@@ -423,16 +327,9 @@ class IkProgram extends SProgram {
   private Thread initializeTightIkEnforcer() {
     tightIkEnforcer = new TightPositionalIkEnforcer(getSubjectImp());
 
-    Thread calculateThread = new Thread() {
+    Thread calculateThread = new Thread("IK-TightEnforcer") {
       @Override
       public void run() {
-        //        System.out.println("will start");
-        //        try {
-        //          System.in.read();
-        //        } catch (IOException e1) {
-        //          // TODO Auto-generated catch block
-        //          e1.printStackTrace();
-        //        }
         while (!interrupted()) {
 
           //not bad concurrent programming practice
@@ -443,34 +340,9 @@ class IkProgram extends SProgram {
           final JointId eeId = EndJointIdState.getInstance().getValue();
           final JointId anchorId = AnchorJointIdState.getInstance().getValue();
 
-          double deltaTime = IkConstants.DESIRED_DELTA_TIME;
-
           AffineMatrix4x4 targetTransformation = getTargetImp().getTransformation(AsSeenBy.SCENE);
 
           myPositionConstraint.setEeDesiredPosition(targetTransformation.translation());
-
-          //          //this is a little weird. I'd better let the enforcer create and hold the constraint, and I should hold a pointer to it for myself.
-          //          for(PositionConstraint positionConstraint: constraints.activePositionConstraints) {
-          //            //should it be like this, or should constraints read them automatically?
-          //              //IK system reads joint angles automatically anyway
-          //              //but these desired position/orientations are not necessarily tied to scenegraph stuff. I should give them myself like this.
-          //            positionConstraint.setEeDesiredPosition(targetTransformation.translation);
-          //
-          //            //force bone reprint
-          //            //this should be fine even if the chain is not valid anymore.
-          //            //this would prevent me from selecting the list
-          ////            javax.swing.SwingUtilities.invokeLater(new Runnable() {
-          ////              public void run() {
-          ////                test.ik.croquet.BonesState.getInstance().setChain( ikEnforcer.getChainForPrinting(anchorId, eeId) );
-          ////              }
-          ////            });
-          //          }
-          //
-          //          for(OrientationConstraint orientationConstraint: constraints.activeOrientationConstraints) {
-          //            System.out.println("orientaiton constraint!");
-          //            orientationConstraint.setEeDesiredOrientation(targetTransformation.orientation);
-          //          }
-          //perhaps better ways of setting constraint values?
 
           //this enforces the constraints immediately right now. so, there is no talk about deltatime or speed
           //had I had a maximum rotational speed for joints, then having time would make sense
@@ -498,30 +370,5 @@ class IkProgram extends SProgram {
 
   private void handleBoneChanged() {
     this.updateInfo();
-  }
-
-  public static void main(String[] args) {
-
-    IkSplitComposite ikSplitComposite = new IkSplitComposite();
-    IkTestApplication app = new IkTestApplication();
-    app.initialize(args);
-    app.getDocumentFrame().getFrame().setMainComposite(ikSplitComposite);
-
-    JointId initialAnchor = BipedResource.RIGHT_CLAVICLE;
-    JointId initialEnd = BipedResource.RIGHT_WRIST;
-
-    AnchorJointIdState.getInstance().setValueTransactionlessly(initialAnchor);
-    EndJointIdState.getInstance().setValueTransactionlessly(initialEnd);
-
-    IsLinearEnabledState.getInstance().setValueTransactionlessly(true);
-    IsAngularEnabledState.getInstance().setValueTransactionlessly(false);
-
-    IkProgram program = new IkProgram();
-
-    ikSplitComposite.getSceneComposite().getView().initializeInAwtContainer(program);
-    program.initializeTest();
-
-    app.getDocumentFrame().getFrame().setSize(1200, 800);
-    app.getDocumentFrame().getFrame().setVisible(true);
   }
 }
