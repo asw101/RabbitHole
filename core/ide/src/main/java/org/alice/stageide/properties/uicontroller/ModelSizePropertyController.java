@@ -109,12 +109,12 @@ public class ModelSizePropertyController extends AbstractAdapterController<Dimen
   private boolean isUpdatingState = false;
   private boolean doUpdateOnAdapter = true;
 
-  private final int GLUE_X_POS = 8;
-  private final int RESET_X_POS = 7;
-  private final int SCALE_ALL_X_POS = 6;
-  private final int SCALE_XZ_X_POS = 5;
-  private final int SCALE_YZ_X_POS = 4;
-  private final int SCALE_XY_X_POS = 3;
+  private static final int GLUE_X_POS = 8;
+  private static final int RESET_X_POS = 7;
+  private static final int SCALE_ALL_X_POS = 6;
+  private static final int SCALE_XZ_X_POS = 5;
+  private static final int SCALE_YZ_X_POS = 4;
+  private static final int SCALE_XY_X_POS = 3;
 
   private static final Insets INSETS_2 = new Insets(2, 2, 2, 2);
 
@@ -162,10 +162,6 @@ public class ModelSizePropertyController extends AbstractAdapterController<Dimen
     this.depthField = new DoubleTextField(3);
     this.depthField.addActionListener(this.valueChangeListener);
 
-    //    this.linkXYButton = new LinkScaleButton( IsXYScaleLinkedState.getInstance(), IsXYScaleLinkedState.class.getResource( "images/subScaleLinked.png" ), IsXYScaleLinkedState.class.getResource( "images/subScaleUnlinked.png" ) );
-    //    this.linkXZButton = new LinkScaleButton( IsXZScaleLinkedState.getInstance(), IsXZScaleLinkedState.class.getResource( "images/subScaleLinked_long.png" ), IsXZScaleLinkedState.class.getResource( "images/subScaleUnlinked_long.png" ) );
-    //    this.linkYZButton = new LinkScaleButton( IsYZScaleLinkedState.getInstance(), IsYZScaleLinkedState.class.getResource( "images/subScaleLinked.png" ), IsYZScaleLinkedState.class.getResource( "images/subScaleUnlinked.png" ) );
-    //    this.linkAllButton = new LinkScaleButton( IsAllScaleLinkedState.getInstance() );
     this.linkXYButton = new LinkScaleButton(IsXYScaleLinkedState.getInstance());
     this.linkXZButton = new LinkScaleButton(IsXZScaleLinkedState.getInstance());
     this.linkYZButton = new LinkScaleButton(IsYZScaleLinkedState.getInstance());
@@ -381,8 +377,7 @@ public class ModelSizePropertyController extends AbstractAdapterController<Dimen
         }
       }
     }
-    Dimension3 newSize = new Dimension3(width, height, depth);
-    return newSize;
+    return new Dimension3(width, height, depth);
   }
 
   private void updateUIFromLinkState(State<Boolean> state, Boolean prevValue, Boolean nextValue) {
