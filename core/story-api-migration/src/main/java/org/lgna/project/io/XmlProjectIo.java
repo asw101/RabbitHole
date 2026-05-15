@@ -92,6 +92,15 @@ public class XmlProjectIo implements ProjectIo {
 
   private static OptionalMigrationManager CAMERA_TO_VR = new OptionalMigrationManager(new ReplaceCameraWithVR());
 
+  private static IsInstanceCrawler<ResourceExpression> resourceExpressionCrawler() {
+    return new IsInstanceCrawler<ResourceExpression>(ResourceExpression.class) {
+      @Override
+      protected boolean isAcceptable(ResourceExpression resourceExpression) {
+        return true;
+      }
+    };
+  }
+
   public static XmlProjectReader reader(ZipEntryContainer container) {
     return new XmlProjectReader(container);
   }
@@ -183,13 +192,7 @@ public class XmlProjectIo implements ProjectIo {
     }
 
     private static String readContent(InputStream is) throws IOException {
-      ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-      byte[] chunk = new byte[8192];
-      int count;
-      while ((count = is.read(chunk)) != -1) {
-        buffer.write(chunk, 0, count);
-      }
-      return new String(buffer.toByteArray(), StandardCharsets.UTF_8);
+      return new String(is.readAllBytes(), StandardCharsets.UTF_8);
     }
 
     private Document readXML(String entryName, MigrationManager migrationManager, Version decodedVersion) throws IOException {
@@ -269,12 +272,7 @@ public class XmlProjectIo implements ProjectIo {
       for (Resource resource : resources) {
         resourcesById.put(resource.getId(), resource);
       }
-      IsInstanceCrawler<ResourceExpression> crawler = new IsInstanceCrawler<ResourceExpression>(ResourceExpression.class) {
-        @Override
-        protected boolean isAcceptable(ResourceExpression resourceExpression) {
-          return true;
-        }
-      };
+      IsInstanceCrawler<ResourceExpression> crawler = resourceExpressionCrawler();
       type.crawl(crawler, CrawlPolicy.COMPLETE);
       for (ResourceExpression resourceExpression : crawler.getList()) {
         Resource expressionResource = resourceExpression.resource.getValue();
@@ -342,12 +340,8 @@ public class XmlProjectIo implements ProjectIo {
       return false;
     }
 
-    private static String getValidFileName(Resource resource) {
-      return ResourceExportNames.entryFileName(resource);
-    }
-
     private static String generateEntryName(Resource resource, Set<String> usedEntryNames) {
-      String validFilename = getValidFileName(resource);
+      String validFilename = ResourceExportNames.entryFileName(resource);
       final String DESIRED_DIRECTORY_NAME = "resources";
       int i = 1;
       while (true) {
@@ -416,12 +410,7 @@ public class XmlProjectIo implements ProjectIo {
       writeDataSources(zos, dataSources);
       Set<Resource> resources = project.getResources();
 
-      IsInstanceCrawler<ResourceExpression> crawler = new IsInstanceCrawler<ResourceExpression>(ResourceExpression.class) {
-        @Override
-        protected boolean isAcceptable(ResourceExpression resourceExpression) {
-          return true;
-        }
-      };
+      IsInstanceCrawler<ResourceExpression> crawler = resourceExpressionCrawler();
       programType.crawl(crawler, CrawlPolicy.COMPLETE);
 
       for (ResourceExpression resourceExpression : crawler.getList()) {
@@ -446,12 +435,7 @@ public class XmlProjectIo implements ProjectIo {
       writeType(type, zos, TYPE_ENTRY_NAME);
       writeDataSources(zos, dataSources);
 
-      IsInstanceCrawler<ResourceExpression> crawler = new IsInstanceCrawler<ResourceExpression>(ResourceExpression.class) {
-        @Override
-        protected boolean isAcceptable(ResourceExpression resourceExpression) {
-          return true;
-        }
-      };
+      IsInstanceCrawler<ResourceExpression> crawler = resourceExpressionCrawler();
       type.crawl(crawler, CrawlPolicy.EXCLUDE_REFERENCES_ENTIRELY);
       Set<Resource> resources = new HashSet<>();
       for (ResourceExpression resourceExpression : crawler.getList()) {
