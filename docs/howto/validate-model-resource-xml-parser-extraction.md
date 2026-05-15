@@ -47,7 +47,7 @@ Expected: at least 5 matches. The extracted methods are:
 | `getBoundingBoxFromXML`            | `(Element) → AxisAlignedBox`                                   |
 | `getSubResourceFromXML`            | `(Element, ModelResourceInfo) → ModelResourceInfo`             |
 | `getResourceTags`                  | `(Element, String, String) → String[]`                         |
-| `addImmediateChildTextContent`     | `(Element, String, LinkedList<String>) → void`                 |
+| `addImmediateChildTextContent`     | `(Element, String, List<String>) → void`                 |
 | `getImmediateChildElementsByTagName` | `(Element, String) → List<Element>`                          |
 
 ## Step 4: Verify the methods were removed from ModelResourceInfo
@@ -197,5 +197,5 @@ If `getSubResourceFromXML` cannot instantiate `ModelResourceInfo`, verify the
 ### Test failures on tag ordering
 
 Tag arrays are order-sensitive. Parent tags appear first, then child tags. The
-`getResourceTags` method preserves document order via `LinkedList` insertion.
+`getResourceTags` method preserves document order via `ArrayList` insertion.
 Verify no sorting was inadvertently introduced.

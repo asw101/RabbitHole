@@ -35,7 +35,7 @@ utilities internally.
 | `getBoundingBoxFromXML(Element)` | Extracts min/max coordinates from a `<BoundingBox>` element and returns an `AxisAlignedBox`. Returns `null` if the element is null. |
 | `getSubResourceFromXML(Element, ModelResourceInfo)` | Parses a `<Resource>` element into a child `ModelResourceInfo` linked to the given parent. Returns `null` if the element is null. |
 | `getResourceTags(Element, String, String)` | Collects tag text content from immediate children matching `tagName`, both directly on the element and inside a container element named `containerTagName`. Returns a `String[]`. |
-| `addImmediateChildTextContent(Element, String, LinkedList<String>)` | Appends the text content of each immediate child matching `tagName` to the provided list. |
+| `addImmediateChildTextContent(Element, String, List<String>)` | Appends the text content of each immediate child matching `tagName` to the provided list. |
 | `getImmediateChildElementsByTagName(Element, String)` | Returns immediate child elements matching `tagName`, without descending into nested elements (unlike `getElementsByTagName`). |
 
 ## Method details
@@ -104,7 +104,7 @@ Result: `["bare-tag", "contained-tag"]`
 ### addImmediateChildTextContent
 
 ```java
-static void addImmediateChildTextContent(Element parent, String tagName, LinkedList<String> textContent)
+static void addImmediateChildTextContent(Element parent, String tagName, List<String> textContent)
 ```
 
 Iterates immediate child elements of `parent` matching `tagName` and appends
