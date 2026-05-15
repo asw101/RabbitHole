@@ -216,22 +216,17 @@ final class ModelResourceJavaGenerator {
   }
 
   static List<String> getMandatoryJointArrayNames(Class<?> superClass) {
-    List<String> methodNames = new ArrayList<>();
-    for (Method method : getMandatoryMethods(superClass, JointId[].class)) {
-      methodNames.add(method.getName());
-    }
     List<String> arrayNames = new ArrayList<>();
-    for (String methodName : methodNames) {
-      int index = methodName.indexOf("get");
-      if ((index == 0)) {
+    for (Method method : getMandatoryMethods(superClass, JointId[].class)) {
+      String methodName = method.getName();
+      if (methodName.startsWith("get")) {
         if (!methodName.equals("getRootJointIds")) {
           String newName = methodName.substring(3);
           int arrayIndex = newName.indexOf("Array");
           if (arrayIndex != -1) {
             newName = newName.substring(0, arrayIndex);
           }
-          newName = AliceResourceUtilities.makeEnumName(newName);
-          arrayNames.add(newName);
+          arrayNames.add(AliceResourceUtilities.makeEnumName(newName));
         }
       } else {
         System.err.println("FROM " + superClass
@@ -242,21 +237,16 @@ final class ModelResourceJavaGenerator {
   }
 
   static List<String> getMandatoryPoseNames(Class<?> superClass) {
-    List<String> methodNames = new ArrayList<>();
-    for (Method method : getMandatoryMethods(superClass, Pose.class)) {
-      methodNames.add(method.getName());
-    }
     List<String> poseNames = new ArrayList<>();
-    for (String methodName : methodNames) {
-      int index = methodName.indexOf("get");
-      if ((index == 0)) {
+    for (Method method : getMandatoryMethods(superClass, Pose.class)) {
+      String methodName = method.getName();
+      if (methodName.startsWith("get")) {
         String newName = methodName.substring(3);
-        int arrayIndex = newName.indexOf("Pose");
-        if (arrayIndex != -1) {
-          newName = newName.substring(0, arrayIndex);
+        int poseIndex = newName.indexOf("Pose");
+        if (poseIndex != -1) {
+          newName = newName.substring(0, poseIndex);
         }
-        newName = AliceResourceUtilities.makeEnumName(newName);
-        poseNames.add(newName);
+        poseNames.add(AliceResourceUtilities.makeEnumName(newName));
       } else {
         System.err.println("FROM " + superClass
             + ": UNABLE TO CONVERT " + methodName + " INTO POSE NAME.");
@@ -289,11 +279,12 @@ final class ModelResourceJavaGenerator {
   }
 
   static String buildJavaCodeBody(ModelResourceExporter exporter) throws java.util.zip.DataFormatException {
-      StringBuilder sb = new StringBuilder();
+      StringBuilder sb = new StringBuilder(4096);
       String javaClassName = getJavaClassName(exporter);
+      ModelClassData classData = exporter.getClassData();
 
       ResourceCodeTemplates.appendPreambleAndEnumConstants(sb, exporter, javaClassName);
-      Set<String> existingIds = new HashSet<>(getExistingJointIds(exporter.getClassData().superClass));
+      Set<String> existingIds = new HashSet<>(getExistingJointIds(classData.superClass));
       boolean addedRoots = false;
       List<Tuple2<String, String>> trimmedSkeleton = makeCodeReadyTree(exporter.getJointList());
       if (trimmedSkeleton != null) {
@@ -325,56 +316,57 @@ final class ModelResourceJavaGenerator {
           ResourceCodeTemplates.appendRootJointIds(sb, rootJoints);
         }
 
-        List<String> mandatoryPoseNames = getMandatoryPoseNames(exporter.getClassData().superClass);
+        List<String> mandatoryPoseNames = getMandatoryPoseNames(classData.superClass);
         ResourceCodeTemplates.appendPoseFields(sb, poseEntries, mandatoryPoseNames,
-            exporter.getClassData(), javaClassName);
+            classData, javaClassName);
 
-        List<String> mandatoryArrayNames = getMandatoryJointArrayNames(exporter.getClassData().superClass);
-        List<String> declaredArrays = getAlreadyDeclaredJointArrayNames(exporter.getClassData().superClass);
+        List<String> mandatoryArrayNames = getMandatoryJointArrayNames(classData.superClass);
+        List<String> declaredArrays = getAlreadyDeclaredJointArrayNames(classData.superClass);
         ResourceCodeTemplates.appendArrayFields(sb, arrayEntries, mandatoryArrayNames,
             declaredArrays, trimmedSkeleton, hideElementArrays,
-            exporter.getClassData(), javaClassName);
+            classData, javaClassName);
       }
 
       ResourceCodeTemplates.appendConstructorsAndMethods(sb, addedRoots,
-          exporter.getClassData(), javaClassName);
+          classData, javaClassName);
 
       return sb.toString();
   }
 
   static List<String> getExistingJointIds(Class<?> resourceClass) {
     List<String> ids = new ArrayList<>();
-    Field[] fields = resourceClass.getDeclaredFields();
-    for (Field f : fields) {
+    collectExistingJointIds(resourceClass, ids);
+    return ids;
+  }
+
+  private static void collectExistingJointIds(Class<?> resourceClass, List<String> ids) {
+    for (Field f : resourceClass.getDeclaredFields()) {
       if (JointId.class.isAssignableFrom(f.getType())) {
-        String fieldName = f.getName();
-        ids.add(fieldName);
+        ids.add(f.getName());
       }
     }
-    Class<?>[] interfaces = resourceClass.getInterfaces();
-    for (Class<?> i : interfaces) {
-      ids.addAll(getExistingJointIds(i));
+    for (Class<?> i : resourceClass.getInterfaces()) {
+      collectExistingJointIds(i, ids);
     }
-    return ids;
   }
 
   static String getAccessorMethodsForResourceClass(Class<? extends JointedModelResource> resourceClass) {
     StringBuilder sb = new StringBuilder();
-    List<String> jointIds = getExistingJointIds(resourceClass);
-    for (String id : jointIds) {
-      sb.append("public Joint get" + AliceResourceClassUtilities.getAliceMethodNameForEnum(id) + "() {\n");
-      sb.append("\t return org.lgna.story.Joint.getJoint( this, " + resourceClass.getCanonicalName() + "." + id + ");\n");
+    String className = resourceClass.getCanonicalName();
+    for (String id : getExistingJointIds(resourceClass)) {
+      sb.append("public Joint get").append(AliceResourceClassUtilities.getAliceMethodNameForEnum(id)).append("() {\n");
+      sb.append("\t return org.lgna.story.Joint.getJoint( this, ").append(className).append(".").append(id).append(");\n");
       sb.append("}\n");
     }
     return sb.toString();
   }
 
   static String getJointAccessCodeForClass(Class<?> resourceClass) {
-    List<String> ids = getExistingJointIds(resourceClass);
     StringBuilder sb = new StringBuilder();
-    for (String id : ids) {
-      sb.append("public org.lgna.story.Joint get" + AliceResourceClassUtilities.getAliceMethodNameForEnum(id) + "() {\n");
-      sb.append("\treturn org.lgna.story.Joint.getJoint( this, " + resourceClass.getName() + "." + id + " );\n");
+    String className = resourceClass.getName();
+    for (String id : getExistingJointIds(resourceClass)) {
+      sb.append("public org.lgna.story.Joint get").append(AliceResourceClassUtilities.getAliceMethodNameForEnum(id)).append("() {\n");
+      sb.append("\treturn org.lgna.story.Joint.getJoint( this, ").append(className).append(".").append(id).append(" );\n");
       sb.append("}\n");
     }
     return sb.toString();

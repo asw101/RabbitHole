@@ -72,18 +72,21 @@ final class ResourceCodeTemplates {
     ModelClassData classData = exporter.getClassData();
     sb.append(JavaCodeUtilities.getCopyrightComment());
     sb.append(JavaCodeUtilities.LINE_RETURN);
-    sb.append("package " + classData.packageString + ";" + JavaCodeUtilities.LINE_RETURN + JavaCodeUtilities.LINE_RETURN);
-    sb.append("import org.lgna.project.annotations.*;" + JavaCodeUtilities.LINE_RETURN);
-    sb.append("import org.lgna.story.implementation.JointIdTransformationPair;" + JavaCodeUtilities.LINE_RETURN);
-    sb.append("import org.lgna.story.Orientation;" + JavaCodeUtilities.LINE_RETURN);
-    sb.append("import org.lgna.story.Position;" + JavaCodeUtilities.LINE_RETURN);
-    sb.append("import org.lgna.story.resources.ImplementationAndVisualType;" + JavaCodeUtilities.LINE_RETURN + JavaCodeUtilities.LINE_RETURN);
+    sb.append("package ").append(classData.packageString).append(";")
+      .append(JavaCodeUtilities.LINE_RETURN).append(JavaCodeUtilities.LINE_RETURN);
+    sb.append("import org.lgna.project.annotations.*;").append(JavaCodeUtilities.LINE_RETURN);
+    sb.append("import org.lgna.story.implementation.JointIdTransformationPair;").append(JavaCodeUtilities.LINE_RETURN);
+    sb.append("import org.lgna.story.Orientation;").append(JavaCodeUtilities.LINE_RETURN);
+    sb.append("import org.lgna.story.Position;").append(JavaCodeUtilities.LINE_RETURN);
+    sb.append("import org.lgna.story.resources.ImplementationAndVisualType;")
+      .append(JavaCodeUtilities.LINE_RETURN).append(JavaCodeUtilities.LINE_RETURN);
     if (exporter.isDeprecated()) {
-      sb.append("@Deprecated" + JavaCodeUtilities.LINE_RETURN);
+      sb.append("@Deprecated").append(JavaCodeUtilities.LINE_RETURN);
     }
-    sb.append("public enum " + javaClassName + " implements " + classData.superClass.getCanonicalName() + " {" + JavaCodeUtilities.LINE_RETURN);
+    sb.append("public enum ").append(javaClassName).append(" implements ")
+      .append(classData.superClass.getCanonicalName()).append(" {").append(JavaCodeUtilities.LINE_RETURN);
     appendEnumConstants(sb, exporter);
-    sb.append(";" + JavaCodeUtilities.LINE_RETURN);
+    sb.append(";").append(JavaCodeUtilities.LINE_RETURN);
   }
 
   private static void appendEnumConstants(StringBuilder sb, ModelResourceExporter exporter) {
@@ -93,13 +96,12 @@ final class ResourceCodeTemplates {
       String resourceEnumName = ModelResourceJavaGenerator.createResourceEnumName(exporter, resource);
       if (ModelResourceJavaGenerator.isValidEnumName(exporter, resource.getModelName(), resourceEnumName)) {
         if (!isFirst) {
-          sb.append("," + JavaCodeUtilities.LINE_RETURN);
+          sb.append(",").append(JavaCodeUtilities.LINE_RETURN);
         }
-        String typeString = "";
+        sb.append("\t").append(resourceEnumName);
         if (!resource.getTypeString().equals(ImplementationAndVisualType.ALICE.toString())) {
-          typeString = "( ImplementationAndVisualType." + resource.getTypeString() + " )";
+          sb.append("( ImplementationAndVisualType.").append(resource.getTypeString()).append(" )");
         }
-        sb.append("\t" + resourceEnumName + typeString);
         isFirst = false;
       } else {
         System.out.println("SKIPPING ENUM NAME: " + resourceEnumName);
@@ -140,15 +142,19 @@ final class ResourceCodeTemplates {
         boolean suppressInArray = (arrayNameForJoint != null)
             && !(exposeFirstArrays.contains(arrayNameForJoint) && ModelResourceArrayUtilities.getArrayIndexForJoint(jointString) == 0);
         if (suppressJoint || suppressInArray) {
-          sb.append("@FieldTemplate(visibility=Visibility.COMPLETELY_HIDDEN)" + JavaCodeUtilities.LINE_RETURN);
+          sb.append("@FieldTemplate(visibility=Visibility.COMPLETELY_HIDDEN)").append(JavaCodeUtilities.LINE_RETURN);
         } else {
           if (arrayNameForJoint != null) {
-            sb.append("@FieldTemplate(visibility=Visibility.PRIME_TIME, methodNameHint=\"" + ModelResourceJavaGenerator.getJointAccessMethodNameForArrayJoint(jointString) + "\")" + JavaCodeUtilities.LINE_RETURN);
+            sb.append("@FieldTemplate(visibility=Visibility.PRIME_TIME, methodNameHint=\"")
+              .append(ModelResourceJavaGenerator.getJointAccessMethodNameForArrayJoint(jointString))
+              .append("\")").append(JavaCodeUtilities.LINE_RETURN);
           } else {
-            sb.append("@FieldTemplate(visibility=Visibility.PRIME_TIME)" + JavaCodeUtilities.LINE_RETURN);
+            sb.append("@FieldTemplate(visibility=Visibility.PRIME_TIME)").append(JavaCodeUtilities.LINE_RETURN);
           }
         }
-        sb.append("\tpublic static final org.lgna.story.resources.JointId " + jointString + " = new org.lgna.story.resources.JointId( " + parentString + ", " + javaClassName + ".class );" + JavaCodeUtilities.LINE_RETURN);
+        sb.append("\tpublic static final org.lgna.story.resources.JointId ").append(jointString)
+          .append(" = new org.lgna.story.resources.JointId( ").append(parentString)
+          .append(", ").append(javaClassName).append(".class );").append(JavaCodeUtilities.LINE_RETURN);
       }
     }
     return rootJoints;
@@ -156,14 +162,10 @@ final class ResourceCodeTemplates {
 
   static void appendRootJointIds(StringBuilder sb, List<String> rootJoints) {
     sb.append("\n@FieldTemplate( visibility = org.lgna.project.annotations.Visibility.COMPLETELY_HIDDEN )");
-    sb.append("\n\tpublic static final org.lgna.story.resources.JointId[] " + ModelResourceJavaGenerator.ROOT_IDS_FIELD_NAME + " = { ");
-    for (int i = 0; i < rootJoints.size(); i++) {
-      sb.append(rootJoints.get(i));
-      if (i < (rootJoints.size() - 1)) {
-        sb.append(", ");
-      }
-    }
-    sb.append(" };" + JavaCodeUtilities.LINE_RETURN);
+    sb.append("\n\tpublic static final org.lgna.story.resources.JointId[] ")
+      .append(ModelResourceJavaGenerator.ROOT_IDS_FIELD_NAME)
+      .append(" = { ").append(String.join(", ", rootJoints))
+      .append(" };").append(JavaCodeUtilities.LINE_RETURN);
   }
 
   static void appendPoseFields(
@@ -194,27 +196,33 @@ final class ResourceCodeTemplates {
         sb.append("\n\t@FieldTemplate( visibility = org.lgna.project.annotations.Visibility.COMPLETELY_HIDDEN )");
       }
 
-      Class poseType = JointedModelPose.class;
-      String poseTypeString = poseType.getName();
-      sb.append("\n\tpublic static final " + poseTypeString + " " + fullPoseName + " = new " + poseTypeString + "( ");
+      String poseTypeString = JointedModelPose.class.getName();
+      sb.append("\n\tpublic static final ").append(poseTypeString).append(" ").append(fullPoseName)
+        .append(" = new ").append(poseTypeString).append("( ");
       sb.append(JavaCodeUtilities.LINE_RETURN);
       int count = 0;
       for (Map.Entry<String, AffineMatrix4x4> poseDataEntry : poseData.entrySet()) {
         count++;
         UnitQuaternion quat = poseDataEntry.getValue().orientation().asUnitQuaternion();
         Point3 pos = poseDataEntry.getValue().translation();
-        sb.append("\t\tnew JointIdTransformationPair( " + poseDataEntry.getKey() + ", new Orientation(" + quat.x() + ", " + quat.y() + ", " + quat.z() + ", " + quat.w() + "), new Position(" + pos.x() + ", " + pos.y() + ", " + pos.z() + ") )");
+        sb.append("\t\tnew JointIdTransformationPair( ").append(poseDataEntry.getKey())
+          .append(", new Orientation(").append(quat.x()).append(", ").append(quat.y())
+          .append(", ").append(quat.z()).append(", ").append(quat.w())
+          .append("), new Position(").append(pos.x()).append(", ").append(pos.y())
+          .append(", ").append(pos.z()).append(") )");
         if (count != poseData.size()) {
           sb.append(",");
         }
         sb.append(JavaCodeUtilities.LINE_RETURN);
       }
-      sb.append("\t);" + JavaCodeUtilities.LINE_RETURN + JavaCodeUtilities.LINE_RETURN);
+      sb.append("\t);").append(JavaCodeUtilities.LINE_RETURN).append(JavaCodeUtilities.LINE_RETURN);
       if (needsAccessor) {
         String poseAccessorName = ModelResourceJavaGenerator.getAccessorMethodName(fullPoseName);
-        sb.append("\tpublic " + poseType.getName() + " " + poseAccessorName + "(){" + JavaCodeUtilities.LINE_RETURN);
-        sb.append("\t\treturn " + javaClassName + "." + fullPoseName + ";" + JavaCodeUtilities.LINE_RETURN);
-        sb.append("\t}" + JavaCodeUtilities.LINE_RETURN);
+        sb.append("\tpublic ").append(poseTypeString).append(" ").append(poseAccessorName)
+          .append("(){").append(JavaCodeUtilities.LINE_RETURN);
+        sb.append("\t\treturn ").append(javaClassName).append(".").append(fullPoseName)
+          .append(";").append(JavaCodeUtilities.LINE_RETURN);
+        sb.append("\t}").append(JavaCodeUtilities.LINE_RETURN);
       }
     }
   }
@@ -263,23 +271,23 @@ final class ResourceCodeTemplates {
             break;
           }
         }
-        sb.append("@FieldTemplate(visibility=Visibility.PRIME_TIME)" + JavaCodeUtilities.LINE_RETURN);
-        sb.append("\tpublic static final org.lgna.story.resources.JointArrayId " + fullArrayName + " = new org.lgna.story.resources.JointArrayId( \"" + arrayEntry.getKey() + "\", " + parentString + ", " + javaClassName + ".class );" + JavaCodeUtilities.LINE_RETURN);
+        sb.append("@FieldTemplate(visibility=Visibility.PRIME_TIME)").append(JavaCodeUtilities.LINE_RETURN);
+        sb.append("\tpublic static final org.lgna.story.resources.JointArrayId ").append(fullArrayName)
+          .append(" = new org.lgna.story.resources.JointArrayId( \"").append(arrayEntry.getKey())
+          .append("\", ").append(parentString).append(", ").append(javaClassName)
+          .append(".class );").append(JavaCodeUtilities.LINE_RETURN);
       } else {
-        sb.append("\n\tpublic static final org.lgna.story.resources.JointId[] " + fullArrayName + " = { ");
-        for (int i = 0; i < arrayElements.size(); i++) {
-          sb.append(arrayElements.get(i));
-          if (i < (arrayElements.size() - 1)) {
-            sb.append(", ");
-          }
-        }
-        sb.append(" };" + JavaCodeUtilities.LINE_RETURN);
+        sb.append("\n\tpublic static final org.lgna.story.resources.JointId[] ").append(fullArrayName)
+          .append(" = { ").append(String.join(", ", arrayElements))
+          .append(" };").append(JavaCodeUtilities.LINE_RETURN);
       }
       if (needsAccessor) {
         String arrayAccessorName = ModelResourceJavaGenerator.getAccessorMethodName(fullArrayName);
-        sb.append("\tpublic org.lgna.story.resources.JointId[] " + arrayAccessorName + "(){" + JavaCodeUtilities.LINE_RETURN);
-        sb.append("\t\treturn " + javaClassName + "." + fullArrayName + ";" + JavaCodeUtilities.LINE_RETURN);
-        sb.append("\t}" + JavaCodeUtilities.LINE_RETURN);
+        sb.append("\tpublic org.lgna.story.resources.JointId[] ").append(arrayAccessorName)
+          .append("(){").append(JavaCodeUtilities.LINE_RETURN);
+        sb.append("\t\treturn ").append(javaClassName).append(".").append(fullArrayName)
+          .append(";").append(JavaCodeUtilities.LINE_RETURN);
+        sb.append("\t}").append(JavaCodeUtilities.LINE_RETURN);
       }
     }
   }
@@ -291,33 +299,39 @@ final class ResourceCodeTemplates {
       String javaClassName) {
 
     sb.append(JavaCodeUtilities.LINE_RETURN);
-    sb.append("\tprivate final ImplementationAndVisualType resourceType;" + JavaCodeUtilities.LINE_RETURN);
-    sb.append("\tprivate " + javaClassName + "() {" + JavaCodeUtilities.LINE_RETURN);
-    sb.append("\t\tthis( ImplementationAndVisualType.ALICE );" + JavaCodeUtilities.LINE_RETURN);
-    sb.append("\t}" + JavaCodeUtilities.LINE_RETURN + JavaCodeUtilities.LINE_RETURN);
-    sb.append("\tprivate " + javaClassName + "( ImplementationAndVisualType resourceType ) {" + JavaCodeUtilities.LINE_RETURN);
-    sb.append("\t\tthis.resourceType = resourceType;" + JavaCodeUtilities.LINE_RETURN);
-    sb.append("\t}" + JavaCodeUtilities.LINE_RETURN + JavaCodeUtilities.LINE_RETURN);
+    sb.append("\tprivate final ImplementationAndVisualType resourceType;").append(JavaCodeUtilities.LINE_RETURN);
+    sb.append("\tprivate ").append(javaClassName).append("() {").append(JavaCodeUtilities.LINE_RETURN);
+    sb.append("\t\tthis( ImplementationAndVisualType.ALICE );").append(JavaCodeUtilities.LINE_RETURN);
+    sb.append("\t}").append(JavaCodeUtilities.LINE_RETURN).append(JavaCodeUtilities.LINE_RETURN);
+    sb.append("\tprivate ").append(javaClassName).append("( ImplementationAndVisualType resourceType ) {").append(JavaCodeUtilities.LINE_RETURN);
+    sb.append("\t\tthis.resourceType = resourceType;").append(JavaCodeUtilities.LINE_RETURN);
+    sb.append("\t}").append(JavaCodeUtilities.LINE_RETURN).append(JavaCodeUtilities.LINE_RETURN);
     if (ModelResourceJavaGenerator.needsToDefineRootsMethod(classData.superClass)) {
-      sb.append("\tpublic org.lgna.story.resources.JointId[] " + ModelResourceJavaGenerator.ROOT_IDS_METHOD_NAME + "(){" + JavaCodeUtilities.LINE_RETURN);
+      sb.append("\tpublic org.lgna.story.resources.JointId[] ")
+        .append(ModelResourceJavaGenerator.ROOT_IDS_METHOD_NAME).append("(){").append(JavaCodeUtilities.LINE_RETURN);
       if (addedRoots) {
-        sb.append("\t\treturn " + javaClassName + "." + ModelResourceJavaGenerator.ROOT_IDS_FIELD_NAME + ";" + JavaCodeUtilities.LINE_RETURN);
+        sb.append("\t\treturn ").append(javaClassName).append(".")
+          .append(ModelResourceJavaGenerator.ROOT_IDS_FIELD_NAME).append(";").append(JavaCodeUtilities.LINE_RETURN);
       } else {
         Field rootsField = ModelResourceJavaGenerator.getJointRootsField(classData.superClass);
         if (rootsField != null) {
-          sb.append("\t\treturn " + rootsField.getDeclaringClass().getCanonicalName() + "." + rootsField.getName() + ";" + JavaCodeUtilities.LINE_RETURN);
+          sb.append("\t\treturn ").append(rootsField.getDeclaringClass().getCanonicalName())
+            .append(".").append(rootsField.getName()).append(";").append(JavaCodeUtilities.LINE_RETURN);
         } else {
-          sb.append("\t\treturn new org.lgna.story.resources.JointId[0];" + JavaCodeUtilities.LINE_RETURN);
+          sb.append("\t\treturn new org.lgna.story.resources.JointId[0];").append(JavaCodeUtilities.LINE_RETURN);
         }
       }
-      sb.append("\t}" + JavaCodeUtilities.LINE_RETURN);
+      sb.append("\t}").append(JavaCodeUtilities.LINE_RETURN);
     }
-    sb.append("\n\tpublic org.lgna.story.implementation.JointedModelImp.JointImplementationAndVisualDataFactory<org.lgna.story.resources.JointedModelResource> getImplementationAndVisualFactory() {" + JavaCodeUtilities.LINE_RETURN);
-    sb.append("\t\treturn this.resourceType.getFactory( this );" + JavaCodeUtilities.LINE_RETURN);
-    sb.append("\t}" + JavaCodeUtilities.LINE_RETURN);
-    sb.append("\tpublic " + classData.implementationClass.getCanonicalName() + " createImplementation( " + classData.abstractionClass.getCanonicalName() + " abstraction ) {" + JavaCodeUtilities.LINE_RETURN);
-    sb.append("\t\treturn new " + classData.implementationClass.getCanonicalName() + "( abstraction, this.resourceType.getFactory( this ) );" + JavaCodeUtilities.LINE_RETURN);
-    sb.append("\t}" + JavaCodeUtilities.LINE_RETURN);
-    sb.append("}" + JavaCodeUtilities.LINE_RETURN);
+    sb.append("\n\tpublic org.lgna.story.implementation.JointedModelImp.JointImplementationAndVisualDataFactory<org.lgna.story.resources.JointedModelResource> getImplementationAndVisualFactory() {").append(JavaCodeUtilities.LINE_RETURN);
+    sb.append("\t\treturn this.resourceType.getFactory( this );").append(JavaCodeUtilities.LINE_RETURN);
+    sb.append("\t}").append(JavaCodeUtilities.LINE_RETURN);
+    sb.append("\tpublic ").append(classData.implementationClass.getCanonicalName())
+      .append(" createImplementation( ").append(classData.abstractionClass.getCanonicalName())
+      .append(" abstraction ) {").append(JavaCodeUtilities.LINE_RETURN);
+    sb.append("\t\treturn new ").append(classData.implementationClass.getCanonicalName())
+      .append("( abstraction, this.resourceType.getFactory( this ) );").append(JavaCodeUtilities.LINE_RETURN);
+    sb.append("\t}").append(JavaCodeUtilities.LINE_RETURN);
+    sb.append("}").append(JavaCodeUtilities.LINE_RETURN);
   }
 }
