@@ -62,10 +62,11 @@ Both characteristics make them ideal extraction candidates.
 ## 2. Trace the HandleGeometryHelper extraction
 
 Six methods move to a package-private `final class HandleGeometryHelper`
-with all-static methods. Three of these (`getTransformationForAxis`,
-`getManipulatedObjectBox`, `calculateCameraRelativeOpacity`) retain thin
-delegate methods on ManipulationHandle3D because subclasses call them
-via `this.`:
+with all-static methods. Two of these (`getTransformationForAxis`,
+`getManipulatedObjectBox`) retain thin delegate methods on
+ManipulationHandle3D because subclasses call them via `this.`. A third
+(`calculateCameraRelativeOpacity`) retains a delegate to preserve its
+`public` API contract:
 
 | Method | Original signature | Static signature | Delegate kept? |
 | --- | --- | --- | --- |
