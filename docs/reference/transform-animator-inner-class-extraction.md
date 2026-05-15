@@ -3,7 +3,7 @@
 This reference documents the extraction of inner classes from
 `TransformAnimator` (issue #639) into three top-level package-private files in
 `org.lgna.story.implementation`. The extraction reduces `TransformAnimator.java`
-from 616 lines to ~377 lines (well under the 500-line target).
+from 616 lines to ~368 lines (well under the 500-line target).
 
 ## Contents
 
@@ -45,10 +45,10 @@ After extraction, these files exist in
 
 | File | Lines | Description |
 | --- | --- | --- |
-| `TransformAnimator.java` | ~377 | Animate methods, anonymous inline animations, delegation to extracted classes |
-| `OrientationData.java` | ~150 | 6-class hierarchy: 2 abstract bases → 3 concrete + 1 sub-concrete (`TurnToFace` extends `Local`) |
-| `SmoothPositionAnimations.java` | ~60 | Parent + child animation classes sharing package-private fields |
-| `PlaceAnimation.java` | ~45 | Self-contained placement animation |
+| `TransformAnimator.java` | ~368 | Animate methods, anonymous inline animations, delegation to extracted classes |
+| `OrientationData.java` | ~201 | 6-class hierarchy: 2 abstract bases → 3 concrete + 1 sub-concrete (`TurnToFace` extends `Local`) |
+| `SmoothPositionAnimations.java` | ~116 | Parent + child animation classes sharing package-private fields |
+| `PlaceAnimation.java` | ~97 | Self-contained placement animation |
 
 All new files carry the CMU BSD copyright header matching the original.
 
@@ -125,7 +125,7 @@ mvn -pl core/story-api -am -DfailIfNoTests=false -Dcheckstyle.skip compile
 
 ```bash
 wc -l core/story-api/src/main/java/org/lgna/story/implementation/TransformAnimator.java
-# Target: under 500 lines (~377 expected)
+# Target: under 500 lines (~368 expected)
 ```
 
 ### Test execution

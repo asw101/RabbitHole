@@ -219,7 +219,7 @@ repository.
 
 ## Story-API transform animator decomposition
 
-- [TransformAnimator Inner Class Extraction](./reference/transform-animator-inner-class-extraction.md) - Reference for extraction of 9 inner classes from `TransformAnimator` (616 lines) into `OrientationData.java`, `SmoothPositionAnimations.java`, and `PlaceAnimation.java` (issue #639), reducing to ~377 lines.
+- [TransformAnimator Inner Class Extraction](./reference/transform-animator-inner-class-extraction.md) - Reference for extraction of 9 inner classes from `TransformAnimator` (616 lines) into `OrientationData.java`, `SmoothPositionAnimations.java`, and `PlaceAnimation.java` (issue #639), reducing to ~368 lines.
 - [Validate TransformAnimator Inner Class Extraction](./howto/validate-transform-animator-inner-class-extraction.md) - How to verify compilation, line counts, visibility, field access fix, and tests after the inner class extraction.
 - [Tutorial: Trace the TransformAnimator Inner Class Extraction](./tutorials/trace-transform-animator-inner-class-extraction.md) - Guided walkthrough of orientation hierarchy co-location, smooth animation field access, data.subject→data.getSubject() fix, and inline class retention decisions.
 

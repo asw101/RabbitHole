@@ -58,7 +58,7 @@ Compilation must succeed with zero errors. Key things the compiler verifies:
 wc -l core/story-api/src/main/java/org/lgna/story/implementation/TransformAnimator.java
 ```
 
-Target: under 500 lines. Expected: ~377 lines (616 − 239 extracted lines).
+Target: under 500 lines. Expected: ~368 lines (616 − 248 extracted lines).
 
 ## Step 4: Verify the field access fix
 
