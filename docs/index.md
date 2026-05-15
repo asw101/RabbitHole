@@ -217,6 +217,12 @@ repository.
 - [TightPositionalIkEnforcer Inner Class Extraction](./reference/tight-positional-ik-enforcer-decomposition.md) - Reference for extraction of all 14 inner classes from `TightPositionalIkEnforcer` (1328 lines) into top-level files in `org.lgna.ik.core.enforcer`, with `IkEnforcerContext` interface replacing implicit outer-class references.
 - [IK Enforcer Downstream Import Fixups](./reference/ik-enforcer-downstream-import-fixups.md) - Reference for mechanical import fixups in `IKCore.java` and `IkProgram.java` after inner classes were promoted to top-level classes (issue #557).
 
+## Story-API transform animator decomposition
+
+- [TransformAnimator Inner Class Extraction](./reference/transform-animator-inner-class-extraction.md) - Reference for extraction of 9 inner classes from `TransformAnimator` (616 lines) into `OrientationData.java`, `SmoothPositionAnimations.java`, and `PlaceAnimation.java` (issue #639), reducing to ~377 lines.
+- [Validate TransformAnimator Inner Class Extraction](./howto/validate-transform-animator-inner-class-extraction.md) - How to verify compilation, line counts, visibility, field access fix, and tests after the inner class extraction.
+- [Tutorial: Trace the TransformAnimator Inner Class Extraction](./tutorials/trace-transform-animator-inner-class-extraction.md) - Guided walkthrough of orientation hierarchy co-location, smooth animation field access, data.subject→data.getSubject() fix, and inline class retention decisions.
+
 ## Formal specification lane
 
 The formal-spec lane documents Alice project archive and backup-recovery
