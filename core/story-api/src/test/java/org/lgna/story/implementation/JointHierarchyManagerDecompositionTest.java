@@ -502,15 +502,17 @@ public class JointHierarchyManagerDecompositionTest {
     try {
       java.io.File sourceFile = new java.io.File(
           "src/main/java/org/lgna/story/implementation/JointHierarchyManager.java");
-      if (sourceFile.exists()) {
-        long lineCount = java.nio.file.Files.lines(sourceFile.toPath()).count();
-        assertTrue(
-            "JointHierarchyManager.java should be under 500 lines after extraction, but has "
-                + lineCount,
-            lineCount < 500);
-      }
-    } catch (Exception e) {
-      // Source access may vary by test runner working directory
+      assertTrue(
+          "Source file not found at " + sourceFile.getAbsolutePath()
+              + " — run tests from the story-api module root",
+          sourceFile.exists());
+      long lineCount = java.nio.file.Files.lines(sourceFile.toPath()).count();
+      assertTrue(
+          "JointHierarchyManager.java should be under 500 lines after extraction, but has "
+              + lineCount,
+          lineCount < 500);
+    } catch (java.io.IOException e) {
+      fail("Could not read source file: " + e.getMessage());
     }
   }
 

@@ -64,6 +64,11 @@ final class IkChainHelper {
     // utility class
   }
 
+  /**
+   * Operations for building the joint chain in forward or reverse order.
+   * Callers must pass mutable {@link List} instances (e.g. {@link java.util.LinkedList})
+   * since {@code PREPEND} uses {@link List#addFirst(Object)}.
+   */
   private enum AddOp {
     PREPEND {
       @Override
