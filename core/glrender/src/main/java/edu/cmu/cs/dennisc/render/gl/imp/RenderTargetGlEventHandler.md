@@ -103,78 +103,72 @@ final RenderTargetGlEventHandler glEventHandler = new RenderTargetGlEventHandler
 ```java
 // RenderTargetGlEventHandler.java (~70 lines, package-private)
 class RenderTargetGlEventHandler implements GLEventListener {
-    private final RenderTargetImp rtImp;
+  private final RenderTargetImp rtImp;
 
-    RenderTargetGlEventHandler(RenderTargetImp rtImp) {
-        this.rtImp = rtImp;
+  RenderTargetGlEventHandler(RenderTargetImp rtImp) {
+    this.rtImp = rtImp;
+  }
+
+  @Override
+  public void init(GLAutoDrawable drawable) {
+    assert drawable == rtImp.drawable;
+    GL2 gl = drawable.getGL().getGL2();
+    ConformanceTestResults.SINGLETON.updateRenderInformationIfNecessary(gl);
+    final boolean USE_DEBUG_GL = false;
+    if (USE_DEBUG_GL && !(gl instanceof DebugGL2)) {
+      gl = new DebugGL2(gl);
+      Logger.info("using debug gl: ", gl);
+      drawable.setGL(gl);
     }
+    int w = GlDrawableUtils.getGlDrawableWidth(drawable);
+    int h = GlDrawableUtils.getGlDrawableHeight(drawable);
+    rtImp.drawableWidth = w;
+    rtImp.drawableHeight = h;
+    rtImp.screenWidth = GlDrawableUtils.getGLJPanelWidth(drawable);
+    rtImp.screenHeight = GlDrawableUtils.getGLJPanelHeight(drawable);
+    rtImp.renderContext.setGL(gl);
+    rtImp.fireInitialized(new RenderTargetInitializeEvent(rtImp.getRenderTarget(), w, h));
+  }
 
-    @Override
-    public void init(GLAutoDrawable drawable) {
-        assert drawable == rtImp.drawable;
-        GL2 gl = drawable.getGL().getGL2();
-        ConformanceTestResults.SINGLETON.updateRenderInformationIfNecessary(gl);
-
-        final boolean USE_DEBUG_GL = false;
-        if (USE_DEBUG_GL) {
-            if (!(gl instanceof DebugGL2)) {
-                gl = new DebugGL2(gl);
-                Logger.info("using debug gl: ", gl);
-                drawable.setGL(gl);
-            }
-        }
-
-        rtImp.drawableWidth = GlDrawableUtils.getGlDrawableWidth(drawable);
-        rtImp.drawableHeight = GlDrawableUtils.getGlDrawableHeight(drawable);
-        rtImp.screenWidth = GlDrawableUtils.getGLJPanelWidth(drawable);
-        rtImp.screenHeight = GlDrawableUtils.getGLJPanelHeight(drawable);
-        rtImp.renderContext.setGL(gl);
-        rtImp.fireInitialized(new RenderTargetInitializeEvent(
-            rtImp.getRenderTarget(),
-            GlDrawableUtils.getGlDrawableWidth(drawable),
-            GlDrawableUtils.getGlDrawableHeight(drawable)));
+  @Override
+  public void display(GLAutoDrawable drawable) {
+    assert drawable == rtImp.drawable;
+    GL2 gl = drawable.getGL().getGL2();
+    if (rtImp.renderContext.gl == null) {
+      init(drawable);
+      Logger.outln("note: initialize necessary from display");
     }
-
-    @Override
-    public void display(GLAutoDrawable drawable) {
-        assert drawable == rtImp.drawable;
-        GL2 gl = drawable.getGL().getGL2();
-        if (rtImp.renderContext.gl == null) {
-            init(drawable);
-            Logger.outln("note: initialize necessary from display");
-        }
-        if (rtImp.drawableWidth <= 0 || rtImp.drawableHeight <= 0) {
-            int nextW = GlDrawableUtils.getGlDrawableWidth(drawable);
-            int nextH = GlDrawableUtils.getGlDrawableHeight(drawable);
-            int nextSW = GlDrawableUtils.getGLJPanelWidth(drawable);
-            int nextSH = GlDrawableUtils.getGLJPanelHeight(drawable);
-            if (rtImp.drawableWidth != nextW || rtImp.drawableHeight != nextH) {
-                Logger.severe(rtImp.drawableWidth, rtImp.drawableHeight, nextW, nextH);
-                rtImp.drawableWidth = nextW;
-                rtImp.drawableHeight = nextH;
-                rtImp.screenWidth = nextSW;
-                rtImp.screenHeight = nextSH;
-            }
-        }
-        rtImp.renderContext.setGL(gl);
-        rtImp.performRender();
+    if (rtImp.drawableWidth <= 0 || rtImp.drawableHeight <= 0) {
+      int nextW = GlDrawableUtils.getGlDrawableWidth(drawable);
+      int nextH = GlDrawableUtils.getGlDrawableHeight(drawable);
+      int nextSW = GlDrawableUtils.getGLJPanelWidth(drawable);
+      int nextSH = GlDrawableUtils.getGLJPanelHeight(drawable);
+      if (rtImp.drawableWidth != nextW || rtImp.drawableHeight != nextH) {
+        Logger.severe(rtImp.drawableWidth, rtImp.drawableHeight, nextW, nextH);
+        rtImp.drawableWidth = nextW;
+        rtImp.drawableHeight = nextH;
+        rtImp.screenWidth = nextSW;
+        rtImp.screenHeight = nextSH;
+      }
     }
+    rtImp.renderContext.setGL(gl);
+    rtImp.performRender();
+  }
 
-    @Override
-    public void reshape(GLAutoDrawable drawable, int x, int y, int width, int height) {
-        assert drawable == rtImp.drawable;
-        rtImp.drawableWidth = width;
-        rtImp.drawableHeight = height;
-        rtImp.screenWidth = GlDrawableUtils.getGLJPanelWidth(drawable);
-        rtImp.screenHeight = GlDrawableUtils.getGLJPanelHeight(drawable);
-        rtImp.fireResized(new RenderTargetResizeEvent(
-            rtImp.getRenderTarget(), width, height));
-    }
+  @Override
+  public void reshape(GLAutoDrawable drawable, int x, int y, int width, int height) {
+    assert drawable == rtImp.drawable;
+    rtImp.drawableWidth = width;
+    rtImp.drawableHeight = height;
+    rtImp.screenWidth = GlDrawableUtils.getGLJPanelWidth(drawable);
+    rtImp.screenHeight = GlDrawableUtils.getGLJPanelHeight(drawable);
+    rtImp.fireResized(new RenderTargetResizeEvent(rtImp.getRenderTarget(), width, height));
+  }
 
-    @Override
-    public void dispose(GLAutoDrawable drawable) {
-        Logger.todo(drawable);
-    }
+  @Override
+  public void dispose(GLAutoDrawable drawable) {
+    Logger.todo(drawable);
+  }
 }
 ```
 
