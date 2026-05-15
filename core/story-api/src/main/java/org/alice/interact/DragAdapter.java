@@ -54,7 +54,6 @@ import edu.cmu.cs.dennisc.scenegraph.Joint;
 import edu.cmu.cs.dennisc.scenegraph.OrthographicCamera;
 import edu.cmu.cs.dennisc.scenegraph.Silhouette;
 import edu.cmu.cs.dennisc.scenegraph.SymmetricPerspectiveCamera;
-import edu.cmu.cs.dennisc.scenegraph.Visual;
 import org.alice.interact.event.ManipulationEvent;
 import org.alice.interact.event.ManipulationEventManager;
 import org.alice.interact.event.ManipulationListener;
@@ -87,6 +86,7 @@ import java.util.Map;
  *
  * Event handling delegated to {@link DragEventHandler}.
  * Camera management delegated to {@link DragCameraController}.
+ * Selection state delegated to {@link DragSelectionController}.
  */
 public abstract class DragAdapter {
   public static final Element.Key<AxisAlignedBox> BOUNDING_BOX_KEY = Element.Key.createInstance("BOUNDING_BOX_KEY");
@@ -128,10 +128,7 @@ public abstract class DragAdapter {
   private AbstractTransformableImp toBeSelected = null;
   private boolean hasObjectToBeSelected = false;
   private InteractionGroup currentInteractionState = null;
-  private AbstractTransformableImp selectedObject = null;
-  private Silhouette sgSilhouette;
-  private CameraMarkerImp selectedCameraMarker = null;
-  private ObjectMarkerImp selectedObjectMarker = null;
+  final DragSelectionController selectionController = new DragSelectionController(this);
   private OnscreenRenderTarget onscreenRenderTarget;
   private Component lookingGlassComponent = null;
   private Animator animator;
@@ -212,7 +209,7 @@ public abstract class DragAdapter {
   private void setCurrentInteractionState(InteractionGroup interactionState) {
     this.currentInteractionState = interactionState;
     if (this.currentInteractionState != null) {
-      InteractionGroup.InteractionInfo interactionInfo = this.currentInteractionState.getMatchingInfo(ObjectType.getObjectType(this.selectedObject));
+      InteractionGroup.InteractionInfo interactionInfo = this.currentInteractionState.getMatchingInfo(ObjectType.getObjectType(this.selectionController.getSelectedObject()));
       if (interactionInfo != null) {
         this.handleManager.setHandleSet(interactionInfo.getHandleSet());
       }
@@ -246,7 +243,7 @@ public abstract class DragAdapter {
     this.selectionListeners.add(selectionListener);
   }
 
-  private void fireSelecting(SelectionEvent e) {
+  void fireSelecting(SelectionEvent e) {
     for (SelectionListener selectionListener : this.selectionListeners) {
       selectionListener.selecting(e);
     }
@@ -291,35 +288,11 @@ public abstract class DragAdapter {
   }
 
   public void setSelectedCameraMarker(CameraMarkerImp selected) {
-    if (selected != this.selectedCameraMarker) {
-      this.fireSelecting(new SelectionEvent(this, selected));
-      if (this.selectedCameraMarker != null) {
-        this.selectedCameraMarker.opacity.setValue(.3f);
-        if (this.selectedCameraMarker instanceof PerspectiveCameraMarkerImp imp) {
-          imp.setDetailedViewShowing(false);
-        }
-      }
-      this.selectedCameraMarker = selected;
-      if (this.selectedCameraMarker != null) {
-        this.selectedCameraMarker.opacity.setValue(1f);
-        if (this.hasSceneEditor() && (this.selectedCameraMarker instanceof PerspectiveCameraMarkerImp imp)) {
-          imp.setDetailedViewShowing(true);
-        }
-      }
-    }
+    this.selectionController.setSelectedCameraMarker(selected);
   }
 
   public void setSelectedObjectMarker(ObjectMarkerImp selected) {
-    if (selected != this.selectedObjectMarker) {
-      this.fireSelecting(new SelectionEvent(this, selected));
-      if (this.selectedObjectMarker != null) {
-        this.selectedObjectMarker.opacity.setValue(.3f);
-      }
-      this.selectedObjectMarker = selected;
-      if (this.selectedObjectMarker != null) {
-        this.selectedObjectMarker.opacity.setValue(1f);
-      }
-    }
+    this.selectionController.setSelectedObjectMarker(selected);
   }
 
   protected void setHandleSelectionState(HandleStyle handleStyle) {
@@ -333,7 +306,8 @@ public abstract class DragAdapter {
     }
     if (selected != null) {
       if (selected.getSgComposite() instanceof Joint) {
-        if ((this.selectedObject == null) || !(this.selectedObject.getSgComposite() instanceof Joint)) {
+        AbstractTransformableImp currentSelected = this.selectionController.getSelectedObject();
+        if ((currentSelected == null) || !(currentSelected.getSgComposite() instanceof Joint)) {
           if (this.getDefaultJointHandleStyle() != null) {
             this.setHandleSelectionState(this.getDefaultJointHandleStyle());
           }
@@ -344,14 +318,14 @@ public abstract class DragAdapter {
       } else if (selected instanceof CameraMarkerImp cameraMarker) {
         setSelectedCameraMarker(cameraMarker);
       } else {
-        setSelectedSceneObjectImplementation(selected);
+        this.selectionController.setSelectedSceneObjectImplementation(selected);
       }
       if (this.handleManager.getCurrentHandleSet() == null) {
         this.setCurrentInteractionState(this.currentInteractionState);
       }
       updateHandleSelection(selected);
     } else {
-      setSelectedSceneObjectImplementation(null);
+      this.selectionController.setSelectedSceneObjectImplementation(null);
     }
   }
 
@@ -368,37 +342,8 @@ public abstract class DragAdapter {
     }
   }
 
-  private void setSelectedObjectSilhouetteIfAppropriate(boolean isHaloed) {
-    if (this.sgSilhouette != null) {
-      if (this.selectedObject instanceof ModelImp modelImp) {
-        for (Visual sgVisual : modelImp.getSgVisuals()) {
-          sgVisual.silouette.setValue(isHaloed ? this.sgSilhouette : null);
-        }
-      }
-    }
-  }
-
-  private void setSelectedSceneObjectImplementation(AbstractTransformableImp selected) {
-    if (this.selectedObject != selected) {
-      this.fireSelecting(new SelectionEvent(this, selected));
-      this.setSelectedObjectSilhouetteIfAppropriate(false);
-      AbstractTransformable sgTransformable = selected != null ? selected.getSgComposite() : null;
-      if (HandleManager.isSelectable(sgTransformable)) {
-        this.handleManager.setHandlesShowing(true);
-        this.handleManager.setSelectedObject(sgTransformable);
-      } else {
-        this.handleManager.setSelectedObject(null);
-      }
-      this.currentInputState.setCurrentlySelectedObject(sgTransformable);
-      this.currentInputState.setTimeCaptured();
-      selectedObject = selected;
-      this.setSelectedObjectSilhouetteIfAppropriate(true);
-      this.fireStateChange();
-    }
-  }
-
   public void setHandleShowingForSelectedImplementation(AbstractTransformableImp object, boolean handlesShowing) {
-    if (this.selectedObject == object) {
+    if (this.selectionController.getSelectedObject() == object) {
       this.handleManager.setHandlesShowing(handlesShowing);
     }
   }
@@ -408,7 +353,7 @@ public abstract class DragAdapter {
   }
 
   public void triggerImplementationSelection(AbstractTransformableImp selected) {
-    if (this.selectedObject != selected) {
+    if (this.selectionController.getSelectedObject() != selected) {
       this.fireSelected(new SelectionEvent(this, selected));
     }
   }
@@ -417,7 +362,7 @@ public abstract class DragAdapter {
   }
 
   protected void setSgSilhouette(Silhouette sgSilhouette) {
-    this.sgSilhouette = sgSilhouette;
+    this.selectionController.setSgSilhouette(sgSilhouette);
   }
 
   AbstractCamera getSGCamera() {
