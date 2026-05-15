@@ -245,62 +245,67 @@ public class RenderTargetImp {
 
   /*package-private*/ void performRender() {
     RenderTarget rt = this.getRenderTarget();
-    if (rt.isRenderingEnabled()) {
-      this.renderContext.actuallyForgetTexturesIfNecessary();
-      this.renderContext.actuallyForgetDisplayListsIfNecessary();
-      if (this.isDisplayIgnoredDueToPreviousException) {
-        //pass
-      } else if ((this.drawableWidth == 0) || (this.drawableHeight == 0)) {
-        Logger.severe(this.drawableWidth, this.drawableHeight, rt.getSurfaceSize());
-      } else {
+    if (!rt.isRenderingEnabled()) {
+      return;
+    }
+    this.renderContext.actuallyForgetTexturesIfNecessary();
+    this.renderContext.actuallyForgetDisplayListsIfNecessary();
+    if (this.isDisplayIgnoredDueToPreviousException) {
+      return;
+    }
+    if ((this.drawableWidth == 0) || (this.drawableHeight == 0)) {
+      Logger.severe(this.drawableWidth, this.drawableHeight, rt.getSurfaceSize());
+      return;
+    }
+    try {
+      boolean hasListeners = !this.renderTargetListeners.isEmpty();
+      if (hasListeners) {
+        this.reusableLookingGlassRenderEvent.prologue();
         try {
-          this.reusableLookingGlassRenderEvent.prologue();
-          try {
-            this.fireCleared(this.reusableLookingGlassRenderEvent);
-          } finally {
-            this.reusableLookingGlassRenderEvent.epilogue();
-          }
-          if (rt.getSgCameraCount() > 0) {
-            this.renderContext.initialize();
-            for (AbstractCamera sgCamera : this.sgCameras) {
-              GlrAbstractCamera<? extends AbstractCamera> cameraAdapterI = AdapterFactory.getAdapterFor(sgCamera);
-              cameraAdapterI.performClearAndRenderOffscreen(this.renderContext, this.drawableWidth, this.drawableHeight);
-              this.reusableLookingGlassRenderEvent.prologue();
-              try {
-                // Pass the screen size to post render because operations like speech bubbles use the screen size as a reference rather than the drawable size
-                cameraAdapterI.postRender(this.renderContext, this.screenWidth, this.screenHeight, rt, this.reusableLookingGlassRenderEvent.getGraphics2D());
-              } finally {
-                this.reusableLookingGlassRenderEvent.epilogue();
-              }
-            }
-            this.renderContext.renderLetterboxingIfNecessary(this.drawableWidth, this.drawableHeight);
-          } else {
-            this.renderContext.gl.glClearColor(0, 0, 0, 1);
-            this.renderContext.gl.glClear(GL_COLOR_BUFFER_BIT);
-          }
-          this.reusableLookingGlassRenderEvent.prologue();
-          try {
-            this.fireRendered(this.reusableLookingGlassRenderEvent);
-          } finally {
-            this.reusableLookingGlassRenderEvent.epilogue();
-          }
-          this.renderContext.gl.glFlush();
-          if ((this.rvColorBuffer != null) || (this.rvDepthBuffer != null)) {
-            this.renderContext.captureBuffers(this.rvColorBuffer, this.rvDepthBuffer, this.atIsUpsideDown);
-          }
-
-        } catch (RuntimeException re) {
-          Logger.severe("rendering will be disabled due to exception");
-          this.isDisplayIgnoredDueToPreviousException = true;
-          re.printStackTrace();
-          throw re;
-        } catch (Error er) {
-          Logger.severe("rendering will be disabled due to exception");
-          this.isDisplayIgnoredDueToPreviousException = true;
-          er.printStackTrace();
-          throw er;
+          this.fireCleared(this.reusableLookingGlassRenderEvent);
+        } finally {
+          this.reusableLookingGlassRenderEvent.epilogue();
         }
       }
+      if (!this.sgCameras.isEmpty()) {
+        this.renderContext.initialize();
+        for (AbstractCamera sgCamera : this.sgCameras) {
+          GlrAbstractCamera<? extends AbstractCamera> cameraAdapterI = AdapterFactory.getAdapterFor(sgCamera);
+          cameraAdapterI.performClearAndRenderOffscreen(this.renderContext, this.drawableWidth, this.drawableHeight);
+          this.reusableLookingGlassRenderEvent.prologue();
+          try {
+            cameraAdapterI.postRender(this.renderContext, this.screenWidth, this.screenHeight, rt, this.reusableLookingGlassRenderEvent.getGraphics2D());
+          } finally {
+            this.reusableLookingGlassRenderEvent.epilogue();
+          }
+        }
+        this.renderContext.renderLetterboxingIfNecessary(this.drawableWidth, this.drawableHeight);
+      } else {
+        this.renderContext.gl.glClearColor(0, 0, 0, 1);
+        this.renderContext.gl.glClear(GL_COLOR_BUFFER_BIT);
+      }
+      if (hasListeners) {
+        this.reusableLookingGlassRenderEvent.prologue();
+        try {
+          this.fireRendered(this.reusableLookingGlassRenderEvent);
+        } finally {
+          this.reusableLookingGlassRenderEvent.epilogue();
+        }
+      }
+      this.renderContext.gl.glFlush();
+      if ((this.rvColorBuffer != null) || (this.rvDepthBuffer != null)) {
+        this.renderContext.captureBuffers(this.rvColorBuffer, this.rvDepthBuffer, this.atIsUpsideDown);
+      }
+    } catch (RuntimeException re) {
+      Logger.severe("rendering will be disabled due to exception");
+      this.isDisplayIgnoredDueToPreviousException = true;
+      re.printStackTrace();
+      throw re;
+    } catch (Error er) {
+      Logger.severe("rendering will be disabled due to exception");
+      this.isDisplayIgnoredDueToPreviousException = true;
+      er.printStackTrace();
+      throw er;
     }
   }
 

@@ -67,13 +67,14 @@ class RenderTargetGlEventHandler implements GLEventListener {
       Logger.info("using debug gl: ", gl);
       drawable.setGL(gl);
     }
-    rtImp.drawableWidth = GlDrawableUtils.getGlDrawableWidth(drawable);
-    rtImp.drawableHeight = GlDrawableUtils.getGlDrawableHeight(drawable);
+    int w = GlDrawableUtils.getGlDrawableWidth(drawable);
+    int h = GlDrawableUtils.getGlDrawableHeight(drawable);
+    rtImp.drawableWidth = w;
+    rtImp.drawableHeight = h;
     rtImp.screenWidth = GlDrawableUtils.getGLJPanelWidth(drawable);
     rtImp.screenHeight = GlDrawableUtils.getGLJPanelHeight(drawable);
     rtImp.renderContext.setGL(gl);
-    rtImp.fireInitialized(new RenderTargetInitializeEvent(rtImp.getRenderTarget(),
-        GlDrawableUtils.getGlDrawableWidth(drawable), GlDrawableUtils.getGlDrawableHeight(drawable)));
+    rtImp.fireInitialized(new RenderTargetInitializeEvent(rtImp.getRenderTarget(), w, h));
   }
 
   @Override
