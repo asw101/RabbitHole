@@ -234,6 +234,6 @@ The `org.lgna.story.*` wildcard import remains (used by retained code).
 
 | File | Action | Lines Before | Lines After |
 |---|---|---|---|
-| `StoryApiConfigurationManager.java` | Modified | 587 | ~450 |
-| `StoryTypeComparator.java` | Created | — | ~55 |
-| `JointMethodAugmentor.java` | Created | — | ~155 |
+| `StoryApiConfigurationManager.java` | Modified | 587 | 391 |
+| `StoryTypeComparator.java` | Created | — | 98 |
+| `JointMethodAugmentor.java` | Created | — | 202 |
