@@ -278,7 +278,7 @@ public abstract class AstI18nFactory extends I18nFactory {
           if (parent instanceof MethodInvocation methodInvocation) {
             Node grandparent = methodInvocation.getParent();
             if (grandparent instanceof JavaKeyedArgument javaKeyedArgument) {
-              AbstractType<?, ?, ?> type = AstUtilities.getKeywordFactoryType(javaKeyedArgument);
+              AbstractType<?, ?, ?> type = AstTypeResolutionHelpers.getKeywordFactoryType(javaKeyedArgument);
               if (type != null) {
                 rv = new Label(type.getName() + ".");
                 //rv.makeStandOut();

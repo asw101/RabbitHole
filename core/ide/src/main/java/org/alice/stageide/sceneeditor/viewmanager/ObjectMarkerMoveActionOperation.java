@@ -152,7 +152,7 @@ public abstract class ObjectMarkerMoveActionOperation extends ActionOperation {
   protected void perform(UserActivity activity) {
     if ((this.toMoveField != null) && (this.toMoveToField != null)) {
       Expression toMoveToExpression = new FieldAccess(toMoveToField);
-      AbstractMethod method = AstUtilities.lookupMethod(SMovableTurnable.class, "moveAndOrientTo", new Class<?>[] {SThing.class, MoveAndOrientTo.Detail[].class});
+      AbstractMethod method = AstMethodLookupHelpers.lookupMethod(SMovableTurnable.class, "moveAndOrientTo", new Class<?>[] {SThing.class, MoveAndOrientTo.Detail[].class});
       LocalTransformationEdit edit = new LocalTransformationEdit(activity, ThisFieldAccessFactory.getInstance(this.toMoveField), method, new Expression[] {toMoveToExpression});
       activity.commitAndInvokeDo(edit);
     } else {

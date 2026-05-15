@@ -56,6 +56,8 @@ import org.lgna.project.ast.AbstractField;
 import org.lgna.project.ast.AbstractMethod;
 import org.lgna.project.ast.AbstractType;
 import org.lgna.project.ast.ArrayAccess;
+import org.lgna.project.ast.AstMethodLookupHelpers;
+import org.lgna.project.ast.AstTypeResolutionHelpers;
 import org.lgna.project.ast.AstUtilities;
 import org.lgna.project.ast.DoubleLiteral;
 import org.lgna.project.ast.Expression;
@@ -128,7 +130,7 @@ public class SetUpMethodGenerator {
   }
 
   private static ExpressionStatement createStatement(Class<?> declarationCls, String methodName, Class<?>[] parameterClses, Expression instanceExpression, Expression... argumentExpressions) {
-    AbstractMethod method = AstUtilities.lookupMethod(declarationCls, methodName, parameterClses);
+    AbstractMethod method = AstMethodLookupHelpers.lookupMethod(declarationCls, methodName, parameterClses);
     return AstUtilities.createMethodInvocationStatement(instanceExpression, method, argumentExpressions);
   }
 
@@ -145,7 +147,7 @@ public class SetUpMethodGenerator {
   }
 
   private static ExpressionStatement createSetVehicleStatement(AbstractField rider, Expression vehicle) {
-    AbstractMethod setVehicleMethod = AstUtilities.lookupMethod(MutableRider.class, "setVehicle", (Class<?>) SThing.class);
+    AbstractMethod setVehicleMethod = AstMethodLookupHelpers.lookupMethod(MutableRider.class, "setVehicle", (Class<?>) SThing.class);
     return AstUtilities.createMethodInvocationStatement(new FieldAccess(rider), setVehicleMethod, vehicle);
   }
 
@@ -340,8 +342,8 @@ public class SetUpMethodGenerator {
       AbstractField field = sceneInstance.ACCEPTABLE_HACK_FOR_SCENE_EDITOR_getFieldForInstanceInJava(instance);
       if ((field != null) || isThis) {
         JavaType javaType = JavaType.getInstance(instance.getClass());
-        for (JavaMethod getter : AstUtilities.getPersistentPropertyGetters(javaType)) {
-          JavaMethod setter = AstUtilities.getSetterForGetter(getter, javaType);
+        for (JavaMethod getter : AstTypeResolutionHelpers.getPersistentPropertyGetters(javaType)) {
+          JavaMethod setter = AstTypeResolutionHelpers.getSetterForGetter(getter, javaType);
           if (setter != null) {
             Method gttr = getter.getMethodReflectionProxy().getReification();
             Object value = ReflectionUtilities.invoke(instance, gttr);
@@ -381,14 +383,14 @@ public class SetUpMethodGenerator {
             Position rightHandPosition = vrUser.getRightHand().getPositionRelativeToVehicle();
             try {
               Expression getHeadsetExpression = getGetterExpressionForDevice(vrUser.getHeadset(), sceneInstance);
-              AbstractMethod setOrientation = AstUtilities.lookupMethod(SVRHeadset.class, "setOrientationRelativeToVehicle", Orientation.class, SetOrientationRelativeToVehicle.Detail[].class);
+              AbstractMethod setOrientation = AstMethodLookupHelpers.lookupMethod(SVRHeadset.class, "setOrientationRelativeToVehicle", Orientation.class, SetOrientationRelativeToVehicle.Detail[].class);
               statements.add(AstUtilities.createMethodInvocationStatement(getHeadsetExpression, setOrientation,
                   getExpressionCreator().createExpression(headOrientation)));
-              AbstractMethod setPosition = AstUtilities.lookupMethod(SVRHeadset.class, "setPositionRelativeToVehicle", Position.class, SetPositionRelativeToVehicle.Detail[].class);
+              AbstractMethod setPosition = AstMethodLookupHelpers.lookupMethod(SVRHeadset.class, "setPositionRelativeToVehicle", Position.class, SetPositionRelativeToVehicle.Detail[].class);
               statements.add(AstUtilities.createMethodInvocationStatement(getHeadsetExpression, setPosition,
                   getExpressionCreator().createExpression(headPosition)));
 
-              AbstractMethod setHandPosition = AstUtilities.lookupMethod(SVRHand.class, "setPositionRelativeToVehicle", Position.class, SetPositionRelativeToVehicle.Detail[].class);
+              AbstractMethod setHandPosition = AstMethodLookupHelpers.lookupMethod(SVRHand.class, "setPositionRelativeToVehicle", Position.class, SetPositionRelativeToVehicle.Detail[].class);
               statements.add(AstUtilities.createMethodInvocationStatement(
                   getGetterExpressionForDevice(vrUser.getLeftHand(), sceneInstance),
                   setHandPosition,

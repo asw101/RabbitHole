@@ -75,7 +75,7 @@ import org.lgna.project.ast.AbstractCode;
 import org.lgna.project.ast.AbstractDeclaration;
 import org.lgna.project.ast.AbstractMethod;
 import org.lgna.project.ast.AbstractType;
-import org.lgna.project.ast.AstUtilities;
+import org.lgna.project.ast.AstMethodLookupHelpers;
 import org.lgna.project.ast.Expression;
 import org.lgna.project.ast.ExpressionStatement;
 import org.lgna.project.ast.Lambda;
@@ -271,7 +271,7 @@ public class InstanceFactoryState extends CustomItemStateWithInternalBlank<Insta
                       if (lambda instanceof UserLambda userLambda) {
                         for (UserParameter parameter : userLambda.getRequiredParameters()) {
                           AbstractType<?, ?, ?> parameterType = parameter.getValueType();
-                          for (AbstractMethod parameterMethod : AstUtilities.getAllMethods(parameterType)) {
+                          for (AbstractMethod parameterMethod : AstMethodLookupHelpers.getAllMethods(parameterType)) {
                             AbstractType<?, ?, ?> parameterMethodReturnType = parameterMethod.getReturnType();
                             if (parameterMethodReturnType.isAssignableTo(SThing.class)) {
                               methodInvocationBlankChildren.add(createFillInMenuComboIfNecessary(InstanceFactoryFillIn.getInstance(ParameterAccessMethodInvocationFactory.getInstance(parameter, parameterMethod)), apiConfigurationManager.getInstanceFactorySubMenuForParameterAccessMethodInvocation(parameter, parameterMethod)));

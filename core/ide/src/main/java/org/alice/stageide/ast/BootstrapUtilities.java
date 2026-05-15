@@ -276,9 +276,9 @@ public class BootstrapUtilities {
       Expression headOrientation = expressionCreator.createExpression(SVRUser.HEADSET_ORIENTATION);
       Expression headPosition = expressionCreator.createExpression(SVRUser.HEADSET_POSITION);
 
-      AbstractMethod setOrientation = AstUtilities.lookupMethod(SVRHeadset.class, "setOrientationRelativeToVehicle", Orientation.class, SetOrientationRelativeToVehicle.Detail[].class);
+      AbstractMethod setOrientation = AstMethodLookupHelpers.lookupMethod(SVRHeadset.class, "setOrientationRelativeToVehicle", Orientation.class, SetOrientationRelativeToVehicle.Detail[].class);
       body.statements.add(createMethodInvocationStatement(getHeadsetExpression, setOrientation, headOrientation));
-      AbstractMethod setPosition = AstUtilities.lookupMethod(SVRHeadset.class, "setPositionRelativeToVehicle", Position.class, SetPositionRelativeToVehicle.Detail[].class);
+      AbstractMethod setPosition = AstMethodLookupHelpers.lookupMethod(SVRHeadset.class, "setPositionRelativeToVehicle", Position.class, SetPositionRelativeToVehicle.Detail[].class);
       body.statements.add(createMethodInvocationStatement(getHeadsetExpression, setPosition, headPosition));
 
       // VRHands
@@ -290,7 +290,7 @@ public class BootstrapUtilities {
       Expression leftHandPosition = expressionCreator.createExpression(SVRUser.LEFT_HAND_POSITION);
       Expression rightHandPosition = expressionCreator.createExpression(SVRUser.RIGHT_HAND_POSITION);
 
-      AbstractMethod setHandPosition = AstUtilities.lookupMethod(SVRHand.class, "setPositionRelativeToVehicle", Position.class, SetPositionRelativeToVehicle.Detail[].class);
+      AbstractMethod setHandPosition = AstMethodLookupHelpers.lookupMethod(SVRHand.class, "setPositionRelativeToVehicle", Position.class, SetPositionRelativeToVehicle.Detail[].class);
       body.statements.add(createMethodInvocationStatement(getLeftHandExpression, setHandPosition, leftHandPosition));
       body.statements.add(createMethodInvocationStatement(getRightHandExpression, setHandPosition, rightHandPosition));
     } catch (ExpressionCreator.CannotCreateExpressionException ccee) {

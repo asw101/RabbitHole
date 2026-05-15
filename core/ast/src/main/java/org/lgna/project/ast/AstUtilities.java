@@ -45,16 +45,12 @@ package org.lgna.project.ast;
 
 import edu.cmu.cs.dennisc.java.lang.ArrayUtilities;
 import edu.cmu.cs.dennisc.java.lang.reflect.ReflectionUtilities;
-import edu.cmu.cs.dennisc.java.util.Lists;
-import edu.cmu.cs.dennisc.java.util.Sets;
 import edu.cmu.cs.dennisc.java.util.logging.Logger;
 import edu.cmu.cs.dennisc.pattern.Criterion;
 import edu.cmu.cs.dennisc.pattern.IsInstanceCrawler;
-import edu.cmu.cs.dennisc.property.PropertyUtilities;
 import org.alice.serialization.xml.XmlEncoderDecoder;
 import org.lgna.project.VersionNotSupportedException;
 import org.lgna.project.annotations.AddEventListenerTemplate;
-import org.lgna.project.annotations.GetterTemplate;
 import org.lgna.project.code.ProcessableNode;
 import org.w3c.dom.Document;
 
@@ -108,7 +104,7 @@ public class AstUtilities {
   public static Expression getJavaKeyedArgumentSubArgument0Expression(JavaKeyedArgument argument) {
     Expression expresssion = argument.expression.getValue();
     if (expresssion instanceof MethodInvocation methodInvocation) {
-      if (methodInvocation.requiredArguments.size() > 0) {
+      if (!methodInvocation.requiredArguments.isEmpty()) {
         return methodInvocation.requiredArguments.get(0).expression.getValue();
       } else {
         throw new RuntimeException();
@@ -116,59 +112,6 @@ public class AstUtilities {
     } else {
       throw new RuntimeException();
     }
-  }
-
-  private static List<JavaMethod> updatePersistentPropertyGetters(List<JavaMethod> rv, JavaType javaType) {
-    for (JavaMethod method : javaType.getDeclaredMethods()) {
-      java.lang.reflect.Method mthd = method.getMethodReflectionProxy().getReification();
-      if (mthd != null) {
-        if (mthd.isAnnotationPresent(GetterTemplate.class)) {
-          GetterTemplate gttrTemplate = mthd.getAnnotation(GetterTemplate.class);
-          if (gttrTemplate.isPersistent()) {
-            rv.add(method);
-          }
-        }
-      }
-    }
-    return rv;
-  }
-
-  public static Iterable<JavaMethod> getDeclaredPersistentPropertyGetters(JavaType javaType) {
-    List<JavaMethod> rv = Lists.newLinkedList();
-    updatePersistentPropertyGetters(rv, javaType);
-    return rv;
-  }
-
-  public static Iterable<JavaMethod> getPersistentPropertyGetters(AbstractType<?, ?, ?> type) {
-    List<JavaMethod> rv = Lists.newLinkedList();
-    JavaType javaType = type.getFirstEncounteredJavaType();
-    while (true) {
-      if (javaType != null) {
-        updatePersistentPropertyGetters(rv, javaType);
-        if (!javaType.isFollowToSuperClassDesired()) {
-          break;
-        }
-        javaType = javaType.getSuperType();
-      } else {
-        Logger.severe(type);
-        break;
-      }
-    }
-    return rv;
-  }
-
-  public static JavaMethod getSetterForGetter(JavaMethod getter, JavaType type) {
-    java.lang.reflect.Method gttr = getter.getMethodReflectionProxy().getReification();
-    java.lang.reflect.Method sttr = PropertyUtilities.getSetterForGetter(gttr, type.getClassReflectionProxy().getReification());
-    if (sttr != null) {
-      return JavaMethod.getInstance(sttr);
-    } else {
-      return null;
-    }
-  }
-
-  public static JavaMethod getSetterForGetter(JavaMethod getter) {
-    return getSetterForGetter(getter, getter.getDeclaringType());
   }
 
   public static UserMethod createMethod(String name, AbstractType<?, ?, ?> returnType) {
@@ -352,10 +295,6 @@ public class AstUtilities {
     return createArrayInstanceCreation(JavaType.getInstance(arrayCls), ArrayUtilities.createArray(expressions, Expression.class));
   }
 
-  public static JavaMethod lookupMethod(Class<?> cls, String methodName, Class<?>... parameterTypes) {
-    return JavaMethod.getInstance(cls, methodName, parameterTypes);
-  }
-
   public static ReturnStatement createReturnStatement(AbstractType<?, ?, ?> type, Expression expression) {
     return new ReturnStatement(type, expression);
   }
@@ -468,27 +407,8 @@ public class AstUtilities {
     }
   }
 
-  public static AbstractType<?, ?, ?>[] getParameterValueTypes(AbstractMethod method) {
-    List<? extends AbstractParameter> parameters = method.getRequiredParameters();
-    AbstractType<?, ?, ?>[] rv = new AbstractType[parameters.size()];
-    int i = 0;
-    for (AbstractParameter parameter : parameters) {
-      rv[i] = parameter.getValueType();
-      i++;
-    }
-    return rv;
-  }
-
-  public static <M extends AbstractMethod> M getSingleAbstractMethod(AbstractType<?, M, ?> type) {
-    List<M> methods = type.getDeclaredMethods();
-    assert methods.size() == 1 : type;
-    M singleAbstractMethod = methods.getFirst();
-    assert singleAbstractMethod.isAbstract() : singleAbstractMethod;
-    return singleAbstractMethod;
-  }
-
   public static UserLambda createUserLambda(AbstractType<?, ?, ?> type) {
-    AbstractMethod singleAbstractMethod = getSingleAbstractMethod(type);
+    AbstractMethod singleAbstractMethod = AstMethodLookupHelpers.getSingleAbstractMethod(type);
     List<? extends AbstractParameter> srcRequiredParameters = singleAbstractMethod.getRequiredParameters();
     UserParameter[] dstRequiredParameters = new UserParameter[srcRequiredParameters.size()];
     for (int i = 0; i < dstRequiredParameters.length; i++) {
@@ -529,73 +449,6 @@ public class AstUtilities {
     return false;
   }
 
-  public static AbstractType<?, ?, ?> getKeywordFactoryType(JavaKeyedArgument argument) {
-    AbstractParameter parameter = argument.parameter.getValue();
-    if (parameter.isKeyworded()) {
-      AbstractType<?, ?, ?> parameterType = parameter.getValueType();
-      if ((parameterType != null) && parameterType.isArray()) {
-        AbstractType<?, ?, ?> componentType = parameterType.getComponentType();
-        if (componentType != null) {
-          return componentType.getKeywordFactoryType();
-        }
-      }
-    }
-    return null;
-  }
-
-  private static AbstractType<?, ?, ?>[] getParameterTypes(AbstractMethod method) {
-    AbstractParameter[] parameters = method.getAllParameters();
-    AbstractType<?, ?, ?>[] rv = new AbstractType<?, ?, ?>[parameters.length];
-    for (int i = 0; i < parameters.length; i++) {
-      rv[i] = parameters[i].getValueType();
-    }
-    return rv;
-  }
-
-  private static AbstractMethod getOverridenMethod(AbstractType<?, ?, ?> type, String methodName, AbstractType<?, ?, ?>[] parameterTypes) {
-    if (type != null) {
-      AbstractMethod rv = type.getDeclaredMethod(methodName, parameterTypes);
-      if (rv != null) {
-        return rv;
-      } else {
-        //edu.cmu.cs.dennisc.java.util.logging.Logger.outln( type, methodName, java.util.Arrays.toString( parameterTypes ) );
-        return getOverridenMethod(type.getSuperType(), methodName, parameterTypes);
-      }
-    } else {
-      return null;
-    }
-  }
-
-  public static AbstractMethod getOverridenMethod(AbstractMethod method) {
-    AbstractType<?, ?, ?> type = method.getDeclaringType();
-    return getOverridenMethod(type.getSuperType(), method.getName(), getParameterTypes(method));
-  }
-
-  private static void addInvokedMethods(Set<UserMethod> set, UserMethod from) {
-    IsInstanceCrawler<MethodInvocation> crawler = new IsInstanceCrawler<MethodInvocation>(MethodInvocation.class) {
-      @Override
-      protected boolean isAcceptable(MethodInvocation methodInvocation) {
-        return true;
-      }
-    };
-    from.body.getValue().crawl(crawler, CrawlPolicy.EXCLUDE_REFERENCES_ENTIRELY);
-    for (MethodInvocation methodInvocation : crawler.getList()) {
-      AbstractMethod m = methodInvocation.method.getValue();
-      if (m instanceof UserMethod userMethod) {
-        if (!set.contains(userMethod)) {
-          set.add(userMethod);
-          addInvokedMethods(set, userMethod);
-        }
-      }
-    }
-  }
-
-  public static Set<UserMethod> getAllInvokedMethods(UserMethod seed) {
-    Set<UserMethod> set = Sets.newHashSet();
-    addInvokedMethods(set, seed);
-    return set;
-  }
-
   public static void fixRequiredArgumentsIfNecessary(MethodInvocation methodInvocation) {
     AbstractMethod method = methodInvocation.method.getValue();
     List<? extends AbstractParameter> requiredParameters = method.getRequiredParameters();
@@ -619,31 +472,4 @@ public class AstUtilities {
     return crawler.getList();
   }
 
-  public static AbstractType<?, ?, ?> getDeclaringTypeIfMemberOrTypeItselfIfType(AbstractDeclaration declaration) {
-    if (declaration != null) {
-      if (declaration instanceof AbstractType<?, ?, ?> type) {
-        return type;
-      } else if (declaration instanceof AbstractMember member) {
-        return member.getDeclaringType();
-      } else {
-        throw new UnsupportedOperationException();
-      }
-    } else {
-      return null;
-    }
-  }
-
-  private static void updateAllMethods(List<AbstractMethod> allMethods, AbstractType<?, ?, ?> type) {
-    allMethods.addAll(type.getDeclaredMethods());
-    AbstractType<?, ?, ?> superType = type.getSuperType();
-    if (superType != null) {
-      updateAllMethods(allMethods, superType);
-    }
-  }
-
-  public static List<AbstractMethod> getAllMethods(AbstractType<?, ?, ?> type) {
-    List<AbstractMethod> rv = Lists.newLinkedList();
-    updateAllMethods(rv, type);
-    return rv;
-  }
 }

@@ -54,7 +54,7 @@ import org.lgna.croquet.CascadeLineSeparator;
 import org.lgna.croquet.imp.cascade.BlankNode;
 import org.lgna.project.ast.AbstractMethod;
 import org.lgna.project.ast.AbstractType;
-import org.lgna.project.ast.AstUtilities;
+import org.lgna.project.ast.AstMethodLookupHelpers;
 import org.lgna.project.ast.Expression;
 import org.lgna.project.ast.ExpressionStatement;
 import org.lgna.project.ast.JavaMethod;
@@ -132,7 +132,7 @@ public class MethodInvocationBlank extends CascadeBlank<MethodInvocationEditFact
 
       //Search the UserMethods on the type looking for generated pose animations
       //Grab the java method invocation (strikePose) inside the pose animation and add it to the methodInvocations list
-      List<AbstractMethod> declaredMethods = AstUtilities.getAllMethods(instanceFactoryValueType);
+      List<AbstractMethod> declaredMethods = AstMethodLookupHelpers.getAllMethods(instanceFactoryValueType);
       for (AbstractMethod method : declaredMethods) {
         if (method instanceof UserMethod userMethod) {
           //Pose animations are GENERATED and have no return value
