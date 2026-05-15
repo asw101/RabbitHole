@@ -159,7 +159,7 @@ public final class ModelManifestManager {
      * the cached list. Scans StoryApiDirectoryUtilities.getUserGalleryDirectory()
      * for .json model files and parses each via ManifestEncoderDecoder.
      *
-     * @return unmodifiable view of user gallery manifests; never null
+     * @return cached list of user gallery manifests; never null
      */
     public List<ModelManifest> findAndLoadUserGalleryResources();
 
@@ -167,7 +167,7 @@ public final class ModelManifestManager {
      * Lazily load all internal (non-user-visible) model manifests from
      * StoryApiDirectoryUtilities.getInternalModelsDirectory().
      *
-     * @return unmodifiable view of internal manifests; never null
+     * @return cached list of internal manifests; never null
      */
     public List<ModelManifest> findAndLoadInternalResources();
 
@@ -354,9 +354,9 @@ names and package-private visibility are preserved via delegates.
 
 | Component | Estimated Lines | Notes |
 |-----------|----------------|-------|
-| `ResourceClassLoader.java` | ~130 | 5 methods + `LoadResult` inner class + license header |
-| `ModelManifestManager.java` | ~100 | 8 methods + 2 fields + license header |
-| `StorytellingResources.java` | ~410 | Original 611 − ~195 extracted + ~20 delegates/field − ~26 dead/simplified code in place |
+| `ResourceClassLoader.java` | ~225 | 5 methods + `LoadResult` inner class + Javadoc + license header |
+| `ModelManifestManager.java` | ~195 | 8 methods + 2 fields + Javadoc + license header |
+| `StorytellingResources.java` | ~355 | Original 611 − ~195 extracted + ~20 delegates/field − ~26 dead/simplified code in place |
 
 **Target: under 500 lines.** Budget allows ~90 lines margin. Exact count will be validated
 post-implementation (verification checklist item 6).

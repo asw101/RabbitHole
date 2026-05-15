@@ -105,6 +105,14 @@ public final class ResourceClassLoader {
     return baseName;
   }
 
+  /**
+   * Scan resource directories and jar/zip files for XML model descriptors.
+   * Returns a map from each resource file to the list of fully-qualified
+   * Alice resource class names found within it.
+   *
+   * @param resourceFiles directories or jar files to scan
+   * @return map of resource-file to class-name list; never null
+   */
   public static Map<File, List<String>> getClassNamesFromResources(File... resourceFiles) {
     HashMap<File, List<String>> rv = new HashMap<>();
     for (File resourceFile : resourceFiles) {
@@ -137,6 +145,15 @@ public final class ResourceClassLoader {
     return rv;
   }
 
+  /**
+   * Load {@link ModelResource} classes by name from the given resource files
+   * using a fresh {@link java.net.URLClassLoader}.  Falls back to the
+   * system classloader on failure.
+   *
+   * @param classNames    fully-qualified class names to load
+   * @param resourceFiles jars/directories providing the classpath
+   * @return a {@link LoadResult} containing the loaded classes and classloader
+   */
   public static LoadResult loadClassesFromResourceFiles(List<String> classNames, File... resourceFiles) {
     List<Class<? extends ModelResource>> classes = new ArrayList<>();
     List<URLClassLoader> classLoaders = new ArrayList<>();
@@ -170,6 +187,14 @@ public final class ResourceClassLoader {
     return new LoadResult(classes, classLoaders);
   }
 
+  /**
+   * Full pipeline: resolve resource paths, discover class names, and load.
+   * Handles the common pattern of expanding directories into their
+   * contained jars and sub-directories before scanning.
+   *
+   * @param resourcePaths top-level directories or jar files
+   * @return a {@link LoadResult} containing all discovered ModelResource classes
+   */
   public static LoadResult getAndLoadModelResourceClasses(List<File> resourcePaths) {
     List<File> resourceFiles = new ArrayList<>();
     for (File modelPath : resourcePaths) {

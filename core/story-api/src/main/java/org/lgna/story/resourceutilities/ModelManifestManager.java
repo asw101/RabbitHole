@@ -70,6 +70,12 @@ public final class ModelManifestManager {
   private List<ModelManifest> internalModelManifests = null;
   private Map<String, ModelManifest> internalManifestsByName;
 
+  /**
+   * Find all {@code .json} model files within the given directories.
+   *
+   * @param directoriesToSearch directories to scan (non-directories are ignored)
+   * @return list of {@code .json} files found; never null
+   */
   public List<File> getDynamicModelFiles(File... directoriesToSearch) {
     List<File> dynamicModelFiles = new ArrayList<>();
     for (File directory : directoriesToSearch) {
@@ -81,6 +87,12 @@ public final class ModelManifestManager {
     return dynamicModelFiles;
   }
 
+  /**
+   * Lazily load all user gallery model manifests.  Subsequent calls
+   * return the cached list.
+   *
+   * @return list of user gallery manifests; never null
+   */
   public List<ModelManifest> findAndLoadUserGalleryResources() {
     if (this.userGalleryModelManifests == null) {
       this.userGalleryManifestsByName = new HashMap<>();
@@ -90,6 +102,12 @@ public final class ModelManifestManager {
     return this.userGalleryModelManifests;
   }
 
+  /**
+   * Lazily load all internal model manifests.  Subsequent calls
+   * return the cached list.
+   *
+   * @return list of internal manifests; never null
+   */
   public List<ModelManifest> findAndLoadInternalResources() {
     if (internalModelManifests == null) {
       internalManifestsByName = new HashMap<>();
@@ -120,11 +138,18 @@ public final class ModelManifestManager {
       }
       return modelManifest;
     } catch (IOException e) {
-      Logger.warning("Error loading model data from " + modelFile);
+      Logger.warning("Error loading model data from " + modelFile, e);
       return null;
     }
   }
 
+  /**
+   * Re-scan the user gallery directory and return only manifests that
+   * were not present in the previously cached set (compared by name).
+   *
+   * @return list of newly discovered manifests, or {@code null} if
+   *         {@link #findAndLoadUserGalleryResources()} has never been called
+   */
   public List<ModelManifest> findNewUserGalleryResources() {
     if (userGalleryModelManifests != null) {
       List<ModelManifest> newModelManifests = new ArrayList<>();
@@ -142,11 +167,25 @@ public final class ModelManifestManager {
     return null;
   }
 
+  /**
+   * Look up a user gallery manifest by model name.
+   * Triggers lazy load if not yet initialized.
+   *
+   * @param modelName the manifest name to search for
+   * @return matching manifest, or {@code null} if not found
+   */
   public ModelManifest getModelManifest(String modelName) {
     findAndLoadUserGalleryResources();
     return userGalleryManifestsByName.get(modelName);
   }
 
+  /**
+   * Look up an internal manifest by model name.
+   * Triggers lazy load if not yet initialized.
+   *
+   * @param modelName the manifest name to search for
+   * @return matching manifest, or {@code null} if not found
+   */
   public ModelManifest getInternalModelManifest(String modelName) {
     findAndLoadInternalResources();
     return internalManifestsByName.get(modelName);
