@@ -52,12 +52,9 @@ import javax.swing.SwingUtilities;
 import java.awt.Component;
 import java.awt.Dialog;
 import java.awt.Frame;
-import java.awt.GraphicsEnvironment;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 
@@ -194,7 +191,6 @@ public class FileDialogUtilities {
       } else {
         this.result = this.jFileChooser.showSaveDialog(this.root);
       }
-
     }
   }
 
@@ -215,19 +211,13 @@ public class FileDialogUtilities {
     String directoryPath = directory != null ? directory.getAbsolutePath() : null;
     FileDialog fileDialog;
     Component root = SwingUtilities.getRoot(component);
-    SelectedPathAutomation selectedPathAutomation = selectedPathAutomation(directory, extension);
-    recordSaveDialogDiscoveryTarget(component, directory, filename, extension, root, selectedPathAutomation);
-    if (selectedPathAutomation.isConfigured()) {
-      return selectedPathAutomation.selectedFile();
+    SelectedPathAutomation automation = SelectedPathAutomation.resolve(directory, extension);
+    SaveDialogDiscoveryWriter.record(component, directory, filename, extension, root, automation);
+    if (automation.isConfigured()) {
+      return automation.selectedFile();
     }
-    String secondaryKey;
-    if (directoryPath != null) {
-      secondaryKey = directoryPath;
-    } else {
-      secondaryKey = NULL_KEY;
-    }
-    MapToMap<Component, String, FileDialog> mapPathToFileDialog;
-    mapPathToFileDialog = FileDialogUtilities.mapPathToSaveFileDialog;
+    String secondaryKey = directoryPath != null ? directoryPath : NULL_KEY;
+    MapToMap<Component, String, FileDialog> mapPathToFileDialog = FileDialogUtilities.mapPathToSaveFileDialog;
     fileDialog = mapPathToFileDialog.get(component, secondaryKey);
 
     if (fileDialog == null) {
@@ -262,377 +252,15 @@ public class FileDialogUtilities {
   }
 
   public static Path writeSaveDialogDiscoveryTarget(
-      Path evidenceDir,
-      Component component,
-      File directory,
-      String filename,
-      String extension) throws IOException {
-    return writeSaveDialogDiscoveryTarget(evidenceDir, component, directory, filename, extension, SwingUtilities.getRoot(component));
+      Path evidenceDir, Component component, File directory,
+      String filename, String extension) throws IOException {
+    return SaveDialogDiscoveryWriter.write(
+        evidenceDir, component, directory, filename, extension,
+        SwingUtilities.getRoot(component));
   }
 
   public static String escapeJson(String value) {
-    StringBuilder escaped = new StringBuilder(value.length());
-    for (int i = 0; i < value.length(); i++) {
-      char ch = value.charAt(i);
-      switch (ch) {
-        case '\\' -> escaped.append("\\\\");
-        case '"' -> escaped.append("\\\"");
-        case '\b' -> escaped.append("\\b");
-        case '\f' -> escaped.append("\\f");
-        case '\n' -> escaped.append("\\n");
-        case '\r' -> escaped.append("\\r");
-        case '\t' -> escaped.append("\\t");
-        default -> {
-          if (ch < 0x20) {
-            escaped.append(String.format("\\u%04x", (int) ch));
-          } else {
-            escaped.append(ch);
-          }
-        }
-      }
-    }
-    return escaped.toString();
-  }
-
-  private static void recordSaveDialogDiscoveryTarget(
-      Component component,
-      File directory,
-      String filename,
-      String extension,
-      Component root) {
-    recordSaveDialogDiscoveryTarget(component, directory, filename, extension, root, selectedPathAutomation(directory, extension));
-  }
-
-  private static void recordSaveDialogDiscoveryTarget(
-      Component component,
-      File directory,
-      String filename,
-      String extension,
-      Component root,
-      SelectedPathAutomation selectedPathAutomation) {
-    String evidenceDir = System.getProperty(SAVE_DIALOG_DISCOVERY_EVIDENCE_DIR_PROPERTY);
-    if (evidenceDir == null || evidenceDir.isBlank()) {
-      return;
-    }
-    try {
-      writeSaveDialogDiscoveryTarget(Path.of(evidenceDir), component, directory, filename, extension, root, selectedPathAutomation);
-    } catch (IOException | RuntimeException ex) {
-      Logger.throwable(ex, "Save dialog discovery target evidence write failed: " + evidenceDir);
-    }
-  }
-
-  private static Path writeSaveDialogDiscoveryTarget(
-      Path evidenceDir,
-      Component component,
-      File directory,
-      String filename,
-      String extension,
-      Component root) throws IOException {
-    return writeSaveDialogDiscoveryTarget(
-        evidenceDir,
-        component,
-        directory,
-        filename,
-        extension,
-        root,
-        selectedPathAutomation(directory, extension));
-  }
-
-  private static Path writeSaveDialogDiscoveryTarget(
-      Path evidenceDir,
-      Component component,
-      File directory,
-      String filename,
-      String extension,
-      Component root,
-      SelectedPathAutomation selectedPathAutomation) throws IOException {
-    Files.createDirectories(evidenceDir);
-    Path artifact = artifactPath(evidenceDir, SAVE_DIALOG_DISCOVERY_TARGET_ARTIFACT);
-    Files.writeString(
-        artifact,
-        saveDialogDiscoveryJson(component, directory, filename, extension, root, selectedPathAutomation),
-        StandardCharsets.UTF_8);
-    if (!Files.isRegularFile(artifact) || Files.size(artifact) == 0) {
-      throw new IOException("Save dialog discovery target artifact was not written: " + artifact);
-    }
-    return artifact;
-  }
-
-  private static String saveDialogDiscoveryJson(
-      Component component,
-      File directory,
-      String filename,
-      String extension,
-      Component root,
-      SelectedPathAutomation selectedPathAutomation) {
-    String reason = saveDialogDiscoveryReason(component, root);
-    String status = switch (reason) {
-      case "target_resolved" -> "target_resolved";
-      case "missing_owner_component", "headless_graphics_environment" -> "unsupported";
-      default -> "blocked";
-    };
-    return "{\n"
-        + "  \"schema_version\": \"eatme.alice-desktop-save-dialog-discovery-target/v1\",\n"
-        + "  \"status\": \"" + status + "\",\n"
-        + "  \"reason\": \"" + reason + "\",\n"
-        + "  \"source\": \"edu.cmu.cs.dennisc.java.awt.FileDialogUtilities#showSaveFileDialog(Component,File,String,String)\",\n"
-        + "  \"dialog_targets\": {\n"
-        + "    \"desktop_frame\": \"org.lgna.croquet.DocumentFrame#showSaveFileDialog(File,String,String)\",\n"
-        + "    \"native_chooser\": \"edu.cmu.cs.dennisc.java.awt.FileDialogUtilities#showSaveFileDialog(Component,File,String,String)\",\n"
-        + "    \"dialog_implementation\": \"" + escapeJson(saveDialogImplementation()) + "\"\n"
-        + "  },\n"
-        + "  \"request\": {\n"
-        + "    \"title\": \"Save...\",\n"
-        + "    \"mode\": \"SAVE\",\n"
-        + "    \"directory\": " + fileJson(directory) + ",\n"
-        + "    \"filename\": " + stringJson(filename) + ",\n"
-        + "    \"extension\": " + stringJson(extension) + "\n"
-        + "  },\n"
-        + "  \"owner_window\": {\n"
-        + "    \"headless\": " + GraphicsEnvironment.isHeadless() + ",\n"
-        + "    \"owner_component_class\": " + componentJson(component) + ",\n"
-        + "    \"owner_displayable\": " + booleanJson(component == null ? null : component.isDisplayable()) + ",\n"
-        + "    \"owner_showing\": " + booleanJson(component == null ? null : component.isShowing()) + ",\n"
-        + "    \"root_component_class\": " + componentJson(root) + ",\n"
-        + "    \"root_displayable\": " + booleanJson(root == null ? null : root.isDisplayable()) + ",\n"
-        + "    \"root_showing\": " + booleanJson(root == null ? null : root.isShowing()) + "\n"
-        + "  },\n"
-        + "  \"selected_path_automation\": " + selectedPathAutomationJson(selectedPathAutomation) + ",\n"
-        + "  \"reporting_summary\": \"" + escapeJson(reportingSummary(reason)) + "\",\n"
-        + "  \"blocker\": {\n"
-        + "    \"observed\": \"" + escapeJson(observed(reason)) + "\",\n"
-        + "    \"required\": \"" + escapeJson(blockerRequired(reason)) + "\"\n"
-        + "  },\n"
-        + saveDialogRequiresNextEvidenceJson(reason)
-        + "  \"doesNotClaim\": [\n"
-        + "    \"desktop Save menu item was clicked\",\n"
-        + "    \"Save dialog displayed\",\n"
-        + "    \"Save dialog controlled\",\n"
-        + "    \"selected Save path supplied by UI automation\",\n"
-        + "    \"saved file completed\",\n"
-        + "    \"first-lesson completion\",\n"
-        + "    \"visible rendering correctness\",\n"
-        + "    \"grading\"\n"
-        + "  ]\n"
-        + "}\n";
-  }
-
-  private static String saveDialogDiscoveryReason(Component component, Component root) {
-    if (component == null) {
-      return "missing_owner_component";
-    }
-    if (root == null) {
-      return "missing_dialog_root_window";
-    }
-    if (GraphicsEnvironment.isHeadless()) {
-      return "headless_graphics_environment";
-    }
-    if (!root.isDisplayable()) {
-      return "dialog_root_not_displayable";
-    }
-    return "target_resolved";
-  }
-
-  private static String saveDialogImplementation() {
-    return SystemUtilities.isLinux()
-        ? "edu.cmu.cs.dennisc.java.awt.FileDialogUtilities.SwingFileDialog"
-        : "edu.cmu.cs.dennisc.java.awt.FileDialogUtilities.AwtFileDialog";
-  }
-
-  private static String reportingSummary(String reason) {
-    return switch (reason) {
-      case "missing_owner_component" -> "No owner Component was supplied, so Alice cannot discover or control a Save dialog from this seam.";
-      case "missing_dialog_root_window" -> "A Save dialog owner Component was supplied, but SwingUtilities.getRoot(component) did not find a desktop window.";
-      case "headless_graphics_environment" -> "The JVM is headless, so Alice cannot display or control a desktop Save dialog here.";
-      case "dialog_root_not_displayable" -> "The Save dialog root window exists but is not displayable yet.";
-      default -> "The Save dialog owner and root target were resolved before FileDialog.show(); dialog display and control still require separate evidence.";
-    };
-  }
-
-  private static String observed(String reason) {
-    return switch (reason) {
-      case "missing_owner_component" -> "owner Component is null";
-      case "missing_dialog_root_window" -> "SwingUtilities.getRoot(component) is null";
-      case "headless_graphics_environment" -> "GraphicsEnvironment.isHeadless() is true";
-      case "dialog_root_not_displayable" -> "root Component exists but root.isDisplayable() is false";
-      default -> "owner Component and displayable root Component resolved";
-    };
-  }
-
-  private static String blockerRequired(String reason) {
-    if ("target_resolved".equals(reason)) {
-      return "Save dialog display/control result after FileDialog.show(), or completed saved project file evidence through the Save flow";
-    }
-    return "displayable Alice ProjectDocumentFrame root window before FileDialogUtilities.showSaveFileDialog displays the Save dialog";
-  }
-
-  private static String saveDialogRequiresNextEvidenceJson(String reason) {
-    if ("target_resolved".equals(reason)) {
-      return "  \"requiresNextEvidence\": [\n"
-          + "    \"Save dialog displayed result from FileDialogUtilities after FileDialog.show() returns\",\n"
-          + "    \"Save dialog control result artifact\",\n"
-          + "    \"completed saved project file evidence through the Save flow\"\n"
-          + "  ],\n";
-    }
-    return "  \"requiresNextEvidence\": [\n"
-        + "    \"displayable Alice ProjectDocumentFrame root window at FileDialogUtilities.showSaveFileDialog\",\n"
-        + "    \"Save dialog displayed result from FileDialogUtilities after FileDialog.show() returns\",\n"
-        + "    \"selected Save path supplied by UI automation\"\n"
-        + "  ],\n";
-  }
-
-  private static SelectedPathAutomation selectedPathAutomation(File directory, String extension) {
-    String configuredPath = System.getProperty(SAVE_DIALOG_SELECTED_PATH_PROPERTY);
-    if (configuredPath == null || configuredPath.isBlank()) {
-      return SelectedPathAutomation.inactive();
-    }
-    if (directory == null) {
-      return SelectedPathAutomation.unsupported("missing_requested_directory", configuredPath, null, false);
-    }
-    if (!directory.isDirectory()) {
-      return SelectedPathAutomation.unsupported("requested_directory_not_available", configuredPath, null, false);
-    }
-    Path requestedDirectory;
-    try {
-      requestedDirectory = directory.toPath().toRealPath();
-    } catch (IOException ioe) {
-      return SelectedPathAutomation.unsupported("requested_directory_not_available", configuredPath, null, false);
-    }
-    Path configured;
-    try {
-      configured = Path.of(configuredPath);
-    } catch (RuntimeException ex) {
-      return SelectedPathAutomation.unsupported("selected_path_invalid", configuredPath, null, false);
-    }
-    if (!configured.isAbsolute()) {
-      return SelectedPathAutomation.unsupported("selected_path_not_absolute", configuredPath, null, false);
-    }
-    Path selectedPath = addExtensionIfMissing(configured.normalize(), extension);
-    Path selectedParent = selectedPath.getParent();
-    if (selectedParent == null || !Files.isDirectory(selectedParent)) {
-      return SelectedPathAutomation.unsupported("selected_parent_directory_not_available", configuredPath, null, false);
-    }
-    if (Files.isSymbolicLink(selectedPath)) {
-      return SelectedPathAutomation.unsupported("selected_path_is_symbolic_link", configuredPath, null, false);
-    }
-    Path selectedParentReal;
-    try {
-      selectedParentReal = selectedParent.toRealPath();
-    } catch (IOException ioe) {
-      return SelectedPathAutomation.unsupported("selected_parent_directory_not_available", configuredPath, null, false);
-    }
-    boolean safeUnderRequestedDirectory = selectedParentReal.startsWith(requestedDirectory);
-    if (!safeUnderRequestedDirectory) {
-      return SelectedPathAutomation.unsupported(
-          "selected_path_outside_requested_directory",
-          configuredPath,
-          null,
-          false);
-    }
-    return SelectedPathAutomation.accepted(configuredPath, selectedPath.toFile());
-  }
-
-  private static Path addExtensionIfMissing(Path path, String extension) {
-    if (extension == null || extension.isBlank()) {
-      return path;
-    }
-    Path fileName = path.getFileName();
-    if (fileName == null || fileName.toString().endsWith("." + extension)) {
-      return path;
-    }
-    Path parent = path.getParent();
-    Path fileNameWithExtension = Path.of(fileName + "." + extension);
-    return parent == null ? fileNameWithExtension : parent.resolve(fileNameWithExtension);
-  }
-
-  private static String selectedPathAutomationJson(SelectedPathAutomation selectedPathAutomation) {
-    SelectedPathAutomation value =
-        selectedPathAutomation == null ? SelectedPathAutomation.inactive() : selectedPathAutomation;
-    return "{\n"
-        + "    \"property\": \"" + SAVE_DIALOG_SELECTED_PATH_PROPERTY + "\",\n"
-        + "    \"status\": \"" + value.status() + "\",\n"
-        + "    \"reason\": \"" + value.reason() + "\",\n"
-        + "    \"configured_path\": " + stringJson(value.configuredPath()) + ",\n"
-        + "    \"selected_file\": " + fileJson(value.selectedFile()) + ",\n"
-        + "    \"safe_under_requested_directory\": " + booleanJson(value.safeUnderRequestedDirectory()) + ",\n"
-        + "    \"reporting_summary\": \"" + escapeJson(selectedPathAutomationSummary(value.reason())) + "\"\n"
-        + "  }";
-  }
-
-  private static String selectedPathAutomationSummary(String reason) {
-    return switch (reason) {
-      case "inactive" -> "No selected Save path automation property was configured.";
-      case "selected_path_property_accepted" -> "FileDialogUtilities.showSaveFileDialog returned the opt-in selected Save path without opening a desktop dialog.";
-      case "missing_requested_directory" -> "Selected Save path automation requires the Save dialog request to include a directory.";
-      case "requested_directory_not_available" -> "Selected Save path automation requires the requested Save directory to exist.";
-      case "selected_path_invalid" -> "Configured selected Save path is not a valid local path.";
-      case "selected_path_not_absolute" -> "Configured selected Save path must be absolute.";
-      case "selected_parent_directory_not_available" -> "Configured selected Save path must have an existing parent directory.";
-      case "selected_path_is_symbolic_link" -> "Configured selected Save path must not be a symbolic link.";
-      case "selected_path_outside_requested_directory" -> "Configured selected Save path must stay under the requested directory.";
-      default -> "Selected Save path automation was not accepted.";
-    };
-  }
-
-  private record SelectedPathAutomation(
-      String status,
-      String reason,
-      String configuredPath,
-      File selectedFile,
-      Boolean safeUnderRequestedDirectory) {
-    static SelectedPathAutomation inactive() {
-      return new SelectedPathAutomation("inactive", "inactive", null, null, null);
-    }
-
-    static SelectedPathAutomation accepted(String configuredPath, File selectedFile) {
-      return new SelectedPathAutomation(
-          "selected_path_injected",
-          "selected_path_property_accepted",
-          configuredPath,
-          selectedFile,
-          true);
-    }
-
-    static SelectedPathAutomation unsupported(
-        String reason,
-        String configuredPath,
-        File selectedFile,
-        boolean safeUnderRequestedDirectory) {
-      return new SelectedPathAutomation(
-          "unsupported",
-          reason,
-          configuredPath,
-          selectedFile,
-          safeUnderRequestedDirectory);
-    }
-
-    boolean isConfigured() {
-      return !"inactive".equals(this.status);
-    }
-  }
-
-  private static String fileJson(File file) {
-    return file == null ? "null" : stringJson(file.getPath());
-  }
-
-  private static String stringJson(String value) {
-    return value == null ? "null" : "\"" + escapeJson(value) + "\"";
-  }
-
-  private static String componentJson(Component component) {
-    return component == null ? "null" : stringJson(component.getClass().getName());
-  }
-
-  private static String booleanJson(Boolean value) {
-    return value == null ? "null" : value.toString();
-  }
-
-  private static Path artifactPath(Path evidenceDir, String artifactName) {
-    Path artifact = evidenceDir.resolve(artifactName).normalize();
-    if (!artifact.startsWith(evidenceDir.normalize())) {
-      throw new IllegalArgumentException("Save dialog discovery artifact escapes evidence dir");
-    }
-    return artifact;
+    return SaveDialogDiscoveryWriter.escapeJson(value);
   }
 
   private static File showFileDialog(int mode, Component component, String title, File directory, String filename, FilenameFilter filenameFilter, String extensionToAddIfMissing) {
