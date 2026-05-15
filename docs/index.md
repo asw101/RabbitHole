@@ -200,6 +200,12 @@ repository.
 - [Tutorial: Trace the Encoder Delegate Decomposition](./tutorials/trace-encoder-delegate-decomposition.md) - guided walkthrough of a Tweedle encode request flowing through TweedleEncoder, StatementEncoder, ExpressionEncoder, EncoderMappings, and ResourceStructureEncoder.
 - [Tweedle VirtualMachine Dead Code Removal](./reference/tweedle-vm-dead-code-removal.md) - removal of ~835 lines of commented-out dead code from `VirtualMachine.java` (938→104 lines), preserving all 11 active methods with identical signatures (issue #579).
 
+## Croquet framework decomposition
+
+- [CompositeResourceManager Extraction](./reference/composite-resource-manager-extraction.md) - Reference for extraction of 13 inner state classes into `InternalStateTypes` and localization methods into `CompositeLocalizationDelegate` from `CompositeResourceManager` (issue #631), reducing 649 lines to ~225.
+- [Validate CompositeResourceManager Extraction](./howto/validate-composite-resource-manager-extraction.md) - How to verify compilation, line counts, visibility, and contract tests after the inner class and localization extraction.
+- [Tutorial: Trace the CompositeResourceManager Extraction](./tutorials/trace-composite-resource-manager-extraction.md) - Guided walkthrough of inner class extraction into InternalStateTypes, stateless localization delegate design, factory method references, encryption call chain preservation, and characterization test boundaries.
+
 ## IK enforcer decomposition
 
 - [TightPositionalIkEnforcer Inner Class Extraction](./reference/tight-positional-ik-enforcer-decomposition.md) - Reference for extraction of all 14 inner classes from `TightPositionalIkEnforcer` (1328 lines) into top-level files in `org.lgna.ik.core.enforcer`, with `IkEnforcerContext` interface replacing implicit outer-class references.
