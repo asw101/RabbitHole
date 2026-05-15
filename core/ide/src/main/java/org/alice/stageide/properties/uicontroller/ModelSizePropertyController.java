@@ -117,6 +117,9 @@ public class ModelSizePropertyController extends AbstractAdapterController<Dimen
   private static final int SCALE_XY_X_POS = 3;
 
   private static final Insets INSETS_2 = new Insets(2, 2, 2, 2);
+  private static final Insets INSETS_0 = new Insets(0, 0, 0, 0);
+  private static final Insets INSETS_XY_OFFSET = new Insets(16, 2, 2, 2);
+  private static final Insets INSETS_YZ_OFFSET = new Insets(48, 2, 2, 2);
 
   private static GridBagConstraints gbc(int gridX, int gridY, int gridHeight, int anchor, Insets insets) {
     return new GridBagConstraints(gridX, gridY, 1, gridHeight, 0.0, 0.0, anchor, GridBagConstraints.NONE, insets, 0, 0);
@@ -181,7 +184,7 @@ public class ModelSizePropertyController extends AbstractAdapterController<Dimen
                                                                                   1.0, //weightY
                                                                                   GridBagConstraints.CENTER, //anchor
                                                                                   GridBagConstraints.BOTH, //fill
-                                                                                  new Insets(0, 0, 0, 0), //insets
+                                                                                  INSETS_0, //insets
                                                                                   0, //ipadX
                                                                                   0) //ipadY
     );
@@ -245,13 +248,13 @@ public class ModelSizePropertyController extends AbstractAdapterController<Dimen
       this.addComponent(this.linkAllButton, gbc(SCALE_ALL_X_POS, 0, 3, GridBagConstraints.WEST, INSETS_2));
     }
     if (hasLinkXY) {
-      this.addComponent(this.linkXYButton, gbc(SCALE_XY_X_POS, 0, 3, GridBagConstraints.NORTHWEST, new Insets(16, 2, 2, 2)));
+      this.addComponent(this.linkXYButton, gbc(SCALE_XY_X_POS, 0, 3, GridBagConstraints.NORTHWEST, INSETS_XY_OFFSET));
     }
     if (hasLinkXZ) {
       this.addComponent(this.linkXZButton, gbc(SCALE_XZ_X_POS, 0, 3, GridBagConstraints.WEST, INSETS_2));
     }
     if (hasLinkYZ) {
-      this.addComponent(this.linkYZButton, gbc(SCALE_YZ_X_POS, 0, 3, GridBagConstraints.NORTHWEST, new Insets(48, 2, 2, 2)));
+      this.addComponent(this.linkYZButton, gbc(SCALE_YZ_X_POS, 0, 3, GridBagConstraints.NORTHWEST, INSETS_YZ_OFFSET));
     }
     isUpdatingState = true;
 
@@ -286,23 +289,18 @@ public class ModelSizePropertyController extends AbstractAdapterController<Dimen
     if ((this.resetButton != null) && (this.resetButton.getAwtComponent().getParent() != null)) {
       this.removeComponent(this.resetButton);
     }
-    if (this.propertyAdapter != null) {
-
-      Operation operation = new ModelSizePropertyValueOperation(this.propertyAdapter, getOriginalSize());
-      operation.setName(AbstractPropertyAdapter.getLocalizedString("Reset"));
-      this.resetButton = operation.createButton();
-
+    this.resetButton = null;
+    if ((this.propertyAdapter == null) || (this.propertyAdapter.getInstance() == null)) {
+      return;
     }
-    boolean usesReset = false;
-    if ((this.propertyAdapter != null) && (this.propertyAdapter.getInstance() != null)) {
-      ModelImp baseModel = (ModelImp) this.propertyAdapter.getInstance();
-      if ((baseModel instanceof JointedModelImp) || (baseModel instanceof BillboardImp)) {
-        usesReset = true;
-      }
+    ModelImp baseModel = (ModelImp) this.propertyAdapter.getInstance();
+    if (!(baseModel instanceof JointedModelImp) && !(baseModel instanceof BillboardImp)) {
+      return;
     }
-    if ((this.resetButton != null) && usesReset) {
-      this.addComponent(this.resetButton, gbc(RESET_X_POS, 0, 3, GridBagConstraints.WEST, INSETS_2));
-    }
+    Operation operation = new ModelSizePropertyValueOperation(this.propertyAdapter, getOriginalSize());
+    operation.setName(AbstractPropertyAdapter.getLocalizedString("Reset"));
+    this.resetButton = operation.createButton();
+    this.addComponent(this.resetButton, gbc(RESET_X_POS, 0, 3, GridBagConstraints.WEST, INSETS_2));
   }
 
   private Dimension3 getOriginalSize() {
@@ -413,29 +411,24 @@ public class ModelSizePropertyController extends AbstractAdapterController<Dimen
   }
 
   protected void updateAdapterFromUI(ActionEvent e) {
-    if (this.doUpdateOnAdapter) {
-      Dimension3 newScale = getSizeFromUI(e.getSource());
-      if (newScale != null) {
-        if (!newScale.equals(this.propertyAdapter.getValue())) {
-          if ((this.propertyAdapter.getLastSetValue() == null) || !this.propertyAdapter.getLastSetValue().equals(newScale)) {
-            if (newScale.hasNegativeComponents()) {
-              String modelName = this.propertyAdapter.getInstance().getClass().getSimpleName();
-              Logger.outln("Restricting size for " + modelName + " to a near-zero non-negative value");
-
-              Dimension3 oldScale = propertyAdapter.getValue();
-
-              double maxDim = Math.max(oldScale.x(), Math.max(oldScale.y(), oldScale.z()));
-
-              double scaleFactor = .01; // set the size close to zero, instead of negative
-
-              newScale = oldScale.times(scaleFactor / maxDim);
-            }
-
-            Operation operation = new ModelSizePropertyValueOperation(this.propertyAdapter, newScale);
-            operation.fire(ActionEventTrigger.createUserActivity(e));
-          }
-        }
-      }
+    if (!this.doUpdateOnAdapter) {
+      return;
     }
+    Dimension3 newScale = getSizeFromUI(e.getSource());
+    if (newScale == null || newScale.equals(this.propertyAdapter.getValue())) {
+      return;
+    }
+    if ((this.propertyAdapter.getLastSetValue() != null) && this.propertyAdapter.getLastSetValue().equals(newScale)) {
+      return;
+    }
+    if (newScale.hasNegativeComponents()) {
+      String modelName = this.propertyAdapter.getInstance().getClass().getSimpleName();
+      Logger.outln("Restricting size for " + modelName + " to a near-zero non-negative value");
+      Dimension3 oldScale = propertyAdapter.getValue();
+      double maxDim = Math.max(oldScale.x(), Math.max(oldScale.y(), oldScale.z()));
+      newScale = oldScale.times(0.01 / maxDim);
+    }
+    Operation operation = new ModelSizePropertyValueOperation(this.propertyAdapter, newScale);
+    operation.fire(ActionEventTrigger.createUserActivity(e));
   }
 }
