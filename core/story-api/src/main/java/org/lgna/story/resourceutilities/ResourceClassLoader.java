@@ -76,8 +76,8 @@ public final class ResourceClassLoader {
 
     LoadResult(List<Class<? extends ModelResource>> classes,
                List<URLClassLoader> classLoaders) {
-      this.classes = classes;
-      this.classLoaders = classLoaders;
+      this.classes = Collections.unmodifiableList(classes);
+      this.classLoaders = Collections.unmodifiableList(classLoaders);
     }
 
     public List<Class<? extends ModelResource>> classes() {
@@ -145,6 +145,8 @@ public final class ResourceClassLoader {
       for (int i = 0; i < resourceFiles.length; i++) {
         urlArray[i] = resourceFiles[i].toURI().toURL();
       }
+      // URLClassLoader is intentionally never closed — it must remain open
+      // for subsequent resource lookups via StorytellingResources.getAliceResource().
       URLClassLoader cl = new URLClassLoader(urlArray, ClassLoader.getSystemClassLoader());
       for (String className : classNames) {
         try {
