@@ -44,7 +44,6 @@ package edu.cmu.cs.dennisc.scenegraph.io;
 
 import edu.cmu.cs.dennisc.scenegraph.Vertex;
 
-import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -54,13 +53,16 @@ import java.io.OutputStream;
  * Mirrors {@link BinaryArrayDecoder} for the write side.
  * Extracted from ASGEncoder to reduce file size.
  *
+ * <p>All callers pass {@link java.io.ByteArrayOutputStream}, so no
+ * intermediate {@link java.io.BufferedOutputStream} is needed —
+ * DataOutputStream writes directly to the in-memory buffer.</p>
+ *
  * @author Dennis Cosgrove
  */
 class BinaryArrayEncoder {
 
   static void encodeVertexArray(Vertex[] vertices, OutputStream os) {
-    BufferedOutputStream bos = new BufferedOutputStream(os);
-    DataOutputStream dos = new DataOutputStream(bos);
+    DataOutputStream dos = new DataOutputStream(os);
     try {
       dos.writeInt(3);
       dos.writeInt(vertices.length);
@@ -101,8 +103,7 @@ class BinaryArrayEncoder {
   }
 
   static void encodeIntArray(int[] array, OutputStream os) {
-    BufferedOutputStream bos = new BufferedOutputStream(os);
-    DataOutputStream dos = new DataOutputStream(bos);
+    DataOutputStream dos = new DataOutputStream(os);
     try {
       dos.writeInt(2);
       dos.writeInt(array.length);
@@ -116,8 +117,7 @@ class BinaryArrayEncoder {
   }
 
   static void encodeDoubleArray(double[] array, OutputStream os) {
-    BufferedOutputStream bos = new BufferedOutputStream(os);
-    DataOutputStream dos = new DataOutputStream(bos);
+    DataOutputStream dos = new DataOutputStream(os);
     try {
       dos.writeInt(2);
       dos.writeInt(array.length);

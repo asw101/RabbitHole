@@ -404,7 +404,6 @@ class ASGEncoder {
       for (var entry : filenameToStreamMap.entrySet()) {
         String filename = entry.getKey();
         ByteArrayOutputStream baos = entry.getValue();
-        baos.flush();
         byte[] ba = baos.toByteArray();
         ZipEntry zipEntry = new ZipEntry(filename);
         int method;
