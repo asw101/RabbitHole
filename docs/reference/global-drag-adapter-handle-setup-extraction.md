@@ -59,7 +59,7 @@ GlobalDragAdapter (~339 lines)
 ├── Snap state overrides (5 methods)
 └── undoRedoEndManipulation()
 
-HandleSetupDelegate (package-private, ~200 lines)
+HandleSetupDelegate (package-private, ~260 lines)
 └── static setupHandles(DragAdapter adapter)
     ├── ManipulationAxes (visualization axis)
     ├── StoodUpRotationRingHandle (default Y-axis rotation)
@@ -150,7 +150,7 @@ the delegate.
 | File | Action | Lines after |
 |------|--------|-------------|
 | `core/ide/src/main/java/org/alice/stageide/sceneeditor/interact/GlobalDragAdapter.java` | Modify | ~339 |
-| `core/ide/src/main/java/org/alice/stageide/sceneeditor/interact/HandleSetupDelegate.java` | Create | ~200 |
+| `core/ide/src/main/java/org/alice/stageide/sceneeditor/interact/HandleSetupDelegate.java` | Create | ~260 |
 
 ## Delegation pattern
 
@@ -197,19 +197,20 @@ The private method is removed. No forwarding stub remains.
 
 ## Import cleanup
 
-After extraction, two imports in `GlobalDragAdapter.java` become
-unused:
+After extraction, three imports in `GlobalDragAdapter.java` become
+unused and are removed:
 
-| Import | Reason unused |
-|--------|---------------|
-| `edu.cmu.cs.dennisc.color.Color4f` | Only used in `setupHandles()` for `RotationRingHandle`, `JointRotationRingHandle`, and `LinearTranslateHandle` colors |
-| `edu.cmu.cs.dennisc.scenegraph.scale.Resizer` | Only used in `setupHandles()` for `LinearScaleHandle.createFromResizer()` |
+| Import | Status | Reason |
+|--------|--------|--------|
+| `edu.cmu.cs.dennisc.color.Color4f` | Removed | Only used in `setupHandles()` for handle colors |
+| `org.alice.interact.event.ManipulationEvent` | Removed | Only used in `setupHandles()` for `ManipulationEventCriteria` constructors |
+| `org.alice.interact.event.ManipulationEventCriteria` | Removed | Only used in `setupHandles()` for handle condition registration |
+| `edu.cmu.cs.dennisc.scenegraph.scale.Resizer` | Retained | Still used in `setUpControls()` for `ResizeDragManipulator(Resizer.UNIFORM, ...)` |
 
-These imports are removed. All wildcard imports
-(`org.alice.interact.handle.*`, `org.alice.interact.manipulator.*`,
-etc.) remain because they supply types still used in the remaining
-code (`HandleSet`, `HandleStyle`, `ClickAdapterManipulator`,
-condition classes).
+All wildcard imports (`org.alice.interact.handle.*`,
+`org.alice.interact.manipulator.*`, etc.) remain because they supply
+types still used in the remaining code (`HandleSet`, `HandleStyle`,
+`ClickAdapterManipulator`, condition classes).
 
 ## Configuration
 
