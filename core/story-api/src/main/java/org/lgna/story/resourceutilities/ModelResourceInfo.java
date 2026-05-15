@@ -51,8 +51,6 @@ import org.alice.tweedle.file.StructureReference;
 import org.lgna.project.ProjectVersion;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
 import java.time.Year;
 import java.time.ZonedDateTime;
@@ -80,101 +78,11 @@ public class ModelResourceInfo {
   private final String[] groupTags;
   private final String[] themeTags;
 
-  private static AxisAlignedBox getBoundingBoxFromXML(Element bboxElement) {
-    if (bboxElement != null) {
-      Element min = (Element) bboxElement.getElementsByTagName("Min").item(0);
-      Element max = (Element) bboxElement.getElementsByTagName("Max").item(0);
-
-      double minX = Double.parseDouble(min.getAttribute("x"));
-      double minY = Double.parseDouble(min.getAttribute("y"));
-      double minZ = Double.parseDouble(min.getAttribute("z"));
-
-      double maxX = Double.parseDouble(max.getAttribute("x"));
-      double maxY = Double.parseDouble(max.getAttribute("y"));
-      double maxZ = Double.parseDouble(max.getAttribute("z"));
-
-      return AxisAlignedBox.createAxisAlignedBox(minX, minY, minZ, maxX, maxY, maxZ);
-    }
-
-    return null;
-  }
-
-  private static ModelResourceInfo getSubResourceFromXML(Element resourceElement, ModelResourceInfo parent) {
-    if (resourceElement != null) {
-      AxisAlignedBox bbox = null;
-      NodeList bboxNodeList = resourceElement.getElementsByTagName("BoundingBox");
-      if (bboxNodeList.getLength() > 0) {
-        bbox = getBoundingBoxFromXML((Element) bboxNodeList.item(0));
-      }
-      String modelName = null;
-      if (resourceElement.hasAttribute("modelName")) {
-        modelName = resourceElement.getAttribute("modelName");
-      }
-      String textureName = null;
-      if (resourceElement.hasAttribute("textureName")) {
-        textureName = resourceElement.getAttribute("textureName");
-      }
-      String resourceName = null;
-      if (resourceElement.hasAttribute("resourceName")) {
-        resourceName = resourceElement.getAttribute("resourceName");
-      }
-      String creatorName = null;
-      if (resourceElement.hasAttribute("creator")) {
-        creatorName = resourceElement.getAttribute("creator");
-      }
-      int creationYearTemp = -1;
-      if (resourceElement.hasAttribute("creationYear")) {
-        try {
-          creationYearTemp = Integer.parseInt(resourceElement.getAttribute("creationYear"));
-        } catch (Exception e) {
-        }
-      }
-      boolean isDeprecated = false;
-      if (resourceElement.hasAttribute("deprecated")) {
-        try {
-          isDeprecated = Boolean.parseBoolean(resourceElement.getAttribute("deprecated"));
-        } catch (Exception e) {
-        }
-      }
-      Boolean placeOnGround = null;
-      if (resourceElement.hasAttribute("placeOnGround")) {
-        try {
-          placeOnGround = Boolean.parseBoolean(resourceElement.getAttribute("placeOnGround"));
-        } catch (Exception e) {
-        }
-      }
-      int creationYear = creationYearTemp;
-      String[] tags = getResourceTags(resourceElement, "Tags", "Tag");
-      String[] groupTags = getResourceTags(resourceElement, "GroupTags", "GroupTag");
-      String[] themeTags = getResourceTags(resourceElement, "ThemeTags", "ThemeTag");
-
-      ModelResourceInfo resource = new ModelResourceInfo(parent, resourceName, creatorName, creationYear, bbox, tags, groupTags, themeTags, modelName, textureName, isDeprecated, placeOnGround);
-      return resource;
-    }
-
-    return null;
-  }
-
-  private static String[] getResourceTags(Element resourceElement, String containerTagName, String tagName) {
-    LinkedList<String> tagList = new LinkedList<String>();
-    addImmediateChildTextContent(resourceElement, tagName, tagList);
-    for (Element container : getImmediateChildElementsByTagName(resourceElement, containerTagName)) {
-      addImmediateChildTextContent(container, tagName, tagList);
-    }
-    return tagList.toArray(new String[tagList.size()]);
-  }
-
-  private static void addImmediateChildTextContent(Element parent, String tagName, LinkedList<String> textContent) {
-    for (Element child : getImmediateChildElementsByTagName(parent, tagName)) {
-      textContent.add(child.getTextContent());
-    }
-  }
-
   public ModelResourceInfo(ModelResourceInfo parent, String resourceName, String creator, int creationYear, AxisAlignedBox boundingBox, String[] tags, String[] groupTags, String[] themeTags, String modelName, String textureName, boolean isDeprecated, boolean placeOnGround) {
     this(parent, resourceName, creator, creationYear, boundingBox, tags, groupTags, themeTags, modelName, textureName, isDeprecated, Boolean.valueOf(placeOnGround));
   }
 
-  private ModelResourceInfo(ModelResourceInfo parent, String resourceName, String creator, int creationYear, AxisAlignedBox boundingBox, String[] tags, String[] groupTags, String[] themeTags, String modelName, String textureName, boolean isDeprecated, Boolean placeOnGround) {
+  ModelResourceInfo(ModelResourceInfo parent, String resourceName, String creator, int creationYear, AxisAlignedBox boundingBox, String[] tags, String[] groupTags, String[] themeTags, String modelName, String textureName, boolean isDeprecated, Boolean placeOnGround) {
     this.parentInfo = parent;
     this.resourceName = resourceName;
     this.creator = creator;
@@ -193,28 +101,16 @@ public class ModelResourceInfo {
     return new ModelResourceInfo(null, resourceName, creator, creationYear, boundingBox, tags, groupTags, themeTags, modelName, textureName, isDeprecated, placeOnGround);
   }
 
-  private static List<Element> getImmediateChildElementsByTagName(Element node, String tagName) {
-    List<Element> elements = new LinkedList<Element>();
-    NodeList children = node.getChildNodes();
-    for (int i = 0; i < children.getLength(); i++) {
-      Node child = children.item(i);
-      if ((child instanceof Element element) && child.getNodeName().equals(tagName)) {
-        elements.add(element);
-      }
-    }
-    return elements;
-  }
-
   public ModelResourceInfo(Document xmlDoc) {
     Element modelElement = xmlDoc.getDocumentElement();
     if (!modelElement.getNodeName().equals("AliceModel")) {
       modelElement = XMLUtilities.getSingleChildElementByTagName(xmlDoc.getDocumentElement(), "AliceModel");
     }
     assert modelElement != null;
-    List<Element> bboxNodeList = getImmediateChildElementsByTagName(modelElement, "BoundingBox");
+    List<Element> bboxNodeList = ModelResourceXmlParser.getImmediateChildElementsByTagName(modelElement, "BoundingBox");
     this.boundingBox = bboxNodeList.isEmpty()
         ? AxisAlignedBox.Empty
-        : getBoundingBoxFromXML(bboxNodeList.getFirst());
+        : ModelResourceXmlParser.getBoundingBoxFromXML(bboxNodeList.getFirst());
     this.modelName = modelElement.getAttribute("name");
     this.creator = modelElement.getAttribute("creator");
     int creationYearTemp = -1;
@@ -238,39 +134,13 @@ public class ModelResourceInfo {
     }
     this.placeOnGround = placeOnGroundTemp;
 
-    LinkedList<String> tagList = new LinkedList<String>();
-    List<Element> tagsElementList = getImmediateChildElementsByTagName(modelElement, "Tags");
-    for (Element tagsElement : tagsElementList) {
-      List<Element> tagElementList = getImmediateChildElementsByTagName(tagsElement, "Tag");
-      for (Element tagElement : tagElementList) {
-        tagList.add(tagElement.getTextContent());
-      }
-    }
-    this.tags = tagList.toArray(new String[tagList.size()]);
+    this.tags = ModelResourceXmlParser.getResourceTags(modelElement, "Tags", "Tag");
+    this.groupTags = ModelResourceXmlParser.getResourceTags(modelElement, "GroupTags", "GroupTag");
+    this.themeTags = ModelResourceXmlParser.getResourceTags(modelElement, "ThemeTags", "ThemeTag");
 
-    LinkedList<String> groupTagList = new LinkedList<String>();
-    List<Element> groupTagsElementList = getImmediateChildElementsByTagName(modelElement, "GroupTags");
-    for (Element groupTagsElement : groupTagsElementList) {
-      List<Element> groupTagElementList = getImmediateChildElementsByTagName(groupTagsElement, "GroupTag");
-      for (Element grouptagElement : groupTagElementList) {
-        groupTagList.add(grouptagElement.getTextContent());
-      }
-    }
-    this.groupTags = groupTagList.toArray(new String[groupTagList.size()]);
-
-    LinkedList<String> themeTagList = new LinkedList<String>();
-    List<Element> themeTagsElementList = getImmediateChildElementsByTagName(modelElement, "ThemeTags");
-    for (Element themeTagsElement : themeTagsElementList) {
-      List<Element> themeTagElementList = getImmediateChildElementsByTagName(themeTagsElement, "ThemeTag");
-      for (Element themeTagElement : themeTagElementList) {
-        themeTagList.add(themeTagElement.getTextContent());
-      }
-    }
-    this.themeTags = themeTagList.toArray(new String[themeTagList.size()]);
-
-    List<Element> subResourcesList = getImmediateChildElementsByTagName(modelElement, "Resource");
+    List<Element> subResourcesList = ModelResourceXmlParser.getImmediateChildElementsByTagName(modelElement, "Resource");
     for (Element subResourceElement : subResourcesList) {
-      ModelResourceInfo subResource = getSubResourceFromXML(subResourceElement, this);
+      ModelResourceInfo subResource = ModelResourceXmlParser.getSubResourceFromXML(subResourceElement, this);
       if (subResource != null) {
         subResources.add(subResource);
       } else {
