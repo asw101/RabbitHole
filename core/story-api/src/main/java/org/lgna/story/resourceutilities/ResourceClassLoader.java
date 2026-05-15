@@ -115,10 +115,7 @@ public final class ResourceClassLoader {
             if (!xmlFile.getName().contains("$")) {
               String relativePath = xmlFile.getAbsolutePath().substring(resourceFile.getAbsolutePath().length());
               String baseName = getAliceResourceClassName(relativePath);
-              if (!rv.containsKey(resourceFile)) {
-                rv.put(resourceFile, new LinkedList<>());
-              }
-              rv.get(resourceFile).add(baseName);
+              rv.computeIfAbsent(resourceFile, k -> new LinkedList<>()).add(baseName);
             }
           }
         } else {
@@ -128,19 +125,12 @@ public final class ResourceClassLoader {
             ZipEntry entry = entries.nextElement();
             if (entry.getName().endsWith(".xml") && !entry.getName().contains("$")) {
               String baseName = getAliceResourceClassName(entry.getName());
-              if (!rv.containsKey(resourceFile)) {
-                rv.put(resourceFile, new LinkedList<>());
-              }
-              rv.get(resourceFile).add(baseName);
-            } else {
-              if (entry.getName().endsWith(".xml")) {
-                System.out.println("NOT ADDING CLASS: " + entry.getName());
-              }
+              rv.computeIfAbsent(resourceFile, k -> new LinkedList<>()).add(baseName);
             }
           }
         }
       } catch (Exception e) {
-        e.printStackTrace();
+        Logger.severe("Error reading resource file: " + resourceFile, e);
       }
     }
     return rv;
@@ -174,7 +164,7 @@ public final class ResourceClassLoader {
       }
       classLoaders.add(cl);
     } catch (Exception e) {
-      e.printStackTrace();
+      Logger.severe("Error loading resource files", e);
     }
     return new LoadResult(classes, classLoaders);
   }
@@ -194,7 +184,7 @@ public final class ResourceClassLoader {
     if (resourceFiles.isEmpty()) {
       return new LoadResult(new LinkedList<>(), new ArrayList<>());
     }
-    File[] resourceFileArray = resourceFiles.toArray(new File[resourceFiles.size()]);
+    File[] resourceFileArray = resourceFiles.toArray(new File[0]);
     List<String> classNames = getClassNamesFromResourceFiles(resourceFileArray);
     return loadClassesFromResourceFiles(classNames, resourceFileArray);
   }

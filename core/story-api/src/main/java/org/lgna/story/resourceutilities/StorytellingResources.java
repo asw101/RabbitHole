@@ -131,19 +131,13 @@ public enum StorytellingResources {
           galleryPaths.add(galleryPath);
         }
       }
-      return galleryPaths.toArray(new String[galleryPaths.size()]);
+      return galleryPaths.toArray(new String[0]);
     }
     return null;
   }
 
   private static String getPreference(String key, String def) {
-    final boolean IS_IGNORING_PREFERENCES = false;
-    if (IS_IGNORING_PREFERENCES) {
-      return null;
-    } else {
-      Preferences rv = Preferences.userRoot();
-      return rv.get(key, def);
-    }
+    return Preferences.userRoot().get(key, def);
   }
 
   static File[] getDirsFromPref(String key, String relativeDir) {

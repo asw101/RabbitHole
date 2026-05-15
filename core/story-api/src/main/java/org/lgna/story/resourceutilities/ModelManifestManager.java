@@ -51,7 +51,6 @@ import org.lgna.story.implementation.StoryApiDirectoryUtilities;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -80,37 +79,32 @@ public final class ModelManifestManager {
 
   public List<ModelManifest> findAndLoadUserGalleryResources() {
     if (this.userGalleryModelManifests == null) {
-      this.userGalleryModelManifests = new ArrayList<>();
-      File userGalleryDirectory = StoryApiDirectoryUtilities.getUserGalleryDirectory();
-      List<File> dynamicModelFiles = getDynamicModelFiles(userGalleryDirectory);
-      for (File modelFile : dynamicModelFiles) {
-        ModelManifest modelManifest = manifestFor(modelFile);
-        if (modelManifest != null) {
-          this.userGalleryModelManifests.add(modelManifest);
-        }
-      }
+      this.userGalleryModelManifests = loadManifestsFrom(StoryApiDirectoryUtilities.getUserGalleryDirectory());
     }
     return this.userGalleryModelManifests;
   }
 
   public List<ModelManifest> findAndLoadInternalResources() {
     if (internalModelManifests == null) {
-      internalModelManifests = new ArrayList<>();
-      File internalModelsDirectory = StoryApiDirectoryUtilities.getInternalModelsDirectory();
-      List<File> dynamicModelFiles = getDynamicModelFiles(internalModelsDirectory);
-      for (File modelFile : dynamicModelFiles) {
-        ModelManifest modelManifest = manifestFor(modelFile);
-        if (modelManifest != null) {
-          internalModelManifests.add(modelManifest);
-        }
-      }
+      internalModelManifests = loadManifestsFrom(StoryApiDirectoryUtilities.getInternalModelsDirectory());
     }
     return internalModelManifests;
   }
 
+  private List<ModelManifest> loadManifestsFrom(File directory) {
+    List<ModelManifest> manifests = new ArrayList<>();
+    for (File modelFile : getDynamicModelFiles(directory)) {
+      ModelManifest manifest = manifestFor(modelFile);
+      if (manifest != null) {
+        manifests.add(manifest);
+      }
+    }
+    return manifests;
+  }
+
   ModelManifest manifestFor(File modelFile) {
     try {
-      String fileContent = new String(Files.readAllBytes(Path.of(modelFile.toURI())));
+      String fileContent = new String(Files.readAllBytes(modelFile.toPath()));
       ModelManifest modelManifest = ManifestEncoderDecoder.fromJson(fileContent, ModelManifest.class);
       if (modelManifest != null) {
         modelManifest.setRootFile(modelFile.getParentFile());
