@@ -195,7 +195,6 @@ final class ResourceCodeTemplates {
       }
 
       Class poseType = JointedModelPose.class;
-      Class poseBuilderType = ModelResourceJavaGenerator.getPoseBuilderTypeForSuperClass(classData.superClass);
       String poseTypeString = poseType.getName();
       sb.append("\n\tpublic static final " + poseTypeString + " " + fullPoseName + " = new " + poseTypeString + "( ");
       sb.append(JavaCodeUtilities.LINE_RETURN);

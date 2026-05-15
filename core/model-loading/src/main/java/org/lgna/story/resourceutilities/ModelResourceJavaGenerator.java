@@ -47,18 +47,12 @@ import edu.cmu.cs.dennisc.java.io.TextFileUtilities;
 import edu.cmu.cs.dennisc.java.lang.reflect.ReflectionUtilities;
 import edu.cmu.cs.dennisc.pattern.Tuple2;
 import org.alice.math.immutable.AffineMatrix4x4;
-import org.lgna.story.BipedPose;
 import org.lgna.story.BipedPoseBuilder;
-import org.lgna.story.FlyerPose;
 import org.lgna.story.FlyerPoseBuilder;
-import org.lgna.story.JointedModelPose;
 import org.lgna.story.JointedModelPoseBuilder;
 import org.lgna.story.Pose;
-import org.lgna.story.QuadrupedPose;
 import org.lgna.story.QuadrupedPoseBuilder;
-import org.lgna.story.SlithererPose;
 import org.lgna.story.SlithererPoseBuilder;
-import org.lgna.story.SwimmerPose;
 import org.lgna.story.SwimmerPoseBuilder;
 import org.lgna.story.implementation.alice.AliceResourceClassUtilities;
 import org.lgna.story.implementation.alice.AliceResourceUtilities;
@@ -284,21 +278,6 @@ final class ModelResourceJavaGenerator {
       return SlithererPoseBuilder.class;
     }
     return JointedModelPoseBuilder.class;
-  }
-
-  static Class<?> getPoseTypeForSuperClass(Class<?> superClass) {
-    if (FlyerResource.class.isAssignableFrom(superClass)) {
-      return FlyerPose.class;
-    } else if (BipedResource.class.isAssignableFrom(superClass)) {
-      return BipedPose.class;
-    } else if (QuadrupedResource.class.isAssignableFrom(superClass)) {
-      return QuadrupedPose.class;
-    } else if (SwimmerResource.class.isAssignableFrom(superClass)) {
-      return SwimmerPose.class;
-    } else if (SlithererResource.class.isAssignableFrom(superClass)) {
-      return SlithererPose.class;
-    }
-    return JointedModelPose.class;
   }
 
   static List<String> getAlreadyDeclaredJointArrayNames(Class<?> superClass) {
