@@ -157,11 +157,11 @@ public abstract class ManipulationHandle3D extends Transformable implements Mani
   }
 
   public void updateCameraRelativeOpacity() {
-    if (ManipulationHandle3D.this.dragAdapter != null) {
-      AbstractCamera activeCamera = ManipulationHandle3D.this.dragAdapter.getActiveCamera();
+    if (this.dragAdapter != null) {
+      AbstractCamera activeCamera = this.dragAdapter.getActiveCamera();
       if (activeCamera instanceof SymmetricPerspectiveCamera camera) {
         Point3 cameraLocation = camera.getAbsoluteTransformation().translation();
-        ManipulationHandle3D.this.setCameraPosition(cameraLocation);
+        this.setCameraPosition(cameraLocation);
       }
     }
   }
@@ -237,7 +237,6 @@ public abstract class ManipulationHandle3D extends Transformable implements Mani
   @Override
   public AbstractTransformable getManipulatedObject() {
     return this.manipulatedObject;
-    //    return (Transformable)this.getParent();
   }
 
   @Override
@@ -336,7 +335,6 @@ public abstract class ManipulationHandle3D extends Transformable implements Mani
   }
 
   protected double getDesiredOpacity(HandleRenderState renderState) {
-    //    PrintUtilities.println(this.getClass().getSimpleName()+":"+this.hashCode()+" camera opacity: "+this.cameraRelativeOpacity);
     return switch (renderState) {
     case NOT_VISIBLE -> 0.0d;
     case VISIBLE_BUT_SIBLING_IS_ACTIVE -> .5d * this.cameraRelativeOpacity;
@@ -456,9 +454,9 @@ public abstract class ManipulationHandle3D extends Transformable implements Mani
   }
 
   private final PropertyListener scaleListener = e -> {
-    ManipulationHandle3D.this.setScale(HandleGeometryHelper.computeObjectScale(ManipulationHandle3D.this.getManipulatedObjectBox()));
-    ManipulationHandle3D.this.resizeToObject();
-    ManipulationHandle3D.this.positionRelativeToObject();
+    this.setScale(HandleGeometryHelper.computeObjectScale(this.getManipulatedObjectBox()));
+    this.resizeToObject();
+    this.positionRelativeToObject();
   };
 
   private final AbsoluteTransformationListener absoluteTransformationListener = new AbsoluteTransformationListener() {
@@ -476,9 +474,6 @@ public abstract class ManipulationHandle3D extends Transformable implements Mani
   private HandleState state = new HandleState();
   private HandleManager handleManager = null;
   private HandleSet handleSet = new HandleSet();
-
-  private DoubleInterruptibleAnimation opacityAnimation;
-  private Color4fInterruptibleAnimation colorAnimation;
 
   private AbstractManipulator manipulation = null;
   private DragAdapter dragAdapter = null;
