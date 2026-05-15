@@ -57,7 +57,11 @@ delegate as `computeStatus()`, while the coordinator retains a thin shell:
 // In DeclarationLikeSubstanceComposite (after extraction)
 @Override
 protected Status getStatusPreRejectorCheck() {
-    return validationDelegate.computeStatus(this.errorStatus, IS_GOOD_TO_GO_STATUS);
+    if (validationDelegate.computeStatus(this.errorStatus)) {
+        return this.errorStatus;
+    } else {
+        return IS_GOOD_TO_GO_STATUS;
+    }
 }
 ```
 
@@ -143,16 +147,17 @@ When the user changes any input in the dialog, the croquet framework calls
 ```
 1. Framework calls getStatusPreRejectorCheck()
 2.   └── DeclarationLikeSubstanceComposite.getStatusPreRejectorCheck()
-3.       └── validationDelegate.computeStatus(errorStatus, IS_GOOD_TO_GO_STATUS)
-4.           ├── getValueTypeExplanation(composite.getValueType())
-5.           │   └── composite.findLocalizedText("mustBeSet")           // callback
-6.           ├── getNameExplanation(composite.getNameState().getValue())
-7.           │   ├── composite.isNameValid(name)                        // callback
-8.           │   ├── composite.isNameAvailable(name)                    // callback
-9.           │   └── composite.findLocalizedText("isNotAValidName")     // callback
-10.          └── getInitializerExplanation(composite.getInitializerState().getValue())
-11.              ├── isNullAllowedForInitializerUnderAnyCircumstances()  // delegate-local
-12.              └── composite.isNullAllowedForInitializer()             // polymorphic callback
+3.       ├── validationDelegate.computeStatus(errorStatus)  // returns boolean
+4.       │   ├── getValueTypeExplanation(composite.getValueType())
+5.       │   │   └── composite.findLocalizedText("mustBeSet")           // callback
+6.       │   ├── getNameExplanation(composite.getNameState().getValue())
+7.       │   │   ├── composite.isNameValid(name)                        // callback
+8.       │   │   ├── composite.isNameAvailable(name)                    // callback
+9.       │   │   └── composite.findLocalizedText("isNotAValidName")     // callback
+10.      │   └── getInitializerExplanation(composite.getInitializerState().getValue())
+11.      │       ├── isNullAllowedForInitializerUnderAnyCircumstances()  // delegate-local
+12.      │       └── composite.isNullAllowedForInitializer()             // polymorphic callback
+13.      └── return errorStatus (if true) or IS_GOOD_TO_GO_STATUS (if false)
 ```
 
 When `AddParameterComposite` overrides `getStatusPreRejectorCheck()`, it calls
@@ -196,8 +201,8 @@ Unit tests for the validation delegate's explanation methods:
 - `getNameExplanation()` returns `null` for valid, available names.
 - `getNameExplanation()` returns error text for empty, invalid, or unavailable names.
 - `getInitializerExplanation()` respects the null-allowed rules.
-- `computeStatus()` returns `IS_GOOD_TO_GO_STATUS` when all explanations are null.
-- `computeStatus()` returns the error status when any explanation is non-null.
+- `computeStatus()` returns `false` when all explanations are null (composite returns `IS_GOOD_TO_GO_STATUS`).
+- `computeStatus()` returns `true` when any explanation is non-null (composite returns `errorStatus`).
 
 ### DeclarationDialogLifecycleDelegateTest
 

@@ -132,7 +132,7 @@ explanations.
 | Name explanation | `getNameExplanation(String)` |
 | Initializer explanation | `getInitializerExplanation(Expression)` |
 | Null-initializer rule | `isNullAllowedForInitializerUnderAnyCircumstances()` |
-| Status assembly | `computeStatus(ErrorStatus, Status)` |
+| Status assembly | `computeStatus(ErrorStatus)` |
 
 **Constructor:**
 
@@ -146,7 +146,7 @@ DeclarationValidationDelegate(DeclarationLikeSubstanceComposite<?> composite) {
 **`computeStatus()` contract:**
 
 ```java
-Status computeStatus(ErrorStatus errorStatus, Status isGoodToGoStatus) {
+boolean computeStatus(ErrorStatus errorStatus) {
     final String valueTypeText;
     if (composite.getValueComponentTypeState() != null) {
         valueTypeText = getValueTypeExplanation(composite.getValueType());
@@ -166,13 +166,14 @@ Status computeStatus(ErrorStatus errorStatus, Status isGoodToGoStatus) {
     } else {
         initializerText = null;
     }
-    if (errorStatus.setText(valueTypeText, nameText, initializerText)) {
-        return errorStatus;
-    } else {
-        return isGoodToGoStatus;
-    }
+    return errorStatus.setText(valueTypeText, nameText, initializerText);
 }
 ```
+
+The delegate returns `boolean` — `true` when the error status has text (i.e., there
+is a validation error). The composite's `getStatusPreRejectorCheck()` uses this to
+decide between returning `errorStatus` or `IS_GOOD_TO_GO_STATUS`, keeping the
+status-constant knowledge in the composite rather than the delegate.
 
 The explanation methods call back to the composite via the stored reference to
 access localized text (`composite.findLocalizedText()`), state labels
