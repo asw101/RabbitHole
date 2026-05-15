@@ -4,7 +4,7 @@ This reference documents the extraction of hierarchy lifecycle internals from
 `AwtComponentView` (issue #686) into a new package-private
 `AwtHierarchyEventHandler` class, and the removal of 10 deprecated
 AWT listener forwarding methods. The extraction reduces
-`AwtComponentView.java` from 575 lines to ~494 lines (under the 500-line
+`AwtComponentView.java` from 575 lines to ~483 lines (under the 500-line
 target).
 
 ## Contents
@@ -28,7 +28,7 @@ class body:
 
 | Responsibility | Lines | Issue |
 | --- | --- | --- |
-| Hierarchy lifecycle tracking | ~40 lines (fields + 3 private methods) | Internal implementation detail leaking into the public class surface |
+| Hierarchy lifecycle tracking | ~45 lines (4 fields + 2 private methods + protected method body) | Internal implementation detail leaking into the public class surface |
 | Deprecated AWT listener forwarding | ~49 lines (10 `@Deprecated` methods) | Wrapper methods that simply delegate to `getAwtComponent()` — callers should use the AWT component directly |
 
 Extracting the hierarchy lifecycle into `AwtHierarchyEventHandler` improves
@@ -114,7 +114,7 @@ in `AwtComponentView` to limit scope.
 | File | Status | Module |
 | --- | --- | --- |
 | `core/croquet/…/views/AwtHierarchyEventHandler.java` | **New** | `core/croquet` |
-| `core/croquet/…/views/AwtComponentView.java` | Modified (575 → ~494 lines) | `core/croquet` |
+| `core/croquet/…/views/AwtComponentView.java` | Modified (575 → ~483 lines) | `core/croquet` |
 | `core/croquet/…/views/List.java` | Modified — 4 listener calls | `core/croquet` |
 | `core/croquet/…/views/FolderTabbedPane.java` | Modified — 2 listener calls | `core/croquet` |
 | `core/croquet/…/views/DragComponent.java` | Modified — 4 listener calls | `core/croquet` |

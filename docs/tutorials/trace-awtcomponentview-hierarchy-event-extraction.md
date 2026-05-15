@@ -8,10 +8,10 @@ Use this to understand the reasoning behind each change.
 `AwtComponentView.java` at 575 lines, containing:
 
 1. **Core view abstraction** — `getAwtComponent()`, `release()`, layout
-   preferences, color/font setters, coordinate conversion (~430 lines)
+   preferences, color/font setters, coordinate conversion (~481 lines)
 2. **Hierarchy lifecycle tracking** — `isDisplayableState`, `awtParent`,
    `isWarningAlreadyPrinted`, `trackDisplayability()`,
-   `handleParentChange()`, `handleHierarchyChanged()` (~40 lines)
+   `handleParentChange()`, `handleHierarchyChanged()` (~45 lines)
 3. **Deprecated listener forwarding** — 10 `@Deprecated` methods that
    simply delegate `addXxxListener`/`removeXxxListener` to
    `getAwtComponent()` (~49 lines)
@@ -45,7 +45,7 @@ class:
 | `static boolean isWarningAlreadyPrinted` (L159) | Static field |
 | `trackDisplayability()` (L130-138) | Package-private method |
 | `handleParentChange(Container)` (L149-157) | Private method |
-| Body of `handleHierarchyChanged(HierarchyEvent)` (L161-186) | `processHierarchyChanged()` + `hierarchyChanged()` |
+| Body of `handleHierarchyChanged(HierarchyEvent)` (L161-187) | `processHierarchyChanged()` + `hierarchyChanged()` |
 
 The handler takes an `AwtComponentView<?>` reference via its constructor.
 It calls back into the owner's protected hooks:
@@ -167,6 +167,6 @@ mvn -pl core/croquet test -Dtest=AwtHierarchyEventHandlerTest -q
 | --- | --- |
 | Starting total | 575 |
 | Removed: deprecated forwarding methods | −49 |
-| Removed: hierarchy fields + methods | −40 |
-| Added: handler field + delegation stubs | +8 |
-| **Final total** | **~494** |
+| Removed: hierarchy fields + methods | −45 |
+| Added: handler field + delegation stubs | +2 |
+| **Final total** | **~483** |

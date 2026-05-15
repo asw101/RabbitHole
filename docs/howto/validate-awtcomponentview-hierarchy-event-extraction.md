@@ -85,7 +85,7 @@ grep -n 'protected void handle' \
   core/croquet/src/main/java/org/lgna/croquet/views/AwtComponentView.java
 ```
 
-Expected to find all four:
+Expected to find all five:
 - `handleDisplayable()`
 - `handleUndisplayable()`
 - `handleAddedTo(AwtComponentView<?>)`
