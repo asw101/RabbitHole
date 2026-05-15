@@ -58,6 +58,10 @@ import org.alice.math.immutable.Vector3;
  * Extracted from TransformAnimator to reduce file size.
  */
 abstract class SmoothAffineMatrix4x4Animation extends DurationBasedAnimation {
+  // Tangent magnitude for Hermite curves; controls how strongly orientation
+  // influences the path curvature (negative = approach along backward axis).
+  private static final double HERMITE_TANGENT_SCALE = -8.0;
+
   final AffineMatrix4x4 m1;
   final HermiteCubic xHermite;
   final HermiteCubic yHermite;
@@ -67,14 +71,13 @@ abstract class SmoothAffineMatrix4x4Animation extends DurationBasedAnimation {
     super(duration, style);
     this.m1 = m1;
 
-    double s = -8;
     Point3 t0 = m0.translation();
     Point3 t1 = m1.translation();
     Vector3 b0 = m0.orientation().backward();
     Vector3 b1 = m1.orientation().backward();
-    this.xHermite = new HermiteCubic(t0.x(), t1.x(), s * b0.x(), s * b1.x());
-    this.yHermite = new HermiteCubic(t0.y(), t1.y(), s * b0.y(), s * b1.y());
-    this.zHermite = new HermiteCubic(t0.z(), t1.z(), s * b0.z(), s * b1.z());
+    this.xHermite = new HermiteCubic(t0.x(), t1.x(), HERMITE_TANGENT_SCALE * b0.x(), HERMITE_TANGENT_SCALE * b1.x());
+    this.yHermite = new HermiteCubic(t0.y(), t1.y(), HERMITE_TANGENT_SCALE * b0.y(), HERMITE_TANGENT_SCALE * b1.y());
+    this.zHermite = new HermiteCubic(t0.z(), t1.z(), HERMITE_TANGENT_SCALE * b0.z(), HERMITE_TANGENT_SCALE * b1.z());
   }
 
   @Override

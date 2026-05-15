@@ -340,12 +340,7 @@ class TransformAnimator {
         owner.applyAnimation();
       }
     } else {
-      AffineMatrix4x4 m1;
-      if (offset != null) {
-        m1 = offset;
-      } else {
-        m1 = AffineMatrix4x4.IDENTITY;
-      }
+      AffineMatrix4x4 m1 = offset != null ? offset : AffineMatrix4x4.IDENTITY;
       AffineMatrix4x4 m0 = owner.getTransformation(target);
       owner.perform(new AffineMatrix4x4Animation(duration, style, m0, m1) {
         @Override
