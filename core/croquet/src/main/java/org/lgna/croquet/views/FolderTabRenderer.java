@@ -64,6 +64,11 @@ import java.awt.event.ItemListener;
  */
 
 class FolderTabTitleUI extends BasicToggleButtonUI {
+  // Reusable rectangles for layout calculation — safe since only called on EDT
+  private final Rectangle viewR = new Rectangle();
+  private final Rectangle iconR = new Rectangle();
+  private final Rectangle textR = new Rectangle();
+
   @Override
   public Dimension getPreferredSize(JComponent c) {
     javax.swing.AbstractButton button = (javax.swing.AbstractButton) c;
@@ -77,9 +82,9 @@ class FolderTabTitleUI extends BasicToggleButtonUI {
       int horizontalAlignment = button.getHorizontalAlignment();
       int verticalTextPosition = button.getVerticalTextPosition();
       int horizontalTextPosition = button.getHorizontalTextPosition();
-      Rectangle viewR = new Rectangle(Short.MAX_VALUE, Short.MAX_VALUE);
-      Rectangle iconR = new Rectangle();
-      Rectangle textR = new Rectangle();
+      viewR.setBounds(0, 0, Short.MAX_VALUE, Short.MAX_VALUE);
+      iconR.setBounds(0, 0, 0, 0);
+      textR.setBounds(0, 0, 0, 0);
       int textIconGap = button.getIconTextGap();
       SwingUtilities.layoutCompoundLabel(c, fm, text, icon, verticalAlignment, horizontalAlignment, verticalTextPosition, horizontalTextPosition, viewR, iconR, textR, textIconGap);
 

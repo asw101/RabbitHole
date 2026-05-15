@@ -167,6 +167,7 @@ public class FolderTabbedPane<E extends TabComposite<?>> extends CardBasedTabbed
   private class ScrollListener extends MouseAdapter {
     private Integer pressedLocationX;
     private Integer pressedViewPositionX;
+    private final Point viewPosition = new Point();
 
     @Override
     public void mousePressed(MouseEvent e) {
@@ -183,15 +184,17 @@ public class FolderTabbedPane<E extends TabComposite<?>> extends CardBasedTabbed
     @Override
     public void mouseDragged(MouseEvent e) {
       if (this.pressedLocationX != null) {
-        Dimension viewSize = titlesScrollPane.getAwtComponent().getViewport().getView().getSize();
-        Rectangle viewportRect = titlesScrollPane.getAwtComponent().getViewport().getViewRect();
+        JViewport viewport = titlesScrollPane.getAwtComponent().getViewport();
+        Dimension viewSize = viewport.getView().getSize();
+        Rectangle viewportRect = viewport.getViewRect();
 
         int xDelta = this.pressedLocationX - e.getX();
         int value = this.pressedViewPositionX + xDelta;
         value = Math.max(value, 0);
         value = Math.min(value, viewSize.width - viewportRect.width);
 
-        titlesScrollPane.getAwtComponent().getViewport().setViewPosition(new Point(value, 0));
+        viewPosition.setLocation(value, 0);
+        viewport.setViewPosition(viewPosition);
       }
     }
   }

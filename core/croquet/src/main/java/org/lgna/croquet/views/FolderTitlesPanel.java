@@ -59,6 +59,8 @@ class FolderTitlesPanel extends LineAxisPanel {
   private static final int NORTH_AREA_PAD = 1;
 
   protected static class JTitlesPanel extends JPanel {
+    private final GeneralPath reusablePath = new GeneralPath();
+
     @Override
     public Dimension getPreferredSize() {
       Dimension rv = super.getPreferredSize();
@@ -131,13 +133,15 @@ class FolderTitlesPanel extends LineAxisPanel {
         }
         g2.setColor(color);
 
-        GeneralPath path = addToPath(new GeneralPath(), x, y, width, height);
+        reusablePath.reset();
+        GeneralPath path = addToPath(reusablePath, x, y, width, height);
 
         // draw the background before the outline
         g2.fill(path);
         g2.setColor(outlineColor);
         g2.draw(path);
       } finally {
+        g2.setClip(prevClip);
         g2.setColor(prevColor);
       }
     }
