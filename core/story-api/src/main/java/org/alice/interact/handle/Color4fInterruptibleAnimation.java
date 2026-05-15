@@ -53,7 +53,6 @@ abstract class Color4fInterruptibleAnimation extends Color4fAnimation {
 
   public Color4fInterruptibleAnimation(Number duration, Style style, Color4f d0, Color4f d1) {
     super(duration, style, d0, d1);
-    this.isActive = true;
     this.target = d1;
   }
 
