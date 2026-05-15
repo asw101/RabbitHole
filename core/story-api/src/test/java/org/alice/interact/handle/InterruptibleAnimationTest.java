@@ -72,7 +72,7 @@ public class InterruptibleAnimationTest {
     }
 
     @Override
-    protected void update(Double v) {
+    protected void updateValue(Double v) {
       this.lastValue = v;
     }
 
@@ -90,7 +90,7 @@ public class InterruptibleAnimationTest {
     }
 
     @Override
-    protected void update(Color4f v) {
+    protected void updateValue(Color4f v) {
       this.lastValue = v;
     }
 
