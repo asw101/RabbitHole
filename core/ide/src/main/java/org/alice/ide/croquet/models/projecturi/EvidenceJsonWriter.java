@@ -45,8 +45,20 @@ final class EvidenceJsonWriter {
   // ── Core utilities ────────────────────────────────────────────────
 
   static String escapeJson(String value) {
-    StringBuilder escaped = new StringBuilder(value.length());
+    // Fast path: return original string when no escaping is needed (common case)
     for (int i = 0; i < value.length(); i++) {
+      char ch = value.charAt(i);
+      if (ch == '\\' || ch == '"' || ch < 0x20) {
+        return escapeJsonSlow(value, i);
+      }
+    }
+    return value;
+  }
+
+  private static String escapeJsonSlow(String value, int firstSpecial) {
+    StringBuilder escaped = new StringBuilder(value.length() + 16);
+    escaped.append(value, 0, firstSpecial);
+    for (int i = firstSpecial; i < value.length(); i++) {
       char ch = value.charAt(i);
       switch (ch) {
         case '\\' -> escaped.append("\\\\");
@@ -144,12 +156,14 @@ final class EvidenceJsonWriter {
     Long fileSizeBytes = savedFileState.exists() ? savedFileState.sizeBytes() : null;
     boolean wroteFile = wroteFile(savedPath, savedFileState, extension);
     String resultStatus = status(result);
+    String escapedOperation = escapeJson(nullToBlank(operationClass));
+    String escapedExtension = escapeJson(nullToBlank(extension));
     return "{\n"
         + "  \"schema_version\": \"eatme.alice-desktop-save-operation-result/v1\",\n"
         + "  \"status\": \"" + resultStatus + "\",\n"
         + "  \"source\": \"AbstractSaveOperation.perform\",\n"
-        + "  \"operation\": \"" + escapeJson(nullToBlank(operationClass)) + "\",\n"
-        + "  \"extension\": \"" + escapeJson(nullToBlank(extension)) + "\",\n"
+        + "  \"operation\": \"" + escapedOperation + "\",\n"
+        + "  \"extension\": \"" + escapedExtension + "\",\n"
         + "  \"finished\": " + result.finished() + ",\n"
         + "  \"canceled\": " + result.canceled() + ",\n"
         + "  \"prompt_count\": " + result.promptCount() + ",\n"
@@ -160,7 +174,7 @@ final class EvidenceJsonWriter {
         + "  \"dialogType\": \"Swing JFileChooser\",\n"
         + "  \"evidencePath\": \"Save dialog control/write path\",\n"
         + "  \"wroteFile\": " + wroteFile + ",\n"
-        + "  \"fileExtension\": \"" + escapeJson(nullToBlank(extension)) + "\",\n"
+        + "  \"fileExtension\": \"" + escapedExtension + "\",\n"
         + resultClaimOrSummaryJson(wroteFile, resultStatus, extension)
         + "  \"doesNotClaim\": [\n"
         + "    \"desktop Save menu item was clicked\",\n"
@@ -257,6 +271,7 @@ final class EvidenceJsonWriter {
       default -> "blocked";
     };
     String operationSimpleName = operationSimpleName(operationClass);
+    String escapedSimpleName = escapeJson(operationSimpleName);
     return "{\n"
         + "  \"schema_version\": \"eatme.alice-desktop-save-action-invocation-proof/v1\",\n"
         + "  \"status\": \"" + status + "\",\n"
@@ -265,8 +280,8 @@ final class EvidenceJsonWriter {
         + "  \"operation\": \"" + escapeJson(nullToBlank(operationClass)) + "\",\n"
         + "  \"extension\": \"" + escapeJson(nullToBlank(extension)) + "\",\n"
         + "  \"target\": {\n"
-        + "    \"action\": \"" + escapeJson(operationSimpleName) + ".getInstance().fire(UserActivity)\",\n"
-        + "    \"menu_item\": \"" + escapeJson(operationSimpleName) + ".getInstance().getMenuItemPrepModel()\",\n"
+        + "    \"action\": \"" + escapedSimpleName + ".getInstance().fire(UserActivity)\",\n"
+        + "    \"menu_item\": \"" + escapedSimpleName + ".getInstance().getMenuItemPrepModel()\",\n"
         + "    \"dialog_path\": \"application.getDocumentFrame().showSaveFileDialog(directory, filename, extension)\",\n"
         + "    \"required_active_application\": \"org.alice.stageide.StageIDE.getActiveInstance()\"\n"
         + "  },\n"
