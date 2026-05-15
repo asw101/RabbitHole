@@ -53,7 +53,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Manages lazy-loaded caches of {@link ModelManifest} instances parsed from
@@ -64,7 +66,9 @@ import java.util.List;
 public final class ModelManifestManager {
 
   private List<ModelManifest> userGalleryModelManifests = null;
+  private Map<String, ModelManifest> userGalleryManifestsByName;
   private List<ModelManifest> internalModelManifests = null;
+  private Map<String, ModelManifest> internalManifestsByName;
 
   public List<File> getDynamicModelFiles(File... directoriesToSearch) {
     List<File> dynamicModelFiles = new ArrayList<>();
@@ -79,24 +83,29 @@ public final class ModelManifestManager {
 
   public List<ModelManifest> findAndLoadUserGalleryResources() {
     if (this.userGalleryModelManifests == null) {
-      this.userGalleryModelManifests = loadManifestsFrom(StoryApiDirectoryUtilities.getUserGalleryDirectory());
+      this.userGalleryManifestsByName = new HashMap<>();
+      this.userGalleryModelManifests = loadManifestsFrom(
+          StoryApiDirectoryUtilities.getUserGalleryDirectory(), userGalleryManifestsByName);
     }
     return this.userGalleryModelManifests;
   }
 
   public List<ModelManifest> findAndLoadInternalResources() {
     if (internalModelManifests == null) {
-      internalModelManifests = loadManifestsFrom(StoryApiDirectoryUtilities.getInternalModelsDirectory());
+      internalManifestsByName = new HashMap<>();
+      internalModelManifests = loadManifestsFrom(
+          StoryApiDirectoryUtilities.getInternalModelsDirectory(), internalManifestsByName);
     }
     return internalModelManifests;
   }
 
-  private List<ModelManifest> loadManifestsFrom(File directory) {
+  private List<ModelManifest> loadManifestsFrom(File directory, Map<String, ModelManifest> nameIndex) {
     List<ModelManifest> manifests = new ArrayList<>();
     for (File modelFile : getDynamicModelFiles(directory)) {
       ModelManifest manifest = manifestFor(modelFile);
       if (manifest != null) {
         manifests.add(manifest);
+        nameIndex.put(manifest.getName(), manifest);
       }
     }
     return manifests;
@@ -120,11 +129,11 @@ public final class ModelManifestManager {
     if (userGalleryModelManifests != null) {
       List<ModelManifest> newModelManifests = new ArrayList<>();
       File userGalleryDirectory = StoryApiDirectoryUtilities.getUserGalleryDirectory();
-      List<File> dynamicModelFiles = getDynamicModelFiles(userGalleryDirectory);
-      for (File modelFile : dynamicModelFiles) {
+      for (File modelFile : getDynamicModelFiles(userGalleryDirectory)) {
         ModelManifest modelManifest = manifestFor(modelFile);
-        if (modelManifest != null && manifestIsNew(modelManifest)) {
+        if (modelManifest != null && !userGalleryManifestsByName.containsKey(modelManifest.getName())) {
           userGalleryModelManifests.add(modelManifest);
+          userGalleryManifestsByName.put(modelManifest.getName(), modelManifest);
           newModelManifests.add(modelManifest);
         }
       }
@@ -133,32 +142,13 @@ public final class ModelManifestManager {
     return null;
   }
 
-  private boolean manifestIsNew(ModelManifest newManifest) {
-    for (ModelManifest oldManifest : userGalleryModelManifests) {
-      if (oldManifest.getName().equals(newManifest.getName())) {
-        return false;
-      }
-    }
-    return true;
-  }
-
   public ModelManifest getModelManifest(String modelName) {
     findAndLoadUserGalleryResources();
-    for (ModelManifest modelManifest : this.userGalleryModelManifests) {
-      if (modelManifest.getName().equals(modelName)) {
-        return modelManifest;
-      }
-    }
-    return null;
+    return userGalleryManifestsByName.get(modelName);
   }
 
   public ModelManifest getInternalModelManifest(String modelName) {
     findAndLoadInternalResources();
-    for (ModelManifest modelManifest : internalModelManifests) {
-      if (modelManifest.getName().equals(modelName)) {
-        return modelManifest;
-      }
-    }
-    return null;
+    return internalManifestsByName.get(modelName);
   }
 }

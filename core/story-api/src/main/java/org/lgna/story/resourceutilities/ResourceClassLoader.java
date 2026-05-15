@@ -115,17 +115,18 @@ public final class ResourceClassLoader {
             if (!xmlFile.getName().contains("$")) {
               String relativePath = xmlFile.getAbsolutePath().substring(resourceFile.getAbsolutePath().length());
               String baseName = getAliceResourceClassName(relativePath);
-              rv.computeIfAbsent(resourceFile, k -> new LinkedList<>()).add(baseName);
+              rv.computeIfAbsent(resourceFile, k -> new ArrayList<>()).add(baseName);
             }
           }
         } else {
-          ZipFile zip = new ZipFile(resourceFile);
-          Enumeration<? extends ZipEntry> entries = zip.entries();
-          while (entries.hasMoreElements()) {
-            ZipEntry entry = entries.nextElement();
-            if (entry.getName().endsWith(".xml") && !entry.getName().contains("$")) {
-              String baseName = getAliceResourceClassName(entry.getName());
-              rv.computeIfAbsent(resourceFile, k -> new LinkedList<>()).add(baseName);
+          try (ZipFile zip = new ZipFile(resourceFile)) {
+            Enumeration<? extends ZipEntry> entries = zip.entries();
+            while (entries.hasMoreElements()) {
+              ZipEntry entry = entries.nextElement();
+              if (entry.getName().endsWith(".xml") && !entry.getName().contains("$")) {
+                String baseName = getAliceResourceClassName(entry.getName());
+                rv.computeIfAbsent(resourceFile, k -> new ArrayList<>()).add(baseName);
+              }
             }
           }
         }
@@ -137,7 +138,7 @@ public final class ResourceClassLoader {
   }
 
   public static LoadResult loadClassesFromResourceFiles(List<String> classNames, File... resourceFiles) {
-    List<Class<? extends ModelResource>> classes = new LinkedList<>();
+    List<Class<? extends ModelResource>> classes = new ArrayList<>();
     List<URLClassLoader> classLoaders = new ArrayList<>();
     try {
       URL[] urlArray = new URL[resourceFiles.length];
@@ -182,7 +183,7 @@ public final class ResourceClassLoader {
       }
     }
     if (resourceFiles.isEmpty()) {
-      return new LoadResult(new LinkedList<>(), new ArrayList<>());
+      return new LoadResult(new ArrayList<>(), new ArrayList<>());
     }
     File[] resourceFileArray = resourceFiles.toArray(new File[0]);
     List<String> classNames = getClassNamesFromResourceFiles(resourceFileArray);
@@ -190,7 +191,7 @@ public final class ResourceClassLoader {
   }
 
   static List<String> getClassNamesFromResourceFiles(File... resourceFiles) {
-    List<String> classNames = new LinkedList<>();
+    List<String> classNames = new ArrayList<>();
     Map<File, List<String>> classNameMap = getClassNamesFromResources(resourceFiles);
     for (Map.Entry<File, List<String>> entry : classNameMap.entrySet()) {
       classNames.addAll(entry.getValue());

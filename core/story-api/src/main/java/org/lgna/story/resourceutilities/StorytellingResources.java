@@ -124,10 +124,10 @@ public enum StorytellingResources {
     if (resourcePath != null) {
       resourcePath = resourcePath.replace('\\', '/');
       String[] resourcePaths = resourcePath.split(PATH_SEPARATOR);
-      List<String> galleryPaths = new ArrayList<>(resourcePaths.length);
+      Set<String> galleryPaths = new LinkedHashSet<>();
       for (String path : resourcePaths) {
         String galleryPath = getGalleryPathFromResourcePath(path);
-        if ((galleryPath != null) && !galleryPaths.contains(galleryPath)) {
+        if (galleryPath != null) {
           galleryPaths.add(galleryPath);
         }
       }
@@ -205,7 +205,7 @@ public enum StorytellingResources {
       ResourcePathManager.addPath(ResourcePathManager.MODEL_RESOURCE_KEY, alicePath);
       return ResourcePathManager.getPaths(ResourcePathManager.MODEL_RESOURCE_KEY);
     } else {
-      LinkedList<File> directoryFromSavedPreference = new LinkedList<>();
+      List<File> directoryFromSavedPreference = new ArrayList<>();
       File[] resourceDirs = getAliceDirsFromPref();
       if (resourceDirs != null) {
         Collections.addAll(directoryFromSavedPreference, resourceDirs);
@@ -310,7 +310,7 @@ public enum StorytellingResources {
 
   private void addClassLoaders(List<URLClassLoader> loaders) {
     if (this.resourceClassLoaders == null) {
-      this.resourceClassLoaders = new LinkedList<>();
+      this.resourceClassLoaders = new ArrayList<>();
     }
     this.resourceClassLoaders.addAll(loaders);
   }
