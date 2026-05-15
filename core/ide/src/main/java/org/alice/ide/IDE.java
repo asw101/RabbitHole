@@ -45,11 +45,8 @@ package org.alice.ide;
 import edu.cmu.cs.dennisc.crash.CrashDetector;
 import edu.cmu.cs.dennisc.java.lang.ClassUtilities;
 import edu.cmu.cs.dennisc.java.lang.SystemUtilities;
-import edu.cmu.cs.dennisc.java.util.Sets;
-import edu.cmu.cs.dennisc.javax.swing.option.Dialogs;
 import edu.cmu.cs.dennisc.pattern.Crawler;
 import edu.cmu.cs.dennisc.pattern.Criterion;
-import edu.cmu.cs.dennisc.pattern.IsInstanceCrawler;
 import org.alice.ide.cascade.ExpressionCascadeManager;
 import org.alice.ide.croquet.models.projecturi.ClearanceCheckingExitOperation;
 import org.alice.ide.croquet.models.projecturi.OpenProjectFromOsOperation;
@@ -91,7 +88,6 @@ import org.lgna.project.ast.SimpleArgumentListProperty;
 import org.lgna.project.ast.StatementListProperty;
 import org.lgna.project.ast.TypeExpression;
 import org.lgna.project.ast.UserCode;
-import org.lgna.project.ast.UserField;
 import org.lgna.project.ast.UserMethod;
 import org.lgna.project.code.ProcessableNode;
 import org.lgna.project.virtualmachine.ReleaseVirtualMachine;
@@ -101,7 +97,6 @@ import java.awt.event.WindowEvent;
 import java.io.File;
 import java.util.List;
 import java.util.Locale;
-import java.util.Set;
 import java.util.UUID;
 import java.util.prefs.BackingStoreException;
 
@@ -232,99 +227,6 @@ public abstract class IDE extends ProjectApplication {
     }
   }
 
-  private static class UnacceptableFieldAccessCrawler extends IsInstanceCrawler<FieldAccess> {
-    private final Set<UserField> unacceptableFields;
-
-    public UnacceptableFieldAccessCrawler(Set<UserField> unacceptableFields) {
-      super(FieldAccess.class);
-      this.unacceptableFields = unacceptableFields;
-    }
-
-    @Override
-    protected boolean isAcceptable(FieldAccess fieldAccess) {
-      return this.unacceptableFields.contains(fieldAccess.field.getValue());
-    }
-  }
-
-  private String reorganizeTypeFieldsIfNecessary(NamedUserType namedUserType, int startIndex, Set<UserField> alreadyMovedFields) {
-    List<UserField> fields = namedUserType.fields.getValue().subList(startIndex, namedUserType.fields.size());
-    Set<UserField> unacceptableFields = Sets.newHashSet(fields);
-    UserField fieldToMoveToTheEnd = null;
-    List<FieldAccess> accessesForFieldToMoveToTheEnd = null;
-    for (UserField field : fields) {
-      Expression initializer = field.initializer.getValue();
-      UnacceptableFieldAccessCrawler crawler = new UnacceptableFieldAccessCrawler(unacceptableFields);
-      initializer.crawl(crawler, CrawlPolicy.EXCLUDE_REFERENCES_ENTIRELY);
-      List<FieldAccess> fieldAccesses = crawler.getList();
-      if (!fieldAccesses.isEmpty()) {
-        fieldToMoveToTheEnd = field;
-        accessesForFieldToMoveToTheEnd = fieldAccesses;
-        break;
-      }
-      unacceptableFields.remove(field);
-    }
-    if (fieldToMoveToTheEnd != null) {
-      if (alreadyMovedFields.contains(fieldToMoveToTheEnd)) {
-        //todo: better cycle detection?
-        StringBuilder sb = new StringBuilder();
-        // TODO I18n
-        sb.append("<html>Possible cycle detected.<br>The field <strong>\"");
-        sb.append(fieldToMoveToTheEnd.getName());
-        sb.append("\"</strong> on type <strong>\"");
-        sb.append(fieldToMoveToTheEnd.getDeclaringType().getName());
-        sb.append("\"</strong> is referencing: ");
-        String prefix = "<strong>\"";
-        for (FieldAccess fieldAccess : accessesForFieldToMoveToTheEnd) {
-          AbstractField accessedField = fieldAccess.field.getValue();
-          sb.append(prefix);
-          sb.append(accessedField.getName());
-          prefix = "\"</strong>, <strong>\"";
-        }
-        sb.append("\"</strong><br>");
-        sb.append(getApplicationName());
-        sb.append(" already attempted to move it once.");
-        sb.append("<br><br><strong>Your program may fail.</strong></html>");
-        return sb.toString();
-      } else {
-        for (FieldAccess fieldAccess : accessesForFieldToMoveToTheEnd) {
-          AbstractField accessedField = fieldAccess.field.getValue();
-          if (accessedField == fieldToMoveToTheEnd) {
-            StringBuilder sb = new StringBuilder();
-            // TODO I18n
-            sb.append("<html>The field <strong>\"");
-            sb.append(fieldToMoveToTheEnd.getName());
-            sb.append("\"</strong> on type <strong>\"");
-            sb.append(fieldToMoveToTheEnd.getDeclaringType().getName());
-            sb.append("\"</strong> is referencing <strong>itself</strong>.");
-            sb.append("<br><br><strong>Your program may fail.</strong></html>");
-            return sb.toString();
-          }
-        }
-        int prevIndex = namedUserType.fields.indexOf(fieldToMoveToTheEnd);
-        int nextIndex = namedUserType.fields.size() - 1;
-        namedUserType.fields.slide(prevIndex, nextIndex);
-        alreadyMovedFields.add(fieldToMoveToTheEnd);
-        return this.reorganizeTypeFieldsIfNecessary(namedUserType, prevIndex, alreadyMovedFields);
-      }
-    } else {
-      return null;
-    }
-  }
-
-  private void reorganizeFieldsIfNecessary() {
-    Project project = this.getProject();
-    if (project != null) {
-      for (NamedUserType namedUserType : project.getNamedUserTypes()) {
-        Set<UserField> alreadyMovedFields = Sets.newHashSet();
-        String message = this.reorganizeTypeFieldsIfNecessary(namedUserType, 0, alreadyMovedFields);
-        if (message != null) {
-          //TODO I18n
-          Dialogs.showError("Unable to Recover", message);
-        }
-      }
-    }
-  }
-
   @Override
   public void ensureProjectCodeUpToDate() {
     Project project = this.getProject();
@@ -346,7 +248,7 @@ public abstract class IDE extends ProjectApplication {
   private void updateProject(Project project) {
     synchronized (project.getLock()) {
       generateCodeForSceneSetUp();
-      reorganizeFieldsIfNecessary();
+      FieldReorganizer.reorganizeFieldsIfNecessary(project);
       updateHistoryIndexSceneSetUpSync();
     }
   }

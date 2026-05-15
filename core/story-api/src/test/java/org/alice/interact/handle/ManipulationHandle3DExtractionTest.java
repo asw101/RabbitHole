@@ -234,10 +234,11 @@ public class ManipulationHandle3DExtractionTest {
   }
 
   @Test
-  public void doubleInterruptibleAnimationIsPublic() throws IOException {
+  public void doubleInterruptibleAnimationIsPackagePrivate() throws IOException {
     String content = readFile(SRC_DIR + "DoubleInterruptibleAnimation.java");
-    assertTrue("DoubleInterruptibleAnimation should be public abstract (subclasses in other packages reference it)",
-        content.contains("public abstract class DoubleInterruptibleAnimation"));
+    assertFalse("DoubleInterruptibleAnimation should be package-private (all subclasses are in the same package)",
+        content.contains("public abstract class DoubleInterruptibleAnimation")
+            || content.contains("public class DoubleInterruptibleAnimation"));
   }
 
   @Test
