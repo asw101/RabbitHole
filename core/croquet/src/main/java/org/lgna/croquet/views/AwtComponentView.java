@@ -378,10 +378,9 @@ public abstract class AwtComponentView<J extends Component> extends ScreenElemen
 
   @Override
   public boolean isInView() {
-    if (this.isVisible()) { //&& this.getAwtComponent().isShowing() && this.getAwtComponent().isDisplayable() && this.getAwtComponent().isValid() ) {
+    if (this.isVisible()) {
       Rectangle visibleRect = this.getVisibleRectangle();
-      Dimension size = this.getAwtComponent().getSize();
-      return (visibleRect.width == size.width) || (visibleRect.height == size.height);
+      return (visibleRect.width == this.getWidth()) || (visibleRect.height == this.getHeight());
     } else {
       return false;
     }

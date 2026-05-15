@@ -66,11 +66,11 @@ final class AwtHierarchyHandler {
   }
 
   void trackDisplayability(Component awtComponent) {
-    if (!isDisplayableState && awtComponent.isDisplayable()) {
+    boolean displayable = awtComponent.isDisplayable();
+    if (!isDisplayableState && displayable) {
       owner.handleDisplayable();
       this.isDisplayableState = true;
-    }
-    if (isDisplayableState && !awtComponent.isDisplayable()) {
+    } else if (isDisplayableState && !displayable) {
       owner.handleUndisplayable();
       this.isDisplayableState = false;
     }
@@ -86,8 +86,13 @@ final class AwtHierarchyHandler {
     }
   }
 
+  private static final long HANDLED_FLAGS = HierarchyEvent.DISPLAYABILITY_CHANGED | HierarchyEvent.PARENT_CHANGED;
+
   void processHierarchyEvent(HierarchyEvent e) {
     long flags = e.getChangeFlags();
+    if ((flags & HANDLED_FLAGS) == 0) {
+      return;
+    }
     Component ownerComponent = owner.getAwtComponent();
     if ((flags & HierarchyEvent.DISPLAYABILITY_CHANGED) != 0) {
       if (e.getComponent() == ownerComponent) {
