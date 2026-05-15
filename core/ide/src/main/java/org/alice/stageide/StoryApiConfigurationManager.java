@@ -44,8 +44,6 @@
 package org.alice.stageide;
 
 import edu.cmu.cs.dennisc.java.util.Lists;
-import edu.cmu.cs.dennisc.java.util.Maps;
-import edu.cmu.cs.dennisc.java.util.logging.Logger;
 import org.alice.ide.ApiConfigurationManager;
 import org.alice.ide.ast.CurrentThisExpression;
 import org.alice.ide.ast.ExpressionCreator;
@@ -56,7 +54,6 @@ import org.alice.ide.croquet.models.ui.preferences.IsIncludingImportAndExportTyp
 import org.alice.ide.croquet.models.ui.preferences.IsIncludingProgramType;
 import org.alice.ide.croquet.models.ui.preferences.IsIncludingThisForFieldAccessesState;
 import org.alice.ide.icons.*;
-import org.alice.ide.identifier.IdentifierNameGenerator;
 import org.alice.ide.instancefactory.InstanceFactory;
 import org.alice.ide.instancefactory.ThisFieldAccessMethodInvocationFactory;
 import org.alice.ide.instancefactory.croquet.InstanceFactoryFillIn;
@@ -71,17 +68,11 @@ import org.lgna.croquet.CascadeMenuModel;
 import org.lgna.croquet.icon.SVGIconFactory;
 import org.lgna.croquet.imp.cascade.BlankNode;
 import org.lgna.croquet.views.SwingComponentView;
-import org.lgna.project.annotations.FieldTemplate;
-import org.lgna.project.annotations.Visibility;
 import org.lgna.project.ast.*;
 import org.lgna.story.*;
 import org.lgna.story.resources.BipedResource;
-import org.lgna.story.resources.DynamicResource;
-import org.lgna.story.resources.JointArrayId;
-import org.lgna.story.resources.JointId;
 import org.lgna.story.resourceutilities.StorytellingResourcesTreeUtils;
 
-import java.lang.reflect.Field;
 import java.util.*;
 
 /**
@@ -89,6 +80,8 @@ import java.util.*;
  */
 public class StoryApiConfigurationManager extends ApiConfigurationManager {
   public static final JavaMethod SET_ACTIVE_SCENE_METHOD = JavaMethod.getInstance(SProgram.class, "setActiveScene", SScene.class);
+  private static final JavaType CAMERA_TYPE = JavaType.getInstance(SCamera.class);
+  private static final JavaType VR_USER_TYPE = JavaType.getInstance(SVRUser.class);
   private CascadeMenuModel<InstanceFactory> cameraFieldsMenuModel;
   private CascadeMenuModel<InstanceFactory> vrUserFieldsMenuModel;
 
@@ -139,49 +132,9 @@ public class StoryApiConfigurationManager extends ApiConfigurationManager {
     this.categoryOrAlphabeticalFunctionSubComposites = createUnmodifiableSubCompositeList(JointFunctionsComposite.getInstance());
   }
 
-  private static enum TypeComparator implements Comparator<AbstractType<?, ?, ?>> {
-    SINGLETON;
-    private static final double DEFAULT_VALUE = 50.0;
-    private final Map<AbstractType<?, ?, ?>, Double> mapTypeToValue = Maps.newHashMap();
-
-    TypeComparator() {
-      mapTypeToValue.put(JavaType.BOOLEAN_OBJECT_TYPE, 1.1);
-      mapTypeToValue.put(JavaType.DOUBLE_OBJECT_TYPE, 1.2);
-      mapTypeToValue.put(JavaType.INTEGER_OBJECT_TYPE, 1.3);
-      mapTypeToValue.put(JavaType.STRING_TYPE, 1.4);
-
-      mapTypeToValue.put(JavaType.getInstance(SThing.class), 10.1);
-
-      mapTypeToValue.put(JavaType.getInstance(Color.class), 20.1);
-      mapTypeToValue.put(JavaType.getInstance(Paint.class), 20.2);
-
-      mapTypeToValue.put(JavaType.getInstance(Position.class), 30.1);
-      mapTypeToValue.put(JavaType.getInstance(Orientation.class), 30.2);
-      mapTypeToValue.put(JavaType.getInstance(VantagePoint.class), 30.3);
-
-      mapTypeToValue.put(JavaType.getInstance(SJoint.class), 99.9);
-    }
-
-    private double getValue(AbstractType<?, ?, ?> type) {
-      Double value = mapTypeToValue.get(type);
-      return Objects.requireNonNullElse(value, DEFAULT_VALUE);
-    }
-
-    @Override
-    public int compare(AbstractType<?, ?, ?> typeA, AbstractType<?, ?, ?> typeB) {
-      double valueA = getValue(typeA);
-      double valueB = getValue(typeB);
-      if (valueA == valueB) {
-        return typeA.getName().compareTo(typeB.getName());
-      } else {
-        return Double.compare(valueA, valueB);
-      }
-    }
-  }
-
   @Override
   public Comparator<AbstractType<?, ?, ?>> getTypeComparator() {
-    return TypeComparator.SINGLETON;
+    return StoryTypeComparator.SINGLETON;
   }
 
   @Override
@@ -248,10 +201,10 @@ public class StoryApiConfigurationManager extends ApiConfigurationManager {
     if (JointedTypeInfo.isJointed(type)) {
       return ThisFieldAccessJointedTypeMenuModel.getInstance(field);
     }
-    if (JavaType.getInstance(SCamera.class).isAssignableFrom(type)) {
+    if (CAMERA_TYPE.isAssignableFrom(type)) {
       return getCameraFieldsMenu(field);
     }
-    if (JavaType.getInstance(SVRUser.class).isAssignableFrom(type)) {
+    if (VR_USER_TYPE.isAssignableFrom(type)) {
       return getVrUserFieldsMenu(field);
     }
     return null;
@@ -377,20 +330,6 @@ public class StoryApiConfigurationManager extends ApiConfigurationManager {
       rv.add(JavaType.getInstance(SVRHeadset.class));
       rv.add(null);
     }
-    //    rv.add( org.lgna.project.ast.JavaType.getInstance( org.lgna.story.SThing.class ) );
-    //    rv.add( org.lgna.project.ast.JavaType.getInstance( org.lgna.story.STurnable.class ) );
-    //    rv.add( org.lgna.project.ast.JavaType.getInstance( org.lgna.story.SMovableTurnable.class ) );
-    //    rv.add( org.lgna.project.ast.JavaType.getInstance( org.lgna.story.SModel.class ) );
-    //    rv.add( org.lgna.project.ast.JavaType.getInstance( org.lgna.story.SJointedModel.class ) );
-    //    rv.add( org.lgna.project.ast.JavaType.getInstance( org.lgna.story.SBillboard.class ) );
-    //    rv.add( org.lgna.project.ast.JavaType.getInstance( org.lgna.story.SAxes.class ) );
-    //    rv.add( org.lgna.project.ast.JavaType.getInstance( org.lgna.story.SShape.class ) );
-    //    rv.add( org.lgna.project.ast.JavaType.getInstance( org.lgna.story.SSphere.class ) );
-    //    rv.add( org.lgna.project.ast.JavaType.getInstance( org.lgna.story.SCone.class ) );
-    //    rv.add( org.lgna.project.ast.JavaType.getInstance( org.lgna.story.SDisc.class ) );
-    //    rv.add( org.lgna.project.ast.JavaType.getInstance( org.lgna.story.SMarker.class ) );
-    //    rv.add( org.lgna.project.ast.JavaType.getInstance( org.lgna.story.SThingMarker.class ) );
-    //    rv.add( org.lgna.project.ast.JavaType.getInstance( org.lgna.story.SCameraMarker.class ) );
     rv.add(JavaType.getInstance(Paint.class));
     rv.add(JavaType.getInstance(Color.class));
     rv.add(null);
@@ -403,144 +342,9 @@ public class StoryApiConfigurationManager extends ApiConfigurationManager {
     return rv;
   }
 
-  private static final JavaType JOINTED_MODEL_TYPE = JavaType.getInstance(SJointedModel.class);
-
-  private static String getFieldMethodNameHint(AbstractField field) {
-    if (field instanceof JavaField javaField) {
-      Field fld = javaField.getFieldReflectionProxy().getReification();
-      if (fld != null) {
-        if (fld.isAnnotationPresent(FieldTemplate.class)) {
-          FieldTemplate propertyFieldTemplate = fld.getAnnotation(FieldTemplate.class);
-          String methodNameHint = propertyFieldTemplate.methodNameHint();
-          if (!methodNameHint.isEmpty()) {
-            return methodNameHint;
-          }
-        }
-      }
-    }
-    return null;
-  }
-
-  private void addMethodsToType(UserType<?> userType, DynamicResource dynamicResource) {
-    //Get the string based "getJoint" method since we're working with dynamic resources and dynamic joints
-    JavaMethod getJointMethod = JOINTED_MODEL_TYPE.getDeclaredMethod("getJoint", String.class);
-    for (JointId joint : dynamicResource.getModelSpecificJoints()) {
-      if (joint.getVisibility() != Visibility.COMPLETELY_HIDDEN) {
-        String methodName = IdentifierNameGenerator.SINGLETON.convertConstantNameToMethodName(joint.toString(), "get");
-        UserMethod method = AstUtilities.createFunction(methodName, SJoint.class);
-        method.managementLevel.setValue(ManagementLevel.GENERATED);
-        BlockStatement body = method.body.getValue();
-        Expression expression = AstUtilities.createMethodInvocation(new ThisExpression(), getJointMethod, new StringLiteral(joint.toString()));
-        body.statements.add(AstUtilities.createReturnStatement(SJoint.class, expression));
-        userType.methods.add(method);
-      }
-    }
-  }
-
-  private void addMethodsToType(UserType<?> userType, AbstractType<?, ?, ?> resourceType) {
-    JavaMethod getJointArrayMethod = JOINTED_MODEL_TYPE.getDeclaredMethod("getJointArray", JointId[].class);
-    JavaMethod getJointArrayIdMethod = JOINTED_MODEL_TYPE.getDeclaredMethod("getJointArray", JointArrayId.class);
-    JavaMethod getJointMethod = JOINTED_MODEL_TYPE.getDeclaredMethod("getJoint", JointId.class);
-    JavaMethod strikePoseMethod = JOINTED_MODEL_TYPE.getDeclaredMethod("strikePose", Pose.class, StrikePose.Detail[].class);
-
-    for (AbstractField field : resourceType.getDeclaredFields()) {
-      if (field.isStatic()) {
-        if (field.getValueType().isAssignableTo(JointId.class) && (field.getVisibility() != Visibility.COMPLETELY_HIDDEN)) {
-          String methodName = getFieldMethodNameHint(field);
-          if (methodName == null) {
-            methodName = IdentifierNameGenerator.SINGLETON.convertConstantNameToMethodName(field.getName(), "get");
-          }
-          UserMethod method = AstUtilities.createFunction(methodName, SJoint.class);
-          method.managementLevel.setValue(ManagementLevel.GENERATED);
-          BlockStatement body = method.body.getValue();
-          Expression expression = AstUtilities.createMethodInvocation(new ThisExpression(), getJointMethod, AstUtilities.createStaticFieldAccess(field));
-          body.statements.add(AstUtilities.createReturnStatement(SJoint.class, expression));
-          userType.methods.add(method);
-        } else if (field.getValueType().isAssignableTo(JointId[].class) && (field.getVisibility() != Visibility.COMPLETELY_HIDDEN)) {
-          String methodName = getFieldMethodNameHint(field);
-          if (methodName == null) {
-            methodName = IdentifierNameGenerator.SINGLETON.convertConstantNameToMethodName(field.getName(), "get");
-          }
-          UserMethod method = AstUtilities.createFunction(methodName, SJoint[].class);
-          method.managementLevel.setValue(ManagementLevel.GENERATED);
-          BlockStatement body = method.body.getValue();
-          Expression expression = AstUtilities.createMethodInvocation(new ThisExpression(), getJointArrayMethod, AstUtilities.createStaticFieldAccess(field));
-          body.statements.add(AstUtilities.createReturnStatement(SJoint[].class, expression));
-          userType.methods.add(method);
-        } else if (field.getValueType().isAssignableTo(JointArrayId.class) && (field.getVisibility() != Visibility.COMPLETELY_HIDDEN)) {
-          String methodName = getFieldMethodNameHint(field);
-          if (methodName == null) {
-            methodName = IdentifierNameGenerator.SINGLETON.convertConstantNameToMethodName(field.getName(), "get");
-          }
-          UserMethod method = AstUtilities.createFunction(methodName, SJoint[].class);
-          method.managementLevel.setValue(ManagementLevel.GENERATED);
-          BlockStatement body = method.body.getValue();
-          Expression expression = AstUtilities.createMethodInvocation(new ThisExpression(), getJointArrayIdMethod, AstUtilities.createStaticFieldAccess(field));
-          body.statements.add(AstUtilities.createReturnStatement(SJoint[].class, expression));
-          userType.methods.add(method);
-        } else if (field.getValueType().isAssignableTo(Pose.class) && (field.getVisibility() != Visibility.COMPLETELY_HIDDEN)) {
-          String methodName = getFieldMethodNameHint(field);
-          if (methodName == null) {
-            methodName = IdentifierNameGenerator.SINGLETON.convertConstantNameToMethodName(field.getName());
-          }
-          UserMethod method = AstUtilities.createProcedure(methodName);
-          method.managementLevel.setValue(ManagementLevel.GENERATED);
-          //                UserParameter detailsParameter = new UserParameter( "details", StrikePose.Detail.class );
-          //                method.getVariableLengthParameter().
-          //                method.requiredParameters.add( detailsParameter );
-          BlockStatement body = method.body.getValue();
-          MethodInvocation mi = AstUtilities.createMethodInvocation(new ThisExpression(), strikePoseMethod, AstUtilities.createStaticFieldAccess(field));
-          //mi.variableArguments.add( new SimpleArgument( strikePoseMethod.getVariableLengthParameter(), new ParameterAccess( detailsParameter ) ) );
-          body.statements.add(new ExpressionStatement(mi));
-          userType.methods.add(method);
-        }
-      }
-    }
-  }
-
   @Override
   public UserType<?> augmentTypeIfNecessary(UserType<?> rv) {
-    if (JOINTED_MODEL_TYPE.isAssignableFrom(rv)) {
-      AbstractConstructor constructor0 = rv.getFirstDeclaredConstructor();
-      //We have multiple different types of constructors to consider:
-      // No parameters:
-      // public Alien() { super(AlienResource.DEFAULT); }
-      // public Alien2() { super(new DynamicBipedResource("Alien2", "Alien2")); }
-      //
-      // 1 parameter:
-      // public Alice(AliceResource resource) { super(resource); }
-      // public Biped(BipedResource resource) { super(resource); }
-      Object firstArgument = constructor0.instantiateFirstArgumentPassedToSuperConstructor();
-      AbstractType<?, ?, ?> constructorParameterType = constructor0.getFirstParameterType();
-      AbstractType<?, ?, ?> inferredResourceType = constructorParameterType;
-      if (inferredResourceType == null) {
-        JavaField field = getArgumentField(constructor0);
-        if (field != null) {
-          inferredResourceType = field.getValueType();
-        }
-      }
-      JavaType ancestorType = rv.getFirstEncounteredJavaType();
-      if (constructorParameterType != ancestorType.getFirstParameterType()) {
-        if (inferredResourceType != null) {
-          addMethodsToType(rv, inferredResourceType);
-        } else if (firstArgument instanceof DynamicResource resource) {
-          addMethodsToType(rv, resource);
-        } else {
-          Logger.severe("Failed to augment type " + rv + ". Unable to find model resource type.");
-        }
-      }
-    }
-    return rv;
-  }
-
-  private static JavaField getArgumentField(AbstractConstructor constructor0) {
-    if (!(constructor0 instanceof NamedUserConstructor namedUserConstructor)) {
-      return null;
-    }
-
-    ConstructorInvocationStatement constructorInvocationStatement = namedUserConstructor.body.getValue().constructorInvocationStatement.getValue();
-    SimpleArgumentListProperty args = constructorInvocationStatement.requiredArguments;
-    return args.getJavaField();
+    return JointMethodAugmentor.augment(rv);
   }
 
   @Override
