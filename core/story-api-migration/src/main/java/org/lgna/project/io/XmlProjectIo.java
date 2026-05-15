@@ -43,7 +43,7 @@
 package org.lgna.project.io;
 
 import edu.cmu.cs.dennisc.java.io.InputStreamUtilities;
-import edu.cmu.cs.dennisc.java.io.TextFileUtilities;
+
 import edu.cmu.cs.dennisc.java.lang.ClassUtilities;
 import edu.cmu.cs.dennisc.java.util.zip.ByteArrayDataSource;
 import edu.cmu.cs.dennisc.java.util.zip.DataSource;
@@ -69,17 +69,9 @@ import org.lgna.project.migration.ast.ReplaceCameraWithVR;
 import org.lgna.story.resourceutilities.ResourceTypeHelper;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.w3c.dom.Text;
-import org.xml.sax.SAXException;
 
-import javax.xml.XMLConstants;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
+
 import java.io.*;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.zip.ZipOutputStream;
@@ -99,6 +91,15 @@ public class XmlProjectIo implements ProjectIo {
   private static final String XML_RESOURCE_ORIGINAL_FILE_NAME_ATTRIBUTE = "originalFileName";
 
   private static OptionalMigrationManager CAMERA_TO_VR = new OptionalMigrationManager(new ReplaceCameraWithVR());
+
+  private static IsInstanceCrawler<ResourceExpression> resourceExpressionCrawler() {
+    return new IsInstanceCrawler<ResourceExpression>(ResourceExpression.class) {
+      @Override
+      protected boolean isAcceptable(ResourceExpression resourceExpression) {
+        return true;
+      }
+    };
+  }
 
   public static XmlProjectReader reader(ZipEntryContainer container) {
     return new XmlProjectReader(container);
@@ -191,27 +192,7 @@ public class XmlProjectIo implements ProjectIo {
     }
 
     private static String readContent(InputStream is) throws IOException {
-      ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-      byte[] chunk = new byte[8192];
-      int count;
-      while ((count = is.read(chunk)) != -1) {
-        buffer.write(chunk, 0, count);
-      }
-      return new String(buffer.toByteArray(), StandardCharsets.UTF_8);
-    }
-
-    private static Document readXML(
-        InputStream is,
-        String entryName,
-        MigrationManager migrationManager,
-        Version decodedVersion) throws IOException {
-      if (migrationManager.hasTextMigrationsFor(decodedVersion)) {
-        Charset charSet = getCharsetForVersion(decodedVersion);
-        String modifiedText =
-            migrationManager.migrate(TextFileUtilities.read(new InputStreamReader(is, charSet)), decodedVersion);
-        is = new ByteArrayInputStream(modifiedText.getBytes(charSet));
-      }
-      return readArchiveXml(is, entryName);
+      return new String(is.readAllBytes(), StandardCharsets.UTF_8);
     }
 
     private Document readXML(String entryName, MigrationManager migrationManager, Version decodedVersion) throws IOException {
@@ -220,7 +201,7 @@ public class XmlProjectIo implements ProjectIo {
         throw new IOException("Archive does not contain entry " + entryName);
       }
       try (InputStream xmlStream = is) {
-        return readXML(xmlStream, entryName, migrationManager, decodedVersion);
+        return SecureXmlParser.readXML(xmlStream, entryName, migrationManager, decodedVersion);
       }
     }
 
@@ -239,7 +220,7 @@ public class XmlProjectIo implements ProjectIo {
       if (isResources != null) {
         Document xmlDocument;
         try (InputStream resourcesStream = isResources) {
-          xmlDocument = readArchiveXml(resourcesStream, RESOURCES_ENTRY_NAME);
+          xmlDocument = SecureXmlParser.readArchiveXml(resourcesStream, RESOURCES_ENTRY_NAME);
         }
         List<Element> xmlElements = XMLUtilities.getChildElementsByTagName(xmlDocument.getDocumentElement(), XML_RESOURCE_TAG_NAME);
         for (Element xmlElement : xmlElements) {
@@ -250,12 +231,12 @@ public class XmlProjectIo implements ProjectIo {
             byte[] data = readResourceData(entryName, xmlElement);
             try {
               Class<? extends Resource> resourceCls = (Class<? extends Resource>) ClassUtilities.forName(className);
-              Resource resource = createResource(resourceCls, uuidText);
+              Resource resource = SecureXmlParser.createResource(resourceCls, uuidText);
               resource.decodeAttributes(xmlElement, data);
               resources.add(resource);
             } catch (ClassNotFoundException cnfe) {
               throw new IOException(
-                  "Unknown resource class '" + className + "' for " + resourceContext(xmlElement, entryName),
+                  "Unknown resource class '" + className + "' for " + SecureXmlParser.resourceContext(xmlElement, entryName),
                   cnfe);
             }
           }
@@ -264,95 +245,22 @@ public class XmlProjectIo implements ProjectIo {
       return resources;
     }
 
-    private static Document readArchiveXml(InputStream is, String entryName) throws IOException {
-      try {
-        DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
-        documentBuilderFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-        documentBuilderFactory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-        documentBuilderFactory.setFeature("http://xml.org/sax/features/external-general-entities", false);
-        documentBuilderFactory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
-        documentBuilderFactory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-        documentBuilderFactory.setXIncludeAware(false);
-        documentBuilderFactory.setExpandEntityReferences(false);
-
-        DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
-        Document document = documentBuilder.parse(is);
-        removeWhitespaceNodes(document.getDocumentElement());
-        return document;
-      } catch (ParserConfigurationException | SAXException | IOException e) {
-        throw new IOException("Unable to read " + entryName, e);
-      }
-    }
-
-    private static void removeWhitespaceNodes(Element element) {
-      NodeList children = element.getChildNodes();
-      for (int i = children.getLength() - 1; i >= 0; i--) {
-        Node child = children.item(i);
-        if ((child instanceof Text text) && isXmlWhitespace(text.getData())) {
-          element.removeChild(child);
-        } else if (child instanceof Element childElement) {
-          removeWhitespaceNodes(childElement);
-        }
-      }
-    }
-
-    private static boolean isXmlWhitespace(String text) {
-      for (int i = 0; i < text.length(); i++) {
-        char ch = text.charAt(i);
-        if ((ch != ' ') && (ch != '\n') && (ch != '\r') && (ch != '\t')) {
-          return false;
-        }
-      }
-      return true;
-    }
-
     private byte[] readResourceData(String entryName, Element xmlElement) throws IOException {
       if (!ResourceExportNames.isResourceEntryName(entryName)) {
-        throw new IOException("Resource data entry outside resources directory for " + resourceContext(xmlElement, entryName));
+        throw new IOException("Resource data entry outside resources directory for " + SecureXmlParser.resourceContext(xmlElement, entryName));
       }
       InputStream resourceStream = container.getInputStream(entryName);
       if (resourceStream == null) {
-        throw new IOException("Missing resource data for " + resourceContext(xmlElement, entryName));
+        throw new IOException("Missing resource data for " + SecureXmlParser.resourceContext(xmlElement, entryName));
       }
       try (InputStream is = resourceStream) {
         byte[] data = InputStreamUtilities.getBytes(is);
         if (data == null) {
-          throw new IOException("Missing resource data for " + resourceContext(xmlElement, entryName));
+          throw new IOException("Missing resource data for " + SecureXmlParser.resourceContext(xmlElement, entryName));
         }
         return data;
       } catch (IOException ioe) {
-        throw new IOException("Unable to read resource data for " + resourceContext(xmlElement, entryName), ioe);
-      }
-    }
-
-    private static String resourceContext(Element xmlElement, String entryName) {
-      String resourceName = xmlElement.getAttribute("name");
-      String uuidText = xmlElement.getAttribute(XML_RESOURCE_UUID_ATTRIBUTE);
-      StringBuilder sb = new StringBuilder("resource");
-      if ((resourceName != null) && !resourceName.isEmpty()) {
-        sb.append(" '").append(resourceName).append("'");
-      } else if ((uuidText != null) && !uuidText.isEmpty()) {
-        sb.append(" with UUID '").append(uuidText).append("'");
-      }
-      if ((entryName != null) && !entryName.isEmpty()) {
-        sb.append(" at archive entry '").append(entryName).append("'");
-      }
-      return sb.toString();
-    }
-
-    private static Resource createResource(Class<? extends Resource> resourceCls, String uuidText) throws IOException {
-      UUID uuid;
-      try {
-        uuid = UUID.fromString(uuidText);
-      } catch (IllegalArgumentException iae) {
-        throw new IOException("Invalid resource UUID " + uuidText, iae);
-      }
-      try {
-        java.lang.reflect.Constructor<? extends Resource> constructor = resourceCls.getDeclaredConstructor(UUID.class);
-        constructor.setAccessible(true);
-        return constructor.newInstance(uuid);
-      } catch (ReflectiveOperationException | SecurityException e) {
-        throw new IOException("Unable to create resource " + resourceCls.getName() + " with UUID " + uuidText, e);
+        throw new IOException("Unable to read resource data for " + SecureXmlParser.resourceContext(xmlElement, entryName), ioe);
       }
     }
 
@@ -364,12 +272,7 @@ public class XmlProjectIo implements ProjectIo {
       for (Resource resource : resources) {
         resourcesById.put(resource.getId(), resource);
       }
-      IsInstanceCrawler<ResourceExpression> crawler = new IsInstanceCrawler<ResourceExpression>(ResourceExpression.class) {
-        @Override
-        protected boolean isAcceptable(ResourceExpression resourceExpression) {
-          return true;
-        }
-      };
+      IsInstanceCrawler<ResourceExpression> crawler = resourceExpressionCrawler();
       type.crawl(crawler, CrawlPolicy.COMPLETE);
       for (ResourceExpression resourceExpression : crawler.getList()) {
         Resource expressionResource = resourceExpression.resource.getValue();
@@ -384,11 +287,6 @@ public class XmlProjectIo implements ProjectIo {
 
     private ResourceTypeHelper typeHelper;
     private Version sourceProgramVersion;
-  }
-
-  // Encoding of project XML changed from UTF-8 to UTF-16 in 3.7.
-  private static Charset getCharsetForVersion(Version version) {
-    return (version.compareTo(Version.VERSION_3_7) < 0) ? StandardCharsets.UTF_8 : StandardCharsets.UTF_16;
   }
 
   private static class XmlProjectWriter implements ProjectWriter {
@@ -442,12 +340,8 @@ public class XmlProjectIo implements ProjectIo {
       return false;
     }
 
-    private static String getValidFileName(Resource resource) {
-      return ResourceExportNames.entryFileName(resource);
-    }
-
     private static String generateEntryName(Resource resource, Set<String> usedEntryNames) {
-      String validFilename = getValidFileName(resource);
+      String validFilename = ResourceExportNames.entryFileName(resource);
       final String DESIRED_DIRECTORY_NAME = "resources";
       int i = 1;
       while (true) {
@@ -474,7 +368,7 @@ public class XmlProjectIo implements ProjectIo {
       Document xmlDocument = XMLUtilities.createDocument();
       Element xmlRootElement = xmlDocument.createElement("root");
       xmlDocument.appendChild(xmlRootElement);
-      List<DataSource> resourceDataSources = new ArrayList<>();
+      List<DataSource> resourceDataSources = new ArrayList<>(resources.size());
       synchronized (resources) {
         Set<String> usedEntryNames = new HashSet<>();
         for (Resource resource : resources) {
@@ -508,59 +402,46 @@ public class XmlProjectIo implements ProjectIo {
 
     @Override
     public void writeProject(OutputStream os, final Project project, DataSource... dataSources) throws IOException {
-      ZipOutputStream zos = new ZipOutputStream(os);
-      writeVersion(zos);
-      writeManifest(project, zos, dataSources);
-      NamedUserType programType = project.getProgramType();
-      writeType(programType, zos, PROGRAM_TYPE_ENTRY_NAME);
-      writeDataSources(zos, dataSources);
-      Set<Resource> resources = project.getResources();
+      try (ZipOutputStream zos = new ZipOutputStream(os)) {
+        writeVersion(zos);
+        writeManifest(project, zos, dataSources);
+        NamedUserType programType = project.getProgramType();
+        writeType(programType, zos, PROGRAM_TYPE_ENTRY_NAME);
+        writeDataSources(zos, dataSources);
+        Set<Resource> resources = project.getResources();
 
-      IsInstanceCrawler<ResourceExpression> crawler = new IsInstanceCrawler<ResourceExpression>(ResourceExpression.class) {
-        @Override
-        protected boolean isAcceptable(ResourceExpression resourceExpression) {
-          return true;
-        }
-      };
-      programType.crawl(crawler, CrawlPolicy.COMPLETE);
+        IsInstanceCrawler<ResourceExpression> crawler = resourceExpressionCrawler();
+        programType.crawl(crawler, CrawlPolicy.COMPLETE);
 
-      for (ResourceExpression resourceExpression : crawler.getList()) {
-        Resource resource = resourceExpression.resource.getValue();
-        if (!resources.contains(resource)) {
-          PrintUtilities.println(
-              "WARNING: adding missing resource",
-              ResourceExportNames.diagnosticName(resource));
-          resources.add(resource);
+        for (ResourceExpression resourceExpression : crawler.getList()) {
+          Resource resource = resourceExpression.resource.getValue();
+          if (!resources.contains(resource)) {
+            PrintUtilities.println(
+                "WARNING: adding missing resource",
+                ResourceExportNames.diagnosticName(resource));
+            resources.add(resource);
+          }
         }
+
+        writeResources(zos, resources);
       }
-
-      writeResources(zos, resources);
-      zos.flush();
-      zos.close();
     }
 
     @Override
     public void writeType(OutputStream os, NamedUserType type, DataSource... dataSources) throws IOException {
-      ZipOutputStream zos = new ZipOutputStream(os);
-      writeVersion(zos);
-      writeType(type, zos, TYPE_ENTRY_NAME);
-      writeDataSources(zos, dataSources);
+      try (ZipOutputStream zos = new ZipOutputStream(os)) {
+        writeVersion(zos);
+        writeType(type, zos, TYPE_ENTRY_NAME);
+        writeDataSources(zos, dataSources);
 
-      IsInstanceCrawler<ResourceExpression> crawler = new IsInstanceCrawler<ResourceExpression>(ResourceExpression.class) {
-        @Override
-        protected boolean isAcceptable(ResourceExpression resourceExpression) {
-          return true;
+        IsInstanceCrawler<ResourceExpression> crawler = resourceExpressionCrawler();
+        type.crawl(crawler, CrawlPolicy.EXCLUDE_REFERENCES_ENTIRELY);
+        Set<Resource> resources = new HashSet<>();
+        for (ResourceExpression resourceExpression : crawler.getList()) {
+          resources.add(resourceExpression.resource.getValue());
         }
-      };
-      type.crawl(crawler, CrawlPolicy.EXCLUDE_REFERENCES_ENTIRELY);
-      Set<Resource> resources = new HashSet<>();
-      for (ResourceExpression resourceExpression : crawler.getList()) {
-        resources.add(resourceExpression.resource.getValue());
+        writeResources(zos, resources);
       }
-      writeResources(zos, resources);
-
-      zos.flush();
-      zos.close();
     }
   }
 }
