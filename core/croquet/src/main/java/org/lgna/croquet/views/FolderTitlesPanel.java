@@ -91,7 +91,7 @@ class FolderTitlesPanel extends LineAxisPanel {
       float cx1 = xCurve0;
 
       float y0 = y + NORTH_AREA_PAD;
-      float y1 = y + height + 1; // + this.contentBorderInsets.top;
+      float y1 = y + height + 1;
       float cy0 = y0;
       float cy1 = y1;
 

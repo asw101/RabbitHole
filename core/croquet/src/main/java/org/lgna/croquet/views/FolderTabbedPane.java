@@ -74,14 +74,12 @@ public class FolderTabbedPane<E extends TabComposite<?>> extends CardBasedTabbed
     return new FolderTitlesPanel();
   }
 
-  //private java.util.Map<E, javax.swing.Action> mapItemToAction = edu.cmu.cs.dennisc.java.util.Maps.newHashMap();
   private Action getActionFor(E item) {
     Operation operation = this.getModel().getItemSelectionOperation(item);
     operation.initializeIfNecessary();
     return operation.getImp().getSwingModel().getAction();
   }
 
-  //todo: PopupOperation
   private class PopupOperation extends ActionOperation {
     public PopupOperation() {
       super(Application.DOCUMENT_UI_GROUP, UUID.fromString("7923b4c8-6a9f-4c8b-99b5-909ae6c0889a"));
@@ -166,13 +164,9 @@ public class FolderTabbedPane<E extends TabComposite<?>> extends CardBasedTabbed
     }
   }
 
-  private class ScrollListener implements MouseListener, MouseMotionListener {
+  private class ScrollListener extends MouseAdapter {
     private Integer pressedLocationX;
     private Integer pressedViewPositionX;
-
-    @Override
-    public void mouseClicked(MouseEvent e) {
-    }
 
     @Override
     public void mousePressed(MouseEvent e) {
@@ -184,18 +178,6 @@ public class FolderTabbedPane<E extends TabComposite<?>> extends CardBasedTabbed
     public void mouseReleased(MouseEvent e) {
       this.pressedLocationX = null;
       this.pressedViewPositionX = null;
-    }
-
-    @Override
-    public void mouseEntered(MouseEvent e) {
-    }
-
-    @Override
-    public void mouseExited(MouseEvent e) {
-    }
-
-    @Override
-    public void mouseMoved(MouseEvent e) {
     }
 
     @Override
