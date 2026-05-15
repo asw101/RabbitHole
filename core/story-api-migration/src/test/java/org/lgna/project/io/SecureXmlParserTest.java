@@ -44,6 +44,13 @@ package org.lgna.project.io;
 
 import org.junit.Test;
 import org.lgna.project.Version;
+import org.lgna.project.ast.AbstractType;
+import org.lgna.project.ast.InstanceCreation;
+import org.lgna.project.ast.NamedUserType;
+import org.lgna.project.ast.Node;
+import org.lgna.project.migration.MigrationManager;
+import org.lgna.story.resources.ModelResource;
+import org.lgna.story.resourceutilities.ResourceTypeHelper;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -180,5 +187,124 @@ public class SecureXmlParserTest {
     IOException thrown = assertThrows(IOException.class, () ->
         SecureXmlParser.createResource(org.lgna.common.Resource.class, "not-a-uuid"));
     assertTrue(thrown.getMessage().contains("Invalid resource UUID"));
+  }
+
+  @Test
+  public void readArchiveXml_throwsOnMalformedXml() {
+    ByteArrayInputStream is = new ByteArrayInputStream("<<<not xml>>>".getBytes(StandardCharsets.UTF_8));
+
+    IOException thrown = assertThrows(IOException.class, () ->
+        SecureXmlParser.readArchiveXml(is, "bad.xml"));
+    assertTrue(thrown.getMessage().contains("Unable to read bad.xml"));
+  }
+
+  @Test
+  public void resourceContext_withEmptyAttributes() throws Exception {
+    Document doc = javax.xml.parsers.DocumentBuilderFactory.newInstance()
+        .newDocumentBuilder().newDocument();
+    Element elem = doc.createElement("resource");
+    elem.setAttribute("name", "");
+    elem.setAttribute("uuid", "");
+
+    String context = SecureXmlParser.resourceContext(elem, "entry.dat");
+
+    assertEquals("resource at archive entry 'entry.dat'", context);
+  }
+
+  @Test
+  public void resourceContext_withNullEntryName() throws Exception {
+    Document doc = javax.xml.parsers.DocumentBuilderFactory.newInstance()
+        .newDocumentBuilder().newDocument();
+    Element elem = doc.createElement("resource");
+    elem.setAttribute("name", "myRes");
+    elem.setAttribute("uuid", "");
+
+    String context = SecureXmlParser.resourceContext(elem, null);
+
+    assertEquals("resource 'myRes'", context);
+  }
+
+  @Test
+  public void readXML_withoutMigrations_parsesDirectly() throws IOException {
+    String xml = "<root><item key=\"val\"/></root>";
+    ByteArrayInputStream is = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8));
+    Version version = new Version("3.8.0.0");
+
+    MigrationManager noMigrations = new NoOpMigrationManager();
+
+    Document doc = SecureXmlParser.readXML(is, "test-entry.xml", noMigrations, version);
+
+    assertNotNull(doc);
+    assertEquals("root", doc.getDocumentElement().getTagName());
+    assertEquals(1, doc.getDocumentElement().getChildNodes().getLength());
+  }
+
+  @Test
+  public void readXML_withMigrations_appliesTextTransform() throws IOException {
+    // Original XML has <old/>, migration renames it to <root><new/></root>
+    String xml = "<root><old/></root>";
+    ByteArrayInputStream is = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_16));
+    Version version = new Version("3.8.0.0");
+
+    MigrationManager renamingMigration = new NoOpMigrationManager() {
+      @Override
+      public boolean hasTextMigrationsFor(Version decodedVersion) {
+        return true;
+      }
+
+      @Override
+      public String migrate(String source, Version v) {
+        return source.replace("<old/>", "<migrated/>");
+      }
+    };
+
+    Document doc = SecureXmlParser.readXML(is, "migrated.xml", renamingMigration, version);
+
+    assertNotNull(doc);
+    Element root = doc.getDocumentElement();
+    assertEquals(1, root.getChildNodes().getLength());
+    assertEquals("migrated", root.getChildNodes().item(0).getNodeName());
+  }
+
+  /**
+   * Minimal MigrationManager for testing — no text or AST migrations.
+   */
+  private static class NoOpMigrationManager implements MigrationManager {
+    @Override
+    public boolean hasTextMigrationsFor(Version decodedVersion) {
+      return false;
+    }
+
+    @Override
+    public boolean hasAstMigrationsFor(Version decodedVersion) {
+      return false;
+    }
+
+    @Override
+    public String migrate(String source, Version version) {
+      return source;
+    }
+
+    @Override
+    public void migrate(Node root, ResourceTypeHelper typeHelper, Version version) {
+    }
+
+    @Override
+    public void cacheType(NamedUserType type) {
+    }
+
+    @Override
+    public AbstractType<?, ?, ?> getCachedType(String className) {
+      return null;
+    }
+
+    @Override
+    public InstanceCreation createInstanceCreation(ModelResource resourceClass) {
+      return null;
+    }
+
+    @Override
+    public void addFinalization(Runnable finalizer) {
+    }
   }
 }
