@@ -48,7 +48,7 @@ import org.alice.ide.ast.PropertyState;
 import org.alice.stageide.sceneeditor.StorytellingSceneEditor;
 import org.lgna.croquet.Application;
 import org.lgna.project.ast.AbstractParameter;
-import org.lgna.project.ast.AstUtilities;
+import org.lgna.project.ast.AstTypeResolutionHelpers;
 import org.lgna.project.ast.Expression;
 import org.lgna.project.ast.ExpressionStatement;
 import org.lgna.project.ast.FieldAccess;
@@ -78,7 +78,7 @@ public class SceneEditorUpdatingPropertyState extends PropertyState {
   }
 
   public static synchronized SceneEditorUpdatingPropertyState getInstanceForGetter(UserField field, JavaMethod getter) {
-    return getInstanceForSetter(field, AstUtilities.getSetterForGetter(getter));
+    return getInstanceForSetter(field, AstTypeResolutionHelpers.getSetterForGetter(getter));
   }
 
   private final UserField field;

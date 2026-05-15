@@ -159,7 +159,7 @@ public class ReplaceCameraWithVR extends AstMigration {
   private ExpressionStatement setHeadsetOrientationStatement(Expression userExpression, UnitQuaternion headsetOrientation) {
     AbstractMethod headsetMethod = vrUserType.findMethod(getHeadset);
     Expression getHeadsetExpression = new MethodInvocation(userExpression, headsetMethod);
-    AbstractMethod setOrientation = AstUtilities.lookupMethod(SVRHeadset.class, setOrientationRelativeToVehicle, Orientation.class, SetOrientationRelativeToVehicle.Detail[].class);
+    AbstractMethod setOrientation = AstMethodLookupHelpers.lookupMethod(SVRHeadset.class, setOrientationRelativeToVehicle, Orientation.class, SetOrientationRelativeToVehicle.Detail[].class);
 
     JavaConstructor constructor = JavaConstructor.getInstance(Orientation.class, Number.class, Number.class, Number.class, Number.class);
     InstanceCreation headOrientation =
@@ -201,7 +201,7 @@ public class ReplaceCameraWithVR extends AstMigration {
 
           AbstractMethod headsetMethod = vrUserType.findMethod(getHeadset);
           Expression getHeadsetExpression = new MethodInvocation(invocation.expression.getValue(), headsetMethod);
-          AbstractMethod setPosition = AstUtilities.lookupMethod(SVRHeadset.class, setPositionRelativeToVehicle, Position.class, SetPositionRelativeToVehicle.Detail[].class);
+          AbstractMethod setPosition = AstMethodLookupHelpers.lookupMethod(SVRHeadset.class, setPositionRelativeToVehicle, Position.class, SetPositionRelativeToVehicle.Detail[].class);
 
           JavaConstructor constructor = JavaConstructor.getInstance(Position.class, Number.class, Number.class, Number.class);
           InstanceCreation headPosition = AstUtilities.createInstanceCreation(constructor, new DoubleLiteral(0.0), new DoubleLiteral(defaultHeight), new DoubleLiteral(0.0));

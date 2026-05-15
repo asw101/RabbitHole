@@ -55,18 +55,18 @@ public class AstTypeResolutionHelpersTest {
 
   @Test
   public void setterForGetterReturnsNullWhenNoSetterExists() {
-    // String.length() has no corresponding setter
-    JavaMethod getter = JavaMethod.getInstance(String.class, "length");
-    JavaMethod setter = AstTypeResolutionHelpers.getSetterForGetter(getter, JavaType.getInstance(String.class));
-    assertNull("length() has no setter", setter);
+    // Class.getName() has no corresponding setName()
+    JavaMethod getter = JavaMethod.getInstance(Class.class, "getName");
+    JavaMethod setter = AstTypeResolutionHelpers.getSetterForGetter(getter, JavaType.getInstance(Class.class));
+    assertNull("Class.getName() has no setter", setter);
   }
 
   @Test
   public void setterForGetterSingleArgOverloadUsesDeclaringType() {
     // The single-argument overload should use the getter's own declaring type
-    JavaMethod getter = JavaMethod.getInstance(String.class, "length");
+    JavaMethod getter = JavaMethod.getInstance(Class.class, "getName");
     JavaMethod setter = AstTypeResolutionHelpers.getSetterForGetter(getter);
-    assertNull("length() has no setter via convenience overload either", setter);
+    assertNull("Class.getName() has no setter via convenience overload either", setter);
   }
 
   // ── getParameterValueTypes ────────────────────────────────────────────
@@ -163,7 +163,7 @@ public class AstTypeResolutionHelpersTest {
         java.lang.reflect.Modifier.isFinal(AstTypeResolutionHelpers.class.getModifiers()));
   }
 
-  @Test(expected = AssertionError.class)
+  @Test(expected = java.lang.reflect.InvocationTargetException.class)
   public void constructorThrowsAssertionError() throws Exception {
     java.lang.reflect.Constructor<?> ctor = AstTypeResolutionHelpers.class.getDeclaredConstructor();
     ctor.setAccessible(true);

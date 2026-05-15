@@ -4,6 +4,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.lgna.project.Project;
+import org.lgna.project.ast.AstMethodLookupHelpers;
 import org.lgna.project.ast.AstUtilities;
 import org.lgna.project.ast.BlockStatement;
 import org.lgna.project.ast.Comment;
@@ -205,7 +206,7 @@ public class SilverThreadStudentProgramSaveReadbackTest {
     sceneType.methods.add(myFirstMethod);
 
     // initializeEventListeners: this.addSceneActivationListener(lambda)
-    JavaMethod addListener = AstUtilities.lookupMethod(
+    JavaMethod addListener = AstMethodLookupHelpers.lookupMethod(
         SScene.class, "addSceneActivationListener", SceneActivationListener.class);
     LambdaExpression lambda = AstUtilities.createLambdaExpression(SceneActivationListener.class);
     ExpressionStatement listenerStmt = AstUtilities.createMethodInvocationStatement(

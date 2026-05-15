@@ -295,7 +295,7 @@ public class JavaCodeGenerator extends SourceCodeGenerator {
 
   @Override
   public void appendMethodHeader(AbstractMethod method) {
-    AbstractMethod overridenMethod = AstUtilities.getOverridenMethod(method);
+    AbstractMethod overridenMethod = AstMethodLookupHelpers.getOverridenMethod(method);
     if (overridenMethod != null) {
       appendString("@Override ");
     }
@@ -338,7 +338,7 @@ public class JavaCodeGenerator extends SourceCodeGenerator {
     Expression expressionValue = arg.expression.getValue();
     if (expressionValue instanceof MethodInvocation methodInvocation) {
       AbstractMethod method = methodInvocation.method.getValue();
-      AbstractType<?, ?, ?> factoryType = AstUtilities.getKeywordFactoryType(arg);
+      AbstractType<?, ?, ?> factoryType = AstTypeResolutionHelpers.getKeywordFactoryType(arg);
       if (factoryType != null) {
         processTypeName(factoryType);
         appendChar('.');

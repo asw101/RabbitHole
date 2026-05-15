@@ -210,7 +210,7 @@ public class SceneObjectPropertyManagerPanel extends GridBagPanel {
     if (entityImp == null) {
       return null;
     }
-    JavaMethod setter = AstUtilities.getSetterForGetter(getter, declaringType);
+    JavaMethod setter = AstTypeResolutionHelpers.getSetterForGetter(getter, declaringType);
     boolean isHidden = (setter == null)
         || ((setter.getVisibility() != null) && (setter.getVisibility() != Visibility.PRIME_TIME));
     if (isHidden) {
@@ -324,7 +324,7 @@ public class SceneObjectPropertyManagerPanel extends GridBagPanel {
 
       AbstractType<?, ?, ?> instanceValueType = this.selectedInstance.getValueType();
       if (instanceValueType != null) {
-        Iterable<JavaMethod> getterMethods = AstUtilities.getPersistentPropertyGetters(instanceValueType);
+        Iterable<JavaMethod> getterMethods = AstTypeResolutionHelpers.getPersistentPropertyGetters(instanceValueType);
         JavaType declaringType = this.selectedInstance.getValueType().getFirstEncounteredJavaType();
         boolean isScene = this.selectedImp instanceof SceneImp;
 

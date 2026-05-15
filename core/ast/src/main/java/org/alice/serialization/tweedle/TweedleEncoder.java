@@ -230,7 +230,7 @@ public class TweedleEncoder extends SourceCodeGenerator {
     Expression expressionValue = arg.expression.getValue();
     if (expressionValue instanceof MethodInvocation methodInvocation) {
       AbstractMethod method = methodInvocation.method.getValue();
-      AbstractType<?, ?, ?> factoryType = AstUtilities.getKeywordFactoryType(arg);
+      AbstractType<?, ?, ?> factoryType = AstTypeResolutionHelpers.getKeywordFactoryType(arg);
       if (factoryType != null) {
         final String label = method.getName();
         appendString(TweedleEncoderData.methodParamsToRelabel.getOrDefault(label, label));

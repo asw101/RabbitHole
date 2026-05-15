@@ -143,7 +143,7 @@ class StatementCodeEmitter {
 
   void processLambda(UserLambda lambda) {
     AbstractType<?, ?, ?> type = typeForLambdaStack.peek();
-    AbstractMethod singleAbstractMethod = AstUtilities.getSingleAbstractMethod(type);
+    AbstractMethod singleAbstractMethod = AstMethodLookupHelpers.getSingleAbstractMethod(type);
     if (gen.isLambdaSupported()) {
       gen.appendParameters(lambda);
       gen.appendString(" ->");

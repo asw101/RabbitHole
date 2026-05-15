@@ -1,0 +1,154 @@
+/*******************************************************************************
+ * Copyright (c) 2006, 2015, Carnegie Mellon University. All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * 3. Products derived from the software may not be called "Alice", nor may
+ *    "Alice" appear in their name, without prior written permission of
+ *    Carnegie Mellon University.
+ *
+ * 4. All advertising materials mentioning features or use of this software must
+ *    display the following acknowledgement: "This product includes software
+ *    developed by Carnegie Mellon University"
+ *
+ * 5. The gallery of art assets and animations provided with this software is
+ *    contributed by Electronic Arts Inc. and may be used for personal,
+ *    non-commercial, and academic use only. Redistributions of any program
+ *    source code that utilizes The Sims 2 Assets must also retain the copyright
+ *    notice, list of conditions and the disclaimer contained in
+ *    The Alice 3.0 Art Gallery License.
+ *
+ * DISCLAIMER:
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
+ * ANY AND ALL EXPRESS, STATUTORY OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY,  FITNESS FOR A
+ * PARTICULAR PURPOSE, TITLE, AND NON-INFRINGEMENT ARE DISCLAIMED. IN NO EVENT
+ * SHALL THE AUTHORS, COPYRIGHT OWNERS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+ * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, PUNITIVE OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING FROM OR OTHERWISE RELATING TO
+ * THE USE OF OR OTHER DEALINGS WITH THE SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ *******************************************************************************/
+
+package org.lgna.project.ast;
+
+import edu.cmu.cs.dennisc.java.util.Lists;
+import edu.cmu.cs.dennisc.java.util.logging.Logger;
+import edu.cmu.cs.dennisc.property.PropertyUtilities;
+import org.lgna.project.annotations.GetterTemplate;
+
+import java.util.List;
+
+/**
+ * Type resolution and property getter helpers extracted from AstUtilities.
+ *
+ * @author Dennis Cosgrove
+ */
+public final class AstTypeResolutionHelpers {
+  private AstTypeResolutionHelpers() {
+    throw new AssertionError();
+  }
+
+  private static List<JavaMethod> updatePersistentPropertyGetters(List<JavaMethod> rv, JavaType javaType) {
+    for (JavaMethod method : javaType.getDeclaredMethods()) {
+      java.lang.reflect.Method mthd = method.getMethodReflectionProxy().getReification();
+      if (mthd != null) {
+        if (mthd.isAnnotationPresent(GetterTemplate.class)) {
+          GetterTemplate gttrTemplate = mthd.getAnnotation(GetterTemplate.class);
+          if (gttrTemplate.isPersistent()) {
+            rv.add(method);
+          }
+        }
+      }
+    }
+    return rv;
+  }
+
+  public static Iterable<JavaMethod> getDeclaredPersistentPropertyGetters(JavaType javaType) {
+    List<JavaMethod> rv = Lists.newLinkedList();
+    updatePersistentPropertyGetters(rv, javaType);
+    return rv;
+  }
+
+  public static Iterable<JavaMethod> getPersistentPropertyGetters(AbstractType<?, ?, ?> type) {
+    List<JavaMethod> rv = Lists.newLinkedList();
+    JavaType javaType = type.getFirstEncounteredJavaType();
+    while (true) {
+      if (javaType != null) {
+        updatePersistentPropertyGetters(rv, javaType);
+        if (!javaType.isFollowToSuperClassDesired()) {
+          break;
+        }
+        javaType = javaType.getSuperType();
+      } else {
+        Logger.severe(type);
+        break;
+      }
+    }
+    return rv;
+  }
+
+  public static JavaMethod getSetterForGetter(JavaMethod getter, JavaType type) {
+    java.lang.reflect.Method gttr = getter.getMethodReflectionProxy().getReification();
+    java.lang.reflect.Method sttr = PropertyUtilities.getSetterForGetter(gttr, type.getClassReflectionProxy().getReification());
+    if (sttr != null) {
+      return JavaMethod.getInstance(sttr);
+    } else {
+      return null;
+    }
+  }
+
+  public static JavaMethod getSetterForGetter(JavaMethod getter) {
+    return getSetterForGetter(getter, getter.getDeclaringType());
+  }
+
+  public static AbstractType<?, ?, ?>[] getParameterValueTypes(AbstractMethod method) {
+    List<? extends AbstractParameter> parameters = method.getRequiredParameters();
+    AbstractType<?, ?, ?>[] rv = new AbstractType[parameters.size()];
+    int i = 0;
+    for (AbstractParameter parameter : parameters) {
+      rv[i] = parameter.getValueType();
+      i++;
+    }
+    return rv;
+  }
+
+  public static AbstractType<?, ?, ?> getKeywordFactoryType(JavaKeyedArgument argument) {
+    AbstractParameter parameter = argument.parameter.getValue();
+    if (parameter.isKeyworded()) {
+      AbstractType<?, ?, ?> parameterType = parameter.getValueType();
+      if ((parameterType != null) && parameterType.isArray()) {
+        AbstractType<?, ?, ?> componentType = parameterType.getComponentType();
+        if (componentType != null) {
+          return componentType.getKeywordFactoryType();
+        }
+      }
+    }
+    return null;
+  }
+
+  public static AbstractType<?, ?, ?> getDeclaringTypeIfMemberOrTypeItselfIfType(AbstractDeclaration declaration) {
+    if (declaration != null) {
+      if (declaration instanceof AbstractType<?, ?, ?> type) {
+        return type;
+      } else if (declaration instanceof AbstractMember member) {
+        return member.getDeclaringType();
+      } else {
+        throw new UnsupportedOperationException();
+      }
+    } else {
+      return null;
+    }
+  }
+}

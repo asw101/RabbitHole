@@ -6,6 +6,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.lgna.project.Project;
+import org.lgna.project.ast.AstMethodLookupHelpers;
 import org.lgna.project.ast.AstUtilities;
 import org.lgna.project.ast.BlockStatement;
 import org.lgna.project.ast.Comment;
@@ -377,7 +378,7 @@ public class ProjectCodeGeneratorStoryApiGeneratedSourceTest {
   private static NamedUserType programTypeWithStoryApiCall() {
     NamedUserType type = programType("Program");
     JavaMethod setSimulationSpeedFactor =
-        AstUtilities.lookupMethod(SProgram.class, "setSimulationSpeedFactor", Number.class);
+        AstMethodLookupHelpers.lookupMethod(SProgram.class, "setSimulationSpeedFactor", Number.class);
     UserMethod configureStory = new UserMethod(
         "configureStory",
         Void.TYPE,
@@ -392,7 +393,7 @@ public class ProjectCodeGeneratorStoryApiGeneratedSourceTest {
 
   private static NamedUserType programTypeWithSceneActivationCall() {
     NamedUserType type = programType("Program");
-    JavaMethod setActiveScene = AstUtilities.lookupMethod(SProgram.class, "setActiveScene", SScene.class);
+    JavaMethod setActiveScene = AstMethodLookupHelpers.lookupMethod(SProgram.class, "setActiveScene", SScene.class);
     UserMethod clearScene = new UserMethod(
         "clearScene",
         Void.TYPE,
@@ -413,10 +414,10 @@ public class ProjectCodeGeneratorStoryApiGeneratedSourceTest {
     type.fields.add(scene);
     type.fields.add(box);
 
-    JavaMethod setActiveScene = AstUtilities.lookupMethod(SProgram.class, "setActiveScene", SScene.class);
-    JavaMethod setPaint = AstUtilities.lookupMethod(SModel.class, "setPaint", Paint.class, SetPaint.Detail[].class);
-    JavaMethod setOpacity = AstUtilities.lookupMethod(SModel.class, "setOpacity", Number.class, SetOpacity.Detail[].class);
-    JavaMethod say = AstUtilities.lookupMethod(SModel.class, "say", String.class, Say.Detail[].class);
+    JavaMethod setActiveScene = AstMethodLookupHelpers.lookupMethod(SProgram.class, "setActiveScene", SScene.class);
+    JavaMethod setPaint = AstMethodLookupHelpers.lookupMethod(SModel.class, "setPaint", Paint.class, SetPaint.Detail[].class);
+    JavaMethod setOpacity = AstMethodLookupHelpers.lookupMethod(SModel.class, "setOpacity", Number.class, SetOpacity.Detail[].class);
+    JavaMethod say = AstMethodLookupHelpers.lookupMethod(SModel.class, "say", String.class, Say.Detail[].class);
     UserMethod configureWorld = new UserMethod(
         "configureWorld",
         Void.TYPE,
@@ -472,13 +473,13 @@ public class ProjectCodeGeneratorStoryApiGeneratedSourceTest {
 
   private static NamedUserType sceneTypeWithListenerRegistrationCalls() {
     NamedUserType type = AstUtilities.createType("Scene", JavaType.getInstance(SScene.class));
-    JavaMethod addTimeListener = AstUtilities.lookupMethod(
+    JavaMethod addTimeListener = AstMethodLookupHelpers.lookupMethod(
         SScene.class,
         "addTimeListener",
         TimeListener.class,
         Number.class,
         AddTimeListener.Detail[].class);
-    JavaMethod addSceneActivationListener = AstUtilities.lookupMethod(
+    JavaMethod addSceneActivationListener = AstMethodLookupHelpers.lookupMethod(
         SScene.class,
         "addSceneActivationListener",
         SceneActivationListener.class);
@@ -505,7 +506,7 @@ public class ProjectCodeGeneratorStoryApiGeneratedSourceTest {
 
   private static NamedUserType sceneTypeWithExecutableSceneActivationRuntimeDispatchProbe() {
     NamedUserType type = AstUtilities.createType("Scene", JavaType.getInstance(SScene.class));
-    JavaMethod addSceneActivationListener = AstUtilities.lookupMethod(
+    JavaMethod addSceneActivationListener = AstMethodLookupHelpers.lookupMethod(
         SScene.class,
         "addSceneActivationListener",
         SceneActivationListener.class);
@@ -526,7 +527,7 @@ public class ProjectCodeGeneratorStoryApiGeneratedSourceTest {
 
   private static NamedUserType sceneTypeWithExecutableTimeListenerRegistration() {
     NamedUserType type = AstUtilities.createType("Scene", JavaType.getInstance(SScene.class));
-    JavaMethod addTimeListener = AstUtilities.lookupMethod(
+    JavaMethod addTimeListener = AstMethodLookupHelpers.lookupMethod(
         SScene.class,
         "addTimeListener",
         TimeListener.class,
@@ -553,7 +554,7 @@ public class ProjectCodeGeneratorStoryApiGeneratedSourceTest {
 
   private static NamedUserType sceneTypeWithExecutableTimeListenerElapsedProbe() {
     NamedUserType type = AstUtilities.createType("Scene", JavaType.getInstance(SScene.class));
-    JavaMethod addTimeListener = AstUtilities.lookupMethod(
+    JavaMethod addTimeListener = AstMethodLookupHelpers.lookupMethod(
         SScene.class,
         "addTimeListener",
         TimeListener.class,
@@ -578,7 +579,7 @@ public class ProjectCodeGeneratorStoryApiGeneratedSourceTest {
   private static LambdaExpression listenerLambda(Class<?> listenerClass, String recordMethodName, String commentText) {
     LambdaExpression expression = AstUtilities.createLambdaExpression(listenerClass);
     UserLambda lambda = (UserLambda) expression.value.getValue();
-    JavaMethod recordEvent = AstUtilities.lookupMethod(
+    JavaMethod recordEvent = AstMethodLookupHelpers.lookupMethod(
         ProjectCodeGeneratorStoryApiGeneratedSourceTest.class,
         recordMethodName);
     lambda.body.getValue().statements.add(new Comment(commentText));
@@ -592,7 +593,7 @@ public class ProjectCodeGeneratorStoryApiGeneratedSourceTest {
     LambdaExpression expression = AstUtilities.createLambdaExpression(SceneActivationListener.class);
     UserLambda lambda = (UserLambda) expression.value.getValue();
     UserParameter eventParameter = lambda.requiredParameters.get(0);
-    JavaMethod recordEvent = AstUtilities.lookupMethod(
+    JavaMethod recordEvent = AstMethodLookupHelpers.lookupMethod(
         ProjectCodeGeneratorStoryApiGeneratedSourceTest.class,
         "recordSceneActivationRuntimeDispatch",
         SceneActivationEvent.class);
@@ -607,8 +608,8 @@ public class ProjectCodeGeneratorStoryApiGeneratedSourceTest {
     LambdaExpression expression = AstUtilities.createLambdaExpression(TimeListener.class);
     UserLambda lambda = (UserLambda) expression.value.getValue();
     UserParameter eventParameter = lambda.requiredParameters.get(0);
-    JavaMethod timeSinceLastFire = AstUtilities.lookupMethod(TimeEvent.class, "getTimeSinceLastFire");
-    JavaMethod recordEvent = AstUtilities.lookupMethod(
+    JavaMethod timeSinceLastFire = AstMethodLookupHelpers.lookupMethod(TimeEvent.class, "getTimeSinceLastFire");
+    JavaMethod recordEvent = AstMethodLookupHelpers.lookupMethod(
         ProjectCodeGeneratorStoryApiGeneratedSourceTest.class,
         "recordTimeEventElapsed",
         Double.class);
@@ -623,23 +624,23 @@ public class ProjectCodeGeneratorStoryApiGeneratedSourceTest {
 
   private static NamedUserType sceneTypeWithEventAndRenderingCalls() {
     NamedUserType type = AstUtilities.createType("Scene", JavaType.getInstance(SScene.class));
-    JavaMethod setAtmosphereColor = AstUtilities.lookupMethod(
+    JavaMethod setAtmosphereColor = AstMethodLookupHelpers.lookupMethod(
         SScene.class,
         "setAtmosphereColor",
         Color.class,
         SetAtmosphereColor.Detail[].class);
-    JavaMethod setFogDensity = AstUtilities.lookupMethod(
+    JavaMethod setFogDensity = AstMethodLookupHelpers.lookupMethod(
         SScene.class,
         "setFogDensity",
         Number.class,
         SetFogDensity.Detail[].class);
-    JavaMethod addTimeListener = AstUtilities.lookupMethod(
+    JavaMethod addTimeListener = AstMethodLookupHelpers.lookupMethod(
         SScene.class,
         "addTimeListener",
         TimeListener.class,
         Number.class,
         AddTimeListener.Detail[].class);
-    JavaMethod addSceneActivationListener = AstUtilities.lookupMethod(
+    JavaMethod addSceneActivationListener = AstMethodLookupHelpers.lookupMethod(
         SScene.class,
         "addSceneActivationListener",
         SceneActivationListener.class);

@@ -233,7 +233,7 @@ public class AstMethodLookupHelpersTest {
         java.lang.reflect.Modifier.isFinal(AstMethodLookupHelpers.class.getModifiers()));
   }
 
-  @Test(expected = AssertionError.class)
+  @Test(expected = java.lang.reflect.InvocationTargetException.class)
   public void constructorThrowsAssertionError() throws Exception {
     java.lang.reflect.Constructor<?> ctor = AstMethodLookupHelpers.class.getDeclaredConstructor();
     ctor.setAccessible(true);

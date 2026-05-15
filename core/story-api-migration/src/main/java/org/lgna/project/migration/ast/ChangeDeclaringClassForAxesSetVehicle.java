@@ -63,7 +63,7 @@ public class ChangeDeclaringClassForAxesSetVehicle extends MethodInvocationAstMi
     AbstractMethod method = methodInvocation.method.getValue();
     if (method instanceof JavaMethod javaMethod) {
       if ((javaMethod.getDeclaringType() == JavaType.getInstance(SAxes.class)) && javaMethod.getName().equals("setVehicle")) {
-        AbstractMethod replacementMethod = AstUtilities.lookupMethod(MutableRider.class, "setVehicle", SThing.class);
+        AbstractMethod replacementMethod = AstMethodLookupHelpers.lookupMethod(MutableRider.class, "setVehicle", SThing.class);
         methodInvocation.method.setValue(replacementMethod);
         Logger.outln("updating setVehicle method on Axes object");
       }
