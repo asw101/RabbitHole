@@ -95,11 +95,14 @@ Callers that use both extracted methods and retained `AstUtilities` factory meth
 | `BootstrapUtilities` | `AstMethodLookupHelpers` |
 | `SetUpMethodGenerator` | `AstTypeResolutionHelpers`, `AstMethodLookupHelpers` |
 | `ObjectMarkerMoveActionOperation` | `AstMethodLookupHelpers` |
-| `InstanceFactoryState` | `AstTypeResolutionHelpers` |
+| `InstanceFactoryState` | `AstMethodLookupHelpers` |
 | `SceneObjectPropertyManagerPanel` | `AstTypeResolutionHelpers` |
 | `AstI18nFactory` | `AstTypeResolutionHelpers` |
 | `SceneEditorUpdatingPropertyState` | `AstTypeResolutionHelpers` |
 | `SilverThreadStudentProgramSaveReadbackTest` | `AstMethodLookupHelpers` |
+| `ProjectCodeGeneratorGeneratedSourceTest` (netbeans) | `AstMethodLookupHelpers` |
+| `ProjectCodeGeneratorStoryApiGeneratedSourceTest` (netbeans) | `AstMethodLookupHelpers` |
+| `ProjectCodeGeneratorStandaloneProjectTest` (netbeans) | `AstMethodLookupHelpers` |
 
 ### Callers that used only retained methods
 
@@ -165,6 +168,6 @@ All callers are within the Alice 3 monorepo and are updated atomically in the sa
 The decomposition is validated by:
 
 1. **Line count** — `AstUtilities.java` is under 500 lines after extraction.
-2. **Maven compile** — `mvn compile -pl core/ast,core/story-api-migration,core/ide -am` succeeds with no errors.
+2. **Maven compile** — `mvn compile test-compile -pl core/ast,core/story-api-migration,core/ide,netbeans -am` succeeds with no errors.
 3. **Existing test** — `SilverThreadStudentProgramSaveReadbackTest` continues to pass, confirming that the method lookup used by the IDE's student program path is correctly redirected.
 4. **No behavioral change** — Every extracted method preserves its original implementation verbatim, including assertions, null handling, and recursive traversal logic.
