@@ -6,7 +6,6 @@ import org.alice.math.immutable.AxisAlignedBox;
 import org.alice.math.immutable.OrthogonalMatrix3x3;
 import org.alice.math.immutable.Point3;
 import org.junit.Test;
-import org.lgna.story.resources.BipedResource;
 import org.lgna.story.resources.PropResource;
 
 import java.util.ArrayList;
@@ -277,13 +276,13 @@ public class ResourceCodeTemplatesTest {
   public void jointDeclarationsAppliesPrimeTimeWithMethodHintForArrayJoint() {
     StringBuilder sb = new StringBuilder();
     List<Tuple2<String, String>> skeleton = Arrays.asList(
-        Tuple2.createInstance("FINGER_01", "HAND"));
+        Tuple2.createInstance("FINGER_00", "HAND"));
     Set<String> existingIds = Collections.emptySet();
     Map<String, String> jointToArrayName = new HashMap<>();
-    jointToArrayName.put("FINGER_01", "FINGER");
+    jointToArrayName.put("FINGER_00", "FINGER");
     Set<String> suppressJointIds = Collections.emptySet();
     Set<String> hideElementArrays = Collections.emptySet();
-    Set<String> exposeFirstArrays = Collections.emptySet();
+    Set<String> exposeFirstArrays = new HashSet<>(Collections.singletonList("FINGER"));
 
     ResourceCodeTemplates.appendJointDeclarations(
         sb, skeleton, existingIds, jointToArrayName,
@@ -710,17 +709,17 @@ public class ResourceCodeTemplatesTest {
   }
 
   @Test
-  public void constructorsEmitsRootJointIdsMethodForBiped() {
+  public void constructorsEmitsRootJointIdsMethodForQuadruped() {
     StringBuilder sb = new StringBuilder();
 
     ResourceCodeTemplates.appendConstructorsAndMethods(
-        sb, true, ModelClassData.BIPED_CLASS_DATA, "TestBipedResource");
+        sb, true, ModelClassData.QUADRUPED_CLASS_DATA, "TestQuadrupedResource");
 
     String output = sb.toString();
-    assertTrue("BipedResource should need roots method",
+    assertTrue("QuadrupedResource should need roots method",
         output.contains(ModelResourceJavaGenerator.ROOT_IDS_METHOD_NAME));
-    assertTrue("Should return TestBipedResource.JOINT_ID_ROOTS",
-        output.contains("TestBipedResource." + ModelResourceJavaGenerator.ROOT_IDS_FIELD_NAME));
+    assertTrue("Should return TestQuadrupedResource.JOINT_ID_ROOTS",
+        output.contains("TestQuadrupedResource." + ModelResourceJavaGenerator.ROOT_IDS_FIELD_NAME));
   }
 
   @Test
@@ -728,7 +727,7 @@ public class ResourceCodeTemplatesTest {
     StringBuilder sb = new StringBuilder();
 
     ResourceCodeTemplates.appendConstructorsAndMethods(
-        sb, false, ModelClassData.BIPED_CLASS_DATA, "TestBipedResource");
+        sb, false, ModelClassData.QUADRUPED_CLASS_DATA, "TestQuadrupedResource");
 
     String output = sb.toString();
     // When addedRoots is false but roots method is needed, should delegate to parent roots field
