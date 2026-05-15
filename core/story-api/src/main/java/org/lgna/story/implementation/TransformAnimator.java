@@ -50,11 +50,9 @@ import edu.cmu.cs.dennisc.math.EpsilonUtilities;
 import edu.cmu.cs.dennisc.math.animation.AffineMatrix4x4Animation;
 import edu.cmu.cs.dennisc.math.animation.Point3Animation;
 import edu.cmu.cs.dennisc.math.animation.UnitQuaternionAnimation;
-import edu.cmu.cs.dennisc.math.polynomial.HermiteCubic;
 import edu.cmu.cs.dennisc.scenegraph.AsSeenBy;
 import org.alice.math.immutable.AffineMatrix4x4;
 import org.alice.math.immutable.Angle;
-import org.alice.math.immutable.ForwardAndUpGuide;
 import org.alice.math.immutable.Orientation;
 import org.alice.math.immutable.OrthogonalMatrix3x3;
 import org.alice.math.immutable.Point3;
@@ -62,7 +60,10 @@ import org.alice.math.immutable.UnitQuaternion;
 import org.alice.math.immutable.Vector3;
 
 /**
- * Instance helper for all animate* methods and orientation data hierarchy.
+ * Instance helper for all animate* methods.
+ * Orientation data hierarchy, smooth position animations, and place animation
+ * are extracted to OrientationData.java, SmoothPositionAnimations.java,
+ * and PlaceAnimation.java respectively.
  * Extracted from AbstractTransformableImp.
  */
 class TransformAnimator {
@@ -197,153 +198,6 @@ class TransformAnimator {
     animateApplyRotationInRadians(axis, angleInRevolutions * Angle.REVOLUTIONS_TO_RADIANS, asSeenBy, duration, style);
   }
 
-  // --- Orientation data hierarchy ---
-
-  private abstract static class OrientationData {
-    private final AbstractTransformableImp subject;
-
-    OrientationData(AbstractTransformableImp subject) {
-      this.subject = subject;
-    }
-
-    public AbstractTransformableImp getSubject() {
-      return this.subject;
-    }
-
-    protected abstract void setM(OrthogonalMatrix3x3 m);
-
-    protected final void setQ(UnitQuaternion q) {
-      this.setM(q.asMatrix3x3());
-    }
-
-    protected abstract OrthogonalMatrix3x3 getM0();
-
-    protected abstract OrthogonalMatrix3x3 getM1();
-
-    protected abstract UnitQuaternion getQ0();
-
-    protected abstract UnitQuaternion getQ1();
-
-    public void setPortion(double portion) {
-      UnitQuaternion q0 = this.getQ0();
-      UnitQuaternion q1 = this.getQ1();
-      assert !q0.isNaN() : this;
-      assert !q1.isNaN() : this;
-      this.setQ(q0.interpolate(q1, portion));
-    }
-
-    public void epilogue() {
-      this.setM(this.getM1());
-    }
-  }
-
-  private abstract static class PreSetOrientationData extends OrientationData {
-    private final OrthogonalMatrix3x3 m0;
-    private final OrthogonalMatrix3x3 m1;
-    private UnitQuaternion q0;
-    private UnitQuaternion q1;
-
-    PreSetOrientationData(AbstractTransformableImp subject, OrthogonalMatrix3x3 m0, OrthogonalMatrix3x3 m1) {
-      super(subject);
-      this.m0 = m0;
-      this.m1 = m1;
-    }
-
-    @Override
-    protected final OrthogonalMatrix3x3 getM0() {
-      return this.m0;
-    }
-
-    @Override
-    protected final OrthogonalMatrix3x3 getM1() {
-      return this.m1;
-    }
-
-    @Override
-    protected UnitQuaternion getQ0() {
-      if (this.q0 == null) {
-        this.q0 = this.m0.asUnitQuaternion();
-      }
-      return this.q0;
-    }
-
-    @Override
-    protected UnitQuaternion getQ1() {
-      if (this.q1 == null) {
-        this.q1 = this.m1.asUnitQuaternion();
-      }
-      return this.q1;
-    }
-  }
-
-  private static class LocalOrientationData extends PreSetOrientationData {
-    LocalOrientationData(AbstractTransformableImp subject, OrthogonalMatrix3x3 m1) {
-      super(subject, subject.getSgComposite().getLocalTransformation().orientation(), m1);
-    }
-
-    @Override
-    protected void setM(OrthogonalMatrix3x3 orientation) {
-      AffineMatrix4x4 prevM = this.getSubject().getSgComposite().getLocalTransformation();
-      AffineMatrix4x4 nextM = new AffineMatrix4x4(orientation, prevM.translation());
-      this.getSubject().getSgComposite().setLocalTransformation(nextM);
-    }
-  }
-
-  private static class TurnToFaceOrientationData extends LocalOrientationData {
-    TurnToFaceOrientationData(AbstractTransformableImp subject, EntityImp target) {
-      super(subject, VehicleManager.calculateTurnToFaceAxes(subject, target));
-    }
-  }
-
-  private static class OrientToUprightData extends PreSetOrientationData {
-    private final edu.cmu.cs.dennisc.scenegraph.ReferenceFrame sgRef;
-
-    public static OrientToUprightData createInstance(AbstractTransformableImp subject, ReferenceFrame upAsSeenBy) {
-      OrthogonalMatrix3x3 orientation0 = subject.getTransformation(upAsSeenBy).orientation();
-      OrthogonalMatrix3x3 orientation1 = orientation0.asStandUp();
-      return new OrientToUprightData(subject, orientation0, orientation1, upAsSeenBy);
-    }
-
-    private OrientToUprightData(AbstractTransformableImp subject, OrthogonalMatrix3x3 orientation0, OrthogonalMatrix3x3 orientation1, ReferenceFrame upAsSeenBy) {
-      super(subject, orientation0, orientation1);
-      this.sgRef = upAsSeenBy.getSgReferenceFrame();
-    }
-
-    @Override
-    protected void setM(OrthogonalMatrix3x3 m) {
-      this.getSubject().getSgComposite().setAxesOnly(m, this.sgRef);
-    }
-  }
-
-  private static class OrientToPointAtData extends PreSetOrientationData {
-    private final edu.cmu.cs.dennisc.scenegraph.ReferenceFrame sgRef;
-
-    public static OrientToPointAtData createInstance(AbstractTransformableImp subject, EntityImp target, ReferenceFrame upAsSeenBy) {
-      AffineMatrix4x4 m0 = subject.getTransformation(upAsSeenBy);
-      Point3 t0 = m0.translation();
-      Point3 t1 = target.getTransformation(upAsSeenBy).translation();
-      Vector3 forward = t1.minus(t0);
-      OrthogonalMatrix3x3 o1;
-      if (forward.isZero()) {
-        o1 = m0.orientation();
-        //no op
-      } else {
-        o1 = new ForwardAndUpGuide(forward, null).asMatrix3x3();
-      }
-      return new OrientToPointAtData(subject, m0.orientation(), o1, upAsSeenBy);
-    }
-
-    private OrientToPointAtData(AbstractTransformableImp subject, OrthogonalMatrix3x3 orientation0, OrthogonalMatrix3x3 orientation1, ReferenceFrame upAsSeenBy) {
-      super(subject, orientation0, orientation1);
-      this.sgRef = upAsSeenBy.getSgReferenceFrame();
-    }
-
-    @Override
-    protected void setM(OrthogonalMatrix3x3 m) {
-      this.getSubject().getSgComposite().setAxesOnly(m, this.sgRef);
-    }
-  }
-
   // --- Orientation methods ---
 
   private void setOrientationOnly(OrientationData data) {
@@ -358,7 +212,7 @@ class TransformAnimator {
       owner.perform(new DurationBasedAnimation(duration, style) {
         @Override
         public Animated getAnimated() {
-          return data.subject;
+          return data.getSubject();
         }
 
         @Override
@@ -430,61 +284,6 @@ class TransformAnimator {
 
   // --- Position animation ---
 
-  private abstract static class SmoothAffineMatrix4x4Animation extends DurationBasedAnimation {
-    final AffineMatrix4x4 m1;
-    final HermiteCubic xHermite;
-    final HermiteCubic yHermite;
-    final HermiteCubic zHermite;
-
-    SmoothAffineMatrix4x4Animation(AffineMatrix4x4 m0, AffineMatrix4x4 m1, double duration, Style style) {
-      super(duration, style);
-      this.m1 = m1;
-
-      double s = -8;
-      Point3 t0 = m0.translation();
-      Point3 t1 = m1.translation();
-      Vector3 b0 = m0.orientation().backward();
-      Vector3 b1 = m1.orientation().backward();
-      this.xHermite = new HermiteCubic(t0.x(), t1.x(), s * b0.x(), s * b1.x());
-      this.yHermite = new HermiteCubic(t0.y(), t1.y(), s * b0.y(), s * b1.y());
-      this.zHermite = new HermiteCubic(t0.z(), t1.z(), s * b0.z(), s * b1.z());
-    }
-
-    @Override
-    protected void prologue() {
-    }
-  }
-
-  private static class SmoothPositionAnimation extends SmoothAffineMatrix4x4Animation {
-    private final AbstractTransformableImp subject;
-    private final edu.cmu.cs.dennisc.scenegraph.ReferenceFrame sgRef;
-
-    SmoothPositionAnimation(AbstractTransformableImp subject, AffineMatrix4x4 m1, ReferenceFrame asSeenBy, double duration, Style style) {
-      super(subject.getTransformation(asSeenBy), m1, duration, style);
-      this.subject = subject;
-      this.sgRef = asSeenBy.getSgReferenceFrame();
-    }
-
-    @Override
-    public Animated getAnimated() {
-      return subject;
-    }
-
-    @Override
-    protected void setPortion(double portion) {
-      double x = this.xHermite.evaluate(portion);
-      double y = this.yHermite.evaluate(portion);
-      double z = this.zHermite.evaluate(portion);
-
-      this.subject.getSgComposite().setTranslationOnly(x, y, z, this.sgRef);
-    }
-
-    @Override
-    protected void epilogue() {
-      this.subject.getSgComposite().setTranslationOnly(this.m1.translation(), this.sgRef);
-    }
-  }
-
   private void setPositionOnly(EntityImp target, Point3 offset) {
     owner.getSgComposite().setTranslationOnly(offset != null ? offset : Point3.ORIGIN,
                                               target != null ? target.getSgComposite() : AsSeenBy.SCENE);
@@ -517,48 +316,6 @@ class TransformAnimator {
 
   // --- Place animation ---
 
-  private static class PlaceAnimation extends DurationBasedAnimation {
-    private final TransformOperations.PlaceData placeData;
-    private Point3 p0;
-    private UnitQuaternion q0;
-    private Point3 p1;
-    private UnitQuaternion q1;
-    private AffineMatrix4x4 finalTransform;
-
-    PlaceAnimation(TransformOperations.PlaceData placeData, double duration, Style style) {
-      super(duration, style);
-      this.placeData = placeData;
-    }
-
-    @Override
-    protected void prologue() {
-      AffineMatrix4x4 m0 = this.placeData.calculateTranslation0();
-      AffineMatrix4x4 m1 = this.placeData.calculateTranslation1(m0);
-      this.p0 = m0.translation();
-      this.q0 = m0.orientation().asUnitQuaternion();
-      this.p1 = m1.translation();
-      this.q1 = m1.orientation().asUnitQuaternion();
-      this.finalTransform = m1;
-    }
-
-    @Override
-    protected void setPortion(double portion) {
-      Point3 p = p0.interpolate(p1, portion);
-      UnitQuaternion q = q0.interpolate(q1, portion);
-      this.placeData.setTranslation(new AffineMatrix4x4(q.asMatrix3x3(), p));
-    }
-
-    @Override
-    public Animated getAnimated() {
-      return placeData.subject;
-    }
-
-    @Override
-    protected void epilogue() {
-      this.placeData.setTranslation(this.finalTransform);
-    }
-  }
-
   void animatePlace(SpatialRelationImp spatialRelation, EntityImp target, double alongAxisOffset, ReferenceFrame asSeenBy, boolean isSmooth, double duration, Style style) {
     TransformOperations.PlaceData placeData = new TransformOperations.PlaceData(owner, spatialRelation, target, alongAxisOffset, asSeenBy);
     duration = owner.adjustDurationIfNecessary(duration);
@@ -583,12 +340,7 @@ class TransformAnimator {
         owner.applyAnimation();
       }
     } else {
-      AffineMatrix4x4 m1;
-      if (offset != null) {
-        m1 = offset;
-      } else {
-        m1 = AffineMatrix4x4.IDENTITY;
-      }
+      AffineMatrix4x4 m1 = offset != null ? offset : AffineMatrix4x4.IDENTITY;
       AffineMatrix4x4 m0 = owner.getTransformation(target);
       owner.perform(new AffineMatrix4x4Animation(duration, style, m0, m1) {
         @Override
