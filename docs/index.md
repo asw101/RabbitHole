@@ -199,6 +199,9 @@ repository.
 - [Validate the TweedleEncoder Extraction](./howto/validate-tweedle-encoder-extraction.md) - step-by-step validation for the TweedleEncoder extraction: delegate visibility, line counts, core AST tests, story-api-migration tests, silver-thread round-trip, and stale reference checks.
 - [Tutorial: Trace the Encoder Delegate Decomposition](./tutorials/trace-encoder-delegate-decomposition.md) - guided walkthrough of a Tweedle encode request flowing through TweedleEncoder, StatementEncoder, ExpressionEncoder, EncoderMappings, and ResourceStructureEncoder.
 - [Tweedle VirtualMachine Dead Code Removal](./reference/tweedle-vm-dead-code-removal.md) - removal of ~835 lines of commented-out dead code from `VirtualMachine.java` (938→104 lines), preserving all 11 active methods with identical signatures (issue #579).
+- [JavaCodeGenerator Delegate Extraction](./reference/java-code-generator-delegate-extraction.md) - extraction of import management, comment formatting, and concurrency emission from the 643-line `JavaCodeGenerator` into `JavaImportCollector`, `JavaCommentFormatter`, and `JavaConcurrencyEmitter` package-private delegates (issue #649), reducing to ~475 lines.
+- [Validate the JavaCodeGenerator Extraction](./howto/validate-java-code-generator-extraction.md) - step-by-step validation for the `JavaCodeGenerator` extraction: delegate visibility, line counts, protected method retention, NetBeans compatibility, and compilation checks.
+- [Tutorial: Trace the JavaCodeGenerator Extraction](./tutorials/trace-java-code-generator-extraction.md) - guided walkthrough of import collection, localized comment formatting, and concurrency emission flows through `JavaCodeGenerator` and its three delegates.
 
 ## Croquet framework decomposition
 
