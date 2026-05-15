@@ -72,7 +72,7 @@ public class ModelResourceInfo {
   private final boolean isDeprecated;
   private final Boolean placeOnGround;
   private ModelResourceInfo parentInfo = null;
-  private final List<ModelResourceInfo> subResources = new LinkedList<ModelResourceInfo>();
+  private final List<ModelResourceInfo> subResources = new LinkedList<>();
 
   private final String[] tags;
   private final String[] groupTags;
@@ -116,23 +116,13 @@ public class ModelResourceInfo {
     int creationYearTemp = -1;
     try {
       creationYearTemp = Integer.parseInt(modelElement.getAttribute("creationYear"));
-    } catch (Exception e) {
+    } catch (NumberFormatException ignored) {
     }
     this.creationYear = creationYearTemp;
 
-    boolean isDeprecatedTemp = false;
-    try {
-      isDeprecatedTemp = Boolean.parseBoolean(modelElement.getAttribute("deprecated"));
-    } catch (Exception e) {
-    }
-    this.isDeprecated = isDeprecatedTemp;
+    this.isDeprecated = Boolean.parseBoolean(modelElement.getAttribute("deprecated"));
 
-    boolean placeOnGroundTemp = false;
-    try {
-      placeOnGroundTemp = Boolean.parseBoolean(modelElement.getAttribute("placeOnGround"));
-    } catch (Exception e) {
-    }
-    this.placeOnGround = placeOnGroundTemp;
+    this.placeOnGround = Boolean.parseBoolean(modelElement.getAttribute("placeOnGround"));
 
     this.tags = ModelResourceXmlParser.getResourceTags(modelElement, "Tags", "Tag");
     this.groupTags = ModelResourceXmlParser.getResourceTags(modelElement, "GroupTags", "GroupTag");

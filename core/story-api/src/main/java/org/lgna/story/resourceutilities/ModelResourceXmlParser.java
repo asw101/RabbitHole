@@ -107,42 +107,30 @@ final class ModelResourceXmlParser {
       if (resourceElement.hasAttribute("creationYear")) {
         try {
           creationYearTemp = Integer.parseInt(resourceElement.getAttribute("creationYear"));
-        } catch (Exception e) {
+        } catch (NumberFormatException ignored) {
         }
       }
-      boolean isDeprecated = false;
-      if (resourceElement.hasAttribute("deprecated")) {
-        try {
-          isDeprecated = Boolean.parseBoolean(resourceElement.getAttribute("deprecated"));
-        } catch (Exception e) {
-        }
-      }
-      Boolean placeOnGround = null;
-      if (resourceElement.hasAttribute("placeOnGround")) {
-        try {
-          placeOnGround = Boolean.parseBoolean(resourceElement.getAttribute("placeOnGround"));
-        } catch (Exception e) {
-        }
-      }
-      int creationYear = creationYearTemp;
+      boolean isDeprecated = resourceElement.hasAttribute("deprecated")
+          && Boolean.parseBoolean(resourceElement.getAttribute("deprecated"));
+      Boolean placeOnGround = resourceElement.hasAttribute("placeOnGround")
+          ? Boolean.parseBoolean(resourceElement.getAttribute("placeOnGround")) : null;
       String[] tags = getResourceTags(resourceElement, "Tags", "Tag");
       String[] groupTags = getResourceTags(resourceElement, "GroupTags", "GroupTag");
       String[] themeTags = getResourceTags(resourceElement, "ThemeTags", "ThemeTag");
 
-      ModelResourceInfo resource = new ModelResourceInfo(parent, resourceName, creatorName, creationYear, bbox, tags, groupTags, themeTags, modelName, textureName, isDeprecated, placeOnGround);
-      return resource;
+      return new ModelResourceInfo(parent, resourceName, creatorName, creationYearTemp, bbox, tags, groupTags, themeTags, modelName, textureName, isDeprecated, placeOnGround);
     }
 
     return null;
   }
 
   static String[] getResourceTags(Element resourceElement, String containerTagName, String tagName) {
-    LinkedList<String> tagList = new LinkedList<String>();
+    LinkedList<String> tagList = new LinkedList<>();
     addImmediateChildTextContent(resourceElement, tagName, tagList);
     for (Element container : getImmediateChildElementsByTagName(resourceElement, containerTagName)) {
       addImmediateChildTextContent(container, tagName, tagList);
     }
-    return tagList.toArray(new String[tagList.size()]);
+    return tagList.toArray(new String[0]);
   }
 
   static void addImmediateChildTextContent(Element parent, String tagName, LinkedList<String> textContent) {
@@ -152,7 +140,7 @@ final class ModelResourceXmlParser {
   }
 
   static List<Element> getImmediateChildElementsByTagName(Element node, String tagName) {
-    List<Element> elements = new LinkedList<Element>();
+    List<Element> elements = new LinkedList<>();
     NodeList children = node.getChildNodes();
     for (int i = 0; i < children.getLength(); i++) {
       Node child = children.item(i);
