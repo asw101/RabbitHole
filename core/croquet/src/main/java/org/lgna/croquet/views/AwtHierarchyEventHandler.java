@@ -73,11 +73,11 @@ final class AwtHierarchyEventHandler implements HierarchyListener {
 
   void trackDisplayability() {
     Component awtComponent = owner.getAwtComponent();
-    if (!isDisplayableState && awtComponent.isDisplayable()) {
+    boolean displayable = awtComponent.isDisplayable();
+    if (!isDisplayableState && displayable) {
       owner.handleDisplayable();
       this.isDisplayableState = true;
-    }
-    if (isDisplayableState && !awtComponent.isDisplayable()) {
+    } else if (isDisplayableState && !displayable) {
       owner.handleUndisplayable();
       this.isDisplayableState = false;
     }
