@@ -40,21 +40,21 @@ methods, and the `contains()` lookup index.
 
 ### InternalStateTypes.java — 13 state classes
 
-| Class | Supertype | Static? | Key fields |
-| --- | --- | --- | --- |
-| `InternalStringValue` | `AbstractComposite.AbstractInternalStringValue` | Yes | `key` (inherited) |
-| `InternalStringState` | `StringState` | Yes | `key` |
-| `InternalPreferenceStringState` | `PreferenceStringState` | Yes | `key`, `isStoringPreferenceDesiredState` |
-| `InternalBooleanState` | `BooleanState` | Yes | `key` |
-| `InternalPreferenceBooleanState` | `PreferenceBooleanState` | Yes | `key` |
-| `InternalSingleSelectListState<T>` | `SingleSelectListState<T, ListData<T>>` | Yes | `key` |
-| `InternalImmutableDataSingleSelectListState<T>` | `ImmutableDataSingleSelectListState<T>` | Yes | `key` |
-| `InternalRefreshableDataSingleSelectListState<T>` | `RefreshableDataSingleSelectListState<T>` | Yes | `key` |
-| `InternalMutableDataSingleSelectListState<T>` | `MutableDataSingleSelectListState<T>` | Yes | `key` |
-| `InternalTabState<T>` | `SimpleTabState<T>` | Yes | `key` |
-| `InternalBoundedIntegerState` | `BoundedIntegerState` | Yes | `key` |
-| `InternalBoundedDoubleState` | `BoundedDoubleState` | Yes | `key` |
-| `InternalCascadeWithInternalBlank<T>` | `CascadeWithInternalBlank<T>` | Yes | `key`, `customizer` |
+| Class | Supertype | Key fields |
+| --- | --- | --- |
+| `InternalStringValue` | `AbstractComposite.AbstractInternalStringValue` | `key` (inherited) |
+| `InternalStringState` | `StringState` | `key` |
+| `InternalPreferenceStringState` | `PreferenceStringState` | `key`, `isStoringPreferenceDesiredState` |
+| `InternalBooleanState` | `BooleanState` | `key` |
+| `InternalPreferenceBooleanState` | `PreferenceBooleanState` | `key` |
+| `InternalSingleSelectListState<T>` | `SingleSelectListState<T, ListData<T>>` | `key` |
+| `InternalImmutableDataSingleSelectListState<T>` | `ImmutableDataSingleSelectListState<T>` | `key` |
+| `InternalRefreshableDataSingleSelectListState<T>` | `RefreshableDataSingleSelectListState<T>` | `key` |
+| `InternalMutableDataSingleSelectListState<T>` | `MutableDataSingleSelectListState<T>` | `key` |
+| `InternalTabState<T>` | `SimpleTabState<T>` | `key` |
+| `InternalBoundedIntegerState` | `BoundedIntegerState` | `key` |
+| `InternalBoundedDoubleState` | `BoundedDoubleState` | `key` |
+| `InternalCascadeWithInternalBlank<T>` | `CascadeWithInternalBlank<T>` | `key`, `customizer` |
 
 All 13 classes share a common pattern:
 - Store an `AbstractComposite.Key key` field
@@ -84,7 +84,7 @@ localization delegate as it is only referenced by `localizeSidekicks`.
 | File | Role | Approx lines |
 | --- | --- | --- |
 | `CompositeResourceManager.java` | State maps, factory methods, `contains()`, registration. Delegates `localize()` to `CompositeLocalizationDelegate`. | ~225 |
-| `InternalStateTypes.java` | 13 package-private `static final` state classes + imports | ~395 |
+| `InternalStateTypes.java` | 13 package-private `final` top-level state classes + imports | ~395 |
 | `CompositeLocalizationDelegate.java` | Static `localize()` and `localizeSidekicks()` methods | ~55 |
 | `CompositeResourceManagerTest.java` | 24 existing + 3 new characterization tests | ~350 |
 
@@ -92,9 +92,9 @@ localization delegate as it is only referenced by `localizeSidekicks`.
 
 | Before | After | Rationale |
 | --- | --- | --- |
-| `private static final class InternalStringValue` | `static final class InternalStringValue` (package-private) | Constructors called by `CompositeResourceManager` factory methods |
-| `private static final class InternalBooleanState` | `static final class InternalBooleanState` (package-private) | Same |
-| (all 13 inner classes) | package-private in `InternalStateTypes.java` | Same package, no new public API surface |
+| `private static final class InternalStringValue` | `final class InternalStringValue` (package-private, top-level) | Constructors called by `CompositeResourceManager` factory methods |
+| `private static final class InternalBooleanState` | `final class InternalBooleanState` (package-private, top-level) | Same |
+| (all 13 inner classes) | package-private top-level classes in `InternalStateTypes.java` | Same package, no new public API surface |
 
 **Risk: LOW.** All 13 classes were only referenced by factory methods in
 `CompositeResourceManager`. Widening from `private` to package-private
@@ -109,7 +109,7 @@ than storing them as constructor arguments:
 ```java
 final class CompositeLocalizationDelegate {
 
-    private static final String SIDEKICK_LABEL_EPILOGUE = ".sidekickLabel";
+    static final String SIDEKICK_LABEL_EPILOGUE = ".sidekickLabel";
 
     static void localize(AbstractComposite<?> composite,
             Map<AbstractComposite.Key, AbstractComposite.AbstractInternalStringValue> stringValues,
@@ -122,8 +122,7 @@ final class CompositeLocalizationDelegate {
         localizeSidekicks(composite, sidekickMaps);
     }
 
-    @SuppressWarnings("unchecked")
-    private static void localizeSidekicks(AbstractComposite<?> composite,
+    static void localizeSidekicks(AbstractComposite<?> composite,
             Map<AbstractComposite.Key, ? extends CompletionModel>... maps) {
         // ... iterates maps, sets sidekick labels from localization bundles
     }

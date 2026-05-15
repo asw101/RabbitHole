@@ -49,33 +49,36 @@ package org.lgna.croquet;
 // imports...
 
 final class InternalStateTypes {
-    private InternalStateTypes() {} // utility class, no instances
-
-    static final class InternalStringValue extends AbstractComposite.AbstractInternalStringValue {
-        InternalStringValue(AbstractComposite.Key key) {           // was: private
-            super(UUID.fromString("142b66a2-..."), key);
-        }
-    }
-
-    static final class InternalBooleanState extends BooleanState {
-        private final AbstractComposite.Key key;
-
-        InternalBooleanState(boolean initialValue, AbstractComposite.Key key) { // was: private
-            super(Application.INHERIT_GROUP, UUID.fromString("5053e40f-..."), initialValue);
-            this.key = key;
-        }
-
-        // getKey(), getClassUsedForLocalization(), getSubKeyForLocalization(), appendRepr()
-    }
-
-    // ... 11 more classes following the same pattern
+    private InternalStateTypes() {} // marker class, no instances
 }
+
+// ── Extracted internal state types ──────────────────────────────────
+
+final class InternalStringValue extends AbstractComposite.AbstractInternalStringValue {
+    InternalStringValue(AbstractComposite.Key key) {           // was: private
+        super(UUID.fromString("142b66a2-..."), key);
+    }
+}
+
+final class InternalBooleanState extends BooleanState {
+    private final AbstractComposite.Key key;
+
+    InternalBooleanState(boolean initialValue, AbstractComposite.Key key) { // was: private
+        super(Application.INHERIT_GROUP, UUID.fromString("5053e40f-..."), initialValue);
+        this.key = key;
+    }
+
+    // getKey(), getClassUsedForLocalization(), getSubKeyForLocalization(), appendRepr()
+}
+
+// ... 11 more classes following the same pattern
 ```
 
 Key observations:
 
-- **Wrapper class**: `InternalStateTypes` is a `final class` with a private
-  constructor — a pure namespace for the 13 types.
+- **Marker class**: `InternalStateTypes` is a `final class` with a private
+  constructor — a file anchor documenting the extraction origin. The 13
+  extracted types are top-level classes in the same file, not nested inside it.
 - **Visibility widening**: Constructor access changed from `private` to
   package-private. This is the only visibility change and it is safe because
   the constructors are only called by `CompositeResourceManager` factory
@@ -90,7 +93,7 @@ Key observations:
 This class has extra overrides that the other 12 classes lack:
 
 ```java
-static final class InternalCascadeWithInternalBlank<T> extends CascadeWithInternalBlank<T> {
+final class InternalCascadeWithInternalBlank<T> extends CascadeWithInternalBlank<T> {
     private final AbstractComposite.CascadeCustomizer<T> customizer;
     private final AbstractComposite.Key key;
 
@@ -126,8 +129,9 @@ package org.lgna.croquet;
 final class CompositeLocalizationDelegate {
     private CompositeLocalizationDelegate() {}
 
-    private static final String SIDEKICK_LABEL_EPILOGUE = ".sidekickLabel";
+    static final String SIDEKICK_LABEL_EPILOGUE = ".sidekickLabel";
 
+    @SafeVarargs
     @SuppressWarnings("unchecked")
     static void localize(AbstractComposite<?> composite,
             Map<AbstractComposite.Key, AbstractComposite.AbstractInternalStringValue> stringValues,
@@ -142,8 +146,8 @@ final class CompositeLocalizationDelegate {
         localizeSidekicks(composite, sidekickMaps);
     }
 
-    @SuppressWarnings("unchecked")
-    private static void localizeSidekicks(AbstractComposite<?> composite,
+    @SafeVarargs
+    static void localizeSidekicks(AbstractComposite<?> composite,
             Map<AbstractComposite.Key, ? extends CompletionModel>... maps) {
         // ... identical to original, using composite.findLocalizedText()
     }
@@ -157,28 +161,23 @@ Design decisions:
   avoids duplicate references and makes the dependency explicit.
 - **`SIDEKICK_LABEL_EPILOGUE` constant moved here**: It is only used by
   `localizeSidekicks`. Keeping it with its sole consumer improves locality.
-- **`@SuppressWarnings("unchecked")` preserved**: The varargs
-  `Map<..., ? extends CompletionModel>...` parameter triggers unchecked
-  warnings just as it did in the original code.
+- **`localizeSidekicks` is package-private**: This enables direct testing
+  from `CompositeLocalizationDelegateTest` while remaining invisible outside
+  the `org.lgna.croquet` package.
 
 ## 5. Trace the forwarding call in CompositeResourceManager
 
 Open `CompositeResourceManager.java`. Find the `localize()` method:
 
 ```java
-@SuppressWarnings("unchecked")
 void localize(AbstractComposite<?> composite) {
     CompositeLocalizationDelegate.localize(composite,
-        this.mapKeyToStringValue,
-        this.mapKeyToActionOperation, this.mapKeyToBooleanState,
-        this.mapKeyToPreferenceBooleanState, this.mapKeyToBoundedDoubleState,
-        this.mapKeyToBoundedIntegerState, this.mapKeyToCascade,
-        this.mapKeyToItemState, this.mapKeyToImmutableSingleSelectListState,
-        this.mapKeyToRefreshableSingleSelectListState,
-        this.mapKeyToMutableSingleSelectListState, this.mapKeyToTabState,
-        this.mapKeyToPreferenceStringState, this.mapKeyToStringState);
+        this.mapKeyToStringValue, this.getSidekickMaps());
 }
 ```
+
+The sidekick maps are cached in a lazily-initialized array by
+`getSidekickMaps()`, avoiding allocation on every `localize()` call.
 
 This is the only change to `CompositeResourceManager`'s method signatures.
 The method remains `void localize(AbstractComposite<?>)` — callers in
@@ -186,8 +185,8 @@ The method remains `void localize(AbstractComposite<?>)` — callers in
 
 ## 6. Trace a factory method
 
-Factory methods in `CompositeResourceManager` now reference types from
-`InternalStateTypes` instead of local inner classes:
+Factory methods in `CompositeResourceManager` reference the extracted
+top-level types by simple name (same package, no qualifier needed):
 
 ```java
 // Before (inner class):
@@ -198,10 +197,9 @@ BooleanState createBooleanState(AbstractComposite.Key key, boolean initialValue)
     return rv;
 }
 
-// After (extracted type — same code, different class file):
+// After (extracted top-level type — identical code, different class file):
 BooleanState createBooleanState(AbstractComposite.Key key, boolean initialValue) {
-    InternalStateTypes.InternalBooleanState rv =
-        new InternalStateTypes.InternalBooleanState(initialValue, key);
+    InternalBooleanState rv = new InternalBooleanState(initialValue, key);
     this.mapKeyToBooleanState.put(key, rv);
     this.containsIndex.add(rv);
     return rv;
@@ -273,7 +271,7 @@ removed from factory methods during the extraction.
 This is the highest-risk class due to its call to `getEncryptionKey()`:
 
 ```java
-static final class InternalPreferenceStringState extends PreferenceStringState {
+final class InternalPreferenceStringState extends PreferenceStringState {
     InternalPreferenceStringState(String initialValue, AbstractComposite.Key key,
             BooleanState isStoringPreferenceDesiredState, UUID encryptionId) {
         super(Application.INHERIT_GROUP,
@@ -303,7 +301,7 @@ No change in resolution. No change in security boundary.
 
 | Decision | Rationale |
 | --- | --- |
-| Wrapper class `InternalStateTypes` rather than 13 files | Reduces file count; classes are tiny and share the same pattern |
+| Marker class `InternalStateTypes` with 13 top-level classes in one file | Reduces file count; classes are tiny and share the same pattern |
 | Stateless delegate rather than delegate object | Maps are owned by `CompositeResourceManager`; passing them avoids dual ownership |
 | Factory methods stay in `CompositeResourceManager` | They mutate maps and `containsIndex`; moving them would require exposing internal state |
 | Package-private visibility for all extracted types | Matches framework-internal convention; no new public API |

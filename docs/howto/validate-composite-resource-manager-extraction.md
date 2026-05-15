@@ -101,17 +101,17 @@ declarations must be absent.
 ## Step 7: Verify all 13 classes exist in InternalStateTypes
 
 ```bash
-grep 'static final class Internal' \
+grep 'final class Internal.*extends' \
   core/croquet/src/main/java/org/lgna/croquet/InternalStateTypes.java | wc -l
 ```
 
-Expected: 13. Each class should be `static final class` with package-private
-visibility (no `private` modifier).
+Expected: 13. Each class should be a top-level `final class` with
+package-private visibility (no access modifier).
 
 ## Step 8: Verify localization delegate contains expected methods
 
 ```bash
-grep -n 'static void localize\|private static void localizeSidekicks\|SIDEKICK_LABEL_EPILOGUE' \
+grep -cE 'static void localize\(|static void localizeSidekicks\(|SIDEKICK_LABEL_EPILOGUE =' \
   core/croquet/src/main/java/org/lgna/croquet/CompositeLocalizationDelegate.java
 ```
 
