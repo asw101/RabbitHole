@@ -31,7 +31,7 @@ Expected: `BUILD SUCCESS` with no errors.
 wc -l core/ide/src/main/java/org/alice/stageide/StoryApiConfigurationManager.java
 ```
 
-Expected: **≤500 lines** (target: ~450).
+Expected: **≤500 lines** (actual: 391).
 
 ### 2. Confirm New Files Exist
 
