@@ -69,8 +69,7 @@ import org.lgna.story.resources.DynamicBipedResource;
 import org.lgna.story.resources.JointId;
 import test.ik.croquet.*;
 
-import java.util.HashMap;
-import java.util.Map;
+
 
 /**
  * @author Dennis Cosgrove
@@ -281,8 +280,6 @@ class IkProgram extends SProgram {
           //solver has the chain. can also have multiple chains.
           //I can tell solver, for this chain this is the linear target, etc.
           //it actually only needs the velocity, etc. then, I should say for this chain this is the desired velocity. ok.
-
-          Map<Bone.Axis, Double> desiredSpeedForAxis = new HashMap<Bone.Axis, Double>();
 
           //not bad concurrent programming practice
           boolean isLinearEnabled = IsLinearEnabledState.getInstance().getValue();
