@@ -109,7 +109,7 @@ public class JavaConcurrencyEmitterTest {
   @Test
   public void emitsEachInTogetherWithLambdaSyntax() {
     UserLocal item = new UserLocal("animal", String.class, true);
-    AbstractEachInTogether eachIn = new ForEachInArrayLoop(
+    EachInArrayTogether eachIn = new EachInArrayTogether(
         item,
         AstUtilities.createArrayInstanceCreation(
             String[].class,
@@ -135,7 +135,7 @@ public class JavaConcurrencyEmitterTest {
   @Test
   public void emitsEachInTogetherWithAnonymousClassWhenLambdaNotSupported() {
     UserLocal item = new UserLocal("item", String.class, true);
-    AbstractEachInTogether eachIn = new ForEachInArrayLoop(
+    EachInArrayTogether eachIn = new EachInArrayTogether(
         item,
         AstUtilities.createArrayInstanceCreation(
             String[].class,
@@ -161,10 +161,11 @@ public class JavaConcurrencyEmitterTest {
     UserLocal item = new UserLocal("element", String.class, true);
     UserLocal items = new UserLocal("myList", Iterable.class, false);
 
-    ForEachInIterableLoop eachIn = new ForEachInIterableLoop(
+    EachInIterableTogether eachIn = new EachInIterableTogether(
         item,
         new LocalAccess(items),
         new BlockStatement());
+    eachIn.iterable.setValue(new LocalAccess(items));
 
     JavaCodeGenerator gen = new JavaCodeGenerator.Builder()
         .isLambdaSupported(true)

@@ -169,7 +169,16 @@ public class JavaCodeGeneratorDelegationTest {
         new UserParameter[] {},
         new BlockStatement(AstUtilities.createReturnStatement(String.class, new StringLiteral("hi"))));
 
-    JavaCodeGenerator gen = new JavaCodeGenerator.Builder().build();
+    // Attach method to a type so getDeclaringType() is non-null
+    NamedUserType type = new NamedUserType(
+        "Greeter", null, Object.class,
+        new NamedUserConstructor[] {new NamedUserConstructor(new UserParameter[] {}, new ConstructorBlockStatement())},
+        new UserMethod[] {greet},
+        new UserField[] {});
+
+    JavaCodeGenerator gen = new JavaCodeGenerator.Builder()
+        .addDefaultCodeOrganizerDefinition(CodeOrganizer.defaultCodeOrganizer)
+        .build();
     gen.processMethod(greet);
     String source = gen.getText();
 
@@ -208,9 +217,19 @@ public class JavaCodeGeneratorDelegationTest {
     // Getters get appendMemberPrefix/Postfix wrapping
     UserField field = new UserField("value", String.class, new StringLiteral("v"));
     field.accessLevel.setValue(AccessLevel.PRIVATE);
+
+    // Attach field to a type so getDeclaringType() is non-null
+    NamedUserType type = new NamedUserType(
+        "Holder", null, Object.class,
+        new NamedUserConstructor[] {new NamedUserConstructor(new UserParameter[] {}, new ConstructorBlockStatement())},
+        new UserMethod[] {},
+        new UserField[] {field});
+
     Getter getter = field.getGetter();
 
-    JavaCodeGenerator gen = new JavaCodeGenerator.Builder().build();
+    JavaCodeGenerator gen = new JavaCodeGenerator.Builder()
+        .addDefaultCodeOrganizerDefinition(CodeOrganizer.defaultCodeOrganizer)
+        .build();
     gen.processGetter(getter);
     String source = gen.getText();
 
