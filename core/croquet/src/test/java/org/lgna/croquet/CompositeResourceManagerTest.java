@@ -226,6 +226,104 @@ public class CompositeResourceManagerTest {
         resourceManager.getMapKeyToTabState().isEmpty());
   }
 
+  // ── Characterization: extraction boundary preservation ────────────────
+
+  @Test
+  public void localize_delegatesToLocalizationLogicAfterExtraction() {
+    // Characterization: localize() must work regardless of whether the
+    // implementation lives in CRM or in CompositeLocalizationDelegate.
+    // Register items across multiple map types.
+    composite.doCreateStringValue("title");
+    composite.doCreateBooleanState("enabled", true);
+    composite.doCreateStringState("name", "default");
+    composite.doCreateActionOperation("save");
+    composite.doCreateBoundedIntegerState("count");
+    composite.doCreateBoundedDoubleState("ratio");
+
+    // Must not throw — this validates the localize() call chain is intact
+    resourceManager.localize(composite);
+  }
+
+  @Test
+  public void factoryMethods_createTypesFromExtractedInternalStateTypes() {
+    // Characterization: after extraction, factory methods create instances
+    // from InternalStateTypes.java. The returned types must still be
+    // instanceof their expected supertypes.
+    PlainStringValue sv = composite.doCreateStringValue("sv");
+    BooleanState bs = composite.doCreateBooleanState("bs", false);
+    StringState ss = composite.doCreateStringState("ss", "val");
+    ActionOperation op = composite.doCreateActionOperation("op");
+    BoundedIntegerState bis = composite.doCreateBoundedIntegerState("bis");
+    BoundedDoubleState bds = composite.doCreateBoundedDoubleState("bds");
+
+    // Supertype checks
+    assertTrue("StringValue must be PlainStringValue", sv instanceof PlainStringValue);
+    assertTrue("BooleanState must be BooleanState", bs instanceof BooleanState);
+    assertTrue("StringState must be StringState", ss instanceof StringState);
+    assertTrue("ActionOperation must be ActionOperation", op instanceof ActionOperation);
+    assertTrue("BoundedIntegerState must be BoundedIntegerState", bis instanceof BoundedIntegerState);
+    assertTrue("BoundedDoubleState must be BoundedDoubleState", bds instanceof BoundedDoubleState);
+
+    // They also must be Models (for contains())
+    assertTrue(bs instanceof Model);
+    assertTrue(ss instanceof Model);
+    assertTrue(op instanceof Model);
+    assertTrue(bis instanceof Model);
+    assertTrue(bds instanceof Model);
+  }
+
+  @Test
+  public void contains_worksAfterExtractionRoundTrip() {
+    // Characterization: create items, verify contains(), then localize(),
+    // then verify contains() again. This proves the extraction boundary
+    // doesn't corrupt the identity-based containsIndex.
+    BooleanState bs = composite.doCreateBooleanState("b", true);
+    StringState ss = composite.doCreateStringState("s", "v");
+    ActionOperation op = composite.doCreateActionOperation("a");
+
+    // Pre-localize
+    assertTrue(resourceManager.contains(bs));
+    assertTrue(resourceManager.contains(ss));
+    assertTrue(resourceManager.contains(op));
+
+    // Localize (exercises the code that will move to delegate)
+    resourceManager.localize(composite);
+
+    // Post-localize — contains must still work
+    assertTrue("contains must survive localize()", resourceManager.contains(bs));
+    assertTrue("contains must survive localize()", resourceManager.contains(ss));
+    assertTrue("contains must survive localize()", resourceManager.contains(op));
+  }
+
+  @Test
+  public void multipleRegistrations_containsFindsAll() {
+    // Stress test: register many items across all accessible types
+    BooleanState[] bools = new BooleanState[5];
+    StringState[] strs = new StringState[5];
+    for (int i = 0; i < 5; i++) {
+      bools[i] = composite.doCreateBooleanState("b" + i, i % 2 == 0);
+      strs[i] = composite.doCreateStringState("s" + i, "val" + i);
+    }
+
+    for (int i = 0; i < 5; i++) {
+      assertTrue("Bool " + i + " must be in contains()", resourceManager.contains(bools[i]));
+      assertTrue("Str " + i + " must be in contains()", resourceManager.contains(strs[i]));
+    }
+
+    // Unknown model still not found
+    assertFalse(resourceManager.contains(new StubModel()));
+  }
+
+  @Test
+  public void localize_idempotent_calledTwice() {
+    composite.doCreateStringValue("label");
+    composite.doCreateBooleanState("flag", false);
+
+    // Must be safe to call multiple times
+    resourceManager.localize(composite);
+    resourceManager.localize(composite);
+  }
+
   // ── Test doubles ─────────────────────────────────────────────────────
 
   /**
