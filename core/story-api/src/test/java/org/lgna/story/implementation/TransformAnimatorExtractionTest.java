@@ -64,8 +64,22 @@ import static org.junit.Assert.fail;
  */
 public class TransformAnimatorExtractionTest {
 
-  private static final String SRC_DIR =
-      "core/story-api/src/main/java/org/lgna/story/implementation/";
+  private static final String SRC_DIR = findSourceDir();
+
+  private static String findSourceDir() {
+    // Maven Surefire runs from module basedir (core/story-api/)
+    File moduleLocal = new File("src/main/java/org/lgna/story/implementation/");
+    if (moduleLocal.isDirectory()) {
+      return moduleLocal.getPath() + File.separator;
+    }
+    // Fallback: running from project root
+    File projectRoot = new File("core/story-api/src/main/java/org/lgna/story/implementation/");
+    if (projectRoot.isDirectory()) {
+      return projectRoot.getPath() + File.separator;
+    }
+    // Last resort: return the module-local path and let tests fail with a clear message
+    return moduleLocal.getPath() + File.separator;
+  }
 
   // ===== File existence =====
 
