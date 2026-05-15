@@ -46,11 +46,8 @@ package edu.cmu.cs.dennisc.render.gl.imp;
 import com.jogamp.opengl.GL;
 import com.jogamp.opengl.util.awt.ImageUtil;
 import edu.cmu.cs.dennisc.java.util.DStack;
-import edu.cmu.cs.dennisc.java.util.Lists;
-import edu.cmu.cs.dennisc.java.util.Maps;
 import edu.cmu.cs.dennisc.java.util.Stacks;
 import edu.cmu.cs.dennisc.java.util.logging.Logger;
-import edu.cmu.cs.dennisc.render.gl.ForgettableBinding;
 import edu.cmu.cs.dennisc.render.gl.imp.adapters.GlrGeometry;
 import edu.cmu.cs.dennisc.render.gl.imp.adapters.GlrTexture;
 import edu.cmu.cs.dennisc.scenegraph.Geometry;
@@ -63,9 +60,8 @@ import java.awt.image.DataBuffer;
 import java.awt.image.DataBufferByte;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import static com.jogamp.opengl.GL.*;
 import static com.jogamp.opengl.GL2.GL_ABGR_EXT;
@@ -82,20 +78,15 @@ public class RenderContext extends Context {
     public void unusedTexturesCleared(GL gl); //todo: rename
   }
 
-  private static final List<UnusedTexturesListener> unusedTexturesListeners = Lists.newCopyOnWriteArrayList();
+  private final GlResourceCache resourceCache = new GlResourceCache();
 
   public static void addUnusedTexturesListener(UnusedTexturesListener listener) {
-    unusedTexturesListeners.add(listener);
+    GlResourceCache.addUnusedTexturesListener(listener);
   }
 
   public static void removeUnusedTexturesListener(UnusedTexturesListener listener) {
-    unusedTexturesListeners.add(listener);
+    GlResourceCache.removeUnusedTexturesListener(listener);
   }
-
-  private final Map<GlrGeometry<? extends Geometry>, Integer> displayListMap = Maps.newHashMap();
-  private final Map<GlrTexture<? extends Texture>, ForgettableBinding> textureBindingMap = Maps.newHashMap();
-  private final List<Integer> toBeForgottenDisplayLists = Lists.newCopyOnWriteArrayList();
-  private final List<ForgettableBinding> toBeForgottenTextures = Lists.newCopyOnWriteArrayList();
 
   private int lastTime_nextLightID = GL_LIGHT0;
   private int nextLightID;
@@ -104,8 +95,9 @@ public class RenderContext extends Context {
   private final float[] ambient = new float[4];
   private final FloatBuffer ambientBuffer = FloatBuffer.wrap(this.ambient);
 
-  private static final float[] s_color = new float[4];
-  private static final FloatBuffer s_colorBuffer = FloatBuffer.wrap(s_color);
+  // Per-instance scratch buffer — eliminates cross-instance synchronization
+  private final float[] colorScratch = new float[4];
+  private final FloatBuffer colorScratchBuffer = FloatBuffer.wrap(this.colorScratch);
 
   private float globalBrightness = 1.0f;
 
@@ -230,7 +222,7 @@ public class RenderContext extends Context {
             break;
           } else {
             if (errors == null) {
-              errors = new LinkedList<Integer>();
+              errors = new ArrayList<Integer>();
             }
             errors.add(error);
           }
@@ -251,34 +243,10 @@ public class RenderContext extends Context {
   }
 
   public void actuallyForgetTexturesIfNecessary() {
-    final int N = this.toBeForgottenTextures.size();
-    if (N > 0) {
-      synchronized (this.toBeForgottenTextures) {
-        //java.nio.IntBuffer ids = java.nio.IntBuffer.allocate( N );
-        for (ForgettableBinding toBeForgottenTexture : this.toBeForgottenTextures) {
-          //toBeForgottenTexture.destroy( this.gl );
-          toBeForgottenTexture.forget(this);
-          //ids.put( toBeForgottenTexture );
-          //System.out.println( "forget gl texture: " + toBeForgottenTexture );
-        }
-        //ids.rewind();
-        //gl.glDeleteTextures( N, ids );
-        this.toBeForgottenTextures.clear();
-      }
-    }
+    resourceCache.actuallyForgetTexturesIfNecessary(this);
   }
-
   public void actuallyForgetDisplayListsIfNecessary() {
-    final int N = this.toBeForgottenDisplayLists.size();
-    if (N > 0) {
-      synchronized (this.toBeForgottenDisplayLists) {
-        for (Integer toBeForgottenDisplayList : this.toBeForgottenDisplayLists) {
-          gl.glDeleteLists(toBeForgottenDisplayList, 1);
-          //System.out.println( "forget gl display list: " + toBeForgottenDisplayList );
-        }
-        this.toBeForgottenDisplayLists.clear();
-      }
-    }
+    resourceCache.actuallyForgetDisplayListsIfNecessary(this);
   }
 
   public void beginAffectorSetup() {
@@ -334,44 +302,36 @@ public class RenderContext extends Context {
   }
 
   public void setLightColor(int id, float[] color, float brightness) {
-    synchronized (s_colorBuffer) {
-      s_color[0] = color[0] * brightness * this.globalBrightness;
-      s_color[1] = color[1] * brightness * this.globalBrightness;
-      s_color[2] = color[2] * brightness * this.globalBrightness;
-      s_color[3] = color[3] * brightness * this.globalBrightness;
-      gl.glLightfv(id, GL_DIFFUSE, s_colorBuffer);
-      gl.glLightfv(id, GL_SPECULAR, s_colorBuffer);
-    }
+    colorScratch[0] = color[0] * brightness * this.globalBrightness;
+    colorScratch[1] = color[1] * brightness * this.globalBrightness;
+    colorScratch[2] = color[2] * brightness * this.globalBrightness;
+    colorScratch[3] = color[3] * brightness * this.globalBrightness;
+    gl.glLightfv(id, GL_DIFFUSE, colorScratchBuffer);
+    gl.glLightfv(id, GL_SPECULAR, colorScratchBuffer);
   }
 
   public void setFogColor(float[] fogColor) {
-    synchronized (s_colorBuffer) {
-      s_color[0] = fogColor[0] * this.globalBrightness;
-      s_color[1] = fogColor[1] * this.globalBrightness;
-      s_color[2] = fogColor[2] * this.globalBrightness;
-      s_color[3] = fogColor[3] * this.globalBrightness;
-      gl.glFogfv(GL_FOG_COLOR, s_colorBuffer);
-    }
+    colorScratch[0] = fogColor[0] * this.globalBrightness;
+    colorScratch[1] = fogColor[1] * this.globalBrightness;
+    colorScratch[2] = fogColor[2] * this.globalBrightness;
+    colorScratch[3] = fogColor[3] * this.globalBrightness;
+    gl.glFogfv(GL_FOG_COLOR, colorScratchBuffer);
   }
 
   public void setColor(float[] color, float opacity) {
-    synchronized (s_colorBuffer) {
-      s_color[0] = color[0] * this.globalBrightness;
-      s_color[1] = color[1] * this.globalBrightness;
-      s_color[2] = color[2] * this.globalBrightness;
-      s_color[3] = color[3] * opacity * this.globalOpacity;
-      gl.glColor4fv(s_colorBuffer);
-    }
+    colorScratch[0] = color[0] * this.globalBrightness;
+    colorScratch[1] = color[1] * this.globalBrightness;
+    colorScratch[2] = color[2] * this.globalBrightness;
+    colorScratch[3] = color[3] * opacity * this.globalOpacity;
+    gl.glColor4fv(colorScratchBuffer);
   }
 
   public void setMaterial(int face, int name, float[] color, float opacity) {
-    synchronized (s_colorBuffer) {
-      s_color[0] = color[0] * this.globalBrightness;
-      s_color[1] = color[1] * this.globalBrightness;
-      s_color[2] = color[2] * this.globalBrightness;
-      s_color[3] = color[3] * opacity * this.globalOpacity;
-      gl.glMaterialfv(face, name, s_colorBuffer);
-    }
+    colorScratch[0] = color[0] * this.globalBrightness;
+    colorScratch[1] = color[1] * this.globalBrightness;
+    colorScratch[2] = color[2] * this.globalBrightness;
+    colorScratch[3] = color[3] * opacity * this.globalOpacity;
+    gl.glMaterialfv(face, name, colorScratchBuffer);
   }
 
   public void setClearColor(float[] color) {
@@ -408,103 +368,32 @@ public class RenderContext extends Context {
   }
 
   public Integer getDisplayListID(GlrGeometry<? extends Geometry> geometryAdapter) {
-    synchronized (this.displayListMap) {
-      Integer rv = this.displayListMap.get(geometryAdapter);
-      //      if( this.gl.glIsList( rv ) ) {
-      //        //pass
-      //      } else {
-      //        this.displayListMap.remove( geometryAdapter );
-      //        rv = null;
-      //      }
-      return rv;
-    }
+    return resourceCache.getDisplayListID(geometryAdapter);
   }
-
   public Integer generateDisplayListID(GlrGeometry<? extends Geometry> geometryAdapter) {
-    Integer id = gl.glGenLists(1);
-    synchronized (this.displayListMap) {
-      this.displayListMap.put(geometryAdapter, id);
-    }
-    geometryAdapter.addRenderContext(this);
-    return id;
-  }
-
-  private void forgetAllGeometryAdapters() {
-    synchronized (this.displayListMap) {
-      for (GlrGeometry<? extends Geometry> geometryAdapter : this.displayListMap.keySet()) {
-        forgetGeometryAdapter(geometryAdapter, false);
-      }
-      this.displayListMap.clear();
-    }
+    return resourceCache.generateDisplayListID(geometryAdapter, this);
   }
 
   public void forgetGeometryAdapter(GlrGeometry<? extends Geometry> geometryAdapter, boolean removeFromMap) {
-    synchronized (this.displayListMap) {
-      Integer value = this.displayListMap.get(geometryAdapter);
-      if (value != null) {
-        this.toBeForgottenDisplayLists.add(value);
-        if (removeFromMap) {
-          this.displayListMap.remove(geometryAdapter);
-        }
-        geometryAdapter.removeRenderContext(this);
-      } else {
-        // todo?
-      }
-    }
+    resourceCache.forgetGeometryAdapter(geometryAdapter, removeFromMap, this);
   }
-
   public void forgetGeometryAdapter(GlrGeometry<? extends Geometry> geometryAdapter) {
-    forgetGeometryAdapter(geometryAdapter, true);
-  }
-
-  private void forgetTextureBindingID(GlrTexture<? extends Texture> textureAdapter, ForgettableBinding value, boolean removeFromMap) {
-    if (value != null) {
-      this.toBeForgottenTextures.add(value);
-      if (removeFromMap) {
-        this.textureBindingMap.remove(textureAdapter);
-      }
-      textureAdapter.removeRenderContext(this);
-      Logger.info("texture adapter forgotten:", textureAdapter, value);
-    } else {
-      Logger.warning("no id for texture adapter:", textureAdapter);
-    }
-  }
-
-  private void forgetAllTextureAdapters() {
-    synchronized (this.textureBindingMap) {
-      //edu.cmu.cs.dennisc.print.PrintUtilities.println( this.textureBindingMap );
-      for (GlrTexture<? extends Texture> textureAdapter : this.textureBindingMap.keySet()) {
-        forgetTextureBindingID(textureAdapter, this.textureBindingMap.get(textureAdapter), false);
-      }
-      this.textureBindingMap.clear();
-    }
+    resourceCache.forgetGeometryAdapter(geometryAdapter, this);
   }
 
   public void forgetTextureAdapter(GlrTexture<? extends Texture> textureAdapter, boolean removeFromMap) {
-    synchronized (this.textureBindingMap) {
-      forgetTextureBindingID(textureAdapter, this.textureBindingMap.get(textureAdapter), removeFromMap);
-    }
+    resourceCache.forgetTextureAdapter(textureAdapter, removeFromMap, this);
   }
-
   public void forgetTextureAdapter(GlrTexture<? extends Texture> textureAdapter) {
-    forgetTextureAdapter(textureAdapter, true);
+    resourceCache.forgetTextureAdapter(textureAdapter, this);
   }
 
   public void forgetAllCachedItems() {
-    this.forgetAllGeometryAdapters();
-    this.forgetAllTextureAdapters();
+    resourceCache.forgetAllCachedItems(this);
   }
-
   public void clearUnusedTextures() {
-    for (UnusedTexturesListener listener : unusedTexturesListeners) {
-      listener.unusedTexturesCleared(gl);
-    }
+    GlResourceCache.clearUnusedTextures(gl);
   }
-
-  //  //todo: better name
-  //  public void put( TextureAdapter< ? extends edu.cmu.cs.dennisc.texture.Texture > textureAdapter, com.sun.opengl.util.texture.Texture glTexture ) {
-  //    this.textureBindingMap.put( textureAdapter, glTexture );
-  //  }
 
   public boolean isTextureEnabled() {
     return this.currDiffuseColorTextureAdapter != null;
@@ -585,11 +474,11 @@ public class RenderContext extends Context {
   }
 
   public void renderVertex(Vertex vertex) {
-    if (this.currDiffuseColorTextureAdapter != null) {
+    final GlrTexture<? extends Texture> texAdapter = this.currDiffuseColorTextureAdapter;
+    if (texAdapter != null) {
       if (!vertex.textureCoordinate0.isNaN()) {
-        float u = this.currDiffuseColorTextureAdapter.mapU(vertex.textureCoordinate0.u);
-        float v = this.currDiffuseColorTextureAdapter.mapV(vertex.textureCoordinate0.v);
-        gl.glTexCoord2f(u, v);
+        gl.glTexCoord2f(texAdapter.mapU(vertex.textureCoordinate0.u),
+                        texAdapter.mapV(vertex.textureCoordinate0.v));
       }
     }
     if (!vertex.diffuseColor.isNaN()) {
