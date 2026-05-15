@@ -215,6 +215,11 @@ repository.
 - [Validate Declaration Composite Delegate Decomposition](./howto/validate-declaration-composite-delegate-decomposition.md) - How to verify compilation, line counts, visibility, subclass override chains, and contract tests after the delegate extraction.
 - [Tutorial: Trace the Declaration Composite Delegate Decomposition](./tutorials/trace-declaration-composite-delegate-decomposition.md) - Guided walkthrough of validation delegation, dialog lifecycle wiring, listener symmetry, type-to-initializer cache, and subclass override preservation.
 
+## IDE StoryApiConfigurationManager decomposition
+
+- [StoryApiConfigurationManager Decomposition](./reference/story-api-configuration-manager-decomposition.md) - Reference for extraction of `StoryTypeComparator` enum and `JointMethodAugmentor` class from `StoryApiConfigurationManager` (587 lines) into package-private delegates (issue #661), reducing to ~450 lines.
+- [Validate StoryApiConfigurationManager Decomposition](./howto/validate-story-api-configuration-manager-decomposition.md) - How to verify compilation, line counts, visibility, delegation wiring, and nonfree subclass compatibility after the extraction.
+
 ## IK enforcer decomposition
 
 - [TightPositionalIkEnforcer Inner Class Extraction](./reference/tight-positional-ik-enforcer-decomposition.md) - Reference for extraction of all 14 inner classes from `TightPositionalIkEnforcer` (1328 lines) into top-level files in `org.lgna.ik.core.enforcer`, with `IkEnforcerContext` interface replacing implicit outer-class references.
