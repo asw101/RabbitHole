@@ -63,28 +63,16 @@ class ClipboardClipRenderer {
     g.setTransform(trans_0_0_2_0_9_0);
     // _0_0_2_0_9_1
     g.setComposite(AlphaComposite.getInstance(3, 1.0f * origAlpha));
-    AffineTransform trans_0_0_2_0_9_1 = g.getTransform();
-    g.transform(new AffineTransform(1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f));
     paintShapeNode_0_0_2_0_9_1(g);
-    g.setTransform(trans_0_0_2_0_9_1);
     // _0_0_2_0_9_2
     g.setComposite(AlphaComposite.getInstance(3, 0.5f * origAlpha));
-    AffineTransform trans_0_0_2_0_9_2 = g.getTransform();
-    g.transform(new AffineTransform(1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f));
     paintShapeNode_0_0_2_0_9_2(g);
-    g.setTransform(trans_0_0_2_0_9_2);
     // _0_0_2_0_9_3
     g.setComposite(AlphaComposite.getInstance(3, 1.0f * origAlpha));
-    AffineTransform trans_0_0_2_0_9_3 = g.getTransform();
-    g.transform(new AffineTransform(1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f));
     paintShapeNode_0_0_2_0_9_3(g);
-    g.setTransform(trans_0_0_2_0_9_3);
     // _0_0_2_0_9_4
     g.setComposite(AlphaComposite.getInstance(3, 0.2f * origAlpha));
-    AffineTransform trans_0_0_2_0_9_4 = g.getTransform();
-    g.transform(new AffineTransform(1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f));
     paintShapeNode_0_0_2_0_9_4(g);
-    g.setTransform(trans_0_0_2_0_9_4);
   }
 
   private void paintShapeNode_0_0_2_0_9_0(Graphics2D g) {
@@ -118,11 +106,9 @@ class ClipboardClipRenderer {
     shape11.curveTo(311.89008f, 62.66503f, 311.83807f, 64.46263f, 312.72192f, 64.50683f);
     shape11.closePath();
     g.setPaint(GradientPaintFactory.new_LinearGradientPaint(new Point2D.Double(24.635435104370117, 3.519411563873291), new Point2D.Double(24.635435104370117, 11.540999412536621), new float[] {0.0f, 0.13349205f, 0.53102833f, 0.78739f, 1.0f}, new Color[] {new Color(186, 189, 182, 255), new Color(238, 238, 236, 255), new Color(186, 189, 182, 255), new Color(255, 255, 255, 255), new Color(156, 152, 138, 255)},
-                                       //MultipleGradientPaint.CycleMethod.NO_CYCLE, MultipleGradientPaint.ColorSpaceType.SRGB,
                                        new AffineTransform(1.0f, 0.0f, 0.0f, 1.0f, 296.0f, 52.0f)));
     g.fill(shape11);
     g.setPaint(GradientPaintFactory.new_LinearGradientPaint(new Point2D.Double(32.91161346435547, 16.214149475097656), new Point2D.Double(31.417892456054688, 4.031081199645996), new float[] {0.0f, 1.0f}, new Color[] {new Color(85, 87, 83, 255), new Color(186, 189, 182, 255)},
-                                       //MultipleGradientPaint.CycleMethod.NO_CYCLE, MultipleGradientPaint.ColorSpaceType.SRGB,
                                        new AffineTransform(1.0f, 0.0f, 0.0f, 1.0f, 296.0f, 50.0f)));
     g.setStroke(new BasicStroke(1.0f, 0, 0, 4.0f, null, 0.0f));
     g.draw(shape11);
@@ -147,7 +133,6 @@ class ClipboardClipRenderer {
     shape13.lineTo(316.0f, 60.0f);
     shape13.closePath();
     g.setPaint(GradientPaintFactory.new_LinearGradientPaint(new Point2D.Double(24.49800682067871, 3.9980428218841553), new Point2D.Double(24.49800682067871, 8.0), new float[] {0.0f, 1.0f}, new Color[] {Color.WHITE, new Color(255, 255, 255, 0)},
-                                       //MultipleGradientPaint.CycleMethod.NO_CYCLE, MultipleGradientPaint.ColorSpaceType.SRGB,
                                        new AffineTransform(1.0f, 0.0f, 0.0f, 1.0f, 296.0f, 52.0f)));
     g.fill(shape13);
   }

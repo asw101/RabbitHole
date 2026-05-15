@@ -100,11 +100,7 @@ public class ClipboardIcon implements Icon {
   }
 
   private void paintCompositeGraphicsNode_0_0_2(Graphics2D g) {
-    // _0_0_2_0
-    AffineTransform trans_0_0_2_0 = g.getTransform();
-    g.transform(new AffineTransform(1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f));
     paintCompositeGraphicsNode_0_0_2_0(g);
-    g.setTransform(trans_0_0_2_0);
   }
 
   private void paintCanvasGraphicsNode_0_0(Graphics2D g) {
@@ -116,12 +112,8 @@ public class ClipboardIcon implements Icon {
   }
 
   private void paintRootGraphicsNode_0(Graphics2D g) {
-    // _0_0
     g.setComposite(AlphaComposite.getInstance(3, 1.0f * origAlpha));
-    AffineTransform trans_0_0 = g.getTransform();
-    g.transform(new AffineTransform(1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f));
     paintCanvasGraphicsNode_0_0(g);
-    g.setTransform(trans_0_0);
   }
 
   /**

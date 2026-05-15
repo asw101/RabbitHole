@@ -98,12 +98,10 @@ class ClipboardBoardRenderer {
 
     Color boardColor = state.getBoardColor();
     g.setPaint(GradientPaintFactory.new_LinearGradientPaint(new Point2D.Double(25.5, -13.625), new Point2D.Double(26.0, -39.125), new float[] {0.0f, 1.0f}, new Color[] {boardColor, new Color(199, 155, 85, 255)},
-                                       //MultipleGradientPaint.CycleMethod.NO_CYCLE, MultipleGradientPaint.ColorSpaceType.SRGB,
                                        new AffineTransform(1.0f, 0.0f, 0.0f, 1.0f, 296.0f, -52.0f)));
 
     g.fill(shape2);
     g.setPaint(GradientPaintFactory.new_LinearGradientPaint(new Point2D.Double(18.39735221862793, -37.160858154296875), new Point2D.Double(10.831841468811035, 4.028111457824707), new float[] {0.0f, 1.0f}, new Color[] {new Color(143, 89, 2, 255), new Color(233, 185, 110, 255)},
-                                       //MultipleGradientPaint.CycleMethod.NO_CYCLE, MultipleGradientPaint.ColorSpaceType.SRGB,
                                        new AffineTransform(1.0f, 0.0f, 0.0f, 1.0f, 296.0f, -50.0f)));
     g.setStroke(new BasicStroke(1.0f, 0, 0, 4.0f, null, 0.0f));
     g.draw(shape2);
@@ -112,7 +110,6 @@ class ClipboardBoardRenderer {
   private void paintShapeNode_0_0_2_0_0_3(Graphics2D g) {
     RoundRectangle2D.Double shape3 = new RoundRectangle2D.Double(306.5, -91.5, 28.00001335144043, 30.000003814697266, 3.0, 3.0);
     g.setPaint(GradientPaintFactory.new_LinearGradientPaint(new Point2D.Double(14.787761688232422, -9.017683982849121), new Point2D.Double(14.787761688232422, -69.46895599365234), new float[] {0.0f, 1.0f}, new Color[] {new Color(255, 255, 255, 255), new Color(255, 255, 255, 0)},
-                                       //MultipleGradientPaint.CycleMethod.NO_CYCLE, MultipleGradientPaint.ColorSpaceType.SRGB,
                                        new AffineTransform(1.0f, 0.0f, 0.0f, 1.0f, 296.0f, -52.0f)));
     g.setStroke(new BasicStroke(0.99999994f, 0, 0, 4.0f, null, 0.0f));
     g.draw(shape3);

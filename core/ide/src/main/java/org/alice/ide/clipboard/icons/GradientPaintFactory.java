@@ -68,9 +68,7 @@ final class GradientPaintFactory {
       Constructor<?> cnstrctr = ReflectionUtilities.getConstructor(cls, Point2D.class, Point2D.class, float[].class, Color[].class, cycleMethodCls, colorSpaceTypeCls, AffineTransform.class);
       return (Paint) cnstrctr.newInstance(start, end, fractions, colors, NO_CYCLE, SRGB, gradientTransform);
     } catch (Throwable t) {
-      //t.printStackTrace();
       return colors[0];
-      //    return new java.awt.LinearGradientPaint( start, end, fractions, colors, java.awt.MultipleGradientPaint.CycleMethod.NO_CYCLE, java.awt.MultipleGradientPaint.ColorSpaceType.SRGB, gradientTransform );
     }
   }
 
@@ -84,9 +82,7 @@ final class GradientPaintFactory {
       Constructor<?> cnstrctr = ReflectionUtilities.getConstructor(cls, Point2D.class, Float.TYPE, Point2D.class, float[].class, Color[].class, cycleMethodCls, colorSpaceTypeCls, AffineTransform.class);
       return (Paint) cnstrctr.newInstance(center, radius, focus, fractions, colors, NO_CYCLE, SRGB, gradientTransform);
     } catch (Throwable t) {
-      //t.printStackTrace();
       return colors[0];
-      //return new java.awt.RadialGradientPaint( center, radius, focus, fractions, colors, java.awt.MultipleGradientPaint.CycleMethod.NO_CYCLE, java.awt.MultipleGradientPaint.ColorSpaceType.SRGB, gradientTransform );
     }
   }
 }
