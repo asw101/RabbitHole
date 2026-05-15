@@ -69,7 +69,7 @@ and straighten/pose support. Delegates IK chain computation to
 | `(pkg)` | `buildJointHierarchy(JointedModelImp<?,R>)` | Creates joint wrappers, links parent/child, fills arrays |
 | `(pkg)` | `updateSkeleton(JointedModelImp<?,R>)` | Replaces internal joints on resource change; removes stale joints |
 | `(pkg)` | `getJointImplementation(JointId)` | O(1) lookup from `mapIdToJoint` |
-| `(pkg)` | `getJointImplementation(String)` | Linear scan for `DynamicJointId` by name |
+| `(pkg)` | `getJointImplementation(String)` | O(1) lookup for `DynamicJointId` via lazily-built name index |
 | `(pkg)` | `getJointIdArray(JointArrayId)` | Returns cached joint ID array |
 | `(pkg)` | `isEmpty()` | True when no joints are mapped |
 | `(pkg)` | `getJointWrappers()` | Returns all wrapper values |
@@ -189,12 +189,12 @@ These classes predate this decomposition and remain unchanged:
 
 | File | Lines | Role |
 |---|---|---|
-| `JointHierarchyManager.java` | ~354 | Coordinator: hierarchy construction, lookup, tree walk, caches, straighten/pose |
-| `JointImpWrapper.java` | ~178 | Joint wrapping with resource-swap support |
-| `IkChainHelper.java` | ~118 | Static IK chain computation |
-| **Total** | **~650** | Same as original (code moved, not deleted) |
+| `JointHierarchyManager.java` | 350 | Coordinator: hierarchy construction, lookup, tree walk, caches, straighten/pose |
+| `JointImpWrapper.java` | 244 | Joint wrapping with resource-swap support |
+| `IkChainHelper.java` | 193 | Static IK chain computation |
+| **Total** | **787** | Original code (~650) plus copyright headers and Javadoc on each new file |
 
-The manager itself drops from 650 to ~354 lines — well under the 500-line target.
+The manager itself drops from 650 to 350 lines — well under the 500-line target.
 
 ## Constants
 

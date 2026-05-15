@@ -29,7 +29,7 @@ All tests should pass with `BUILD SUCCESS`.
 wc -l core/story-api/src/main/java/org/lgna/story/implementation/JointHierarchyManager.java
 ```
 
-Expected: **≤500 lines** (target: ~354).
+Expected: **≤500 lines** (actual: 350).
 
 ### 2. Confirm New Files Exist
 
