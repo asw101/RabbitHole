@@ -153,7 +153,7 @@ class IkProgram extends SProgram {
   private void updateInfo() {
     Bone bone = BonesState.getInstance().getValue();
 
-    StringBuilder sb = new StringBuilder();
+    StringBuilder sb = new StringBuilder(256);
     if (bone != null) {
       JointImp a = bone.getA();
       //      org.lgna.story.implementation.JointImp b = bone.getB();
@@ -259,6 +259,7 @@ class IkProgram extends SProgram {
 
     this.handleChainChanged();
 
+    calculateThread.setDaemon(true);
     calculateThread.start();
   }
 
@@ -273,14 +274,14 @@ class IkProgram extends SProgram {
 
     //using ikEnforcer's methods rather than dealing with chains.
 
-    Thread calculateThread = new Thread() {
+    Thread calculateThread = new Thread("IK-OldEnforcer") {
       @Override
       public void run() {
-        while (!interrupted()) {
-          //solver has the chain. can also have multiple chains.
-          //I can tell solver, for this chain this is the linear target, etc.
-          //it actually only needs the velocity, etc. then, I should say for this chain this is the desired velocity. ok.
+        final double maxLinearSpeedForEe = IkConstants.MAX_LINEAR_SPEED_FOR_EE;
+        final double maxAngularSpeedForEe = IkConstants.MAX_ANGULAR_SPEED_FOR_EE;
+        final double deltaTime = IkConstants.DESIRED_DELTA_TIME;
 
+        while (!interrupted()) {
           //not bad concurrent programming practice
           boolean isLinearEnabled = IsLinearEnabledState.getInstance().getValue();
           boolean isAngularEnabled = IsAngularEnabledState.getInstance().getValue();
@@ -288,11 +289,6 @@ class IkProgram extends SProgram {
           //these could be multiple. in this app it is one pair.
           final JointId eeId = EndJointIdState.getInstance().getValue();
           final JointId anchorId = AnchorJointIdState.getInstance().getValue();
-
-          double maxLinearSpeedForEe = IkConstants.MAX_LINEAR_SPEED_FOR_EE;
-          double maxAngularSpeedForEe = IkConstants.MAX_ANGULAR_SPEED_FOR_EE;
-
-          double deltaTime = IkConstants.DESIRED_DELTA_TIME;
 
           if (ikEnforcer.hasActiveChain() && (isLinearEnabled || isAngularEnabled)) {
             //I could make chain setter not race with this
@@ -331,7 +327,7 @@ class IkProgram extends SProgram {
   private Thread initializeTightIkEnforcer() {
     tightIkEnforcer = new TightPositionalIkEnforcer(getSubjectImp());
 
-    Thread calculateThread = new Thread() {
+    Thread calculateThread = new Thread("IK-TightEnforcer") {
       @Override
       public void run() {
         while (!interrupted()) {
@@ -343,8 +339,6 @@ class IkProgram extends SProgram {
           //these could be multiple. in this app it is one pair.
           final JointId eeId = EndJointIdState.getInstance().getValue();
           final JointId anchorId = AnchorJointIdState.getInstance().getValue();
-
-          double deltaTime = IkConstants.DESIRED_DELTA_TIME;
 
           AffineMatrix4x4 targetTransformation = getTargetImp().getTransformation(AsSeenBy.SCENE);
 
