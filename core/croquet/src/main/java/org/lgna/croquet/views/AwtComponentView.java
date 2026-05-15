@@ -50,7 +50,6 @@ import edu.cmu.cs.dennisc.java.awt.event.MouseEventUtilities;
 import edu.cmu.cs.dennisc.java.awt.font.TextAttribute;
 import edu.cmu.cs.dennisc.java.util.Maps;
 import edu.cmu.cs.dennisc.java.util.logging.Logger;
-import edu.cmu.cs.dennisc.print.PrintUtilities;
 
 import javax.swing.JComponent;
 import javax.swing.SwingUtilities;
@@ -114,6 +113,7 @@ public abstract class AwtComponentView<J extends Component> extends ScreenElemen
   }
 
   private final HierarchyListener hierarchyListener = AwtComponentView.this::handleHierarchyChanged;
+  private final AwtHierarchyHandler hierarchyHandler = new AwtHierarchyHandler(this);
 
   public final Object getTreeLock() {
     return this.getAwtComponent().getTreeLock();
@@ -121,69 +121,14 @@ public abstract class AwtComponentView<J extends Component> extends ScreenElemen
 
   protected void handleDisplayable() {
   }
-
   protected void handleUndisplayable() {
   }
-
-  private boolean isDisplayableState = false;
-
-  private void trackDisplayability() {
-    if (!isDisplayableState && awtComponent.isDisplayable()) {
-      this.handleDisplayable();
-      this.isDisplayableState = true;
-    }
-    if (isDisplayableState && !awtComponent.isDisplayable()) {
-      this.handleUndisplayable();
-      this.isDisplayableState = false;
-    }
-  }
-
   protected void handleAddedTo(AwtComponentView<?> parent) {
   }
-
   protected void handleRemovedFrom(AwtComponentView<?> parent) {
   }
-
-  private Container awtParent;
-
-  private void handleParentChange(Container newParent) {
-    if (this.awtParent != null) {
-      this.handleRemovedFrom(AwtComponentView.lookup(this.awtParent));
-    }
-    this.awtParent = newParent;
-    if (this.awtParent != null) {
-      this.handleAddedTo(AwtComponentView.lookup(this.awtParent));
-    }
-  }
-
-  private static boolean isWarningAlreadyPrinted = false;
-
   protected void handleHierarchyChanged(HierarchyEvent e) {
-    long flags = e.getChangeFlags();
-    if ((flags & HierarchyEvent.DISPLAYABILITY_CHANGED) != 0) {
-      if (e.getComponent() == this.awtComponent) {
-        this.trackDisplayability();
-      } else {
-        PrintUtilities.println("handleDisplayabilityChanged:", this.awtComponent.hashCode(), this.awtComponent.isDisplayable());
-      }
-    }
-    if ((flags & HierarchyEvent.PARENT_CHANGED) != 0 && e.getComponent() == e.getChanged()) {
-      Container eventAwtParent = e.getChangedParent();
-      if (eventAwtParent != AwtComponentView.this.awtParent) {
-        handleParentChange(eventAwtParent);
-      } else {
-        if (!isWarningAlreadyPrinted) {
-          //Thread.dumpStack();
-          PrintUtilities.println("investigate: hierarchyChanged seems to not be actually changing the parent");
-          //            edu.cmu.cs.dennisc.print.PrintUtilities.println( "    flags:", flags );
-          //            edu.cmu.cs.dennisc.print.PrintUtilities.println( "    this:", this );
-          //            edu.cmu.cs.dennisc.print.PrintUtilities.println( "    awtChanged:", awtChanged.getClass().getName(), awtChanged );
-          //            edu.cmu.cs.dennisc.print.PrintUtilities.println( "    awtParent:", awtParent.hashCode(), awtParent.getClass().getName(), awtParent.getLayout() );
-          isWarningAlreadyPrinted = true;
-        }
-      }
-    }
-
+    this.hierarchyHandler.processHierarchyEvent(e);
   }
 
   private J awtComponent;
@@ -196,7 +141,7 @@ public abstract class AwtComponentView<J extends Component> extends ScreenElemen
     if (this.awtComponent == null) {
       this.checkEventDispatchThread();
       this.awtComponent = this.createAwtComponent();
-      this.trackDisplayability();
+      this.hierarchyHandler.trackDisplayability(this.awtComponent);
       this.awtComponent.addHierarchyListener(this.hierarchyListener);
       this.awtComponent.setName(this.getClass().getName());
       ComponentOrientation componentOrientation = ComponentOrientation.getOrientation(JComponent.getDefaultLocale());
@@ -212,7 +157,7 @@ public abstract class AwtComponentView<J extends Component> extends ScreenElemen
     if (this.awtComponent != null) {
       //System.err.println( "release: " + this.hashCode() );
       this.awtComponent.removeHierarchyListener(this.hierarchyListener);
-      this.trackDisplayability();
+      this.hierarchyHandler.trackDisplayability(this.awtComponent);
       AwtComponentView.map.remove(this.awtComponent);
       this.awtComponent = null;
     }
@@ -433,10 +378,9 @@ public abstract class AwtComponentView<J extends Component> extends ScreenElemen
 
   @Override
   public boolean isInView() {
-    if (this.isVisible()) { //&& this.getAwtComponent().isShowing() && this.getAwtComponent().isDisplayable() && this.getAwtComponent().isValid() ) {
+    if (this.isVisible()) {
       Rectangle visibleRect = this.getVisibleRectangle();
-      Dimension size = this.getAwtComponent().getSize();
-      return (visibleRect.width == size.width) || (visibleRect.height == size.height);
+      return (visibleRect.width == this.getWidth()) || (visibleRect.height == this.getHeight());
     } else {
       return false;
     }
@@ -499,63 +443,40 @@ public abstract class AwtComponentView<J extends Component> extends ScreenElemen
     SwingUtilities.invokeLater(this::requestFocus);
   }
 
-  @Deprecated
-  public void addHierarchyListener(HierarchyListener listener) {
+  @Deprecated public void addHierarchyListener(HierarchyListener listener) {
     this.getAwtComponent().addHierarchyListener(listener);
   }
-
-  @Deprecated
-  public void removeHierarchyListener(HierarchyListener listener) {
+  @Deprecated public void removeHierarchyListener(HierarchyListener listener) {
     this.getAwtComponent().removeHierarchyListener(listener);
   }
-
-  @Deprecated
-  public void addKeyListener(KeyListener listener) {
+  @Deprecated public void addKeyListener(KeyListener listener) {
     this.getAwtComponent().addKeyListener(listener);
   }
-
-  @Deprecated
-  public void removeKeyListener(KeyListener listener) {
+  @Deprecated public void removeKeyListener(KeyListener listener) {
     this.getAwtComponent().removeKeyListener(listener);
   }
-
-  @Deprecated
-  public void addMouseListener(MouseListener listener) {
+  @Deprecated public void addMouseListener(MouseListener listener) {
     this.getAwtComponent().addMouseListener(listener);
   }
-
-  @Deprecated
-  public void removeMouseListener(MouseListener listener) {
+  @Deprecated public void removeMouseListener(MouseListener listener) {
     this.getAwtComponent().removeMouseListener(listener);
   }
-
-  @Deprecated
-  public void addMouseMotionListener(MouseMotionListener listener) {
+  @Deprecated public void addMouseMotionListener(MouseMotionListener listener) {
     this.getAwtComponent().addMouseMotionListener(listener);
   }
-
-  @Deprecated
-  public void removeMouseMotionListener(MouseMotionListener listener) {
+  @Deprecated public void removeMouseMotionListener(MouseMotionListener listener) {
     this.getAwtComponent().removeMouseMotionListener(listener);
   }
-
-  @Deprecated
-  public void addMouseWheelListener(MouseWheelListener listener) {
+  @Deprecated public void addMouseWheelListener(MouseWheelListener listener) {
     this.getAwtComponent().addMouseWheelListener(listener);
   }
-
-  @Deprecated
-  public void removeMouseWheelListener(MouseWheelListener listener) {
+  @Deprecated public void removeMouseWheelListener(MouseWheelListener listener) {
     this.getAwtComponent().removeMouseWheelListener(listener);
   }
-
-  @Deprecated
-  public void setPreferredSize(Dimension preferredSize) {
+  @Deprecated public void setPreferredSize(Dimension preferredSize) {
     this.getAwtComponent().setPreferredSize(preferredSize);
   }
-
-  @Deprecated
-  public void makeStandOut() {
+  @Deprecated public void makeStandOut() {
     ComponentUtilities.makeStandOut(this.getAwtComponent());
   }
 
