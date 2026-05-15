@@ -44,8 +44,6 @@ package org.alice.interact;
 
 import edu.cmu.cs.dennisc.scenegraph.Silhouette;
 import org.alice.interact.event.SelectionEvent;
-import org.lgna.story.implementation.CameraMarkerImp;
-import org.lgna.story.implementation.ObjectMarkerImp;
 import org.lgna.story.implementation.StandInImp;
 import org.junit.Before;
 import org.junit.Test;
