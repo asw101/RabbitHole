@@ -54,8 +54,6 @@ import edu.cmu.cs.dennisc.render.gl.GlDrawableUtils;
 import edu.cmu.cs.dennisc.render.gl.imp.adapters.AdapterFactory;
 import edu.cmu.cs.dennisc.render.gl.imp.adapters.GlrAbstractCamera;
 import edu.cmu.cs.dennisc.scenegraph.AbstractCamera;
-import edu.cmu.cs.dennisc.system.graphics.ConformanceTestResults;
-
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
@@ -172,7 +170,7 @@ public class RenderTargetImp {
     this.drawable.invoke(false, displayTask);
   }
 
-  private void fireInitialized(RenderTargetInitializeEvent e) {
+  /*package-private*/ void fireInitialized(RenderTargetInitializeEvent e) {
     for (RenderTargetListener rtListener : this.renderTargetListeners) {
       rtListener.initialized(e);
     }
@@ -190,16 +188,9 @@ public class RenderTargetImp {
     }
   }
 
-  private void fireResized(RenderTargetResizeEvent e) {
+  /*package-private*/ void fireResized(RenderTargetResizeEvent e) {
     for (RenderTargetListener rtListener : this.renderTargetListeners) {
       rtListener.resized(e);
-    }
-  }
-
-  //todo:
-  private void fireDisplayChanged(RenderTargetDisplayChangeEvent e) {
-    for (RenderTargetListener rtListener : this.renderTargetListeners) {
-      rtListener.displayChanged(e);
     }
   }
 
@@ -232,7 +223,7 @@ public class RenderTargetImp {
     if (drawable != null) {
       this.isListening = true;
       this.drawable = drawable;
-      this.drawable.addGLEventListener(this.glEventListener);
+      this.drawable.addGLEventListener(this.glEventHandler);
     }
   }
 
@@ -243,7 +234,7 @@ public class RenderTargetImp {
       if (this.isListening) {
         this.isListening = false;
         if (drawable != null) {
-          drawable.removeGLEventListener(this.glEventListener);
+          drawable.removeGLEventListener(this.glEventHandler);
         }
       } else {
         Logger.warning("request GLEventAdapter.stopListening(drawable) ignored; already not listening.");
@@ -252,96 +243,69 @@ public class RenderTargetImp {
     }
   }
 
-  //  private void paintOverlay() {
-  //    edu.cmu.cs.dennisc.lookingglass.Overlay overlay = this.lookingGlass.getOverlay();
-  //    if( overlay != null ) {
-  //
-  //      this.renderContext.gl.glMatrixMode( GL_PROJECTION );
-  //      this.renderContext.gl.glPushMatrix();
-  //      this.renderContext.gl.glLoadIdentity();
-  //      this.renderContext.gl.glOrtho( 0, this.lookingGlass.getWidth() - 1, this.lookingGlass.getHeight() - 1, 0, -1, 1 );
-  //      this.renderContext.gl.glMatrixMode( GL_MODELVIEW );
-  //      this.renderContext.gl.glPushMatrix();
-  //      this.renderContext.gl.glLoadIdentity();
-  //
-  //      this.renderContext.gl.glDisable( GL_DEPTH_TEST );
-  //      this.renderContext.gl.glDisable( GL_LIGHTING );
-  //      this.renderContext.gl.glDisable( GL_CULL_FACE );
-  //      this.renderContext.setDiffuseColorTextureAdapter( null );
-  //      this.renderContext.setBumpTextureAdapter( null );
-  //
-  //
-  //      try {
-  //        overlay.paint( this.lookingGlass );
-  //        this.renderContext.gl.glFlush();
-  //      } finally {
-  //        this.renderContext.gl.glMatrixMode( GL_PROJECTION );
-  //        this.renderContext.gl.glPopMatrix();
-  //        this.renderContext.gl.glMatrixMode( GL_MODELVIEW );
-  //        this.renderContext.gl.glPopMatrix();
-  //      }
-  //    }
-  //  }
-
-  private void performRender() {
+  /*package-private*/ void performRender() {
     RenderTarget rt = this.getRenderTarget();
-    if (rt.isRenderingEnabled()) {
-      this.renderContext.actuallyForgetTexturesIfNecessary();
-      this.renderContext.actuallyForgetDisplayListsIfNecessary();
-      if (this.isDisplayIgnoredDueToPreviousException) {
-        //pass
-      } else if ((this.drawableWidth == 0) || (this.drawableHeight == 0)) {
-        Logger.severe(this.drawableWidth, this.drawableHeight, rt.getSurfaceSize());
-      } else {
+    if (!rt.isRenderingEnabled()) {
+      return;
+    }
+    this.renderContext.actuallyForgetTexturesIfNecessary();
+    this.renderContext.actuallyForgetDisplayListsIfNecessary();
+    if (this.isDisplayIgnoredDueToPreviousException) {
+      return;
+    }
+    if ((this.drawableWidth == 0) || (this.drawableHeight == 0)) {
+      Logger.severe(this.drawableWidth, this.drawableHeight, rt.getSurfaceSize());
+      return;
+    }
+    try {
+      boolean hasListeners = !this.renderTargetListeners.isEmpty();
+      if (hasListeners) {
+        this.reusableLookingGlassRenderEvent.prologue();
         try {
-          //todo: separate clearing and rendering
-          this.reusableLookingGlassRenderEvent.prologue();
-          try {
-            this.fireCleared(this.reusableLookingGlassRenderEvent);
-          } finally {
-            this.reusableLookingGlassRenderEvent.epilogue();
-          }
-          if (rt.getSgCameraCount() > 0) {
-            this.renderContext.initialize();
-            for (AbstractCamera sgCamera : this.sgCameras) {
-              GlrAbstractCamera<? extends AbstractCamera> cameraAdapterI = AdapterFactory.getAdapterFor(sgCamera);
-              cameraAdapterI.performClearAndRenderOffscreen(this.renderContext, this.drawableWidth, this.drawableHeight);
-              this.reusableLookingGlassRenderEvent.prologue();
-              try {
-                // Pass the screen size to post render because operations like speech bubbles use the screen size as a reference rather than the drawable size
-                cameraAdapterI.postRender(this.renderContext, this.screenWidth, this.screenHeight, rt, this.reusableLookingGlassRenderEvent.getGraphics2D());
-              } finally {
-                this.reusableLookingGlassRenderEvent.epilogue();
-              }
-            }
-            this.renderContext.renderLetterboxingIfNecessary(this.drawableWidth, this.drawableHeight);
-          } else {
-            this.renderContext.gl.glClearColor(0, 0, 0, 1);
-            this.renderContext.gl.glClear(GL_COLOR_BUFFER_BIT);
-          }
-          this.reusableLookingGlassRenderEvent.prologue();
-          try {
-            this.fireRendered(this.reusableLookingGlassRenderEvent);
-          } finally {
-            this.reusableLookingGlassRenderEvent.epilogue();
-          }
-          this.renderContext.gl.glFlush();
-          if ((this.rvColorBuffer != null) || (this.rvDepthBuffer != null)) {
-            this.renderContext.captureBuffers(this.rvColorBuffer, this.rvDepthBuffer, this.atIsUpsideDown);
-          }
-
-        } catch (RuntimeException re) {
-          Logger.severe("rendering will be disabled due to exception");
-          this.isDisplayIgnoredDueToPreviousException = true;
-          re.printStackTrace();
-          throw re;
-        } catch (Error er) {
-          Logger.severe("rendering will be disabled due to exception");
-          this.isDisplayIgnoredDueToPreviousException = true;
-          er.printStackTrace();
-          throw er;
+          this.fireCleared(this.reusableLookingGlassRenderEvent);
+        } finally {
+          this.reusableLookingGlassRenderEvent.epilogue();
         }
       }
+      if (!this.sgCameras.isEmpty()) {
+        this.renderContext.initialize();
+        for (AbstractCamera sgCamera : this.sgCameras) {
+          GlrAbstractCamera<? extends AbstractCamera> cameraAdapterI = AdapterFactory.getAdapterFor(sgCamera);
+          cameraAdapterI.performClearAndRenderOffscreen(this.renderContext, this.drawableWidth, this.drawableHeight);
+          this.reusableLookingGlassRenderEvent.prologue();
+          try {
+            cameraAdapterI.postRender(this.renderContext, this.screenWidth, this.screenHeight, rt, this.reusableLookingGlassRenderEvent.getGraphics2D());
+          } finally {
+            this.reusableLookingGlassRenderEvent.epilogue();
+          }
+        }
+        this.renderContext.renderLetterboxingIfNecessary(this.drawableWidth, this.drawableHeight);
+      } else {
+        this.renderContext.gl.glClearColor(0, 0, 0, 1);
+        this.renderContext.gl.glClear(GL_COLOR_BUFFER_BIT);
+      }
+      if (hasListeners) {
+        this.reusableLookingGlassRenderEvent.prologue();
+        try {
+          this.fireRendered(this.reusableLookingGlassRenderEvent);
+        } finally {
+          this.reusableLookingGlassRenderEvent.epilogue();
+        }
+      }
+      this.renderContext.gl.glFlush();
+      if ((this.rvColorBuffer != null) || (this.rvDepthBuffer != null)) {
+        this.renderContext.captureBuffers(this.rvColorBuffer, this.rvDepthBuffer, this.atIsUpsideDown);
+      }
+    } catch (RuntimeException re) {
+      Logger.severe("rendering will be disabled due to exception");
+      this.isDisplayIgnoredDueToPreviousException = true;
+      re.printStackTrace();
+      throw re;
+    } catch (Error er) {
+      Logger.severe("rendering will be disabled due to exception");
+      this.isDisplayIgnoredDueToPreviousException = true;
+      er.printStackTrace();
+      throw er;
     }
   }
 
@@ -366,44 +330,6 @@ public class RenderTargetImp {
   }
 
   public BufferedImage createBufferedImageForUseAsColorBuffer() {
-    //    boolean isClearedToCreateImage;
-    //    if( this.this.renderContext.gl != null ) {
-    //      String extensions = this.this.renderContext.gl.glGetString( GL_EXTENSIONS );
-    //      if( extensions != null ) {
-    //        boolean isABGRExtensionSupported = extensions.contains( "GL_EXT_abgr" );
-    //        if( isABGRExtensionSupported ) {
-    //          //pass
-    //        } else {
-    //          edu.cmu.cs.dennisc.print.PrintUtilities.println( "createBufferedImageForUseAsColorBuffer: capturing images from gl is expected to fail since since GL_EXT_abgr not found in: " );
-    //          edu.cmu.cs.dennisc.print.PrintUtilities.println( "\t" + extensions );
-    //        }
-    //        isClearedToCreateImage = isABGRExtensionSupported;
-    //      } else {
-    //        edu.cmu.cs.dennisc.print.PrintUtilities.println( "createBufferedImageForUseAsColorBuffer: capturing images from gl is expected to fail since since gl.glGetString( GL_EXTENSIONS ) returns null." );
-    //        isClearedToCreateImage = false;
-    //      }
-    //    } else {
-    //      edu.cmu.cs.dennisc.print.PrintUtilities.println( "createBufferedImageForUseAsColorBuffer: opengl is not initialized yet, so we will assume the GL_EXT_abgr extension is present." );
-    //      isClearedToCreateImage = true;
-    //    }
-    //
-    //
-    //    //todo: investigate
-    //    if( isClearedToCreateImage ) {
-    //      //pass
-    //    } else {
-    //      isClearedToCreateImage = true;
-    //    }
-    //
-    //    if( isClearedToCreateImage ) {
-    //      //todo:
-    //      //int type = java.awt.image.BufferedImage.TYPE_3BYTE_ABGR;
-    //      int type = java.awt.image.BufferedImage.TYPE_4BYTE_ABGR;
-    //      //int type = java.awt.image.BufferedImage.TYPE_INT_ARGB;
-    //      return createBufferedImageForUseAsColorBuffer( type );
-    //    } else {
-    //      return null;
-    //    }
     int type = BufferedImage.TYPE_4BYTE_ABGR;
     return createBufferedImageForUseAsColorBuffer(type);
   }
@@ -446,99 +372,17 @@ public class RenderTargetImp {
     return rv;
   }
 
-  private void initialize(GLAutoDrawable drawable) {
-    //edu.cmu.cs.dennisc.print.PrintUtilities.println( "initialize", drawable );
-    assert drawable == this.drawable;
-    GL2 gl = drawable.getGL().getGL2();
-    ConformanceTestResults.SINGLETON.updateRenderInformationIfNecessary(gl);
+  final RenderContext renderContext = new RenderContext();
 
-    //edu.cmu.cs.dennisc.print.PrintUtilities.println( drawable.getChosenGLCapabilities() );
-
-    final boolean USE_DEBUG_GL = false;
-    if (USE_DEBUG_GL) {
-      if (gl instanceof DebugGL2) {
-        // pass
-      } else {
-        gl = new DebugGL2(gl);
-        Logger.info("using debug gl: ", gl);
-        drawable.setGL(gl);
-      }
-    }
-
-    this.drawableWidth = GlDrawableUtils.getGlDrawableWidth(drawable);
-    this.drawableHeight = GlDrawableUtils.getGlDrawableHeight(drawable);
-    this.screenWidth = GlDrawableUtils.getGLJPanelWidth(drawable);
-    this.screenHeight = GlDrawableUtils.getGLJPanelHeight(drawable);
-
-    this.renderContext.setGL(gl);
-    this.fireInitialized(new RenderTargetInitializeEvent(this.getRenderTarget(), GlDrawableUtils.getGlDrawableWidth(this.drawable), GlDrawableUtils.getGlDrawableHeight(this.drawable)));
-  }
-
-  //todo: investigate not being invoked
-  private void handleInit(GLAutoDrawable drawable) {
-    //edu.cmu.cs.dennisc.print.PrintUtilities.println( "init", drawable );
-    initialize(drawable);
-  }
-
-  private void handleDisplay(GLAutoDrawable drawable) {
-    //edu.cmu.cs.dennisc.print.PrintUtilities.println( "display:", drawable );
-    assert drawable == this.drawable;
-    //this.lookingGlass.commitAnyPendingChanges();
-    //todo?
-    GL2 gl = drawable.getGL().getGL2();
-    if (this.renderContext.gl == null) {
-      initialize(drawable);
-      Logger.outln("note: initialize necessary from display");
-    }
-    if (this.drawableWidth <= 0 || this.drawableHeight <= 0) {
-      int nextWidth = GlDrawableUtils.getGlDrawableWidth(drawable);
-      int nextHeight = GlDrawableUtils.getGlDrawableHeight(drawable);
-      int nextScreenWidth = GlDrawableUtils.getGLJPanelWidth(drawable);
-      int nextScreenHeight = GlDrawableUtils.getGLJPanelHeight(drawable);
-      if ((this.drawableWidth != nextWidth) || (this.drawableHeight != nextHeight)) {
-        Logger.severe(this.drawableWidth, this.drawableHeight, nextWidth, nextHeight);
-        this.drawableWidth = nextWidth;
-        this.drawableHeight = nextHeight;
-        this.screenHeight = nextScreenHeight;
-        this.screenWidth = nextScreenWidth;
-      }
-    }
-    this.renderContext.setGL(gl);
-
-    performRender();
-  }
-
-  private void handleReshape(GLAutoDrawable drawable, int x, int y, int width, int height) {
-    //edu.cmu.cs.dennisc.print.PrintUtilities.println( "reshape", drawable, x, y, width, height );
-    assert drawable == this.drawable;
-    this.drawableWidth = width;
-    this.drawableHeight = height;
-    this.screenWidth = GlDrawableUtils.getGLJPanelWidth(drawable);
-    this.screenHeight = GlDrawableUtils.getGLJPanelHeight(drawable);
-    this.fireResized(new RenderTargetResizeEvent(this.getRenderTarget(), width, height));
-  }
-
-  //  public void displayChanged( com.jogamp.opengl.GLAutoDrawable drawable, boolean modeChanged, boolean deviceChanged ) {
-  //    //edu.cmu.cs.dennisc.print.PrintUtilities.println( "displayChanged", drawable, modeChanged, deviceChanged );
-  //    assert drawable == this.drawable;
-  //    this.rtImp.fireDisplayChanged( new edu.cmu.cs.dennisc.renderer.event.RenderTargetDisplayChangeEvent( this.rtImp.getRenderTarget(), modeChanged, deviceChanged ) );
-  //  }
-
-  private void handleDispose(GLAutoDrawable drawable) {
-    Logger.todo(drawable);
-  }
-
-  private final RenderContext renderContext = new RenderContext();
-
-  private GLAutoDrawable drawable;
+  GLAutoDrawable drawable;
 
   //The drawable size and the screen size are not necessarily the same
   //This is known to be the case on retina displays where the drawable size is 2x the screen size
   //See https://jogamp.org/bugzilla/show_bug.cgi?id=741 for details
-  private int drawableWidth;
-  private int drawableHeight;
-  private int screenWidth;
-  private int screenHeight;
+  int drawableWidth;
+  int drawableHeight;
+  int screenWidth;
+  int screenHeight;
 
   private BufferedImage rvColorBuffer = null;
   private FloatBuffer rvDepthBuffer = null;
@@ -559,26 +403,5 @@ public class RenderTargetImp {
 
   private final List<AbstractCamera> sgCameras = Lists.newCopyOnWriteArrayList();
 
-  //
-  private final GLEventListener glEventListener = new GLEventListener() {
-    @Override
-    public void init(GLAutoDrawable drawable) {
-      handleInit(drawable);
-    }
-
-    @Override
-    public void display(GLAutoDrawable drawable) {
-      handleDisplay(drawable);
-    }
-
-    @Override
-    public void reshape(GLAutoDrawable drawable, int x, int y, int width, int height) {
-      handleReshape(drawable, x, y, width, height);
-    }
-
-    @Override
-    public void dispose(GLAutoDrawable drawable) {
-      handleDispose(drawable);
-    }
-  };
+  final RenderTargetGlEventHandler glEventHandler = new RenderTargetGlEventHandler(this);
 }

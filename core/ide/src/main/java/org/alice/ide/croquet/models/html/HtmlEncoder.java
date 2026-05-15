@@ -42,49 +42,37 @@
  *******************************************************************************/
 package org.alice.ide.croquet.models.html;
 
-import edu.cmu.cs.dennisc.java.awt.ComponentUtilities;
 import edu.cmu.cs.dennisc.java.util.ResourceBundleUtilities;
 import org.alice.ide.common.BodyPane;
 import org.alice.ide.common.TypeComponent;
 import org.alice.ide.x.ProjectEditorAstI18nFactory;
 import org.alice.ide.x.components.StatementListPropertyView;
-import org.apache.batik.svggen.SVGGraphics2D;
-import org.apache.batik.svggen.SVGIDGenerator;
-import org.lgna.croquet.views.SwingComponentView;
 import org.lgna.project.ast.*;
 import org.lgna.project.code.CodeOrganizer;
 import org.lgna.project.code.ProcessableNode;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import javax.swing.*;
-import java.awt.*;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.Deque;
 import java.util.List;
 import java.util.Map;
-import java.util.Stack;
+import java.util.Set;
 
 public class HtmlEncoder implements AstProcessor {
 
   private final Document document;
-  private SVGGraphics2D activeSVG = null;
-  private SVGIDGenerator firstIDGenerator = null;
-  private final Stack<org.w3c.dom.Element> activeElements = new Stack<>();
-  private static final Map<String, CodeOrganizer.CodeOrganizerDefinition> codeOrganizerDefinitionMap = new HashMap<>();
-  private final Map<String, CodeOrganizer.CodeOrganizerDefinition> codeOrganizerDefinitions = codeOrganizerDefinitionMap;
-  private static final Collection<String> sectionsToSkip = Collections.unmodifiableList(Arrays.asList("ConstructorSection", "GettersAndSettersSection", "StaticMethodsSection"));
-
-  static {
-    codeOrganizerDefinitionMap.put("Scene", CodeOrganizer.sceneClassCodeOrganizer);
-    codeOrganizerDefinitionMap.put("Program", CodeOrganizer.programClassCodeOrganizer);
-  }
+  private final SvgEncoder svgEncoder;
+  private final Deque<org.w3c.dom.Element> activeElements = new ArrayDeque<>();
+  private static final Map<String, CodeOrganizer.CodeOrganizerDefinition> codeOrganizerDefinitionMap = Map.of(
+      "Scene", CodeOrganizer.sceneClassCodeOrganizer,
+      "Program", CodeOrganizer.programClassCodeOrganizer);
+  private static final Set<String> sectionsToSkip = Set.of("ConstructorSection", "GettersAndSettersSection", "StaticMethodsSection");
 
   HtmlEncoder(Document doc) {
     document = doc;
+    svgEncoder = new SvgEncoder(doc);
   }
 
   public void encode(ProcessableNode node, org.w3c.dom.Element root) {
@@ -134,42 +122,11 @@ public class HtmlEncoder implements AstProcessor {
   }
 
   private void pushSvg(Runnable content) {
-    if (activeSVG != null) {
-      throw new RuntimeException("Attempted to create an SVG inside another SVG.");
-    }
-    activeSVG = new SVGGraphics2D(document);
-    activeSVG.setSVGCanvasSize(new Dimension(0, 0));
-    useCommonIdGenerator();
-
-    content.run();
-
-    final Element svgRoot = activeSVG.getRoot();
-    svgRoot.setAttribute("class", "alice-generated-svg");
-    parentNode().appendChild(svgRoot);
-    activeSVG = null;
+    svgEncoder.pushSvg(parentNode(), content);
   }
 
-  private void useCommonIdGenerator() {
-    if (firstIDGenerator == null) {
-      // Use the one from the first SVG generated
-      firstIDGenerator = activeSVG.getGeneratorContext().getIDGenerator();
-    } else {
-      // Replace the generator on other SVGs to continue number and prevent conflicts
-      activeSVG.getGeneratorContext().setIDGenerator(firstIDGenerator);
-    }
-  }
-
-  private void addToSvg(SwingComponentView<?> view) {
-    if (activeSVG == null) {
-      throw new RuntimeException("Attempted to add to SVG before creating it.");
-    }
-    JComponent awt = view.getAwtComponent();
-    ComponentUtilities.doLayoutTree(awt);
-    ComponentUtilities.setSizeToPreferredSizeTree(awt);
-    Dimension addedSize = awt.getPreferredSize();
-    Dimension svgSize = activeSVG.getSVGCanvasSize();
-    activeSVG.setSVGCanvasSize(new Dimension(Math.max(addedSize.width, svgSize.width), Math.max(addedSize.height, svgSize.height)));
-    awt.paint(activeSVG);
+  private void addToSvg(org.lgna.croquet.views.SwingComponentView<?> view) {
+    svgEncoder.addToSvg(view);
   }
 
   private void addTypeSvgInline(AbstractType<?, ?, ?> type) {
@@ -190,12 +147,13 @@ public class HtmlEncoder implements AstProcessor {
 
   @Override
   public CodeOrganizer getNewCodeOrganizerForTypeName(String typeName) {
-    return new CodeOrganizer(codeOrganizerDefinitions.getOrDefault(typeName, CodeOrganizer.defaultCodeOrganizer));
+    return new CodeOrganizer(codeOrganizerDefinitionMap.getOrDefault(typeName, CodeOrganizer.defaultCodeOrganizer));
   }
 
   @Override
   public void processClass(CodeOrganizer codeOrganizer, NamedUserType userType) {
-    if (isClassEmpty(codeOrganizer)) {
+    Map<String, List<ProcessableNode>> sections = codeOrganizer.getOrderedSections();
+    if (isClassEmpty(sections)) {
       return;
     }
     pushDiv("alice-class", () -> {
@@ -204,7 +162,7 @@ public class HtmlEncoder implements AstProcessor {
         addSpan("alice-code-header-detail", "extends");
         addSpan("alice-class-superType", userType.getSuperType().getName());
       });
-      for (Map.Entry<String, List<ProcessableNode>> entry : codeOrganizer.getOrderedSections().entrySet()) {
+      for (Map.Entry<String, List<ProcessableNode>> entry : sections.entrySet()) {
           if (isSectionToInclude(entry.getKey()) && !entry.getValue().isEmpty()) {
             appendSection(entry.getValue());
         }
@@ -212,8 +170,8 @@ public class HtmlEncoder implements AstProcessor {
     });
   }
 
-  private boolean isClassEmpty(CodeOrganizer codeOrganizer) {
-    for (Map.Entry<String, List<ProcessableNode>> entry : codeOrganizer.getOrderedSections().entrySet()) {
+  private boolean isClassEmpty(Map<String, List<ProcessableNode>> sections) {
+    for (Map.Entry<String, List<ProcessableNode>> entry : sections.entrySet()) {
       if (isSectionToInclude(entry.getKey()) && !entry.getValue().isEmpty()) {
         for (ProcessableNode item : entry.getValue()) {
           if (!(item instanceof UserMethod) || !((UserMethod) item).getManagementLevel().isGenerated()) {
@@ -380,201 +338,5 @@ public class HtmlEncoder implements AstProcessor {
         addSpan("alice-parameter-label", parameterName);
       }
     });
-  }
-
-  @Override
-  public void processGetter(Getter getter) {
-    // Does not include getters
-  }
-
-  @Override
-  public void processIndexedGetter(ArrayItemGetter getter) {
-    // Does not include getters
-  }
-
-  @Override
-  public void processSetter(Setter setter) {
-    // Does not include setters
-  }
-
-  @Override
-  public void processIndexedSetter(ArrayItemSetter setter) {
-    // Does not include setters
-  }
-
-  @Override
-  public void processConstructor(NamedUserConstructor constructor) {
-    // Does not include constructors
-  }
-
-  @Override
-  public void processSuperConstructor(SuperConstructorInvocationStatement supCon) {
-    // Does not include constructors
-  }
-
-  /** Statements will not be processed, as they are all inside generated SVGs **/
-
-  @Override
-  public void processExpressionStatement(ExpressionStatement stmt) {
-  }
-
-  @Override
-  public void processReturnStatement(ReturnStatement stmt) {
-  }
-
-  @Override
-  public void processBlock(BlockStatement blockStatement) {
-  }
-
-  @Override
-  public void processConstructorBlock(ConstructorBlockStatement constructor) {
-  }
-
-  @Override
-  public void processThisConstructor(ThisConstructorInvocationStatement thisCon) {
-  }
-
-  @Override
-  public void processLocalDeclaration(LocalDeclarationStatement stmt) {
-  }
-
-  @Override
-  public void processKeyedArgument(JavaKeyedArgument arg) {
-  }
-
-  /** Code Flow **/
-
-  @Override
-  public void processConditional(ConditionalStatement stmt) {
-  }
-
-  @Override
-  public void processForEach(AbstractForEachLoop loop) {
-  }
-
-  @Override
-  public void processEachInTogether(AbstractEachInTogether eachInTogether) {
-  }
-
-  @Override
-  public void processWhileLoop(WhileLoop loop) {
-  }
-
-  @Override
-  public void processCountLoop(CountLoop loop) {
-  }
-
-  @Override
-  public void processDoInOrder(DoInOrder doInOrder) {
-  }
-
-  @Override
-  public void processDoTogether(DoTogether doTogether) {
-  }
-
-  @Override
-  public void processLambda(UserLambda lambda) {
-  }
-
-  /** Expressions **/
-
-  @Override
-  public void processExpression(Expression expression) {
-  }
-
-  @Override
-  public void processMethodCall(MethodInvocation invocation) {
-  }
-
-  @Override
-  public void processFieldAccess(FieldAccess access) {
-  }
-
-  @Override
-  public void processAssignmentExpression(AssignmentExpression assignment) {
-  }
-
-  @Override
-  public void processConcatenation(StringConcatenation concat) {
-  }
-
-  @Override
-  public void processLogicalComplement(LogicalComplement complement) {
-  }
-
-  @Override
-  public void processInfixExpression(InfixExpression infixExpression) {
-  }
-
-  @Override
-  public void processInstantiation(InstanceCreation creation) {
-  }
-
-  @Override
-  public void processArrayInstantiation(ArrayInstanceCreation creation) {
-  }
-
-  @Override
-  public void processArrayAccess(ArrayAccess access) {
-  }
-
-  @Override
-  public void processArrayLength(ArrayLength arrayLength) {
-  }
-
-  @Override
-  public void processResourceExpression(ResourceExpression resourceExpression) {
-  }
-
-  /** Comments **/
-
-  @Override
-  public void processMultiLineComment(String comment) {
-  }
-
-  /** Primitives and syntax **/
-
-  @Override
-  public void processNull() {
-  }
-
-  @Override
-  public void processThisReference() {
-  }
-
-  @Override
-  public void processSuperReference() {
-  }
-
-  @Override
-  public void processBoolean(boolean b) {
-  }
-
-  @Override
-  public void processInt(int n) {
-  }
-
-  @Override
-  public void processFloat(float f) {
-  }
-
-  @Override
-  public void processDouble(double d) {
-  }
-
-  @Override
-  public void processEscapedStringLiteral(StringLiteral literal) {
-  }
-
-  @Override
-  public void processVariableIdentifier(AbstractDeclaration variable) {
-  }
-
-  @Override
-  public void processTypeLiteral(TypeLiteral typeLiteral) {
-  }
-
-  @Override
-  public void processTypeName(AbstractType<?, ?, ?> type) {
   }
 }

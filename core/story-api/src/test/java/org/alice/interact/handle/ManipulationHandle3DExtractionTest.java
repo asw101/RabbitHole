@@ -239,6 +239,8 @@ public class ManipulationHandle3DExtractionTest {
     assertFalse("DoubleInterruptibleAnimation should be package-private (all subclasses are in the same package)",
         content.contains("public abstract class DoubleInterruptibleAnimation")
             || content.contains("public class DoubleInterruptibleAnimation"));
+    assertTrue("DoubleInterruptibleAnimation should be abstract",
+        content.contains("abstract class DoubleInterruptibleAnimation"));
   }
 
   @Test
