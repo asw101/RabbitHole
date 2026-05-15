@@ -42,8 +42,6 @@
  *******************************************************************************/
 package org.alice.ide.ast.declaration;
 
-import edu.cmu.cs.dennisc.java.util.Maps;
-import edu.cmu.cs.dennisc.java.util.logging.Logger;
 import edu.cmu.cs.dennisc.tree.DefaultNode;
 import org.alice.ide.IDE;
 import org.alice.ide.ast.declaration.views.DeclarationLikeSubstanceView;
@@ -63,10 +61,7 @@ import org.lgna.croquet.CascadeFillIn;
 import org.lgna.croquet.CascadeLineSeparator;
 import org.lgna.croquet.CustomItemState;
 import org.lgna.croquet.Operation;
-import org.lgna.croquet.State;
 import org.lgna.croquet.StringState;
-import org.lgna.croquet.event.ValueEvent;
-import org.lgna.croquet.event.ValueListener;
 import org.lgna.croquet.imp.cascade.BlankNode;
 import org.lgna.croquet.views.Dialog;
 import org.lgna.project.Project;
@@ -83,9 +78,7 @@ import org.lgna.project.ast.UserType;
 import org.lgna.story.SThing;
 
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
-import java.util.regex.Matcher;
 
 /**
  * @author Dennis Cosgrove
@@ -166,6 +159,9 @@ public abstract class DeclarationLikeSubstanceComposite<N extends Node> extends 
   private final CustomItemState<Expression> initializerState;
 
   private final ErrorStatus errorStatus = this.createErrorStatus("errorStatus");
+
+  private final DeclarationValidationDelegate validationDelegate = new DeclarationValidationDelegate(this);
+  private final DeclarationDialogLifecycleDelegate lifecycleDelegate = new DeclarationDialogLifecycleDelegate(this);
 
   private final Details details;
 
@@ -381,13 +377,33 @@ public abstract class DeclarationLikeSubstanceComposite<N extends Node> extends 
     }
   }
 
-  protected String getValueTypeExplanation(AbstractType<?, ?, ?> valueType) {
-    if (valueType != null) {
-      return null;
+  String findLocalizedTextForDelegate(String key) {
+    return this.findLocalizedText(key);
+  }
+
+  @Override
+  protected AbstractSeverityStatusComposite.Status getStatusPreRejectorCheck() {
+    if (validationDelegate.computeStatus(this.errorStatus)) {
+      return this.errorStatus;
     } else {
-      String mustBeSetTest = this.findLocalizedText("mustBeSet");
-      return mustBeSetTest.replaceAll("</type/>", this.valueComponentTypeState.getSidekickLabel().getText().replaceAll(":", ""));
+      return IS_GOOD_TO_GO_STATUS;
     }
+  }
+
+  boolean isValueComponentTypeEditable() {
+    return this.valueComponentTypeState != null && this.valueComponentTypeState.isEnabled();
+  }
+
+  boolean isValueIsArrayTypeEditable() {
+    return this.valueIsArrayTypeState != null && this.valueIsArrayTypeState.isEnabled();
+  }
+
+  boolean isNameEditable() {
+    return this.nameState != null && this.nameState.isEnabled();
+  }
+
+  boolean isInitializerEditable() {
+    return this.initializerState != null && this.initializerState.isEnabled();
   }
 
   protected final boolean isNameValid(String name) {
@@ -396,145 +412,8 @@ public abstract class DeclarationLikeSubstanceComposite<N extends Node> extends 
 
   protected abstract boolean isNameAvailable(String name);
 
-  protected String getNameExplanation(String declarationName) {
-    if (declarationName.length() > 0) {
-      if (this.isNameValid(declarationName)) {
-        if (this.isNameAvailable(declarationName)) {
-          return null;
-        } else {
-          String notAvalableText = this.findLocalizedText("isNotAvailable");
-          return notAvalableText.replaceAll("</name/>", "\"" + Matcher.quoteReplacement(declarationName) + "\"");
-        }
-      } else {
-        String notValidNameText = this.findLocalizedText("isNotAValidName");
-        return notValidNameText.replaceAll("</name/>", "\"" + Matcher.quoteReplacement(declarationName) + "\"");
-      }
-    } else {
-      String notValidText = this.findLocalizedText("isNotValid");
-      notValidText = notValidText.replaceAll("</name/>", "\"" + Matcher.quoteReplacement(declarationName) + "\"");
-      return notValidText.replaceAll("</type/>", this.nameState.getSidekickLabel().getText().replaceAll(":", ""));
-    }
-  }
-
-  private boolean isNullAllowedForInitializerUnderAnyCircumstances() {
-    AbstractType<?, ?, ?> type = this.getValueType();
-    if (type != null) {
-      if (type.isArray()) {
-        return false;
-      } else {
-        if (type.isPrimitive() || JavaType.isWrapperType(type)) {
-          return false;
-        } else {
-          return true;
-        }
-      }
-    } else {
-      return false;
-    }
-  }
-
   protected boolean isNullAllowedForInitializer() {
     return false;
-  }
-
-  protected String getInitializerExplanation(Expression initializer) {
-    if ((initializer != null) || (this.isNullAllowedForInitializerUnderAnyCircumstances() && this.isNullAllowedForInitializer())) {
-      return null;
-    } else {
-      String mustBeSetTest = this.findLocalizedText("mustBeSet");
-      return mustBeSetTest.replaceAll("</type/>", this.initializerState.getSidekickLabel().getText().replaceAll(":", ""));
-    }
-  }
-
-  @Override
-  protected AbstractSeverityStatusComposite.Status getStatusPreRejectorCheck() {
-    final String valueTypeText;
-    if (this.valueComponentTypeState != null) {
-      valueTypeText = this.getValueTypeExplanation(this.getValueType());
-    } else {
-      valueTypeText = null;
-    }
-    final String nameText;
-    if (this.isNameEditable()) {
-      nameText = this.getNameExplanation(this.nameState.getValue());
-    } else {
-      nameText = null;
-    }
-    final String initializerText;
-    if (this.initializerState != null) {
-      initializerText = this.getInitializerExplanation(initializerState.getValue());
-    } else {
-      initializerText = null;
-    }
-    if (errorStatus.setText(valueTypeText, nameText, initializerText)) {
-      return this.errorStatus;
-    } else {
-      return IS_GOOD_TO_GO_STATUS;
-    }
-  }
-
-  private boolean isValueComponentTypeEditable() {
-    return this.valueComponentTypeState != null ? this.valueComponentTypeState.isEnabled() : false;
-  }
-
-  private boolean isValueIsArrayTypeEditable() {
-    return this.valueIsArrayTypeState != null ? this.valueIsArrayTypeState.isEnabled() : false;
-  }
-
-  private boolean isNameEditable() {
-    return this.nameState != null ? this.nameState.isEnabled() : false;
-  }
-
-  private boolean isInitializerEditable() {
-    return this.initializerState != null ? this.initializerState.isEnabled() : false;
-  }
-
-  private final Map<AbstractType<?, ?, ?>, Expression> mapTypeToInitializer = Maps.newHashMap();
-  private final State.ValueListener<Boolean> isArrayValueTypeListener = new State.ValueListener<Boolean>() {
-    @Override
-    public void changing(State<Boolean> state, Boolean prevValue, Boolean nextValue) {
-      DeclarationLikeSubstanceComposite.this.handleValueTypeChanging();
-    }
-
-    @Override
-    public void changed(State<Boolean> state, Boolean prevValue, Boolean nextValue) {
-      DeclarationLikeSubstanceComposite.this.handleValueTypeChanged();
-    }
-  };
-  private final State.ValueListener<AbstractType> valueComponentTypeListener = new State.ValueListener<AbstractType>() {
-    @Override
-    public void changing(State<AbstractType> state, AbstractType prevValue, AbstractType nextValue) {
-      DeclarationLikeSubstanceComposite.this.handleValueTypeChanging();
-    }
-
-    @Override
-    public void changed(State<AbstractType> state, AbstractType prevValue, AbstractType nextValue) {
-      DeclarationLikeSubstanceComposite.this.handleValueTypeChanged();
-    }
-  };
-  private final ValueListener<Expression> initializerListener = new ValueListener<Expression>() {
-    @Override
-    public void valueChanged(ValueEvent<Expression> e) {
-      DeclarationLikeSubstanceComposite.this.getView().handleInitializerChanged(e.getNextValue());
-    }
-  };
-
-  private void handleValueTypeChanging() {
-    AbstractType<?, ?, ?> prevType = this.getValueType();
-    Logger.info("preserve:", prevType);
-    if (prevType != null) {
-      Expression prevInitializer = this.getInitializer();
-      this.mapTypeToInitializer.put(prevType, prevInitializer);
-    }
-  }
-
-  private void handleValueTypeChanged() {
-    if (this.initializerState != null) {
-      AbstractType<?, ?, ?> nextType = this.getValueType();
-      Logger.info("restore:", nextType);
-      Expression nextInitializer = this.mapTypeToInitializer.get(nextType);
-      this.initializerState.setValueTransactionlessly(nextInitializer);
-    }
   }
 
   protected boolean getIsFinalInitialValue() {
@@ -585,18 +464,9 @@ public abstract class DeclarationLikeSubstanceComposite<N extends Node> extends 
       this.nameState.setValueTransactionlessly(this.getNameInitialValue());
     }
 
-    if (this.isValueComponentTypeEditable() || this.isInitializerEditable()) {
-      if (this.isValueIsArrayTypeEditable()) {
-        this.valueIsArrayTypeState.addValueListener(this.isArrayValueTypeListener);
-      }
-      this.valueComponentTypeState.addValueListener(this.valueComponentTypeListener);
-    }
+    this.lifecycleDelegate.wireListeners();
+    this.lifecycleDelegate.clearTypeToInitializerCache();
 
-    this.mapTypeToInitializer.clear();
-
-    if (this.isInitializerEditable()) {
-      this.initializerState.addNewSchoolValueListener(this.initializerListener);
-    }
     this.getView().handleInitializerChanged(this.getInitializer());
     super.handlePreShowDialog(dialog);
   }
@@ -604,14 +474,6 @@ public abstract class DeclarationLikeSubstanceComposite<N extends Node> extends 
   @Override
   protected void handlePostHideDialog() {
     super.handlePostHideDialog();
-    if (this.isInitializerEditable()) {
-      this.initializerState.removeNewSchoolValueListener(this.initializerListener);
-    }
-    if (this.isValueComponentTypeEditable() || this.isInitializerEditable()) {
-      if (this.isValueIsArrayTypeEditable()) {
-        this.valueIsArrayTypeState.removeValueListener(this.isArrayValueTypeListener);
-      }
-      this.valueComponentTypeState.removeValueListener(this.valueComponentTypeListener);
-    }
+    this.lifecycleDelegate.unwireListeners();
   }
 }
