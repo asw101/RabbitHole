@@ -197,15 +197,17 @@ The private method is removed. No forwarding stub remains.
 
 ## Import cleanup
 
-After extraction, two imports in `GlobalDragAdapter.java` become
+After extraction, one import in `GlobalDragAdapter.java` becomes
 unused:
 
-| Import | Reason unused |
-|--------|---------------|
-| `edu.cmu.cs.dennisc.color.Color4f` | Only used in `setupHandles()` for `RotationRingHandle`, `JointRotationRingHandle`, and `LinearTranslateHandle` colors |
-| `edu.cmu.cs.dennisc.scenegraph.scale.Resizer` | Only used in `setupHandles()` for `LinearScaleHandle.createFromResizer()` |
+| Import | Status | Reason |
+|--------|--------|--------|
+| `edu.cmu.cs.dennisc.color.Color4f` | Removed | Only used in `setupHandles()` for handle colors |
+| `edu.cmu.cs.dennisc.scenegraph.scale.Resizer` | Retained | Still used in `setUpControls()` for `ResizeDragManipulator(Resizer.UNIFORM, ...)` |
 
-These imports are removed. All wildcard imports
+The `Color4f` import is removed. The `Resizer` import remains because
+`GlobalDragAdapter.setUpControls()` still uses it at line 170 to
+construct a `ResizeDragManipulator`. All wildcard imports
 (`org.alice.interact.handle.*`, `org.alice.interact.manipulator.*`,
 etc.) remain because they supply types still used in the remaining
 code (`HandleSet`, `HandleStyle`, `ClickAdapterManipulator`,
@@ -232,8 +234,8 @@ for step-by-step verification commands.
    succeeds with no regressions.
 5. No public API on `GlobalDragAdapter` changes (no new public methods,
    no removed public methods, no signature changes).
-6. The `Color4f` and `Resizer` imports are removed from
-   `GlobalDragAdapter.java`.
+6. The `Color4f` import is removed from `GlobalDragAdapter.java`.
+   The `Resizer` import is retained (still used in `setUpControls()`).
 7. All 24 handle objects created by `setupHandles` are unchanged (same
    handle types, same handle sets/groups, same conditions, same names).
 
@@ -245,7 +247,7 @@ This extraction covers **only** the `setupHandles()` method body
 **In scope:**
 - Handle creation and configuration
 - Handle-to-adapter registration
-- Import cleanup for `Color4f` and `Resizer`
+- Import cleanup for `Color4f` (only; `Resizer` is retained)
 
 **Out of scope:**
 - Manipulator condition set setup (constructor lines before

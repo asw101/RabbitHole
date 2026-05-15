@@ -63,15 +63,15 @@ Check:
 - Contains `static void setupHandles(DragAdapter adapter)`
 - Has a `private HandleSetupDelegate()` constructor
 
-## Step 4: Verify unused imports removed from GlobalDragAdapter
+## Step 4: Verify Color4f unused import removed from GlobalDragAdapter
 
 ```bash
-grep -n "Color4f\|Resizer" \
+grep -n "Color4f" \
   core/ide/src/main/java/org/alice/stageide/sceneeditor/interact/GlobalDragAdapter.java
 ```
 
-Expected: no output. Both `Color4f` and `Resizer` imports should be
-removed since they are only used in the extracted `setupHandles()` body.
+Expected: only a commented-out reference. The `Color4f` import should be
+removed since it is only used in a comment.
 
 ## Step 5: Verify delegation call site
 
@@ -166,8 +166,7 @@ state — it only overrides `getHandleSetToEnable()` with a constant.
 If compilation fails, verify the anonymous class does not reference
 `this` (the enclosing class instance).
 
-### Color4f or Resizer "unused import" warnings
+### Color4f "unused import" warning
 
-These imports should be removed from `GlobalDragAdapter.java` since
-they are only used in the extracted handle setup code. They must be
-present in `HandleSetupDelegate.java` instead.
+The `Color4f` import should be removed from `GlobalDragAdapter.java`
+since it only appears in a comment.

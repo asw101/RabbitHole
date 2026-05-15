@@ -178,25 +178,27 @@ references static enum constants.
 
 ## 7. Trace the import cleanup
 
-After moving `setupHandles()` out of `GlobalDragAdapter`, two imports
-become unused:
+After moving `setupHandles()` out of `GlobalDragAdapter`, one import
+becomes unused:
 
-| Import | Used only in setupHandles() for |
-|--------|--------------------------------|
-| `edu.cmu.cs.dennisc.color.Color4f` | `RotationRingHandle` (`RED`, `BLUE`, `WHITE`), `JointRotationRingHandle` (`WHITE`, `RED`, `BLUE`), `LinearTranslateHandle` (`GREEN`, `RED`, `WHITE`, `YELLOW`) |
-| `edu.cmu.cs.dennisc.scenegraph.scale.Resizer` | `LinearScaleHandle.createFromResizer(Resizer.X_AXIS)`, etc. |
+| Import | Status | Reason |
+|--------|--------|--------|
+| `edu.cmu.cs.dennisc.color.Color4f` | Removed | Only used in `setupHandles()` for `RotationRingHandle` (`RED`, `BLUE`, `WHITE`), `JointRotationRingHandle` (`WHITE`, `RED`, `BLUE`), `LinearTranslateHandle` (`GREEN`, `RED`, `WHITE`, `YELLOW`) |
+| `edu.cmu.cs.dennisc.scenegraph.scale.Resizer` | Retained | Still used in `setUpControls()` for `ResizeDragManipulator(Resizer.UNIFORM, ...)` |
 
-Verify no other code in `GlobalDragAdapter` uses these types:
+Verify that `Color4f` is no longer used (only a commented-out
+reference remains) and that `Resizer` is still actively used:
 
 ```bash
-grep -c "Color4f\|Resizer" \
+grep -n "Color4f\|Resizer" \
   core/ide/src/main/java/org/alice/stageide/sceneeditor/interact/GlobalDragAdapter.java
 ```
 
-After extraction, the count should be 0 (imports removed). The
-wildcard imports (`org.alice.interact.handle.*`, etc.) remain because
-they supply `HandleSet`, `HandleStyle`, and other types still used
-in the constructor and other methods.
+After extraction, `Color4f` appears only in a comment. `Resizer`
+appears in the import and at line 170 (`ResizeDragManipulator`
+constructor). The wildcard imports (`org.alice.interact.handle.*`,
+etc.) remain because they supply `HandleSet`, `HandleStyle`, and
+other types still used in the constructor and other methods.
 
 ## 8. Verify the result
 
