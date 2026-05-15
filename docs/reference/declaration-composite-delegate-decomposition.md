@@ -100,8 +100,8 @@ method declarations, and the template methods that subclasses override.
 **Delegate fields:**
 
 ```java
-/* package-private */ final DeclarationValidationDelegate validationDelegate;
-/* package-private */ final DeclarationDialogLifecycleDelegate lifecycleDelegate;
+private final DeclarationValidationDelegate validationDelegate;
+private final DeclarationDialogLifecycleDelegate lifecycleDelegate;
 ```
 
 **Constructor wiring (end of existing constructor):**
@@ -138,7 +138,6 @@ explanations.
 
 ```java
 DeclarationValidationDelegate(DeclarationLikeSubstanceComposite<?> composite) {
-    assert composite != null;
     this.composite = composite;
 }
 ```
@@ -176,7 +175,7 @@ decide between returning `errorStatus` or `IS_GOOD_TO_GO_STATUS`, keeping the
 status-constant knowledge in the composite rather than the delegate.
 
 The explanation methods call back to the composite via the stored reference to
-access localized text (`composite.findLocalizedText()`), state labels
+access localized text (`composite.findLocalizedTextForDelegate()`), state labels
 (`composite.getValueComponentTypeState().getSidekickLabel()`), and override
 hooks (`composite.isNullAllowedForInitializer()`).
 
@@ -200,7 +199,6 @@ wiring/unwiring logic that was previously embedded in
 
 ```java
 DeclarationDialogLifecycleDelegate(DeclarationLikeSubstanceComposite<?> composite) {
-    assert composite != null;
     this.composite = composite;
 }
 ```
@@ -278,7 +276,8 @@ The delegates also use public methods that were already available:
 `getNameState()`, `getInitializerState()`, `getValueType()`,
 `getValueComponentType()`, `getInitializer()`, `getView()`,
 `isNullAllowedForInitializer()`, `isNameValid()`, `isNameAvailable()`, and
-`findLocalizedText()`.
+`findLocalizedTextForDelegate()` (a package-private bridge to the `protected`
+`findLocalizedText()` inherited from the superclass).
 
 No interfaces or inheritance are introduced. All collaboration uses direct
 method calls within the same package.
@@ -360,7 +359,7 @@ All existing error handling is preserved verbatim:
 
 - `errorStatus.setText()` receives the same three explanation strings in the
   same order (value-type, name, initializer).
-- `findLocalizedText()` keys are unchanged: `"mustBeSet"`, `"isNotAvailable"`,
+- `findLocalizedTextForDelegate()` keys are unchanged: `"mustBeSet"`, `"isNotAvailable"`,
   `"isNotAValidName"`, `"isNotValid"`.
 - The original `replaceAll()` calls with `Matcher.quoteReplacement()` were
   simplified to `replace()`. The substitution tokens (`</type/>`, `</name/>`)
