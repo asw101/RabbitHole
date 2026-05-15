@@ -225,9 +225,13 @@ private final State.ValueListener<Boolean> isArrayValueTypeListener =
 
 Called by the composite's `handlePreShowDialog()` after state reset. Adds
 value-type listeners if the component type or initializer is editable, then
-clears the type-to-initializer cache, then adds the initializer listener if the
-initializer is editable. The cache clear happens *between* the type listeners
-and the initializer listener — this ordering matches the original code exactly.
+adds the initializer listener if the initializer is editable. The coordinator
+calls `clearTypeToInitializerCache()` separately after `wireListeners()`. In
+the original code the cache clear sat between the type listeners and the
+initializer listener; the extracted version groups all listener wiring together
+and clears the cache afterward. This reordering is safe because no listener
+can fire during the synchronous `handlePreShowDialog()` sequence — state resets
+are already complete and no user interaction occurs until the dialog is shown.
 
 **`unwireListeners()` contract:**
 
@@ -357,9 +361,10 @@ All existing error handling is preserved verbatim:
   same order (value-type, name, initializer).
 - `findLocalizedText()` keys are unchanged: `"mustBeSet"`, `"isNotAvailable"`,
   `"isNotAValidName"`, `"isNotValid"`.
-- `Matcher.quoteReplacement()` escaping of declaration names is preserved.
-- `replaceAll()` substitution patterns (`</type/>`, `</name/>`) are
-  preserved character-for-character.
+- The original `replaceAll()` calls with `Matcher.quoteReplacement()` were
+  simplified to `replace()`. The substitution tokens (`</type/>`, `</name/>`)
+  are literal strings, not regex patterns, so `replace()` is equivalent and
+  `Matcher.quoteReplacement()` is no longer needed.
 
 No new exceptions are introduced.
 

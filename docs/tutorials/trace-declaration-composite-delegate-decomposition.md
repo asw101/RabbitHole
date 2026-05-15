@@ -106,16 +106,18 @@ coordinator does versus what the delegate does:
 8.       ├── lifecycleDelegate.wireListeners()  // DELEGATE
 9.       │   ├── Add isArrayValueTypeListener   // delegate (if editable)
 10.      │   ├── Add valueComponentTypeListener // delegate (if editable)
-11.      │   ├── Clear mapTypeToInitializer     // delegate
-12.      │   └── Add initializerListener        // delegate (if editable)
+11.      │   └── Add initializerListener        // delegate (if editable)
+12.      ├── lifecycleDelegate.clearTypeToInitializerCache()  // coordinator calls delegate
 13.      ├── View.handleInitializerChanged()     // coordinator
 14.      └── super.handlePreShowDialog(dialog)   // grandparent
 ```
 
 The critical invariants are: (a) state reset (steps 3–7) happens *before*
 listener wiring (step 8), so listeners don't fire on the programmatic reset;
-(b) the cache clear (step 11) happens *after* type listeners are added but
-*before* the initializer listener — matching the original code exactly.
+(b) the cache clear (step 12) happens after all listeners are wired rather
+than between the type and initializer listeners as in the original code. This
+reordering is safe because no listener fires during the synchronous setup —
+user interaction cannot occur until the dialog is shown.
 
 ## Tracing `handlePostHideDialog` after extraction
 
@@ -211,7 +213,7 @@ Unit tests for the lifecycle delegate's cache and wiring logic:
 | Risk | Mitigation |
 | --- | --- |
 | `super` call chain breaks | Coordinator retains `getStatusPreRejectorCheck()`, `handlePreShowDialog()`, `handlePostHideDialog()` as overrides; delegates are called within, not replacing, the methods |
-| Listener wiring order changes | `wireListeners()` and `unwireListeners()` reproduce the original code's exact ordering |
-| Cache clear-on-show contract violated | `wireListeners()` calls `mapTypeToInitializer.clear()` between type listener addition and initializer listener addition, matching the original code position |
+| Listener wiring order changes | `wireListeners()` and `unwireListeners()` preserve the same listener groups; cache clear moved after all wiring but still within the synchronous `handlePreShowDialog()` sequence |
+| Cache clear-on-show contract violated | `clearTypeToInitializerCache()` is called by the coordinator immediately after `wireListeners()`. The original code cleared between type and initializer listener additions; the reordering is safe because no listener fires during synchronous dialog setup |
 | `isNullAllowedForInitializer()` override missed | Delegate calls `composite.isNullAllowedForInitializer()` which dispatches polymorphically |
 | Localized text key drift | Characterization tests assert exact localized text keys |
