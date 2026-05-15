@@ -219,8 +219,8 @@ public class StoryTypeComparatorContractTest {
 
   private static void assertImportPresent(Set<String> imports, String simpleTypeName, String reason) {
     boolean found = imports.stream().anyMatch(line ->
-        line.contains("." + simpleTypeName + ";")
-            || line.endsWith(".*;"));
-    assertTrue("Import of " + simpleTypeName + " must be present (" + reason + ")", found);
+        line.contains("." + simpleTypeName + ";"));
+    assertTrue("Import of " + simpleTypeName + " must be present — "
+        + "no wildcard fallback (" + reason + ")", found);
   }
 }
