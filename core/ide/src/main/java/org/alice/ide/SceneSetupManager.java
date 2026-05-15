@@ -96,7 +96,7 @@ final class SceneSetupManager {
     }
   }
 
-  String reorganizeTypeFieldsIfNecessary(NamedUserType namedUserType, int startIndex, Set<UserField> alreadyMovedFields) {
+  private String reorganizeTypeFieldsIfNecessary(NamedUserType namedUserType, int startIndex, Set<UserField> alreadyMovedFields) {
     if (startIndex >= namedUserType.fields.size()) {
       return null;
     }

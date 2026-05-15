@@ -37,7 +37,7 @@ The private static nested class `UnacceptableFieldAccessCrawler` (originally L23
 The only structural change to `IDE` is:
 
 1. A new `private final SceneSetupManager sceneSetupManager` field.
-2. Constructor initialization: `this.sceneSetupManager = new SceneSetupManager(this)` immediately after `super(apiConfigurationManager)`.
+2. Constructor initialization: `this.sceneSetupManager = new SceneSetupManager(this)` in the constructor, after `super(apiConfigurationManager)` and `crashDetector` assignment.
 3. `updateProject()` now delegates to the manager instead of calling the methods directly.
 
 ### What does NOT move
@@ -97,13 +97,13 @@ These imports were used exclusively by the extracted code and are no longer need
 
 | Import | Retained because |
 | --- | --- |
-| `org.lgna.project.ast.Comment` | Used by `commentThatWantsFocus` field and accessors (L417–424) |
-| `org.lgna.project.ast.FieldAccess` | Used by `getFieldAccesses` (L363) and `getPrefixPaneForFieldAccessIfAppropriate` (L530) |
-| `org.lgna.project.ast.UserMethod` | Used by abstract `getPerformEditorGeneratedSetUpMethod()` declaration (L224) |
-| `edu.cmu.cs.dennisc.pattern.Crawler` | Used by `crawlFilteredProgramType` (L228) |
-| `edu.cmu.cs.dennisc.pattern.Criterion` | Used by `getDeclarationFilter` (L226) |
-| `org.lgna.project.ast.CrawlPolicy` | Used by `crawlFilteredProgramType` (L231) |
-| `org.lgna.project.ast.Expression` | Used by `isDropDownDesiredFor` (L375) |
+| `org.lgna.project.ast.Comment` | Used by `commentThatWantsFocus` field and accessors (L321–329) |
+| `org.lgna.project.ast.FieldAccess` | Used by `getFieldAccesses` (L267) and `getPrefixPaneForFieldAccessIfAppropriate` (L423) |
+| `org.lgna.project.ast.UserMethod` | Used by abstract `getPerformEditorGeneratedSetUpMethod()` declaration (L221) |
+| `edu.cmu.cs.dennisc.pattern.Crawler` | Used by `crawlFilteredProgramType` (L225) |
+| `edu.cmu.cs.dennisc.pattern.Criterion` | Used by `getDeclarationFilter` (L223) |
+| `org.lgna.project.ast.CrawlPolicy` | Used by `crawlFilteredProgramType` (L228) |
+| `org.lgna.project.ast.Expression` | Used by `isDropDownDesiredFor` (L279) |
 
 ## API reference
 
@@ -115,13 +115,13 @@ final class SceneSetupManager {
 
     void generateCodeForSceneSetUp()
     void reorganizeFieldsIfNecessary()
-    String reorganizeTypeFieldsIfNecessary(NamedUserType namedUserType,
-                                           int startIndex,
-                                           Set<UserField> alreadyMovedFields)
+    private String reorganizeTypeFieldsIfNecessary(NamedUserType namedUserType,
+                                                   int startIndex,
+                                                   Set<UserField> alreadyMovedFields)
 }
 ```
 
-All members are package-private (no access modifier). The class is `final` and cannot be subclassed. `UnacceptableFieldAccessCrawler` is a `private static` nested class inside `SceneSetupManager`, invisible to all other code.
+The class and its constructor and public-facing methods (`generateCodeForSceneSetUp`, `reorganizeFieldsIfNecessary`) are package-private (no access modifier). `reorganizeTypeFieldsIfNecessary` is `private` since it is only called internally. The class is `final` and cannot be subclassed. `UnacceptableFieldAccessCrawler` is a `private static` nested class inside `SceneSetupManager`, invisible to all other code.
 
 ## Thread safety
 
@@ -141,7 +141,7 @@ Thread safety is unchanged. The `synchronized(project.getLock())` block remains 
 | **Net reduction** | **~103** |
 | **IDE.java final line count** | **~436** |
 
-`SceneSetupManager.java` is approximately 100 lines including the license header, imports, and class body.
+`SceneSetupManager.java` is approximately 180 lines including the license header, imports, and class body.
 
 ## Build and test
 
@@ -153,4 +153,4 @@ mvn compile -pl core/ide
 mvn test -pl core/ide
 ```
 
-No new tests are required. The extraction is a pure structural refactoring — all existing tests exercise the same code paths through IDE's unchanged public API. The `ensureProjectCodeUpToDate()` → `forceProjectCodeUpToDate()` → `updateProject()` call chain is the only entry point to the extracted logic, and it continues to work identically.
+The extraction is a pure structural refactoring — all existing tests exercise the same code paths through IDE's unchanged public API. A `SceneSetupManagerExtractionContractTest` verifies the structural contract (class visibility, method signatures, delegation field, import cleanup, and IDE line count) via reflection. The `ensureProjectCodeUpToDate()` → `forceProjectCodeUpToDate()` → `updateProject()` call chain is the only entry point to the extracted logic, and it continues to work identically.
