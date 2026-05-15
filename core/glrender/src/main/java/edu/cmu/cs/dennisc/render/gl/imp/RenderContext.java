@@ -60,7 +60,7 @@ import java.awt.image.DataBuffer;
 import java.awt.image.DataBufferByte;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 
 import static com.jogamp.opengl.GL.*;
@@ -95,8 +95,9 @@ public class RenderContext extends Context {
   private final float[] ambient = new float[4];
   private final FloatBuffer ambientBuffer = FloatBuffer.wrap(this.ambient);
 
-  private static final float[] s_color = new float[4];
-  private static final FloatBuffer s_colorBuffer = FloatBuffer.wrap(s_color);
+  // Per-instance scratch buffer — eliminates cross-instance synchronization
+  private final float[] colorScratch = new float[4];
+  private final FloatBuffer colorScratchBuffer = FloatBuffer.wrap(this.colorScratch);
 
   private float globalBrightness = 1.0f;
 
@@ -221,7 +222,7 @@ public class RenderContext extends Context {
             break;
           } else {
             if (errors == null) {
-              errors = new LinkedList<Integer>();
+              errors = new ArrayList<Integer>();
             }
             errors.add(error);
           }
@@ -301,44 +302,36 @@ public class RenderContext extends Context {
   }
 
   public void setLightColor(int id, float[] color, float brightness) {
-    synchronized (s_colorBuffer) {
-      s_color[0] = color[0] * brightness * this.globalBrightness;
-      s_color[1] = color[1] * brightness * this.globalBrightness;
-      s_color[2] = color[2] * brightness * this.globalBrightness;
-      s_color[3] = color[3] * brightness * this.globalBrightness;
-      gl.glLightfv(id, GL_DIFFUSE, s_colorBuffer);
-      gl.glLightfv(id, GL_SPECULAR, s_colorBuffer);
-    }
+    colorScratch[0] = color[0] * brightness * this.globalBrightness;
+    colorScratch[1] = color[1] * brightness * this.globalBrightness;
+    colorScratch[2] = color[2] * brightness * this.globalBrightness;
+    colorScratch[3] = color[3] * brightness * this.globalBrightness;
+    gl.glLightfv(id, GL_DIFFUSE, colorScratchBuffer);
+    gl.glLightfv(id, GL_SPECULAR, colorScratchBuffer);
   }
 
   public void setFogColor(float[] fogColor) {
-    synchronized (s_colorBuffer) {
-      s_color[0] = fogColor[0] * this.globalBrightness;
-      s_color[1] = fogColor[1] * this.globalBrightness;
-      s_color[2] = fogColor[2] * this.globalBrightness;
-      s_color[3] = fogColor[3] * this.globalBrightness;
-      gl.glFogfv(GL_FOG_COLOR, s_colorBuffer);
-    }
+    colorScratch[0] = fogColor[0] * this.globalBrightness;
+    colorScratch[1] = fogColor[1] * this.globalBrightness;
+    colorScratch[2] = fogColor[2] * this.globalBrightness;
+    colorScratch[3] = fogColor[3] * this.globalBrightness;
+    gl.glFogfv(GL_FOG_COLOR, colorScratchBuffer);
   }
 
   public void setColor(float[] color, float opacity) {
-    synchronized (s_colorBuffer) {
-      s_color[0] = color[0] * this.globalBrightness;
-      s_color[1] = color[1] * this.globalBrightness;
-      s_color[2] = color[2] * this.globalBrightness;
-      s_color[3] = color[3] * opacity * this.globalOpacity;
-      gl.glColor4fv(s_colorBuffer);
-    }
+    colorScratch[0] = color[0] * this.globalBrightness;
+    colorScratch[1] = color[1] * this.globalBrightness;
+    colorScratch[2] = color[2] * this.globalBrightness;
+    colorScratch[3] = color[3] * opacity * this.globalOpacity;
+    gl.glColor4fv(colorScratchBuffer);
   }
 
   public void setMaterial(int face, int name, float[] color, float opacity) {
-    synchronized (s_colorBuffer) {
-      s_color[0] = color[0] * this.globalBrightness;
-      s_color[1] = color[1] * this.globalBrightness;
-      s_color[2] = color[2] * this.globalBrightness;
-      s_color[3] = color[3] * opacity * this.globalOpacity;
-      gl.glMaterialfv(face, name, s_colorBuffer);
-    }
+    colorScratch[0] = color[0] * this.globalBrightness;
+    colorScratch[1] = color[1] * this.globalBrightness;
+    colorScratch[2] = color[2] * this.globalBrightness;
+    colorScratch[3] = color[3] * opacity * this.globalOpacity;
+    gl.glMaterialfv(face, name, colorScratchBuffer);
   }
 
   public void setClearColor(float[] color) {
@@ -481,11 +474,11 @@ public class RenderContext extends Context {
   }
 
   public void renderVertex(Vertex vertex) {
-    if (this.currDiffuseColorTextureAdapter != null) {
+    final GlrTexture<? extends Texture> texAdapter = this.currDiffuseColorTextureAdapter;
+    if (texAdapter != null) {
       if (!vertex.textureCoordinate0.isNaN()) {
-        float u = this.currDiffuseColorTextureAdapter.mapU(vertex.textureCoordinate0.u);
-        float v = this.currDiffuseColorTextureAdapter.mapV(vertex.textureCoordinate0.v);
-        gl.glTexCoord2f(u, v);
+        gl.glTexCoord2f(texAdapter.mapU(vertex.textureCoordinate0.u),
+                        texAdapter.mapV(vertex.textureCoordinate0.v));
       }
     }
     if (!vertex.diffuseColor.isNaN()) {

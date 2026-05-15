@@ -164,8 +164,9 @@ class GlResourceCache {
 
   private void forgetAllGeometryAdapters(RenderContext renderContext) {
     synchronized (this.displayListMap) {
-      for (GlrGeometry<? extends Geometry> geometryAdapter : this.displayListMap.keySet()) {
-        forgetGeometryAdapter(geometryAdapter, false, renderContext);
+      for (Map.Entry<GlrGeometry<? extends Geometry>, Integer> entry : this.displayListMap.entrySet()) {
+        this.toBeForgottenDisplayLists.add(entry.getValue());
+        entry.getKey().removeRenderContext(renderContext);
       }
       this.displayListMap.clear();
     }
@@ -173,8 +174,15 @@ class GlResourceCache {
 
   private void forgetAllTextureAdapters(RenderContext renderContext) {
     synchronized (this.textureBindingMap) {
-      for (GlrTexture<? extends Texture> textureAdapter : this.textureBindingMap.keySet()) {
-        forgetTextureBindingID(textureAdapter, this.textureBindingMap.get(textureAdapter), false, renderContext);
+      for (Map.Entry<GlrTexture<? extends Texture>, ForgettableBinding> entry : this.textureBindingMap.entrySet()) {
+        ForgettableBinding value = entry.getValue();
+        if (value != null) {
+          this.toBeForgottenTextures.add(value);
+          entry.getKey().removeRenderContext(renderContext);
+          Logger.info("texture adapter forgotten:", entry.getKey(), value);
+        } else {
+          Logger.warning("no id for texture adapter:", entry.getKey());
+        }
       }
       this.textureBindingMap.clear();
     }
