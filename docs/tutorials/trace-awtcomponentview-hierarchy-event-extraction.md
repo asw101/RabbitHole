@@ -132,9 +132,10 @@ Each caller replaces `this.addXxxListener(…)` with
 | File | Changes |
 | --- | --- |
 | `ImageCaptureRectangleStencilView.java` | 4 calls (mouse + motion listener add/remove) |
+| `FindView.java` | 2 calls (key listener add/remove) |
 | `ArrayCustomExpressionCreatorView.java` | 2 calls (mouse listener add/remove) |
 | `JavaCodeView.java` | 4 calls (key + mouse wheel listener add/remove) |
-| `KeyViewController.java` | 2 calls (key listener add/remove) |
+| `ResourceManagerView.java` | 4 calls (mouse + motion listener add/remove) |
 | `InstanceFactorySelectionPanel.java` | 2 calls (mouse listener add/remove) |
 | `MarkersView.java` | 2 calls (mouse listener add/remove) |
 

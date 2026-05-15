@@ -54,9 +54,10 @@ grep -rn 'this\.addMouseListener\|this\.removeMouseListener\|this\.addKeyListene
   core/croquet/src/main/java/org/lgna/croquet/views/ButtonWithRightClickCascade.java \
   core/croquet/src/main/java/org/lgna/croquet/views/HoverPopupView.java \
   core/ide/src/main/java/org/alice/ide/capture/views/ImageCaptureRectangleStencilView.java \
+  core/ide/src/main/java/org/alice/ide/croquet/models/project/find/croquet/views/FindView.java \
   core/ide/src/main/java/org/alice/ide/custom/components/ArrayCustomExpressionCreatorView.java \
   core/ide/src/main/java/org/alice/ide/javacode/croquet/views/JavaCodeView.java \
-  core/ide/src/main/java/org/alice/stageide/custom/components/KeyViewController.java \
+  core/ide/src/main/java/org/alice/ide/resource/manager/views/ResourceManagerView.java \
   core/ide/src/main/java/org/alice/stageide/sceneeditor/views/InstanceFactorySelectionPanel.java \
   core/ide/src/main/java/org/alice/stageide/sceneeditor/side/views/MarkersView.java
 ```

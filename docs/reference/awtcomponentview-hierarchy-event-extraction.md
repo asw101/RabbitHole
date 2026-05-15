@@ -123,7 +123,8 @@ in `AwtComponentView` to limit scope.
 | `core/ide/…/capture/views/ImageCaptureRectangleStencilView.java` | Modified — 4 listener calls | `core/ide` |
 | `core/ide/…/custom/components/ArrayCustomExpressionCreatorView.java` | Modified — 2 listener calls | `core/ide` |
 | `core/ide/…/javacode/croquet/views/JavaCodeView.java` | Modified — 4 listener calls | `core/ide` |
-| `core/ide/…/custom/components/KeyViewController.java` | Modified — 2 listener calls | `core/ide` |
+| `core/ide/…/croquet/models/project/find/croquet/views/FindView.java` | Modified — 2 listener calls | `core/ide` |
+| `core/ide/…/resource/manager/views/ResourceManagerView.java` | Modified — 4 listener calls | `core/ide` |
 | `core/ide/…/sceneeditor/views/InstanceFactorySelectionPanel.java` | Modified — 2 listener calls | `core/ide` |
 | `core/ide/…/sceneeditor/side/views/MarkersView.java` | Modified — 2 listener calls | `core/ide` |
 | `core/croquet/…/views/AwtHierarchyEventHandlerTest.java` | **New** — characterization test | `core/croquet` |
@@ -138,6 +139,7 @@ in `AwtComponentView` to limit scope.
 | `TimeLinePoseMarker.java` | Extends `JToggleButton`, not `AwtComponentView` |
 | `MemoryView.java` | Extends `JComponent`, not `AwtComponentView` |
 | `CommentPane.java` (inner `CommentLine`) | Extends `JSuggestiveTextArea`, not `AwtComponentView` |
+| `KeyViewController.java` | `addKeyListener` is on a raw `JLabel` inside `createAwtComponent()`, not through `AwtComponentView` |
 | `DropDownButtonUI.java` | Operates on raw `AbstractButton` |
 | `ScrollingPopupMenuUtilities.java` | Operates on `JPopupMenu` |
 | `ShowAllSystemPropertiesView.java` | No deprecated listener calls (in design spec but not actually affected) |
