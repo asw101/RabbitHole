@@ -61,103 +61,103 @@ public interface AstProcessor {
     return true;
   }
 
-  void processClass(CodeOrganizer codeOrganizer, NamedUserType userType);
+  default void processClass(CodeOrganizer codeOrganizer, NamedUserType userType) { }
 
   default void processResourceType(String jointedModelResource) { }
 
   default void processDynamicResource(String jointedModelResource, String resourceName, InstantiableTweedleNode[] addedJoints) { }
 
-  void processConstructor(NamedUserConstructor constructor);
+  default void processConstructor(NamedUserConstructor constructor) { }
 
-  void processMethod(UserMethod method);
+  default void processMethod(UserMethod method) { }
 
-  void processGetter(Getter getter);
+  default void processGetter(Getter getter) { }
 
-  void processIndexedGetter(ArrayItemGetter getter);
+  default void processIndexedGetter(ArrayItemGetter getter) { }
 
-  void processSetter(Setter setter);
+  default void processSetter(Setter setter) { }
 
-  void processIndexedSetter(ArrayItemSetter setter);
+  default void processIndexedSetter(ArrayItemSetter setter) { }
 
-  void processField(UserField field);
+  default void processField(UserField field) { }
 
-  void processLocalDeclaration(LocalDeclarationStatement stmt);
+  default void processLocalDeclaration(LocalDeclarationStatement stmt) { }
 
-  void processExpressionStatement(ExpressionStatement stmt);
+  default void processExpressionStatement(ExpressionStatement stmt) { }
 
-  void processReturnStatement(ReturnStatement stmt);
+  default void processReturnStatement(ReturnStatement stmt) { }
 
-  void processBlock(BlockStatement blockStatement);
+  default void processBlock(BlockStatement blockStatement) { }
 
-  void processConstructorBlock(ConstructorBlockStatement constructor);
+  default void processConstructorBlock(ConstructorBlockStatement constructor) { }
 
-  void processSuperConstructor(SuperConstructorInvocationStatement supCon);
+  default void processSuperConstructor(SuperConstructorInvocationStatement supCon) { }
 
-  void processThisConstructor(ThisConstructorInvocationStatement thisCon);
+  default void processThisConstructor(ThisConstructorInvocationStatement thisCon) { }
 
-  void processConditional(ConditionalStatement stmt);
+  default void processConditional(ConditionalStatement stmt) { }
 
-  void processCountLoop(CountLoop loop);
+  default void processCountLoop(CountLoop loop) { }
 
-  void processForEach(AbstractForEachLoop loop);
+  default void processForEach(AbstractForEachLoop loop) { }
 
-  void processWhileLoop(WhileLoop loop);
+  default void processWhileLoop(WhileLoop loop) { }
 
-  void processDoInOrder(DoInOrder doInOrder);
+  default void processDoInOrder(DoInOrder doInOrder) { }
 
-  void processDoTogether(DoTogether doTogether);
+  default void processDoTogether(DoTogether doTogether) { }
 
-  void processEachInTogether(AbstractEachInTogether eachInTogether);
+  default void processEachInTogether(AbstractEachInTogether eachInTogether) { }
 
-  void processLambda(UserLambda lambda);
+  default void processLambda(UserLambda lambda) { }
 
-  void processExpression(Expression expression);
+  default void processExpression(Expression expression) { }
 
-  void processMethodCall(MethodInvocation invocation);
+  default void processMethodCall(MethodInvocation invocation) { }
 
-  void processKeyedArgument(JavaKeyedArgument arg);
+  default void processKeyedArgument(JavaKeyedArgument arg) { }
 
-  void processAssignmentExpression(AssignmentExpression assignment);
+  default void processAssignmentExpression(AssignmentExpression assignment) { }
 
-  void processConcatenation(StringConcatenation concat);
+  default void processConcatenation(StringConcatenation concat) { }
 
-  void processLogicalComplement(LogicalComplement complement);
+  default void processLogicalComplement(LogicalComplement complement) { }
 
-  void processInfixExpression(InfixExpression infixExpression);
+  default void processInfixExpression(InfixExpression infixExpression) { }
 
-  void processInstantiation(InstanceCreation creation);
+  default void processInstantiation(InstanceCreation creation) { }
 
-  void processArrayInstantiation(ArrayInstanceCreation creation);
+  default void processArrayInstantiation(ArrayInstanceCreation creation) { }
 
-  void processArrayAccess(ArrayAccess access);
+  default void processArrayAccess(ArrayAccess access) { }
 
-  void processArrayLength(ArrayLength arrayLength);
+  default void processArrayLength(ArrayLength arrayLength) { }
 
-  void processFieldAccess(FieldAccess access);
+  default void processFieldAccess(FieldAccess access) { }
 
-  void processNull();
+  default void processNull() { }
 
-  void processThisReference();
+  default void processThisReference() { }
 
-  void processSuperReference();
+  default void processSuperReference() { }
 
-  void processBoolean(boolean b);
+  default void processBoolean(boolean b) { }
 
-  void processInt(int n);
+  default void processInt(int n) { }
 
-  void processFloat(float f);
+  default void processFloat(float f) { }
 
-  void processDouble(double d);
+  default void processDouble(double d) { }
 
-  void processEscapedStringLiteral(StringLiteral literal);
+  default void processEscapedStringLiteral(StringLiteral literal) { }
 
-  void processTypeName(AbstractType<?, ?, ?> type);
+  default void processTypeName(AbstractType<?, ?, ?> type) { }
 
-  void processTypeLiteral(TypeLiteral typeLiteral);
+  default void processTypeLiteral(TypeLiteral typeLiteral) { }
 
-  void processResourceExpression(ResourceExpression resourceExpression);
+  default void processResourceExpression(ResourceExpression resourceExpression) { }
 
-  void processMultiLineComment(String comment);
+  default void processMultiLineComment(String comment) { }
 
-  void processVariableIdentifier(AbstractDeclaration variable);
+  default void processVariableIdentifier(AbstractDeclaration variable) { }
 }
