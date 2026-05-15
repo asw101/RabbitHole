@@ -46,7 +46,9 @@ package org.lgna.project.ast;
 import edu.cmu.cs.dennisc.java.util.Maps;
 import edu.cmu.cs.dennisc.java.util.logging.Logger;
 
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Extracted from JavaType — manages the mapping between primitive types and
@@ -56,6 +58,7 @@ import java.util.Map;
  */
 final class JavaTypePrimitiveMapping {
   private static final Map<JavaType, JavaType> mapPrimitiveToWrapper = Maps.newHashMap();
+  private static final Set<JavaType> wrapperTypes = new HashSet<>();
 
   static {
     addPrimitiveToWrapper(Void.TYPE, Void.class);
@@ -74,11 +77,13 @@ final class JavaTypePrimitiveMapping {
   }
 
   private static void addPrimitiveToWrapper(Class<?> primitiveCls, Class<?> wrapperCls) {
-    mapPrimitiveToWrapper.put(JavaType.getInstance(primitiveCls), JavaType.getInstance(wrapperCls));
+    JavaType wrapper = JavaType.getInstance(wrapperCls);
+    mapPrimitiveToWrapper.put(JavaType.getInstance(primitiveCls), wrapper);
+    wrapperTypes.add(wrapper);
   }
 
   static boolean isWrapperType(AbstractType<?, ?, ?> type) {
-    return mapPrimitiveToWrapper.containsValue(type);
+    return wrapperTypes.contains(type);
   }
 
   static AbstractType<?, ?, ?> getWrapperTypeIfNecessary(AbstractType<?, ?, ?> type) {

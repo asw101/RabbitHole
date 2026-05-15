@@ -135,7 +135,8 @@ final class JavaTypeMethodLookup {
     if (cls == null) {
       return Collections.emptyList();
     }
-    List<JavaMethod> methods = Lists.newLinkedList();
+    Method[] declaredMethods = cls.getDeclaredMethods();
+    List<JavaMethod> methods = Lists.newArrayListWithInitialCapacity(declaredMethods.length);
     Set<Method> methodSet = null;
     Iterable<MethodInfo> methodInfos = ClassInfoManager.getMethodInfos(cls);
     if (methodInfos != null) {
@@ -153,7 +154,7 @@ final class JavaTypeMethodLookup {
         }
       }
     }
-    for (Method mthd : cls.getDeclaredMethods()) {
+    for (Method mthd : declaredMethods) {
       if ((methodSet != null) && methodSet.contains(mthd)) {
         //pass
       } else {

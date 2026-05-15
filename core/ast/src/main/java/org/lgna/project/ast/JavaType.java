@@ -372,8 +372,9 @@ public class JavaType extends AbstractType<JavaConstructor, JavaMethod, JavaFiel
     protected List<JavaConstructor> create() {
       Class<?> cls = classReflectionProxy.getReification();
       if (cls != null) {
-        List<JavaConstructor> constructors = Lists.newLinkedList();
-        for (Constructor<?> cnstrctr : cls.getDeclaredConstructors()) {
+        Constructor<?>[] declared = cls.getDeclaredConstructors();
+        List<JavaConstructor> constructors = Lists.newArrayListWithInitialCapacity(declared.length);
+        for (Constructor<?> cnstrctr : declared) {
           constructors.add(JavaConstructor.getInstance(cnstrctr));
         }
         return Collections.unmodifiableList(constructors);
@@ -393,8 +394,9 @@ public class JavaType extends AbstractType<JavaConstructor, JavaMethod, JavaFiel
     protected List<JavaField> create() {
       Class<?> cls = classReflectionProxy.getReification();
       if (cls != null) {
-        List<JavaField> fields = Lists.newLinkedList();
-        for (Field fld : cls.getDeclaredFields()) {
+        Field[] declared = cls.getDeclaredFields();
+        List<JavaField> fields = Lists.newArrayListWithInitialCapacity(declared.length);
+        for (Field fld : declared) {
           fields.add(JavaField.getInstance(fld));
         }
         return Collections.unmodifiableList(fields);
@@ -408,7 +410,7 @@ public class JavaType extends AbstractType<JavaConstructor, JavaMethod, JavaFiel
     protected List<JavaGetterSetterPair> create() {
       Class<?> cls = classReflectionProxy.getReification();
       if (cls != null) {
-        List<JavaGetterSetterPair> getterSetterPairs = Lists.newLinkedList();
+        List<JavaGetterSetterPair> getterSetterPairs = Lists.newArrayList();
         for (JavaMethod method : getDeclaredMethods()) {
           java.lang.reflect.Method mthd = method.getMethodReflectionProxy().getReification();
           GetterTemplate propertyGetterTemplate = mthd.getAnnotation(GetterTemplate.class);
