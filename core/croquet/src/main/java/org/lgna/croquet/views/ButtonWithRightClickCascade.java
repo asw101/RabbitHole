@@ -72,14 +72,14 @@ public class ButtonWithRightClickCascade extends Button {
   @Override
   protected void handleDisplayable() {
     super.handleDisplayable();
-    this.addMouseListener(this.mouseClickListener);
-    this.addMouseMotionListener(this.mouseClickListener);
+    this.getAwtComponent().addMouseListener(this.mouseClickListener);
+    this.getAwtComponent().addMouseMotionListener(this.mouseClickListener);
   }
 
   @Override
   protected void handleUndisplayable() {
-    this.removeMouseMotionListener(this.mouseClickListener);
-    this.removeMouseListener(this.mouseClickListener);
+    this.getAwtComponent().removeMouseMotionListener(this.mouseClickListener);
+    this.getAwtComponent().removeMouseListener(this.mouseClickListener);
     super.handleUndisplayable();
   }
 

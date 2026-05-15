@@ -119,13 +119,13 @@ public class List<T> extends ViewController<JList, SingleSelectListState<T, ?>> 
   };
 
   public void enableClickingDefaultButtonOnDoubleClick() {
-    this.addMouseListener(this.mouseAdapter);
-    this.addMouseMotionListener(this.mouseAdapter);
+    this.getAwtComponent().addMouseListener(this.mouseAdapter);
+    this.getAwtComponent().addMouseMotionListener(this.mouseAdapter);
   }
 
   public void disableClickingDefaultButtonOnDoubleClick() {
-    this.removeMouseMotionListener(this.mouseAdapter);
-    this.removeMouseListener(this.mouseAdapter);
+    this.getAwtComponent().removeMouseMotionListener(this.mouseAdapter);
+    this.getAwtComponent().removeMouseListener(this.mouseAdapter);
   }
 
   protected class JDefaultList extends JList {

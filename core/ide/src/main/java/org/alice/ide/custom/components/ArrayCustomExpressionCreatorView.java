@@ -324,12 +324,12 @@ public class ArrayCustomExpressionCreatorView extends CustomExpressionCreatorVie
   @Override
   protected void handleDisplayable() {
     super.handleDisplayable();
-    this.addMouseListener(this.mouseListener);
+    this.getAwtComponent().addMouseListener(this.mouseListener);
   }
 
   @Override
   protected void handleUndisplayable() {
-    this.removeMouseListener(this.mouseListener);
+    this.getAwtComponent().removeMouseListener(this.mouseListener);
     super.handleUndisplayable();
   }
 

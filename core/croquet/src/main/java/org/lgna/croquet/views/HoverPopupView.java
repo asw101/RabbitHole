@@ -127,14 +127,14 @@ public class HoverPopupView extends SwingComponentView<javax.swing.AbstractButto
 
   @Override
   protected void handleAddedTo(AwtComponentView<?> parent) {
-    this.addMouseListener(this.mouseListener);
+    this.getAwtComponent().addMouseListener(this.mouseListener);
     super.handleAddedTo(parent);
   }
 
   @Override
   protected void handleRemovedFrom(AwtComponentView<?> parent) {
     super.handleRemovedFrom(parent);
-    this.removeMouseListener(this.mouseListener);
+    this.getAwtComponent().removeMouseListener(this.mouseListener);
   }
 
   private class JHoverPopupView extends JButton {

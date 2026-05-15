@@ -468,10 +468,10 @@ public abstract class DragComponent<M extends DragModel> extends ViewController<
   protected void handleDisplayable() {
     super.handleDisplayable();
     if (this.mouseListener != null) {
-      this.addMouseListener(this.mouseListener);
+      this.getAwtComponent().addMouseListener(this.mouseListener);
     }
     if (this.mouseMotionListener != null) {
-      this.addMouseMotionListener(this.mouseMotionListener);
+      this.getAwtComponent().addMouseMotionListener(this.mouseMotionListener);
     }
     if (this.componentListener != null) {
       this.addComponentListener(this.componentListener);
@@ -484,10 +484,10 @@ public abstract class DragComponent<M extends DragModel> extends ViewController<
       this.removeComponentListener(this.componentListener);
     }
     if (this.mouseMotionListener != null) {
-      this.removeMouseMotionListener(this.mouseMotionListener);
+      this.getAwtComponent().removeMouseMotionListener(this.mouseMotionListener);
     }
     if (this.mouseListener != null) {
-      this.removeMouseListener(this.mouseListener);
+      this.getAwtComponent().removeMouseListener(this.mouseListener);
     }
     super.handleUndisplayable();
   }

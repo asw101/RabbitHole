@@ -286,7 +286,7 @@ public class FindView extends BorderPanel {
   @Override
   protected void handleDisplayable() {
     referenceResults.addNewSchoolValueListener(referenceTreeListener);
-    searchBox.addKeyListener(keyListener);
+    searchBox.getAwtComponent().addKeyListener(keyListener);
     referencesTreeList.getAwtComponent().addTreeExpansionListener(treeListener);
     super.handleDisplayable();
   }
@@ -295,7 +295,7 @@ public class FindView extends BorderPanel {
   protected void handleUndisplayable() {
     super.handleUndisplayable();
     referenceResults.addNewSchoolValueListener(referenceTreeListener);
-    searchBox.addKeyListener(keyListener);
+    searchBox.getAwtComponent().addKeyListener(keyListener);
     referencesTreeList.getAwtComponent().addTreeExpansionListener(treeListener);
   }
 }

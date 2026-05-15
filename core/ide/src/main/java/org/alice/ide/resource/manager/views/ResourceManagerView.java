@@ -151,14 +151,14 @@ public class ResourceManagerView extends BorderPanel {
   @Override
   protected void handleDisplayable() {
     super.handleDisplayable();
-    this.table.addMouseListener(this.mouseAdapter);
-    this.table.addMouseMotionListener(this.mouseAdapter);
+    this.table.getAwtComponent().addMouseListener(this.mouseAdapter);
+    this.table.getAwtComponent().addMouseMotionListener(this.mouseAdapter);
   }
 
   @Override
   protected void handleUndisplayable() {
-    this.table.removeMouseMotionListener(this.mouseAdapter);
-    this.table.removeMouseListener(this.mouseAdapter);
+    this.table.getAwtComponent().removeMouseMotionListener(this.mouseAdapter);
+    this.table.getAwtComponent().removeMouseListener(this.mouseAdapter);
     super.handleUndisplayable();
   }
 

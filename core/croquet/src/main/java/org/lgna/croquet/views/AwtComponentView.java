@@ -112,8 +112,8 @@ public abstract class AwtComponentView<J extends Component> extends ScreenElemen
     }
   }
 
-  private final HierarchyListener hierarchyListener = AwtComponentView.this::handleHierarchyChanged;
-  private final AwtHierarchyHandler hierarchyHandler = new AwtHierarchyHandler(this);
+  private AwtHierarchyEventHandler hierarchyHandler;
+
 
   public final Object getTreeLock() {
     return this.getAwtComponent().getTreeLock();
@@ -123,12 +123,16 @@ public abstract class AwtComponentView<J extends Component> extends ScreenElemen
   }
   protected void handleUndisplayable() {
   }
+
+
   protected void handleAddedTo(AwtComponentView<?> parent) {
   }
   protected void handleRemovedFrom(AwtComponentView<?> parent) {
   }
+
   protected void handleHierarchyChanged(HierarchyEvent e) {
-    this.hierarchyHandler.processHierarchyEvent(e);
+    this.hierarchyHandler.processHierarchyChanged(e);
+
   }
 
   private J awtComponent;
@@ -141,8 +145,10 @@ public abstract class AwtComponentView<J extends Component> extends ScreenElemen
     if (this.awtComponent == null) {
       this.checkEventDispatchThread();
       this.awtComponent = this.createAwtComponent();
-      this.hierarchyHandler.trackDisplayability(this.awtComponent);
-      this.awtComponent.addHierarchyListener(this.hierarchyListener);
+      this.hierarchyHandler = new AwtHierarchyEventHandler(this);
+      this.hierarchyHandler.trackDisplayability();
+      this.awtComponent.addHierarchyListener(this.hierarchyHandler);
+
       this.awtComponent.setName(this.getClass().getName());
       ComponentOrientation componentOrientation = ComponentOrientation.getOrientation(JComponent.getDefaultLocale());
       if (!componentOrientation.isLeftToRight()) {
@@ -155,9 +161,9 @@ public abstract class AwtComponentView<J extends Component> extends ScreenElemen
 
   protected void release() {
     if (this.awtComponent != null) {
-      //System.err.println( "release: " + this.hashCode() );
-      this.awtComponent.removeHierarchyListener(this.hierarchyListener);
-      this.hierarchyHandler.trackDisplayability(this.awtComponent);
+      this.awtComponent.removeHierarchyListener(this.hierarchyHandler);
+      this.hierarchyHandler.trackDisplayability();
+
       AwtComponentView.map.remove(this.awtComponent);
       this.awtComponent = null;
     }
@@ -443,37 +449,9 @@ public abstract class AwtComponentView<J extends Component> extends ScreenElemen
     SwingUtilities.invokeLater(this::requestFocus);
   }
 
-  @Deprecated public void addHierarchyListener(HierarchyListener listener) {
-    this.getAwtComponent().addHierarchyListener(listener);
-  }
-  @Deprecated public void removeHierarchyListener(HierarchyListener listener) {
-    this.getAwtComponent().removeHierarchyListener(listener);
-  }
-  @Deprecated public void addKeyListener(KeyListener listener) {
-    this.getAwtComponent().addKeyListener(listener);
-  }
-  @Deprecated public void removeKeyListener(KeyListener listener) {
-    this.getAwtComponent().removeKeyListener(listener);
-  }
-  @Deprecated public void addMouseListener(MouseListener listener) {
-    this.getAwtComponent().addMouseListener(listener);
-  }
-  @Deprecated public void removeMouseListener(MouseListener listener) {
-    this.getAwtComponent().removeMouseListener(listener);
-  }
-  @Deprecated public void addMouseMotionListener(MouseMotionListener listener) {
-    this.getAwtComponent().addMouseMotionListener(listener);
-  }
-  @Deprecated public void removeMouseMotionListener(MouseMotionListener listener) {
-    this.getAwtComponent().removeMouseMotionListener(listener);
-  }
-  @Deprecated public void addMouseWheelListener(MouseWheelListener listener) {
-    this.getAwtComponent().addMouseWheelListener(listener);
-  }
-  @Deprecated public void removeMouseWheelListener(MouseWheelListener listener) {
-    this.getAwtComponent().removeMouseWheelListener(listener);
-  }
-  @Deprecated public void setPreferredSize(Dimension preferredSize) {
+  @Deprecated
+  public void setPreferredSize(Dimension preferredSize) {
+
     this.getAwtComponent().setPreferredSize(preferredSize);
   }
   @Deprecated public void makeStandOut() {

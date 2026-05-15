@@ -213,12 +213,12 @@ public class MarkersView extends BorderPanel {
   @Override
   protected void handleAddedTo(AwtComponentView<?> parent) {
     super.handleAddedTo(parent);
-    this.addMouseListener(this.mouseListener);
+    this.getAwtComponent().addMouseListener(this.mouseListener);
   }
 
   @Override
   protected void handleRemovedFrom(AwtComponentView<?> parent) {
-    this.removeMouseListener(this.mouseListener);
+    this.getAwtComponent().removeMouseListener(this.mouseListener);
     super.handleRemovedFrom(parent);
   }
 }

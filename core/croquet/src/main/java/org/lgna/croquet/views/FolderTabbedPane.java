@@ -206,8 +206,8 @@ public class FolderTabbedPane<E extends TabComposite<?>> extends CardBasedTabbed
     this.titlesScrollPane.setVerticalScrollbarPolicy(ScrollPane.VerticalScrollbarPolicy.NEVER);
 
     ScrollListener scrollListener = new ScrollListener();
-    this.titlesScrollPane.addMouseListener(scrollListener);
-    this.titlesScrollPane.addMouseMotionListener(scrollListener);
+    this.titlesScrollPane.getAwtComponent().addMouseListener(scrollListener);
+    this.titlesScrollPane.getAwtComponent().addMouseMotionListener(scrollListener);
 
     this.titlesScrollPane.setBorder(BorderFactory.createEmptyBorder(4, 0, 0, 0));
     cardOwner.getView().setBorder(new Border() {

@@ -216,8 +216,8 @@ public class ImageCaptureRectangleStencilView extends LayerStencil {
     if (prevIsStencilShowing != isShowing) {
       if (prevIsStencilShowing) {
         this.unregisterKeyboardAction(ESCAPE_KEY_STROKE);
-        this.removeMouseMotionListener(this.mouseAdapter);
-        this.removeMouseListener(this.mouseAdapter);
+        this.getAwtComponent().removeMouseMotionListener(this.mouseAdapter);
+        this.getAwtComponent().removeMouseListener(this.mouseAdapter);
       }
       super.setStencilShowing(isShowing);
       if (isShowing) {
@@ -229,8 +229,8 @@ public class ImageCaptureRectangleStencilView extends LayerStencil {
       }
       this.window.setVisible(isShowing);
       if (isShowing) {
-        this.addMouseListener(this.mouseAdapter);
-        this.addMouseMotionListener(this.mouseAdapter);
+        this.getAwtComponent().addMouseListener(this.mouseAdapter);
+        this.getAwtComponent().addMouseMotionListener(this.mouseAdapter);
         this.registerKeyboardAction(this.escapeKeyListener, ESCAPE_KEY_STROKE, Condition.WHEN_IN_FOCUSED_WINDOW);
         this.requestFocusLater();
       }

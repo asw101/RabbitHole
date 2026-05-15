@@ -48,35 +48,42 @@ import edu.cmu.cs.dennisc.print.PrintUtilities;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.event.HierarchyEvent;
+import java.awt.event.HierarchyListener;
 
 /**
- * Package-private handler owning hierarchy-lifecycle state and dispatch logic
- * extracted from {@link AwtComponentView}. Tracks displayability transitions
- * and parent-change events, delegating to the owner's protected hooks.
+ * Package-private handler that owns hierarchy lifecycle tracking for
+ * {@link AwtComponentView}. Extracted to reduce AwtComponentView line count
+ * while preserving its protected override hooks.
+ *
+ * @see AwtComponentView#handleDisplayable()
+ * @see AwtComponentView#handleUndisplayable()
+ * @see AwtComponentView#handleAddedTo(AwtComponentView)
+ * @see AwtComponentView#handleRemovedFrom(AwtComponentView)
  */
-final class AwtHierarchyHandler {
+final class AwtHierarchyEventHandler implements HierarchyListener {
+  private static boolean isWarningAlreadyPrinted = false;
 
   private final AwtComponentView<?> owner;
   private boolean isDisplayableState = false;
   private Container awtParent;
-  private static boolean isWarningAlreadyPrinted = false;
 
-  AwtHierarchyHandler(AwtComponentView<?> owner) {
+  AwtHierarchyEventHandler(AwtComponentView<?> owner) {
     this.owner = owner;
   }
 
-  void trackDisplayability(Component awtComponent) {
-    boolean displayable = awtComponent.isDisplayable();
-    if (!isDisplayableState && displayable) {
+  void trackDisplayability() {
+    Component awtComponent = owner.getAwtComponent();
+    if (!isDisplayableState && awtComponent.isDisplayable()) {
       owner.handleDisplayable();
       this.isDisplayableState = true;
-    } else if (isDisplayableState && !displayable) {
+    }
+    if (isDisplayableState && !awtComponent.isDisplayable()) {
       owner.handleUndisplayable();
       this.isDisplayableState = false;
     }
   }
 
-  void handleParentChange(Container newParent) {
+  private void handleParentChange(Container newParent) {
     if (this.awtParent != null) {
       owner.handleRemovedFrom(AwtComponentView.lookup(this.awtParent));
     }
@@ -86,19 +93,14 @@ final class AwtHierarchyHandler {
     }
   }
 
-  private static final long HANDLED_FLAGS = HierarchyEvent.DISPLAYABILITY_CHANGED | HierarchyEvent.PARENT_CHANGED;
-
-  void processHierarchyEvent(HierarchyEvent e) {
+  void processHierarchyChanged(HierarchyEvent e) {
     long flags = e.getChangeFlags();
-    if ((flags & HANDLED_FLAGS) == 0) {
-      return;
-    }
-    Component ownerComponent = owner.getAwtComponent();
+    Component awtComponent = owner.getAwtComponent();
     if ((flags & HierarchyEvent.DISPLAYABILITY_CHANGED) != 0) {
-      if (e.getComponent() == ownerComponent) {
-        this.trackDisplayability(ownerComponent);
+      if (e.getComponent() == awtComponent) {
+        this.trackDisplayability();
       } else {
-        PrintUtilities.println("handleDisplayabilityChanged:", ownerComponent.hashCode(), ownerComponent.isDisplayable());
+        PrintUtilities.println("handleDisplayabilityChanged:", awtComponent.hashCode(), awtComponent.isDisplayable());
       }
     }
     if ((flags & HierarchyEvent.PARENT_CHANGED) != 0 && e.getComponent() == e.getChanged()) {
@@ -112,5 +114,10 @@ final class AwtHierarchyHandler {
         }
       }
     }
+  }
+
+  @Override
+  public void hierarchyChanged(HierarchyEvent e) {
+    owner.handleHierarchyChanged(e);
   }
 }

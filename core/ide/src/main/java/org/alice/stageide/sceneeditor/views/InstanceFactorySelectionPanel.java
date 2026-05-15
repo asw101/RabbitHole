@@ -329,12 +329,12 @@ public class InstanceFactorySelectionPanel extends PanelViewController<InstanceF
     @Override
     protected void handleDisplayable() {
       super.handleDisplayable();
-      this.addMouseListener(this.altTriggerMouseAdapter);
+      this.getAwtComponent().addMouseListener(this.altTriggerMouseAdapter);
     }
 
     @Override
     protected void handleUndisplayable() {
-      this.removeMouseListener(this.altTriggerMouseAdapter);
+      this.getAwtComponent().removeMouseListener(this.altTriggerMouseAdapter);
       super.handleUndisplayable();
     }
   }

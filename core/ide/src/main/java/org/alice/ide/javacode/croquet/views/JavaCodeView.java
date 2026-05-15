@@ -117,9 +117,9 @@ public class JavaCodeView extends HtmlView {
     if (this.undoHistory != null) {
       this.undoHistory.addHistoryListener(this.historyListener);
     }
-    this.addKeyListener(this.keyListener);
+    this.getAwtComponent().addKeyListener(this.keyListener);
     if (IS_MOUSE_WHEEL_FONT_ADJUSTMENT_DESIRED) {
-      this.addMouseWheelListener(this.mouseWheelListener);
+      this.getAwtComponent().addMouseWheelListener(this.mouseWheelListener);
     }
     this.updateHtml();
     super.handleDisplayable();
@@ -128,9 +128,9 @@ public class JavaCodeView extends HtmlView {
   @Override
   protected void handleUndisplayable() {
     if (IS_MOUSE_WHEEL_FONT_ADJUSTMENT_DESIRED) {
-      this.removeMouseWheelListener(this.mouseWheelListener);
+      this.getAwtComponent().removeMouseWheelListener(this.mouseWheelListener);
     }
-    this.removeKeyListener(this.keyListener);
+    this.getAwtComponent().removeKeyListener(this.keyListener);
     if (this.undoHistory != null) {
       this.undoHistory.removeHistoryListener(this.historyListener);
     }
