@@ -44,7 +44,6 @@
 package org.lgna.ik.core.solver;
 
 import Jama.Matrix;
-import Jama.SingularValueDecomposition;
 import edu.cmu.cs.dennisc.java.util.Lists;
 import org.alice.math.immutable.AxisRotation;
 import org.alice.math.immutable.OrthogonalMatrix3x3;
@@ -127,23 +126,18 @@ public class Solver {
   public double calculatePseudoInverseErrorForTime(JacobianAndInverse jacobianAndInverse, double dt) {
     //will calculate I-(JJ^-1)
 
-    Matrix jj11 = jacobianAndInverse.getJacobian().times(jacobianAndInverse.getPseudoInverseJacobianForMotion()).times(-1);
+    Matrix jji = jacobianAndInverse.getJacobian().times(jacobianAndInverse.getPseudoInverseJacobianForMotion());
 
-    int n = jj11.getRowDimension();
+    int n = jji.getRowDimension();
 
+    // I - J*J^{-1} in-place (avoids allocating a negated copy)
     for (int i = 0; i < n; ++i) {
-      jj11.set(i, i, 1 + jj11.get(i, i));
+      for (int k = 0; k < n; ++k) {
+        jji.set(i, k, (i == k ? 1.0 : 0.0) - jji.get(i, k));
+      }
     }
 
-    double dtn = dt;
-
-    for (int i = 1; i < n; ++i) {
-      dtn *= dt;
-    }
-
-    double error = jj11.det() * dtn;
-
-    return error;
+    return jji.det() * Math.pow(dt, n);
   }
 
   public JacobianAndInverse prepareAndCalculateJacobianAndInverse() {
@@ -410,53 +404,16 @@ public class Solver {
   }
 
   private JacobianAndInverse invertJacobian(Matrix jacobian) {
-    Matrix mj = jacobian;
-
-    boolean transposed = false;
-    int m = mj.getRowDimension();
-    int n = mj.getColumnDimension();
-    if (m < n) {
-      transposed = true;
-    }
-
-    if (transposed) {
-      mj = mj.transpose();
-    }
-
-    SingularValueDecomposition svd = new SingularValueDecomposition(mj);
-
-    Matrix u = svd.getU();
-    Matrix s = svd.getS();
-    Matrix v = svd.getV();
-
-    Matrix sForBasic = s.copy();
-
-    reduceAndInvertSofSvdByDamping(s, IkConstants.SVD_DAMPING_CONSTANT);
-    reduceAndInvertSofSvdBasically(sForBasic);
-
-    Matrix pseudoInverseForMotion = v.times(s).times(u.transpose());
-    Matrix pseudoInverseForNullspace = v.times(sForBasic).times(u.transpose());
-
-    if (transposed) { //TODO perhaps record the fact that matrices are transposed and act accordingly.
-      pseudoInverseForMotion = pseudoInverseForMotion.transpose();
-      pseudoInverseForNullspace = pseudoInverseForNullspace.transpose();
-    }
-
-    return new JacobianAndInverse(jacobian, pseudoInverseForMotion, pseudoInverseForNullspace);
+    Matrix[] inverses = JacobianMath.computePseudoInverses(jacobian, IkConstants.SVD_DAMPING_CONSTANT);
+    return new JacobianAndInverse(jacobian, inverses[0], inverses[1]);
   }
 
   private Matrix createDesiredVelocitiesColumn(DesiredVelocity[] desiredVelocities2) {
-    Matrix rv = new Matrix(desiredVelocities2.length * 3, 1);
-
-    int row = 0;
-    for (DesiredVelocity desiredVelocity : desiredVelocities2) {
-      rv.set(row, 0, desiredVelocity.velocity.x());
-      rv.set(row + 1, 0, desiredVelocity.velocity.y());
-      rv.set(row + 2, 0, desiredVelocity.velocity.z());
-      row += 3;
+    Vector3[] velocities = new Vector3[desiredVelocities2.length];
+    for (int i = 0; i < desiredVelocities2.length; i++) {
+      velocities[i] = desiredVelocities2[i].velocity;
     }
-
-    return rv;
+    return JacobianMath.createDesiredVelocitiesColumn(velocities);
   }
 
   private Matrix createJacobianMatrix(Map<Bone, Map<Axis, Vector3[]>> jacobianColumns) {
@@ -506,33 +463,6 @@ public class Solver {
     }
 
     return j;
-  }
-
-  private void reduceAndInvertSofSvdBasically(Matrix s) {
-    assert (s.getRowDimension() == s.getColumnDimension());
-    for (int i = 0; i < s.getRowDimension(); ++i) {
-      s.set(i, i, 1.0 / s.get(i, i));
-    }
-  }
-
-  private void reduceAndInvertSofSvdByDamping(Matrix s, double svdDampingConstant) {
-    assert (s.getRowDimension() == s.getColumnDimension());
-    for (int i = 0; i < s.getRowDimension(); ++i) {
-      double d = s.get(i, i);
-      s.set(i, i, d / ((d * d) + (svdDampingConstant * svdDampingConstant)));
-    }
-  }
-
-  private void reduceAndInvertSofSvdByClampingSmallEntries(Matrix s, double threshold) {
-    assert (s.getRowDimension() == s.getColumnDimension());
-    for (int i = 0; i < s.getRowDimension(); ++i) {
-      if (s.get(i, i) < threshold) {
-        s.set(i, i, 0.0);
-        assert threshold > 0.0;
-      } else {
-        s.set(i, i, 1.0 / s.get(i, i));
-      }
-    }
   }
 
   Map<Chain, Vector3> desiredLinearVelocities = new HashMap<Chain, Vector3>();
