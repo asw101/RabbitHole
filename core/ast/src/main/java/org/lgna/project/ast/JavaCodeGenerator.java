@@ -44,23 +44,15 @@ package org.lgna.project.ast;
 
 import edu.cmu.cs.dennisc.java.util.Lists;
 import edu.cmu.cs.dennisc.java.util.Maps;
-import edu.cmu.cs.dennisc.java.util.ResourceBundleUtilities;
-import edu.cmu.cs.dennisc.java.util.Sets;
-import org.lgna.common.EachInTogetherRunnable;
 import org.lgna.common.Resource;
-import org.lgna.common.ThreadUtilities;
 import org.lgna.project.code.CodeOrganizer;
 import org.lgna.project.code.ProcessableNode;
 import org.lgna.project.resource.ResourcesTypeWrapper;
 
 import java.lang.reflect.Modifier;
-import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.MissingResourceException;
-import java.util.ResourceBundle;
-import java.util.Set;
 
 /**
  * @author Dennis Cosgrove
@@ -132,9 +124,9 @@ public class JavaCodeGenerator extends SourceCodeGenerator {
     this.isLambdaSupported = builder.isLambdaSupported;
     this.isPublicStaticFinalFieldGetterDesired = builder.isPublicStaticFinalFieldGetterDesired;
     this.resourcesTypeWrapper = builder.resourcesTypeWrapper;
-    this.packagesMarkedForOnDemandImport = Collections.unmodifiableList(builder.importOnDemandPackages);
-    this.staticMethodsMarkedForImport = Collections.unmodifiableList(builder.importStaticMethods);
-    this.commentsLocalizationBundleName = builder.commentsLocalizationBundleName;
+    this.importCollector = new ImportCollector(builder.importOnDemandPackages, builder.importStaticMethods);
+    this.concurrencyAppender = new ConcurrencyCodeAppender();
+    this.commentHelper = new CommentLocalizationHelper(builder.commentsLocalizationBundleName);
   }
 
   @Override
@@ -258,28 +250,15 @@ public class JavaCodeGenerator extends SourceCodeGenerator {
   @Override
   public void processTypeName(AbstractType<?, ?, ?> type) {
     if (type instanceof JavaType javaType) {
-      if (!javaType.isPrimitive()) {
-        JavaPackage javaPackage = javaType.getPackage();
-        if (javaPackage != null) {
-          JavaType enclosingType = javaType.getEnclosingType();
-          //todo: choose EnclosingTypeName.ClassName instead?
-          if (enclosingType != null || !packagesMarkedForOnDemandImport.contains(javaPackage)) {
-            typesToImport.add(javaType);
-          } else {
-            packagesToImportOnDemand.add(javaPackage);
-          }
-        }
-        // else - should be covered already by the primitive check
-      }
+      importCollector.trackType(javaType);
     }
-    //todo: handle imports
     appendString(type == null ? "MISSING_TYPE" : type.getName());
   }
 
   @Override
   protected void appendTargetAndMethodName(Expression target, AbstractMethod method) {
-    if (method instanceof JavaMethod javaMethod && method.isStatic() && staticMethodsMarkedForImport.contains(method)) {
-      methodsToImportStatic.add(javaMethod);
+    if (method instanceof JavaMethod javaMethod && method.isStatic() && importCollector.isStaticMethodImported(method)) {
+      importCollector.trackStaticMethodImport(javaMethod);
       appendString(method.getName());
     } else {
       super.appendTargetAndMethodName(target, method);
@@ -361,39 +340,7 @@ public class JavaCodeGenerator extends SourceCodeGenerator {
   }
 
   private StringBuilder getImports() {
-    StringBuilder sb = new StringBuilder();
-    sb.append(getImportsPrefix());
-    for (JavaPackage packageToImportOnDemand : packagesToImportOnDemand) {
-      sb.append("import ");
-      sb.append(packageToImportOnDemand.getName());
-      sb.append(".*;");
-    }
-    for (JavaType typeToImport : typesToImport) {
-      JavaPackage pack = typeToImport.getPackage();
-      if (!"java.lang".contentEquals(pack.getName())) {
-        sb.append("import ");
-        sb.append(typeToImport.getPackage().getName());
-        sb.append('.');
-        JavaType enclosingType = typeToImport.getEnclosingType();
-        if (enclosingType != null) {
-          sb.append(enclosingType.getName());
-          sb.append('.');
-        }
-        sb.append(typeToImport.getName());
-        sb.append(';');
-      }
-    }
-    for (JavaMethod methodToImportStatic : methodsToImportStatic) {
-      sb.append("import static ");
-      sb.append(methodToImportStatic.getDeclaringType().getPackage().getName());
-      sb.append('.');
-      sb.append(methodToImportStatic.getDeclaringType().getName());
-      sb.append('.');
-      sb.append(methodToImportStatic.getName());
-      sb.append(';');
-    }
-    sb.append(getImportsPostfix());
-    return sb;
+    return importCollector.buildImports(getImportsPrefix(), getImportsPostfix());
   }
 
   @Override
@@ -425,100 +372,21 @@ public class JavaCodeGenerator extends SourceCodeGenerator {
 
   @Override
   public void processDoInOrder(DoInOrder doInOrder) {
-    openBlock();
-    try {
-      final String doInOrderName = ResourceBundleUtilities.getStringFromSimpleNames(doInOrder.getClass(), "org.alice.ide.controlflow.Templates");
-      // TODO adjust CodeFormatter to not insert linefeed before this comment
-      appendSingleLineComment(doInOrderName);
-    } catch (MissingResourceException mre) {
-      System.out.println("No resource bundle setup to localize do in order.");
-    }
-    BlockStatement blockStatement = doInOrder.body.getValue();
-    for (Statement subStatement : blockStatement.statements) {
-      appendStatement(subStatement);
-    }
-    closeBlock();
+    concurrencyAppender.appendDoInOrder(doInOrder, this);
   }
 
   @Override
   public void processDoTogether(DoTogether doTogether) {
-    JavaType threadUtilitiesType = JavaType.getInstance(ThreadUtilities.class);
-    JavaMethod doTogetherMethod = threadUtilitiesType.getDeclaredMethod("doTogether", Runnable[].class);
-    TypeExpression target = new TypeExpression(threadUtilitiesType);
-    appendTargetAndMethodName(target, doTogetherMethod);
-    appendString("(");
-    String prefix = "";
-    for (Statement statement : doTogether.body.getValue().statements) {
-      appendString(prefix);
-      if (isLambdaSupported()) {
-        appendString("()->{");
-      } else {
-        appendString("new Runnable(){public void run(){");
-      }
-      if (statement instanceof DoInOrder doInOrder) {
-        BlockStatement blockStatement = doInOrder.body.getValue();
-        for (Statement subStatement : blockStatement.statements) {
-          appendStatement(subStatement);
-        }
-      } else {
-        appendStatement(statement);
-      }
-      if (isLambdaSupported()) {
-        appendString("}");
-      } else {
-        appendString("}}");
-      }
-      prefix = ",";
-    }
-    appendString(");");
+    concurrencyAppender.appendDoTogether(doTogether, this);
   }
 
   @Override
   public void processEachInTogether(AbstractEachInTogether eachInTogether) {
-    JavaType threadUtilitiesType = JavaType.getInstance(ThreadUtilities.class);
-    JavaMethod eachInTogetherMethod = threadUtilitiesType.getDeclaredMethod("eachInTogether", EachInTogetherRunnable.class, Object[].class);
-    TypeExpression target = new TypeExpression(threadUtilitiesType);
-    appendTargetAndMethodName(target, eachInTogetherMethod);
-    appendString("(");
-
-    UserLocal itemValue = eachInTogether.item.getValue();
-    AbstractType<?, ?, ?> itemType = itemValue.getValueType();
-    if (isLambdaSupported()) {
-      appendString("(");
-      processTypeName(itemType);
-      appendSpace();
-      appendString(itemValue.getName());
-      appendString(")->");
-    } else {
-      appendString("new ");
-      processTypeName(JavaType.getInstance(EachInTogetherRunnable.class));
-      appendString("<");
-      processTypeName(itemType);
-      appendString(">() { public void run(");
-      processTypeName(itemType);
-      appendSpace();
-      appendString(itemValue.getName());
-      appendString(")");
-    }
-    appendStatement(eachInTogether.body.getValue());
-    if (!isLambdaSupported()) {
-      appendString("}");
-    }
-    Expression arrayOrIterableExpression = eachInTogether.getArrayOrIterableProperty().getValue();
-    if (arrayOrIterableExpression instanceof ArrayInstanceCreation arrayInstanceCreation) {
-      for (Expression variableLengthExpression : arrayInstanceCreation.expressions) {
-        appendString(",");
-        processExpression(variableLengthExpression);
-      }
-    } else {
-      appendString(",");
-      processExpression(arrayOrIterableExpression);
-    }
-    appendString(");");
+    concurrencyAppender.appendEachInTogether(eachInTogether, this);
   }
 
   private void appendMemberPrefix(AbstractMember member) {
-    String memberComment = getLocalizedMultiLineComment(member.getDeclaringType(), member.getName());
+    String memberComment = commentHelper.getLocalizedMultiLineComment(member.getDeclaringType(), member.getName());
     if (memberComment != null) {
       getCodeStringBuilder().append("\n").append(memberComment).append("\n");
     }
@@ -537,59 +405,13 @@ public class JavaCodeGenerator extends SourceCodeGenerator {
     super.processMultiLineComment(comment);
   }
 
-  private String formatBlockComment(String commentText) {
-    String[] commentLines = splitIntoLines(commentText);
-    StringBuilder sb = new StringBuilder();
-
-    sb.append("/* ");
-    for (int i = 0; i < commentLines.length; i++) {
-      sb.append(commentLines[i]);
-      if (i < (commentLines.length - 1)) {
-        sb.append("\n * "); // End each line with a new line and start each line with " *"
-      }
-    }
-    sb.append(" */");
-    return sb.toString();
-  }
-
   protected String getLocalizedMultiLineComment(AbstractType<?, ?, ?> type, String sectionName) {
-    String comment = getLocalizedComment(type, sectionName, Locale.getDefault());
-    if (comment != null) {
-      comment = formatBlockComment(comment);
-    }
-    return comment;
+    return commentHelper.getLocalizedMultiLineComment(type, sectionName);
   }
 
   @Override
   public String getLocalizedComment(AbstractType<?, ?, ?> type, String itemName, Locale locale) {
-    if (commentsLocalizationBundleName != null) {
-      ResourceBundle resourceBundle = ResourceBundleUtilities.getUtf8Bundle(commentsLocalizationBundleName, locale);
-      String key;
-      AbstractType<?, ?, ?> t = type;
-      boolean done = false;
-      String returnVal = null;
-      do {
-        if (t != null) {
-          key = t.getName() + "." + itemName;
-          t = t.getSuperType();
-        } else {
-          key = itemName;
-          done = true;
-        }
-        try {
-          returnVal = resourceBundle.getString(key);
-          break;
-        } catch (RuntimeException re) {
-          //pass;
-        }
-      } while (!done);
-      if (returnVal != null) {
-        returnVal = returnVal.replaceAll("<classname>", type.getName());
-        returnVal = returnVal.replaceAll("<objectname>", itemName);
-      }
-      return returnVal;
-    }
-    return null;
+    return commentHelper.getLocalizedComment(type, itemName, locale);
   }
 
   @Override
@@ -629,15 +451,9 @@ public class JavaCodeGenerator extends SourceCodeGenerator {
 
   private final boolean isLambdaSupported;
   private final boolean isPublicStaticFinalFieldGetterDesired;
-
-  private final Set<JavaPackage> packagesToImportOnDemand = Sets.newHashSet();
-  private final Set<JavaType> typesToImport = Sets.newHashSet();
-  private final Set<JavaMethod> methodsToImportStatic = Sets.newHashSet();
-
-  private final List<JavaPackage> packagesMarkedForOnDemandImport;
-  private final List<JavaMethod> staticMethodsMarkedForImport;
-
   private final ResourcesTypeWrapper resourcesTypeWrapper;
 
-  private final String commentsLocalizationBundleName;
+  private final ImportCollector importCollector;
+  private final ConcurrencyCodeAppender concurrencyAppender;
+  private final CommentLocalizationHelper commentHelper;
 }
