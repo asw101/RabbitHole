@@ -51,7 +51,6 @@ import org.lgna.croquet.data.RefreshableListData;
 import org.lgna.croquet.preferences.PreferenceBooleanState;
 import org.lgna.croquet.preferences.PreferenceStringState;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Map;
@@ -87,6 +86,9 @@ class CompositeResourceManager {
 
   // O(1) identity-based lookup index for contains()
   private final Set<Object> containsIndex = Collections.newSetFromMap(new IdentityHashMap<>());
+
+  // Cached array of sidekick maps — avoids allocation on every localize() call
+  private Map<AbstractComposite.Key, ? extends CompletionModel>[] cachedSidekickMaps;
 
   // ── Map accessors ───────────────────────────────────────────────────
 
@@ -182,7 +184,7 @@ class CompositeResourceManager {
 
   <T extends Enum<T>> ImmutableDataSingleSelectListState<T> createImmutableListStateForEnum(AbstractComposite.Key key, Class<T> valueCls, EnumCodec.LocalizationCustomizer<T> localizationCustomizer, T initialValue) {
     T[] constants = valueCls.getEnumConstants();
-    int selectionIndex = Arrays.asList(constants).indexOf(initialValue);
+    int selectionIndex = initialValue != null ? initialValue.ordinal() : -1;
     EnumCodec<T> enumCodec = localizationCustomizer != null ? EnumCodec.createInstance(valueCls, localizationCustomizer) : EnumCodec.getInstance(valueCls);
     InternalImmutableDataSingleSelectListState<T> rv = new InternalImmutableDataSingleSelectListState<T>(selectionIndex, enumCodec, constants, key);
     this.mapKeyToImmutableSingleSelectListState.put(key, rv);
@@ -225,21 +227,24 @@ class CompositeResourceManager {
 
   @SuppressWarnings("unchecked")
   Map<AbstractComposite.Key, ? extends CompletionModel>[] getSidekickMaps() {
-    return new Map[] {
-        this.mapKeyToActionOperation,
-        this.mapKeyToBooleanState,
-        this.mapKeyToPreferenceBooleanState,
-        this.mapKeyToBoundedDoubleState,
-        this.mapKeyToBoundedIntegerState,
-        this.mapKeyToCascade,
-        this.mapKeyToItemState,
-        this.mapKeyToImmutableSingleSelectListState,
-        this.mapKeyToRefreshableSingleSelectListState,
-        this.mapKeyToMutableSingleSelectListState,
-        this.mapKeyToTabState,
-        this.mapKeyToPreferenceStringState,
-        this.mapKeyToStringState,
-    };
+    if (this.cachedSidekickMaps == null) {
+      this.cachedSidekickMaps = new Map[] {
+          this.mapKeyToActionOperation,
+          this.mapKeyToBooleanState,
+          this.mapKeyToPreferenceBooleanState,
+          this.mapKeyToBoundedDoubleState,
+          this.mapKeyToBoundedIntegerState,
+          this.mapKeyToCascade,
+          this.mapKeyToItemState,
+          this.mapKeyToImmutableSingleSelectListState,
+          this.mapKeyToRefreshableSingleSelectListState,
+          this.mapKeyToMutableSingleSelectListState,
+          this.mapKeyToTabState,
+          this.mapKeyToPreferenceStringState,
+          this.mapKeyToStringState,
+      };
+    }
+    return this.cachedSidekickMaps;
   }
 
   // ── localize() ──────────────────────────────────────────────────────
