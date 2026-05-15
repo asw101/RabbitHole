@@ -133,7 +133,7 @@ public final class AstMethodLookupHelpers {
   }
 
   public static List<AbstractMethod> getAllMethods(AbstractType<?, ?, ?> type) {
-    List<AbstractMethod> rv = Lists.newLinkedList();
+    List<AbstractMethod> rv = Lists.newArrayList();
     updateAllMethods(rv, type);
     return rv;
   }

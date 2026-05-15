@@ -104,7 +104,7 @@ public class AstUtilities {
   public static Expression getJavaKeyedArgumentSubArgument0Expression(JavaKeyedArgument argument) {
     Expression expresssion = argument.expression.getValue();
     if (expresssion instanceof MethodInvocation methodInvocation) {
-      if (methodInvocation.requiredArguments.size() > 0) {
+      if (!methodInvocation.requiredArguments.isEmpty()) {
         return methodInvocation.requiredArguments.get(0).expression.getValue();
       } else {
         throw new RuntimeException();

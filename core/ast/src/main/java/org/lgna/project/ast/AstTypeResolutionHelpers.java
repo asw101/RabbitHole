@@ -64,11 +64,9 @@ public final class AstTypeResolutionHelpers {
     for (JavaMethod method : javaType.getDeclaredMethods()) {
       java.lang.reflect.Method mthd = method.getMethodReflectionProxy().getReification();
       if (mthd != null) {
-        if (mthd.isAnnotationPresent(GetterTemplate.class)) {
-          GetterTemplate gttrTemplate = mthd.getAnnotation(GetterTemplate.class);
-          if (gttrTemplate.isPersistent()) {
-            rv.add(method);
-          }
+        GetterTemplate gttrTemplate = mthd.getAnnotation(GetterTemplate.class);
+        if (gttrTemplate != null && gttrTemplate.isPersistent()) {
+          rv.add(method);
         }
       }
     }
@@ -76,13 +74,13 @@ public final class AstTypeResolutionHelpers {
   }
 
   public static Iterable<JavaMethod> getDeclaredPersistentPropertyGetters(JavaType javaType) {
-    List<JavaMethod> rv = Lists.newLinkedList();
+    List<JavaMethod> rv = Lists.newArrayList();
     updatePersistentPropertyGetters(rv, javaType);
     return rv;
   }
 
   public static Iterable<JavaMethod> getPersistentPropertyGetters(AbstractType<?, ?, ?> type) {
-    List<JavaMethod> rv = Lists.newLinkedList();
+    List<JavaMethod> rv = Lists.newArrayList();
     JavaType javaType = type.getFirstEncounteredJavaType();
     while (true) {
       if (javaType != null) {
