@@ -10,31 +10,31 @@ After decomposition, `AstUtilities` is under 500 lines and contains only AST nod
 
 `AstTypeResolutionHelpers` owns property getter discovery, setter resolution, keyword factory type lookup, parameter value type extraction, and declaring-type resolution. All methods are `public static` with no mutable state.
 
-| Method | Purpose |
-| --- | --- |
-| `getDeclaredPersistentPropertyGetters(JavaType)` | Returns `@GetterTemplate(isPersistent=true)` methods declared directly on the given type. |
-| `getPersistentPropertyGetters(AbstractType)` | Walks the type hierarchy collecting persistent property getters until `isFollowToSuperClassDesired()` returns false. |
-| `getSetterForGetter(JavaMethod, JavaType)` | Resolves the setter method corresponding to a persistent property getter on a specific type. |
-| `getSetterForGetter(JavaMethod)` | Convenience overload that uses the getter's own declaring type. |
-| `getParameterValueTypes(AbstractMethod)` | Extracts an array of value types from a method's required parameters. |
-| `getKeywordFactoryType(JavaKeyedArgument)` | Resolves the keyword factory type for a keyworded parameter's array component type. Returns null when the argument is not keyworded or has no component type. |
-| `getDeclaringTypeIfMemberOrTypeItselfIfType(AbstractDeclaration)` | Returns the type itself if the declaration is a type, or the declaring type if it is a member. Throws `UnsupportedOperationException` for other declaration kinds. Returns null for null input. |
+| Method | Source lines | Purpose |
+| --- | --- | --- |
+| `getDeclaredPersistentPropertyGetters(JavaType)` | L136–140 | Returns `@GetterTemplate(isPersistent=true)` methods declared directly on the given type. **No current callers** — retained for API completeness. |
+| `getPersistentPropertyGetters(AbstractType)` | L142–158 | Walks the type hierarchy collecting persistent property getters until `isFollowToSuperClassDesired()` returns false. |
+| `getSetterForGetter(JavaMethod, JavaType)` | L160–168 | Resolves the setter method corresponding to a persistent property getter on a specific type. |
+| `getSetterForGetter(JavaMethod)` | L170–172 | Convenience overload that uses the getter's own declaring type. |
+| `getParameterValueTypes(AbstractMethod)` | L471–480 | Extracts an array of value types from a method's required parameters. **No current callers** — retained for API completeness. |
+| `getKeywordFactoryType(JavaKeyedArgument)` | L532–544 | Resolves the keyword factory type for a keyworded parameter's array component type. Returns null when the argument is not keyworded or has no component type. |
+| `getDeclaringTypeIfMemberOrTypeItselfIfType(AbstractDeclaration)` | L622–634 | Returns the type itself if the declaration is a type, or the declaring type if it is a member. Throws `UnsupportedOperationException` for other declaration kinds. Returns null for null input. **No current callers** — retained for API completeness. |
 
-The private helper `updatePersistentPropertyGetters(List<JavaMethod>, JavaType)` moved alongside the public methods that depend on it.
+The private helper `updatePersistentPropertyGetters(List<JavaMethod>, JavaType)` (L121–134) moves alongside the public methods that depend on it.
 
 ### AstMethodLookupHelpers
 
 `AstMethodLookupHelpers` owns method lookup by signature, single abstract method (SAM) resolution, overridden method discovery, method invocation crawling, and full method hierarchy traversal. All methods are `public static` with no mutable state.
 
-| Method | Purpose |
-| --- | --- |
-| `lookupMethod(Class, String, Class...)` | Delegates to `JavaMethod.getInstance` for reflective method lookup. |
-| `getSingleAbstractMethod(AbstractType)` | Returns the single abstract method declared on a functional interface type. Asserts exactly one method exists and that it is abstract. |
-| `getOverridenMethod(AbstractMethod)` | Walks the supertype chain to find the method that the given method overrides. Returns null if no override exists. |
-| `getAllInvokedMethods(UserMethod)` | Recursively crawls the body of a user method and returns the transitive set of all invoked `UserMethod` instances. |
-| `getAllMethods(AbstractType)` | Recursively collects all methods from the type and its entire supertype hierarchy. |
+| Method | Source lines | Purpose |
+| --- | --- | --- |
+| `lookupMethod(Class, String, Class...)` | L355–357 | Delegates to `JavaMethod.getInstance` for reflective method lookup. |
+| `getSingleAbstractMethod(AbstractType)` | L482–488 | Returns the single abstract method declared on a functional interface type. Asserts exactly one method exists and that it is abstract. |
+| `getOverridenMethod(AbstractMethod)` | L569–572 | Walks the supertype chain to find the method that the given method overrides. Returns null if no override exists. |
+| `getAllInvokedMethods(UserMethod)` | L593–597 | Recursively crawls the body of a user method and returns the transitive set of all invoked `UserMethod` instances. |
+| `getAllMethods(AbstractType)` | L644–648 | Recursively collects all methods from the type and its entire supertype hierarchy. |
 
-The private helpers `getParameterTypes(AbstractMethod)`, `getOverridenMethod(AbstractType, String, AbstractType[])`, `addInvokedMethods(Set<UserMethod>, UserMethod)`, and `updateAllMethods(List<AbstractMethod>, AbstractType)` moved alongside their public entry points.
+The private helpers `getParameterTypes(AbstractMethod)` (L546–553), `getOverridenMethod(AbstractType, String, AbstractType[])` (L555–567), `addInvokedMethods(Set<UserMethod>, UserMethod)` (L574–591), and `updateAllMethods(List<AbstractMethod>, AbstractType)` (L636–642) move alongside their public entry points.
 
 ### AstUtilities (reduced)
 
@@ -53,7 +53,11 @@ The private helpers `getParameterTypes(AbstractMethod)`, `getOverridenMethod(Abs
 - `fixRequiredArgumentsIfNecessary` — argument repair
 - `getNamedUserTypes` — type crawling
 
-The `createUserLambda` method now calls `AstMethodLookupHelpers.getSingleAbstractMethod(type)` instead of the previously co-located `getSingleAbstractMethod`. This is the only internal call-site change within `AstUtilities`.
+The `createUserLambda` method (L490) now calls `AstMethodLookupHelpers.getSingleAbstractMethod(type)` instead of the previously co-located `getSingleAbstractMethod`. This is the only internal call-site change within `AstUtilities`.
+
+### Uncalled public methods
+
+Three extracted methods — `getDeclaredPersistentPropertyGetters`, `getParameterValueTypes`, and `getDeclaringTypeIfMemberOrTypeItselfIfType` — have zero callers anywhere in the codebase today. They are still extracted into `AstTypeResolutionHelpers` for API completeness and to preserve the existing public contract. They are candidates for removal in a future dead-code cleanup pass.
 
 ## Migration guide
 
@@ -167,7 +171,7 @@ All callers are within the Alice 3 monorepo and are updated atomically in the sa
 
 The decomposition is validated by:
 
-1. **Line count** — `AstUtilities.java` is under 500 lines after extraction.
+1. **Line count** — `AstUtilities.java` drops from 649 to ~479 lines after extraction (~170 lines removed: L121–172, L355–357, L471–488, L532–597, L622–648 plus associated blank lines). Well under the 500-line target.
 2. **Maven compile** — `mvn compile test-compile -pl core/ast,core/story-api-migration,core/ide,netbeans -am` succeeds with no errors.
 3. **Existing test** — `SilverThreadStudentProgramSaveReadbackTest` continues to pass, confirming that the method lookup used by the IDE's student program path is correctly redirected.
 4. **No behavioral change** — Every extracted method preserves its original implementation verbatim, including assertions, null handling, and recursive traversal logic.
