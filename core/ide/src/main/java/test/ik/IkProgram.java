@@ -331,15 +331,6 @@ class IkProgram extends SProgram {
       @Override
       public void run() {
         while (!interrupted()) {
-
-          //not bad concurrent programming practice
-          boolean isLinearEnabled = IsLinearEnabledState.getInstance().getValue();
-          boolean isAngularEnabled = IsAngularEnabledState.getInstance().getValue();
-
-          //these could be multiple. in this app it is one pair.
-          final JointId eeId = EndJointIdState.getInstance().getValue();
-          final JointId anchorId = AnchorJointIdState.getInstance().getValue();
-
           AffineMatrix4x4 targetTransformation = getTargetImp().getTransformation(AsSeenBy.SCENE);
 
           myPositionConstraint.setEeDesiredPosition(targetTransformation.translation());
