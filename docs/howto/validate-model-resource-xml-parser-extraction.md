@@ -129,17 +129,28 @@ grep -c 'ModelResourceXmlParser.getSubResourceFromXML' \
 
 Expected: `1`
 
-## Step 8: Run the existing tests
+## Step 8: Run the tests
 
 ```bash
 cd core/story-api && mvn test -pl . -Dtest=ModelResourceInfoTest -q
 ```
 
-Expected: all 9 tests pass with no failures or errors. The tests exercise the
+Expected: all 9 tests pass with no failures or errors. These exercise the
 full XML-to-`ModelResourceInfo` pipeline including sub-resource creation,
 tag parsing, bounding box extraction, manifest generation, and
 `placeOnGround` inheritance — covering every method that moved to
 `ModelResourceXmlParser`.
+
+Then run the parser-specific tests:
+
+```bash
+cd core/story-api && mvn test -pl . -Dtest=ModelResourceXmlParserTest -q
+```
+
+Expected: all 24 tests pass. These directly exercise the 5 extracted static
+methods (`getBoundingBoxFromXML`, `getSubResourceFromXML`, `getResourceTags`,
+`addImmediateChildTextContent`, `getImmediateChildElementsByTagName`) plus an
+integration test verifying the `Document` constructor still works end-to-end.
 
 ## Step 9: Verify no public API changes
 

@@ -14,11 +14,8 @@ import java.util.List;
 import static org.junit.Assert.*;
 
 /**
- * TDD tests for ModelResourceXmlParser — the package-private utility class
+ * Tests for ModelResourceXmlParser — the package-private utility class
  * holding 5 static XML-parsing helpers extracted from ModelResourceInfo.
- *
- * These tests define the contract BEFORE the implementation exists.
- * They must all fail initially and pass once ModelResourceXmlParser is created.
  */
 public class ModelResourceXmlParserTest {
 
@@ -335,7 +332,7 @@ public class ModelResourceXmlParserTest {
   }
 
   @Test
-  public void getSubResourceFromXMLParsesDeprecatedFlag() throws Exception {
+  public void getSubResourceFromXMLHandlesDeprecatedAttribute() throws Exception {
     ModelResourceInfo parent = createMinimalParent();
     Element resource = rootElement("""
         <Resource resourceName="OLD" deprecated="true" modelName="OldModel"/>

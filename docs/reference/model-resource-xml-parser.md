@@ -165,3 +165,4 @@ After the extraction, `ModelResourceInfo` retains all public API:
 | `ModelResourceXmlParser` | `core/story-api/src/main/java/org/lgna/story/resourceutilities/ModelResourceXmlParser.java` |
 | `ModelResourceInfo` | `core/story-api/src/main/java/org/lgna/story/resourceutilities/ModelResourceInfo.java` |
 | `ModelResourceInfoTest` | `core/story-api/src/test/java/org/lgna/story/resourceutilities/ModelResourceInfoTest.java` |
+| `ModelResourceXmlParserTest` | `core/story-api/src/test/java/org/lgna/story/resourceutilities/ModelResourceXmlParserTest.java` |
