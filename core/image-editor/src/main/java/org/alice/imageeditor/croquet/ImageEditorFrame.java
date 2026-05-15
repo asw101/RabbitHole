@@ -492,21 +492,4 @@ public class ImageEditorFrame extends FrameCompositeWithInternalIsShowingState<I
       }
     }
   }
-
-  //  public static void main( String[] args ) throws Exception {
-  //    edu.cmu.cs.dennisc.javax.swing.UIManagerUtilities.setLookAndFeel( "Nimbus" );
-  //
-  //    //final javax.swing.ImageIcon icon = new javax.swing.ImageIcon( org.alice.ide.warning.components.WarningView.class.getResource( "images/toxic.png" ) );
-  //    final java.awt.Image image = edu.cmu.cs.dennisc.image.ImageUtilities.read( org.alice.ide.warning.components.WarningView.class.getResource( "images/toxic.png" ) );
-  //    org.lgna.croquet.simple.SimpleApplication app = new org.lgna.croquet.simple.SimpleApplication();
-  //    final ImageEditorFrame imageComposite = new ImageEditorFrame();
-  //    imageComposite.getShowInScreenResolutionState().setValueTransactionlessly( false );
-  //    imageComposite.getToolState().setValueTransactionlessly( Tool.CROP_SELECT );
-  //    javax.swing.SwingUtilities.invokeLater( new Runnable() {
-  //      public void run() {
-  //        imageComposite.setImageClearShapesAndShowFrame( image );
-  //        ( (org.lgna.croquet.components.Frame)imageComposite.getView().getRoot() ).setDefaultCloseOperation( org.lgna.croquet.components.Frame.DefaultCloseOperation.EXIT );
-  //      }
-  //    } );
-  //  }
 }
