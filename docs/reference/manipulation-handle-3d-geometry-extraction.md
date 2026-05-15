@@ -73,16 +73,16 @@ All new files carry the CMU BSD copyright header matching the original.
 | Element | Before | After | Reason |
 | --- | --- | --- | --- |
 | `DoubleInterruptibleAnimation` (class) | `protected static` inner | `public abstract` top-level | Subclasses in same package declare fields of this type; `public` matches the field accessibility pattern used by `RotationRingHandle` and siblings |
-| `Color4fInterruptibleAnimation` (class) | `protected static` inner | `protected abstract` top-level (package-private effective) | Only referenced within the `handle` package |
+| `Color4fInterruptibleAnimation` (class) | `protected static` inner | package-private `abstract` top-level | Only referenced within the `handle` package; Java disallows `protected` on top-level classes |
 | `NOT_3D_HANDLE_CRITERION` (constant) | `public static final` anonymous class | `public static final` delegating to `Not3dHandleCriterion` | One-liner alias preserves binary compatibility |
 | `Not3dHandleCriterion` (class) | N/A (anonymous) | package-private | No external consumers; all 27 usage sites reference the `NOT_3D_HANDLE_CRITERION` constant |
 | `HandleGeometryHelper` (class) | N/A | `final` package-private | Pure utility; no reason to expose outside `handle` package |
 | `getScalable()` (method) | `private` on `ManipulationHandle3D` | `static` on `HandleGeometryHelper` | Pure function of its argument; no instance state needed |
 | `invertParentScale()` (method) | `private` on `ManipulationHandle3D` | `static` on `HandleGeometryHelper` | Reads only from the passed `Transformable` and `Composite` arguments |
-| `getObjectScale()` (method) | `protected` on `ManipulationHandle3D` | `static` on `HandleGeometryHelper` | Pure function of object and bounding box |
-| `getManipulatedObjectBox()` (method) | `protected` on `ManipulationHandle3D` | `static` on `HandleGeometryHelper` | Pure function of `AbstractTransformable` |
-| `getTransformationForAxis()` (method) | `public` on `ManipulationHandle3D` | `static` on `HandleGeometryHelper` | Pure function of `Vector3` axis; no instance state |
-| `calculateCameraRelativeOpacity()` (method) | `public` on `ManipulationHandle3D` | `static` on `HandleGeometryHelper` | Pure function of parent position and camera position |
+| `getObjectScale()` (method) | `protected` on `ManipulationHandle3D` | `static` on `HandleGeometryHelper`; **no delegate kept** (only called within ManipulationHandle3D) | Pure function of object and bounding box |
+| `getManipulatedObjectBox()` (method) | `protected` on `ManipulationHandle3D` | `static` on `HandleGeometryHelper`; **delegate kept** on ManipulationHandle3D | Called by 6 subclass sites (JointRotationRingHandle, RotationRingHandle ×2, LinearDragHandle, ManipulationAxes, LinearScaleHandle) |
+| `getTransformationForAxis()` (method) | `public` on `ManipulationHandle3D` | `static` on `HandleGeometryHelper`; **delegate kept** on ManipulationHandle3D | Called by 5 subclass sites (RotationRingHandle, LinearDragHandle ×2, LinearScaleHandle, StoodUpRotationRingHandle) |
+| `calculateCameraRelativeOpacity()` (method) | `public` on `ManipulationHandle3D` | `static` on `HandleGeometryHelper`; **delegate kept** on ManipulationHandle3D | Public API preserved; delegate body is 1 line |
 
 **No existing public API constant or type name was removed.** The
 `NOT_3D_HANDLE_CRITERION` constant remains on `ManipulationHandle3D` at its
@@ -91,12 +91,23 @@ original fully-qualified name.
 ## Inlined methods
 
 Two private methods were eliminated by inlining their logic as calls to
-`HandleGeometryHelper`:
+`HandleGeometryHelper`. One protected method (`getObjectScale`) was also
+eliminated because its only callers are within ManipulationHandle3D itself:
 
 | Removed method | Lines saved | Replacement |
 | --- | --- | --- |
 | `getScalable(AbstractTransformable)` | 9 | Call sites use `HandleGeometryHelper.getScalable(object)` directly |
 | `invertParentScale(Composite)` | 13 | `setParent()` calls `HandleGeometryHelper.invertParentScale(this, parent)` |
+| `getObjectScale()` | ~22 | Call sites use `HandleGeometryHelper.getObjectScale(object, bbox)` directly |
+
+Three methods remain on `ManipulationHandle3D` as thin delegates because
+subclasses call them via `this.`:
+
+| Delegate method | Body after extraction |
+| --- | --- |
+| `getTransformationForAxis(Vector3 axis)` | `return HandleGeometryHelper.getTransformationForAxis(axis);` |
+| `getManipulatedObjectBox()` | `return HandleGeometryHelper.getManipulatedObjectBox(this.manipulatedObject);` |
+| `calculateCameraRelativeOpacity(Point3 cameraPosition)` | `return HandleGeometryHelper.calculateCameraRelativeOpacity(this.getParentTransformable(), cameraPosition);` |
 
 ## NOT\_3D\_HANDLE\_CRITERION compatibility
 
@@ -131,7 +142,8 @@ final class Not3dHandleCriterion implements Criterion<Component> {
 }
 ```
 
-All 27 external reference sites use `ManipulationHandle3D.NOT_3D_HANDLE_CRITERION`
+Both external reference sites (`ResizeDragManipulator` and
+`ScaleDragManipulator`) use `ManipulationHandle3D.NOT_3D_HANDLE_CRITERION`
 and require zero changes.
 
 ## Classes that stay inline
@@ -192,12 +204,15 @@ mvn -pl core/story-api -am \
    `org.alice.interact.handle`. Package-private access is preserved between
    `ManipulationHandle3D` and its helpers.
 
-3. **No subclass changes.** The 8 subclasses (`RotationRingHandle`,
-   `LinearTranslateHandle`, `LinearScaleHandle`, `LinearDragHandle`,
-   `StoodUpRotationRingHandle`, `JointRotationRingHandle`, etc.) do not
-   override any extracted method. They reference the animation types only as
-   field declarations (lines 653–654 in the original), which now resolve to
-   the same-package top-level classes.
+3. **No subclass changes.** The 7 subclasses (`RotationRingHandle`,
+   `StoodUpRotationRingHandle`, `JointRotationRingHandle`,
+   `LinearDragHandle`, `LinearTranslateHandle`, `LinearScaleHandle`,
+   `ManipulationAxes`) do not require modification. `getTransformationForAxis`
+   and `getManipulatedObjectBox` remain as delegate methods on
+   ManipulationHandle3D so subclass `this.` call sites compile unchanged.
+   Animation types referenced as field declarations (lines 653–654 plus
+   `RotationRingHandle:433` and `LinearDragHandle:271`) resolve to the
+   same-package top-level classes.
 
 4. **No reflection dependencies.** No Alice 3 code uses reflection to
    access the extracted inner classes by their inner-class names.
@@ -215,11 +230,19 @@ mvn -pl core/story-api -am \
 ### HandleGeometryHelper — axis transformation
 
 ```java
-// Before (instance method on ManipulationHandle3D):
-AffineMatrix4x4 transform = this.getTransformationForAxis(Vector3.POSITIVE_Y_AXIS);
+// Before (12-line instance method body on ManipulationHandle3D):
+public AffineMatrix4x4 getTransformationForAxis(Vector3 axis) {
+  double upDot = axis.dotProduct(Vector3.POSITIVE_Y_AXIS);
+  // ... 10 more lines
+}
 
-// After (static utility):
-AffineMatrix4x4 transform = HandleGeometryHelper.getTransformationForAxis(Vector3.POSITIVE_Y_AXIS);
+// After (1-line delegate on ManipulationHandle3D; logic moved to helper):
+public AffineMatrix4x4 getTransformationForAxis(Vector3 axis) {
+  return HandleGeometryHelper.getTransformationForAxis(axis);
+}
+
+// Subclass call sites remain unchanged:
+this.localTransformation.setValue(this.getTransformationForAxis(this.rotationAxis));
 ```
 
 ### HandleGeometryHelper — object scale in setManipulatedObject
@@ -256,12 +279,14 @@ public void setParent(Composite parent) {
 ### HandleGeometryHelper — camera-relative opacity
 
 ```java
-// Before:
+// Before (12-line body):
 public float calculateCameraRelativeOpacity(Point3 cameraPosition) { ... }
 
-// After (static, takes parent transformable explicitly):
-float opacity = HandleGeometryHelper.calculateCameraRelativeOpacity(
-    this.getParentTransformable(), cameraPosition);
+// After (1-line delegate; logic moved to helper):
+public float calculateCameraRelativeOpacity(Point3 cameraPosition) {
+  return HandleGeometryHelper.calculateCameraRelativeOpacity(
+      this.getParentTransformable(), cameraPosition);
+}
 ```
 
 ### DoubleInterruptibleAnimation — subclass field declaration

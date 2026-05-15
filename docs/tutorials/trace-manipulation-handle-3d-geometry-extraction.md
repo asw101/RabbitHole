@@ -32,8 +32,10 @@ After this tutorial you will be able to explain:
   `Color4fInterruptibleAnimation` is package-private
 - Why `NOT_3D_HANDLE_CRITERION` keeps its constant on ManipulationHandle3D
   while the implementation moves to a named class
-- Why `getScalable()` and `invertParentScale()` were inlined rather than
-  just delegated
+- Why `getScalable()`, `invertParentScale()`, and `getObjectScale()` were
+  inlined rather than kept as delegates
+- Why `getTransformationForAxis()` and `getManipulatedObjectBox()` remain
+  as delegate methods instead of being fully removed
 - Why the two anonymous listener fields remain as inner declarations
 
 ## 1. Understand the pre-extraction structure
@@ -60,16 +62,19 @@ Both characteristics make them ideal extraction candidates.
 ## 2. Trace the HandleGeometryHelper extraction
 
 Six methods move to a package-private `final class HandleGeometryHelper`
-with all-static methods:
+with all-static methods. Three of these (`getTransformationForAxis`,
+`getManipulatedObjectBox`, `calculateCameraRelativeOpacity`) retain thin
+delegate methods on ManipulationHandle3D because subclasses call them
+via `this.`:
 
-| Method | Original signature | Static signature |
-| --- | --- | --- |
-| `getTransformationForAxis` | `public AffineMatrix4x4 getTransformationForAxis(Vector3 axis)` | `static AffineMatrix4x4 getTransformationForAxis(Vector3 axis)` |
-| `getManipulatedObjectBox` | `protected AxisAlignedBox getManipulatedObjectBox()` | `static AxisAlignedBox getManipulatedObjectBox(AbstractTransformable object)` |
-| `getObjectScale` | `protected double getObjectScale()` | `static double getObjectScale(AbstractTransformable object, AxisAlignedBox bbox)` |
-| `calculateCameraRelativeOpacity` | `public float calculateCameraRelativeOpacity(Point3 cameraPosition)` | `static float calculateCameraRelativeOpacity(AbstractTransformable parentTransformable, Point3 cameraPosition)` |
-| `invertParentScale` | `private void invertParentScale(Composite parent)` | `static void invertParentScale(Transformable target, Composite parent)` |
-| `getScalable` | `private Scalable getScalable(AbstractTransformable object)` | `static Scalable getScalable(AbstractTransformable object)` |
+| Method | Original signature | Static signature | Delegate kept? |
+| --- | --- | --- | --- |
+| `getTransformationForAxis` | `public AffineMatrix4x4 getTransformationForAxis(Vector3 axis)` | `static AffineMatrix4x4 getTransformationForAxis(Vector3 axis)` | **Yes** — 5 subclass call sites |
+| `getManipulatedObjectBox` | `protected AxisAlignedBox getManipulatedObjectBox()` | `static AxisAlignedBox getManipulatedObjectBox(AbstractTransformable object)` | **Yes** — 6 subclass call sites |
+| `getObjectScale` | `protected double getObjectScale()` | `static double getObjectScale(AbstractTransformable object, AxisAlignedBox bbox)` | No — only called within ManipulationHandle3D |
+| `calculateCameraRelativeOpacity` | `public float calculateCameraRelativeOpacity(Point3 cameraPosition)` | `static float calculateCameraRelativeOpacity(AbstractTransformable parentTransformable, Point3 cameraPosition)` | **Yes** — public API preservation |
+| `invertParentScale` | `private void invertParentScale(Composite parent)` | `static void invertParentScale(Transformable target, Composite parent)` | No — single call site, inlined |
+| `getScalable` | `private Scalable getScalable(AbstractTransformable object)` | `static Scalable getScalable(AbstractTransformable object)` | No — 2 call sites, inlined |
 
 **Why static?** Every method is a pure function. None reads or writes
 instance fields — they only operate on their explicit parameters. Making
@@ -116,10 +121,11 @@ subclasses including potential out-of-package ones), and the field
 declarations in subclasses use the unqualified type name. Making it
 `public` preserves the widest original access.
 
-**Why `Color4fInterruptibleAnimation` stays `protected` (effective
-package-private):** This type is only referenced as a field type within
+**Why `Color4fInterruptibleAnimation` is package-private (default access):**
+This type is only referenced as a field type within
 `ManipulationHandle3D` itself (line 654). No subclass declares a field of
-this type. The narrower visibility is appropriate.
+this type. Java does not allow `protected` on top-level classes, so the
+narrowest valid access — package-private — is the correct choice.
 
 **No behavioral change:** The `cancel()` → `complete(null)` → `epilogue()`
 chain works identically whether the class is inner or top-level.
@@ -152,7 +158,8 @@ public static final Criterion<Component> NOT_3D_HANDLE_CRITERION =
     new Not3dHandleCriterion();
 ```
 
-All 27 usage sites reference the constant by its original qualified name
+All 2 external usage sites (`ResizeDragManipulator` and
+`ScaleDragManipulator`) reference the constant by its original qualified name
 (`ManipulationHandle3D.NOT_3D_HANDLE_CRITERION`). None casts or
 reflects on the anonymous type. The change is transparent.
 
@@ -161,7 +168,7 @@ construct a `Not3dHandleCriterion` directly. The constant is the API.
 
 ## 5. Understand the inlined methods
 
-Two methods were eliminated entirely rather than delegated:
+Three methods were eliminated entirely rather than delegated:
 
 ### `getScalable()` (9 lines → 0)
 
@@ -198,10 +205,35 @@ HandleGeometryHelper.invertParentScale(this, parent);
 The static method receives the `Transformable` explicitly instead of
 reading `localTransformation` implicitly.
 
-**Why inline instead of delegate?** For methods with a single call site,
-a one-line delegation wrapper `private void invertParentScale(Composite p)
-{ HandleGeometryHelper.invertParentScale(this, p); }` wastes a line for
-zero readability benefit. The direct call at the use site is equally clear.
+### `getObjectScale()` (~22 lines → 0)
+
+```java
+// BEFORE: protected method on ManipulationHandle3D
+protected double getObjectScale() {
+  if (this.getManipulatedObject() == null) { return 1.0d; }
+  AxisAlignedBox bbox = this.getManipulatedObjectBox();
+  // ... clamp scale between 0.25 and 2.0
+}
+```
+
+Called at exactly 2 sites within ManipulationHandle3D (`setManipulatedObject`
+line 238 and `scaleListener` line 632). No subclass calls or overrides this
+method. Call sites become:
+
+```java
+AxisAlignedBox bbox = HandleGeometryHelper.getManipulatedObjectBox(this.manipulatedObject);
+this.setScale(HandleGeometryHelper.getObjectScale(this.manipulatedObject, bbox));
+```
+
+**Why inline instead of delegate?** For methods with 1–2 call sites and
+no subclass callers, a delegation wrapper wastes a line for zero
+readability benefit. The direct call at the use site is equally clear.
+
+**Why NOT inline `getTransformationForAxis` and `getManipulatedObjectBox`?**
+These have 5 and 6 subclass call sites respectively (e.g.,
+`RotationRingHandle`, `LinearDragHandle`, `LinearScaleHandle`). Removing
+them would require updating all subclass callers, violating the "no
+subclass changes" rule. They stay as 1-line delegate methods.
 
 ## 6. Understand why listeners stay inline
 

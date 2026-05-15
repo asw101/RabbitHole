@@ -59,8 +59,9 @@ Expected changed/added files:
 | `.../handle/Color4fInterruptibleAnimation.java` | Added |
 
 No other `.java` files should appear. Subclasses (`RotationRingHandle`,
-`LinearTranslateHandle`, `LinearScaleHandle`, `LinearDragHandle`,
-`StoodUpRotationRingHandle`, `JointRotationRingHandle`) must be unchanged.
+`StoodUpRotationRingHandle`, `JointRotationRingHandle`, `LinearDragHandle`,
+`LinearTranslateHandle`, `LinearScaleHandle`, `ManipulationAxes`) must be
+unchanged.
 
 ## 5. Verify NOT_3D_HANDLE_CRITERION constant preserved
 
