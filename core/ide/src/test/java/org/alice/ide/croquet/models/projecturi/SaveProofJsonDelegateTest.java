@@ -24,8 +24,8 @@ public class SaveProofJsonDelegateTest {
    * Returns a fully-proven snapshot where every gate is passed.
    * Individual tests override specific fields by constructing new snapshots.
    */
-  private static EvidenceJsonWriter.SaveProofSnapshot provenSnapshot() {
-    return new EvidenceJsonWriter.SaveProofSnapshot(
+  private static SaveProofJsonDelegate.SaveProofSnapshot provenSnapshot() {
+    return new SaveProofJsonDelegate.SaveProofSnapshot(
         /* robotFileMenuOpened */        true,
         /* robotSaveItemClicked */       true,
         /* saveActionIdentityMatched */  true,
@@ -55,8 +55,8 @@ public class SaveProofJsonDelegateTest {
    * Returns a snapshot where the file menu was never opened — the first
    * gate in the blocker-inference chain.
    */
-  private static EvidenceJsonWriter.SaveProofSnapshot menuNotOpenedSnapshot() {
-    return new EvidenceJsonWriter.SaveProofSnapshot(
+  private static SaveProofJsonDelegate.SaveProofSnapshot menuNotOpenedSnapshot() {
+    return new SaveProofJsonDelegate.SaveProofSnapshot(
         false, false, false, false, false, false, false, false,
         false, null, null, 0, false, false, null, null, null,
         null, Path.of("/proof/root/classroom.a3p"), "classroom.a3p",
@@ -69,7 +69,7 @@ public class SaveProofJsonDelegateTest {
 
   @Test
   public void headerJsonContainsSchemaVersion() {
-    EvidenceJsonWriter.SaveProofSnapshot snap = provenSnapshot();
+    SaveProofJsonDelegate.SaveProofSnapshot snap = provenSnapshot();
     String json = SaveProofJsonDelegate.headerJson("proven", true, snap);
     assertTrue(json, json.contains(
         "\"schemaVersion\": \"" + SaveOperationCompletionEvidence.SAVE_PROOF_SCHEMA_VERSION + "\""));
@@ -77,7 +77,7 @@ public class SaveProofJsonDelegateTest {
 
   @Test
   public void headerJsonContainsScenarioAndRunId() {
-    EvidenceJsonWriter.SaveProofSnapshot snap = provenSnapshot();
+    SaveProofJsonDelegate.SaveProofSnapshot snap = provenSnapshot();
     String json = SaveProofJsonDelegate.headerJson("proven", true, snap);
     assertTrue(json, json.contains("\"scenario\": \"alice-desktop-save-menu-dialog-write-proof\""));
     assertTrue(json, json.contains("\"runId\": \"run-001\""));
@@ -85,7 +85,7 @@ public class SaveProofJsonDelegateTest {
 
   @Test
   public void headerJsonContainsWorkflow() {
-    EvidenceJsonWriter.SaveProofSnapshot snap = provenSnapshot();
+    SaveProofJsonDelegate.SaveProofSnapshot snap = provenSnapshot();
     String json = SaveProofJsonDelegate.headerJson("proven", true, snap);
     assertTrue(json, json.contains(
         "\"workflow\": \"" + SaveOperationCompletionEvidence.SAVE_PROOF_WORKFLOW + "\""));
@@ -93,28 +93,28 @@ public class SaveProofJsonDelegateTest {
 
   @Test
   public void headerJsonContainsGeneratedAtUtc() {
-    EvidenceJsonWriter.SaveProofSnapshot snap = provenSnapshot();
+    SaveProofJsonDelegate.SaveProofSnapshot snap = provenSnapshot();
     String json = SaveProofJsonDelegate.headerJson("proven", true, snap);
     assertTrue(json, json.contains("\"generatedAtUtc\":"));
   }
 
   @Test
   public void headerJsonContainsStatus() {
-    EvidenceJsonWriter.SaveProofSnapshot snap = provenSnapshot();
+    SaveProofJsonDelegate.SaveProofSnapshot snap = provenSnapshot();
     String json = SaveProofJsonDelegate.headerJson("proven", true, snap);
     assertTrue(json, json.contains("\"status\": \"proven\""));
   }
 
   @Test
   public void headerJsonContainsProofTarget() {
-    EvidenceJsonWriter.SaveProofSnapshot snap = provenSnapshot();
+    SaveProofJsonDelegate.SaveProofSnapshot snap = provenSnapshot();
     String json = SaveProofJsonDelegate.headerJson("proven", true, snap);
     assertTrue(json, json.contains("\"proofTarget\":"));
   }
 
   @Test
   public void headerJsonContainsClaimWhenProven() {
-    EvidenceJsonWriter.SaveProofSnapshot snap = provenSnapshot();
+    SaveProofJsonDelegate.SaveProofSnapshot snap = provenSnapshot();
     String json = SaveProofJsonDelegate.headerJson("proven", true, snap);
     assertTrue(json, json.contains("\"claim\":"));
     assertTrue(json, json.contains(SaveOperationCompletionEvidence.SAVE_PROOF_MARKER));
@@ -123,7 +123,7 @@ public class SaveProofJsonDelegateTest {
 
   @Test
   public void headerJsonContainsReportingSummaryWhenNotProven() {
-    EvidenceJsonWriter.SaveProofSnapshot snap = menuNotOpenedSnapshot();
+    SaveProofJsonDelegate.SaveProofSnapshot snap = menuNotOpenedSnapshot();
     String json = SaveProofJsonDelegate.headerJson("blocked", false, snap);
     assertTrue(json, json.contains("\"reportingSummary\":"));
     assertFalse(json, json.contains("\"claim\":"));
@@ -131,7 +131,7 @@ public class SaveProofJsonDelegateTest {
 
   @Test
   public void headerJsonEscapesSpecialCharsInScenario() {
-    EvidenceJsonWriter.SaveProofSnapshot snap = new EvidenceJsonWriter.SaveProofSnapshot(
+    SaveProofJsonDelegate.SaveProofSnapshot snap = new SaveProofJsonDelegate.SaveProofSnapshot(
         true, true, true, true, true, false, true, true,
         true, "javax.swing.JFileChooser", "/proof/root/classroom.a3p", 3,
         true, true, null, null, null,
@@ -187,7 +187,7 @@ public class SaveProofJsonDelegateTest {
 
   @Test
   public void menuJsonContainsAllFields() {
-    EvidenceJsonWriter.SaveProofSnapshot snap = provenSnapshot();
+    SaveProofJsonDelegate.SaveProofSnapshot snap = provenSnapshot();
     String json = SaveProofJsonDelegate.menuJson(snap);
     assertTrue(json, json.contains("\"menu\": {"));
     assertTrue(json, json.contains("\"fileMenuOpened\": true"));
@@ -197,7 +197,7 @@ public class SaveProofJsonDelegateTest {
 
   @Test
   public void menuJsonReflectsFalseValues() {
-    EvidenceJsonWriter.SaveProofSnapshot snap = menuNotOpenedSnapshot();
+    SaveProofJsonDelegate.SaveProofSnapshot snap = menuNotOpenedSnapshot();
     String json = SaveProofJsonDelegate.menuJson(snap);
     assertTrue(json, json.contains("\"fileMenuOpened\": false"));
     assertTrue(json, json.contains("\"saveMenuItemInvoked\": false"));
@@ -210,7 +210,7 @@ public class SaveProofJsonDelegateTest {
 
   @Test
   public void dialogJsonContainsAllFields() {
-    EvidenceJsonWriter.SaveProofSnapshot snap = provenSnapshot();
+    SaveProofJsonDelegate.SaveProofSnapshot snap = provenSnapshot();
     String json = SaveProofJsonDelegate.dialogJson(snap);
     assertTrue(json, json.contains("\"dialog\": {"));
     assertTrue(json, json.contains("\"saveDialogObserved\": true"));
@@ -223,7 +223,7 @@ public class SaveProofJsonDelegateTest {
 
   @Test
   public void dialogJsonRendersNullDialogClassAsJsonNull() {
-    EvidenceJsonWriter.SaveProofSnapshot snap = menuNotOpenedSnapshot();
+    SaveProofJsonDelegate.SaveProofSnapshot snap = menuNotOpenedSnapshot();
     String json = SaveProofJsonDelegate.dialogJson(snap);
     assertTrue(json, json.contains("\"dialogClass\": null"));
   }
@@ -234,7 +234,7 @@ public class SaveProofJsonDelegateTest {
 
   @Test
   public void controlJsonContainsAllFields() {
-    EvidenceJsonWriter.SaveProofSnapshot snap = provenSnapshot();
+    SaveProofJsonDelegate.SaveProofSnapshot snap = provenSnapshot();
     Path selectedPath = Path.of("/proof/root/classroom.a3p");
     String json = SaveProofJsonDelegate.controlJson(snap, selectedPath, true);
     assertTrue(json, json.contains("\"control\": {"));
@@ -246,7 +246,7 @@ public class SaveProofJsonDelegateTest {
 
   @Test
   public void controlJsonContainsRelativePaths() {
-    EvidenceJsonWriter.SaveProofSnapshot snap = provenSnapshot();
+    SaveProofJsonDelegate.SaveProofSnapshot snap = provenSnapshot();
     Path selectedPath = Path.of("/proof/root/classroom.a3p");
     String json = SaveProofJsonDelegate.controlJson(snap, selectedPath, true);
     assertTrue(json, json.contains("\"normalizedSelectedPath\":"));
@@ -255,7 +255,7 @@ public class SaveProofJsonDelegateTest {
 
   @Test
   public void controlJsonHandlesNullSelectedPath() {
-    EvidenceJsonWriter.SaveProofSnapshot snap = provenSnapshot();
+    SaveProofJsonDelegate.SaveProofSnapshot snap = provenSnapshot();
     String json = SaveProofJsonDelegate.controlJson(snap, null, false);
     assertTrue(json, json.contains("\"normalizedSelectedPath\": null"));
     assertTrue(json, json.contains("\"selectedPathMatchesExpected\": false"));
@@ -267,7 +267,7 @@ public class SaveProofJsonDelegateTest {
 
   @Test
   public void writeJsonContainsAllFields() {
-    EvidenceJsonWriter.SaveProofSnapshot snap = provenSnapshot();
+    SaveProofJsonDelegate.SaveProofSnapshot snap = provenSnapshot();
     String json = SaveProofJsonDelegate.writeJson(true, true, true, 1024, snap);
     assertTrue(json, json.contains("\"write\": {"));
     assertTrue(json, json.contains("\"fileWritten\": true"));
@@ -278,14 +278,14 @@ public class SaveProofJsonDelegateTest {
 
   @Test
   public void writeJsonContainsOutputPath() {
-    EvidenceJsonWriter.SaveProofSnapshot snap = provenSnapshot();
+    SaveProofJsonDelegate.SaveProofSnapshot snap = provenSnapshot();
     String json = SaveProofJsonDelegate.writeJson(true, true, true, 1024, snap);
     assertTrue(json, json.contains("\"outputPath\":"));
   }
 
   @Test
   public void writeJsonReflectsFalseValues() {
-    EvidenceJsonWriter.SaveProofSnapshot snap = provenSnapshot();
+    SaveProofJsonDelegate.SaveProofSnapshot snap = provenSnapshot();
     String json = SaveProofJsonDelegate.writeJson(false, false, false, 0, snap);
     assertTrue(json, json.contains("\"fileWritten\": false"));
     assertTrue(json, json.contains("\"fileNonempty\": false"));
@@ -299,7 +299,7 @@ public class SaveProofJsonDelegateTest {
 
   @Test
   public void readbackJsonContainsAllFields() {
-    EvidenceJsonWriter.SaveProofSnapshot snap = provenSnapshot();
+    SaveProofJsonDelegate.SaveProofSnapshot snap = provenSnapshot();
     String json = SaveProofJsonDelegate.readbackJson(snap);
     assertTrue(json, json.contains("\"readback\": {"));
     assertTrue(json, json.contains("\"projectReadable\": true"));
@@ -309,7 +309,7 @@ public class SaveProofJsonDelegateTest {
 
   @Test
   public void readbackJsonReflectsFalseValues() {
-    EvidenceJsonWriter.SaveProofSnapshot snap = menuNotOpenedSnapshot();
+    SaveProofJsonDelegate.SaveProofSnapshot snap = menuNotOpenedSnapshot();
     String json = SaveProofJsonDelegate.readbackJson(snap);
     assertTrue(json, json.contains("\"projectReadable\": false"));
     assertTrue(json, json.contains("\"markerPresent\": false"));
@@ -385,14 +385,14 @@ public class SaveProofJsonDelegateTest {
 
   @Test
   public void inferBlockerKindFileMenuNotShowing() {
-    EvidenceJsonWriter.SaveProofSnapshot snap = menuNotOpenedSnapshot();
+    SaveProofJsonDelegate.SaveProofSnapshot snap = menuNotOpenedSnapshot();
     assertEquals("file_menu_not_showing",
         SaveProofJsonDelegate.inferBlockerKind(snap, false));
   }
 
   @Test
   public void inferBlockerKindSaveItemNotAttributedWhenNotClicked() {
-    EvidenceJsonWriter.SaveProofSnapshot snap = new EvidenceJsonWriter.SaveProofSnapshot(
+    SaveProofJsonDelegate.SaveProofSnapshot snap = new SaveProofJsonDelegate.SaveProofSnapshot(
         true, false, false, false, false, false, false, false,
         false, null, null, 0, false, false, null, null, null,
         null, Path.of("/proof/root/classroom.a3p"), "classroom.a3p",
@@ -403,7 +403,7 @@ public class SaveProofJsonDelegateTest {
 
   @Test
   public void inferBlockerKindSaveItemNotAttributedWhenIdentityNotMatched() {
-    EvidenceJsonWriter.SaveProofSnapshot snap = new EvidenceJsonWriter.SaveProofSnapshot(
+    SaveProofJsonDelegate.SaveProofSnapshot snap = new SaveProofJsonDelegate.SaveProofSnapshot(
         true, true, false, false, false, false, false, false,
         false, null, null, 0, false, false, null, null, null,
         null, Path.of("/proof/root/classroom.a3p"), "classroom.a3p",
@@ -414,7 +414,7 @@ public class SaveProofJsonDelegateTest {
 
   @Test
   public void inferBlockerKindDialogNotObserved() {
-    EvidenceJsonWriter.SaveProofSnapshot snap = new EvidenceJsonWriter.SaveProofSnapshot(
+    SaveProofJsonDelegate.SaveProofSnapshot snap = new SaveProofJsonDelegate.SaveProofSnapshot(
         true, true, true, false, false, false, false, false,
         false, null, null, 0, false, false, null, null, null,
         null, Path.of("/proof/root/classroom.a3p"), "classroom.a3p",
@@ -425,7 +425,7 @@ public class SaveProofJsonDelegateTest {
 
   @Test
   public void inferBlockerKindAmbiguousChooserDiscovery() {
-    EvidenceJsonWriter.SaveProofSnapshot snap = new EvidenceJsonWriter.SaveProofSnapshot(
+    SaveProofJsonDelegate.SaveProofSnapshot snap = new SaveProofJsonDelegate.SaveProofSnapshot(
         true, true, true, true, false, true, false, false,
         false, null, null, 0, false, false, null, null, null,
         null, Path.of("/proof/root/classroom.a3p"), "classroom.a3p",
@@ -436,7 +436,7 @@ public class SaveProofJsonDelegateTest {
 
   @Test
   public void inferBlockerKindChooserControlFailedWhenDialogNotShowing() {
-    EvidenceJsonWriter.SaveProofSnapshot snap = new EvidenceJsonWriter.SaveProofSnapshot(
+    SaveProofJsonDelegate.SaveProofSnapshot snap = new SaveProofJsonDelegate.SaveProofSnapshot(
         true, true, true, true, false, false, false, false,
         false, null, null, 0, false, false, null, null, null,
         null, Path.of("/proof/root/classroom.a3p"), "classroom.a3p",
@@ -447,7 +447,7 @@ public class SaveProofJsonDelegateTest {
 
   @Test
   public void inferBlockerKindChooserControlFailedWhenNotApproved() {
-    EvidenceJsonWriter.SaveProofSnapshot snap = new EvidenceJsonWriter.SaveProofSnapshot(
+    SaveProofJsonDelegate.SaveProofSnapshot snap = new SaveProofJsonDelegate.SaveProofSnapshot(
         true, true, true, true, false, false, true, false,
         true, null, null, 0, false, false, null, null, null,
         null, Path.of("/proof/root/classroom.a3p"), "classroom.a3p",
@@ -458,7 +458,7 @@ public class SaveProofJsonDelegateTest {
 
   @Test
   public void inferBlockerKindTargetPathRejectedWhenOutsideProofRoot() {
-    EvidenceJsonWriter.SaveProofSnapshot snap = new EvidenceJsonWriter.SaveProofSnapshot(
+    SaveProofJsonDelegate.SaveProofSnapshot snap = new SaveProofJsonDelegate.SaveProofSnapshot(
         true, true, true, true, true, false, true, false,
         true, null, null, 0, false, false, null, null, null,
         null, Path.of("/proof/root/classroom.a3p"), "classroom.a3p",
@@ -469,7 +469,7 @@ public class SaveProofJsonDelegateTest {
 
   @Test
   public void inferBlockerKindTargetPathRejectedWhenNotA3p() {
-    EvidenceJsonWriter.SaveProofSnapshot snap = new EvidenceJsonWriter.SaveProofSnapshot(
+    SaveProofJsonDelegate.SaveProofSnapshot snap = new SaveProofJsonDelegate.SaveProofSnapshot(
         true, true, true, true, true, false, true, true,
         true, null, null, 0, false, false, null, null, null,
         null, Path.of("/proof/root/classroom.txt"), "classroom.txt",
@@ -480,7 +480,7 @@ public class SaveProofJsonDelegateTest {
 
   @Test
   public void inferBlockerKindWriteNotObserved() {
-    EvidenceJsonWriter.SaveProofSnapshot snap = new EvidenceJsonWriter.SaveProofSnapshot(
+    SaveProofJsonDelegate.SaveProofSnapshot snap = new SaveProofJsonDelegate.SaveProofSnapshot(
         true, true, true, true, true, false, true, true,
         true, null, null, 0, false, false, null, null, null,
         null, Path.of("/proof/root/classroom.a3p"), "classroom.a3p",
@@ -491,7 +491,7 @@ public class SaveProofJsonDelegateTest {
 
   @Test
   public void inferBlockerKindReadbackFailed() {
-    EvidenceJsonWriter.SaveProofSnapshot snap = new EvidenceJsonWriter.SaveProofSnapshot(
+    SaveProofJsonDelegate.SaveProofSnapshot snap = new SaveProofJsonDelegate.SaveProofSnapshot(
         true, true, true, true, true, false, true, true,
         true, null, null, 0, false, false, null, null, null,
         null, Path.of("/proof/root/classroom.a3p"), "classroom.a3p",
@@ -502,7 +502,7 @@ public class SaveProofJsonDelegateTest {
 
   @Test
   public void inferBlockerKindMarkerMissing() {
-    EvidenceJsonWriter.SaveProofSnapshot snap = new EvidenceJsonWriter.SaveProofSnapshot(
+    SaveProofJsonDelegate.SaveProofSnapshot snap = new SaveProofJsonDelegate.SaveProofSnapshot(
         true, true, true, true, true, false, true, true,
         true, null, null, 0, true, false, null, null, null,
         null, Path.of("/proof/root/classroom.a3p"), "classroom.a3p",
@@ -517,14 +517,14 @@ public class SaveProofJsonDelegateTest {
 
   @Test
   public void inferBlockerObservedFileMenuNotOpened() {
-    EvidenceJsonWriter.SaveProofSnapshot snap = menuNotOpenedSnapshot();
+    SaveProofJsonDelegate.SaveProofSnapshot snap = menuNotOpenedSnapshot();
     String result = SaveProofJsonDelegate.inferBlockerObserved(snap, false);
     assertEquals("The rendered File menu was not opened by Robot", result);
   }
 
   @Test
   public void inferBlockerObservedSaveItemNotClicked() {
-    EvidenceJsonWriter.SaveProofSnapshot snap = new EvidenceJsonWriter.SaveProofSnapshot(
+    SaveProofJsonDelegate.SaveProofSnapshot snap = new SaveProofJsonDelegate.SaveProofSnapshot(
         true, false, false, false, false, false, false, false,
         false, null, null, 0, false, false, null, null, null,
         null, Path.of("/proof/root/classroom.a3p"), "classroom.a3p",
@@ -535,7 +535,7 @@ public class SaveProofJsonDelegateTest {
 
   @Test
   public void inferBlockerObservedDialogNotObserved() {
-    EvidenceJsonWriter.SaveProofSnapshot snap = new EvidenceJsonWriter.SaveProofSnapshot(
+    SaveProofJsonDelegate.SaveProofSnapshot snap = new SaveProofJsonDelegate.SaveProofSnapshot(
         true, true, true, false, false, false, false, false,
         false, null, null, 0, false, false, null, null, null,
         null, Path.of("/proof/root/classroom.a3p"), "classroom.a3p",
@@ -546,7 +546,7 @@ public class SaveProofJsonDelegateTest {
 
   @Test
   public void inferBlockerObservedAmbiguousChooser() {
-    EvidenceJsonWriter.SaveProofSnapshot snap = new EvidenceJsonWriter.SaveProofSnapshot(
+    SaveProofJsonDelegate.SaveProofSnapshot snap = new SaveProofJsonDelegate.SaveProofSnapshot(
         true, true, true, true, false, true, false, false,
         false, null, null, 0, false, false, null, null, null,
         null, Path.of("/proof/root/classroom.a3p"), "classroom.a3p",
@@ -557,7 +557,7 @@ public class SaveProofJsonDelegateTest {
 
   @Test
   public void inferBlockerObservedChooserControlFailed() {
-    EvidenceJsonWriter.SaveProofSnapshot snap = new EvidenceJsonWriter.SaveProofSnapshot(
+    SaveProofJsonDelegate.SaveProofSnapshot snap = new SaveProofJsonDelegate.SaveProofSnapshot(
         true, true, true, true, false, false, false, false,
         false, null, null, 0, false, false, null, null, null,
         null, Path.of("/proof/root/classroom.a3p"), "classroom.a3p",
@@ -568,7 +568,7 @@ public class SaveProofJsonDelegateTest {
 
   @Test
   public void inferBlockerObservedTargetPathRejected() {
-    EvidenceJsonWriter.SaveProofSnapshot snap = new EvidenceJsonWriter.SaveProofSnapshot(
+    SaveProofJsonDelegate.SaveProofSnapshot snap = new SaveProofJsonDelegate.SaveProofSnapshot(
         true, true, true, true, true, false, true, false,
         true, null, null, 0, false, false, null, null, null,
         null, Path.of("/proof/root/classroom.a3p"), "classroom.a3p",
@@ -581,7 +581,7 @@ public class SaveProofJsonDelegateTest {
 
   @Test
   public void inferBlockerObservedWriteNotObserved() {
-    EvidenceJsonWriter.SaveProofSnapshot snap = new EvidenceJsonWriter.SaveProofSnapshot(
+    SaveProofJsonDelegate.SaveProofSnapshot snap = new SaveProofJsonDelegate.SaveProofSnapshot(
         true, true, true, true, true, false, true, true,
         true, null, null, 0, false, false, null, null, null,
         null, Path.of("/proof/root/classroom.a3p"), "classroom.a3p",
@@ -594,7 +594,7 @@ public class SaveProofJsonDelegateTest {
 
   @Test
   public void inferBlockerObservedReadbackFailed() {
-    EvidenceJsonWriter.SaveProofSnapshot snap = new EvidenceJsonWriter.SaveProofSnapshot(
+    SaveProofJsonDelegate.SaveProofSnapshot snap = new SaveProofJsonDelegate.SaveProofSnapshot(
         true, true, true, true, true, false, true, true,
         true, null, null, 0, false, false, null, null, null,
         null, Path.of("/proof/root/classroom.a3p"), "classroom.a3p",
@@ -607,7 +607,7 @@ public class SaveProofJsonDelegateTest {
 
   @Test
   public void inferBlockerObservedMarkerMissing() {
-    EvidenceJsonWriter.SaveProofSnapshot snap = new EvidenceJsonWriter.SaveProofSnapshot(
+    SaveProofJsonDelegate.SaveProofSnapshot snap = new SaveProofJsonDelegate.SaveProofSnapshot(
         true, true, true, true, true, false, true, true,
         true, null, null, 0, true, false, null, null, null,
         null, Path.of("/proof/root/classroom.a3p"), "classroom.a3p",
@@ -686,7 +686,7 @@ public class SaveProofJsonDelegateTest {
   @Test
   public void dialogJsonUsesStringJsonForDialogClass() {
     // stringJson(null) -> "null", stringJson("X") -> "\"X\""
-    EvidenceJsonWriter.SaveProofSnapshot withClass = provenSnapshot();
+    SaveProofJsonDelegate.SaveProofSnapshot withClass = provenSnapshot();
     String json = SaveProofJsonDelegate.dialogJson(withClass);
     assertTrue("Non-null dialogClass should be quoted",
         json.contains("\"dialogClass\": \"javax.swing.JFileChooser\""));
@@ -695,7 +695,7 @@ public class SaveProofJsonDelegateTest {
   @Test
   public void controlJsonUsesProofRelativePathForNormalizedSelectedPath() {
     // When selectedPath is under proofRoot, should show relative path
-    EvidenceJsonWriter.SaveProofSnapshot snap = provenSnapshot();
+    SaveProofJsonDelegate.SaveProofSnapshot snap = provenSnapshot();
     Path selectedPath = Path.of("/proof/root/classroom.a3p");
     String json = SaveProofJsonDelegate.controlJson(snap, selectedPath, true);
     // proofRelativePath(/proof/root/classroom.a3p, /proof/root) -> "classroom.a3p"
@@ -704,7 +704,7 @@ public class SaveProofJsonDelegateTest {
 
   @Test
   public void controlJsonUsesProofRelativePathForExpectedPath() {
-    EvidenceJsonWriter.SaveProofSnapshot snap = provenSnapshot();
+    SaveProofJsonDelegate.SaveProofSnapshot snap = provenSnapshot();
     Path selectedPath = Path.of("/proof/root/classroom.a3p");
     String json = SaveProofJsonDelegate.controlJson(snap, selectedPath, true);
     assertTrue(json, json.contains("\"expectedPath\": \"classroom.a3p\""));
@@ -712,7 +712,7 @@ public class SaveProofJsonDelegateTest {
 
   @Test
   public void writeJsonUsesProofRelativePathForOutputPath() {
-    EvidenceJsonWriter.SaveProofSnapshot snap = provenSnapshot();
+    SaveProofJsonDelegate.SaveProofSnapshot snap = provenSnapshot();
     String json = SaveProofJsonDelegate.writeJson(true, true, true, 1024, snap);
     assertTrue(json, json.contains("\"outputPath\": \"classroom.a3p\""));
   }

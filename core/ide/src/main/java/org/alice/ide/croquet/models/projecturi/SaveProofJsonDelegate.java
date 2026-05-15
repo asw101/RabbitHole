@@ -4,14 +4,11 @@ import java.nio.file.Path;
 import java.time.Instant;
 
 /**
- * Static JSON fragment builders for the save-proof section of
- * {@link EvidenceJsonWriter#saveProofJson(EvidenceJsonWriter.SaveProofSnapshot)}.
+ * Package-private delegate for save-proof JSON generation.
  *
- * <p>Extracted from EvidenceJsonWriter to keep that class under 500 lines.
- * Every method delegates escaping to
- * {@link EvidenceJsonWriter#escapeJson(String)},
- * {@link EvidenceJsonWriter#stringJson(String)}, and
- * {@link EvidenceJsonWriter#nullToBlank(String)} — no duplicated escape logic.
+ * <p>Extracted from {@link EvidenceJsonWriter} to reduce its line count.
+ * Every method is a package-private or private static that produces a JSON
+ * fragment. No file I/O is performed here.
  *
  * <p>Package-private, final, utility class — not part of the public API.
  */
@@ -19,9 +16,91 @@ final class SaveProofJsonDelegate {
   private SaveProofJsonDelegate() {
   }
 
+  // ── Snapshot for SaveProofEvidence JSON generation ─────────────────
+
+  record SaveProofSnapshot(
+      boolean robotFileMenuOpened,
+      boolean robotSaveItemClicked,
+      boolean saveActionIdentityMatched,
+      boolean chooserObserved,
+      boolean approvedSelection,
+      boolean ambiguousChooserDiscovery,
+      boolean selectedFileVerified,
+      boolean targetInsideProofRoot,
+      boolean dialogShowing,
+      String dialogClass,
+      String normalizedSelectedFile,
+      int pollCount,
+      boolean projectReadable,
+      boolean markerPresent,
+      String blockerKind,
+      String blockerObserved,
+      String blockerRequired,
+      String targetCanonicalPath,
+      Path targetPath,
+      String targetFileName,
+      Path proofRoot,
+      String scenario,
+      String runId) {
+  }
+
+  // ── Entry point ──────────────────────────────────────────────────
+
+  static String saveProofJson(SaveProofSnapshot snap) {
+    Path selectedPath = snap.normalizedSelectedFile() == null
+        ? null
+        : Path.of(snap.normalizedSelectedFile()).normalize();
+    EvidenceFileOperations.RegularFileState targetFileState =
+        EvidenceFileOperations.regularFileState(snap.targetPath());
+    boolean fileExists = targetFileState.exists();
+    long fileSizeBytes = targetFileState.sizeBytes();
+    boolean fileNonempty = targetFileState.nonEmpty();
+    boolean fileHasExpectedExtension = snap.targetFileName().endsWith(".a3p");
+    boolean selectedFileMatchesExpected =
+        snap.normalizedSelectedFile() != null
+            && snap.targetCanonicalPath().equals(snap.normalizedSelectedFile());
+    boolean observedWrite =
+        fileExists && fileNonempty && fileHasExpectedExtension && snap.targetInsideProofRoot();
+    boolean proven = snap.robotFileMenuOpened()
+        && snap.robotSaveItemClicked()
+        && snap.saveActionIdentityMatched()
+        && snap.chooserObserved()
+        && snap.dialogShowing()
+        && snap.approvedSelection()
+        && !snap.ambiguousChooserDiscovery()
+        && snap.selectedFileVerified()
+        && selectedFileMatchesExpected
+        && observedWrite
+        && snap.projectReadable()
+        && snap.markerPresent()
+        && snap.blockerKind() == null;
+    String blockerKind = snap.blockerKind();
+    String blockerObserved = snap.blockerObserved();
+    String blockerRequired = snap.blockerRequired();
+    if (!proven && blockerKind == null) {
+      blockerKind = inferBlockerKind(snap, observedWrite);
+      blockerObserved = inferBlockerObserved(snap, observedWrite);
+      blockerRequired =
+          "A complete Robot File menu Save activation, rendered dialog approval, write, readback, and marker path";
+    }
+    String status = proven ? "proven" : "blocked";
+    return "{\n"
+        + headerJson(status, proven, snap)
+        + blockerJson(proven, blockerKind, blockerObserved, blockerRequired)
+        + menuJson(snap)
+        + dialogJson(snap)
+        + controlJson(snap, selectedPath, selectedFileMatchesExpected)
+        + writeJson(fileExists, fileNonempty, fileHasExpectedExtension, fileSizeBytes, snap)
+        + readbackJson(snap)
+        + baselinePreservedJson()
+        + requiresNextEvidenceJson()
+        + doesNotClaimJson()
+        + "}\n";
+  }
+
   // ── Section builders ───────────────────────────────────────────────
 
-  static String headerJson(String status, boolean proven, EvidenceJsonWriter.SaveProofSnapshot snap) {
+  static String headerJson(String status, boolean proven, SaveProofSnapshot snap) {
     String claimOrSummary = proven
         ? "  \"claim\": \"AWT Robot opened File, clicked the production Save menu item, controlled the rendered Swing Save chooser, wrote a non-empty .a3p file, read it back, and verified " + SaveOperationCompletionEvidence.SAVE_PROOF_MARKER + "\",\n"
         : "  \"reportingSummary\": \"Robot File menu Save dialog/write/readback path was not proven; blocker.kind identifies the first missing or unsafe step.\",\n";
@@ -47,7 +126,7 @@ final class SaveProofJsonDelegate {
         + "  },\n";
   }
 
-  static String menuJson(EvidenceJsonWriter.SaveProofSnapshot snap) {
+  static String menuJson(SaveProofSnapshot snap) {
     return "  \"menu\": {\n"
         + "    \"fileMenuOpened\": " + snap.robotFileMenuOpened() + ",\n"
         + "    \"saveMenuItemInvoked\": " + snap.robotSaveItemClicked() + ",\n"
@@ -55,7 +134,7 @@ final class SaveProofJsonDelegate {
         + "  },\n";
   }
 
-  static String dialogJson(EvidenceJsonWriter.SaveProofSnapshot snap) {
+  static String dialogJson(SaveProofSnapshot snap) {
     return "  \"dialog\": {\n"
         + "    \"saveDialogObserved\": " + snap.chooserObserved() + ",\n"
         + "    \"dialogType\": \"Swing JFileChooser\",\n"
@@ -67,7 +146,7 @@ final class SaveProofJsonDelegate {
   }
 
   static String controlJson(
-      EvidenceJsonWriter.SaveProofSnapshot snap, Path selectedPath, boolean selectedFileMatchesExpected) {
+      SaveProofSnapshot snap, Path selectedPath, boolean selectedFileMatchesExpected) {
     return "  \"control\": {\n"
         + "    \"selectedPathSet\": " + snap.selectedFileVerified() + ",\n"
         + "    \"approvedSelection\": " + snap.approvedSelection() + ",\n"
@@ -83,7 +162,7 @@ final class SaveProofJsonDelegate {
       boolean fileNonempty,
       boolean fileHasExpectedExtension,
       long fileSizeBytes,
-      EvidenceJsonWriter.SaveProofSnapshot snap) {
+      SaveProofSnapshot snap) {
     return "  \"write\": {\n"
         + "    \"fileWritten\": " + fileExists + ",\n"
         + "    \"fileNonempty\": " + fileNonempty + ",\n"
@@ -93,7 +172,7 @@ final class SaveProofJsonDelegate {
         + "  },\n";
   }
 
-  static String readbackJson(EvidenceJsonWriter.SaveProofSnapshot snap) {
+  static String readbackJson(SaveProofSnapshot snap) {
     return "  \"readback\": {\n"
         + "    \"projectReadable\": " + snap.projectReadable() + ",\n"
         + "    \"marker\": \"" + SaveOperationCompletionEvidence.SAVE_PROOF_MARKER + "\",\n"
@@ -131,7 +210,7 @@ final class SaveProofJsonDelegate {
 
   // ── Blocker inference helpers ─────────────────────────────────────
 
-  static String inferBlockerKind(EvidenceJsonWriter.SaveProofSnapshot snap, boolean observedWrite) {
+  static String inferBlockerKind(SaveProofSnapshot snap, boolean observedWrite) {
     if (!snap.robotFileMenuOpened()) {
       return "file_menu_not_showing";
     }
@@ -159,7 +238,7 @@ final class SaveProofJsonDelegate {
     return "marker_missing";
   }
 
-  static String inferBlockerObserved(EvidenceJsonWriter.SaveProofSnapshot snap, boolean observedWrite) {
+  static String inferBlockerObserved(SaveProofSnapshot snap, boolean observedWrite) {
     if (!snap.robotFileMenuOpened()) {
       return "The rendered File menu was not opened by Robot";
     }

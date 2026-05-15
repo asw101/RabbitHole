@@ -31,7 +31,7 @@ public class OutsideInEvidenceJsonWriterTest {
     File a3pFile = new File(proofRoot, "classroom.a3p");
     createMinimalA3pFile(a3pFile);
 
-    EvidenceJsonWriter.SaveProofSnapshot snap = new EvidenceJsonWriter.SaveProofSnapshot(
+    SaveProofJsonDelegate.SaveProofSnapshot snap = new SaveProofJsonDelegate.SaveProofSnapshot(
         true, true, true, true, true, false, true, true, true,
         "javax.swing.JFileChooser",
         a3pFile.getCanonicalPath(),
@@ -46,7 +46,7 @@ public class OutsideInEvidenceJsonWriterTest {
         "outside-in-run-001");
 
     // Act: call the top-level method that delegates to SaveProofJsonDelegate
-    String json = EvidenceJsonWriter.saveProofJson(snap);
+    String json = SaveProofJsonDelegate.saveProofJson(snap);
 
     // Assert: all sections present with correct structure
     assertNotNull("JSON must not be null", json);
@@ -99,7 +99,7 @@ public class OutsideInEvidenceJsonWriterTest {
     File a3pFile = new File(proofRoot, "blocked.a3p");
     // Don't create the file — simulates write failure
 
-    EvidenceJsonWriter.SaveProofSnapshot snap = new EvidenceJsonWriter.SaveProofSnapshot(
+    SaveProofJsonDelegate.SaveProofSnapshot snap = new SaveProofJsonDelegate.SaveProofSnapshot(
         false,  // robotFileMenuOpened=false — triggers blocker inference
         false, false, false, false, false, false, false,
         false, null, null, 0, false, false,
@@ -112,7 +112,7 @@ public class OutsideInEvidenceJsonWriterTest {
         "outside-in-run-002");
 
     // Act
-    String json = EvidenceJsonWriter.saveProofJson(snap);
+    String json = SaveProofJsonDelegate.saveProofJson(snap);
 
     // Assert: blocked status with inferred blocker
     assertNotNull("JSON must not be null", json);
@@ -159,7 +159,7 @@ public class OutsideInEvidenceJsonWriterTest {
     createMinimalA3pFile(a3pFile);
 
     String scenarioWithSpecialChars = "test \"scenario\" with\nnewline and\\backslash";
-    EvidenceJsonWriter.SaveProofSnapshot snap = new EvidenceJsonWriter.SaveProofSnapshot(
+    SaveProofJsonDelegate.SaveProofSnapshot snap = new SaveProofJsonDelegate.SaveProofSnapshot(
         true, true, true, true, true, false, true, true, true,
         "javax.swing.JFileChooser",
         a3pFile.getCanonicalPath(),
@@ -173,7 +173,7 @@ public class OutsideInEvidenceJsonWriterTest {
         scenarioWithSpecialChars,
         "run-escape-001");
 
-    String json = EvidenceJsonWriter.saveProofJson(snap);
+    String json = SaveProofJsonDelegate.saveProofJson(snap);
 
     // Verify escaping worked — raw special chars must not appear
     assertFalse("Raw newline must not appear in JSON",

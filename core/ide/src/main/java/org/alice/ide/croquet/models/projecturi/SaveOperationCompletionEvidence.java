@@ -362,11 +362,11 @@ final class SaveOperationCompletionEvidence {
     }
 
     private String json() {
-      return EvidenceJsonWriter.saveProofJson(snapshot());
+      return SaveProofJsonDelegate.saveProofJson(snapshot());
     }
 
-    private EvidenceJsonWriter.SaveProofSnapshot snapshot() {
-      return new EvidenceJsonWriter.SaveProofSnapshot(
+    private SaveProofJsonDelegate.SaveProofSnapshot snapshot() {
+      return new SaveProofJsonDelegate.SaveProofSnapshot(
           this.robotFileMenuOpened,
           this.robotSaveItemClicked,
           this.saveActionIdentityMatched,
