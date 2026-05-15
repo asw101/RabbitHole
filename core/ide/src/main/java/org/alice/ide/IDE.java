@@ -411,7 +411,7 @@ public abstract class IDE extends ProjectApplication {
   protected static <E extends Node> E getAncestor(Node node, Class<E> cls) {
     Node ancestor = node.getParent();
     while (ancestor != null) {
-      if (cls.isAssignableFrom(ancestor.getClass())) {
+      if (cls.isInstance(ancestor)) {
         break;
       } else {
         ancestor = ancestor.getParent();

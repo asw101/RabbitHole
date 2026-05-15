@@ -97,6 +97,9 @@ final class SceneSetupManager {
   }
 
   String reorganizeTypeFieldsIfNecessary(NamedUserType namedUserType, int startIndex, Set<UserField> alreadyMovedFields) {
+    if (startIndex >= namedUserType.fields.size()) {
+      return null;
+    }
     List<UserField> fields = namedUserType.fields.getValue().subList(startIndex, namedUserType.fields.size());
     Set<UserField> unacceptableFields = Sets.newHashSet(fields);
     UserField fieldToMoveToTheEnd = null;
