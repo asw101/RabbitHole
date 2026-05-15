@@ -206,6 +206,12 @@ repository.
 - [Validate CompositeResourceManager Extraction](./howto/validate-composite-resource-manager-extraction.md) - How to verify compilation, line counts, visibility, and contract tests after the inner class and localization extraction.
 - [Tutorial: Trace the CompositeResourceManager Extraction](./tutorials/trace-composite-resource-manager-extraction.md) - Guided walkthrough of inner class extraction into InternalStateTypes, stateless localization delegate design, factory method references, encryption call chain preservation, and characterization test boundaries.
 
+## IDE declaration composite decomposition
+
+- [Declaration Composite Delegate Decomposition](./reference/declaration-composite-delegate-decomposition.md) - Reference for extraction of validation logic and dialog lifecycle management from `DeclarationLikeSubstanceComposite` (617 lines) into `DeclarationValidationDelegate` and `DeclarationDialogLifecycleDelegate` package-private delegates (issue #637), reducing to ~460 lines.
+- [Validate Declaration Composite Delegate Decomposition](./howto/validate-declaration-composite-delegate-decomposition.md) - How to verify compilation, line counts, visibility, subclass override chains, and contract tests after the delegate extraction.
+- [Tutorial: Trace the Declaration Composite Delegate Decomposition](./tutorials/trace-declaration-composite-delegate-decomposition.md) - Guided walkthrough of validation delegation, dialog lifecycle wiring, listener symmetry, type-to-initializer cache, and subclass override preservation.
+
 ## IK enforcer decomposition
 
 - [TightPositionalIkEnforcer Inner Class Extraction](./reference/tight-positional-ik-enforcer-decomposition.md) - Reference for extraction of all 14 inner classes from `TightPositionalIkEnforcer` (1328 lines) into top-level files in `org.lgna.ik.core.enforcer`, with `IkEnforcerContext` interface replacing implicit outer-class references.
