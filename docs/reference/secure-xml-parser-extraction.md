@@ -3,7 +3,7 @@
 This reference describes the extraction of XXE-hardened XML parsing and resource
 creation utilities from `XmlProjectIo.java` (566 lines) into a new
 package-private helper class `SecureXmlParser.java` (169 lines), reducing
-`XmlProjectIo` to 466 lines.
+`XmlProjectIo` to 447 lines.
 
 The extraction is a pure internal refactor. The public API surface —
 `XmlProjectIo` — is unchanged. All existing read/write behavior, error
@@ -43,7 +43,7 @@ RabbitHole issue #656 extracts the parsing and resource utilities into
 ## Architecture
 
 ```text
-XmlProjectIo (package-private coordinator, 466 lines)
+XmlProjectIo (package-private coordinator, 447 lines)
 ├── XmlProjectReader (inner class)
 │   ├── readProject(), readType(), readResources()
 │   ├── readResourceData(), bindResourceExpressions()
@@ -296,7 +296,7 @@ Element with name="", uuid="abc-123", entry="resources/file.png"
 
 | Criterion | Verification |
 | --- | --- |
-| `XmlProjectIo.java` ≤ 500 lines | `wc -l XmlProjectIo.java` → 466 |
+| `XmlProjectIo.java` ≤ 500 lines | `wc -l XmlProjectIo.java` → 447 |
 | `SecureXmlParser.java` created | exists at `core/story-api-migration/src/main/java/org/lgna/project/io/SecureXmlParser.java` |
 | `SecureXmlParserTest.java` created | exists at `core/story-api-migration/src/test/java/org/lgna/project/io/SecureXmlParserTest.java` |
 | `SecureXmlParser` is package-private | No `public` keyword on class declaration |
@@ -314,7 +314,7 @@ Element with name="", uuid="abc-123", entry="resources/file.png"
 
 This extraction proves:
 
-- The 566-line `XmlProjectIo` can be reduced to 466 lines by extracting
+- The 566-line `XmlProjectIo` can be reduced to 447 lines by extracting
   XML parsing into a focused, testable helper class.
 - The 7-layer XXE defense is preserved identically in `SecureXmlParser`.
 - All existing `StarterProjectXmlFallbackReadabilityTest` assertions pass.
