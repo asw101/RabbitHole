@@ -116,7 +116,4 @@ class JavaCommentFormatter {
     return comment;
   }
 
-  String getMemberComment(AbstractType<?, ?, ?> declaringType, String memberName) {
-    return getLocalizedMultiLineComment(declaringType, memberName);
-  }
 }

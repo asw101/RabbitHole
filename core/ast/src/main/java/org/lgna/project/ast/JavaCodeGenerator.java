@@ -246,7 +246,6 @@ public class JavaCodeGenerator extends SourceCodeGenerator {
     appendMemberPostfix(constructor);
   }
 
-
   @Override
   public void processSuperConstructor(SuperConstructorInvocationStatement supCon) {
     processSingleStatement(supCon, () -> {
@@ -402,14 +401,14 @@ public class JavaCodeGenerator extends SourceCodeGenerator {
   }
 
   private void appendMemberPrefix(AbstractMember member) {
-    String memberComment = commentFormatter.getMemberComment(member.getDeclaringType(), member.getName());
+    String memberComment = commentFormatter.getLocalizedMultiLineComment(member.getDeclaringType(), member.getName());
     if (memberComment != null) {
       getCodeStringBuilder().append("\n").append(memberComment).append("\n");
     }
   }
 
   private void appendMemberPostfix(AbstractMember member) {
-    String memberComment = commentFormatter.getMemberComment(member.getDeclaringType(), member.getName() + ".end");
+    String memberComment = commentFormatter.getLocalizedMultiLineComment(member.getDeclaringType(), member.getName() + ".end");
     if (memberComment != null) {
       getCodeStringBuilder().append("\n").append(memberComment).append("\n");
     }

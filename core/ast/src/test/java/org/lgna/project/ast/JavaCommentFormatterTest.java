@@ -101,7 +101,7 @@ public class JavaCommentFormatterTest {
   public void appendMemberPrefixReturnsNullWhenNoBundle() {
     JavaCommentFormatter formatter = new JavaCommentFormatter(null);
     JavaType declaringType = JavaType.getInstance(String.class);
-    String prefix = formatter.getMemberComment(declaringType, "someMethod");
+    String prefix = formatter.getLocalizedMultiLineComment(declaringType, "someMethod");
     assertNull("no bundle means null member comment", prefix);
   }
 
@@ -109,7 +109,7 @@ public class JavaCommentFormatterTest {
   public void appendMemberPostfixAppendsEndSuffix() {
     JavaCommentFormatter formatter = new JavaCommentFormatter(null);
     JavaType declaringType = JavaType.getInstance(String.class);
-    String postfix = formatter.getMemberComment(declaringType, "someMethod.end");
+    String postfix = formatter.getLocalizedMultiLineComment(declaringType, "someMethod.end");
     assertNull("no bundle means null end comment", postfix);
   }
 
