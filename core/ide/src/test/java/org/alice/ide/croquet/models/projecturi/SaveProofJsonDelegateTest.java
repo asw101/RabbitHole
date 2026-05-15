@@ -716,4 +716,37 @@ public class SaveProofJsonDelegateTest {
     String json = SaveProofJsonDelegate.writeJson(true, true, true, 1024, snap);
     assertTrue(json, json.contains("\"outputPath\": \"classroom.a3p\""));
   }
+
+  // ═══════════════════════════════════════════════════════════════════
+  //  saveProofJson — pre-set blocker passthrough
+  // ═══════════════════════════════════════════════════════════════════
+
+  @Test
+  public void saveProofJsonPresetBlockerSkipsInference() {
+    // When blockerKind is already set in the snapshot, saveProofJson must
+    // use it directly instead of calling inferBlockerKind.
+    SaveProofJsonDelegate.SaveProofSnapshot snap = new SaveProofJsonDelegate.SaveProofSnapshot(
+        false, false, false, false, false, false, false, false,
+        false, null, null, 0, false, false,
+        "custom_blocker_kind",
+        "Custom observed message",
+        "Custom required message",
+        "/proof/root/classroom.a3p",
+        Path.of("/proof/root/classroom.a3p"),
+        "classroom.a3p",
+        Path.of("/proof/root"),
+        "test-scenario", "run-preset");
+
+    String json = SaveProofJsonDelegate.saveProofJson(snap);
+
+    assertTrue("Must contain pre-set blocker kind",
+        json.contains("\"kind\": \"custom_blocker_kind\""));
+    assertTrue("Must contain pre-set observed message",
+        json.contains("\"observed\": \"Custom observed message\""));
+    assertTrue("Must contain pre-set required message",
+        json.contains("\"required\": \"Custom required message\""));
+    // Must NOT contain inferred blocker kind
+    assertFalse("Must NOT contain inferred file_menu_not_showing",
+        json.contains("file_menu_not_showing"));
+  }
 }
