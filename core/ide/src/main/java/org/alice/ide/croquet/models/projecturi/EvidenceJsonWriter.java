@@ -44,8 +44,10 @@ final class EvidenceJsonWriter {
 
   // ── Core utilities ────────────────────────────────────────────────
 
+  private static final char[] HEX = "0123456789abcdef".toCharArray();
+
   static String escapeJson(String value) {
-    StringBuilder escaped = new StringBuilder(value.length());
+    StringBuilder escaped = new StringBuilder(value.length() + 16);
     for (int i = 0; i < value.length(); i++) {
       char ch = value.charAt(i);
       switch (ch) {
@@ -58,7 +60,10 @@ final class EvidenceJsonWriter {
         case '\t' -> escaped.append("\\t");
         default -> {
           if (ch < 0x20) {
-            escaped.append(String.format("\\u%04x", (int) ch));
+            // Manual hex: ch is 0x00–0x1f so top two digits are always 00
+            escaped.append("\\u00");
+            escaped.append(HEX[(ch >> 4) & 0xf]);
+            escaped.append(HEX[ch & 0xf]);
           } else {
             escaped.append(ch);
           }
