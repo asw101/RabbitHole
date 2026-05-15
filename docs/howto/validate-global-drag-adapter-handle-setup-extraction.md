@@ -66,12 +66,32 @@ Check:
 ## Step 4: Verify unused imports removed from GlobalDragAdapter
 
 ```bash
-grep -n "Color4f\|Resizer" \
+grep -n "Color4f" \
   core/ide/src/main/java/org/alice/stageide/sceneeditor/interact/GlobalDragAdapter.java
 ```
 
-Expected: no output. Both `Color4f` and `Resizer` imports should be
-removed since they are only used in the extracted `setupHandles()` body.
+Expected: only a commented-out reference. The `Color4f` import should be
+removed since it is only used in the extracted `setupHandles()` body.
+
+Verify that `Resizer` is still imported (it is used in `setUpControls()`
+for `ResizeDragManipulator`):
+
+```bash
+grep -n "Resizer" \
+  core/ide/src/main/java/org/alice/stageide/sceneeditor/interact/GlobalDragAdapter.java
+```
+
+Expected: import line and one usage at approximately line 170.
+
+Verify that `ManipulationEvent` and `ManipulationEventCriteria` imports
+were removed (they are only used in the extracted `setupHandles()` body):
+
+```bash
+grep -n "ManipulationEvent" \
+  core/ide/src/main/java/org/alice/stageide/sceneeditor/interact/GlobalDragAdapter.java
+```
+
+Expected: no output.
 
 ## Step 5: Verify delegation call site
 
@@ -166,8 +186,11 @@ state — it only overrides `getHandleSetToEnable()` with a constant.
 If compilation fails, verify the anonymous class does not reference
 `this` (the enclosing class instance).
 
-### Color4f or Resizer "unused import" warnings
+### Color4f "unused import" warning
 
-These imports should be removed from `GlobalDragAdapter.java` since
-they are only used in the extracted handle setup code. They must be
-present in `HandleSetupDelegate.java` instead.
+The `Color4f` import should be removed from `GlobalDragAdapter.java`
+since it only appears in a comment. It must be present in
+`HandleSetupDelegate.java` instead.
+
+The `Resizer` import must remain in `GlobalDragAdapter.java` because
+it is still used in `setUpControls()` for `ResizeDragManipulator`.
