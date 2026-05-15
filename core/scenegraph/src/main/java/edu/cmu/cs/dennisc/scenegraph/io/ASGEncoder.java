@@ -122,75 +122,15 @@ class ASGEncoder {
   }
 
   static void encodeVertexArrayInBinary(Vertex[] vertices, OutputStream os) {
-    BufferedOutputStream bos = new BufferedOutputStream(os);
-    DataOutputStream dos = new DataOutputStream(bos);
-    try {
-      dos.writeInt(3);
-      dos.writeInt(vertices.length);
-      for (Vertex vertice : vertices) {
-        int format = vertice.getFormat();
-        dos.writeInt(format);
-        if ((format & Vertex.FORMAT_POSITION) != 0) {
-          dos.writeDouble(vertice.position.x());
-          dos.writeDouble(vertice.position.y());
-          dos.writeDouble(vertice.position.z());
-        }
-        if ((format & Vertex.FORMAT_NORMAL) != 0) {
-          dos.writeDouble(vertice.normal.x());
-          dos.writeDouble(vertice.normal.y());
-          dos.writeDouble(vertice.normal.z());
-        }
-        if ((format & Vertex.FORMAT_DIFFUSE_COLOR) != 0) {
-          dos.writeFloat(vertice.diffuseColor.red);
-          dos.writeFloat(vertice.diffuseColor.green);
-          dos.writeFloat(vertice.diffuseColor.blue);
-          dos.writeFloat(vertice.diffuseColor.alpha);
-        }
-        if ((format & Vertex.FORMAT_SPECULAR_HIGHLIGHT_COLOR) != 0) {
-          dos.writeFloat(vertice.specularHighlightColor.red);
-          dos.writeFloat(vertice.specularHighlightColor.green);
-          dos.writeFloat(vertice.specularHighlightColor.blue);
-          dos.writeFloat(vertice.specularHighlightColor.alpha);
-        }
-        if ((format & Vertex.FORMAT_TEXTURE_COORDINATE_0) != 0) {
-          dos.writeFloat(vertice.textureCoordinate0.u);
-          dos.writeFloat(vertice.textureCoordinate0.v);
-        }
-      }
-      dos.flush();
-    } catch (IOException ioe) {
-      throw new RuntimeException(ioe);
-    }
+    BinaryArrayEncoder.encodeVertexArray(vertices, os);
   }
 
   static void encodeIntArrayInBinary(int[] array, OutputStream os) {
-    BufferedOutputStream bos = new BufferedOutputStream(os);
-    DataOutputStream dos = new DataOutputStream(bos);
-    try {
-      dos.writeInt(2);
-      dos.writeInt(array.length);
-      for (int element : array) {
-        dos.writeInt(element);
-      }
-      dos.flush();
-    } catch (IOException ioe) {
-      throw new RuntimeException(ioe);
-    }
+    BinaryArrayEncoder.encodeIntArray(array, os);
   }
 
   static void encodeDoubleArrayInBinary(double[] array, OutputStream os) {
-    BufferedOutputStream bos = new BufferedOutputStream(os);
-    DataOutputStream dos = new DataOutputStream(bos);
-    try {
-      dos.writeInt(2);
-      dos.writeInt(array.length);
-      for (double element : array) {
-        dos.writeDouble(element);
-      }
-      dos.flush();
-    } catch (IOException ioe) {
-      throw new RuntimeException(ioe);
-    }
+    BinaryArrayEncoder.encodeDoubleArray(array, os);
   }
 
   private static String encodeIntArray(int[] array, int offset, int length, boolean isHexadecimal) {
@@ -464,7 +404,6 @@ class ASGEncoder {
       for (var entry : filenameToStreamMap.entrySet()) {
         String filename = entry.getKey();
         ByteArrayOutputStream baos = entry.getValue();
-        baos.flush();
         byte[] ba = baos.toByteArray();
         ZipEntry zipEntry = new ZipEntry(filename);
         int method;
