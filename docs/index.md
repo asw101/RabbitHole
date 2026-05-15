@@ -217,7 +217,7 @@ repository.
 
 ## IDE StoryApiConfigurationManager decomposition
 
-- [StoryApiConfigurationManager Decomposition](./reference/story-api-configuration-manager-decomposition.md) - Reference for extraction of `StoryTypeComparator` enum and `JointMethodAugmentor` class from `StoryApiConfigurationManager` (587 lines) into package-private delegates (issue #661), reducing to ~450 lines.
+- [StoryApiConfigurationManager Decomposition](./reference/story-api-configuration-manager-decomposition.md) - Reference for extraction of `StoryTypeComparator` enum and `JointMethodAugmentor` class from `StoryApiConfigurationManager` (587 lines) into package-private delegates (issue #661), reducing to 391 lines.
 - [Validate StoryApiConfigurationManager Decomposition](./howto/validate-story-api-configuration-manager-decomposition.md) - How to verify compilation, line counts, visibility, delegation wiring, and nonfree subclass compatibility after the extraction.
 
 ## IK enforcer decomposition
