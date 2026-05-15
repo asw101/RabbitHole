@@ -68,6 +68,7 @@ class JointHierarchyManager<R extends JointedModelResource> {
   // Cached derived structures, invalidated on build/update
   private List<JointImp> cachedRootJoints;
   private List<JointImp> cachedJointsDfs;
+  private Map<String, JointImpWrapper> mapNameToJoint;
 
   JointHierarchyManager(JointedModelResourceBinder<R> resourceBinder) {
     this.resourceBinder = Objects.requireNonNull(resourceBinder, "resourceBinder");
@@ -76,6 +77,7 @@ class JointHierarchyManager<R extends JointedModelResource> {
   private void invalidateCaches() {
     cachedRootJoints = null;
     cachedJointsDfs = null;
+    mapNameToJoint = null;
   }
 
   // ════════════════════════════════════════════════════════════════════════════
@@ -180,14 +182,16 @@ class JointHierarchyManager<R extends JointedModelResource> {
     return this.mapIdToJoint.get(jointId);
   }
 
-  //String based lookup for DynamicJointIds
+  //String based lookup for DynamicJointIds — O(1) via lazily-built name index
   JointImp getJointImplementation(String jointName) {
-    for (Map.Entry<JointId, JointImpWrapper> entry : this.mapIdToJoint.entrySet()) {
-      if (entry.getKey().toString().equals(jointName)) {
-        return entry.getValue();
+    if (mapNameToJoint == null) {
+      Map<String, JointImpWrapper> nameMap = new HashMap<>();
+      for (Map.Entry<JointId, JointImpWrapper> entry : mapIdToJoint.entrySet()) {
+        nameMap.put(entry.getKey().toString(), entry.getValue());
       }
+      mapNameToJoint = nameMap;
     }
-    return null;
+    return mapNameToJoint.get(jointName);
   }
 
   JointId[] getJointIdArray(JointArrayId jointArrayId) {

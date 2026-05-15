@@ -47,9 +47,7 @@ import edu.cmu.cs.dennisc.java.util.Lists;
 import org.lgna.ik.core.solver.Bone.Direction;
 import org.lgna.story.resources.JointId;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.ListIterator;
+import java.util.*;
 import java.util.function.Function;
 
 /**
@@ -144,10 +142,12 @@ final class IkChainHelper {
     updateJointsBetween(pathA, directionsA, jointA, owner, AddOp.PREPEND, jointLookup);
     updateJointsBetween(pathB, directionsB, jointB, owner, AddOp.APPEND, jointLookup);
 
+    // O(1) membership test instead of O(n) LinkedList.contains
+    Set<JointImp> pathBSet = new HashSet<>(pathB);
     JointImp commonAncestor = null;
 
     for (JointImp jointInA : pathA) {
-      if (pathB.contains(jointInA)) {
+      if (pathBSet.contains(jointInA)) {
         commonAncestor = jointInA;
         break;
       }
