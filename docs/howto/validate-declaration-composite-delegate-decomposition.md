@@ -121,8 +121,10 @@ grep -rn 'super\.getStatusPreRejectorCheck\|super\.handlePreShowDialog\|super\.h
 ```
 
 Expected: existing `super` calls in `AddParameterComposite`,
-`AddPredeterminedValueTypeManagedFieldComposite`, `AddUnmanagedFieldComposite`,
-and `InsertLocalDeclarationStatementComposite` are unchanged.
+`AddPredeterminedValueTypeManagedFieldComposite`,
+and `InsertLocalDeclarationStatementComposite` are unchanged. Note that
+`AddUnmanagedFieldComposite` overrides `isNullAllowedForInitializer()`, not
+the dialog lifecycle methods.
 
 ## Troubleshooting
 

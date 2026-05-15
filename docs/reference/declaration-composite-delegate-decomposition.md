@@ -214,10 +214,11 @@ private final State.ValueListener<Boolean> isArrayValueTypeListener =
 
 **`wireListeners()` contract:**
 
-Called by the composite's `handlePreShowDialog()` after state reset. Clears
-the type-to-initializer cache, adds value-type listeners if the component type
-or initializer is editable, and adds the initializer listener if the
-initializer is editable.
+Called by the composite's `handlePreShowDialog()` after state reset. Adds
+value-type listeners if the component type or initializer is editable, then
+clears the type-to-initializer cache, then adds the initializer listener if the
+initializer is editable. The cache clear happens *between* the type listeners
+and the initializer listener — this ordering matches the original code exactly.
 
 **`unwireListeners()` contract:**
 
@@ -235,10 +236,10 @@ The following subclasses continue to work identically:
 
 | Subclass | Overrides affected | Impact |
 | --- | --- | --- |
-| `AddParameterComposite` | `getStatusPreRejectorCheck()`, `handlePreShowDialog()` | Calls `super.getStatusPreRejectorCheck()` which now delegates internally; no change to override behavior |
-| `AddPredeterminedValueTypeManagedFieldComposite` | `handlePreShowDialog()` | Calls `super.handlePreShowDialog()` which now delegates internally; no change |
-| `AddUnmanagedFieldComposite` | `handlePreShowDialog()` | Same pattern |
-| `InsertLocalDeclarationStatementComposite` | `isNullAllowedForInitializer()` | Override stays in composite hierarchy; delegate reads it via callback |
+| `AddParameterComposite` | `getStatusPreRejectorCheck()` | Calls `super.getStatusPreRejectorCheck()` which now delegates internally; no change to override behavior |
+| `AddPredeterminedValueTypeManagedFieldComposite` | `handlePreShowDialog()`, `handlePostHideDialog()` | Calls `super.handlePreShowDialog()` / `super.handlePostHideDialog()` which now delegate internally; no change |
+| `AddUnmanagedFieldComposite` | `isNullAllowedForInitializer()` | Override stays in composite hierarchy; delegate reads it via polymorphic callback |
+| `InsertLocalDeclarationStatementComposite` | `isNullAllowedForInitializer()` | Override stays in composite hierarchy; delegate reads it via polymorphic callback |
 
 ## Package-private collaboration
 
@@ -307,13 +308,13 @@ protected Status getStatusPreRejectorCheck() {
 }
 ```
 
-### Pattern 2: `super.handlePreShowDialog()` call ordering
+### Pattern 2: `super.handlePreShowDialog()` / `super.handlePostHideDialog()` call ordering
 
-`AddPredeterminedValueTypeManagedFieldComposite`, `AddUnmanagedFieldComposite`,
-and `AddParameterComposite` override `handlePreShowDialog()` and call
-`super.handlePreShowDialog(dialog)`. The coordinator's method now delegates
-listener wiring to `lifecycleDelegate.wireListeners()` at exactly the same
-point in the method, preserving the ordering contract:
+`AddPredeterminedValueTypeManagedFieldComposite` overrides both
+`handlePreShowDialog()` and `handlePostHideDialog()`, calling their `super`
+methods. The coordinator's methods now delegate listener wiring/unwiring to
+`lifecycleDelegate.wireListeners()` / `lifecycleDelegate.unwireListeners()` at
+exactly the same points in the methods, preserving the ordering contract:
 
 1. Subclass pre-work (before `super` call)
 2. Coordinator resets state values
@@ -322,11 +323,12 @@ point in the method, preserving the ordering contract:
 
 ### Pattern 3: `isNullAllowedForInitializer()` callback
 
-`InsertLocalDeclarationStatementComposite` overrides
-`isNullAllowedForInitializer()` to return `true`. The validation delegate
-calls `composite.isNullAllowedForInitializer()` which dispatches
-polymorphically through the standard Java override mechanism. No change to
-the override behavior.
+`InsertLocalDeclarationStatementComposite` and `AddUnmanagedFieldComposite`
+override `isNullAllowedForInitializer()` to return configuration-dependent
+`true`. The validation delegate calls
+`composite.isNullAllowedForInitializer()` which dispatches polymorphically
+through the standard Java override mechanism. No change to the override
+behavior.
 
 ## Error handling contract
 

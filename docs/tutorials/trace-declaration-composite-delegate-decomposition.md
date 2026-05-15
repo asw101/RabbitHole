@@ -96,7 +96,7 @@ Here is the execution flow when a declaration dialog opens, showing what the
 coordinator does versus what the delegate does:
 
 ```
-1. Subclass.handlePreShowDialog(dialog)       // e.g., AddParameterComposite
+1. Subclass.handlePreShowDialog(dialog)       // e.g., AddPredeterminedValueTypeManagedFieldComposite
 2.   └── super.handlePreShowDialog(dialog)     // DeclarationLikeSubstanceComposite
 3.       ├── Reset isFinalState                 // coordinator
 4.       ├── Reset initializerState             // coordinator
@@ -104,17 +104,18 @@ coordinator does versus what the delegate does:
 6.       ├── Reset valueIsArrayTypeState        // coordinator
 7.       ├── Reset nameState                    // coordinator
 8.       ├── lifecycleDelegate.wireListeners()  // DELEGATE
-9.       │   ├── Clear mapTypeToInitializer     // delegate
-10.      │   ├── Add isArrayValueTypeListener   // delegate (if editable)
-11.      │   ├── Add valueComponentTypeListener // delegate (if editable)
+9.       │   ├── Add isArrayValueTypeListener   // delegate (if editable)
+10.      │   ├── Add valueComponentTypeListener // delegate (if editable)
+11.      │   ├── Clear mapTypeToInitializer     // delegate
 12.      │   └── Add initializerListener        // delegate (if editable)
 13.      ├── View.handleInitializerChanged()     // coordinator
 14.      └── super.handlePreShowDialog(dialog)   // grandparent
 ```
 
-The critical invariant is that state reset (steps 3–7) happens *before*
-listener wiring (step 8), so listeners don't fire on the programmatic reset.
-This ordering is preserved exactly.
+The critical invariants are: (a) state reset (steps 3–7) happens *before*
+listener wiring (step 8), so listeners don't fire on the programmatic reset;
+(b) the cache clear (step 11) happens *after* type listeners are added but
+*before* the initializer listener — matching the original code exactly.
 
 ## Tracing `handlePostHideDialog` after extraction
 
@@ -210,6 +211,6 @@ Unit tests for the lifecycle delegate's cache and wiring logic:
 | --- | --- |
 | `super` call chain breaks | Coordinator retains `getStatusPreRejectorCheck()`, `handlePreShowDialog()`, `handlePostHideDialog()` as overrides; delegates are called within, not replacing, the methods |
 | Listener wiring order changes | `wireListeners()` and `unwireListeners()` reproduce the original code's exact ordering |
-| Cache clear-on-show contract violated | `wireListeners()` calls `mapTypeToInitializer.clear()` at the same position as the original code |
+| Cache clear-on-show contract violated | `wireListeners()` calls `mapTypeToInitializer.clear()` between type listener addition and initializer listener addition, matching the original code position |
 | `isNullAllowedForInitializer()` override missed | Delegate calls `composite.isNullAllowedForInitializer()` which dispatches polymorphically |
 | Localized text key drift | Characterization tests assert exact localized text keys |
