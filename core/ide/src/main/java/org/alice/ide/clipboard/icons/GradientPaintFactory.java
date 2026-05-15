@@ -42,16 +42,16 @@
  *******************************************************************************/
 package org.alice.ide.clipboard.icons;
 
-import edu.cmu.cs.dennisc.java.lang.reflect.ReflectionUtilities;
-
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
-import java.lang.reflect.Constructor;
 
 /**
- * Static factory methods for creating gradient paints via reflection.
+ * Static factory methods for creating gradient paints.
  * Extracted from ClipboardIcon to reduce class size.
+ *
+ * Previously used reflection for JDK compatibility; now uses direct
+ * construction (LinearGradientPaint/RadialGradientPaint require Java 6+).
  */
 final class GradientPaintFactory {
 
@@ -59,30 +59,16 @@ final class GradientPaintFactory {
   }
 
   static Paint new_LinearGradientPaint(Point2D start, Point2D end, float[] fractions, Color[] colors, AffineTransform gradientTransform) {
-    try {
-      Class<?> cls = Class.forName("java.awt.LinearGradientPaint");
-      Class<?> cycleMethodCls = Class.forName("java.awt.MultipleGradientPaint$CycleMethod");
-      Class<?> colorSpaceTypeCls = Class.forName("java.awt.MultipleGradientPaint$ColorSpaceType");
-      final Object NO_CYCLE = cycleMethodCls.getField("NO_CYCLE").get(null);
-      final Object SRGB = colorSpaceTypeCls.getField("SRGB").get(null);
-      Constructor<?> cnstrctr = ReflectionUtilities.getConstructor(cls, Point2D.class, Point2D.class, float[].class, Color[].class, cycleMethodCls, colorSpaceTypeCls, AffineTransform.class);
-      return (Paint) cnstrctr.newInstance(start, end, fractions, colors, NO_CYCLE, SRGB, gradientTransform);
-    } catch (Throwable t) {
-      return colors[0];
-    }
+    return new LinearGradientPaint(start, end, fractions, colors,
+        MultipleGradientPaint.CycleMethod.NO_CYCLE,
+        MultipleGradientPaint.ColorSpaceType.SRGB,
+        gradientTransform);
   }
 
   static Paint new_RadialGradientPaint(Point2D center, float radius, Point2D focus, float[] fractions, Color[] colors, AffineTransform gradientTransform) {
-    try {
-      Class<?> cls = Class.forName("java.awt.RadialGradientPaint");
-      Class<?> cycleMethodCls = Class.forName("java.awt.MultipleGradientPaint$CycleMethod");
-      Class<?> colorSpaceTypeCls = Class.forName("java.awt.MultipleGradientPaint$ColorSpaceType");
-      final Object NO_CYCLE = cycleMethodCls.getField("NO_CYCLE").get(null);
-      final Object SRGB = colorSpaceTypeCls.getField("SRGB").get(null);
-      Constructor<?> cnstrctr = ReflectionUtilities.getConstructor(cls, Point2D.class, Float.TYPE, Point2D.class, float[].class, Color[].class, cycleMethodCls, colorSpaceTypeCls, AffineTransform.class);
-      return (Paint) cnstrctr.newInstance(center, radius, focus, fractions, colors, NO_CYCLE, SRGB, gradientTransform);
-    } catch (Throwable t) {
-      return colors[0];
-    }
+    return new RadialGradientPaint(center, radius, focus, fractions, colors,
+        MultipleGradientPaint.CycleMethod.NO_CYCLE,
+        MultipleGradientPaint.ColorSpaceType.SRGB,
+        gradientTransform);
   }
 }

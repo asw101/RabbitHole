@@ -60,7 +60,7 @@ class ClipboardPaperRenderer {
     g.setComposite(AlphaComposite.getInstance(3, 0.2f * origAlpha));
     paintShapeNode_0_0_2_0_1(g);
     // _0_0_2_0_2
-    g.setComposite(AlphaComposite.getInstance(3, 1.0f * origAlpha));
+    g.setComposite(AlphaComposite.getInstance(3, origAlpha));
     // _0_0_2_0_4
     AffineTransform trans_0_0_2_0_4 = g.getTransform();
     g.transform(new AffineTransform(0.6232035160064697f, 0.0f, 0.0f, 0.6771684288978577f, 164.3101348876953f, 56.7651481628418f));
@@ -78,7 +78,7 @@ class ClipboardPaperRenderer {
     paintShapeNode_0_0_2_0_6(g);
     g.setTransform(trans_0_0_2_0_6);
     // _0_0_2_0_7
-    g.setComposite(AlphaComposite.getInstance(3, 1.0f * origAlpha));
+    g.setComposite(AlphaComposite.getInstance(3, origAlpha));
     paintShapeNode_0_0_2_0_7(g);
     // _0_0_2_0_8
     paintShapeNode_0_0_2_0_8(g);
@@ -96,7 +96,7 @@ class ClipboardPaperRenderer {
     shape4.lineTo(141.5061f, 61.931465f);
     shape4.curveTo(141.5061f, 61.138454f, 142.14452f, 60.50004f, 142.93753f, 60.50004f);
     shape4.closePath();
-    g.setPaint(new Color(0, 0, 0, 255));
+    g.setPaint(Color.BLACK);
     g.fill(shape4);
     g.setStroke(new BasicStroke(1.0000001f, 0, 0, 4.0f, null, 0.0f));
     g.draw(shape4);
@@ -153,7 +153,7 @@ class ClipboardPaperRenderer {
     shape7.lineTo(326.5f, 89.5f);
     shape7.lineTo(331.5f, 84.5f);
     shape7.closePath();
-    g.setPaint(new Color(0, 0, 0, 255));
+    g.setPaint(Color.BLACK);
     g.fill(shape7);
   }
 

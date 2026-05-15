@@ -62,13 +62,13 @@ class ClipboardClipRenderer {
     paintShapeNode_0_0_2_0_9_0(g);
     g.setTransform(trans_0_0_2_0_9_0);
     // _0_0_2_0_9_1
-    g.setComposite(AlphaComposite.getInstance(3, 1.0f * origAlpha));
+    g.setComposite(AlphaComposite.getInstance(3, origAlpha));
     paintShapeNode_0_0_2_0_9_1(g);
     // _0_0_2_0_9_2
     g.setComposite(AlphaComposite.getInstance(3, 0.5f * origAlpha));
     paintShapeNode_0_0_2_0_9_2(g);
     // _0_0_2_0_9_3
-    g.setComposite(AlphaComposite.getInstance(3, 1.0f * origAlpha));
+    g.setComposite(AlphaComposite.getInstance(3, origAlpha));
     paintShapeNode_0_0_2_0_9_3(g);
     // _0_0_2_0_9_4
     g.setComposite(AlphaComposite.getInstance(3, 0.2f * origAlpha));

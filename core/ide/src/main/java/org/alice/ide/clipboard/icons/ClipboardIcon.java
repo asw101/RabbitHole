@@ -112,7 +112,7 @@ public class ClipboardIcon implements Icon {
   }
 
   private void paintRootGraphicsNode_0(Graphics2D g) {
-    g.setComposite(AlphaComposite.getInstance(3, 1.0f * origAlpha));
+    g.setComposite(AlphaComposite.getInstance(3, origAlpha));
     paintCanvasGraphicsNode_0_0(g);
   }
 

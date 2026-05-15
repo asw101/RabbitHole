@@ -69,7 +69,7 @@ class ClipboardBoardRenderer {
     paintShapeNode_0_0_2_0_0_1(g);
     g.setTransform(trans_0_0_2_0_0_1);
     // _0_0_2_0_0_2
-    g.setComposite(AlphaComposite.getInstance(3, 1.0f * origAlpha));
+    g.setComposite(AlphaComposite.getInstance(3, origAlpha));
     AffineTransform trans_0_0_2_0_0_2 = g.getTransform();
     g.transform(new AffineTransform(1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f));
     paintShapeNode_0_0_2_0_0_2(g, state);
@@ -84,7 +84,7 @@ class ClipboardBoardRenderer {
 
   private void paintShapeNode_0_0_2_0_0_0(Graphics2D g) {
     RoundRectangle2D.Double shape0 = new RoundRectangle2D.Double(6.874999523162842, 35.875, 35.125, 6.5, 6.499999523162842, 6.5);
-    g.setPaint(new Color(0, 0, 0, 255));
+    g.setPaint(Color.BLACK);
     g.fill(shape0);
   }
 
