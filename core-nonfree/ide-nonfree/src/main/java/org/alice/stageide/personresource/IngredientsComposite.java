@@ -44,7 +44,6 @@
 package org.alice.stageide.personresource;
 
 import com.formdev.flatlaf.extras.FlatSVGIcon;
-import edu.cmu.cs.dennisc.java.util.Lists;
 import edu.cmu.cs.dennisc.java.util.logging.Logger;
 import edu.cmu.cs.dennisc.map.MapToMap;
 import org.alice.ide.icons.Icons;
@@ -62,7 +61,6 @@ import org.lgna.story.Color;
 import org.lgna.story.resources.sims2.*;
 
 import javax.swing.Icon;
-import java.util.List;
 import java.util.UUID;
 
 /**
@@ -89,130 +87,19 @@ public class IngredientsComposite extends SimpleComposite<IngredientsView> {
   private OutfitTabComposite<? extends OutfitTabView> lastActiveOutfitTab = null;
 
   private final MapToMap<LifeStage, Gender, PersonResource> mapToMap = MapToMap.newInstance();
-  private final State.ValueListener<LifeStage> lifeStageListener = new State.ValueListener<LifeStage>() {
-    @Override
-    public void changing(State<LifeStage> state, LifeStage prevValue, LifeStage nextValue) {
-      pushAtomic();
-    }
+  private final HairStyleManager hairStyleManager = new HairStyleManager();
 
-    @Override
-    public void changed(State<LifeStage> state, LifeStage prevValue, LifeStage nextValue) {
-      popAtomic();
-      updateCameraPointOfView();
-    }
-  };
-  private final State.ValueListener<Gender> genderListener = new State.ValueListener<Gender>() {
-    @Override
-    public void changing(State<Gender> state, Gender prevValue, Gender nextValue) {
-      pushAtomic();
-    }
-
-    @Override
-    public void changed(State<Gender> state, Gender prevValue, Gender nextValue) {
-      popAtomic();
-    }
-  };
-  private final State.ValueListener<java.awt.Color> skinColorListener = new State.ValueListener<java.awt.Color>() {
-    @Override
-    public void changing(State<java.awt.Color> state, java.awt.Color prevValue, java.awt.Color nextValue) {
-      pushAtomic();
-    }
-
-    @Override
-    public void changed(State<java.awt.Color> state, java.awt.Color prevValue, java.awt.Color nextValue) {
-      popAtomic();
-      handleSkinColorChange(nextValue);
-    }
-  };
-  private final State.ValueListener<BaseFace> faceListener = new State.ValueListener<BaseFace>() {
-    @Override
-    public void changing(State<BaseFace> state, BaseFace prevValue, BaseFace nextValue) {
-      pushAtomic();
-    }
-
-    @Override
-    public void changed(State<BaseFace> state, BaseFace prevValue, BaseFace nextValue) {
-      popAtomic();
-    }
-  };
-  private final State.ValueListener<BaseEyeColor> baseEyeColorListener = new State.ValueListener<BaseEyeColor>() {
-    @Override
-    public void changing(State<BaseEyeColor> state, BaseEyeColor prevValue, BaseEyeColor nextValue) {
-      pushAtomic();
-    }
-
-    @Override
-    public void changed(State<BaseEyeColor> state, BaseEyeColor prevValue, BaseEyeColor nextValue) {
-      popAtomic();
-    }
-  };
-  private final State.ValueListener<HairColorName> hairColorNameListener = new State.ValueListener<HairColorName>() {
-    @Override
-    public void changing(State<HairColorName> state, HairColorName prevValue, HairColorName nextValue) {
-      pushAtomic();
-    }
-
-    @Override
-    public void changed(State<HairColorName> state, HairColorName prevValue, HairColorName nextValue) {
-      addHairColorNameToFront(nextValue);
-      popAtomic();
-    }
-  };
-  private final State.ValueListener<HairHatStyle> hairListener = new State.ValueListener<HairHatStyle>() {
-    @Override
-    public void changing(State<HairHatStyle> state, HairHatStyle prevValue, HairHatStyle nextValue) {
-      pushAtomic();
-    }
-
-    @Override
-    public void changed(State<HairHatStyle> state, HairHatStyle prevValue, HairHatStyle nextValue) {
-      popAtomic();
-    }
-  };
-  private final State.ValueListener<FullBodyOutfit> fullBodyOutfitListener = new State.ValueListener<FullBodyOutfit>() {
-    @Override
-    public void changing(State<FullBodyOutfit> state, FullBodyOutfit prevValue, FullBodyOutfit nextValue) {
-      pushAtomic();
-    }
-
-    @Override
-    public void changed(State<FullBodyOutfit> state, FullBodyOutfit prevValue, FullBodyOutfit nextValue) {
-      popAtomic();
-    }
-  };
-  private final State.ValueListener<TopPiece> topPieceListener = new State.ValueListener<TopPiece>() {
-    @Override
-    public void changing(State<TopPiece> state, TopPiece prevValue, TopPiece nextValue) {
-      pushAtomic();
-    }
-
-    @Override
-    public void changed(State<TopPiece> state, TopPiece prevValue, TopPiece nextValue) {
-      popAtomic();
-    }
-  };
-  private final State.ValueListener<BottomPiece> bottomPieceListener = new State.ValueListener<BottomPiece>() {
-    @Override
-    public void changing(State<BottomPiece> state, BottomPiece prevValue, BottomPiece nextValue) {
-      pushAtomic();
-    }
-
-    @Override
-    public void changed(State<BottomPiece> state, BottomPiece prevValue, BottomPiece nextValue) {
-      popAtomic();
-    }
-  };
-  private final State.ValueListener<Double> obesityLevelListener = new State.ValueListener<Double>() {
-    @Override
-    public void changing(State<Double> state, Double prevValue, Double nextValue) {
-      pushAtomic();
-    }
-
-    @Override
-    public void changed(State<Double> state, Double prevValue, Double nextValue) {
-      popAtomic();
-    }
-  };
+  private final State.ValueListener<LifeStage> lifeStageListener = atomicListener(null, (s, p, n) -> updateCameraPointOfView());
+  private final State.ValueListener<Gender> genderListener = atomicListener(null, null);
+  private final State.ValueListener<java.awt.Color> skinColorListener = atomicListener(null, (s, p, n) -> handleSkinColorChange(n));
+  private final State.ValueListener<BaseFace> faceListener = atomicListener(null, null);
+  private final State.ValueListener<BaseEyeColor> baseEyeColorListener = atomicListener(null, null);
+  private final State.ValueListener<HairColorName> hairColorNameListener = atomicListener((s, p, n) -> hairStyleManager.addHairColorNameToFront(n), null);
+  private final State.ValueListener<HairHatStyle> hairListener = atomicListener(null, null);
+  private final State.ValueListener<FullBodyOutfit> fullBodyOutfitListener = atomicListener(null, null);
+  private final State.ValueListener<TopPiece> topPieceListener = atomicListener(null, null);
+  private final State.ValueListener<BottomPiece> bottomPieceListener = atomicListener(null, null);
+  private final State.ValueListener<Double> obesityLevelListener = atomicListener(null, null);
 
   private final ValueListener<SimpleTabComposite<?>> tabListener = new ValueListener<SimpleTabComposite<?>>() {
     @Override
@@ -224,11 +111,34 @@ public class IngredientsComposite extends SimpleComposite<IngredientsView> {
 
   private static final Icon RANDOM_ICON = new FlatSVGIcon(Icons.class.getResource("images/random.svg"));
 
-  private final List<HairColorName> hairColorNames = Lists.newLinkedList();
-
   public IngredientsComposite() {
     super(UUID.fromString("dd127381-09a8-4f78-bfd5-f3bffc1af98b"));
     this.randomize.setButtonIcon(RANDOM_ICON);
+  }
+
+  @FunctionalInterface
+  private interface ChangedCallback<T> {
+    void onChanged(State<T> state, T prevValue, T nextValue);
+  }
+
+  private <T> State.ValueListener<T> atomicListener(ChangedCallback<T> beforePop, ChangedCallback<T> afterPop) {
+    return new State.ValueListener<T>() {
+      @Override
+      public void changing(State<T> state, T prevValue, T nextValue) {
+        pushAtomic();
+      }
+
+      @Override
+      public void changed(State<T> state, T prevValue, T nextValue) {
+        if (beforePop != null) {
+          beforePop.onChanged(state, prevValue, nextValue);
+        }
+        popAtomic();
+        if (afterPop != null) {
+          afterPop.onChanged(state, prevValue, nextValue);
+        }
+      }
+    };
   }
 
   private void updateLastActiveOutfitTab() {
@@ -256,35 +166,8 @@ public class IngredientsComposite extends SimpleComposite<IngredientsView> {
     }
   }
 
-  private void addHairColorNameToFront(HairColorName hairColorName) {
-    synchronized (this.hairColorNames) {
-      int index = this.hairColorNames.indexOf(hairColorName);
-      if (index != -1) {
-        this.hairColorNames.remove(index);
-      }
-      this.hairColorNames.addFirst(hairColorName);
-    }
-  }
-
   public Hair getHairForHairHatStyle(HairHatStyle hairHatStyle) {
-    if (hairHatStyle != null) {
-      synchronized (this.hairColorNames) {
-        for (HairColorName hairColorName : this.hairColorNames) {
-          Hair rv = hairHatStyle.getHair(hairColorName);
-          if (rv != null) {
-            return rv;
-          }
-        }
-      }
-      List<HairColorNameHairCombo> hairColorNameHairCombos = hairHatStyle.getHairColorNameHairCombos();
-      if (!hairColorNameHairCombos.isEmpty()) {
-        HairColorNameHairCombo hairColorNameHairCombo = hairColorNameHairCombos.getFirst();
-        if (hairColorNameHairCombo != null) {
-          return hairColorNameHairCombo.getHair();
-        }
-      }
-    }
-    return null;
+    return this.hairStyleManager.getHairForHairHatStyle(hairHatStyle);
   }
 
   @Override
@@ -414,7 +297,6 @@ public class IngredientsComposite extends SimpleComposite<IngredientsView> {
     super.handlePreActivation();
     if (activeCount == 0) {
       this.addListeners();
-
       this.bodyHeadHairTabState.addAndInvokeNewSchoolValueListener(this.tabListener);
     } else {
       Logger.severe(this, this.activeCount);
@@ -463,84 +345,7 @@ public class IngredientsComposite extends SimpleComposite<IngredientsView> {
     }
   }
 
-  //  private void updateHairColorName( org.lgna.story.resources.sims2.LifeStage lifeStage, org.lgna.story.resources.sims2.Gender gender, org.lgna.story.resources.sims2.Hair hair, String hairColorName ) {
-  //    if( hairColorName != null ) {
-  //      //pass
-  //    } else {
-  //      hairColorName = this.getHairColorNameState().getValue();
-  //    }
-  //    this.getHairColorNameState().setValueTransactionlessly( null );
-  //    org.alice.stageide.personresource.data.HairColorNameListData data = this.hairTab.getHairColorNameData();
-  //    data.setHairHatStyle( hairHatStyle );
-  //    if( hairColorName != null ) {
-  //      if( data.contains( hairColorName ) ) {
-  //        //pass
-  //      } else {
-  //        hairColorName = null;
-  //      }
-  //    }
-  //    if( hairColorName != null ) {
-  //      //pass
-  //    } else {
-  //      if( hair != null ) {
-  //        hairColorName = hair.toString();
-  //      }
-  //      else {
-  //        org.lgna.story.resources.sims2.PersonResource personResource = this.mapToMap.get( lifeStage, gender );
-  //        if( personResource != null ) {
-  //          org.lgna.story.resources.sims2.Hair personHair = personResource.getHair();
-  //          if( personHair != null ) {
-  //            hairColorName = personHair.toString();
-  //          }
-  //        }
-  //      }
-  //    }
-  //    if( hairColorName != null ) {
-  //      this.getHairColorNameState().setValueTransactionlessly( hairColorName );
-  //    } else {
-  //      this.getHairColorNameState().setRandomSelectedValue();
-  //    }
-  //  }
-  //
-  //  private void updateHair( org.lgna.story.resources.sims2.LifeStage lifeStage, org.lgna.story.resources.sims2.Gender gender, org.lgna.story.resources.sims2.Hair hair ) {
-  //    this.getHairHatStyleState().setValueTransactionlessly( null );
-  //
-  //    String hairColorName;
-  //    if( hair != null ) {
-  //      hairColorName = hair.toString();
-  //    } else {
-  //      hairColorName = this.getHairColorNameState().getValue();
-  //      if( hairColorName != null ) {
-  //        org.lgna.story.resources.sims2.PersonResource previousPersonResource = this.mapToMap.get( lifeStage, gender );
-  //        if( previousPersonResource != null ) {
-  //          org.lgna.story.resources.sims2.Hair previousHairValue = previousPersonResource.getHair();
-  //          if( previousHairValue != null ) {
-  //            Class<?> cls = previousHairValue.getClass();
-  //            if( cls.isEnum() ) {
-  //              try {
-  //                hair = (org.lgna.story.resources.sims2.Hair)cls.getField( hairColorName ).get( null );
-  //              } catch( Exception e ) {
-  //                edu.cmu.cs.dennisc.java.util.logging.Logger.throwable( e, previousHairValue );
-  //                hair = null;
-  //              }
-  //            }
-  //          }
-  //        }
-  //      }
-  //    }
-  //    this.hairTab.getHairHatStyleListData().setLifeStageAndGender( lifeStage, gender );
-  //
-  //    if( hair != null ) {
-  //      edu.cmu.cs.dennisc.java.util.logging.Logger.severe( hair );
-  //      //this.getHairHatStyleState().setValueTransactionlessly( hair );
-  //      this.getHairHatStyleState().setRandomSelectedValue();
-  //    } else {
-  //      this.getHairHatStyleState().setRandomSelectedValue();
-  //    }
-  //  }
-
   private BaseSkinTone closestBaseSkinTone = null;
-  private final boolean FORCE_GRAY_SKIN_TONE = true;
 
   private void handleSkinColorChange(java.awt.Color color) {
     if (color != null) {
@@ -588,7 +393,6 @@ public class IngredientsComposite extends SimpleComposite<IngredientsView> {
     this.getBottomPieceState().setValueTransactionlessly(null);
     this.topAndBottomTab.getBottomPieceData().setLifeStageAndGender(lifeStage, gender);
 
-    //If there are no top or bottom pieces, leave the data set to null
     if ((this.topAndBottomTab.getTopPieceData().getItemCount() == 0) || (this.topAndBottomTab.getBottomPieceData().getItemCount() == 0)) {
       return;
     }
@@ -631,8 +435,6 @@ public class IngredientsComposite extends SimpleComposite<IngredientsView> {
   }
 
   public void pushAtomic() {
-    if (this.atomicCount == 0) {
-    }
     this.atomicCount++;
   }
 
@@ -656,11 +458,8 @@ public class IngredientsComposite extends SimpleComposite<IngredientsView> {
         boolean isHairChanged = nextHair != prevHair;
 
         if (isLifeStageChanged || isGenderChanged) {
-          //Need a new hair style since we're on a new gender or lifestage
-          //Pick a random one (we don't track previous values across lifestage or gender changes)
           this.hairTab.getHairHatStyleListData().setLifeStageAndGender(nextLifeStage, nextGender);
           this.hairTab.getHairHatStyleState().setRandomSelectedValue();
-          //Given a new hair style, try to pick a color for it
           nextHair = this.getHairForHairHatStyle(this.hairTab.getHairHatStyleState().getValue());
           HairHatStyleHairColorName hairHatStyleHairColorName = HairUtilities.getHairHatStyleColorNameFromHair(nextLifeStage, nextGender, nextHair);
           if (hairHatStyleHairColorName != null) {
@@ -674,29 +473,6 @@ public class IngredientsComposite extends SimpleComposite<IngredientsView> {
             this.updateHairHatStyleHairColorName(nextLifeStage, nextGender, hairHatStyleHairColorName);
           }
         }
-        //        if( isLifeStageChanged || isHairChanged ) {
-        //          String[] nextColors = org.alice.stageide.personresource.data.HairColorNameListData.getHairColors( nextHair );
-        //          String[] prevColors = org.alice.stageide.personresource.data.HairColorNameListData.getHairColors( prevHair );
-        //
-        //          if( !Arrays.equals( nextColors, prevColors ) ) {
-        //            this.updateHairColorName( nextLifeStage, nextGender, nextHair, null );
-        //          }
-        //        }
-        //
-        //        String prevHairColorName = getHairColorName( this.prevPersonResource );
-        //        final String nextHairColorName = this.getHairColorNameState().getValue();
-        //        boolean isHairColorChanged = edu.cmu.cs.dennisc.java.util.Objects.notEquals( prevHairColorName, nextHairColorName );
-        //
-        //        if( isLifeStageChanged || isGenderChanged ) {
-        //          this.updateHair( nextLifeStage, nextGender, null );
-        //        } else if( isHairColorChanged ) {
-        //          if( isHairChanged ) {
-        //            this.updateHair( nextLifeStage, nextGender, nextHair );
-        //          }
-        //          else {
-        //            this.updateHair( nextLifeStage, nextGender, null );
-        //          }
-        //        }
         if (isLifeStageChanged || isGenderChanged) {
           this.updateOutfit(nextLifeStage, nextGender, null);
         }
@@ -732,33 +508,11 @@ public class IngredientsComposite extends SimpleComposite<IngredientsView> {
   private Outfit getOutfit(LifeStage lifeStage, Gender gender) {
     boolean topsAndBottomsAvailable = (topAndBottomTab.getBottomPieceData().getItemCount() > 0)
                                    && (topAndBottomTab.getTopPieceData().getItemCount() > 0);
-    Outfit fullbody = getFullBodyOutfitState().getValue();
-    if ((!topsAndBottomsAvailable || lastActiveOutfitTab != topAndBottomTab) && fullbody != null) {
-      return fullbody;
-    }
-
-    final TopPiece top = getTopPieceState().getValue();
-    final BottomPiece bottom = getBottomPieceState().getValue();
-    return switch (lifeStage) {
-      // TODDLER does not have tops and bottom options so this should not be reached. Here to cover all cases.
-      case TODDLER -> fullbody;
-      case CHILD -> switch (gender) {
-        case MALE -> new MaleChildTopAndBottomOutfit((MaleChildTopPiece) top, (MaleChildBottomPiece) bottom);
-        case FEMALE -> new FemaleChildTopAndBottomOutfit((FemaleChildTopPiece) top, (FemaleChildBottomPiece) bottom);
-      };
-      case TEEN -> switch (gender) {
-        case MALE -> new MaleTeenTopAndBottomOutfit((MaleTeenTopPiece) top, (MaleTeenBottomPiece) bottom);
-        case FEMALE -> new FemaleTeenTopAndBottomOutfit((FemaleTeenTopPiece) top, (FemaleTeenBottomPiece) bottom);
-      };
-      case ADULT -> switch (gender) {
-        case MALE -> new MaleAdultTopAndBottomOutfit((MaleAdultTopPiece) top, (MaleAdultBottomPiece) bottom);
-        case FEMALE -> new FemaleAdultTopAndBottomOutfit((FemaleAdultTopPiece) top, (FemaleAdultBottomPiece) bottom);
-      };
-      case ELDER -> switch (gender) {
-        case MALE -> new MaleElderTopAndBottomOutfit((MaleElderTopPiece) top, (MaleElderBottomPiece) bottom);
-        case FEMALE -> new FemaleElderTopAndBottomOutfit((FemaleElderTopPiece) top, (FemaleElderBottomPiece) bottom);
-      };
-    };
+    FullBodyOutfit fullbody = getFullBodyOutfitState().getValue();
+    TopPiece top = getTopPieceState().getValue();
+    BottomPiece bottom = getBottomPieceState().getValue();
+    boolean lastActiveIsTopAndBottom = lastActiveOutfitTab == topAndBottomTab;
+    return OutfitFactory.getOutfit(lifeStage, gender, fullbody, top, bottom, topsAndBottomsAvailable, lastActiveIsTopAndBottom);
   }
 
   public void setStates(PersonResource personResource) {
@@ -772,11 +526,9 @@ public class IngredientsComposite extends SimpleComposite<IngredientsView> {
       Hair hair = personResource.getHair();
       HairHatStyleHairColorName hairHatStyleHairColorName = HairUtilities.getHairHatStyleColorNameFromHair(personResource.getLifeStage(), personResource.getGender(), hair);
 
-      this.addHairColorNameToFront(hairHatStyleHairColorName.getHairColorName());
+      this.hairStyleManager.addHairColorNameToFront(hairHatStyleHairColorName.getHairColorName());
 
       this.updateOutfit(personResource.getLifeStage(), personResource.getGender(), personResource.getOutfit());
-      //this.updateHairColorName( personResource.getLifeStage(), personResource.getGender(), hair, hair != null ? hair.toString() : null );
-      //this.updateHair( personResource.getLifeStage(), personResource.getGender(), hair );
       this.updateHairHatStyleHairColorName(personResource.getLifeStage(), personResource.getGender(), hairHatStyleHairColorName);
       this.getObesityLevelState().setValueTransactionlessly(personResource.getObesityLevel());
       this.getBaseFaceState().setValueTransactionlessly((BaseFace) personResource.getFace());

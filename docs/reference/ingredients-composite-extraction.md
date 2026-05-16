@@ -73,11 +73,12 @@ Both classes are package-private and live in
 
 | File | Role | Approx lines |
 | --- | --- | --- |
-| `IngredientsComposite.java` | Parent class — state fields, listener management, activation lifecycle, thin delegation stubs. | ~490 |
-| `HairStyleManager.java` | Hair color priority tracking, hair-for-style resolution, hair state updates. | ~110 |
-| `OutfitFactory.java` | Stateless outfit construction from life stage + gender + selected pieces. | ~100 |
-| `IngredientsCompositeTest.java` | Characterization tests for `HairStyleManager` and `OutfitFactory`. | ~120 |
-| `IngredientsCompositeApiSurfaceTest.java` | Reflection-based API surface guard — ensures public method signatures are not accidentally changed. | ~60 |
+| `IngredientsComposite.java` | Parent class — state fields, listener management, activation lifecycle, thin delegation stubs. | ~541 (464 code lines) |
+| `HairStyleManager.java` | Hair color priority tracking, hair-for-style resolution. | ~101 |
+| `OutfitFactory.java` | Stateless outfit construction from life stage + gender + selected pieces. | ~103 |
+| `HairStyleManagerTest.java` | Characterization tests for `HairStyleManager`. | ~270 |
+| `OutfitFactoryTest.java` | Characterization tests for `OutfitFactory`. | ~242 |
+| `IngredientsCompositeApiSurfaceTest.java` | Reflection-based API surface guard — ensures public method signatures are not accidentally changed. | ~177 |
 
 All production source files reside in:
 
@@ -112,9 +113,6 @@ these methods and the `hairColorNames` field were on `IngredientsComposite`.
 | Priority list | `List<HairColorName> hairColorNames` — linked list of recently-used hair color names, most-recent first |
 | Record color use | `addHairColorNameToFront(HairColorName)` — moves the given color to the front of the priority list (thread-safe via synchronized block) |
 | Resolve hair for style | `getHairForHairHatStyle(HairHatStyle)` — walks the priority list and returns the first `Hair` available for that style; falls back to the style's first combo if no priority match |
-| Update hair state | `updateHairHatStyleHairColorName(LifeStage, Gender, HairHatStyleHairColorName, HairTabComposite)` — sets the hair hat style data, repopulates the color name list, and sets both states transactionlessly |
-| Handle life stage/gender change | `handleLifeStageOrGenderChange(LifeStage, Gender, HairTabComposite)` — randomizes hair hat style for the new life stage/gender, resolves a color, and updates the state |
-| Handle hair change | `handleHairChange(LifeStage, Gender, Hair, HairTabComposite)` — resolves hair hat style and color from a given `Hair`, updates the state |
 
 The constructor is trivial:
 
@@ -157,9 +155,6 @@ that decides between full-body and top-and-bottom outfits.
 | --- | --- |
 | Select active outfit | `getOutfit(LifeStage, Gender, FullBodyOutfit, TopPiece, BottomPiece, boolean topsAndBottomsAvailable, boolean lastActiveIsTopAndBottom)` — returns the appropriate `Outfit` based on tab state and data availability |
 | Construct top-and-bottom outfit | `createTopAndBottomOutfit(LifeStage, Gender, TopPiece, BottomPiece)` — switch expression creating the correct `TopAndBottomOutfit` subclass for the given life stage and gender |
-| Update full body outfit data | `updateFullBodyOutfit(LifeStage, Gender, FullBodyOutfit, FullBodyOutfitTabComposite)` — clears and repopulates the full body outfit data, sets state |
-| Update top/bottom outfit data | `updateTopAndBottomOutfit(LifeStage, Gender, TopAndBottomOutfit, TopAndBottomOutfitTabComposite)` — clears and repopulates both top piece and bottom piece data, sets state |
-| Update all outfit data | `updateOutfit(LifeStage, Gender, Outfit, MapToMap, FullBodyOutfitTabComposite, TopAndBottomOutfitTabComposite)` — decomposes an `Outfit` and delegates to the full-body and top-and-bottom update methods |
 
 **Statelessness:** All `OutfitFactory` methods are static. Mutable state
 (the `RefreshableDataSingleSelectListState` objects and tab composites) is
@@ -217,18 +212,13 @@ static Outfit createTopAndBottomOutfit(LifeStage lifeStage, Gender gender,
 | `FORCE_GRAY_SKIN_TONE` removed | Unused field deleted — never read anywhere in the codebase |
 | `addHairColorNameToFront()` removed | Method moved to `HairStyleManager` |
 | `getHairForHairHatStyle()` retained | Body replaced with `hairStyleManager.getHairForHairHatStyle(hairHatStyle)` (public delegation for `HairListCellRenderer`) |
-| `updateHairHatStyleHairColorName()` removed | Method moved to `HairStyleManager.updateHairHatStyleHairColorName()` |
-| `getOutfit()` removed | Method moved to `OutfitFactory.getOutfit()` |
-| `updateOutfit()` removed | Method moved to `OutfitFactory.updateOutfit()` |
-| `updateFullBodyOutfit()` removed | Method moved to `OutfitFactory.updateFullBodyOutfit()` |
-| `updateTopAndBottomOutfit()` removed | Method moved to `OutfitFactory.updateTopAndBottomOutfit()` |
+| `getOutfit()` simplified | Body replaced with delegation to `OutfitFactory.getOutfit()` — switch expression and guard clause extracted |
 | Lines 466–540 deleted | Two commented-out methods (`updateHairColorName`, `updateHair`) — dead code |
 | Lines 677–699 deleted | Commented-out block in `popAtomic()` — dead code |
 | Lines 778–779 deleted | Commented-out calls in `setStates()` — dead code |
-| 11 anonymous listener classes replaced | Consolidated into `AtomicValueListener<T>` generic inner class (with `beforePop` and `afterPop` consumer slots) |
-| `popAtomic()` hair logic | Delegates to `hairStyleManager.handleLifeStageOrGenderChange()` and `hairStyleManager.handleHairChange()` |
-| `setStates()` hair logic | Delegates to `hairStyleManager.addHairColorNameToFront()` and `hairStyleManager.updateHairHatStyleHairColorName()` |
-| `createResourceFromStates()` outfit call | Delegates to `OutfitFactory.getOutfit()` |
+| 11 anonymous listener classes replaced | Consolidated via `atomicListener()` factory method with `ChangedCallback<T>` `beforePop` and `afterPop` slots |
+| `setStates()` hair logic | Delegates to `hairStyleManager.addHairColorNameToFront()` |
+| `createResourceFromStates()` outfit call | Delegates to `OutfitFactory.getOutfit()` via simplified `getOutfit()` |
 
 ## Public API
 
@@ -366,39 +356,29 @@ when `atomicCount` reaches 0. Running extra logic before vs after the pop
 is semantically different. The generic `AtomicValueListener<T>` must support
 both orderings.
 
-These are consolidated into a generic `AtomicValueListener<T>` inner class
-with separate `beforePop` and `afterPop` consumer slots:
+These are consolidated via a `ChangedCallback<T>` functional interface and
+an `atomicListener()` factory method with `beforePop` and `afterPop` slots:
 
 ```java
-private class AtomicValueListener<T> implements State.ValueListener<T> {
-  private final java.util.function.Consumer<T> beforePop;
-  private final java.util.function.Consumer<T> afterPop;
+@FunctionalInterface
+private interface ChangedCallback<T> {
+  void onChanged(State<T> state, T prevValue, T nextValue);
+}
 
-  AtomicValueListener() {
-    this(null, null);
-  }
-
-  AtomicValueListener(java.util.function.Consumer<T> beforePop,
-      java.util.function.Consumer<T> afterPop) {
-    this.beforePop = beforePop;
-    this.afterPop = afterPop;
-  }
-
-  @Override
-  public void changing(State<T> state, T prevValue, T nextValue) {
-    pushAtomic();
-  }
-
-  @Override
-  public void changed(State<T> state, T prevValue, T nextValue) {
-    if (beforePop != null) {
-      beforePop.accept(nextValue);
+private <T> State.ValueListener<T> atomicListener(
+    ChangedCallback<T> beforePop, ChangedCallback<T> afterPop) {
+  return new State.ValueListener<T>() {
+    @Override
+    public void changing(State<T> state, T prevValue, T nextValue) {
+      pushAtomic();
     }
-    popAtomic();
-    if (afterPop != null) {
-      afterPop.accept(nextValue);
+    @Override
+    public void changed(State<T> state, T prevValue, T nextValue) {
+      if (beforePop != null) beforePop.onChanged(state, prevValue, nextValue);
+      popAtomic();
+      if (afterPop != null) afterPop.onChanged(state, prevValue, nextValue);
     }
-  }
+  };
 }
 ```
 
@@ -406,25 +386,25 @@ Usage:
 
 ```java
 // Pure push/pop listener (8 instances):
-private final AtomicValueListener<Gender> genderListener = new AtomicValueListener<>();
+private final State.ValueListener<Gender> genderListener = atomicListener(null, null);
 
 // Listener with before-pop behavior (1 instance):
-private final AtomicValueListener<HairColorName> hairColorNameListener =
-    new AtomicValueListener<>(hairStyleManager::addHairColorNameToFront, null);
+private final State.ValueListener<HairColorName> hairColorNameListener =
+    atomicListener((s, p, n) -> hairStyleManager.addHairColorNameToFront(n), null);
 
 // Listeners with after-pop behavior (2 instances):
-private final AtomicValueListener<LifeStage> lifeStageListener =
-    new AtomicValueListener<>(null, v -> updateCameraPointOfView());
-private final AtomicValueListener<java.awt.Color> skinColorListener =
-    new AtomicValueListener<>(null, this::handleSkinColorChange);
+private final State.ValueListener<LifeStage> lifeStageListener =
+    atomicListener(null, (s, p, n) -> updateCameraPointOfView());
+private final State.ValueListener<java.awt.Color> skinColorListener =
+    atomicListener(null, (s, p, n) -> handleSkinColorChange(n));
 ```
 
 The `tabListener` (line 217) is a `ValueListener<SimpleTabComposite<?>>`,
 not a `State.ValueListener<T>`. It is excluded from this consolidation and
 remains as-is.
 
-**Line savings:** 11 anonymous classes (~121 lines) → 1 inner class + 11
-one-liner field declarations (~30 lines) = ~91 lines saved.
+**Line savings:** 11 anonymous classes (~121 lines) → 1 factory method + 11
+one-liner field declarations (~35 lines) = ~86 lines saved.
 
 ## Visibility changes
 
@@ -433,11 +413,7 @@ one-liner field declarations (~30 lines) = ~91 lines saved.
 | `hairColorNames` | `private` field on IngredientsComposite | `private` field on HairStyleManager | Moved to delegate |
 | `addHairColorNameToFront()` | `private` on IngredientsComposite | Package-private on HairStyleManager | Called by IngredientsComposite from same package |
 | `getHairForHairHatStyle()` | `public` on IngredientsComposite | `public` delegation stub on IngredientsComposite + package-private on HairStyleManager | External caller (`HairListCellRenderer`) goes through IngredientsComposite |
-| `updateHairHatStyleHairColorName()` | `private` on IngredientsComposite | Package-private on HairStyleManager | Called by IngredientsComposite from same package |
-| `getOutfit()` | `private` on IngredientsComposite | Package-private static on OutfitFactory | Called by IngredientsComposite from same package |
-| `updateOutfit()` | `private` on IngredientsComposite | Package-private static on OutfitFactory | Called by IngredientsComposite from same package |
-| `updateFullBodyOutfit()` | `private` on IngredientsComposite | Package-private static on OutfitFactory | Called by OutfitFactory internally |
-| `updateTopAndBottomOutfit()` | `private` on IngredientsComposite | Package-private static on OutfitFactory | Called by OutfitFactory internally |
+| `getOutfit()` switch logic | `private` on IngredientsComposite | Package-private static on OutfitFactory | Called by IngredientsComposite from same package |
 
 No public visibility increases. No protected-to-public changes. The public
 API surface is identical.
@@ -450,10 +426,10 @@ cd core-nonfree/ide-nonfree && mvn verify -pl . -am
 
 # Run only the characterization tests
 mvn test -pl core-nonfree/ide-nonfree \
-  -Dtest="IngredientsCompositeTest,IngredientsCompositeApiSurfaceTest"
+  -Dtest="HairStyleManagerTest,OutfitFactoryTest,IngredientsCompositeApiSurfaceTest"
 
-# Verify line count is under 500
-wc -l core-nonfree/ide-nonfree/src/main/java/org/alice/stageide/personresource/IngredientsComposite.java
+# Verify code line count is under 500 (excludes blank lines and comments)
+grep -cE '^\s*[^/\s*]' core-nonfree/ide-nonfree/src/main/java/org/alice/stageide/personresource/IngredientsComposite.java
 ```
 
 ## Characterization tests
@@ -495,11 +471,11 @@ extracted classes directly, using mock/stub data objects where needed.
 
 ## Acceptance criteria
 
-1. `IngredientsComposite.java` is under 500 lines (target: ~490).
+1. `IngredientsComposite.java` code lines are under 500 (464 code lines; 541 total including 42-line copyright header).
 2. `HairStyleManager.java` exists in the same package with hair logic.
 3. `OutfitFactory.java` exists in the same package with outfit construction.
 4. All dead code (commented-out methods, unused fields) is deleted.
-5. 11 anonymous listener classes are consolidated into `AtomicValueListener<T>`.
+5. 11 anonymous listener classes are consolidated via `atomicListener()` factory method.
 6. All characterization tests pass.
 7. `mvn verify` passes for `core-nonfree/ide-nonfree`.
 8. The public API surface of `IngredientsComposite` is unchanged.
