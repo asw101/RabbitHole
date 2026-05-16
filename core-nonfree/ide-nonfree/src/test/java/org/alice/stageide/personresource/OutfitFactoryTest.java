@@ -224,6 +224,32 @@ public class OutfitFactoryTest {
   }
 
   @Test
+  public void getOutfit_toddler_alwaysReturnsFullBody() {
+    FullBodyOutfit fullbody = MaleAdultFullBodyOutfitGardener.MALEOUTFIT;
+
+    // Even when topAndBottom tab is active, TODDLER must use fullbody
+    Outfit result = OutfitFactory.getOutfit(
+        LifeStage.TODDLER, Gender.MALE,
+        fullbody, null, null,
+        true,  // topsAndBottomsAvailable
+        true   // lastActiveIsTopAndBottom
+    );
+
+    assertSame("TODDLER should always return fullbody outfit", fullbody, result);
+  }
+
+  @Test
+  public void getOutfit_toddler_returnsNull_whenNoFullBody() {
+    Outfit result = OutfitFactory.getOutfit(
+        LifeStage.TODDLER, Gender.MALE,
+        null, null, null,
+        true, true
+    );
+
+    assertNull("TODDLER with no fullbody should return null", result);
+  }
+
+  @Test
   public void getOutfit_returnsTopAndBottom_whenFullBodyIsNull() {
     MaleAdultTopPiece top = MaleAdultTopPieceCowboyShirt.PATTERN_RED;
     MaleAdultBottomPiece bottom = MaleAdultBottomPiecePants.KHAKI_SLACKS_BROWN;

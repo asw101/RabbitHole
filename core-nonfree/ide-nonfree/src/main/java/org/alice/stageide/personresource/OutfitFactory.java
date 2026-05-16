@@ -95,6 +95,10 @@ class OutfitFactory {
   static Outfit getOutfit(LifeStage lifeStage, Gender gender,
                           FullBodyOutfit fullbody, TopPiece top, BottomPiece bottom,
                           boolean topsAndBottomsAvailable, boolean lastActiveIsTopAndBottom) {
+    // TODDLER has no top-and-bottom option; always use fullbody
+    if (lifeStage == LifeStage.TODDLER) {
+      return fullbody;
+    }
     if ((!topsAndBottomsAvailable || !lastActiveIsTopAndBottom) && fullbody != null) {
       return fullbody;
     }
