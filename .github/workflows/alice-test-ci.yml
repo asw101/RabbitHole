@@ -15,7 +15,11 @@ concurrency:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Check out source
         uses: actions/checkout@v4
@@ -160,7 +164,7 @@ jobs:
 
       - name: Run no-Sims test baseline
         if: github.event_name != 'pull_request' || steps.change-scope.outputs.maven-required == 'true'
-        run: mvn -DincludeSims=false -Dinstall4j.skip -Dcheckstyle.skip clean test
+        run: mvn -DincludeSims=false -Dinstall4j.skip -Dcheckstyle.skip -Djava.awt.headless=true clean test
 
       - name: Report Maven validation no-op
         if: github.event_name == 'pull_request' && steps.change-scope.outputs.maven-required == 'false'
