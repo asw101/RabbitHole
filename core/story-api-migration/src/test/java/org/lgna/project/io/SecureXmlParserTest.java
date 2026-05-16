@@ -218,6 +218,14 @@ public class SecureXmlParserTest {
         SecureXmlParser.isAllowedResourcePackage("org.lgna.story.resources.prop.BoxResource"));
     assertTrue("Allowlist should cover org.lgna.project.",
         SecureXmlParser.isAllowedResourcePackage("org.lgna.project.SomeResource"));
+    // org.alice.* coverage — regression from PR #718 allowlist being too restrictive
+    assertTrue("Allowlist should cover org.alice.",
+        SecureXmlParser.isAllowedResourcePackage("org.alice.ide.SomeResource"));
+    assertTrue("Allowlist should cover org.alice deep subpackages",
+        SecureXmlParser.isAllowedResourcePackage("org.alice.storyeditor.resources.SomeResource"));
+    // Trailing-dot protection: org.alicefoo.* must NOT match
+    assertFalse("Trailing dot must prevent org.alicefoo matching",
+        SecureXmlParser.isAllowedResourcePackage("org.alicefoo.Evil"));
     assertFalse("Allowlist should reject java.lang",
         SecureXmlParser.isAllowedResourcePackage("java.lang.Runtime"));
     assertFalse("Allowlist should reject com.evil",
