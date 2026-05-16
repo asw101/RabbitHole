@@ -44,10 +44,14 @@
 package org.alice.stageide.personresource;
 
 import edu.cmu.cs.dennisc.java.util.Lists;
+import edu.cmu.cs.dennisc.java.util.logging.Logger;
 import org.alice.stageide.personresource.data.HairColorName;
 import org.alice.stageide.personresource.data.HairColorNameHairCombo;
 import org.alice.stageide.personresource.data.HairHatStyle;
+import org.alice.stageide.personresource.data.HairHatStyleHairColorName;
+import org.lgna.story.resources.sims2.Gender;
 import org.lgna.story.resources.sims2.Hair;
+import org.lgna.story.resources.sims2.LifeStage;
 
 import java.util.List;
 
@@ -96,6 +100,26 @@ class HairStyleManager {
         this.hairColorNames.remove(index);
       }
       this.hairColorNames.addFirst(hairColorName);
+    }
+  }
+
+  /**
+   * Applies a resolved hair style + color to the given hair tab, updating
+   * list data, view, and state objects.
+   */
+  public void applyHairStyle(HairTabComposite hairTab, LifeStage lifeStage, Gender gender, HairHatStyleHairColorName hairHatStyleHairColorName) {
+    if (hairHatStyleHairColorName != null) {
+      HairHatStyle hairHatStyle = hairHatStyleHairColorName.getHairHatStyle();
+      HairColorName hairColorName = hairHatStyleHairColorName.getHairColorName();
+
+      hairTab.getHairHatStyleListData().setLifeStageAndGender(lifeStage, gender);
+      hairTab.getHairColorNameData().setHairHatStyle(hairHatStyle);
+      hairTab.getView().repaint();
+
+      hairTab.getHairHatStyleState().setValueTransactionlessly(hairHatStyle);
+      hairTab.getHairColorNameState().setValueTransactionlessly(hairColorName);
+    } else {
+      Logger.severe();
     }
   }
 }

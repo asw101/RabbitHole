@@ -182,63 +182,48 @@ public class IngredientsComposite extends SimpleComposite<IngredientsView> {
   public Operation getRandomize() {
     return this.randomize;
   }
-
   public ImmutableDataSingleSelectListState<LifeStage> getLifeStageState() {
     return this.lifeStageState;
   }
-
   public ImmutableDataSingleSelectListState<Gender> getGenderState() {
     return this.genderState;
   }
-
   public ImmutableDataSingleSelectListState<BaseFace> getBaseFaceState() {
     return this.faceTab.getBaseFaceState();
   }
-
   public SkinColorState getSkinColorState() {
     return this.skinColorState;
   }
-
   public RefreshableDataSingleSelectListState<HairHatStyle> getHairHatStyleState() {
     return this.hairTab.getHairHatStyleState();
   }
-
   public RefreshableDataSingleSelectListState<HairColorName> getHairColorNameState() {
     return this.hairTab.getHairColorNameState();
   }
-
   public ImmutableDataSingleSelectListState<BaseEyeColor> getBaseEyeColorState() {
     return this.faceTab.getBaseEyeColorState();
   }
-
   public RefreshableDataSingleSelectListState<FullBodyOutfit> getFullBodyOutfitState() {
     return this.bodyTab.getFullBodyOutfitState();
   }
-
   public RefreshableDataSingleSelectListState<TopPiece> getTopPieceState() {
     return this.topAndBottomTab.getTopPieceState();
   }
-
   public RefreshableDataSingleSelectListState<BottomPiece> getBottomPieceState() {
     return this.topAndBottomTab.getBottomPieceState();
   }
-
   public BoundedDoubleState getObesityLevelState() {
     return this.obesityLevelState;
   }
-
   public ImmutableDataTabState<SimpleTabComposite<?>> getBodyHeadHairTabState() {
     return this.bodyHeadHairTabState;
   }
-
   public FullBodyOutfitTabComposite getBodyTab() {
     return this.bodyTab;
   }
-
   public HairTabComposite getHairTab() {
     return this.hairTab;
   }
-
   public FaceTabComposite getFaceTab() {
     return this.faceTab;
   }
@@ -321,18 +306,6 @@ public class IngredientsComposite extends SimpleComposite<IngredientsView> {
     super.handlePostDeactivation();
   }
 
-  private static LifeStage getLifeStage(PersonResource personResource) {
-    return personResource != null ? personResource.getLifeStage() : null;
-  }
-
-  private static Gender getGender(PersonResource personResource) {
-    return personResource != null ? personResource.getGender() : null;
-  }
-
-  private static Hair getHair(PersonResource personResource) {
-    return personResource != null ? personResource.getHair() : null;
-  }
-
   private PersonResource prevPersonResource;
   private int atomicCount = 0;
 
@@ -366,19 +339,7 @@ public class IngredientsComposite extends SimpleComposite<IngredientsView> {
   }
 
   private void updateHairHatStyleHairColorName(LifeStage lifeStage, Gender gender, HairHatStyleHairColorName hairHatStyleHairColorName) {
-    if (hairHatStyleHairColorName != null) {
-      HairHatStyle hairHatStyle = hairHatStyleHairColorName.getHairHatStyle();
-      HairColorName hairColorName = hairHatStyleHairColorName.getHairColorName();
-
-      this.getHairTab().getHairHatStyleListData().setLifeStageAndGender(lifeStage, gender);
-      this.getHairTab().getHairColorNameData().setHairHatStyle(hairHatStyle);
-      this.getHairTab().getView().repaint();
-
-      this.getHairHatStyleState().setValueTransactionlessly(hairHatStyle);
-      this.getHairColorNameState().setValueTransactionlessly(hairColorName);
-    } else {
-      Logger.severe();
-    }
+    this.hairStyleManager.applyHairStyle(this.hairTab, lifeStage, gender, hairHatStyleHairColorName);
   }
 
   private void updateFullBodyOutfit(LifeStage lifeStage, Gender gender, FullBodyOutfit fullBodyOutfit) {
@@ -447,9 +408,9 @@ public class IngredientsComposite extends SimpleComposite<IngredientsView> {
     if (this.atomicCount == 0) {
       this.removeListenersIfAppropriate();
       try {
-        LifeStage prevLifeStage = getLifeStage(this.prevPersonResource);
+        LifeStage prevLifeStage = this.prevPersonResource != null ? this.prevPersonResource.getLifeStage() : null;
         LifeStage nextLifeStage = this.getLifeStageState().getValue();
-        Gender prevGender = getGender(this.prevPersonResource);
+        Gender prevGender = this.prevPersonResource != null ? this.prevPersonResource.getGender() : null;
         Gender nextGender = this.getGenderState().getValue();
 
         if (prevLifeStage != nextLifeStage || prevGender != nextGender) {
@@ -465,7 +426,7 @@ public class IngredientsComposite extends SimpleComposite<IngredientsView> {
           this.updateOutfit(nextLifeStage, nextGender, null);
         } else {
           Hair nextHair = this.getHairForHairHatStyle(this.getHairHatStyleState().getValue());
-          Hair prevHair = getHair(this.prevPersonResource);
+          Hair prevHair = this.prevPersonResource != null ? this.prevPersonResource.getHair() : null;
           if (nextHair != prevHair) {
             HairHatStyleHairColorName hairHatStyleHairColorName = HairUtilities.getHairHatStyleColorNameFromHair(nextLifeStage, nextGender, nextHair);
             this.updateHairHatStyleHairColorName(nextLifeStage, nextGender, hairHatStyleHairColorName);
