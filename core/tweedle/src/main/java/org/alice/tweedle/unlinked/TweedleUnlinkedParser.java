@@ -12,7 +12,14 @@ import java.util.Map;
 
 import static java.util.stream.Collectors.toList;
 
+import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.toMap;
+
 public class TweedleUnlinkedParser {
+
+  private static final Map<String, TweedlePrimitiveType> PRIMITIVE_TYPE_MAP =
+      java.util.Arrays.stream(TweedleTypes.PRIMITIVE_TYPES)
+          .collect(toMap(TweedlePrimitiveType::getName, identity()));
 
   public TweedleType parseType(String sourceForType) {
     return new TypeVisitor().visit(tweedleParserForSource(sourceForType).typeDeclaration());
@@ -27,7 +34,7 @@ public class TweedleUnlinkedParser {
   }
 
   private TweedleParser tweedleParserForSource(String source) {
-    CharStream charStream = new ANTLRInputStream(source);
+    CharStream charStream = CharStreams.fromString(source);
     TweedleLexer lexer = new TweedleLexer(charStream);
     TokenStream tokens = new CommonTokenStream(lexer);
     return new TweedleParser(tokens);
@@ -72,7 +79,6 @@ public class TweedleUnlinkedParser {
         Map<String, TweedleExpression> arguments = null;
         if (enumConst.arguments() != null) {
           arguments = visitLabeledArguments(enumConst.arguments().labeledExpressionList());
-          //TweedleMethod method = new TweedleMethod(name, null, )
         }
         TweedleEnumValue value = new TweedleEnumValue(null, name, arguments);
         values.put(name, value);
@@ -186,7 +192,7 @@ public class TweedleUnlinkedParser {
   }
 
   List<TweedleExpression> visitUnlabeledArguments(TweedleParser.UnlabeledExpressionListContext listContext, ExpressionVisitor expressionVisitor) {
-    return listContext == null ? new ArrayList<>() : listContext.expression().stream().map(a -> a.accept(expressionVisitor)).collect(toList());
+    return listContext == null ? Collections.emptyList() : listContext.expression().stream().map(a -> a.accept(expressionVisitor)).collect(toList());
   }
 
   TweedleType getTypeOrVoid(TweedleParser.TypeTypeOrVoidContext context) {
@@ -209,12 +215,7 @@ public class TweedleUnlinkedParser {
   }
 
   TweedlePrimitiveType getPrimitiveType(String typeName) {
-    for (TweedlePrimitiveType prim : TweedleTypes.PRIMITIVE_TYPES) {
-      if (prim.getName().equals(typeName)) {
-        return prim;
-      }
-    }
-    return null;
+    return PRIMITIVE_TYPE_MAP.get(typeName);
   }
 
 }

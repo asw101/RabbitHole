@@ -2,6 +2,8 @@ package org.alice.tweedle.unlinked;
 
 import org.alice.tweedle.*;
 import org.alice.tweedle.ast.*;
+import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.tree.TerminalNode;
 
 import java.util.List;
 import java.util.Map;
@@ -45,13 +47,13 @@ class ExpressionVisitor extends TweedleParserBaseVisitor<TweedleExpression> {
 
   @Override
   public TweedleExpression visitLiteral(TweedleParser.LiteralContext context) {
-    org.antlr.v4.runtime.tree.TerminalNode wholeNumber = context.DECIMAL_LITERAL();
+    TerminalNode wholeNumber = context.DECIMAL_LITERAL();
     if (wholeNumber != null) {
       int value = Integer.parseInt(wholeNumber.getSymbol().getText());
       return TweedleTypes.WHOLE_NUMBER.createValue(value);
     }
 
-    org.antlr.v4.runtime.tree.TerminalNode flt = context.FLOAT_LITERAL();
+    TerminalNode flt = context.FLOAT_LITERAL();
     if (flt != null) {
       double value = Double.parseDouble(flt.getSymbol().getText());
       return TweedleTypes.DECIMAL_NUMBER.createValue(value);
@@ -61,13 +63,13 @@ class ExpressionVisitor extends TweedleParserBaseVisitor<TweedleExpression> {
       return TweedleNull.NULL;
     }
 
-    org.antlr.v4.runtime.tree.TerminalNode bool = context.BOOL_LITERAL();
+    TerminalNode bool = context.BOOL_LITERAL();
     if (bool != null) {
       boolean value = Boolean.parseBoolean(bool.getSymbol().getText());
       return TweedleTypes.BOOLEAN.createValue(value);
     }
 
-    org.antlr.v4.runtime.tree.TerminalNode str = context.STRING_LITERAL();
+    TerminalNode str = context.STRING_LITERAL();
     if (str != null) {
       final String quotedString = str.getSymbol().getText();
       return TweedleTypes.TEXT_STRING.createValue(quotedString.substring(1, quotedString.length() - 1));
@@ -98,8 +100,8 @@ class ExpressionVisitor extends TweedleParserBaseVisitor<TweedleExpression> {
   }
 
   private TweedleExpression buildExpression(TweedleParser.ExpressionContext context) {
-    org.antlr.v4.runtime.Token prefix = context.prefix;
-    org.antlr.v4.runtime.Token operation = context.bop;
+    Token prefix = context.prefix;
+    Token operation = context.bop;
 
     if (prefix != null) {
       switch (prefix.getText()) {
