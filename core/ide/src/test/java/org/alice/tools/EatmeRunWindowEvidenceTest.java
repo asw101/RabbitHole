@@ -23,7 +23,7 @@ public class EatmeRunWindowEvidenceTest {
 
     Path artifact = EatmeRunWindowEvidence.writeRunWindowCreated(evidenceDir, "Run \"Alice\"", "Program\nType");
 
-    assertEquals(evidenceDir.resolve("run-window-created.json"), artifact);
+    assertEquals(evidenceDir.resolve("run-window-created.json").toRealPath(), artifact.toRealPath());
     assertTrue(Files.size(artifact) > 0);
     String json = Files.readString(artifact);
     assertTrue(json, json.contains("\"schema_version\": \"eatme.alice-run-window-created/v1\""));

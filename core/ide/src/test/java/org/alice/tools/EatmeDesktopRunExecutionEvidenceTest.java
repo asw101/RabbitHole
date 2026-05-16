@@ -43,7 +43,7 @@ public class EatmeDesktopRunExecutionEvidenceTest {
         "executed:Comment",
         List.of("listener-installed", "set-active-scene-invoked", "executing:Comment", "executed:Comment"));
 
-    assertEquals(evidenceDir.resolve("desktop-run-execution.json"), artifact);
+    assertEquals(evidenceDir.resolve("desktop-run-execution.json").toRealPath(), artifact.toRealPath());
     assertTrue(Files.size(artifact) > 0);
     assertTrue(Files.size(evidenceDir.resolve("desktop-run-runtime.log")) > 0);
     String json = Files.readString(artifact);

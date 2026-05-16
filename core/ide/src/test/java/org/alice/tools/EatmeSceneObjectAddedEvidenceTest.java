@@ -25,7 +25,7 @@ public class EatmeSceneObjectAddedEvidenceTest {
 
     Path artifact = EatmeSceneObjectAddedEvidence.writeObjectAdded(evidenceDir, "SBiped", 5);
 
-    assertEquals(evidenceDir.resolve("scene-object-added.json"), artifact);
+    assertEquals(evidenceDir.resolve("scene-object-added.json").toRealPath(), artifact.toRealPath());
     assertTrue(Files.size(artifact) > 0);
     String json = Files.readString(artifact);
     assertTrue(json, json.contains("\"schema_version\": \"eatme.alice-scene-object-added/v1\""));
