@@ -2,7 +2,7 @@
 
 This reference documents the extraction of hair style resolution and outfit
 construction logic from `IngredientsComposite` into two new package-private
-delegate classes (issue #723). The extraction also removes ~125 lines of dead
+delegate classes (issue #723). The extraction also removes ~100 lines of dead
 code (commented-out methods, unused fields) and consolidates 11 boilerplate
 `State.ValueListener` anonymous classes into a generic helper.
 
@@ -40,7 +40,7 @@ and obesity. Three distinct concerns are interleaved:
 | --- | --- | --- |
 | Hair color priority tracking and resolution | ~80 | `addHairColorNameToFront()`, `getHairForHairHatStyle()`, `updateHairHatStyleHairColorName()`, hair-related logic in `popAtomic()` |
 | Outfit construction from life stage + gender | ~86 | `getOutfit()`, `updateOutfit()`, `updateFullBodyOutfit()`, `updateTopAndBottomOutfit()` |
-| Dead code (commented-out methods, unused fields) | ~125 | Lines 466–540 (two commented-out methods), lines 677–699 (commented-out block in `popAtomic()`), lines 778–779 (commented-out calls in `setStates()`), unused `FORCE_GRAY_SKIN_TONE` field |
+| Dead code (commented-out methods, unused fields) | ~100 | Lines 466–540 (two commented-out methods), lines 677–699 (commented-out block in `popAtomic()`), lines 778–779 (commented-out calls in `setStates()`), unused `FORCE_GRAY_SKIN_TONE` field |
 
 After extraction and dead code removal, `IngredientsComposite.java` drops
 from 789 to ~490 lines — under the 500-line target. The public API surface
@@ -233,7 +233,7 @@ static Outfit createTopAndBottomOutfit(LifeStage lifeStage, Gender gender,
 ## Public API
 
 The public API is exclusively on `IngredientsComposite`. No API changes are
-made by this extraction. All 19 public methods remain on `IngredientsComposite`
+made by this extraction. All 22 public methods remain on `IngredientsComposite`
 with identical signatures:
 
 | Method | Signature |
@@ -488,7 +488,7 @@ Three test files are added before extraction to characterize existing behavior:
 
 | Test | What it verifies |
 | --- | --- |
-| `publicMethodSignaturesAreStable` | Reflection-based check that all 19+ public methods exist with expected parameter types and return types. Fails if a method is accidentally removed or signature-changed during refactoring. |
+| `publicMethodSignaturesAreStable` | Reflection-based check that all 22 public methods exist with expected parameter types and return types. Fails if a method is accidentally removed or signature-changed during refactoring. |
 
 All tests run without a Croquet context or Alice IDE runtime. They test
 extracted classes directly, using mock/stub data objects where needed.
