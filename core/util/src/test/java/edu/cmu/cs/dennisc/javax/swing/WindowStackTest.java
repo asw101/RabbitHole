@@ -42,41 +42,64 @@
  *******************************************************************************/
 package edu.cmu.cs.dennisc.javax.swing;
 
-import edu.cmu.cs.dennisc.java.util.DStack;
-import edu.cmu.cs.dennisc.java.util.Stacks;
+import org.junit.Test;
 
-import javax.swing.JFrame;
 import java.awt.GraphicsEnvironment;
-import java.awt.Window;
+
+import static org.junit.Assert.*;
 
 /**
- * @author Dennis Cosgrove
+ * TDD tests for WindowStack headless guard.
+ *
+ * <p>Before the fix, {@code WindowStack} eagerly creates a {@code new JFrame()}
+ * in a static initializer, which throws {@code HeadlessException} in headless
+ * CI environments (macOS runners). After the fix, {@code getRootFrame()} returns
+ * {@code null} when {@code GraphicsEnvironment.isHeadless()} is true.
+ *
+ * <p>In headless mode, the current (unfixed) code causes an
+ * {@code ExceptionInInitializerError}/{@code HeadlessException} when this test
+ * class loads WindowStack — that's the expected TDD failure.
  */
-public class WindowStack {
-  private WindowStack() {
-    throw new AssertionError();
+public class WindowStackTest {
+
+  @Test
+  public void getRootFrame_returnsNullInHeadless() {
+    if (GraphicsEnvironment.isHeadless()) {
+      // In headless environments, getRootFrame() must return null
+      // instead of crashing with HeadlessException during class init.
+      assertNull("getRootFrame() should return null in headless environments",
+          WindowStack.getRootFrame());
+    }
+    // In headed environments this test is a no-op — the headed assertion
+    // is covered by getRootFrame_returnsJFrameInHeaded.
   }
 
-  private static final JFrame rootFrame = GraphicsEnvironment.isHeadless() ? null : new JFrame();
-  private static final DStack<Window> stack = Stacks.newStack();
-
-  public static JFrame getRootFrame() {
-    return rootFrame;
-  }
-
-  public static void push(Window window) {
-    stack.push(window);
-  }
-
-  public static Window peek() {
-    if (stack.size() > 0) {
-      return stack.peek();
-    } else {
-      return rootFrame;
+  @Test
+  public void getRootFrame_returnsJFrameInHeaded() {
+    if (!GraphicsEnvironment.isHeadless()) {
+      assertNotNull("getRootFrame() should return a JFrame in headed environments",
+          WindowStack.getRootFrame());
     }
   }
 
-  public static Window pop() {
-    return stack.pop();
+  @Test
+  public void peek_returnsNullWhenStackEmptyInHeadless() {
+    if (GraphicsEnvironment.isHeadless()) {
+      // peek() falls back to rootFrame when stack is empty.
+      // In headless mode, rootFrame is null so peek() should return null.
+      assertNull("peek() should return null when stack is empty in headless",
+          WindowStack.peek());
+    }
+  }
+
+  @Test
+  public void peek_returnsRootFrameWhenStackEmptyInHeaded() {
+    if (!GraphicsEnvironment.isHeadless()) {
+      // In headed mode, peek() should return the rootFrame when stack is empty.
+      assertNotNull("peek() should return rootFrame when stack is empty",
+          WindowStack.peek());
+      assertSame("peek() should return getRootFrame() when stack is empty",
+          WindowStack.getRootFrame(), WindowStack.peek());
+    }
   }
 }

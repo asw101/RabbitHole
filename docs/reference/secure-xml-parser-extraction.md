@@ -342,3 +342,4 @@ Adjacent claims are owned by their own documents:
 | Project migration manager characterization | [Project Migration Manager Characterization](./project-migration-manager-characterization.md) |
 | Project backup and recovery | [Project Backup Recovery IO](./project-backup-recovery-io.md) |
 | Save/export operations | [Project Save Export Operations](./project-save-export-operations.md) |
+| Allowlist regression hotfix and headless guard | [SecureXmlParser Allowlist and Headless Guard](./securexmlparser-allowlist-headless-guard.md) |

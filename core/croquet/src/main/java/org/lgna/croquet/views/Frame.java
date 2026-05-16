@@ -73,7 +73,12 @@ public final class Frame extends AbstractWindow<JFrame> {
     }
   }
 
-  private static final Frame applicationRootFrame = new Frame(WindowStack.getRootFrame());
+  private static final Frame applicationRootFrame = createApplicationRootFrame();
+
+  private static Frame createApplicationRootFrame() {
+    JFrame rootFrame = WindowStack.getRootFrame();
+    return rootFrame != null ? new Frame(rootFrame) : null;
+  }
 
   public static Frame getApplicationRootFrame() {
     return applicationRootFrame;

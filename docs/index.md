@@ -71,6 +71,8 @@ repository.
 - [Tutorial: Add a ProjectMigrationManager Migration Characterization](./tutorials/project-migration-manager-characterization.md) - A guided example for protecting ordered text migration behavior without binary fixtures.
 - [Characterize ProjectMigrationManager migrations](./howto/characterize-project-migration-manager.md) - How to add or review generated XML-string characterization for protected migration hotspots.
 - [Tutorial: Trace Source-Code-Generator Characterization](./tutorials/trace-source-code-generator-characterization.md) - Guided review from core AST snippets to generated NetBeans source, Story API listener seams, launcher evidence, and bounded non-claims.
+- [SecureXmlParser Allowlist and Headless Guard](./reference/securexmlparser-allowlist-headless-guard.md) - Reference for the allowlist regression hotfix (issue #664): adds `org.alice.` to `ALLOWED_RESOURCE_PACKAGES` and guards WindowStack/Frame static initializers for headless CI environments.
+- [Validate SecureXmlParser Allowlist and Headless Guard](./howto/validate-securexmlparser-allowlist-headless-guard.md) - How to verify the allowlist expansion, headless guard, and previously-failing integration tests after checkout or merge.
 
 ## Issue-reporting characterization
 
