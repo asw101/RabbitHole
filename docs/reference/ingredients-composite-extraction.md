@@ -73,11 +73,11 @@ Both classes are package-private and live in
 
 | File | Role | Approx lines |
 | --- | --- | --- |
-| `IngredientsComposite.java` | Parent class — state fields, listener management, activation lifecycle, thin delegation stubs. | ~541 (464 code lines) |
-| `HairStyleManager.java` | Hair color priority tracking, hair-for-style resolution. | ~101 |
-| `OutfitFactory.java` | Stateless outfit construction from life stage + gender + selected pieces. | ~103 |
+| `IngredientsComposite.java` | Parent class — state fields, listener management, activation lifecycle, thin delegation stubs. | ~497 |
+| `HairStyleManager.java` | Hair color priority tracking, hair-for-style resolution. | ~125 |
+| `OutfitFactory.java` | Stateless outfit construction from life stage + gender + selected pieces. | ~107 |
 | `HairStyleManagerTest.java` | Characterization tests for `HairStyleManager`. | ~270 |
-| `OutfitFactoryTest.java` | Characterization tests for `OutfitFactory`. | ~242 |
+| `OutfitFactoryTest.java` | Characterization tests for `OutfitFactory`. | ~268 |
 | `IngredientsCompositeApiSurfaceTest.java` | Reflection-based API surface guard — ensures public method signatures are not accidentally changed. | ~177 |
 
 All production source files reside in:
@@ -102,7 +102,7 @@ core-nonfree/ide-nonfree/src/test/java/org/alice/stageide/personresource/
 | Visibility | Package-private (no access modifier) |
 | Constructor | `HairStyleManager()` |
 | Lifecycle | Stored as `hairStyleManager` field on `IngredientsComposite` |
-| Approximate lines | ~110 |
+| Approximate lines | ~125 |
 
 This class owns the hair color priority list and all methods that resolve
 which `Hair` enum constant to use for a given `HairHatStyle`. Previously,
@@ -144,7 +144,7 @@ public Hair getHairForHairHatStyle(HairHatStyle hairHatStyle) {
 | Visibility | Package-private (no access modifier) |
 | Constructor | None (utility class — private constructor) |
 | Lifecycle | Stateless — all methods are static |
-| Approximate lines | ~100 |
+| Approximate lines | ~107 |
 
 This class owns the outfit construction switch expression that maps
 `(LifeStage, Gender, TopPiece, BottomPiece)` to the correct
@@ -436,7 +436,7 @@ grep -cE '^\s*[^/\s*]' core-nonfree/ide-nonfree/src/main/java/org/alice/stageide
 
 Three test files are added before extraction to characterize existing behavior:
 
-### HairStyleManager tests (`IngredientsCompositeTest.java`)
+### HairStyleManager tests (`HairStyleManagerTest.java`)
 
 | Test | What it verifies |
 | --- | --- |
@@ -447,7 +447,7 @@ Three test files are added before extraction to characterize existing behavior:
 | `addHairColorNameToFront_addsNewToFront` | A new color is inserted at position 0 |
 | `getHairForHairHatStyle_isThreadSafe` | Concurrent add + resolve calls do not throw or deadlock |
 
-### OutfitFactory tests (`IngredientsCompositeTest.java`)
+### OutfitFactory tests (`OutfitFactoryTest.java`)
 
 | Test | What it verifies |
 | --- | --- |
@@ -471,7 +471,7 @@ extracted classes directly, using mock/stub data objects where needed.
 
 ## Acceptance criteria
 
-1. `IngredientsComposite.java` code lines are under 500 (464 code lines; 541 total including 42-line copyright header).
+1. `IngredientsComposite.java` is under 500 lines (497 total including 42-line copyright header).
 2. `HairStyleManager.java` exists in the same package with hair logic.
 3. `OutfitFactory.java` exists in the same package with outfit construction.
 4. All dead code (commented-out methods, unused fields) is deleted.
