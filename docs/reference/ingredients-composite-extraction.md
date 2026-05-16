@@ -3,7 +3,7 @@
 This reference documents the extraction of hair style resolution and outfit
 construction logic from `IngredientsComposite` into two new package-private
 delegate classes (issue #723). The extraction also removes ~125 lines of dead
-code (commented-out methods, unused fields) and consolidates 10 boilerplate
+code (commented-out methods, unused fields) and consolidates 11 boilerplate
 `State.ValueListener` anonymous classes into a generic helper.
 
 The extraction is a pure internal refactor. The public API surface —
@@ -168,6 +168,13 @@ no Croquet context required for the switch expression logic.
 
 The switch expression for `createTopAndBottomOutfit`:
 
+> **Note:** The original `getOutfit()` returns `fullbody` for TODDLER as a
+> defensive fallback. In the extracted design, `createTopAndBottomOutfit`
+> returns `null` for TODDLER because `getOutfit()` handles the fallback to
+> full-body outfit before calling the switch. The guard clause
+> `if (!topsAndBottomsAvailable ... && fullbody != null) return fullbody`
+> prevents TODDLER from reaching the switch in practice.
+
 ```java
 static Outfit createTopAndBottomOutfit(LifeStage lifeStage, Gender gender,
     TopPiece top, BottomPiece bottom) {
@@ -218,7 +225,7 @@ static Outfit createTopAndBottomOutfit(LifeStage lifeStage, Gender gender,
 | Lines 466–540 deleted | Two commented-out methods (`updateHairColorName`, `updateHair`) — dead code |
 | Lines 677–699 deleted | Commented-out block in `popAtomic()` — dead code |
 | Lines 778–779 deleted | Commented-out calls in `setStates()` — dead code |
-| 10 anonymous listener classes replaced | Consolidated into `AtomicValueListener<T>` generic inner class |
+| 11 anonymous listener classes replaced | Consolidated into `AtomicValueListener<T>` generic inner class (with `beforePop` and `afterPop` consumer slots) |
 | `popAtomic()` hair logic | Delegates to `hairStyleManager.handleLifeStageOrGenderChange()` and `hairStyleManager.handleHairChange()` |
 | `setStates()` hair logic | Delegates to `hairStyleManager.addHairColorNameToFront()` and `hairStyleManager.updateHairHatStyleHairColorName()` |
 | `createResourceFromStates()` outfit call | Delegates to `OutfitFactory.getOutfit()` |
@@ -327,7 +334,7 @@ line count is ~490.
 
 ## Listener consolidation
 
-The original file contains 10 nearly-identical `State.ValueListener<T>`
+The original file contains 11 nearly-identical `State.ValueListener<T>`
 anonymous classes (lines 92–215). Each follows the same pattern:
 
 ```java
@@ -344,27 +351,37 @@ private final State.ValueListener<SomeType> someListener = new State.ValueListen
 };
 ```
 
-Seven of the ten listeners are pure push/pop-atomic with no extra logic.
-Three have additional behavior in `changed()`:
+Eight of the eleven listeners are pure push/pop-atomic with no extra logic.
+Three have additional behavior in `changed()`, but with **different ordering**
+relative to `popAtomic()`:
 
-| Listener | Extra `changed()` behavior |
-| --- | --- |
-| `lifeStageListener` | `updateCameraPointOfView()` |
-| `skinColorListener` | `handleSkinColorChange(nextValue)` |
-| `hairColorNameListener` | `hairStyleManager.addHairColorNameToFront(nextValue)` |
+| Listener | Extra `changed()` behavior | Order |
+| --- | --- | --- |
+| `hairColorNameListener` | `addHairColorNameToFront(nextValue)` | **Before** `popAtomic()` |
+| `lifeStageListener` | `updateCameraPointOfView()` | **After** `popAtomic()` |
+| `skinColorListener` | `handleSkinColorChange(nextValue)` | **After** `popAtomic()` |
 
-These are consolidated into a generic `AtomicValueListener<T>` inner class:
+**⚠ Ordering matters.** `popAtomic()` can trigger `syncPersonImpAndMaps()`
+when `atomicCount` reaches 0. Running extra logic before vs after the pop
+is semantically different. The generic `AtomicValueListener<T>` must support
+both orderings.
+
+These are consolidated into a generic `AtomicValueListener<T>` inner class
+with separate `beforePop` and `afterPop` consumer slots:
 
 ```java
 private class AtomicValueListener<T> implements State.ValueListener<T> {
-  private final java.util.function.Consumer<T> onChanged;
+  private final java.util.function.Consumer<T> beforePop;
+  private final java.util.function.Consumer<T> afterPop;
 
   AtomicValueListener() {
-    this(null);
+    this(null, null);
   }
 
-  AtomicValueListener(java.util.function.Consumer<T> onChanged) {
-    this.onChanged = onChanged;
+  AtomicValueListener(java.util.function.Consumer<T> beforePop,
+      java.util.function.Consumer<T> afterPop) {
+    this.beforePop = beforePop;
+    this.afterPop = afterPop;
   }
 
   @Override
@@ -374,10 +391,13 @@ private class AtomicValueListener<T> implements State.ValueListener<T> {
 
   @Override
   public void changed(State<T> state, T prevValue, T nextValue) {
-    if (onChanged != null) {
-      onChanged.accept(nextValue);
+    if (beforePop != null) {
+      beforePop.accept(nextValue);
     }
     popAtomic();
+    if (afterPop != null) {
+      afterPop.accept(nextValue);
+    }
   }
 }
 ```
@@ -385,24 +405,26 @@ private class AtomicValueListener<T> implements State.ValueListener<T> {
 Usage:
 
 ```java
-// Pure push/pop listener (7 instances):
+// Pure push/pop listener (8 instances):
 private final AtomicValueListener<Gender> genderListener = new AtomicValueListener<>();
 
-// Listener with extra behavior (3 instances):
-private final AtomicValueListener<LifeStage> lifeStageListener =
-    new AtomicValueListener<>(v -> updateCameraPointOfView());
-private final AtomicValueListener<java.awt.Color> skinColorListener =
-    new AtomicValueListener<>(this::handleSkinColorChange);
+// Listener with before-pop behavior (1 instance):
 private final AtomicValueListener<HairColorName> hairColorNameListener =
-    new AtomicValueListener<>(hairStyleManager::addHairColorNameToFront);
+    new AtomicValueListener<>(hairStyleManager::addHairColorNameToFront, null);
+
+// Listeners with after-pop behavior (2 instances):
+private final AtomicValueListener<LifeStage> lifeStageListener =
+    new AtomicValueListener<>(null, v -> updateCameraPointOfView());
+private final AtomicValueListener<java.awt.Color> skinColorListener =
+    new AtomicValueListener<>(null, this::handleSkinColorChange);
 ```
 
 The `tabListener` (line 217) is a `ValueListener<SimpleTabComposite<?>>`,
 not a `State.ValueListener<T>`. It is excluded from this consolidation and
 remains as-is.
 
-**Line savings:** 10 anonymous classes (~120 lines) → 1 inner class + 10
-one-liner field declarations (~30 lines) = ~90 lines saved.
+**Line savings:** 11 anonymous classes (~121 lines) → 1 inner class + 11
+one-liner field declarations (~30 lines) = ~91 lines saved.
 
 ## Visibility changes
 
@@ -477,7 +499,7 @@ extracted classes directly, using mock/stub data objects where needed.
 2. `HairStyleManager.java` exists in the same package with hair logic.
 3. `OutfitFactory.java` exists in the same package with outfit construction.
 4. All dead code (commented-out methods, unused fields) is deleted.
-5. 10 anonymous listener classes are consolidated into `AtomicValueListener<T>`.
+5. 11 anonymous listener classes are consolidated into `AtomicValueListener<T>`.
 6. All characterization tests pass.
 7. `mvn verify` passes for `core-nonfree/ide-nonfree`.
 8. The public API surface of `IngredientsComposite` is unchanged.
