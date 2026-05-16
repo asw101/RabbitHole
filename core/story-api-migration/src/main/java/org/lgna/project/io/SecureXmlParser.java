@@ -79,7 +79,8 @@ class SecureXmlParser {
       "org.lgna.common.",
       "org.lgna.common.resources.",
       "org.lgna.story.resources.",
-      "org.lgna.project."
+      "org.lgna.project.",
+      "org.alice."
   );
 
   private SecureXmlParser() {

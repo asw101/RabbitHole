@@ -56,8 +56,15 @@ public class WindowStack {
     throw new AssertionError();
   }
 
-  private static final JFrame rootFrame = new JFrame();
+  private static final JFrame rootFrame = createRootFrame();
   private static final DStack<Window> stack = Stacks.newStack();
+
+  private static JFrame createRootFrame() {
+    if (java.awt.GraphicsEnvironment.isHeadless()) {
+      return null;
+    }
+    return new JFrame();
+  }
 
   public static JFrame getRootFrame() {
     return rootFrame;
