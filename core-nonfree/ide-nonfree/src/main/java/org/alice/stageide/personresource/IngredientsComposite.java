@@ -104,8 +104,7 @@ public class IngredientsComposite extends SimpleComposite<IngredientsView> {
   private final ValueListener<SimpleTabComposite<?>> tabListener = new ValueListener<SimpleTabComposite<?>>() {
     @Override
     public void valueChanged(ValueEvent<SimpleTabComposite<?>> e) {
-      updateCameraPointOfView();
-      updateLastActiveOutfitTab();
+      handleTabChange();
     }
   };
 
@@ -141,29 +140,34 @@ public class IngredientsComposite extends SimpleComposite<IngredientsView> {
     };
   }
 
-  private void updateLastActiveOutfitTab() {
-    SimpleTabComposite nextValue = this.bodyHeadHairTabState.getValue();
-    if (nextValue == this.bodyTab) {
+  private void handleTabChange() {
+    SimpleTabComposite<?> activeTab = this.bodyHeadHairTabState.getValue();
+    updateCameraForTab(activeTab);
+
+    if (activeTab == this.bodyTab) {
       this.lastActiveOutfitTab = this.bodyTab;
       syncPersonImpAndMaps();
-    } else if (nextValue == this.topAndBottomTab) {
+    } else if (activeTab == this.topAndBottomTab) {
       this.lastActiveOutfitTab = this.topAndBottomTab;
       syncPersonImpAndMaps();
     }
   }
 
-  private void updateCameraPointOfView() {
-    SimpleTabComposite nextValue = this.bodyHeadHairTabState.getValue();
+  private void updateCameraForTab(SimpleTabComposite<?> activeTab) {
     PersonViewer personViewer = PersonResourceComposite.getInstance().getPreviewComposite().getView();
     LifeStage lifeStage = lifeStageState.getValue();
     if (lifeStage == null) {
       lifeStage = LifeStage.ADULT;
     }
-    if ((nextValue == this.bodyTab) || (nextValue == this.topAndBottomTab)) {
+    if ((activeTab == this.bodyTab) || (activeTab == this.topAndBottomTab)) {
       personViewer.setCameraToFullView(lifeStage);
     } else {
       personViewer.setCameraToCloseUp(lifeStage);
     }
+  }
+
+  private void updateCameraPointOfView() {
+    updateCameraForTab(this.bodyHeadHairTabState.getValue());
   }
 
   public Hair getHairForHairHatStyle(HairHatStyle hairHatStyle) {
@@ -445,36 +449,27 @@ public class IngredientsComposite extends SimpleComposite<IngredientsView> {
       try {
         LifeStage prevLifeStage = getLifeStage(this.prevPersonResource);
         LifeStage nextLifeStage = this.getLifeStageState().getValue();
-        boolean isLifeStageChanged = prevLifeStage != nextLifeStage;
-
-        Gender nextGender = this.getGenderState().getValue();
         Gender prevGender = getGender(this.prevPersonResource);
-        boolean isGenderChanged = prevGender != nextGender;
+        Gender nextGender = this.getGenderState().getValue();
 
-        HairHatStyle hairHatStyle = this.getHairHatStyleState().getValue();
-        Hair nextHair = this.getHairForHairHatStyle(hairHatStyle);
-
-        Hair prevHair = getHair(this.prevPersonResource);
-        boolean isHairChanged = nextHair != prevHair;
-
-        if (isLifeStageChanged || isGenderChanged) {
+        if (prevLifeStage != nextLifeStage || prevGender != nextGender) {
           this.hairTab.getHairHatStyleListData().setLifeStageAndGender(nextLifeStage, nextGender);
           this.hairTab.getHairHatStyleState().setRandomSelectedValue();
-          nextHair = this.getHairForHairHatStyle(this.hairTab.getHairHatStyleState().getValue());
+          Hair nextHair = this.getHairForHairHatStyle(this.hairTab.getHairHatStyleState().getValue());
           HairHatStyleHairColorName hairHatStyleHairColorName = HairUtilities.getHairHatStyleColorNameFromHair(nextLifeStage, nextGender, nextHair);
           if (hairHatStyleHairColorName != null) {
             this.updateHairHatStyleHairColorName(nextLifeStage, nextGender, hairHatStyleHairColorName);
           } else {
             this.hairTab.getHairColorNameState().setRandomSelectedValue();
           }
+          this.updateOutfit(nextLifeStage, nextGender, null);
         } else {
-          if (isHairChanged) {
+          Hair nextHair = this.getHairForHairHatStyle(this.getHairHatStyleState().getValue());
+          Hair prevHair = getHair(this.prevPersonResource);
+          if (nextHair != prevHair) {
             HairHatStyleHairColorName hairHatStyleHairColorName = HairUtilities.getHairHatStyleColorNameFromHair(nextLifeStage, nextGender, nextHair);
             this.updateHairHatStyleHairColorName(nextLifeStage, nextGender, hairHatStyleHairColorName);
           }
-        }
-        if (isLifeStageChanged || isGenderChanged) {
-          this.updateOutfit(nextLifeStage, nextGender, null);
         }
       } finally {
         this.addListenersIfAppropriate();
