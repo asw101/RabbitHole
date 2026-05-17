@@ -1,7 +1,5 @@
 package org.lgna.croquet;
 
-import edu.cmu.cs.dennisc.codec.BinaryDecoder;
-import edu.cmu.cs.dennisc.codec.BinaryEncoder;
 import org.lgna.croquet.data.MutableListData;
 import org.lgna.croquet.event.ValueListener;
 import org.junit.Before;
@@ -33,7 +31,7 @@ public class MultipleSelectionListStateTest {
 
   @Before
   public void setUp() {
-    data = new MutableListData<>(STRING_CODEC, new String[]{"alpha", "bravo", "charlie"});
+    data = new MutableListData<>(CroquetTestUtils.STRING_CODEC, new String[]{"alpha", "bravo", "charlie"});
     state = new TestMultipleSelectionListState(TEST_GROUP, data);
     removeListSelectionListeners(state);
   }
@@ -189,26 +187,4 @@ public class MultipleSelectionListStateTest {
       return "test";
     }
   }
-
-  private static final ItemCodec<String> STRING_CODEC = new ItemCodec<String>() {
-    @Override
-    public Class<String> getValueClass() {
-      return String.class;
-    }
-
-    @Override
-    public String decodeValue(BinaryDecoder binaryDecoder) {
-      return binaryDecoder.decodeString();
-    }
-
-    @Override
-    public void encodeValue(BinaryEncoder binaryEncoder, String value) {
-      binaryEncoder.encode(value);
-    }
-
-    @Override
-    public void appendRepresentation(StringBuilder sb, String value) {
-      sb.append(value);
-    }
-  };
 }

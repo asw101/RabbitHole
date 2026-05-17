@@ -1,5 +1,6 @@
 package org.lgna.croquet;
 
+import edu.cmu.cs.dennisc.java.awt.event.InputEventUtilities;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -58,7 +59,9 @@ public class AbstractElementTest {
     KeyStroke ks = AbstractElement.getKeyStroke("VK_S");
     assertNotNull(ks);
     assertEquals(KeyEvent.VK_S, ks.getKeyCode());
-    assertTrue(ks.getModifiers() != 0);
+    int acceleratorMask = InputEventUtilities.getAcceleratorMask();
+    assertTrue("Letter key should include platform accelerator",
+        (ks.getModifiers() & acceleratorMask) != 0);
   }
 
   @Test
@@ -74,7 +77,9 @@ public class AbstractElementTest {
     KeyStroke ks = AbstractElement.getKeyStroke("VK_Z,PLATFORM_ACCELERATOR_MASK");
     assertNotNull(ks);
     assertEquals(KeyEvent.VK_Z, ks.getKeyCode());
-    assertTrue(ks.getModifiers() != 0);
+    int acceleratorMask = InputEventUtilities.getAcceleratorMask();
+    assertTrue("PLATFORM_ACCELERATOR_MASK should resolve to platform modifier",
+        (ks.getModifiers() & acceleratorMask) != 0);
   }
 
   @Test

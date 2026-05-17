@@ -3,6 +3,7 @@ package org.lgna.croquet.views;
 import org.junit.Test;
 
 import javax.swing.Box;
+import java.awt.Dimension;
 
 import static org.junit.Assert.*;
 
@@ -13,56 +14,80 @@ import static org.junit.Assert.*;
 public class BoxUtilitiesTest {
 
   @Test
-  public void createGlue_returnsNonNull() {
+  public void createGlue_expandsBothDirections() {
     SwingComponentView<Box.Filler> glue = BoxUtilities.createGlue();
-    assertNotNull(glue);
+    Box.Filler filler = glue.getAwtComponent();
+    assertEquals(new Dimension(0, 0), filler.getMinimumSize());
+    assertEquals(new Dimension(Short.MAX_VALUE, Short.MAX_VALUE), filler.getMaximumSize());
   }
 
   @Test
-  public void createHorizontalGlue_returnsNonNull() {
+  public void createHorizontalGlue_expandsHorizontalOnly() {
     SwingComponentView<Box.Filler> glue = BoxUtilities.createHorizontalGlue();
-    assertNotNull(glue);
+    Box.Filler filler = glue.getAwtComponent();
+    assertEquals(0, filler.getMaximumSize().height);
+    assertEquals(Short.MAX_VALUE, filler.getMaximumSize().width);
   }
 
   @Test
-  public void createVerticalGlue_returnsNonNull() {
+  public void createVerticalGlue_expandsVerticalOnly() {
     SwingComponentView<Box.Filler> glue = BoxUtilities.createVerticalGlue();
-    assertNotNull(glue);
+    Box.Filler filler = glue.getAwtComponent();
+    assertEquals(0, filler.getMaximumSize().width);
+    assertEquals(Short.MAX_VALUE, filler.getMaximumSize().height);
   }
 
   @Test
-  public void createHorizontalSliver_returnsNonNull() {
+  public void createHorizontalSliver_fixedWidthZeroHeight() {
     SwingComponentView<Box.Filler> sliver = BoxUtilities.createHorizontalSliver(10);
-    assertNotNull(sliver);
+    Box.Filler filler = sliver.getAwtComponent();
+    assertEquals(10, filler.getPreferredSize().width);
+    assertEquals(0, filler.getPreferredSize().height);
+    assertEquals(10, filler.getMaximumSize().width);
   }
 
   @Test
-  public void createVerticalSliver_returnsNonNull() {
+  public void createVerticalSliver_fixedHeightZeroWidth() {
     SwingComponentView<Box.Filler> sliver = BoxUtilities.createVerticalSliver(10);
-    assertNotNull(sliver);
+    Box.Filler filler = sliver.getAwtComponent();
+    assertEquals(0, filler.getPreferredSize().width);
+    assertEquals(10, filler.getPreferredSize().height);
+    assertEquals(10, filler.getMaximumSize().height);
   }
 
   @Test
-  public void createHorizontalStrut_returnsNonNull() {
+  public void createHorizontalStrut_fixedWidthFlexibleHeight() {
     SwingComponentView<Box.Filler> strut = BoxUtilities.createHorizontalStrut(5);
-    assertNotNull(strut);
+    Box.Filler filler = strut.getAwtComponent();
+    assertEquals(5, filler.getPreferredSize().width);
+    assertEquals(5, filler.getMaximumSize().width);
+    assertEquals(Short.MAX_VALUE, filler.getMaximumSize().height);
   }
 
   @Test
-  public void createVerticalStrut_returnsNonNull() {
+  public void createVerticalStrut_fixedHeightFlexibleWidth() {
     SwingComponentView<Box.Filler> strut = BoxUtilities.createVerticalStrut(5);
-    assertNotNull(strut);
+    Box.Filler filler = strut.getAwtComponent();
+    assertEquals(5, filler.getPreferredSize().height);
+    assertEquals(5, filler.getMaximumSize().height);
+    assertEquals(Short.MAX_VALUE, filler.getMaximumSize().width);
   }
 
   @Test
-  public void createRigidArea_dimension_returnsNonNull() {
-    SwingComponentView<Box.Filler> area = BoxUtilities.createRigidArea(new java.awt.Dimension(20, 20));
-    assertNotNull(area);
+  public void createRigidArea_dimension_allSizesMatch() {
+    Dimension d = new Dimension(20, 20);
+    SwingComponentView<Box.Filler> area = BoxUtilities.createRigidArea(d);
+    Box.Filler filler = area.getAwtComponent();
+    assertEquals(d, filler.getMinimumSize());
+    assertEquals(d, filler.getPreferredSize());
+    assertEquals(d, filler.getMaximumSize());
   }
 
   @Test
-  public void createRigidArea_widthHeight_returnsNonNull() {
+  public void createRigidArea_widthHeight_delegatesToDimensionOverload() {
     SwingComponentView<Box.Filler> area = BoxUtilities.createRigidArea(30, 40);
-    assertNotNull(area);
+    Box.Filler filler = area.getAwtComponent();
+    assertEquals(new Dimension(30, 40), filler.getPreferredSize());
+    assertEquals(new Dimension(30, 40), filler.getMaximumSize());
   }
 }
