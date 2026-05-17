@@ -26,7 +26,7 @@ import static org.junit.Assert.assertTrue;
  * TDD tests for the ArgumentEncoder extraction from TweedleEncoder (issue #730).
  *
  * <p>These tests specify the contract that must hold after extracting
- * argument-encoding methods (appendArgument, processKeyedArgument,
+ * argument-encoding methods (processKeyedArgument,
  * processArgument, and their private helpers: appendOneArgument,
  * appendWrappedArg, getParameterLabel, parameterIndex) into a new
  * ArgumentEncoder companion class, and wiring TweedleEncoder to delegate.
@@ -113,14 +113,14 @@ public class ArgumentEncoderExtractionTest {
   // ═══════════════════════════════════════════════════════════════════════════
 
   @Test
-  public void argumentEncoderHasAppendArgument() throws Exception {
+  public void argumentEncoderHasProcessKeyedArgument() throws Exception {
     Class<?> clazz = Class.forName(ARGUMENT_ENCODER_CLASS);
-    Method method = clazz.getDeclaredMethod("appendArgument", JavaKeyedArgument.class);
-    assertNotNull("ArgumentEncoder must have appendArgument(JavaKeyedArgument)", method);
+    Method method = clazz.getDeclaredMethod("processKeyedArgument", JavaKeyedArgument.class);
+    assertNotNull("ArgumentEncoder must have processKeyedArgument(JavaKeyedArgument)", method);
   }
 
   @Test
-  public void argumentEncoderHasProcessKeyedArgument() throws Exception {
+  public void argumentEncoderHasProcessKeyedArgument_packagePrivate() throws Exception {
     Class<?> clazz = Class.forName(ARGUMENT_ENCODER_CLASS);
     Method method = clazz.getDeclaredMethod("processKeyedArgument", JavaKeyedArgument.class);
     assertNotNull("ArgumentEncoder must have processKeyedArgument(JavaKeyedArgument)", method);
@@ -138,7 +138,6 @@ public class ArgumentEncoderExtractionTest {
   public void extractedMethodsArePackagePrivate() throws Exception {
     Class<?> clazz = Class.forName(ARGUMENT_ENCODER_CLASS);
     String[] methodNames = {
-        "appendArgument",
         "processKeyedArgument",
         "processArgument"
     };
@@ -205,11 +204,12 @@ public class ArgumentEncoderExtractionTest {
   // ═══════════════════════════════════════════════════════════════════════════
 
   @Test
-  public void tweedleEncoderHasForwardProcessExpressionForArgEncoder() throws Exception {
+  public void tweedleEncoderInheritsProcessExpressionForArgEncoder() throws Exception {
     Class<?> teClass = Class.forName(TWEEDLE_ENCODER_CLASS);
-    Method method = teClass.getDeclaredMethod("forwardProcessExpression",
+    // ArgumentEncoder calls encoder.processExpression() directly (public inherited method)
+    Method method = teClass.getMethod("processExpression",
         org.lgna.project.ast.Expression.class);
-    assertNotNull("TweedleEncoder must have forwardProcessExpression bridge (used by ArgumentEncoder)", method);
+    assertNotNull("TweedleEncoder must inherit processExpression (used by ArgumentEncoder)", method);
   }
 
   @Test

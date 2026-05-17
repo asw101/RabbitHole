@@ -212,11 +212,11 @@ public class ExpressionEncoderExtractionTest {
   }
 
   @Test
-  public void tweedleEncoderHasForwardProcessExpressionBridge() throws Exception {
+  public void tweedleEncoderInheritsProcessExpression() throws Exception {
     Class<?> teClass = Class.forName(TWEEDLE_ENCODER_CLASS);
-    Method method = teClass.getDeclaredMethod("forwardProcessExpression", Expression.class);
-    assertNotNull("TweedleEncoder must have forwardProcessExpression(Expression) bridge", method);
-    assertFalse("Bridge must not be public", Modifier.isPublic(method.getModifiers()));
+    // ExpressionEncoder calls encoder.processExpression() directly (public inherited method)
+    Method method = teClass.getMethod("processExpression", Expression.class);
+    assertNotNull("TweedleEncoder must inherit processExpression(Expression) from base class", method);
   }
 
   @Test
