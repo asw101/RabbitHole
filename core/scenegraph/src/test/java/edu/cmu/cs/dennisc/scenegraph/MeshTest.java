@@ -38,6 +38,9 @@ public class MeshTest {
   public void defaultConstructorCreatesEmptyMesh() {
     Mesh mesh = new Mesh();
     assertNotNull(mesh);
+    assertNull("Default vertex buffer should be null", mesh.vertexBuffer.getValue());
+    assertNull("Default normal buffer should be null", mesh.normalBuffer.getValue());
+    assertNull("Default index buffer should be null", mesh.indexBuffer.getValue());
   }
 
   @Test
@@ -72,9 +75,13 @@ public class MeshTest {
   @Test
   public void createCopyReturnsDistinctMesh() {
     Mesh original = createSimpleMesh();
+    original.setName("copySource");
     Mesh copy = original.createCopy();
     assertNotNull(copy);
     assertNotSame(original, copy);
+    assertNotNull("Copied mesh should have vertex buffer", copy.vertexBuffer.getValue());
+    assertNotNull("Copied mesh should have normal buffer", copy.normalBuffer.getValue());
+    assertNotNull("Copied mesh should have index buffer", copy.indexBuffer.getValue());
   }
 
   @Test

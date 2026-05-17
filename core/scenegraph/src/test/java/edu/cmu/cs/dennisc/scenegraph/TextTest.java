@@ -1,10 +1,12 @@
 package edu.cmu.cs.dennisc.scenegraph;
 
+import edu.cmu.cs.dennisc.property.event.PropertyListener;
 import org.alice.math.immutable.AxisAlignedBox;
 import org.alice.math.immutable.Vector3;
 import org.junit.Test;
 
 import java.awt.Font;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -209,10 +211,17 @@ public class TextTest {
   @Test
   public void settingAlignmentToSameValueDoesNotFireEvent() {
     Text text = new Text();
-    // Setting to existing value should be a no-op
+    AtomicInteger events = new AtomicInteger();
+    PropertyListener listener = e -> events.incrementAndGet();
+    text.leftToRightAlignment.addPropertyListener(listener);
+    text.topToBottomAlignment.addPropertyListener(listener);
+    text.frontToBackAlignment.addPropertyListener(listener);
+
+    // Setting to existing defaults should not fire events
     text.leftToRightAlignment.setValue(LeftToRightAlignment.ALIGN_CENTER_OF_LEFT_AND_RIGHT);
     text.topToBottomAlignment.setValue(TopToBottomAlignment.ALIGN_BASELINE);
     text.frontToBackAlignment.setValue(FrontToBackAlignment.ALIGN_CENTER_OF_FRONT_AND_BACK);
-    // No exception means success
+
+    assertEquals("No property events should fire for same-value set", 0, events.get());
   }
 }

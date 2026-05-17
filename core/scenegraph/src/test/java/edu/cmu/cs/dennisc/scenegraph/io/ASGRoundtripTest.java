@@ -372,6 +372,9 @@ public class ASGRoundtripTest {
     assertEquals(identity.up().x(), decO.up().x(), EPSILON);
     assertEquals(identity.up().y(), decO.up().y(), EPSILON);
     assertEquals(identity.up().z(), decO.up().z(), EPSILON);
+    assertEquals(identity.backward().x(), decO.backward().x(), EPSILON);
+    assertEquals(identity.backward().y(), decO.backward().y(), EPSILON);
+    assertEquals(identity.backward().z(), decO.backward().z(), EPSILON);
   }
 
   @Test

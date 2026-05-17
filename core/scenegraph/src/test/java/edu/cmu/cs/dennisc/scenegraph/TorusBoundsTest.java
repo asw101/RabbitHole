@@ -90,6 +90,8 @@ public class TorusBoundsTest {
     assertTrue("BoundListener should have fired", events.get() >= 1);
     AxisAlignedBox newBounds = torus.getAxisAlignedMinimumBoundingBox();
     assertNotNull(newBounds);
+    assertTrue("Bounds should have changed after coordinate plane change",
+        !oldBounds.minimum().equals(newBounds.minimum()) || !oldBounds.maximum().equals(newBounds.maximum()));
   }
 
   @Test

@@ -135,6 +135,8 @@ public class CylinderBoundsTest {
     assertTrue("BoundListener should have fired", events.get() >= 1);
     AxisAlignedBox newBounds = cyl.getAxisAlignedMinimumBoundingBox();
     assertNotNull(newBounds);
+    assertTrue("Bounds should have changed after axis change",
+        !oldBounds.minimum().equals(newBounds.minimum()) || !oldBounds.maximum().equals(newBounds.maximum()));
   }
 
   @Test

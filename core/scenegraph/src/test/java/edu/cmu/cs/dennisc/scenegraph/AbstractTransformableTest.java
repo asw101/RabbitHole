@@ -376,9 +376,9 @@ public class AbstractTransformableTest {
     AffineMatrix4x4 result = t.getLocalTransformation();
     // Translation should be preserved
     assertPointEquals(new Point3(5, 10, 15), result.translation());
-    // Orientation should have changed
-    assertTrue("Orientation should not be identity after setAxesOnly",
-        Math.abs(result.orientation().right().x()) < 0.1);
+    // After 90° Y rotation, right().x() should be ~0.0 (cos(90°))
+    assertEquals("right().x() should be ~0 after 90° Y rotation",
+        0.0, result.orientation().right().x(), EPSILON);
   }
 
   @Test
