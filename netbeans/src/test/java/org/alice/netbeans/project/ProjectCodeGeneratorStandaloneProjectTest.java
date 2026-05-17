@@ -337,6 +337,13 @@ public class ProjectCodeGeneratorStandaloneProjectTest {
 
   @Test
   public void templatePackagedLauncherWithRealJavaFxModulesStopsAtDisplayBoundaryWhenHeadless() throws Exception {
+    // macOS CI runners have a display server even in headless mode, so JavaFX
+    // does not stop at the display precondition — it starts successfully.
+    // This test validates Linux-specific headless behavior.
+    org.junit.Assume.assumeFalse(
+        "macOS has a display server in CI; headless display boundary test is Linux-specific",
+        System.getProperty("os.name", "").toLowerCase().contains("mac"));
+
     Path projectDirectory = temporaryFolder.newFolder("template-real-javafx-runtime").toPath();
     extractProjectTemplate(projectDirectory);
     Path sourceDirectory = projectDirectory.resolve("src");
