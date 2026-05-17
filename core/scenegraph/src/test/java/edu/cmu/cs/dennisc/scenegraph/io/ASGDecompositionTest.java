@@ -44,6 +44,7 @@ package edu.cmu.cs.dennisc.scenegraph.io;
 
 import edu.cmu.cs.dennisc.color.Color4f;
 import edu.cmu.cs.dennisc.scenegraph.Component;
+import edu.cmu.cs.dennisc.scenegraph.Composite;
 import edu.cmu.cs.dennisc.scenegraph.Transformable;
 import edu.cmu.cs.dennisc.scenegraph.Vertex;
 import edu.cmu.cs.dennisc.texture.TextureCoordinate2f;
@@ -62,6 +63,8 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
 
+import static edu.cmu.cs.dennisc.scenegraph.ScenegraphTestAssertions.EPSILON;
+import static edu.cmu.cs.dennisc.scenegraph.ScenegraphTestAssertions.assertPointEquals;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -75,7 +78,19 @@ import static org.junit.Assert.fail;
  * Characterization tests capture existing behavior and must PASS before and after.
  */
 public class ASGDecompositionTest {
-  private static final double EPSILON = 0.000001;
+
+  // Cached reflection lookups — avoid repeated Class.forName per test
+  private static final Class<?> ENCODER_CLASS;
+  private static final Class<?> DECODER_CLASS;
+
+  static {
+    try {
+      ENCODER_CLASS = Class.forName("edu.cmu.cs.dennisc.scenegraph.io.ASGEncoder");
+      DECODER_CLASS = Class.forName("edu.cmu.cs.dennisc.scenegraph.io.ASGDecoder");
+    } catch (Exception e) {
+      throw new ExceptionInInitializerError(e);
+    }
+  }
 
   // ═══════════════════════════════════════════════════════════════════
   // STRUCTURAL: These tests FAIL until ASGEncoder/ASGDecoder exist.
@@ -83,21 +98,18 @@ public class ASGDecompositionTest {
 
   @Test
   public void asgEncoderClassExistsInPackage() throws Exception {
-    Class<?> cls = Class.forName("edu.cmu.cs.dennisc.scenegraph.io.ASGEncoder");
-    assertNotNull("ASGEncoder class should exist", cls);
+    assertNotNull("ASGEncoder class should exist", ENCODER_CLASS);
   }
 
   @Test
   public void asgDecoderClassExistsInPackage() throws Exception {
-    Class<?> cls = Class.forName("edu.cmu.cs.dennisc.scenegraph.io.ASGDecoder");
-    assertNotNull("ASGDecoder class should exist", cls);
+    assertNotNull("ASGDecoder class should exist", DECODER_CLASS);
   }
 
   @Test
   public void asgEncoderHasStaticEncodeMethod() throws Exception {
-    Class<?> cls = Class.forName("edu.cmu.cs.dennisc.scenegraph.io.ASGEncoder");
     boolean found = false;
-    for (Method m : cls.getDeclaredMethods()) {
+    for (Method m : ENCODER_CLASS.getDeclaredMethods()) {
       if (m.getName().equals("encode") && Modifier.isStatic(m.getModifiers())) {
         found = true;
         break;
@@ -108,9 +120,8 @@ public class ASGDecompositionTest {
 
   @Test
   public void asgDecoderHasStaticDecodeMethod() throws Exception {
-    Class<?> cls = Class.forName("edu.cmu.cs.dennisc.scenegraph.io.ASGDecoder");
     boolean found = false;
-    for (Method m : cls.getDeclaredMethods()) {
+    for (Method m : DECODER_CLASS.getDeclaredMethods()) {
       if (m.getName().equals("decode") && Modifier.isStatic(m.getModifiers())) {
         found = true;
         break;
@@ -121,18 +132,16 @@ public class ASGDecompositionTest {
 
   @Test
   public void asgEncoderHasBinaryEncodeMethods() throws Exception {
-    Class<?> cls = Class.forName("edu.cmu.cs.dennisc.scenegraph.io.ASGEncoder");
-    assertStaticMethodExists(cls, "encodeIntArrayInBinary");
-    assertStaticMethodExists(cls, "encodeDoubleArrayInBinary");
-    assertStaticMethodExists(cls, "encodeVertexArrayInBinary");
+    assertStaticMethodExists(ENCODER_CLASS, "encodeIntArrayInBinary");
+    assertStaticMethodExists(ENCODER_CLASS, "encodeDoubleArrayInBinary");
+    assertStaticMethodExists(ENCODER_CLASS, "encodeVertexArrayInBinary");
   }
 
   @Test
   public void asgDecoderHasBinaryDecodeMethods() throws Exception {
-    Class<?> cls = Class.forName("edu.cmu.cs.dennisc.scenegraph.io.ASGDecoder");
-    assertStaticMethodExists(cls, "decodeIntArrayInBinary");
-    assertStaticMethodExists(cls, "decodeDoubleArrayInBinary");
-    assertStaticMethodExists(cls, "decodeVertexArrayInBinary");
+    assertStaticMethodExists(DECODER_CLASS, "decodeIntArrayInBinary");
+    assertStaticMethodExists(DECODER_CLASS, "decodeDoubleArrayInBinary");
+    assertStaticMethodExists(DECODER_CLASS, "decodeVertexArrayInBinary");
   }
 
   // ═══════════════════════════════════════════════════════════════════
@@ -383,31 +392,37 @@ public class ASGDecompositionTest {
     assertTrue("Encoded output should not be empty", encoded.length > 0);
   }
 
-  // Pre-existing bug: encoder writes class="edu.cmu.cs.dennisc.math.Matrix4d"
-  // for AffineMatrix4x4 values, but that legacy class no longer exists.
-  // The decoder fails with ClassNotFoundException wrapped in RuntimeException.
-  // These tests document this known limitation — behavior must be preserved
-  // (not fixed) during the decomposition.
+  // The encoder writes class="edu.cmu.cs.dennisc.math.Matrix4d" for AffineMatrix4x4
+  // values. The decoder converts this legacy classname to the current
+  // org.alice.math.immutable.AffineMatrix4x4, enabling successful roundtrip.
 
-  @Test(expected = RuntimeException.class)
-  public void decodeTransformableFailsDueToLegacyMatrix4dClassName() {
+  @Test
+  public void decodeTransformableRoundtripsSuccessfully() {
     Transformable original = new Transformable();
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     ASG.encode(original, baos);
-    ASG.decodeZip(new ByteArrayInputStream(baos.toByteArray()));
+    Component decoded = ASG.decodeZip(new ByteArrayInputStream(baos.toByteArray()));
+    assertNotNull(decoded);
+    assertTrue(decoded instanceof Transformable);
   }
 
-  @Test(expected = RuntimeException.class)
-  public void decodeTransformableWithTranslationFailsDueToLegacyMatrix4d() {
+  @Test
+  public void decodeTransformableWithTranslationRoundtripsSuccessfully() {
     Transformable original = new Transformable();
     original.setLocalTransformation(AffineMatrix4x4.createTranslation(10.0, 20.0, 30.0));
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     ASG.encode(original, baos);
-    ASG.decodeZip(new ByteArrayInputStream(baos.toByteArray()));
+    Component decoded = ASG.decodeZip(new ByteArrayInputStream(baos.toByteArray()));
+    assertNotNull(decoded);
+    assertTrue(decoded instanceof Transformable);
+    Transformable decodedT = (Transformable) decoded;
+    assertEquals(10.0, decodedT.getLocalTransformation().translation().x(), 0.000001);
+    assertEquals(20.0, decodedT.getLocalTransformation().translation().y(), 0.000001);
+    assertEquals(30.0, decodedT.getLocalTransformation().translation().z(), 0.000001);
   }
 
-  @Test(expected = RuntimeException.class)
-  public void decodeParentChildHierarchyFailsDueToLegacyMatrix4d() {
+  @Test
+  public void decodeParentChildHierarchyRoundtripsSuccessfully() {
     Transformable parent = new Transformable();
     parent.setLocalTransformation(AffineMatrix4x4.createTranslation(1.0, 0.0, 0.0));
     Transformable child = new Transformable();
@@ -415,7 +430,11 @@ public class ASGDecompositionTest {
     parent.addComponent(child);
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     ASG.encode(parent, baos);
-    ASG.decodeZip(new ByteArrayInputStream(baos.toByteArray()));
+    Component decoded = ASG.decodeZip(new ByteArrayInputStream(baos.toByteArray()));
+    assertNotNull(decoded);
+    assertTrue(decoded instanceof Transformable);
+    Composite decodedParent = (Composite) decoded;
+    assertEquals(1, decodedParent.getComponentCount());
   }
 
   // ═══════════════════════════════════════════════════════════════════
@@ -437,11 +456,5 @@ public class ASGDecompositionTest {
       }
     }
     assertTrue(cls.getSimpleName() + " should have static method " + name, found);
-  }
-
-  private static void assertPointEquals(Point3 expected, Point3 actual) {
-    assertEquals("x", expected.x(), actual.x(), EPSILON);
-    assertEquals("y", expected.y(), actual.y(), EPSILON);
-    assertEquals("z", expected.z(), actual.z(), EPSILON);
   }
 }

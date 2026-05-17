@@ -67,20 +67,38 @@ import static org.junit.Assert.*;
  */
 public class BinaryArrayEncoderTest {
 
+  // Cached reflection handles — avoid repeated Class.forName/getDeclaredMethod per test
+  private static final Class<?> ENCODER_CLASS;
+  private static final Method ENCODE_INT_METHOD;
+  private static final Method ENCODE_DOUBLE_METHOD;
+  private static final Method ENCODE_VERTEX_METHOD;
+
+  static {
+    try {
+      ENCODER_CLASS = Class.forName("edu.cmu.cs.dennisc.scenegraph.io.BinaryArrayEncoder");
+      ENCODE_INT_METHOD = ENCODER_CLASS.getDeclaredMethod("encodeIntArray", int[].class, OutputStream.class);
+      ENCODE_INT_METHOD.setAccessible(true);
+      ENCODE_DOUBLE_METHOD = ENCODER_CLASS.getDeclaredMethod("encodeDoubleArray", double[].class, OutputStream.class);
+      ENCODE_DOUBLE_METHOD.setAccessible(true);
+      ENCODE_VERTEX_METHOD = ENCODER_CLASS.getDeclaredMethod("encodeVertexArray", Vertex[].class, OutputStream.class);
+      ENCODE_VERTEX_METHOD.setAccessible(true);
+    } catch (Exception e) {
+      throw new ExceptionInInitializerError(e);
+    }
+  }
+
   // ═══════════════════════════════════════════════════════════════════
   // STRUCTURAL: Class existence and method signatures
   // ═══════════════════════════════════════════════════════════════════
 
   @Test
   public void binaryArrayEncoderClassExists() throws Exception {
-    Class<?> cls = Class.forName("edu.cmu.cs.dennisc.scenegraph.io.BinaryArrayEncoder");
-    assertNotNull("BinaryArrayEncoder class must exist in the io package", cls);
+    assertNotNull("BinaryArrayEncoder class must exist in the io package", ENCODER_CLASS);
   }
 
   @Test
   public void binaryArrayEncoderIsPackagePrivate() throws Exception {
-    Class<?> cls = Class.forName("edu.cmu.cs.dennisc.scenegraph.io.BinaryArrayEncoder");
-    int modifiers = cls.getModifiers();
+    int modifiers = ENCODER_CLASS.getModifiers();
     assertFalse("BinaryArrayEncoder must not be public", Modifier.isPublic(modifiers));
     assertFalse("BinaryArrayEncoder must not be protected", Modifier.isProtected(modifiers));
     assertFalse("BinaryArrayEncoder must not be private", Modifier.isPrivate(modifiers));
@@ -88,23 +106,17 @@ public class BinaryArrayEncoderTest {
 
   @Test
   public void hasStaticEncodeVertexArrayMethod() throws Exception {
-    Class<?> cls = Class.forName("edu.cmu.cs.dennisc.scenegraph.io.BinaryArrayEncoder");
-    Method m = cls.getDeclaredMethod("encodeVertexArray", Vertex[].class, OutputStream.class);
-    assertTrue("encodeVertexArray must be static", Modifier.isStatic(m.getModifiers()));
+    assertTrue("encodeVertexArray must be static", Modifier.isStatic(ENCODE_VERTEX_METHOD.getModifiers()));
   }
 
   @Test
   public void hasStaticEncodeIntArrayMethod() throws Exception {
-    Class<?> cls = Class.forName("edu.cmu.cs.dennisc.scenegraph.io.BinaryArrayEncoder");
-    Method m = cls.getDeclaredMethod("encodeIntArray", int[].class, OutputStream.class);
-    assertTrue("encodeIntArray must be static", Modifier.isStatic(m.getModifiers()));
+    assertTrue("encodeIntArray must be static", Modifier.isStatic(ENCODE_INT_METHOD.getModifiers()));
   }
 
   @Test
   public void hasStaticEncodeDoubleArrayMethod() throws Exception {
-    Class<?> cls = Class.forName("edu.cmu.cs.dennisc.scenegraph.io.BinaryArrayEncoder");
-    Method m = cls.getDeclaredMethod("encodeDoubleArray", double[].class, OutputStream.class);
-    assertTrue("encodeDoubleArray must be static", Modifier.isStatic(m.getModifiers()));
+    assertTrue("encodeDoubleArray must be static", Modifier.isStatic(ENCODE_DOUBLE_METHOD.getModifiers()));
   }
 
   // ═══════════════════════════════════════════════════════════════════
@@ -491,23 +503,14 @@ public class BinaryArrayEncoderTest {
   // ═══════════════════════════════════════════════════════════════════
 
   private void invokeEncodeIntArray(int[] array, OutputStream os) throws Exception {
-    Class<?> cls = Class.forName("edu.cmu.cs.dennisc.scenegraph.io.BinaryArrayEncoder");
-    Method m = cls.getDeclaredMethod("encodeIntArray", int[].class, OutputStream.class);
-    m.setAccessible(true);
-    m.invoke(null, array, os);
+    ENCODE_INT_METHOD.invoke(null, array, os);
   }
 
   private void invokeEncodeDoubleArray(double[] array, OutputStream os) throws Exception {
-    Class<?> cls = Class.forName("edu.cmu.cs.dennisc.scenegraph.io.BinaryArrayEncoder");
-    Method m = cls.getDeclaredMethod("encodeDoubleArray", double[].class, OutputStream.class);
-    m.setAccessible(true);
-    m.invoke(null, array, os);
+    ENCODE_DOUBLE_METHOD.invoke(null, array, os);
   }
 
   private void invokeEncodeVertexArray(Vertex[] vertices, OutputStream os) throws Exception {
-    Class<?> cls = Class.forName("edu.cmu.cs.dennisc.scenegraph.io.BinaryArrayEncoder");
-    Method m = cls.getDeclaredMethod("encodeVertexArray", Vertex[].class, OutputStream.class);
-    m.setAccessible(true);
-    m.invoke(null, vertices, os);
+    ENCODE_VERTEX_METHOD.invoke(null, vertices, os);
   }
 }

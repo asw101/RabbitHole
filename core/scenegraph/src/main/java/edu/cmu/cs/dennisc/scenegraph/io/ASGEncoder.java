@@ -195,6 +195,9 @@ class ASGEncoder {
     Class<? extends edu.cmu.cs.dennisc.scenegraph.Element> elementClass = element.getClass();
     xmlElement.setAttribute("class", elementClass.getName());
     xmlElement.setAttribute("key", getKey(element));
+    if (element.getName() != null) {
+      xmlElement.setAttribute("name", element.getName());
+    }
     for (InstanceProperty<?> property : element.getProperties()) {
       String propertyName = property.getName();
       if (propertyName.equals("Parent")) {

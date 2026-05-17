@@ -28,6 +28,10 @@ import static org.junit.Assert.*;
  */
 public class ASGOutsideInTest {
 
+  // Cached reflection lookups — avoid repeated getDeclaredMethods per test
+  private static final Method[] ENCODER_METHODS = ASGEncoder.class.getDeclaredMethods();
+  private static final Method[] DECODER_METHODS = ASGDecoder.class.getDeclaredMethods();
+
   // ═══════════════════════════════════════════════════════════════════
   // SCENARIO 1: API Contract Preservation
   // Verify every public method on ASG facade exists and delegates correctly
@@ -54,14 +58,11 @@ public class ASGOutsideInTest {
   }
 
   @Test
-  public void scenario1_encoderClassExists() throws Exception {
-    Class<?> cls = Class.forName("edu.cmu.cs.dennisc.scenegraph.io.ASGEncoder");
-    assertNotNull(cls);
-    // Verify it has the 4 encode methods
+  public void scenario1_encoderClassExists() {
     for (String name : new String[]{"encode", "encodeVertexArrayInBinary",
         "encodeIntArrayInBinary", "encodeDoubleArrayInBinary"}) {
       boolean exists = false;
-      for (Method m : cls.getDeclaredMethods()) {
+      for (Method m : ENCODER_METHODS) {
         if (m.getName().equals(name) && Modifier.isStatic(m.getModifiers())) {
           exists = true;
           break;
@@ -72,13 +73,11 @@ public class ASGOutsideInTest {
   }
 
   @Test
-  public void scenario1_decoderClassExists() throws Exception {
-    Class<?> cls = Class.forName("edu.cmu.cs.dennisc.scenegraph.io.ASGDecoder");
-    assertNotNull(cls);
+  public void scenario1_decoderClassExists() {
     for (String name : new String[]{"decode", "decodeZip", "decodeVertexArrayInBinary",
         "decodeIntArrayInBinary", "decodeDoubleArrayInBinary"}) {
       boolean exists = false;
-      for (Method m : cls.getDeclaredMethods()) {
+      for (Method m : DECODER_METHODS) {
         if (m.getName().equals(name) && Modifier.isStatic(m.getModifiers())) {
           exists = true;
           break;
@@ -99,7 +98,10 @@ public class ASGOutsideInTest {
     java.io.File src = new java.io.File(
         "src/main/java/edu/cmu/cs/dennisc/scenegraph/io/ASG.java");
     if (src.exists()) {
-      long lines = java.nio.file.Files.lines(src.toPath()).count();
+      long lines;
+      try (java.util.stream.Stream<String> stream = java.nio.file.Files.lines(src.toPath())) {
+        lines = stream.count();
+      }
       assertTrue("ASG.java should be under 500 lines, was " + lines, lines < 500);
     }
     // If file not found at relative path, skip silently (CI may run from different dir)
