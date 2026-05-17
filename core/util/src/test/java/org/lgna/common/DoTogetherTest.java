@@ -2,7 +2,6 @@ package org.lgna.common;
 
 import org.junit.Test;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
@@ -35,14 +34,12 @@ public class DoTogetherTest {
   }
 
   @Test
-  public void invokeAndWait_multipleRunnables_allExecute() throws InterruptedException {
+  public void invokeAndWait_multipleRunnables_allExecute() {
     AtomicInteger counter = new AtomicInteger(0);
     Runnable r1 = counter::incrementAndGet;
     Runnable r2 = counter::incrementAndGet;
     Runnable r3 = counter::incrementAndGet;
     DoTogether.invokeAndWait(r1, r2, r3);
-    // Allow brief settling time for thread pool
-    Thread.sleep(50);
     assertEquals(3, counter.get());
   }
 
@@ -95,25 +92,21 @@ public class DoTogetherTest {
   }
 
   @Test
-  public void invokeAndWait_catchesProgramClosedException() throws InterruptedException {
-    // ProgramClosedException is caught by ComponentExecutor, so no exception propagates
-    // But the barrier still needs to complete, so just verify no exception escapes
+  public void invokeAndWait_catchesProgramClosedException() {
     AtomicBoolean otherRan = new AtomicBoolean(false);
     Runnable ok = () -> otherRan.set(true);
     DoTogether.invokeAndWait(ok, ok);
-    Thread.sleep(50);
     assertTrue(otherRan.get());
   }
 
   @Test
-  public void invokeAndWait_manyRunnables() throws InterruptedException {
+  public void invokeAndWait_manyRunnables() {
     AtomicInteger counter = new AtomicInteger(0);
     Runnable[] runnables = new Runnable[10];
     for (int i = 0; i < 10; i++) {
       runnables[i] = counter::incrementAndGet;
     }
     DoTogether.invokeAndWait(runnables);
-    Thread.sleep(100);
     assertEquals(10, counter.get());
   }
 }
