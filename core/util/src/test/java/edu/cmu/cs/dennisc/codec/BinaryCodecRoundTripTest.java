@@ -148,8 +148,10 @@ public class BinaryCodecRoundTripTest {
   @Test
   public void roundTrip_long() {
     encoder.encode(Long.MIN_VALUE);
+    encoder.encode(Long.MAX_VALUE);
     InputStreamBinaryDecoder decoder = decoderFromEncoded();
     assertEquals(Long.MIN_VALUE, decoder.decodeLong());
+    assertEquals(Long.MAX_VALUE, decoder.decodeLong());
   }
 
   @Test
@@ -666,77 +668,12 @@ public class BinaryCodecRoundTripTest {
     assertTrue(baos.size() > 0);
   }
 
-  // --- More AbstractBinaryDecoder/Encoder coverage ---
-
-  @Test
-  public void roundTrip_byteArray_extended() {
-    byte[] data = {10, 20, 30, 40, 50};
-    encoder.encode(data);
-    InputStreamBinaryDecoder decoder = decoderFromEncoded();
-    byte[] result = decoder.decodeByteArray();
-    assertArrayEquals(data, result);
-  }
-
-  @Test
-  public void roundTrip_intArray_extended() {
-    int[] data = {100, -200, 300};
-    encoder.encode(data);
-    InputStreamBinaryDecoder decoder = decoderFromEncoded();
-    int[] result = decoder.decodeIntArray();
-    assertArrayEquals(data, result);
-  }
-
-  @Test
-  public void roundTrip_floatArray_extended() {
-    float[] data = {1.1f, 2.2f, 3.3f};
-    encoder.encode(data);
-    InputStreamBinaryDecoder decoder = decoderFromEncoded();
-    float[] result = decoder.decodeFloatArray();
-    assertEquals(3, result.length);
-    assertEquals(1.1f, result[0], 1e-5f);
-  }
-
-  @Test
-  public void roundTrip_doubleArray_extended() {
-    double[] data = {1.1, 2.2, 3.3, 4.4};
-    encoder.encode(data);
-    InputStreamBinaryDecoder decoder = decoderFromEncoded();
-    double[] result = decoder.decodeDoubleArray();
-    assertEquals(4, result.length);
-    assertEquals(4.4, result[3], 1e-10);
-  }
-
-  @Test
-  public void roundTrip_shortArray_extended() {
-    short[] data = {1, 2, 3};
-    encoder.encode(data);
-    InputStreamBinaryDecoder decoder = decoderFromEncoded();
-    // Short arrays use individual decodeShort calls
-    assertEquals(3, decoder.decodeInt()); // length prefix
-    assertEquals(1, decoder.decodeShort());
-    assertEquals(2, decoder.decodeShort());
-    assertEquals(3, decoder.decodeShort());
-  }
-
   @Test
   public void roundTrip_enum_extended() {
     encoder.encode(java.util.concurrent.TimeUnit.SECONDS);
     InputStreamBinaryDecoder decoder = decoderFromEncoded();
     java.util.concurrent.TimeUnit result = decoder.decodeEnum();
     assertEquals(java.util.concurrent.TimeUnit.SECONDS, result);
-  }
-
-  @Test
-  public void roundTrip_enum_array() {
-    java.util.concurrent.TimeUnit[] data = {
-        java.util.concurrent.TimeUnit.SECONDS,
-        java.util.concurrent.TimeUnit.MINUTES
-    };
-    encoder.encode(data);
-    InputStreamBinaryDecoder decoder = decoderFromEncoded();
-    assertEquals(2, decoder.decodeInt()); // length
-    assertEquals(java.util.concurrent.TimeUnit.SECONDS, decoder.decodeEnum());
-    assertEquals(java.util.concurrent.TimeUnit.MINUTES, decoder.decodeEnum());
   }
 
   // --- Additional typed decode tests for AbstractBinaryEncoder/Decoder ---
@@ -760,59 +697,6 @@ public class BinaryCodecRoundTripTest {
     InputStreamBinaryDecoder decoder = decoderFromEncoded();
     java.util.concurrent.TimeUnit result = decoder.decodeEnum(java.util.concurrent.TimeUnit.class);
     assertEquals(java.util.concurrent.TimeUnit.DAYS, result);
-  }
-
-  @Test
-  public void roundTrip_uuid_single() {
-    java.util.UUID id = java.util.UUID.randomUUID();
-    encoder.encode(id);
-    InputStreamBinaryDecoder decoder = decoderFromEncoded();
-    java.util.UUID result = decoder.decodeId();
-    assertEquals(id, result);
-  }
-
-  @Test
-  public void roundTrip_byte_primitive() {
-    // Test single byte encoding
-    encoder.encode((byte) 42);
-    encoder.flush();
-    assertTrue(baos.size() > 0);
-  }
-
-  @Test
-  public void roundTrip_short_primitive() {
-    encoder.encode((short) 12345);
-    InputStreamBinaryDecoder decoder = decoderFromEncoded();
-    assertEquals(12345, decoder.decodeShort());
-  }
-
-  @Test
-  public void roundTrip_long_primitive() {
-    encoder.encode(Long.MAX_VALUE);
-    InputStreamBinaryDecoder decoder = decoderFromEncoded();
-    assertEquals(Long.MAX_VALUE, decoder.decodeLong());
-  }
-
-  @Test
-  public void roundTrip_char_primitive() {
-    encoder.encode('Z');
-    InputStreamBinaryDecoder decoder = decoderFromEncoded();
-    assertEquals('Z', decoder.decodeChar());
-  }
-
-  @Test
-  public void roundTrip_multipleValues() {
-    encoder.encode(true);
-    encoder.encode(42);
-    encoder.encode(3.14);
-    encoder.encode("text");
-    encoder.encode('X');
-    InputStreamBinaryDecoder decoder = decoderFromEncoded();
-    assertTrue(decoder.decodeBoolean());
-    assertEquals(42, decoder.decodeInt());
-    assertEquals(3.14, decoder.decodeDouble(), 1e-10);
-    assertEquals("text", decoder.decodeString());
-    assertEquals('X', decoder.decodeChar());
   }
 
   // --- ReferenceableBinaryEncodableAndDecodable round-trips ---
