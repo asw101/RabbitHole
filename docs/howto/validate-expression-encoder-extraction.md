@@ -48,16 +48,16 @@ Expected: at least six method signatures — `processInstantiation`,
 `getDeclaringJavaClassName`, `appendTargetAndMember`, `targetIsMath`,
 `tweedleModuleForMath`, `processResourceExpression`.
 
-## Step 5: Verify angleMembers and membersToRename are package-private on TweedleEncoder
+## Step 5: Verify angleMembers and membersToRename are accessed from TweedleEncoderData
 
 ```bash
-grep -E 'angleMembers|membersToRename' \
-  core/ast/src/main/java/org/alice/serialization/tweedle/TweedleEncoder.java | head -4
+grep -E 'TweedleEncoderData\.(angleMembers|membersToRename)' \
+  core/ast/src/main/java/org/alice/serialization/tweedle/ExpressionEncoder.java
 ```
 
-Expected:
-- `static final Set<String> angleMembers` — no `private` modifier.
-- `static final Map<String, String> membersToRename` — no `private` modifier.
+Expected: references to `TweedleEncoderData.angleMembers` and
+`TweedleEncoderData.membersToRename` — these fields already live on
+`TweedleEncoderData` (package-private), so no visibility changes are needed.
 
 ## Step 6: Verify 4 bridge methods on TweedleEncoder
 

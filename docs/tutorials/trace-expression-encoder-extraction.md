@@ -373,7 +373,7 @@ The output is `$DecimalNumber.from(wholeNumber: 42)` — wrapping the Java
 
 5. **Trace DynamicResource instantiation.** Starting from
    `processInstantiation` with a `InstanceCreation` wrapping a `DynamicSphereResource`
-   constructor with two arguments where the second is a `StringLiteral("DEFAULT")`,
+   constructor with two arguments where the second is a `StringLiteral("Sphere")`,
    trace through the delegate to confirm the output is `SphereResource.DEFAULT`.
 
 6. **Compare with ArgumentEncoder.** Open the

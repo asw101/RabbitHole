@@ -91,8 +91,6 @@ ExpressionEncoder(TweedleEncoder encoder) {
 | --- | --- |
 | New field | `private final ExpressionEncoder expressionEncoder` |
 | Constructor wiring | `this.expressionEncoder = new ExpressionEncoder(this)` alongside existing `statementEncoder` |
-| `angleMembers` visibility | Changed from `private static final` to `static final` (package-private) so `ExpressionEncoder.tweedleModuleForMath` can read it |
-| `membersToRename` visibility | Changed from `private static final` to `static final` (package-private) so `ExpressionEncoder.appendTargetAndMember` can read it |
 | `processInstantiation(InstanceCreation)` | Body delegates to `expressionEncoder.processInstantiation(creation)` (added in #730) |
 | `appendTargetAndMember(Expression, String, AbstractType)` | Body delegates to `expressionEncoder.appendTargetAndMember(target, member, returnType)` |
 | `processResourceExpression(ResourceExpression)` | Body delegates to `expressionEncoder.processResourceExpression(resourceExpression)` |
