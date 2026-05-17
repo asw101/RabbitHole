@@ -61,58 +61,66 @@ import static org.junit.Assert.*;
  */
 public class ASGDecoderExtractionTest {
 
+  // Cached reflection lookups
+  private static final Class<?> BINARY_ARRAY_DECODER;
+  private static final Class<?> PROPERTY_VALUE_PARSER;
+  private static final Class<?> ASG_DECODER;
+
+  static {
+    try {
+      BINARY_ARRAY_DECODER = Class.forName("edu.cmu.cs.dennisc.scenegraph.io.BinaryArrayDecoder");
+      PROPERTY_VALUE_PARSER = Class.forName("edu.cmu.cs.dennisc.scenegraph.io.PropertyValueParser");
+      ASG_DECODER = Class.forName("edu.cmu.cs.dennisc.scenegraph.io.ASGDecoder");
+    } catch (Exception e) {
+      throw new ExceptionInInitializerError(e);
+    }
+  }
+
   // ── Structural: delegate classes exist and are package-private ───
 
   @Test
   public void binaryArrayDecoderExists() throws Exception {
-    Class<?> cls = Class.forName("edu.cmu.cs.dennisc.scenegraph.io.BinaryArrayDecoder");
     assertFalse("BinaryArrayDecoder should be package-private",
-        Modifier.isPublic(cls.getModifiers()));
+        Modifier.isPublic(BINARY_ARRAY_DECODER.getModifiers()));
   }
 
   @Test
   public void propertyValueParserExists() throws Exception {
-    Class<?> cls = Class.forName("edu.cmu.cs.dennisc.scenegraph.io.PropertyValueParser");
     assertFalse("PropertyValueParser should be package-private",
-        Modifier.isPublic(cls.getModifiers()));
+        Modifier.isPublic(PROPERTY_VALUE_PARSER.getModifiers()));
   }
 
   @Test
   public void binaryArrayDecoderHasExpectedMethods() throws Exception {
-    Class<?> cls = Class.forName("edu.cmu.cs.dennisc.scenegraph.io.BinaryArrayDecoder");
-    assertStaticMethod(cls, "decodeVertexArray");
-    assertStaticMethod(cls, "decodeIntArray");
-    assertStaticMethod(cls, "decodeDoubleArray");
+    assertStaticMethod(BINARY_ARRAY_DECODER, "decodeVertexArray");
+    assertStaticMethod(BINARY_ARRAY_DECODER, "decodeIntArray");
+    assertStaticMethod(BINARY_ARRAY_DECODER, "decodeDoubleArray");
   }
 
   @Test
   public void propertyValueParserHasParseValueMethod() throws Exception {
-    Class<?> cls = Class.forName("edu.cmu.cs.dennisc.scenegraph.io.PropertyValueParser");
-    assertStaticMethod(cls, "parseValue");
+    assertStaticMethod(PROPERTY_VALUE_PARSER, "parseValue");
   }
 
   @Test
   public void propertyValueParserHasXmlHelpers() throws Exception {
-    Class<?> cls = Class.forName("edu.cmu.cs.dennisc.scenegraph.io.PropertyValueParser");
-    assertStaticMethod(cls, "getFirstChild");
-    assertStaticMethod(cls, "getChildren");
-    assertStaticMethod(cls, "getNodeText");
+    assertStaticMethod(PROPERTY_VALUE_PARSER, "getFirstChild");
+    assertStaticMethod(PROPERTY_VALUE_PARSER, "getChildren");
+    assertStaticMethod(PROPERTY_VALUE_PARSER, "getNodeText");
   }
 
   // ── ASGDecoder still exposes binary decode delegates ──────────────
 
   @Test
   public void asgDecoderStillHasBinaryDelegates() throws Exception {
-    Class<?> cls = Class.forName("edu.cmu.cs.dennisc.scenegraph.io.ASGDecoder");
-    assertStaticMethod(cls, "decodeVertexArrayInBinary");
-    assertStaticMethod(cls, "decodeIntArrayInBinary");
-    assertStaticMethod(cls, "decodeDoubleArrayInBinary");
+    assertStaticMethod(ASG_DECODER, "decodeVertexArrayInBinary");
+    assertStaticMethod(ASG_DECODER, "decodeIntArrayInBinary");
+    assertStaticMethod(ASG_DECODER, "decodeDoubleArrayInBinary");
   }
 
   @Test
   public void asgDecoderStillHasDecodeMethod() throws Exception {
-    Class<?> cls = Class.forName("edu.cmu.cs.dennisc.scenegraph.io.ASGDecoder");
-    assertStaticMethod(cls, "decode");
+    assertStaticMethod(ASG_DECODER, "decode");
   }
 
   // ── Behavioral: binary roundtrip through new BinaryArrayDecoder ──
@@ -163,11 +171,7 @@ public class ASGDecoderExtractionTest {
 
   @Test
   public void asgDecoderIsUnder500Lines() throws Exception {
-    // Read the source file at compile/test time via classloader resource path
-    // is not practical; instead verify via the class method count as a proxy.
-    // The real gate is the wc -l check in CI / the PR description.
-    Class<?> cls = Class.forName("edu.cmu.cs.dennisc.scenegraph.io.ASGDecoder");
-    int methodCount = cls.getDeclaredMethods().length;
+    int methodCount = ASG_DECODER.getDeclaredMethods().length;
     // After extraction, ASGDecoder should have substantially fewer methods
     // than the original 20+ methods (now ~12 with delegates).
     assertTrue("ASGDecoder should have fewer than 20 declared methods, has " + methodCount,

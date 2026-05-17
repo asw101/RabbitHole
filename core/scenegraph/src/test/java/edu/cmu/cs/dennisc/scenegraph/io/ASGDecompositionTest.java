@@ -79,27 +79,37 @@ import static org.junit.Assert.fail;
  */
 public class ASGDecompositionTest {
 
+  // Cached reflection lookups — avoid repeated Class.forName per test
+  private static final Class<?> ENCODER_CLASS;
+  private static final Class<?> DECODER_CLASS;
+
+  static {
+    try {
+      ENCODER_CLASS = Class.forName("edu.cmu.cs.dennisc.scenegraph.io.ASGEncoder");
+      DECODER_CLASS = Class.forName("edu.cmu.cs.dennisc.scenegraph.io.ASGDecoder");
+    } catch (Exception e) {
+      throw new ExceptionInInitializerError(e);
+    }
+  }
+
   // ═══════════════════════════════════════════════════════════════════
   // STRUCTURAL: These tests FAIL until ASGEncoder/ASGDecoder exist.
   // ═══════════════════════════════════════════════════════════════════
 
   @Test
   public void asgEncoderClassExistsInPackage() throws Exception {
-    Class<?> cls = Class.forName("edu.cmu.cs.dennisc.scenegraph.io.ASGEncoder");
-    assertNotNull("ASGEncoder class should exist", cls);
+    assertNotNull("ASGEncoder class should exist", ENCODER_CLASS);
   }
 
   @Test
   public void asgDecoderClassExistsInPackage() throws Exception {
-    Class<?> cls = Class.forName("edu.cmu.cs.dennisc.scenegraph.io.ASGDecoder");
-    assertNotNull("ASGDecoder class should exist", cls);
+    assertNotNull("ASGDecoder class should exist", DECODER_CLASS);
   }
 
   @Test
   public void asgEncoderHasStaticEncodeMethod() throws Exception {
-    Class<?> cls = Class.forName("edu.cmu.cs.dennisc.scenegraph.io.ASGEncoder");
     boolean found = false;
-    for (Method m : cls.getDeclaredMethods()) {
+    for (Method m : ENCODER_CLASS.getDeclaredMethods()) {
       if (m.getName().equals("encode") && Modifier.isStatic(m.getModifiers())) {
         found = true;
         break;
@@ -110,9 +120,8 @@ public class ASGDecompositionTest {
 
   @Test
   public void asgDecoderHasStaticDecodeMethod() throws Exception {
-    Class<?> cls = Class.forName("edu.cmu.cs.dennisc.scenegraph.io.ASGDecoder");
     boolean found = false;
-    for (Method m : cls.getDeclaredMethods()) {
+    for (Method m : DECODER_CLASS.getDeclaredMethods()) {
       if (m.getName().equals("decode") && Modifier.isStatic(m.getModifiers())) {
         found = true;
         break;
@@ -123,18 +132,16 @@ public class ASGDecompositionTest {
 
   @Test
   public void asgEncoderHasBinaryEncodeMethods() throws Exception {
-    Class<?> cls = Class.forName("edu.cmu.cs.dennisc.scenegraph.io.ASGEncoder");
-    assertStaticMethodExists(cls, "encodeIntArrayInBinary");
-    assertStaticMethodExists(cls, "encodeDoubleArrayInBinary");
-    assertStaticMethodExists(cls, "encodeVertexArrayInBinary");
+    assertStaticMethodExists(ENCODER_CLASS, "encodeIntArrayInBinary");
+    assertStaticMethodExists(ENCODER_CLASS, "encodeDoubleArrayInBinary");
+    assertStaticMethodExists(ENCODER_CLASS, "encodeVertexArrayInBinary");
   }
 
   @Test
   public void asgDecoderHasBinaryDecodeMethods() throws Exception {
-    Class<?> cls = Class.forName("edu.cmu.cs.dennisc.scenegraph.io.ASGDecoder");
-    assertStaticMethodExists(cls, "decodeIntArrayInBinary");
-    assertStaticMethodExists(cls, "decodeDoubleArrayInBinary");
-    assertStaticMethodExists(cls, "decodeVertexArrayInBinary");
+    assertStaticMethodExists(DECODER_CLASS, "decodeIntArrayInBinary");
+    assertStaticMethodExists(DECODER_CLASS, "decodeDoubleArrayInBinary");
+    assertStaticMethodExists(DECODER_CLASS, "decodeVertexArrayInBinary");
   }
 
   // ═══════════════════════════════════════════════════════════════════
