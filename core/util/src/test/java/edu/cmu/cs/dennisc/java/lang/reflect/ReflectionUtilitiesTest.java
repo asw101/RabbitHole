@@ -348,4 +348,222 @@ public class ReflectionUtilitiesTest {
     assertNotNull(detail);
     assertTrue(detail.length() > 0);
   }
+
+  @Test
+  public void getDetail_nullMethod() {
+    String detail = ReflectionUtilities.getDetail("inst", null, new Object[]{"a", "b"});
+    assertTrue(detail.contains("null"));
+    assertTrue(detail.contains("inst"));
+  }
+
+  @Test
+  public void getDetail_multipleArgs() throws Exception {
+    SampleClass obj = new SampleClass();
+    Method m = SampleClass.class.getMethod("instanceMethod", String.class);
+    String detail = ReflectionUtilities.getDetail(obj, m, new Object[]{"x", "y", "z"});
+    assertTrue(detail.contains("x"));
+    assertTrue(detail.contains("y"));
+    assertTrue(detail.contains("z"));
+  }
+
+  // --- isAbstract(Member) ---
+
+  @Test
+  public void isAbstract_abstractMethod() throws Exception {
+    Method m = AbstractSample.class.getDeclaredMethod("doWork");
+    assertTrue(ReflectionUtilities.isAbstract(m));
+  }
+
+  @Test
+  public void isAbstract_concreteMethod() throws Exception {
+    Method m = SampleClass.class.getMethod("instanceMethod", String.class);
+    assertFalse(ReflectionUtilities.isAbstract(m));
+  }
+
+  // --- getPublicFinalInstances ---
+
+  @Test
+  public void getPublicFinalInstances_findsStaticConstants() {
+    // getPublicFinalInstances reads public field values via cls.getFields() and field.get(null),
+    // so only works for static fields (instance fields would require an instance)
+    List<Integer> instances = ReflectionUtilities.getPublicFinalInstances(SampleClass.class, Integer.class);
+    assertNotNull(instances);
+  }
+
+  // --- getPublicFinalDeclaredFields ---
+
+  @Test
+  public void getPublicFinalDeclaredFields_returnsOnlyDeclaredFields() {
+    List<Field> fields = ReflectionUtilities.getPublicFinalDeclaredFields(SampleClass.class, String.class);
+    assertNotNull(fields);
+    boolean foundConstant = false;
+    boolean foundInstance = false;
+    for (Field f : fields) {
+      if ("PUBLIC_CONSTANT".equals(f.getName())) foundConstant = true;
+      if ("instanceFinal".equals(f.getName())) foundInstance = true;
+    }
+    assertTrue("Should find PUBLIC_CONSTANT", foundConstant);
+    assertTrue("Should find instanceFinal", foundInstance);
+  }
+
+  // --- getPublicStaticFinalFields with non-matching type ---
+
+  @Test
+  public void getPublicStaticFinalFields_intType() {
+    List<Field> fields = ReflectionUtilities.getPublicStaticFinalFields(SampleClass.class, int.class);
+    assertNotNull(fields);
+  }
+
+  // --- getPublicStaticFinalInstances with int type ---
+
+  @Test
+  public void getPublicStaticFinalInstances_intType() {
+    List<Object> instances = ReflectionUtilities.getPublicStaticFinalInstances(SampleClass.class, Object.class);
+    assertNotNull(instances);
+    assertFalse(instances.isEmpty());
+  }
+
+  // --- getField error case ---
+
+  @Test(expected = RuntimeException.class)
+  public void getField_nonExistent_throws() {
+    ReflectionUtilities.getField(SampleClass.class, "nonExistentField");
+  }
+
+  // --- getDeclaredField error case ---
+
+  @Test(expected = RuntimeException.class)
+  public void getDeclaredField_nonExistent_throws() {
+    ReflectionUtilities.getDeclaredField(SampleClass.class, "nonExistentField");
+  }
+
+  // --- getMethod error case ---
+
+  @Test(expected = RuntimeException.class)
+  public void getMethod_nonExistent_throws() {
+    ReflectionUtilities.getMethod(SampleClass.class, "nonExistentMethod");
+  }
+
+  // --- getDeclaredMethod error case ---
+
+  @Test(expected = RuntimeException.class)
+  public void getDeclaredMethod_nonExistent_throws() {
+    ReflectionUtilities.getDeclaredMethod(SampleClass.class, "nonExistentMethod");
+  }
+
+  // --- getConstructor error case ---
+
+  @Test(expected = RuntimeException.class)
+  public void getConstructor_nonExistent_throws() {
+    ReflectionUtilities.getConstructor(SampleClass.class, Double.class);
+  }
+
+  // --- getDeclaredConstructor error case ---
+
+  @Test(expected = RuntimeException.class)
+  public void getDeclaredConstructor_nonExistent_throws() {
+    ReflectionUtilities.getDeclaredConstructor(SampleClass.class, Double.class);
+  }
+
+  // --- getConstructorForArguments error case ---
+
+  @Test(expected = RuntimeException.class)
+  public void getConstructorForArguments_noMatch_throws() {
+    ReflectionUtilities.getConstructorForArguments(SampleClass.class, 1.0, 2.0, 3.0);
+  }
+
+  // --- getDeclaredConstructorForArguments ---
+
+  @Test(expected = RuntimeException.class)
+  public void getDeclaredConstructorForArguments_noMatch_throws() {
+    ReflectionUtilities.getDeclaredConstructorForArguments(SampleClass.class, 1.0, 2.0, 3.0);
+  }
+
+  @Test
+  public void getDeclaredConstructorForArguments_noArg() {
+    Constructor<SampleClass> c = ReflectionUtilities.getDeclaredConstructorForArguments(SampleClass.class);
+    assertNotNull(c);
+  }
+
+  // --- newInstance with Constructor ---
+
+  @Test
+  public void newInstance_withConstructor() {
+    Constructor<SampleClass> c = ReflectionUtilities.getConstructor(SampleClass.class, String.class);
+    SampleClass obj = ReflectionUtilities.newInstance(c, "via-constructor");
+    assertEquals("via-constructor", obj.getPrivateField());
+  }
+
+  // --- getArrayClass with primitive types ---
+
+  @Test
+  public void getArrayClass_objectType() {
+    Class<?> cls = ReflectionUtilities.getArrayClass(Object.class);
+    assertEquals(Object[].class, cls);
+  }
+
+  @Test
+  public void getArrayClass_threeDimensions() {
+    Class<?> cls = ReflectionUtilities.getArrayClass(String.class, 3);
+    assertEquals(String[][][].class, cls);
+  }
+
+  // --- newTypedArrayInstance ---
+
+  @Test
+  public void newTypedArrayInstance_integerType() {
+    Integer[] arr = ReflectionUtilities.newTypedArrayInstance(Integer.class, 5);
+    assertEquals(5, arr.length);
+  }
+
+  // --- get/set static fields ---
+
+  @Test
+  public void get_staticField() {
+    Field f = ReflectionUtilities.getField(SampleClass.class, "PUBLIC_CONSTANT");
+    Object value = ReflectionUtilities.get(f, null);
+    assertEquals("constant", value);
+  }
+
+  // --- isStatic on non-static field ---
+
+  @Test
+  public void isPublic_publicField() throws Exception {
+    Field f = SampleClass.class.getField("PUBLIC_CONSTANT");
+    assertTrue(ReflectionUtilities.isPublic(f));
+  }
+
+  @Test
+  public void isPrivate_privateField() throws Exception {
+    Field f = SampleClass.class.getDeclaredField("privateField");
+    assertTrue(ReflectionUtilities.isPrivate(f));
+  }
+
+  @Test
+  public void isProtected_protectedField() throws Exception {
+    Field f = SampleClass.class.getDeclaredField("protectedField");
+    assertTrue(ReflectionUtilities.isProtected(f));
+  }
+
+  // --- getClassForName ---
+
+  @Test
+  public void getClassForName_validClass() {
+    Class<?> cls = ReflectionUtilities.getClassForName("java.lang.String");
+    assertEquals(String.class, cls);
+  }
+
+  @Test(expected = RuntimeException.class)
+  public void getClassForName_invalidClass_throws() {
+    ReflectionUtilities.getClassForName("com.nonexistent.FakeClass");
+  }
+
+  // --- invoke error case ---
+
+  @Test(expected = RuntimeException.class)
+  public void invoke_wrongArgument_throws() throws Exception {
+    SampleClass obj = new SampleClass();
+    Method m = SampleClass.class.getMethod("instanceMethod", String.class);
+    ReflectionUtilities.invoke(obj, m, 12345);
+  }
 }

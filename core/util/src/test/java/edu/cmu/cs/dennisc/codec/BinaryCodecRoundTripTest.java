@@ -573,4 +573,245 @@ public class BinaryCodecRoundTripTest {
     assertNotNull(result);
     assertEquals(0, result.length);
   }
+
+  // --- NIO Buffer round-trip tests for codec.BufferUtilities ---
+
+  @Test
+  public void roundTrip_floatBuffer() {
+    java.nio.FloatBuffer fb = java.nio.FloatBuffer.wrap(new float[]{1.0f, 2.5f, -3.14f, 0.0f});
+    BufferUtilities.encode(encoder, fb);
+    InputStreamBinaryDecoder decoder = decoderFromEncoded();
+    java.nio.FloatBuffer result = BufferUtilities.decodeFloatBuffer(decoder);
+    assertEquals(4, result.limit());
+    assertEquals(1.0f, result.get(0), 1e-6f);
+    assertEquals(2.5f, result.get(1), 1e-6f);
+    assertEquals(-3.14f, result.get(2), 1e-3f);
+    assertEquals(0.0f, result.get(3), 1e-6f);
+  }
+
+  @Test
+  public void roundTrip_doubleBuffer() {
+    java.nio.DoubleBuffer db = java.nio.DoubleBuffer.wrap(new double[]{1.0, 2.5, -3.14, 0.0, 999.999});
+    BufferUtilities.encode(encoder, db);
+    InputStreamBinaryDecoder decoder = decoderFromEncoded();
+    java.nio.DoubleBuffer result = BufferUtilities.decodeDoubleBuffer(decoder);
+    assertEquals(5, result.limit());
+    assertEquals(1.0, result.get(0), 1e-10);
+    assertEquals(999.999, result.get(4), 1e-10);
+  }
+
+  @Test
+  public void roundTrip_intBuffer() {
+    java.nio.IntBuffer ib = java.nio.IntBuffer.wrap(new int[]{-1, 0, 1, Integer.MAX_VALUE, Integer.MIN_VALUE});
+    BufferUtilities.encode(encoder, ib);
+    InputStreamBinaryDecoder decoder = decoderFromEncoded();
+    java.nio.IntBuffer result = BufferUtilities.decodeIntBuffer(decoder);
+    assertEquals(5, result.limit());
+    assertEquals(-1, result.get(0));
+    assertEquals(Integer.MAX_VALUE, result.get(3));
+    assertEquals(Integer.MIN_VALUE, result.get(4));
+  }
+
+  @Test
+  public void roundTrip_intBuffer_nativeOptional() {
+    java.nio.IntBuffer ib = java.nio.IntBuffer.wrap(new int[]{10, 20, 30});
+    BufferUtilities.encodeNativeOptional(encoder, ib);
+    InputStreamBinaryDecoder decoder = decoderFromEncoded();
+    java.nio.IntBuffer result = BufferUtilities.decodeIntBuffer(decoder);
+    assertEquals(3, result.limit());
+    assertEquals(10, result.get(0));
+    assertEquals(20, result.get(1));
+    assertEquals(30, result.get(2));
+  }
+
+  @Test
+  public void roundTrip_shortBuffer() {
+    java.nio.ShortBuffer sb = java.nio.ShortBuffer.wrap(new short[]{1, -2, 3, Short.MAX_VALUE});
+    BufferUtilities.encode(encoder, sb);
+    InputStreamBinaryDecoder decoder = decoderFromEncoded();
+    java.nio.ShortBuffer result = BufferUtilities.decodeShortBuffer(decoder);
+    assertEquals(4, result.limit());
+    assertEquals(1, result.get(0));
+    assertEquals(Short.MAX_VALUE, result.get(3));
+  }
+
+  @Test
+  public void roundTrip_longBuffer() {
+    java.nio.LongBuffer lb = java.nio.LongBuffer.wrap(new long[]{Long.MIN_VALUE, 0L, Long.MAX_VALUE});
+    BufferUtilities.encode(encoder, lb);
+    InputStreamBinaryDecoder decoder = decoderFromEncoded();
+    java.nio.LongBuffer result = BufferUtilities.decodeLongBuffer(decoder);
+    assertEquals(3, result.limit());
+    assertEquals(Long.MIN_VALUE, result.get(0));
+    assertEquals(Long.MAX_VALUE, result.get(2));
+  }
+
+  @Test
+  public void roundTrip_charBuffer() {
+    java.nio.CharBuffer cb = java.nio.CharBuffer.wrap(new char[]{'A', 'B', 'Z', '0'});
+    BufferUtilities.encode(encoder, cb);
+    InputStreamBinaryDecoder decoder = decoderFromEncoded();
+    java.nio.CharBuffer result = BufferUtilities.decodeCharBuffer(decoder);
+    assertEquals(4, result.limit());
+    assertEquals('A', result.get(0));
+    assertEquals('Z', result.get(2));
+  }
+
+  @Test
+  public void roundTrip_byteBuffer_encode() {
+    java.nio.ByteBuffer bb = java.nio.ByteBuffer.wrap(new byte[]{1, 2, 3, 4});
+    // Just verify encoding doesn't throw
+    BufferUtilities.encode(encoder, bb);
+    encoder.flush();
+    assertTrue(baos.size() > 0);
+  }
+
+  // --- More AbstractBinaryDecoder/Encoder coverage ---
+
+  @Test
+  public void roundTrip_byteArray_extended() {
+    byte[] data = {10, 20, 30, 40, 50};
+    encoder.encode(data);
+    InputStreamBinaryDecoder decoder = decoderFromEncoded();
+    byte[] result = decoder.decodeByteArray();
+    assertArrayEquals(data, result);
+  }
+
+  @Test
+  public void roundTrip_intArray_extended() {
+    int[] data = {100, -200, 300};
+    encoder.encode(data);
+    InputStreamBinaryDecoder decoder = decoderFromEncoded();
+    int[] result = decoder.decodeIntArray();
+    assertArrayEquals(data, result);
+  }
+
+  @Test
+  public void roundTrip_floatArray_extended() {
+    float[] data = {1.1f, 2.2f, 3.3f};
+    encoder.encode(data);
+    InputStreamBinaryDecoder decoder = decoderFromEncoded();
+    float[] result = decoder.decodeFloatArray();
+    assertEquals(3, result.length);
+    assertEquals(1.1f, result[0], 1e-5f);
+  }
+
+  @Test
+  public void roundTrip_doubleArray_extended() {
+    double[] data = {1.1, 2.2, 3.3, 4.4};
+    encoder.encode(data);
+    InputStreamBinaryDecoder decoder = decoderFromEncoded();
+    double[] result = decoder.decodeDoubleArray();
+    assertEquals(4, result.length);
+    assertEquals(4.4, result[3], 1e-10);
+  }
+
+  @Test
+  public void roundTrip_shortArray_extended() {
+    short[] data = {1, 2, 3};
+    encoder.encode(data);
+    InputStreamBinaryDecoder decoder = decoderFromEncoded();
+    // Short arrays use individual decodeShort calls
+    assertEquals(3, decoder.decodeInt()); // length prefix
+    assertEquals(1, decoder.decodeShort());
+    assertEquals(2, decoder.decodeShort());
+    assertEquals(3, decoder.decodeShort());
+  }
+
+  @Test
+  public void roundTrip_enum_extended() {
+    encoder.encode(java.util.concurrent.TimeUnit.SECONDS);
+    InputStreamBinaryDecoder decoder = decoderFromEncoded();
+    java.util.concurrent.TimeUnit result = decoder.decodeEnum();
+    assertEquals(java.util.concurrent.TimeUnit.SECONDS, result);
+  }
+
+  @Test
+  public void roundTrip_enum_array() {
+    java.util.concurrent.TimeUnit[] data = {
+        java.util.concurrent.TimeUnit.SECONDS,
+        java.util.concurrent.TimeUnit.MINUTES
+    };
+    encoder.encode(data);
+    InputStreamBinaryDecoder decoder = decoderFromEncoded();
+    assertEquals(2, decoder.decodeInt()); // length
+    assertEquals(java.util.concurrent.TimeUnit.SECONDS, decoder.decodeEnum());
+    assertEquals(java.util.concurrent.TimeUnit.MINUTES, decoder.decodeEnum());
+  }
+
+  // --- Additional typed decode tests for AbstractBinaryEncoder/Decoder ---
+
+  @Test
+  public void roundTrip_enumArray_typed() {
+    java.util.concurrent.TimeUnit[] data = {
+        java.util.concurrent.TimeUnit.DAYS,
+        java.util.concurrent.TimeUnit.HOURS,
+        java.util.concurrent.TimeUnit.MINUTES
+    };
+    encoder.encode(data);
+    InputStreamBinaryDecoder decoder = decoderFromEncoded();
+    java.util.concurrent.TimeUnit[] result = decoder.decodeEnumArray(java.util.concurrent.TimeUnit.class);
+    assertArrayEquals(data, result);
+  }
+
+  @Test
+  public void roundTrip_enum_typed() {
+    encoder.encode(java.util.concurrent.TimeUnit.DAYS);
+    InputStreamBinaryDecoder decoder = decoderFromEncoded();
+    java.util.concurrent.TimeUnit result = decoder.decodeEnum(java.util.concurrent.TimeUnit.class);
+    assertEquals(java.util.concurrent.TimeUnit.DAYS, result);
+  }
+
+  @Test
+  public void roundTrip_uuid_single() {
+    java.util.UUID id = java.util.UUID.randomUUID();
+    encoder.encode(id);
+    InputStreamBinaryDecoder decoder = decoderFromEncoded();
+    java.util.UUID result = decoder.decodeId();
+    assertEquals(id, result);
+  }
+
+  @Test
+  public void roundTrip_byte_primitive() {
+    // Test single byte encoding
+    encoder.encode((byte) 42);
+    encoder.flush();
+    assertTrue(baos.size() > 0);
+  }
+
+  @Test
+  public void roundTrip_short_primitive() {
+    encoder.encode((short) 12345);
+    InputStreamBinaryDecoder decoder = decoderFromEncoded();
+    assertEquals(12345, decoder.decodeShort());
+  }
+
+  @Test
+  public void roundTrip_long_primitive() {
+    encoder.encode(Long.MAX_VALUE);
+    InputStreamBinaryDecoder decoder = decoderFromEncoded();
+    assertEquals(Long.MAX_VALUE, decoder.decodeLong());
+  }
+
+  @Test
+  public void roundTrip_char_primitive() {
+    encoder.encode('Z');
+    InputStreamBinaryDecoder decoder = decoderFromEncoded();
+    assertEquals('Z', decoder.decodeChar());
+  }
+
+  @Test
+  public void roundTrip_multipleValues() {
+    encoder.encode(true);
+    encoder.encode(42);
+    encoder.encode(3.14);
+    encoder.encode("text");
+    encoder.encode('X');
+    InputStreamBinaryDecoder decoder = decoderFromEncoded();
+    assertTrue(decoder.decodeBoolean());
+    assertEquals(42, decoder.decodeInt());
+    assertEquals(3.14, decoder.decodeDouble(), 1e-10);
+    assertEquals("text", decoder.decodeString());
+    assertEquals('X', decoder.decodeChar());
+  }
 }

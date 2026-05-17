@@ -185,6 +185,82 @@ class Matrix3x3Test {
     checkConversionsAndBack(rotatedMatrix);
   }
 
+  @Test
+  void append_producesFormattedOutput() throws Exception {
+    StringBuilder sb = new StringBuilder();
+    Matrix3x3.IDENTITY.append(sb, new java.text.DecimalFormat("0.00"), true);
+    String result = sb.toString();
+    assertTrue(result.contains("1.00"), "Should contain formatted 1.00");
+    assertTrue(result.contains("0.00"), "Should contain formatted 0.00");
+    assertTrue(result.contains("|"), "Should contain line boundaries");
+    assertTrue(result.contains("+"), "Should contain corner boundaries");
+  }
+
+  @Test
+  void append_bracketFormat() throws Exception {
+    StringBuilder sb = new StringBuilder();
+    Matrix3x3.IDENTITY.append(sb, new java.text.DecimalFormat("0.0"), false);
+    String result = sb.toString();
+    assertTrue(result.contains("["), "Should contain bracket format");
+    assertTrue(result.contains("]"), "Should contain bracket format");
+  }
+
+  @Test
+  void matrix3x3_getForward() {
+    Vector3 forward = Matrix3x3.IDENTITY.getForward();
+    assertEquals(0.0, forward.x(), 1e-10);
+    assertEquals(0.0, forward.y(), 1e-10);
+    assertEquals(-1.0, forward.z(), 1e-10);
+  }
+
+  @Test
+  void matrix3x3_scale_nonIdentity() {
+    Matrix3x3 scaled = M1.scale(2.0);
+    // M1 right column is (1, 6, 0), scaled by 2 should be (2, 12, 0)
+    assertEquals(2.0, scaled.getRight().x(), 1e-10);
+    assertEquals(12.0, scaled.getRight().y(), 1e-10);
+  }
+
+  @Test
+  void matrix3x3_times_orthogonal() {
+    Matrix3x3 result = Matrix3x3.IDENTITY.times(OrthogonalMatrix3x3.IDENTITY);
+    assertTrue(result.isIdentity());
+  }
+
+  @Test
+  void matrix3x3_times_full() {
+    FullMatrix3x3 full = new FullMatrix3x3(Vector3.POSITIVE_X_AXIS, Vector3.POSITIVE_Y_AXIS, Vector3.POSITIVE_Z_AXIS);
+    Matrix3x3 result = Matrix3x3.IDENTITY.times(full);
+    assertTrue(result.isIdentity());
+  }
+
+  @Test
+  void matrix3x3_transformVector() {
+    Vector3 v = new Vector3(1, 2, 3);
+    Vector3 result = M1.transform(v);
+    assertNotNull(result);
+    assertFalse(result.isNaN());
+  }
+
+  @Test
+  void matrix3x3_transformPoint() {
+    Point3 p = new Point3(1, 2, 3);
+    Point3 result = M1.transform(p);
+    assertNotNull(result);
+    assertFalse(result.isNaN());
+  }
+
+  @Test
+  void matrix3x3_writeColumnMajorArray16() {
+    double[] dest = new double[16];
+    Matrix3x3.IDENTITY.writeColumnMajorArray16(dest);
+    assertEquals(1.0, dest[0], 1e-10);
+    assertEquals(0.0, dest[1], 1e-10);
+    assertEquals(0.0, dest[3], 1e-10);
+    assertEquals(1.0, dest[5], 1e-10);
+    assertEquals(1.0, dest[15], 1e-10);
+  }
+
   private static void checkConversionsAndBack(OrthogonalMatrix3x3 src) {
     compareTo(src, src.asEulerAngles());
     compareTo(src, src.asUnitQuaternion());
