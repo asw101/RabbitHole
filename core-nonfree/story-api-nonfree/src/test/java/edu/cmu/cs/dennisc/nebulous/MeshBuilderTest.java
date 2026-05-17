@@ -44,7 +44,6 @@ package edu.cmu.cs.dennisc.nebulous;
 
 import org.junit.Test;
 
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -129,13 +128,13 @@ public class MeshBuilderTest {
     // oldVertexIndexToNewIndex: maps old vertex (vertexIndex/3) → last new index
     // vertex 0 (index 0/3=0) first appears at new index 0
     // vertex 1 (index 3/3=1) appears at new index 1, then again at 2 → last wins
-    assertEquals(Integer.valueOf(0), result.oldVertexIndexToNewIndex.get(0));
-    assertEquals(Integer.valueOf(2), result.oldVertexIndexToNewIndex.get(1));
+    assertEquals(0, result.oldVertexIndexToNewIndex[0]);
+    assertEquals(2, result.oldVertexIndexToNewIndex[1]);
 
     // newIndexToOldVertex: maps new index → old vertex (vertexIndex/3)
-    assertEquals(Integer.valueOf(0), result.newIndexToOldVertex.get(0));
-    assertEquals(Integer.valueOf(1), result.newIndexToOldVertex.get(1));
-    assertEquals(Integer.valueOf(1), result.newIndexToOldVertex.get(2));
+    assertEquals(0, result.newIndexToOldVertex[0]);
+    assertEquals(1, result.newIndexToOldVertex[1]);
+    assertEquals(1, result.newIndexToOldVertex[2]);
   }
 
   // ── remapIndices: multiple textures ─────────────────────────────────────
@@ -187,8 +186,8 @@ public class MeshBuilderTest {
     assertEquals(0, result.normals.length);
     assertEquals(0, result.uvs.length);
     assertEquals(0, result.textureIdsPerIndex.length);
-    assertTrue(result.oldVertexIndexToNewIndex.isEmpty());
-    assertTrue(result.newIndexToOldVertex.isEmpty());
+    assertEquals(0, result.oldVertexIndexToNewIndex.length);
+    assertEquals(0, result.newIndexToOldVertex.length);
   }
 
   @Test
@@ -260,21 +259,12 @@ public class MeshBuilderTest {
     // Original weights: vertex 0 → 0.5, vertex 1 → 0.8
     float[] vertexWeights = {0.5f, 0.8f};
 
-    // From the remapIndices example above:
-    // oldVertexIndexToNewIndex: {0: 0, 1: 2}
-    Map<Integer, Integer> oldVertexIndexToNewIndex = new HashMap<>();
-    oldVertexIndexToNewIndex.put(0, 0);
-    oldVertexIndexToNewIndex.put(1, 2);
-
     // newIndexToOldVertex: {0: 0, 1: 1, 2: 1}
-    Map<Integer, Integer> newIndexToOldVertex = new HashMap<>();
-    newIndexToOldVertex.put(0, 0);
-    newIndexToOldVertex.put(1, 1);
-    newIndexToOldVertex.put(2, 1);
+    int[] newIndexToOldVertex = {0, 1, 1};
 
-    float[] result = MeshBuilder.remapWeights(vertexWeights, oldVertexIndexToNewIndex, newIndexToOldVertex);
+    float[] result = MeshBuilder.remapWeights(vertexWeights, newIndexToOldVertex);
 
-    // maxNewIndex = max(0, 2) = 2 → result length = 3
+    // output length = newIndexToOldVertex.length = 3
     assertEquals(3, result.length);
     // new[0] = old[0] = 0.5
     assertEquals(0.5f, result[0], 0.0001f);
@@ -291,16 +281,10 @@ public class MeshBuilderTest {
     // Only 1 weight value
     float[] vertexWeights = {0.5f};
 
-    // Old vertex 0 → new 0, old vertex 5 → new 1 (5 is beyond weights length)
-    Map<Integer, Integer> oldVertexIndexToNewIndex = new HashMap<>();
-    oldVertexIndexToNewIndex.put(0, 0);
-    oldVertexIndexToNewIndex.put(5, 1);
+    // new index 0 → old vertex 0, new index 1 → old vertex 5 (beyond weights length)
+    int[] newIndexToOldVertex = {0, 5};
 
-    Map<Integer, Integer> newIndexToOldVertex = new HashMap<>();
-    newIndexToOldVertex.put(0, 0);
-    newIndexToOldVertex.put(1, 5);
-
-    float[] result = MeshBuilder.remapWeights(vertexWeights, oldVertexIndexToNewIndex, newIndexToOldVertex);
+    float[] result = MeshBuilder.remapWeights(vertexWeights, newIndexToOldVertex);
 
     assertEquals(2, result.length);
     assertEquals(0.5f, result[0], 0.0001f);
@@ -315,18 +299,12 @@ public class MeshBuilderTest {
     // 3 old vertices with weights, but only vertex 0 and 2 have mappings
     float[] vertexWeights = {0.3f, 0.6f, 0.9f};
 
-    // Only vertices 0 and 2 are mapped; vertex 1 is unmapped (missing data)
-    Map<Integer, Integer> oldVertexIndexToNewIndex = new HashMap<>();
-    oldVertexIndexToNewIndex.put(0, 0);
-    oldVertexIndexToNewIndex.put(2, 1);
+    // Only new indices 0 and 1 exist; old vertex 1 has no mapping
+    int[] newIndexToOldVertex = {0, 2};
 
-    Map<Integer, Integer> newIndexToOldVertex = new HashMap<>();
-    newIndexToOldVertex.put(0, 0);
-    newIndexToOldVertex.put(1, 2);
+    float[] result = MeshBuilder.remapWeights(vertexWeights, newIndexToOldVertex);
 
-    float[] result = MeshBuilder.remapWeights(vertexWeights, oldVertexIndexToNewIndex, newIndexToOldVertex);
-
-    // maxNewIndex from mapped keys = max(0, 1) = 1 → length = 2
+    // output length = newIndexToOldVertex.length = 2
     assertEquals(2, result.length);
     assertEquals(0.3f, result[0], 0.0001f);
     assertEquals(0.9f, result[1], 0.0001f);
@@ -338,15 +316,10 @@ public class MeshBuilderTest {
   public void remapWeights_identityMapping_preservesOriginalWeights() {
     float[] vertexWeights = {0.1f, 0.2f, 0.3f, 0.4f};
 
-    // Identity: old vertex i → new index i
-    Map<Integer, Integer> oldVertexIndexToNewIndex = new HashMap<>();
-    Map<Integer, Integer> newIndexToOldVertex = new HashMap<>();
-    for (int i = 0; i < 4; i++) {
-      oldVertexIndexToNewIndex.put(i, i);
-      newIndexToOldVertex.put(i, i);
-    }
+    // Identity: new index i → old vertex i
+    int[] newIndexToOldVertex = {0, 1, 2, 3};
 
-    float[] result = MeshBuilder.remapWeights(vertexWeights, oldVertexIndexToNewIndex, newIndexToOldVertex);
+    float[] result = MeshBuilder.remapWeights(vertexWeights, newIndexToOldVertex);
 
     assertEquals(4, result.length);
     assertArrayEquals(vertexWeights, result, 0.0001f);
@@ -358,18 +331,10 @@ public class MeshBuilderTest {
   public void remapWeights_reversedMapping_reversesWeightOrder() {
     float[] vertexWeights = {0.1f, 0.2f, 0.3f};
 
-    // Reversed: old 0→new 2, old 1→new 1, old 2→new 0
-    Map<Integer, Integer> oldVertexIndexToNewIndex = new HashMap<>();
-    oldVertexIndexToNewIndex.put(0, 2);
-    oldVertexIndexToNewIndex.put(1, 1);
-    oldVertexIndexToNewIndex.put(2, 0);
+    // Reversed: new 0→old 2, new 1→old 1, new 2→old 0
+    int[] newIndexToOldVertex = {2, 1, 0};
 
-    Map<Integer, Integer> newIndexToOldVertex = new HashMap<>();
-    newIndexToOldVertex.put(0, 2);
-    newIndexToOldVertex.put(1, 1);
-    newIndexToOldVertex.put(2, 0);
-
-    float[] result = MeshBuilder.remapWeights(vertexWeights, oldVertexIndexToNewIndex, newIndexToOldVertex);
+    float[] result = MeshBuilder.remapWeights(vertexWeights, newIndexToOldVertex);
 
     assertEquals(3, result.length);
     assertEquals(0.3f, result[0], 0.0001f);
@@ -383,13 +348,9 @@ public class MeshBuilderTest {
   public void remapWeights_singleVertex_producesLengthOneArray() {
     float[] vertexWeights = {1.0f};
 
-    Map<Integer, Integer> oldVertexIndexToNewIndex = new HashMap<>();
-    oldVertexIndexToNewIndex.put(0, 0);
+    int[] newIndexToOldVertex = {0};
 
-    Map<Integer, Integer> newIndexToOldVertex = new HashMap<>();
-    newIndexToOldVertex.put(0, 0);
-
-    float[] result = MeshBuilder.remapWeights(vertexWeights, oldVertexIndexToNewIndex, newIndexToOldVertex);
+    float[] result = MeshBuilder.remapWeights(vertexWeights, newIndexToOldVertex);
 
     assertEquals(1, result.length);
     assertEquals(1.0f, result[0], 0.0001f);
@@ -402,12 +363,11 @@ public class MeshBuilderTest {
     // Weights exist but nothing maps into the new index space
     float[] vertexWeights = {0.5f, 0.8f};
 
-    Map<Integer, Integer> oldVertexIndexToNewIndex = new HashMap<>();
-    Map<Integer, Integer> newIndexToOldVertex = new HashMap<>();
+    int[] newIndexToOldVertex = {};
 
-    float[] result = MeshBuilder.remapWeights(vertexWeights, oldVertexIndexToNewIndex, newIndexToOldVertex);
+    float[] result = MeshBuilder.remapWeights(vertexWeights, newIndexToOldVertex);
 
-    // No mapped vertices → maxVertexIndex stays 0 with no entries → length 0
+    // No new indices → length 0
     assertEquals(0, result.length);
   }
 
@@ -418,19 +378,12 @@ public class MeshBuilderTest {
     // Single old vertex with weight 0.75
     float[] vertexWeights = {0.75f};
 
-    // Old vertex 0 maps to new index 2 (last wins in oldVertexIndexToNewIndex)
-    Map<Integer, Integer> oldVertexIndexToNewIndex = new HashMap<>();
-    oldVertexIndexToNewIndex.put(0, 2);
+    // All 3 new indices refer back to old vertex 0
+    int[] newIndexToOldVertex = {0, 0, 0};
 
-    // But all 3 new indices refer back to old vertex 0
-    Map<Integer, Integer> newIndexToOldVertex = new HashMap<>();
-    newIndexToOldVertex.put(0, 0);
-    newIndexToOldVertex.put(1, 0);
-    newIndexToOldVertex.put(2, 0);
+    float[] result = MeshBuilder.remapWeights(vertexWeights, newIndexToOldVertex);
 
-    float[] result = MeshBuilder.remapWeights(vertexWeights, oldVertexIndexToNewIndex, newIndexToOldVertex);
-
-    // maxNewIndex = 2 → length = 3
+    // length = 3
     assertEquals(3, result.length);
     // All indices map back to old vertex 0 → all get weight 0.75
     assertEquals(0.75f, result[0], 0.0001f);
@@ -463,7 +416,6 @@ public class MeshBuilderTest {
 
     float[] remapped = MeshBuilder.remapWeights(
         originalWeights,
-        meshData.oldVertexIndexToNewIndex,
         meshData.newIndexToOldVertex
     );
 
@@ -494,10 +446,10 @@ public class MeshBuilderTest {
     assertEquals(2, result.indices.length);
 
     // oldVertexIndexToNewIndex: vertex 0/3=0 → last occurrence is new index 1
-    assertEquals(Integer.valueOf(1), result.oldVertexIndexToNewIndex.get(0));
+    assertEquals(1, result.oldVertexIndexToNewIndex[0]);
 
     // Both new indices map back to old vertex 0
-    assertEquals(Integer.valueOf(0), result.newIndexToOldVertex.get(0));
-    assertEquals(Integer.valueOf(0), result.newIndexToOldVertex.get(1));
+    assertEquals(0, result.newIndexToOldVertex[0]);
+    assertEquals(0, result.newIndexToOldVertex[1]);
   }
 }

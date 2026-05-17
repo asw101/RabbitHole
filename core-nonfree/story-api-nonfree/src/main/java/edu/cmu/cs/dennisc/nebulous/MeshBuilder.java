@@ -42,6 +42,7 @@
  *******************************************************************************/
 package edu.cmu.cs.dennisc.nebulous;
 
+import java.util.Arrays;
 import java.util.Map;
 
 /**
@@ -59,6 +60,11 @@ class MeshBuilder {
    * unified Alice index buffers. Each Sims triplet produces one unified
    * vertex with its own normal and UV coordinates.
    *
+   * <p>Sims indices are stored as interleaved triplets: (uvIndex, normalIndex, vertexIndex).
+   * Each triplet references separate source arrays. Alice uses a single index into
+   * unified vertex/normal/UV buffers, so this method expands each triplet into a
+   * standalone unified vertex.
+   *
    * @param textureIdToIndices map from texture name to raw Sims indices array
    * @param vertices           raw vertex positions (3 floats per vertex)
    * @param normals            raw normals (3 floats per normal)
@@ -67,24 +73,80 @@ class MeshBuilder {
    */
   static RemappedMeshData remapIndices(Map<String, int[]> textureIdToIndices,
                                        float[] vertices, float[] normals, float[] uvs) {
-    // TODO: Extract logic from Model.initializeMesh
-    throw new UnsupportedOperationException("Not yet implemented");
+    int originalIndexCount = 0;
+    for (int[] indices : textureIdToIndices.values()) {
+      originalIndexCount += indices.length;
+    }
+
+    int newIndexCount = originalIndexCount / 3;
+    if (newIndexCount == 0) {
+      return new RemappedMeshData(new double[0], new float[0], new float[0],
+          new int[0], new String[0], new int[0], new int[0]);
+    }
+
+    double[] newVertices = new double[newIndexCount * 3];
+    float[] newNormals = new float[newIndexCount * 3];
+    float[] newUVs = new float[newIndexCount * 2];
+    String[] newTextureIds = new String[newIndexCount];
+    int[] newIndices = new int[newIndexCount];
+
+    int oldVertexCount = vertices.length / 3;
+    int[] oldVertexIndexToNewIndex = new int[oldVertexCount];
+    Arrays.fill(oldVertexIndexToNewIndex, -1);
+    int[] newIndexToOldVertex = new int[newIndexCount];
+
+    int currentIndex = 0;
+    for (Map.Entry<String, int[]> indicesEntry : textureIdToIndices.entrySet()) {
+      int[] currentIndices = indicesEntry.getValue();
+      String currentTextureId = indicesEntry.getKey();
+      for (int i = 0; i < currentIndices.length; ) {
+        int uvIndex = currentIndices[i];
+        newUVs[currentIndex * 2] = uvs[uvIndex];
+        newUVs[currentIndex * 2 + 1] = uvs[uvIndex + 1];
+        i++;
+        int normalIndex = currentIndices[i];
+        newNormals[currentIndex * 3] = normals[normalIndex];
+        newNormals[currentIndex * 3 + 1] = normals[normalIndex + 1];
+        newNormals[currentIndex * 3 + 2] = normals[normalIndex + 2];
+        i++;
+        int vertexIndex = currentIndices[i];
+        newVertices[currentIndex * 3] = vertices[vertexIndex];
+        newVertices[currentIndex * 3 + 1] = vertices[vertexIndex + 1];
+        newVertices[currentIndex * 3 + 2] = vertices[vertexIndex + 2];
+        newTextureIds[currentIndex] = currentTextureId;
+        // Last-wins: if the same old vertex appears multiple times, the last new index wins
+        oldVertexIndexToNewIndex[vertexIndex / 3] = currentIndex;
+        newIndexToOldVertex[currentIndex] = vertexIndex / 3;
+        newIndices[currentIndex] = currentIndex;
+        i++;
+        currentIndex++;
+      }
+    }
+    return new RemappedMeshData(newVertices, newNormals, newUVs, newIndices, newTextureIds,
+        oldVertexIndexToNewIndex, newIndexToOldVertex);
   }
 
   /**
    * Remaps vertex weights from old (Sims) index space to new (Alice) index
-   * space. Computes the required output array size internally from the
-   * overlap of oldVertexIndexToNewIndex keys.
+   * space. Output array size equals newIndexToOldVertex.length.
    *
-   * @param vertexWeights           original per-vertex weights from JNI
-   * @param oldVertexIndexToNewIndex mapping from old vertex index to new unified index
-   * @param newIndexToOldVertex      mapping from new unified index to old vertex index
-   * @return remapped weights array sized to (maxNewIndex + 1)
+   * @param vertexWeights      original per-vertex weights from JNI
+   * @param newIndexToOldVertex maps each new unified index to its old vertex index
+   * @return remapped weights array, or empty if newIndexToOldVertex is empty
    */
-  static float[] remapWeights(float[] vertexWeights,
-                              Map<Integer, Integer> oldVertexIndexToNewIndex,
-                              Map<Integer, Integer> newIndexToOldVertex) {
-    // TODO: Extract logic from Model.createWeightInfo
-    throw new UnsupportedOperationException("Not yet implemented");
+  static float[] remapWeights(float[] vertexWeights, int[] newIndexToOldVertex) {
+    if (newIndexToOldVertex.length == 0) {
+      return new float[0];
+    }
+    float[] remappedWeights = new float[newIndexToOldVertex.length];
+    for (int i = 0; i < remappedWeights.length; i++) {
+      int oldVertexIndex = newIndexToOldVertex[i];
+      if (oldVertexIndex >= vertexWeights.length) {
+        remappedWeights[i] = 0;
+      } else {
+        remappedWeights[i] = vertexWeights[oldVertexIndex];
+      }
+    }
+    return remappedWeights;
   }
 }

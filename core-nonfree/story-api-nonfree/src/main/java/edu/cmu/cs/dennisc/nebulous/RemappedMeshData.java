@@ -42,12 +42,11 @@
  *******************************************************************************/
 package edu.cmu.cs.dennisc.nebulous;
 
-import java.util.Map;
-
 /**
  * Holds the result of remapping Sims triplet indices into unified Alice indices.
  * Sims indices are stored as interleaved triplets (uvIndex, normalIndex, vertexIndex)
  * referencing separate arrays; Alice uses a single index into unified buffers.
+ * Uses primitive int arrays instead of Maps to eliminate autoboxing overhead.
  */
 class RemappedMeshData {
   final double[] vertices;
@@ -55,13 +54,15 @@ class RemappedMeshData {
   final float[] uvs;
   final int[] indices;
   final String[] textureIdsPerIndex;
-  final Map<Integer, Integer> oldVertexIndexToNewIndex;
-  final Map<Integer, Integer> newIndexToOldVertex;
+  /** Indexed by old vertex index; value is new unified index, or -1 if unmapped. */
+  final int[] oldVertexIndexToNewIndex;
+  /** Indexed by new unified index; value is old vertex index. */
+  final int[] newIndexToOldVertex;
 
   RemappedMeshData(double[] vertices, float[] normals, float[] uvs,
                    int[] indices, String[] textureIdsPerIndex,
-                   Map<Integer, Integer> oldVertexIndexToNewIndex,
-                   Map<Integer, Integer> newIndexToOldVertex) {
+                   int[] oldVertexIndexToNewIndex,
+                   int[] newIndexToOldVertex) {
     this.vertices = vertices;
     this.normals = normals;
     this.uvs = uvs;
