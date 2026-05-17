@@ -180,7 +180,9 @@ class ASGDecoder {
     Integer elementKey = Integer.parseInt(xmlElement.getAttribute("key"));
     String elementName = xmlElement.getAttribute("name");
     edu.cmu.cs.dennisc.scenegraph.Element sgElement = (edu.cmu.cs.dennisc.scenegraph.Element) ReflectionUtilities.newInstance(className);
-    sgElement.setName(elementName);
+    if (!elementName.isEmpty()) {
+      sgElement.setName(elementName);
+    }
     keyToElementMap.put(elementKey, sgElement);
     Element[] xmlProperties = PropertyValueParser.getChildren(xmlElement, "property");
     for (Element xmlProperty : xmlProperties) {

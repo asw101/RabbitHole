@@ -344,6 +344,14 @@ public class ASGRoundtripTest {
 
     OrthogonalMatrix3x3 decO = decodedT.getLocalTransformation().orientation();
     assertEquals(rot.right().x(), decO.right().x(), EPSILON);
+    assertEquals(rot.right().y(), decO.right().y(), EPSILON);
+    assertEquals(rot.right().z(), decO.right().z(), EPSILON);
+    assertEquals(rot.up().x(), decO.up().x(), EPSILON);
+    assertEquals(rot.up().y(), decO.up().y(), EPSILON);
+    assertEquals(rot.up().z(), decO.up().z(), EPSILON);
+    assertEquals(rot.backward().x(), decO.backward().x(), EPSILON);
+    assertEquals(rot.backward().y(), decO.backward().y(), EPSILON);
+    assertEquals(rot.backward().z(), decO.backward().z(), EPSILON);
   }
 
   @Test
@@ -356,6 +364,14 @@ public class ASGRoundtripTest {
     assertNotNull(decoded);
     Transformable decodedT = (Transformable) decoded;
     assertPointEquals(Point3.ORIGIN, decodedT.getLocalTransformation().translation());
+    OrthogonalMatrix3x3 decO = decodedT.getLocalTransformation().orientation();
+    OrthogonalMatrix3x3 identity = AffineMatrix4x4.IDENTITY.orientation();
+    assertEquals(identity.right().x(), decO.right().x(), EPSILON);
+    assertEquals(identity.right().y(), decO.right().y(), EPSILON);
+    assertEquals(identity.right().z(), decO.right().z(), EPSILON);
+    assertEquals(identity.up().x(), decO.up().x(), EPSILON);
+    assertEquals(identity.up().y(), decO.up().y(), EPSILON);
+    assertEquals(identity.up().z(), decO.up().z(), EPSILON);
   }
 
   @Test
@@ -367,6 +383,11 @@ public class ASGRoundtripTest {
     Component decoded = roundtrip(original);
     assertNotNull(decoded);
     assertTrue(decoded instanceof Transformable);
+    Transformable decodedT = (Transformable) decoded;
+    assertPointEquals(new Point3(1, 1, 1), decodedT.getLocalTransformation().translation());
+    // Encoder omits null name; decoder getAttribute returns "" which is now skipped
+    assertTrue("Name should be null after roundtrip of unset name",
+        decoded.getName() == null);
   }
 
   @Test
