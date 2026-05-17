@@ -40,12 +40,13 @@ Expected: `ExpressionEncoder(TweedleEncoder encoder)` or similar.
 ## Step 4: Verify extracted methods exist on ExpressionEncoder
 
 ```bash
-grep -E 'appendTargetAndMember|targetIsMath|tweedleModuleForMath|processResourceExpression' \
+grep -E 'processInstantiation|getDeclaringJavaClassName|appendTargetAndMember|targetIsMath|tweedleModuleForMath|processResourceExpression' \
   core/ast/src/main/java/org/alice/serialization/tweedle/ExpressionEncoder.java
 ```
 
-Expected: at least four method signatures — one `appendTargetAndMember`, one
-`targetIsMath`, one `tweedleModuleForMath`, one `processResourceExpression`.
+Expected: at least six method signatures — `processInstantiation`,
+`getDeclaringJavaClassName`, `appendTargetAndMember`, `targetIsMath`,
+`tweedleModuleForMath`, `processResourceExpression`.
 
 ## Step 5: Verify angleMembers and membersToRename are package-private on TweedleEncoder
 
@@ -58,15 +59,16 @@ Expected:
 - `static final Set<String> angleMembers` — no `private` modifier.
 - `static final Map<String, String> membersToRename` — no `private` modifier.
 
-## Step 6: Verify 3 new bridge methods on TweedleEncoder
+## Step 6: Verify 4 bridge methods on TweedleEncoder
 
 ```bash
-grep -E 'forwardProcessExpression|forwardAppendAccessSeparator|forwardAppendEscapedString' \
+grep -E 'superProcessInstantiation|forwardProcessExpression|forwardAppendAccessSeparator|forwardAppendEscapedString' \
   core/ast/src/main/java/org/alice/serialization/tweedle/TweedleEncoder.java
 ```
 
-Expected: three method declarations — `forwardProcessExpression(Expression)`,
-`forwardAppendAccessSeparator()`, `forwardAppendEscapedString(String)`.
+Expected: four method declarations — `superProcessInstantiation(InstanceCreation)`,
+`forwardProcessExpression(Expression)`, `forwardAppendAccessSeparator()`,
+`forwardAppendEscapedString(String)`.
 
 ## Step 7: Verify TweedleEncoder delegates to ExpressionEncoder
 
@@ -75,17 +77,17 @@ grep 'expressionEncoder\.' \
   core/ast/src/main/java/org/alice/serialization/tweedle/TweedleEncoder.java
 ```
 
-Expected: delegation calls in `appendTargetAndMember` and
-`processResourceExpression`.
+Expected: delegation calls in `processInstantiation`, `appendTargetAndMember`,
+and `processResourceExpression`.
 
-## Step 8: Verify targetIsMath and tweedleModuleForMath are NOT on TweedleEncoder
+## Step 8: Verify private helpers are NOT on TweedleEncoder
 
 ```bash
-grep -E 'private.*targetIsMath|private.*tweedleModuleForMath' \
+grep -E 'private.*targetIsMath|private.*tweedleModuleForMath|private.*getDeclaringJavaClassName' \
   core/ast/src/main/java/org/alice/serialization/tweedle/TweedleEncoder.java
 ```
 
-Expected: **zero matches**. Both methods have moved entirely to
+Expected: **zero matches**. All three private methods have moved entirely to
 `ExpressionEncoder`.
 
 ## Step 9: Verify TweedleEncoderDecoder is unchanged
@@ -105,17 +107,17 @@ git diff HEAD~1 -- core/ast/src/main/java/org/alice/serialization/tweedle/Statem
 
 Expected: no changes. The step 1 extraction is unaffected by step 2.
 
-## Step 11: Run ExpressionEncoderExtractionTest
+## Step 11: Run ExpressionArgumentEncoderExtractionTest
 
 ```bash
 NODE_OPTIONS=--max-old-space-size=32768 \
 mvn -pl core/ast -am -DfailIfNoTests=false \
   -Dsurefire.failIfNoSpecifiedTests=false \
-  -Dtest=ExpressionEncoderExtractionTest \
+  -Dtest=ExpressionArgumentEncoderExtractionTest \
   test -q
 ```
 
-Expected: all tests pass, exit code 0.
+Expected: all 43 characterization tests pass, exit code 0.
 
 ## Step 12: Run StatementEncoderExtractionTest (regression)
 
@@ -155,14 +157,14 @@ Expected: all tests pass, exit code 0.
 - [ ] `ExpressionEncoder.java` exists
 - [ ] `ExpressionEncoder` is package-private (no `public` keyword)
 - [ ] Constructor takes `TweedleEncoder` reference
-- [ ] 4 methods present: `appendTargetAndMember`, `targetIsMath`, `tweedleModuleForMath`, `processResourceExpression`
-- [ ] `angleMembers` and `membersToRename` are package-private on `TweedleEncoder`
-- [ ] 3 new bridge methods on `TweedleEncoder`: `forwardProcessExpression`, `forwardAppendAccessSeparator`, `forwardAppendEscapedString`
+- [ ] 6 methods present: `processInstantiation`, `getDeclaringJavaClassName`, `appendTargetAndMember`, `targetIsMath`, `tweedleModuleForMath`, `processResourceExpression`
+- [ ] `angleMembers` and `membersToRename` accessed from `TweedleEncoderData`
+- [ ] 4 bridge methods on `TweedleEncoder`: `superProcessInstantiation`, `forwardProcessExpression`, `forwardAppendAccessSeparator`, `forwardAppendEscapedString`
 - [ ] `TweedleEncoder` delegates via `expressionEncoder.` calls
-- [ ] `targetIsMath` and `tweedleModuleForMath` removed from `TweedleEncoder`
+- [ ] `targetIsMath`, `tweedleModuleForMath`, `getDeclaringJavaClassName` removed from `TweedleEncoder`
 - [ ] `TweedleEncoderDecoder.java` is unchanged
 - [ ] `StatementEncoder.java` is unchanged
-- [ ] `ExpressionEncoderExtractionTest` passes
+- [ ] `ExpressionArgumentEncoderExtractionTest` passes (43 tests)
 - [ ] `StatementEncoderExtractionTest` passes
 - [ ] `TweedleEncoderTest` passes
 - [ ] `TweedleEncoderRenameContractTest` passes

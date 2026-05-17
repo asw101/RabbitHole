@@ -1,10 +1,11 @@
 # ExpressionEncoder Extraction
 
 This reference describes the extraction of expression-encoding methods from the
-`TweedleEncoder` into a new package-private `ExpressionEncoder` class. This is
-the second step of RabbitHole issue #506, isolating target-and-member resolution,
-Math module routing, and resource expression encoding into a focused companion
-class.
+`TweedleEncoder` into a new package-private `ExpressionEncoder` class. Initially
+created as step 2 of RabbitHole issue #506 (target-and-member resolution, Math
+module routing, resource expression encoding), `ExpressionEncoder` was expanded
+in issue #730 to include instantiation dispatch (`processInstantiation` and
+`getDeclaringJavaClassName`).
 
 The extraction is a pure internal refactor. The public API surface —
 `TweedleEncoderDecoder` — is unchanged. All existing encode behavior, error
@@ -49,8 +50,8 @@ TweedleEncoderDecoder (public facade — unchanged)
 └── TweedleEncoder (coordinator, extends SourceCodeGenerator)
     ├── StatementEncoder (package-private, ~46 lines — step 1)
     │   └── Statement completion, disabled markers, statement-end formatting
-    └── ExpressionEncoder (package-private, ~60 lines — step 2)
-        └── Target+member resolution, Math routing, resource expressions
+    └── ExpressionEncoder (package-private, ~97 lines — step 2 + #730)
+        └── Instantiation dispatch, target+member resolution, Math routing, resource expressions
 ```
 
 Both delegate classes live in `org.alice.serialization.tweedle`.
@@ -64,6 +65,8 @@ shared services.
 
 | Responsibility | Method |
 | --- | --- |
+| Instantiation dispatch | `processInstantiation(InstanceCreation)` — dispatches PersonResource, Double, DynamicResource, or falls back to `super` via bridge (added in #730) |
+| Class name extraction | `getDeclaringJavaClassName(InstanceCreation)` — private helper; resolves Java constructor class name from `JavaConstructor` reflection proxy (added in #730) |
 | Target and member resolution | `appendTargetAndMember(Expression, String, AbstractType)` — resolves Math targets, renames members, appends access separator |
 | Math target detection | `targetIsMath(Expression)` — returns `true` for `TypeExpression` wrapping `java.lang.Math` |
 | Math module routing | `tweedleModuleForMath(String, AbstractType)` — maps to `$WholeNumber`, `$Angle`, or `$DecimalNumber` |
@@ -90,9 +93,11 @@ ExpressionEncoder(TweedleEncoder encoder) {
 | Constructor wiring | `this.expressionEncoder = new ExpressionEncoder(this)` alongside existing `statementEncoder` |
 | `angleMembers` visibility | Changed from `private static final` to `static final` (package-private) so `ExpressionEncoder.tweedleModuleForMath` can read it |
 | `membersToRename` visibility | Changed from `private static final` to `static final` (package-private) so `ExpressionEncoder.appendTargetAndMember` can read it |
+| `processInstantiation(InstanceCreation)` | Body delegates to `expressionEncoder.processInstantiation(creation)` (added in #730) |
 | `appendTargetAndMember(Expression, String, AbstractType)` | Body delegates to `expressionEncoder.appendTargetAndMember(target, member, returnType)` |
 | `processResourceExpression(ResourceExpression)` | Body delegates to `expressionEncoder.processResourceExpression(resourceExpression)` |
-| Bridge methods added | `forwardProcessExpression(Expression)`, `forwardAppendAccessSeparator()`, `forwardAppendEscapedString(String)` — package-private forwarding methods (`forwardAppendAccessSeparator` and `forwardAppendEscapedString` bridge inherited `protected` methods; `forwardProcessExpression` wraps the `public` `processExpression` for uniformity) |
+| `getDeclaringJavaClassName` removed | Private method moved entirely to `ExpressionEncoder` (added in #730) |
+| Bridge methods added | `superProcessInstantiation(InstanceCreation)` (new in #730 — calls `super.processInstantiation`), `forwardProcessExpression(Expression)`, `forwardAppendAccessSeparator()`, `forwardAppendEscapedString(String)` — package-private forwarding methods |
 
 The `@Override` annotations remain on `TweedleEncoder` because the visitor
 pattern in `SourceCodeGenerator` requires the override stubs on the subclass.
@@ -125,11 +130,12 @@ forwarding methods. The following methods on `TweedleEncoder` are used by
 | Method | Purpose |
 | --- | --- |
 | `forwardAppendString(String)` | Append raw string to output buffer (already exists from step 1) |
-| `forwardProcessExpression(Expression)` | Call `processExpression(target)` to encode the target expression (new — consistency bridge; `processExpression` is `public` but wrapped for uniformity) |
-| `forwardAppendAccessSeparator()` | Call `appendAccessSeparator()` to write the `.` separator (new bridge) |
-| `forwardAppendEscapedString(String)` | Call `appendEscapedString(value)` to write a quoted, escaped string (new bridge) |
-| `membersToRename` | Package-private static map for member name translation (was `private`) |
-| `angleMembers` | Package-private static set for Math angle function detection (was `private`) |
+| `superProcessInstantiation(InstanceCreation)` | Call `super.processInstantiation(creation)` — the `super` bridge for instantiation fallback (new in #730) |
+| `forwardProcessExpression(Expression)` | Call `processExpression(target)` to encode the target expression (consistency bridge; `processExpression` is `public` but wrapped for uniformity) |
+| `forwardAppendAccessSeparator()` | Call `appendAccessSeparator()` to write the `.` separator |
+| `forwardAppendEscapedString(String)` | Call `appendEscapedString(value)` to write a quoted, escaped string |
+| `membersToRename` | Package-private static map for member name translation (on `TweedleEncoderData`) |
+| `angleMembers` | Package-private static set for Math angle function detection (on `TweedleEncoderData`) |
 
 No interfaces or inheritance are introduced. All collaboration uses direct
 method calls within the same package, matching the
@@ -141,16 +147,30 @@ method calls within the same package, matching the
 Because `TweedleEncoder` extends `SourceCodeGenerator` (in a different package),
 `ExpressionEncoder` cannot call inherited `protected` methods directly — Java
 accessibility rules prevent a same-package class from calling `protected`
-methods inherited from a class in a different package. Two of the three
-forwarding methods (`forwardAppendAccessSeparator`, `forwardAppendEscapedString`)
-are required for this reason. The third (`forwardProcessExpression`) wraps
-`processExpression`, which is actually `public` on `SourceCodeGenerator`, so it
-is technically callable without a bridge. It is included for consistency with
-the other forwarding methods, keeping all ExpressionEncoder→TweedleEncoder
-callbacks uniform. The bridge pattern used:
+methods inherited from a class in a different package. The forwarding methods
+(`forwardAppendAccessSeparator`, `forwardAppendEscapedString`) are required for
+this reason. The `forwardProcessExpression` method wraps `processExpression`,
+which is actually `public` on `SourceCodeGenerator`, so it is technically
+callable without a bridge — it is included for uniformity.
+
+Issue #730 added `superProcessInstantiation(InstanceCreation)` as a `super`
+bridge, following the same pattern as `StatementEncoder`'s
+`superAppendStatementCompletion`. This is needed because `processInstantiation`
+has a fallback path that calls `super.processInstantiation(creation)` for
+unrecognized constructor types. The bridge pattern used:
 
 ```java
 // TweedleEncoder.java — @Override stays here for polymorphic dispatch
+@Override
+public void processInstantiation(InstanceCreation creation) {
+  expressionEncoder.processInstantiation(creation);
+}
+
+// Package-private super bridge: delegate calls this for fallback
+void superProcessInstantiation(InstanceCreation creation) {
+  super.processInstantiation(creation);
+}
+
 @Override
 protected void appendTargetAndMember(Expression target, String member,
     AbstractType<?, ?, ?> returnType) {
@@ -178,14 +198,6 @@ public void processResourceExpression(ResourceExpression resourceExpression) {
   expressionEncoder.processResourceExpression(resourceExpression);
 }
 ```
-
-Unlike the `StatementEncoder` bridges which need `super` call bridges
-(`superAppendStatementCompletion`), `ExpressionEncoder` does not need `super`
-bridges. The extracted methods (`appendTargetAndMember`,
-`processResourceExpression`) do not call `super` — they implement the behavior
-entirely. The forwarding methods provide access to inherited utility methods
-(`processExpression`, `appendAccessSeparator`, `appendEscapedString`) rather
-than `super` method invocations.
 
 ## Visibility changes
 
@@ -270,16 +282,18 @@ All suites must pass with identical results before and after the extraction.
 | `ExpressionEncoder.java` exists | File present in `core/ast/src/main/java/org/alice/serialization/tweedle/` |
 | `ExpressionEncoder` is package-private | No `public` keyword on class declaration |
 | Constructor takes `TweedleEncoder` | `ExpressionEncoder(TweedleEncoder encoder)` |
+| `processInstantiation` extracted | Method present on `ExpressionEncoder` with `(InstanceCreation)` signature (#730) |
+| `getDeclaringJavaClassName` extracted | Private method on `ExpressionEncoder`, not on `TweedleEncoder` (#730) |
 | `appendTargetAndMember` extracted | Method present on `ExpressionEncoder` with `(Expression, String, AbstractType)` signature |
 | `targetIsMath` extracted | Private method on `ExpressionEncoder`, not on `TweedleEncoder` |
 | `tweedleModuleForMath` extracted | Private method on `ExpressionEncoder`, not on `TweedleEncoder` |
 | `processResourceExpression` extracted | Method present on `ExpressionEncoder` |
-| `angleMembers` widened to package-private | No `private` modifier on the field in `TweedleEncoder` |
-| `membersToRename` widened to package-private | No `private` modifier on the field in `TweedleEncoder` |
-| 3 new bridge methods on TweedleEncoder | `forwardProcessExpression`, `forwardAppendAccessSeparator`, `forwardAppendEscapedString` |
-| `TweedleEncoder` delegates `@Override` bodies | `appendTargetAndMember`, `processResourceExpression` delegate to `expressionEncoder` |
+| `angleMembers` and `membersToRename` on `TweedleEncoderData` | Accessed as `TweedleEncoderData.angleMembers` and `TweedleEncoderData.membersToRename` |
+| `superProcessInstantiation` bridge on TweedleEncoder | Package-private bridge calling `super.processInstantiation` (#730) |
+| 3 forwarding methods on TweedleEncoder | `forwardProcessExpression`, `forwardAppendAccessSeparator`, `forwardAppendEscapedString` |
+| `TweedleEncoder` delegates `@Override` bodies | `processInstantiation`, `appendTargetAndMember`, `processResourceExpression` delegate to `expressionEncoder` |
 | `TweedleEncoderDecoder.java` unchanged | `git diff` shows no changes |
-| `ExpressionEncoderExtractionTest` passes | All structural and behavioral tests — zero failures |
+| `ExpressionArgumentEncoderExtractionTest` passes | All characterization tests — zero failures |
 | `StatementEncoderExtractionTest` passes | Step 1 contract unbroken — zero failures |
 | `TweedleEncoderTest` passes | Zero failures |
 | `TweedleEncoderRenameContractTest` passes | Zero failures |
@@ -292,15 +306,19 @@ All suites must pass with identical results before and after the extraction.
 
 This extraction proves:
 
-- The `appendTargetAndMember`, `targetIsMath`, `tweedleModuleForMath`, and
+- The `processInstantiation`, `getDeclaringJavaClassName`,
+  `appendTargetAndMember`, `targetIsMath`, `tweedleModuleForMath`, and
   `processResourceExpression` methods can be extracted to a delegate without
   changing observable behavior.
+- The `processInstantiation` fallback path correctly calls
+  `super.processInstantiation(creation)` through the `superProcessInstantiation`
+  bridge when no special-case dispatch applies.
+- The PersonResource evaluation via `ReleaseVirtualMachine` produces identical
+  output through the delegate indirection.
 - The Math module routing logic (`$WholeNumber`, `$Angle`, `$DecimalNumber`)
   works correctly through the delegate indirection.
 - The member rename lookup via `membersToRename` produces identical output
-  when accessed as a package-private static field by the delegate.
-- The `angleMembers` set lookup produces identical results when accessed from
-  `ExpressionEncoder` rather than `TweedleEncoder`.
+  when accessed from the delegate.
 - All existing encoder test assertions pass identically.
 - The step 1 `StatementEncoder` extraction remains unaffected.
 
@@ -308,12 +326,12 @@ This extraction does **not** prove:
 
 | Non-claim | Reason |
 | --- | --- |
-| Full encoder decomposition complete | Only `StatementEncoder` and `ExpressionEncoder` are extracted; `EncoderMappings` and `ResourceStructureEncoder` are future steps. |
+| Full encoder decomposition complete | `EncoderMappings` and `ResourceStructureEncoder` are future steps per the [Encoder Delegate Decomposition](./encoder-delegate-decomposition.md). |
 | New encode capabilities | No new Tweedle constructs are supported. |
 | Performance improvement | Extraction is structural, not algorithmic. |
 | Thread safety | `TweedleEncoder` was not thread-safe before; extraction does not change this. |
 | Public API expansion | No new public methods or classes are introduced. |
-| Full ExpressionEncoder scope | The full [Encoder delegate decomposition](./encoder-delegate-decomposition.md) assigns more methods to `ExpressionEncoder` (instantiation dispatch, argument labeling, keyed arguments). This step extracts only the 4 methods at lines 790–826. |
+| Argument encoding | Argument methods are extracted into [ArgumentEncoder](./argument-encoder-extraction.md) as a separate companion delegate in the same issue (#730). |
 
 Adjacent claims are owned by their own documents:
 
@@ -321,5 +339,7 @@ Adjacent claims are owned by their own documents:
 | --- | --- |
 | Full encoder delegate decomposition | [Encoder Delegate Decomposition](./encoder-delegate-decomposition.md) |
 | Statement encoder extraction (step 1) | [StatementEncoder Extraction](./statement-encoder-extraction.md) |
+| Argument encoder extraction (#730) | [ArgumentEncoder Extraction](./argument-encoder-extraction.md) |
+| Formatting encoder extraction (step 3) | [FormattingEncoder Extraction](./formatting-encoder-extraction.md) |
 | Decoder delegate decomposition | [Decoder Delegate Decomposition](./decoder-delegate-decomposition.md) |
 | TweedleEncoder rename | [TweedleEncoder Rename](./tweedle-encoder-rename.md) |

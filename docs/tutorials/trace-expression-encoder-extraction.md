@@ -20,6 +20,8 @@ the formatting passes through two classes:
 ```text
 TweedleEncoder (@Override methods — visitor dispatch)
   └── ExpressionEncoder (extracted expression logic)
+      ├── processInstantiation(InstanceCreation)       (added in #730)
+      ├── getDeclaringJavaClassName(InstanceCreation)   (private, added in #730)
       ├── appendTargetAndMember(Expression, String, AbstractType)
       ├── targetIsMath(Expression)          (private helper)
       ├── tweedleModuleForMath(String, AbstractType) (private helper)
@@ -239,18 +241,111 @@ Result: `$DecimalNumber.round`
 so `ExpressionEncoder` can read it. The rename map is immutable after class
 initialization and contains entries like `rint→round`, `ceil→ceiling`, etc.
 
+## Trace 5: PersonResource instantiation (added in #730)
+
+Follow a `new PersonResource(...)` creation through the encoder.
+
+### Step 1: Visitor dispatch
+
+When `processInstantiation(InstanceCreation)` is called by the visitor pattern:
+
+```java
+// TweedleEncoder.java
+@Override
+public void processInstantiation(InstanceCreation creation) {
+  expressionEncoder.processInstantiation(creation);
+}
+```
+
+### Step 2: ExpressionEncoder identifies PersonResource
+
+```java
+// ExpressionEncoder.java
+void processInstantiation(InstanceCreation creation) {
+  String className = getDeclaringJavaClassName(creation);
+  if (className != null) {
+    if (className.endsWith("PersonResource")) {
+      ReleaseVirtualMachine vm = new ReleaseVirtualMachine();
+      final Object summary = creation.evaluate(vm);
+      if (summary != null) {
+        encoder.appendInstantiation("PersonResource",
+            () -> encoder.appendArg("name",
+                () -> encoder.forwardAppendEscapedString("Person/" + summary)));
+        return;
+      }
+    }
+    // ... Double and DynamicResource cases ...
+  }
+  encoder.superProcessInstantiation(creation);
+}
+```
+
+The delegate evaluates the creation expression via `ReleaseVirtualMachine` to
+get the person summary string, then emits
+`new PersonResource(name: "Person/...")`.
+
+### Step 3: Super bridge fallback
+
+If none of the special cases match, the delegate calls
+`encoder.superProcessInstantiation(creation)`:
+
+```java
+// TweedleEncoder.java (package-private super bridge)
+void superProcessInstantiation(InstanceCreation creation) {
+  super.processInstantiation(creation);
+}
+```
+
+This reaches `SourceCodeGenerator.processInstantiation`, which encodes the
+instantiation using the default visitor pattern. The bridge is required because
+Java's `super.method()` can only appear in the declaring subclass.
+
+**Key difference from forwarding methods:** `superProcessInstantiation` calls
+`super.processInstantiation()` (the *parent* implementation), not
+`this.processInstantiation()`. This is the same `super` bridge pattern used
+by `StatementEncoder`'s `superAppendStatementCompletion`.
+
+## Trace 6: Double boxing instantiation (added in #730)
+
+Follow `new Double(42)` through the encoder.
+
+### Step 1: processInstantiation delegates
+
+Same as Trace 5 Step 1.
+
+### Step 2: Double case detected
+
+```java
+if (className.equals("Double")) {
+  final ArrayList<SimpleArgument> requiredArgs = creation.requiredArguments.getValue();
+  if (requiredArgs.size() == 1) {
+    encoder.forwardAppendString("$DecimalNumber.from");
+    Expression arg = requiredArgs.getFirst().expression.getValue();
+    encoder.forwardParenthesize(
+        () -> encoder.appendArg("wholeNumber", () -> arg.process(encoder)));
+    return;
+  }
+}
+```
+
+The output is `$DecimalNumber.from(wholeNumber: 42)` — wrapping the Java
+`Double` constructor into Tweedle's `$DecimalNumber.from` factory method.
+
 ## Summary of the delegation pattern
 
 | TweedleEncoder @Override | Calls on ExpressionEncoder |
 | --- | --- |
+| `processInstantiation(InstanceCreation)` | `expressionEncoder.processInstantiation(creation)` |
 | `appendTargetAndMember(Expression, String, AbstractType)` | `expressionEncoder.appendTargetAndMember(target, member, returnType)` |
 | `processResourceExpression(ResourceExpression)` | `expressionEncoder.processResourceExpression(resourceExpression)` |
 
 | ExpressionEncoder method | Visibility | Calls back to |
 | --- | --- | --- |
+| `processInstantiation` | package-private | `superProcessInstantiation` (fallback), `forwardAppendString`, `forwardAppendEscapedString` |
+| `getDeclaringJavaClassName` | private | (pure logic, no callbacks) |
 | `appendTargetAndMember` | package-private | `forwardProcessExpression`, `forwardAppendAccessSeparator`, `forwardAppendString` |
 | `targetIsMath` | private | (pure logic, no callbacks) |
-| `tweedleModuleForMath` | private | reads `TweedleEncoder.angleMembers` |
+| `tweedleModuleForMath` | private | reads `TweedleEncoderData.angleMembers` |
 | `processResourceExpression` | package-private | `forwardAppendEscapedString` |
 
 ## Exercises
@@ -260,18 +355,29 @@ initialization and contains entries like `rint→round`, `ceil→ceiling`, etc.
    `targetIsMath`, `tweedleModuleForMath`, and the member rename to confirm the
    output is `$DecimalNumber.round`.
 
-2. **Compare with StatementEncoder bridges.** In `StatementEncoder`,
-   `superAppendStatementCompletion(stmt)` calls `super.appendStatementCompletion(stmt)`.
-   In `ExpressionEncoder`, `forwardProcessExpression(target)` calls
-   `processExpression(target)` (not `super`). Why is `super` not needed here?
-   (Answer: The extracted methods fully implement the behavior — they do not
-   wrap a parent implementation.)
+2. **Compare bridge types.** `ExpressionEncoder` uses both `super` bridges
+   (`superProcessInstantiation`) and `forward` bridges
+   (`forwardProcessExpression`). When is each type needed? (Answer: `super`
+   bridges invoke the parent class implementation that the `@Override` would
+   otherwise shadow. `forward` bridges provide access to inherited utility
+   methods that the delegate calls as-is.)
 
-3. **Verify static map access.** Open `TweedleEncoder.java` and confirm that
-   `angleMembers` and `membersToRename` have no `private` modifier. Then open
-   `ExpressionEncoder.java` and confirm they are accessed as
-   `TweedleEncoder.angleMembers` and `TweedleEncoder.membersToRename`.
+3. **Verify static map access.** Open `ExpressionEncoder.java` and confirm that
+   `angleMembers` and `membersToRename` are accessed as
+   `TweedleEncoderData.angleMembers` and `TweedleEncoderData.membersToRename`.
 
 4. **Compare with decode side.** Open `ExpressionDecoder.java` and compare its
    constructor pattern with `ExpressionEncoder(TweedleEncoder)`. Note the
    symmetry: both delegates hold a back-reference to their coordinator.
+
+5. **Trace DynamicResource instantiation.** Starting from
+   `processInstantiation` with a `InstanceCreation` wrapping a `DynamicSphereResource`
+   constructor with two arguments where the second is a `StringLiteral("DEFAULT")`,
+   trace through the delegate to confirm the output is `SphereResource.DEFAULT`.
+
+6. **Compare with ArgumentEncoder.** Open the
+   [ArgumentEncoder tutorial](./trace-argument-encoder-extraction.md) and note
+   that `ArgumentEncoder` uses only `forward` bridges (no `super` bridges),
+   while `ExpressionEncoder` uses both. This is because extracted argument
+   methods fully implement behavior, while `processInstantiation` has a
+   `super` fallback path.
