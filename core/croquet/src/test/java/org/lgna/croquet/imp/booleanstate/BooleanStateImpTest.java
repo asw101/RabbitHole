@@ -26,7 +26,7 @@ import static org.junit.Assert.*;
 public class BooleanStateImpTest {
 
   private static final Group TEST_GROUP =
-      Group.getInstance(UUID.fromString("00000000-0000-0000-0003-ffffffffffff"), "boolImpTest");
+      Group.getInstance(UUID.fromString("00000000-0000-0000-000a-ffffffffffff"), "boolImpTest");
 
   private TestBooleanState state;
   private BooleanStateImp imp;

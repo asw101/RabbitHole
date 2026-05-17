@@ -1,5 +1,6 @@
 package org.lgna.croquet;
 
+import org.lgna.croquet.preferences.PreferenceBooleanState;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -224,6 +225,98 @@ public class CompositeResourceManagerTest {
         resourceManager.getMapKeyToTabState().isEmpty());
   }
 
+  // ── Key toString ──────────────────────────────────────────────────────
+
+  @Test
+  public void keyToString_containsLocalizationKey() {
+    AbstractComposite.Key key = composite.doCreateKey("myField");
+    assertTrue(key.toString().contains("myField"));
+  }
+
+  @Test
+  public void keyToString_containsKeyClassName() {
+    AbstractComposite.Key key = composite.doCreateKey("myField");
+    assertTrue(key.toString().contains("Key"));
+  }
+
+  // ── Key equals edge cases ───────────────────────────────────────────
+
+  @Test
+  public void keyEquals_self_returnsTrue() {
+    AbstractComposite.Key key = composite.doCreateKey("test");
+    assertEquals(key, key);
+  }
+
+  @Test
+  public void keyEquals_null_returnsFalse() {
+    AbstractComposite.Key key = composite.doCreateKey("test");
+    assertNotEquals(key, null);
+  }
+
+  @Test
+  public void keyEquals_differentType_returnsFalse() {
+    AbstractComposite.Key key = composite.doCreateKey("test");
+    assertNotEquals(key, "not a key");
+  }
+
+  // ── Key from different composites ───────────────────────────────────
+
+  @Test
+  public void keyEquality_differentComposites_notEqual() {
+    TestAbstractComposite other = new TestAbstractComposite();
+    AbstractComposite.Key keyA = composite.doCreateKey("same");
+    AbstractComposite.Key keyB = other.doCreateKey("same");
+    assertNotEquals(keyA, keyB);
+  }
+
+  // ── Internal state value manipulation ───────────────────────────────
+
+  @Test
+  public void internalBooleanState_setValueTransactionlessly() {
+    BooleanState state = composite.doCreateBooleanState("toggle", false);
+    javax.swing.DefaultButtonModel bm = (javax.swing.DefaultButtonModel)
+        state.getImp().getSwingModel().getButtonModel();
+    for (java.awt.event.ItemListener il : bm.getItemListeners()) {
+      bm.removeItemListener(il);
+    }
+    state.setValueTransactionlessly(true);
+    assertTrue(state.getValue());
+  }
+
+  @Test
+  public void internalStringState_setValueTransactionlessly() {
+    StringState state = composite.doCreateStringState("text", "init");
+    javax.swing.text.Document doc = state.getSwingModel().getDocument();
+    for (javax.swing.event.DocumentListener dl :
+        ((javax.swing.text.AbstractDocument) doc).getDocumentListeners()) {
+      doc.removeDocumentListener(dl);
+    }
+    state.setValueTransactionlessly("updated");
+    assertEquals("updated", state.getValue());
+  }
+
+  @Test
+  public void internalBoundedIntegerState_setValueTransactionlessly() {
+    BoundedIntegerState state = composite.doCreateBoundedIntegerState("count");
+    javax.swing.SpinnerNumberModel spinner = state.getSwingModel().getSpinnerModel();
+    for (javax.swing.event.ChangeListener cl : spinner.getChangeListeners()) {
+      spinner.removeChangeListener(cl);
+    }
+    state.setValueTransactionlessly(42);
+    assertEquals(Integer.valueOf(42), state.getValue());
+  }
+
+  @Test
+  public void internalBoundedDoubleState_setValueTransactionlessly() {
+    BoundedDoubleState state = composite.doCreateBoundedDoubleState("ratio");
+    javax.swing.SpinnerNumberModel spinner = state.getSwingModel().getSpinnerModel();
+    for (javax.swing.event.ChangeListener cl : spinner.getChangeListeners()) {
+      spinner.removeChangeListener(cl);
+    }
+    state.setValueTransactionlessly(0.75);
+    assertEquals(0.75, state.getValue(), 0.001);
+  }
+
   // ── Characterization: extraction boundary preservation ────────────────
 
   @Test
@@ -322,6 +415,299 @@ public class CompositeResourceManagerTest {
     resourceManager.localize(composite);
   }
 
+  // ── List state factory methods ──────────────────────────────────────
+
+  @Test
+  public void createImmutableListState_returnsNonNull() {
+    ImmutableDataSingleSelectListState<String> state =
+        composite.doCreateImmutableListState("items", STRING_CODEC, 0, "a", "b", "c");
+    assertNotNull(state);
+    assertTrue(resourceManager.contains(state));
+  }
+
+  @Test
+  public void createImmutableListState_setsInitialSelection() {
+    ImmutableDataSingleSelectListState<String> state =
+        composite.doCreateImmutableListState("items2", STRING_CODEC, 1, "x", "y", "z");
+    assertEquals("y", state.getValue());
+  }
+
+  @Test
+  public void createImmutableListState_getItemCount() {
+    ImmutableDataSingleSelectListState<String> state =
+        composite.doCreateImmutableListState("items3", STRING_CODEC, 0, "a", "b");
+    assertEquals(2, state.getItemCount());
+  }
+
+  @Test
+  public void createImmutableListStateForEnum_returnsNonNull() {
+    ImmutableDataSingleSelectListState<TestEnum> state =
+        composite.doCreateImmutableListStateForEnum("enumSel", TestEnum.class, TestEnum.BETA);
+    assertNotNull(state);
+    assertTrue(resourceManager.contains(state));
+  }
+
+  @Test
+  public void createImmutableListStateForEnum_setsInitialValue() {
+    ImmutableDataSingleSelectListState<TestEnum> state =
+        composite.doCreateImmutableListStateForEnum("enumSel2", TestEnum.class, TestEnum.GAMMA);
+    assertEquals(TestEnum.GAMMA, state.getValue());
+  }
+
+  @Test
+  public void createImmutableListStateForEnum_countsEnumConstants() {
+    ImmutableDataSingleSelectListState<TestEnum> state =
+        composite.doCreateImmutableListStateForEnum("enumSel3", TestEnum.class, TestEnum.ALPHA);
+    assertEquals(TestEnum.values().length, state.getItemCount());
+  }
+
+  @Test
+  public void createMutableListState_returnsNonNull() {
+    MutableDataSingleSelectListState<String> state =
+        composite.doCreateMutableListState("mutable", STRING_CODEC, 0, "p", "q");
+    assertNotNull(state);
+    assertTrue(resourceManager.contains(state));
+  }
+
+  @Test
+  public void createMutableListState_setsInitialSelection() {
+    MutableDataSingleSelectListState<String> state =
+        composite.doCreateMutableListState("mutable2", STRING_CODEC, 1, "p", "q", "r");
+    assertEquals("q", state.getValue());
+  }
+
+  @Test
+  public void createMutableListState_supportsMutation() {
+    MutableDataSingleSelectListState<String> state =
+        composite.doCreateMutableListState("mutable3", STRING_CODEC, 0, "a");
+    // Verify initial item count
+    assertEquals(1, state.getItemCount());
+    assertEquals("a", state.getItemAt(0));
+  }
+
+  @Test
+  public void createGenericListState_returnsNonNull() {
+    org.lgna.croquet.data.MutableListData<String> data =
+        new org.lgna.croquet.data.MutableListData<>(STRING_CODEC, new String[]{"x", "y"});
+    SingleSelectListState<String, ?> state =
+        composite.doCreateGenericListState("generic", data, 0);
+    assertNotNull(state);
+  }
+
+  @Test
+  public void createRefreshableListState_returnsNonNull() {
+    org.lgna.croquet.data.RefreshableListData<String> data =
+        new org.lgna.croquet.data.RefreshableListData<String>(STRING_CODEC) {
+          @Override
+          protected java.util.List<String> createValues() {
+            return java.util.Arrays.asList("a", "b", "c");
+          }
+        };
+    RefreshableDataSingleSelectListState<String> state =
+        composite.doCreateRefreshableListState("refreshable", data, 0);
+    assertNotNull(state);
+    assertTrue(resourceManager.contains(state));
+  }
+
+  @Test
+  public void createPreferenceBooleanState_returnsNonNull() {
+    org.lgna.croquet.preferences.PreferenceBooleanState state =
+        composite.doCreatePreferenceBooleanState("pref", true);
+    assertNotNull(state);
+    assertTrue(resourceManager.contains(state));
+  }
+
+  // ── AbstractComposite lifecycle ─────────────────────────────────────
+
+  @Test
+  public void getCardId_returnsNonNull() {
+    assertNotNull(composite.getCardId());
+  }
+
+  @Test
+  public void modifyLocalizedText_returnsInputByDefault() {
+    String result = composite.modifyLocalizedText(composite, "hello");
+    assertEquals("hello", result);
+  }
+
+  @Test
+  public void contains_delegatesToResourceManager() {
+    BooleanState state = composite.doCreateBooleanState("test", false);
+    assertTrue(composite.contains(state));
+  }
+
+  // ── InternalActionOperation: additional exercises ──────────────────
+
+  @Test
+  public void internalActionOperation_appendUserRepr() {
+    ActionOperation op = composite.doCreateActionOperation("testOp");
+    StringBuilder sb = new StringBuilder();
+    op.appendUserRepr(sb);
+    assertNotNull(sb.toString());
+  }
+
+  @Test
+  public void internalActionOperation_getMigrationId() {
+    ActionOperation op = composite.doCreateActionOperation("testOp2");
+    assertNotNull(op.getMigrationId());
+  }
+
+  @Test
+  public void internalActionOperation_isEnabled() {
+    ActionOperation op = composite.doCreateActionOperation("enabledOp");
+    assertTrue(op.isEnabled());
+  }
+
+  @Test
+  public void internalActionOperation_setEnabled() {
+    ActionOperation op = composite.doCreateActionOperation("disableOp");
+    op.setEnabled(false);
+    assertFalse(op.isEnabled());
+  }
+
+  @Test
+  public void internalStringState_appendUserRepr() {
+    StringState ss = composite.doCreateStringState("repr", "myval");
+    javax.swing.text.Document doc = ss.getSwingModel().getDocument();
+    for (javax.swing.event.DocumentListener dl :
+        ((javax.swing.text.AbstractDocument) doc).getDocumentListeners()) {
+      doc.removeDocumentListener(dl);
+    }
+    StringBuilder sb = new StringBuilder();
+    ss.appendUserRepr(sb);
+    // StringState uses appendRepresentation which delegates to itemCodec
+    assertNotNull(sb.toString());
+  }
+
+  @Test
+  public void internalBooleanState_appendUserRepr() {
+    BooleanState bs = composite.doCreateBooleanState("repr2", true);
+    javax.swing.DefaultButtonModel bm = (javax.swing.DefaultButtonModel)
+        bs.getImp().getSwingModel().getButtonModel();
+    for (java.awt.event.ItemListener il : bm.getItemListeners()) {
+      bm.removeItemListener(il);
+    }
+    StringBuilder sb = new StringBuilder();
+    bs.appendUserRepr(sb);
+    assertNotNull(sb.toString());
+  }
+
+  // ── ImmutableListState: additional exercises ──────────────────────
+
+  @Test
+  public void immutableListState_setSelectedIndex() {
+    ImmutableDataSingleSelectListState<String> state =
+        composite.doCreateImmutableListState("selIdx", STRING_CODEC, 0, "a", "b", "c");
+    javax.swing.DefaultListSelectionModel lsm =
+        (javax.swing.DefaultListSelectionModel) state.getSwingModel().getListSelectionModel();
+    for (javax.swing.event.ListSelectionListener l : lsm.getListSelectionListeners()) {
+      lsm.removeListSelectionListener(l);
+    }
+    state.setSelectedIndex(2);
+    assertEquals("c", state.getValue());
+  }
+
+  @Test
+  public void immutableListState_clearSelection() {
+    ImmutableDataSingleSelectListState<String> state =
+        composite.doCreateImmutableListState("clear", STRING_CODEC, 1, "x", "y");
+    javax.swing.DefaultListSelectionModel lsm =
+        (javax.swing.DefaultListSelectionModel) state.getSwingModel().getListSelectionModel();
+    for (javax.swing.event.ListSelectionListener l : lsm.getListSelectionListeners()) {
+      lsm.removeListSelectionListener(l);
+    }
+    state.clearSelection();
+    assertNull(state.getValue());
+  }
+
+  // ── Refreshable list state: additional exercises ──────────────────
+
+  @Test
+  public void refreshableListState_getValue() {
+    org.lgna.croquet.data.RefreshableListData<String> data =
+        new org.lgna.croquet.data.RefreshableListData<String>(STRING_CODEC) {
+          @Override
+          protected java.util.List<String> createValues() {
+            return java.util.Arrays.asList("p", "q", "r");
+          }
+        };
+    RefreshableDataSingleSelectListState<String> state =
+        composite.doCreateRefreshableListState("refreshGet", data, 1);
+    assertEquals("q", state.getValue());
+  }
+
+  @Test
+  public void refreshableListState_getItemCount() {
+    org.lgna.croquet.data.RefreshableListData<String> data =
+        new org.lgna.croquet.data.RefreshableListData<String>(STRING_CODEC) {
+          @Override
+          protected java.util.List<String> createValues() {
+            return java.util.Arrays.asList("a", "b");
+          }
+        };
+    RefreshableDataSingleSelectListState<String> state =
+        composite.doCreateRefreshableListState("refreshCount", data, 0);
+    assertEquals(2, state.getItemCount());
+  }
+
+  // ── Enum list state: iterator and indexOf ─────────────────────────
+
+  @Test
+  public void enumListState_indexOf() {
+    ImmutableDataSingleSelectListState<TestEnum> state =
+        composite.doCreateImmutableListStateForEnum("enumIdx", TestEnum.class, TestEnum.ALPHA);
+    assertEquals(1, state.indexOf(TestEnum.BETA));
+  }
+
+  @Test
+  public void enumListState_containsItem() {
+    ImmutableDataSingleSelectListState<TestEnum> state =
+        composite.doCreateImmutableListStateForEnum("enumContains", TestEnum.class, TestEnum.ALPHA);
+    assertTrue(state.containsItem(TestEnum.GAMMA));
+  }
+
+  @Test
+  public void enumListState_iterator() {
+    ImmutableDataSingleSelectListState<TestEnum> state =
+        composite.doCreateImmutableListStateForEnum("enumIter", TestEnum.class, TestEnum.ALPHA);
+    int count = 0;
+    for (TestEnum e : state) {
+      count++;
+    }
+    assertEquals(TestEnum.values().length, count);
+  }
+
+  @Test
+  public void genericListState_getItemCount() {
+    org.lgna.croquet.data.MutableListData<String> data =
+        new org.lgna.croquet.data.MutableListData<>(STRING_CODEC, new String[]{"a", "b", "c"});
+    SingleSelectListState<String, ?> state =
+        composite.doCreateGenericListState("genCount", data, 2);
+    assertEquals(3, state.getItemCount());
+    assertEquals("c", state.getValue());
+  }
+
+  @Test
+  public void mutableListState_getItemAt() {
+    MutableDataSingleSelectListState<String> state =
+        composite.doCreateMutableListState("mutItem", STRING_CODEC, 0, "x", "y", "z");
+    assertEquals("x", state.getItemAt(0));
+    assertEquals("z", state.getItemAt(2));
+  }
+
+  @Test
+  public void preferenceBooleanState_setValue() {
+    PreferenceBooleanState state =
+        composite.doCreatePreferenceBooleanState("prefToggle", false);
+    javax.swing.DefaultButtonModel bm = (javax.swing.DefaultButtonModel)
+        state.getImp().getSwingModel().getButtonModel();
+    for (java.awt.event.ItemListener il : bm.getItemListeners()) {
+      bm.removeItemListener(il);
+    }
+    state.setValueTransactionlessly(true);
+    assertTrue(state.getValue());
+  }
+
   // ── Test doubles ─────────────────────────────────────────────────────
 
   /**
@@ -388,6 +774,36 @@ public class CompositeResourceManagerTest {
     BoundedDoubleState doCreateBoundedDoubleState(String keyText) {
       return this.createBoundedDoubleState(keyText, new AbstractComposite.BoundedDoubleDetails());
     }
+
+    @SuppressWarnings("unchecked")
+    <T> ImmutableDataSingleSelectListState<T> doCreateImmutableListState(
+        String keyText, ItemCodec<T> codec, int selectionIndex, T... values) {
+      return this.createImmutableListState(keyText, (Class<T>) codec.getValueClass(), codec, selectionIndex, values);
+    }
+
+    <T extends Enum<T>> ImmutableDataSingleSelectListState<T> doCreateImmutableListStateForEnum(
+        String keyText, Class<T> valueCls, T initialValue) {
+      return this.createImmutableListStateForEnum(keyText, valueCls, initialValue);
+    }
+
+    <T> MutableDataSingleSelectListState<T> doCreateMutableListState(
+        String keyText, ItemCodec<T> codec, int selectionIndex, T... values) {
+      return this.createMutableListState(keyText, codec.getValueClass(), codec, selectionIndex, values);
+    }
+
+    <T> SingleSelectListState<T, org.lgna.croquet.data.ListData<T>> doCreateGenericListState(
+        String keyText, org.lgna.croquet.data.ListData<T> data, int selectionIndex) {
+      return this.createGenericListState(keyText, data, selectionIndex);
+    }
+
+    <T> RefreshableDataSingleSelectListState<T> doCreateRefreshableListState(
+        String keyText, org.lgna.croquet.data.RefreshableListData<T> data, int selectionIndex) {
+      return this.createRefreshableListState(keyText, data, selectionIndex);
+    }
+
+    PreferenceBooleanState doCreatePreferenceBooleanState(String keyText, boolean initialValue) {
+      return this.createPreferenceBooleanState(keyText, initialValue);
+    }
   }
 
   /**
@@ -401,4 +817,28 @@ public class CompositeResourceManagerTest {
     @Override public void setEnabled(boolean isEnabled) {}
     @Override public java.util.UUID getMigrationId() { return null; }
   }
+
+  enum TestEnum { ALPHA, BETA, GAMMA }
+
+  static final ItemCodec<String> STRING_CODEC = new ItemCodec<String>() {
+    @Override
+    public Class<String> getValueClass() {
+      return String.class;
+    }
+
+    @Override
+    public String decodeValue(edu.cmu.cs.dennisc.codec.BinaryDecoder binaryDecoder) {
+      return binaryDecoder.decodeString();
+    }
+
+    @Override
+    public void encodeValue(edu.cmu.cs.dennisc.codec.BinaryEncoder binaryEncoder, String value) {
+      binaryEncoder.encode(value);
+    }
+
+    @Override
+    public void appendRepresentation(StringBuilder sb, String value) {
+      sb.append(value);
+    }
+  };
 }

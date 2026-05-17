@@ -241,6 +241,39 @@ public class BoundedIntegerStateTest {
     assertEquals(Integer.valueOf(100), s.getValue());
   }
 
+  // ── addAndInvokeValueListener ───────────────────────────────────
+
+  @Test
+  public void addAndInvokeValueListener_firesImmediately() {
+    AtomicReference<Integer> captured = new AtomicReference<>();
+    state.addAndInvokeValueListener(new State.ValueListener<Integer>() {
+      @Override
+      public void changing(State<Integer> s, Integer prev, Integer next) {}
+
+      @Override
+      public void changed(State<Integer> s, Integer prev, Integer next) {
+        captured.set(next);
+      }
+    });
+    assertEquals(Integer.valueOf(50), captured.get());
+  }
+
+  // ── addAndInvokeNewSchoolValueListener ────────────────────────────
+
+  @Test
+  public void addAndInvokeNewSchoolListener_firesImmediately() {
+    AtomicReference<Integer> captured = new AtomicReference<>();
+    state.addAndInvokeNewSchoolValueListener(e -> captured.set(e.getNextValue()));
+    assertEquals(Integer.valueOf(50), captured.get());
+  }
+
+  // ── initializeIfNecessary ─────────────────────────────────────────
+
+  @Test
+  public void initializeIfNecessary_doesNotThrow() {
+    state.initializeIfNecessary();
+  }
+
   // ── Test infrastructure ───────────────────────────────────────────
 
   static class TestBoundedIntegerState extends BoundedIntegerState {

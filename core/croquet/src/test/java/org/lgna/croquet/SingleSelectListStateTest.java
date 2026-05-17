@@ -418,6 +418,57 @@ public class SingleSelectListStateTest {
     assertEquals(2, state.getSelectedIndex());
   }
 
+  // ── appendUserRepr ──────────────────────────────────────────────────
+
+  @Test
+  public void appendUserRepr_appendsSelectedValue() {
+    StringBuilder sb = new StringBuilder();
+    state.appendUserRepr(sb);
+    assertEquals("bravo", sb.toString());
+  }
+
+  @Test
+  public void appendUserRepr_clearedSelection_appendsNull() {
+    state.clearSelection();
+    StringBuilder sb = new StringBuilder();
+    state.appendUserRepr(sb);
+    assertEquals("null", sb.toString());
+  }
+
+  // ── isEnabled / setEnabled ────────────────────────────────────────
+
+  @Test
+  public void isEnabled_defaultTrue() {
+    assertTrue(state.isEnabled());
+  }
+
+  @Test
+  public void setEnabled_false() {
+    state.setEnabled(false);
+    assertFalse(state.isEnabled());
+  }
+
+  @Test
+  public void setEnabled_true_afterFalse() {
+    state.setEnabled(false);
+    state.setEnabled(true);
+    assertTrue(state.isEnabled());
+  }
+
+  // ── initializeIfNecessary ─────────────────────────────────────────
+
+  @Test
+  public void initializeIfNecessary_doesNotThrow() {
+    state.initializeIfNecessary();
+  }
+
+  // ── getMigrationId ────────────────────────────────────────────────
+
+  @Test
+  public void getMigrationId_returnsNonNull() {
+    assertNotNull(state.getMigrationId());
+  }
+
   // ── EmptyConditionText ─────────────────────────────────────────────
 
   @Test

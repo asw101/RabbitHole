@@ -244,6 +244,93 @@ public class StringStateTest {
     assertNull(captured.get());
   }
 
+  // ── addAndInvokeValueListener ───────────────────────────────────
+
+  @Test
+  public void addAndInvokeValueListener_firesImmediately() {
+    AtomicReference<String> captured = new AtomicReference<>();
+    state.addAndInvokeValueListener(new State.ValueListener<String>() {
+      @Override
+      public void changing(State<String> s, String prev, String next) {}
+
+      @Override
+      public void changed(State<String> s, String prev, String next) {
+        captured.set(next);
+      }
+    });
+    assertEquals("hello", captured.get());
+  }
+
+  // ── addAndInvokeNewSchoolValueListener ────────────────────────────
+
+  @Test
+  public void addAndInvokeNewSchoolListener_firesImmediately() {
+    AtomicReference<String> captured = new AtomicReference<>();
+    state.addAndInvokeNewSchoolValueListener(e -> captured.set(e.getNextValue()));
+    assertEquals("hello", captured.get());
+  }
+
+  // ── changing callback ─────────────────────────────────────────────
+
+  @Test
+  public void changingCallback_firesBeforeChanged() {
+    java.util.List<String> order = new java.util.ArrayList<>();
+    state.addValueListener(new State.ValueListener<String>() {
+      @Override
+      public void changing(State<String> s, String prev, String next) {
+        order.add("changing");
+      }
+
+      @Override
+      public void changed(State<String> s, String prev, String next) {
+        order.add("changed");
+      }
+    });
+    state.setValueTransactionlessly("world");
+    assertEquals(2, order.size());
+    assertEquals("changing", order.get(0));
+    assertEquals("changed", order.get(1));
+  }
+
+  // ── initializeIfNecessary ─────────────────────────────────────────
+
+  @Test
+  public void initializeIfNecessary_doesNotThrow() {
+    state.initializeIfNecessary();
+  }
+
+  @Test
+  public void initializeIfNecessary_calledTwice_idempotent() {
+    state.initializeIfNecessary();
+    state.initializeIfNecessary();
+  }
+
+  // ── getMigrationId ────────────────────────────────────────────────
+
+  @Test
+  public void getMigrationId_returnsNonNull() {
+    assertNotNull(state.getMigrationId());
+  }
+
+  // ── relocalize ────────────────────────────────────────────────────
+
+  @Test
+  public void relocalize_doesNotThrow() {
+    state.relocalize();
+  }
+
+  // ── findLocalizedText ─────────────────────────────────────────────
+
+  @Test
+  public void findLocalizedText_nullClass_returnsNull() {
+    assertNull(AbstractElement.findLocalizedText(null, "test"));
+  }
+
+  @Test
+  public void findLocalizedText_missingBundle_returnsNull() {
+    assertNull(AbstractElement.findLocalizedText(TestStringState.class, "missing"));
+  }
+
   // ── Test infrastructure ───────────────────────────────────────────
 
   static class TestStringState extends StringState {

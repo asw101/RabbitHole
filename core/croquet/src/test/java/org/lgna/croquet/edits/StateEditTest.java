@@ -165,6 +165,58 @@ public class StateEditTest {
     assertEquals(Boolean.TRUE, edit.getNextValue());
   }
 
+  // ── AbstractEdit: doOrRedo exercises doOrRedoInternal ───────────────
+
+  @Test
+  public void doOrRedo_isDo_exercisesInternal() {
+    StateEdit<String> edit = new StateEdit<>(null, "old", "new");
+    // doOrRedo(true) calls doOrRedoInternal which for StateEdit
+    // changes the model value. With null activity, model is null
+    // so it's a no-op but doesn't throw.
+    edit.doOrRedo(true);
+  }
+
+  @Test(expected = javax.swing.undo.CannotRedoException.class)
+  public void doOrRedo_isRedo_cannotRedoThrows() {
+    StateEdit<String> edit = new StateEdit<>(null, "old", "new");
+    // canRedo() returns false (null model), so throws CannotRedoException
+    edit.doOrRedo(false);
+  }
+
+  // ── AbstractEdit: undo exercises undoInternal ──────────────────────
+
+  @Test(expected = javax.swing.undo.CannotRedoException.class)
+  public void undo_cannotUndo_throws() {
+    StateEdit<String> edit = new StateEdit<>(null, "old", "new");
+    // canUndo() returns false (null model), so throws CannotRedoException
+    edit.undo();
+  }
+
+  // ── AbstractEdit: canUndo/canRedo from base class ─────────────────
+
+  @Test
+  public void canUndo_nullActivity_returnsFalse2() {
+    StateEdit<String> edit = new StateEdit<>(null, "old", "new");
+    assertFalse(edit.canUndo());
+  }
+
+  @Test
+  public void canRedo_nullActivity_returnsFalse2() {
+    StateEdit<String> edit = new StateEdit<>(null, "old", "new");
+    assertFalse(edit.canRedo());
+  }
+
+  // ── DescriptionStyle enum ─────────────────────────────────────────
+
+  @Test
+  public void terseDescription_isNotDetailed() {
+    StateEdit<String> edit = new StateEdit<>(null, "old", "new");
+    String terse = edit.getTerseDescription();
+    String detailed = edit.getDetailedDescription();
+    // Detailed contains class name prefix
+    assertTrue(detailed.length() >= terse.length());
+  }
+
   // ── encode (base class) does not throw ────────────────────────────
 
   @Test

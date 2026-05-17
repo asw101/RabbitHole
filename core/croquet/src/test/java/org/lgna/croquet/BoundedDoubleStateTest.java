@@ -226,6 +226,61 @@ public class BoundedDoubleStateTest {
     assertEquals(0.3, state.getValue(), 0.001);
   }
 
+  // ── addAndInvokeValueListener ───────────────────────────────────
+
+  @Test
+  public void addAndInvokeValueListener_firesImmediately() {
+    AtomicReference<Double> captured = new AtomicReference<>();
+    state.addAndInvokeValueListener(new State.ValueListener<Double>() {
+      @Override
+      public void changing(State<Double> s, Double prev, Double next) {}
+
+      @Override
+      public void changed(State<Double> s, Double prev, Double next) {
+        captured.set(next);
+      }
+    });
+    assertEquals(0.5, captured.get(), 0.001);
+  }
+
+  // ── addAndInvokeNewSchoolValueListener ────────────────────────────
+
+  @Test
+  public void addAndInvokeNewSchoolListener_firesImmediately() {
+    AtomicReference<Double> captured = new AtomicReference<>();
+    state.addAndInvokeNewSchoolValueListener(e -> captured.set(e.getNextValue()));
+    assertEquals(0.5, captured.get(), 0.001);
+  }
+
+  // ── changing callback ─────────────────────────────────────────────
+
+  @Test
+  public void changingCallback_firesBeforeChanged() {
+    java.util.List<String> order = new java.util.ArrayList<>();
+    state.addValueListener(new State.ValueListener<Double>() {
+      @Override
+      public void changing(State<Double> s, Double prev, Double next) {
+        order.add("changing");
+      }
+
+      @Override
+      public void changed(State<Double> s, Double prev, Double next) {
+        order.add("changed");
+      }
+    });
+    state.setValueTransactionlessly(0.75);
+    assertEquals(2, order.size());
+    assertEquals("changing", order.get(0));
+    assertEquals("changed", order.get(1));
+  }
+
+  // ── initializeIfNecessary ─────────────────────────────────────────
+
+  @Test
+  public void initializeIfNecessary_doesNotThrow() {
+    state.initializeIfNecessary();
+  }
+
   // ── Test infrastructure ───────────────────────────────────────────
 
   static class TestBoundedDoubleState extends BoundedDoubleState {

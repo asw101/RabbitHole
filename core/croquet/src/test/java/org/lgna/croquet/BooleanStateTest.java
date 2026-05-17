@@ -270,6 +270,88 @@ public class BooleanStateTest {
     assertFalse(state.getValue());
   }
 
+  // ── addAndInvokeValueListener ───────────────────────────────────
+
+  @Test
+  public void addAndInvokeValueListener_firesImmediately() {
+    AtomicReference<Boolean> captured = new AtomicReference<>();
+    state.addAndInvokeValueListener(new State.ValueListener<Boolean>() {
+      @Override
+      public void changing(State<Boolean> s, Boolean prev, Boolean next) {}
+
+      @Override
+      public void changed(State<Boolean> s, Boolean prev, Boolean next) {
+        captured.set(next);
+      }
+    });
+    assertEquals(Boolean.FALSE, captured.get());
+  }
+
+  // ── addAndInvokeNewSchoolValueListener ────────────────────────────
+
+  @Test
+  public void addAndInvokeNewSchoolListener_firesImmediately() {
+    AtomicReference<Boolean> captured = new AtomicReference<>();
+    state.addAndInvokeNewSchoolValueListener(e -> captured.set(e.getNextValue()));
+    assertEquals(Boolean.FALSE, captured.get());
+  }
+
+  // ── changing callback ─────────────────────────────────────────────
+
+  @Test
+  public void changingCallback_firesBeforeChanged() {
+    java.util.List<String> order = new java.util.ArrayList<>();
+    state.addValueListener(new State.ValueListener<Boolean>() {
+      @Override
+      public void changing(State<Boolean> s, Boolean prev, Boolean next) {
+        order.add("changing");
+      }
+
+      @Override
+      public void changed(State<Boolean> s, Boolean prev, Boolean next) {
+        order.add("changed");
+      }
+    });
+    state.setValueTransactionlessly(true);
+    assertEquals(2, order.size());
+    assertEquals("changing", order.get(0));
+    assertEquals("changed", order.get(1));
+  }
+
+  // ── setIconForTrueAndIconForFalse ─────────────────────────────────
+
+  @Test
+  public void setIconForTrueAndIconForFalse_setsIcons() {
+    javax.swing.Icon trueIcon = new javax.swing.ImageIcon();
+    javax.swing.Icon falseIcon = new javax.swing.ImageIcon();
+    state.setIconForTrueAndIconForFalse(trueIcon, falseIcon);
+    assertSame(trueIcon, state.getTrueIcon());
+    assertSame(falseIcon, state.getFalseIcon());
+  }
+
+  @Test
+  public void getIconFor_afterSetIcons() {
+    javax.swing.Icon trueIcon = new javax.swing.ImageIcon();
+    javax.swing.Icon falseIcon = new javax.swing.ImageIcon();
+    state.setIconForTrueAndIconForFalse(trueIcon, falseIcon);
+    assertSame(trueIcon, state.getIconFor(true));
+    assertSame(falseIcon, state.getIconFor(false));
+  }
+
+  // ── initializeIfNecessary ─────────────────────────────────────────
+
+  @Test
+  public void initializeIfNecessary_doesNotThrow() {
+    state.initializeIfNecessary();
+  }
+
+  // ── getMigrationId ────────────────────────────────────────────────
+
+  @Test
+  public void getMigrationId_returnsNonNull() {
+    assertNotNull(state.getMigrationId());
+  }
+
   // ── Test infrastructure ───────────────────────────────────────────
 
   static class TestBooleanState extends BooleanState {

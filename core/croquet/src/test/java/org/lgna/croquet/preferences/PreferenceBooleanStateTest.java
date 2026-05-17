@@ -23,7 +23,7 @@ import static org.junit.Assert.*;
 public class PreferenceBooleanStateTest {
 
   private static final Group TEST_GROUP =
-      Group.getInstance(UUID.fromString("00000000-0000-0000-0004-ffffffffffff"), "prefBoolTest");
+      Group.getInstance(UUID.fromString("00000000-0000-0000-000b-ffffffffffff"), "prefBoolTest");
 
   private TestPreferenceBooleanState stateTrue;
   private TestPreferenceBooleanState stateFalse;
