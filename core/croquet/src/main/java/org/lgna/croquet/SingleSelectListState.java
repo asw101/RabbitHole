@@ -71,8 +71,8 @@ public class SingleSelectListState<T, D extends ListData<T>> extends ItemState<T
 
   public SingleSelectListState(Group group, UUID id, int selectionIndex, D data) {
     super(group, id, getItemAt(data, selectionIndex), data.getItemCodec());
-    this.dataIndexPair = new DataIndexPair<>(data, selectionIndex, idx -> swingModel.setSelectionIndex(idx));
-    swingModel = new SingleSelectListStateSwingModel(this.dataIndexPair);
+    this.dataIndexPair = new DataIndexPair<>(data, selectionIndex, idx -> getSwingModel().setSelectionIndex(idx));
+    this.swingModel = new SingleSelectListStateSwingModel(this.dataIndexPair);
     swingModel.getListSelectionModel().addListSelectionListener(new ListSelectionListenerAdapter<>(this));
   }
 
@@ -350,7 +350,7 @@ public class SingleSelectListState<T, D extends ListData<T>> extends ItemState<T
   }
 
   private final DataIndexPair<T, D> dataIndexPair;
-  private SingleSelectListStateSwingModel swingModel;
+  private final SingleSelectListStateSwingModel swingModel;
   private final Lazy<MenuModel> menuModelLazy = new Lazy<MenuModel>() {
     @Override
     protected MenuModel create() {
