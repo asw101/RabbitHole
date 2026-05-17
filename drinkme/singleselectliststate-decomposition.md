@@ -96,19 +96,19 @@ public void setListData(int selectedIndex, Collection<T> items) {
 
 ### Constructor change
 
-The constructor now passes `swingModel::setSelectionIndex` as the `IntConsumer` to `DataIndexPair`, and instantiates `EmptyConditionText` with supplier lambdas and `ListSelectionListenerAdapter` with `this`:
+The constructor now passes a lambda `idx -> getSwingModel().setSelectionIndex(idx)` as the `IntConsumer` to `DataIndexPair`, and instantiates `EmptyConditionText` with supplier lambdas and `ListSelectionListenerAdapter` with `this`:
 
 ```java
 public SingleSelectListState(Group group, UUID id, int selectionIndex, D data) {
     super(group, id, getItemAt(data, selectionIndex), data.getItemCodec());
-    this.dataIndexPair = new DataIndexPair<>(data, selectionIndex, idx -> swingModel.setSelectionIndex(idx));
-    swingModel = new SingleSelectListStateSwingModel(this.dataIndexPair);
+    this.dataIndexPair = new DataIndexPair<>(data, selectionIndex, idx -> getSwingModel().setSelectionIndex(idx));
+    this.swingModel = new SingleSelectListStateSwingModel(this.dataIndexPair);
     swingModel.getListSelectionModel().addListSelectionListener(
         new ListSelectionListenerAdapter<>(this));
 }
 ```
 
-Note: The `IntConsumer` lambda captures `swingModel` which is assigned on the next line. This is safe because `setSelectedItem` (which invokes the consumer) is never called during construction — it is only invoked later by Swing event dispatch.
+Note: The `IntConsumer` lambda captures `this` and calls `getSwingModel()` at invocation time. The `swingModel` field is assigned on the next line, which is safe because `setSelectedItem` (which invokes the consumer) is never called during construction — it is only invoked later by Swing event dispatch.
 
 ### Field declarations (after extraction)
 
