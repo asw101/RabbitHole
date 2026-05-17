@@ -26,7 +26,7 @@ WORKFLOWS = {
         "workflow_name": "Alice Test CI",
         "job": "test",
         "maven_step": "Run no-Sims test baseline",
-        "maven_command": "mvn -DincludeSims=false -Dinstall4j.skip -Dcheckstyle.skip clean test",
+        "maven_command": "mvn -DincludeSims=false -Dinstall4j.skip -Dcheckstyle.skip -Djava.awt.headless=true clean test",
         "dependent_steps": [],
     },
     "coverage": {
