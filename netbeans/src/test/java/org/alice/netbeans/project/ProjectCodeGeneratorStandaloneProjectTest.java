@@ -337,6 +337,9 @@ public class ProjectCodeGeneratorStandaloneProjectTest {
 
   @Test
   public void templatePackagedLauncherWithRealJavaFxModulesStopsAtDisplayBoundaryWhenHeadless() throws Exception {
+    org.junit.Assume.assumeFalse(
+        "macOS CI display is available even headless; JavaFX starts instead of failing",
+        System.getProperty("os.name").toLowerCase().contains("mac"));
     Path projectDirectory = temporaryFolder.newFolder("template-real-javafx-runtime").toPath();
     extractProjectTemplate(projectDirectory);
     Path sourceDirectory = projectDirectory.resolve("src");
