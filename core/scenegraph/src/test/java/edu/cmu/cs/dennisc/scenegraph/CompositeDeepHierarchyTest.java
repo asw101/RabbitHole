@@ -270,6 +270,157 @@ public class CompositeDeepHierarchyTest {
     assertNull(orphan.getRoot());
   }
 
+  @Test
+  public void isAncestorOfReturnsTrueForDescendant() {
+    Scene scene = new Scene();
+    Transformable child = named("child");
+    Transformable grandchild = named("grandchild");
+
+    scene.addComponent(child);
+    child.addComponent(grandchild);
+
+    assertTrue(scene.isAncestorOf(grandchild));
+    assertTrue(scene.isAncestorOf(child));
+    assertTrue(child.isAncestorOf(grandchild));
+    assertFalse(grandchild.isAncestorOf(scene));
+  }
+
+  @Test
+  public void isAncestorOfReturnsFalseForNull() {
+    Scene scene = new Scene();
+    assertFalse(scene.isAncestorOf(null));
+  }
+
+  @Test
+  public void getIndexOfComponentReturnsCorrectIndex() {
+    Scene scene = new Scene();
+    Transformable a = named("a");
+    Transformable b = named("b");
+    Transformable c = named("c");
+
+    scene.addComponent(a);
+    scene.addComponent(b);
+    scene.addComponent(c);
+
+    assertEquals(0, scene.getIndexOfComponent(a));
+    assertEquals(1, scene.getIndexOfComponent(b));
+    assertEquals(2, scene.getIndexOfComponent(c));
+  }
+
+  @Test
+  public void getComponentsAsArrayReturnsCorrectArray() {
+    Scene scene = new Scene();
+    Transformable a = named("a");
+    Transformable b = named("b");
+
+    scene.addComponent(a);
+    scene.addComponent(b);
+
+    Component[] array = scene.getComponentsAsArray();
+    assertEquals(2, array.length);
+    assertSame(a, array[0]);
+    assertSame(b, array[1]);
+  }
+
+  @Test
+  public void getChildrenListenersReturnsRegisteredListeners() {
+    Scene scene = new Scene();
+    ComponentsListener listener = new ComponentsListener() {
+      @Override
+      public void componentAdded(ComponentAddedEvent event) {}
+      @Override
+      public void componentRemoved(ComponentRemovedEvent event) {}
+    };
+
+    scene.addChildrenListener(listener);
+    boolean found = false;
+    for (ComponentsListener l : scene.getChildrenListeners()) {
+      if (l == listener) {
+        found = true;
+        break;
+      }
+    }
+    assertTrue("Should find registered listener", found);
+  }
+
+  @Test
+  public void componentRemovedEventFires() {
+    Scene scene = new Scene();
+    Transformable child = named("child");
+    scene.addComponent(child);
+
+    java.util.concurrent.atomic.AtomicInteger removeCount = new java.util.concurrent.atomic.AtomicInteger();
+    scene.addChildrenListener(new ComponentsListener() {
+      @Override
+      public void componentAdded(ComponentAddedEvent event) {}
+      @Override
+      public void componentRemoved(ComponentRemovedEvent event) {
+        removeCount.incrementAndGet();
+      }
+    });
+
+    scene.removeComponent(child);
+    assertEquals(1, removeCount.get());
+  }
+
+  @Test
+  public void getRootReturnsSceneForAttachedNode() {
+    Scene scene = new Scene();
+    Transformable parent = named("parent");
+    Transformable child = named("child");
+
+    scene.addComponent(parent);
+    parent.addComponent(child);
+
+    assertSame(scene, child.getRoot());
+    assertSame(scene, parent.getRoot());
+  }
+
+  @Test
+  public void setParentDirectlyReparentsComponent() {
+    Scene scene = new Scene();
+    Transformable parent1 = named("p1");
+    Transformable parent2 = named("p2");
+    Transformable child = named("child");
+
+    scene.addComponent(parent1);
+    scene.addComponent(parent2);
+    parent1.addComponent(child);
+
+    assertSame(parent1, child.getParent());
+    assertEquals(1, parent1.getComponentCount());
+    assertEquals(0, parent2.getComponentCount());
+
+    child.setParent(parent2);
+
+    assertSame(parent2, child.getParent());
+    assertEquals(0, parent1.getComponentCount());
+    assertEquals(1, parent2.getComponentCount());
+  }
+
+  @Test
+  public void setParentToSameParentIsNoOp() {
+    Scene scene = new Scene();
+    Transformable child = named("child");
+    scene.addComponent(child);
+
+    AtomicInteger events = new AtomicInteger();
+    scene.addChildrenListener(new ComponentsListener() {
+      @Override
+      public void componentAdded(ComponentAddedEvent event) {
+        events.incrementAndGet();
+      }
+      @Override
+      public void componentRemoved(ComponentRemovedEvent event) {
+        events.incrementAndGet();
+      }
+    });
+
+    // Setting same parent should be no-op
+    child.setParent(scene);
+    assertEquals(0, events.get());
+  }
+
   private static Transformable named(String name) {
     Transformable t = new Transformable();
     t.setName(name);

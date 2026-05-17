@@ -1,10 +1,15 @@
 package edu.cmu.cs.dennisc.scenegraph.io;
 
+import edu.cmu.cs.dennisc.scenegraph.AmbientLight;
 import edu.cmu.cs.dennisc.scenegraph.Component;
 import edu.cmu.cs.dennisc.scenegraph.Composite;
 import edu.cmu.cs.dennisc.scenegraph.DirectionalLight;
+import edu.cmu.cs.dennisc.scenegraph.PointLight;
 import edu.cmu.cs.dennisc.scenegraph.Transformable;
 import org.alice.math.immutable.AffineMatrix4x4;
+import org.alice.math.immutable.AngleInRadians;
+import org.alice.math.immutable.AxisRotation;
+import org.alice.math.immutable.OrthogonalMatrix3x3;
 import org.alice.math.immutable.Point3;
 import org.junit.Rule;
 import org.junit.Test;
@@ -217,6 +222,184 @@ public class ASGRoundtripTest {
     assertTrue(decoded instanceof Transformable);
     assertEquals("fileTest", decoded.getName());
     assertPointEquals(new Point3(1, 2, 3), ((Transformable) decoded).getLocalTransformation().translation());
+  }
+
+  @Test
+  public void rotatedTransformablePreservesOrientation() {
+    Transformable original = new Transformable();
+    original.setName("rotated");
+    AffineMatrix4x4 rotated = AffineMatrix4x4.createOrientation(
+        AxisRotation.createYAxisRotation(new AngleInRadians(Math.PI / 4)));
+    original.setLocalTransformation(rotated);
+
+    Component decoded = roundtrip(original);
+
+    assertNotNull(decoded);
+    assertTrue(decoded instanceof Transformable);
+    Transformable decodedT = (Transformable) decoded;
+    OrthogonalMatrix3x3 origO = rotated.orientation();
+    OrthogonalMatrix3x3 decO = decodedT.getLocalTransformation().orientation();
+    assertEquals(origO.right().x(), decO.right().x(), EPSILON);
+    assertEquals(origO.right().y(), decO.right().y(), EPSILON);
+    assertEquals(origO.right().z(), decO.right().z(), EPSILON);
+    assertEquals(origO.up().x(), decO.up().x(), EPSILON);
+    assertEquals(origO.up().y(), decO.up().y(), EPSILON);
+    assertEquals(origO.up().z(), decO.up().z(), EPSILON);
+  }
+
+  @Test
+  public void directionalLightRoundtrip() {
+    Transformable root = new Transformable();
+    root.setName("lightRoot");
+
+    DirectionalLight light = new DirectionalLight();
+    light.setName("dl1");
+    root.addComponent(light);
+
+    Component decoded = roundtrip(root);
+    assertNotNull(decoded);
+    Composite decodedRoot = (Composite) decoded;
+    assertEquals(1, decodedRoot.getComponentCount());
+    Component decodedLight = decodedRoot.getComponentAt(0);
+    assertTrue("Should be DirectionalLight", decodedLight instanceof DirectionalLight);
+    assertEquals("dl1", decodedLight.getName());
+  }
+
+  @Test
+  public void ambientLightRoundtrip() {
+    Transformable root = new Transformable();
+    root.setName("ambientRoot");
+
+    AmbientLight light = new AmbientLight();
+    light.setName("al1");
+    root.addComponent(light);
+
+    Component decoded = roundtrip(root);
+    assertNotNull(decoded);
+    Composite decodedRoot = (Composite) decoded;
+    assertEquals(1, decodedRoot.getComponentCount());
+    Component decodedLight = decodedRoot.getComponentAt(0);
+    assertTrue("Should be AmbientLight", decodedLight instanceof AmbientLight);
+    assertEquals("al1", decodedLight.getName());
+  }
+
+  @Test
+  public void pointLightRoundtrip() {
+    Transformable root = new Transformable();
+    root.setName("pointRoot");
+
+    PointLight light = new PointLight();
+    light.setName("pl1");
+    root.addComponent(light);
+
+    Component decoded = roundtrip(root);
+    assertNotNull(decoded);
+    Composite decodedRoot = (Composite) decoded;
+    assertEquals(1, decodedRoot.getComponentCount());
+    Component decodedLight = decodedRoot.getComponentAt(0);
+    assertTrue("Should be PointLight", decodedLight instanceof PointLight);
+    assertEquals("pl1", decodedLight.getName());
+  }
+
+  @Test
+  public void wideHierarchyWithManyChildren() {
+    Transformable root = new Transformable();
+    root.setName("wideRoot");
+
+    for (int i = 0; i < 10; i++) {
+      Transformable child = new Transformable();
+      child.setName("wide" + i);
+      child.setLocalTransformation(AffineMatrix4x4.createTranslation(i, i * 2, i * 3));
+      root.addComponent(child);
+    }
+
+    Component decoded = roundtrip(root);
+    assertNotNull(decoded);
+    Composite decodedRoot = (Composite) decoded;
+    assertEquals(10, decodedRoot.getComponentCount());
+
+    for (int i = 0; i < 10; i++) {
+      Component child = decodedRoot.getComponentAt(i);
+      assertEquals("wide" + i, child.getName());
+      assertPointEquals(new Point3(i, i * 2, i * 3),
+          ((Transformable) child).getLocalTransformation().translation());
+    }
+  }
+
+  @Test
+  public void combinedTranslationAndRotationRoundtrip() {
+    Transformable original = new Transformable();
+    original.setName("combo");
+    AffineMatrix4x4 m = AffineMatrix4x4.createTranslation(5, 10, 15);
+    OrthogonalMatrix3x3 rot = AffineMatrix4x4.createOrientation(
+        AxisRotation.createZAxisRotation(new AngleInRadians(Math.PI / 3))).orientation();
+    m = new AffineMatrix4x4(rot, m.translation());
+    original.setLocalTransformation(m);
+
+    Component decoded = roundtrip(original);
+    assertNotNull(decoded);
+    Transformable decodedT = (Transformable) decoded;
+    assertPointEquals(new Point3(5, 10, 15), decodedT.getLocalTransformation().translation());
+
+    OrthogonalMatrix3x3 decO = decodedT.getLocalTransformation().orientation();
+    assertEquals(rot.right().x(), decO.right().x(), EPSILON);
+  }
+
+  @Test
+  public void identityTransformRoundtrip() {
+    Transformable original = new Transformable();
+    original.setName("identity");
+    original.setLocalTransformation(AffineMatrix4x4.IDENTITY);
+
+    Component decoded = roundtrip(original);
+    assertNotNull(decoded);
+    Transformable decodedT = (Transformable) decoded;
+    assertPointEquals(Point3.ORIGIN, decodedT.getLocalTransformation().translation());
+  }
+
+  @Test
+  public void emptyNameRoundtrip() {
+    Transformable original = new Transformable();
+    // Don't set name — should still roundtrip
+    original.setLocalTransformation(AffineMatrix4x4.createTranslation(1, 1, 1));
+
+    Component decoded = roundtrip(original);
+    assertNotNull(decoded);
+    assertTrue(decoded instanceof Transformable);
+  }
+
+  @Test
+  public void deepNestedMixedTypes() {
+    Transformable root = new Transformable();
+    root.setName("root");
+
+    Transformable mid = new Transformable();
+    mid.setName("mid");
+    mid.setLocalTransformation(AffineMatrix4x4.createTranslation(1, 0, 0));
+    root.addComponent(mid);
+
+    DirectionalLight leaf = new DirectionalLight();
+    leaf.setName("deepLight");
+    mid.addComponent(leaf);
+
+    Transformable sibling = new Transformable();
+    sibling.setName("sibling");
+    sibling.setLocalTransformation(AffineMatrix4x4.createTranslation(0, 1, 0));
+    mid.addComponent(sibling);
+
+    Component decoded = roundtrip(root);
+    assertNotNull(decoded);
+    Composite decodedRoot = (Composite) decoded;
+    assertEquals(1, decodedRoot.getComponentCount());
+
+    Composite decodedMid = (Composite) decodedRoot.getComponentAt(0);
+    assertEquals("mid", decodedMid.getName());
+    assertEquals(2, decodedMid.getComponentCount());
+
+    assertTrue("First should be DirectionalLight",
+        decodedMid.getComponentAt(0) instanceof DirectionalLight);
+    assertTrue("Second should be Transformable",
+        decodedMid.getComponentAt(1) instanceof Transformable);
   }
 
   private static Component roundtrip(Component original) {
