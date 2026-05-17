@@ -107,19 +107,31 @@ git diff HEAD~1 -- core/ast/src/main/java/org/alice/serialization/tweedle/Statem
 
 Expected: no changes. The step 1 extraction is unaffected by step 2.
 
-## Step 11: Run ExpressionArgumentEncoderExtractionTest
+## Step 11: Run ExpressionEncoderExtractionTest
 
 ```bash
 NODE_OPTIONS=--max-old-space-size=32768 \
 mvn -pl core/ast -am -DfailIfNoTests=false \
   -Dsurefire.failIfNoSpecifiedTests=false \
-  -Dtest=ExpressionArgumentEncoderExtractionTest \
+  -Dtest=ExpressionEncoderExtractionTest \
   test -q
 ```
 
-Expected: all 43 characterization tests pass, exit code 0.
+Expected: all ExpressionEncoder characterization tests pass, exit code 0.
 
-## Step 12: Run StatementEncoderExtractionTest (regression)
+## Step 12: Run ArgumentEncoderExtractionTest
+
+```bash
+NODE_OPTIONS=--max-old-space-size=32768 \
+mvn -pl core/ast -am -DfailIfNoTests=false \
+  -Dsurefire.failIfNoSpecifiedTests=false \
+  -Dtest=ArgumentEncoderExtractionTest \
+  test -q
+```
+
+Expected: all ArgumentEncoder characterization tests pass, exit code 0.
+
+## Step 13: Run StatementEncoderExtractionTest (regression)
 
 ```bash
 NODE_OPTIONS=--max-old-space-size=32768 \
@@ -131,7 +143,7 @@ mvn -pl core/ast -am -DfailIfNoTests=false \
 
 Expected: all tests pass, exit code 0. Step 1 contract is preserved.
 
-## Step 13: Run core/ast encoder tests
+## Step 14: Run core/ast encoder tests
 
 ```bash
 NODE_OPTIONS=--max-old-space-size=32768 \
@@ -143,7 +155,7 @@ mvn -pl core/ast -am -DfailIfNoTests=false \
 
 Expected: all tests pass, exit code 0.
 
-## Step 14: Run story-api-migration round-trip tests
+## Step 15: Run story-api-migration round-trip tests
 
 ```bash
 NODE_OPTIONS=--max-old-space-size=32768 \
@@ -164,7 +176,8 @@ Expected: all tests pass, exit code 0.
 - [ ] `targetIsMath`, `tweedleModuleForMath`, `getDeclaringJavaClassName` removed from `TweedleEncoder`
 - [ ] `TweedleEncoderDecoder.java` is unchanged
 - [ ] `StatementEncoder.java` is unchanged
-- [ ] `ExpressionArgumentEncoderExtractionTest` passes (43 tests)
+- [ ] `ExpressionEncoderExtractionTest` passes
+- [ ] `ArgumentEncoderExtractionTest` passes
 - [ ] `StatementEncoderExtractionTest` passes
 - [ ] `TweedleEncoderTest` passes
 - [ ] `TweedleEncoderRenameContractTest` passes

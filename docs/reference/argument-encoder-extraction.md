@@ -40,7 +40,7 @@ methods form a cohesive group — they all work together to emit labeled
 `name: value` Tweedle argument syntax.
 
 Extracting argument methods into `ArgumentEncoder` brings `TweedleEncoder`
-from 499 lines to 365 lines (under the 400-line target). This extraction is
+from 499 lines to ~370 lines (under the 400-line target). This extraction is
 paired with the [ExpressionEncoder expansion](./expression-encoder-extraction.md)
 (adding `processInstantiation`) as issue #730.
 
@@ -48,7 +48,7 @@ paired with the [ExpressionEncoder expansion](./expression-encoder-extraction.md
 
 ```text
 TweedleEncoderDecoder (public facade — unchanged)
-└── TweedleEncoder (coordinator, 365 lines after extraction)
+└── TweedleEncoder (coordinator, ~370 lines after extraction)
     ├── StatementEncoder (package-private, ~46 lines — step 1)
     ├── ExpressionEncoder (package-private, ~97 lines — step 2 + #730)
     ├── FormattingEncoder (package-private, ~122 lines — step 3)
@@ -133,6 +133,7 @@ forwarding methods. The following methods on `TweedleEncoder` are used by
 | `forwardAppendString(String)` | Append raw string to output buffer (already exists from step 1) |
 | `forwardIdentifierName(AbstractDeclaration)` | Call `identifierName(variable)` to resolve identifier with user-prefix rules (new bridge) |
 | `forwardAppendEscapedString(String)` | Call `appendEscapedString(value)` to write a quoted, escaped string (already exists) |
+| `forwardProcessExpression(Expression)` | Call `processExpression(target)` to encode an expression when keyed argument dispatch falls through (already exists from step 2) |
 
 `ArgumentEncoder` also accesses static data from `TweedleEncoderData`:
 
@@ -260,7 +261,7 @@ NODE_OPTIONS=--max-old-space-size=32768 git submodule update --init tweedle-lang
 NODE_OPTIONS=--max-old-space-size=32768 mvn -pl core/ast -am \
   -DfailIfNoTests=false \
   -Dsurefire.failIfNoSpecifiedTests=false \
-  -Dtest=TweedleEncoderTest,TweedleEncoderRenameContractTest,TweedleEncoderDecoderTest,SourceCodeGeneratorTest,ExpressionArgumentEncoderExtractionTest,StatementEncoderExtractionTest \
+  -Dtest=TweedleEncoderTest,TweedleEncoderRenameContractTest,TweedleEncoderDecoderTest,SourceCodeGeneratorTest,ExpressionEncoderExtractionTest,ArgumentEncoderExtractionTest,StatementEncoderExtractionTest \
   test
 ```
 
@@ -273,9 +274,9 @@ NODE_OPTIONS=--max-old-space-size=32768 mvn -pl core/story-api-migration -am \
 ```
 
 All suites must pass with identical results before and after the extraction.
-The combined `ExpressionArgumentEncoderExtractionTest` contains 43
-characterization tests covering both `ExpressionEncoder` and `ArgumentEncoder`
-delegation.
+The combined `ExpressionEncoderExtractionTest` and `ArgumentEncoderExtractionTest`
+contain characterization tests covering both `ExpressionEncoder` and
+`ArgumentEncoder` delegation.
 
 ## Acceptance criteria
 
@@ -293,9 +294,10 @@ delegation.
 | `parameterIndex` extracted | Private method on `ArgumentEncoder`, not on `TweedleEncoder` |
 | `forwardIdentifierName` bridge added | Package-private method on `TweedleEncoder` |
 | `TweedleEncoder` delegates `@Override` bodies | `appendArgument`, `processKeyedArgument`, `processArgument` delegate to `argumentEncoder` |
-| `TweedleEncoder` ≤ 365 lines | `wc -l` confirms reduction from 499 |
+| `TweedleEncoder` under 400 lines | `wc -l` confirms reduction from 499 |
 | `TweedleEncoderDecoder.java` unchanged | `git diff` shows no changes |
-| `ExpressionArgumentEncoderExtractionTest` passes | All 43 characterization tests — zero failures |
+| `ExpressionEncoderExtractionTest` passes | All ExpressionEncoder characterization tests — zero failures |
+| `ArgumentEncoderExtractionTest` passes | All ArgumentEncoder characterization tests — zero failures |
 | `StatementEncoderExtractionTest` passes | Prior extraction contract unbroken — zero failures |
 | `TweedleEncoderTest` passes | Zero failures |
 | `TweedleEncoderRenameContractTest` passes | Zero failures |
@@ -322,7 +324,7 @@ This extraction proves:
 - The `Dialogs.showError` error path for unlabeled parameters is preserved.
 - All existing encoder test assertions pass identically.
 - The combined `ExpressionEncoder` + `ArgumentEncoder` extraction reduces
-  `TweedleEncoder` from 499 to 365 lines (under 400).
+  `TweedleEncoder` from 499 to under 400 lines.
 
 This extraction does **not** prove:
 

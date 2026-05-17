@@ -93,7 +93,7 @@ delegate passes the `TweedleEncoder` reference for correct visitor dispatch.
 wc -l core/ast/src/main/java/org/alice/serialization/tweedle/TweedleEncoder.java
 ```
 
-Expected: 365 lines or fewer (under the 400-line target).
+Expected: under 400 lines (down from 499).
 
 ## Step 10: Verify TweedleEncoderDecoder is unchanged
 
@@ -104,19 +104,31 @@ git diff HEAD~1 -- core/ast/src/main/java/org/alice/serialization/tweedle/Tweedl
 Expected: no changes. The public facade is unmodified by this extraction.
 Replace `HEAD~1` with the appropriate merge base if your branch diverged.
 
-## Step 11: Run ExpressionArgumentEncoderExtractionTest
+## Step 11: Run ExpressionEncoderExtractionTest
 
 ```bash
 NODE_OPTIONS=--max-old-space-size=32768 \
 mvn -pl core/ast -am -DfailIfNoTests=false \
   -Dsurefire.failIfNoSpecifiedTests=false \
-  -Dtest=ExpressionArgumentEncoderExtractionTest \
+  -Dtest=ExpressionEncoderExtractionTest \
   test -q
 ```
 
-Expected: all 43 characterization tests pass, exit code 0.
+Expected: all ExpressionEncoder characterization tests pass, exit code 0.
 
-## Step 12: Run StatementEncoderExtractionTest (regression)
+## Step 12: Run ArgumentEncoderExtractionTest
+
+```bash
+NODE_OPTIONS=--max-old-space-size=32768 \
+mvn -pl core/ast -am -DfailIfNoTests=false \
+  -Dsurefire.failIfNoSpecifiedTests=false \
+  -Dtest=ArgumentEncoderExtractionTest \
+  test -q
+```
+
+Expected: all ArgumentEncoder characterization tests pass, exit code 0.
+
+## Step 13: Run StatementEncoderExtractionTest (regression)
 
 ```bash
 NODE_OPTIONS=--max-old-space-size=32768 \
@@ -128,7 +140,7 @@ mvn -pl core/ast -am -DfailIfNoTests=false \
 
 Expected: all tests pass, exit code 0. Prior extraction contracts preserved.
 
-## Step 13: Run core/ast encoder tests
+## Step 14: Run core/ast encoder tests
 
 ```bash
 NODE_OPTIONS=--max-old-space-size=32768 \
@@ -140,7 +152,7 @@ mvn -pl core/ast -am -DfailIfNoTests=false \
 
 Expected: all tests pass, exit code 0.
 
-## Step 14: Run story-api-migration round-trip tests
+## Step 15: Run story-api-migration round-trip tests
 
 ```bash
 NODE_OPTIONS=--max-old-space-size=32768 \
@@ -159,9 +171,10 @@ Expected: all tests pass, exit code 0.
 - [ ] `TweedleEncoder` delegates via `argumentEncoder.` calls
 - [ ] Private helpers removed from `TweedleEncoder` (4 methods)
 - [ ] `argument.process(encoder)` uses `TweedleEncoder` reference
-- [ ] `TweedleEncoder` ≤ 365 lines
+- [ ] `TweedleEncoder` under 400 lines
 - [ ] `TweedleEncoderDecoder.java` is unchanged
-- [ ] `ExpressionArgumentEncoderExtractionTest` passes (43 tests)
+- [ ] `ExpressionEncoderExtractionTest` passes
+- [ ] `ArgumentEncoderExtractionTest` passes
 - [ ] `StatementEncoderExtractionTest` passes
 - [ ] `TweedleEncoderTest` passes
 - [ ] `TweedleEncoderRenameContractTest` passes

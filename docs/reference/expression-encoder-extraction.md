@@ -201,15 +201,11 @@ public void processResourceExpression(ResourceExpression resourceExpression) {
 
 ## Visibility changes
 
-| Symbol | Before | After | Reason |
-| --- | --- | --- | --- |
-| `angleMembers` | `private static final Set<String>` | `static final Set<String>` (package-private) | Read by `ExpressionEncoder.tweedleModuleForMath` to detect angle Math functions |
-| `membersToRename` | `private static final Map<String, String>` | `static final Map<String, String>` (package-private) | Read by `ExpressionEncoder.appendTargetAndMember` to translate member names |
-
-Both collections are populated in a `static {}` initializer block and are
-effectively unmodifiable after class initialization. Widening from `private`
-to package-private has negligible security impact — they remain inaccessible
-outside the package.
+No additional visibility changes are required for this extraction. The
+`angleMembers` and `membersToRename` collections already live on
+`TweedleEncoderData`, which is package-private. `ExpressionEncoder` accesses
+them directly as `TweedleEncoderData.angleMembers` and
+`TweedleEncoderData.membersToRename`.
 
 This follows the same pattern as `NODE_ENABLE` and `NODE_DISABLE` which were
 widened to package-private in step 1 for `StatementEncoder`.
@@ -261,7 +257,7 @@ NODE_OPTIONS=--max-old-space-size=32768 git submodule update --init tweedle-lang
 NODE_OPTIONS=--max-old-space-size=32768 mvn -pl core/ast -am \
   -DfailIfNoTests=false \
   -Dsurefire.failIfNoSpecifiedTests=false \
-  -Dtest=TweedleEncoderTest,TweedleEncoderRenameContractTest,TweedleEncoderDecoderTest,SourceCodeGeneratorTest,ExpressionEncoderExtractionTest,StatementEncoderExtractionTest \
+  -Dtest=TweedleEncoderTest,TweedleEncoderRenameContractTest,TweedleEncoderDecoderTest,SourceCodeGeneratorTest,ExpressionEncoderExtractionTest,ArgumentEncoderExtractionTest,StatementEncoderExtractionTest \
   test
 ```
 
@@ -293,7 +289,8 @@ All suites must pass with identical results before and after the extraction.
 | 3 forwarding methods on TweedleEncoder | `forwardProcessExpression`, `forwardAppendAccessSeparator`, `forwardAppendEscapedString` |
 | `TweedleEncoder` delegates `@Override` bodies | `processInstantiation`, `appendTargetAndMember`, `processResourceExpression` delegate to `expressionEncoder` |
 | `TweedleEncoderDecoder.java` unchanged | `git diff` shows no changes |
-| `ExpressionArgumentEncoderExtractionTest` passes | All characterization tests — zero failures |
+| `ExpressionEncoderExtractionTest` passes | All ExpressionEncoder characterization tests — zero failures |
+| `ArgumentEncoderExtractionTest` passes | All ArgumentEncoder characterization tests — zero failures |
 | `StatementEncoderExtractionTest` passes | Step 1 contract unbroken — zero failures |
 | `TweedleEncoderTest` passes | Zero failures |
 | `TweedleEncoderRenameContractTest` passes | Zero failures |

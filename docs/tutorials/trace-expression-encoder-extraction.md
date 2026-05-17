@@ -72,7 +72,7 @@ void appendTargetAndMember(Expression target, String member,
   }
   encoder.forwardAppendAccessSeparator();
 
-  String tweedleName = TweedleEncoder.membersToRename.get(member);
+  String tweedleName = TweedleEncoderData.membersToRename.get(member);
   encoder.forwardAppendString(tweedleName == null ? member : tweedleName);
 }
 ```
@@ -145,19 +145,20 @@ private String tweedleModuleForMath(String member, AbstractType<?, ?, ?> returnT
   if (returnType != null && "int".equals(returnType.getName())) {
     return "$WholeNumber";
   }
-  if (TweedleEncoder.angleMembers.contains(member)) {
+  if (TweedleEncoderData.angleMembers.contains(member)) {
     return "$Angle";
   }
   return "$DecimalNumber";
 }
 ```
 
-`sin` is in the `angleMembers` set (populated in `TweedleEncoder`'s `static {}`
+`sin` is in the `angleMembers` set (populated in `TweedleEncoderData`'s `static {}`
 block), so the method returns `"$Angle"`.
 
-**Key insight:** `angleMembers` was widened from `private` to package-private
-so `ExpressionEncoder` can read it directly. No bridge method is needed for
-static field access — package-private visibility is sufficient.
+**Key insight:** `angleMembers` lives on `TweedleEncoderData`, which is already
+package-private. `ExpressionEncoder` reads it directly as
+`TweedleEncoderData.angleMembers` — no bridge method is needed for static field
+access within the same package.
 
 ### Step 4: Output produced
 
@@ -230,14 +231,14 @@ Same as Trace 2. Since `rint` returns `double`, and `rint` is not in
 ### Step 3: Member rename lookup
 
 ```java
-String tweedleName = TweedleEncoder.membersToRename.get("rint");
-// Returns "round" — populated in static initializer: membersToRename.put("rint", "round")
+String tweedleName = TweedleEncoderData.membersToRename.get("rint");
+// Returns "round" — populated in TweedleEncoderData static initializer
 encoder.forwardAppendString("round");
 ```
 
 Result: `$DecimalNumber.round`
 
-**Key insight:** `membersToRename` was widened from `private` to package-private
+**Key insight:** `membersToRename` lives on `TweedleEncoderData`, already package-private
 so `ExpressionEncoder` can read it. The rename map is immutable after class
 initialization and contains entries like `rint→round`, `ceil→ceiling`, etc.
 
