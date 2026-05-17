@@ -195,9 +195,10 @@ public class ZipUtilitiesTest {
     File zipFile = new File(tempFolder.getRoot(), "exis.zip");
     ZipUtilities.zip(srcDir, zipFile);
 
-    Map<String, byte[]> entries = ZipUtilities.extract(
-        new java.io.FileInputStream(zipFile));
-    assertFalse(entries.isEmpty());
+    try (java.io.FileInputStream fis = new java.io.FileInputStream(zipFile)) {
+      Map<String, byte[]> entries = ZipUtilities.extract(fis);
+      assertFalse(entries.isEmpty());
+    }
   }
 
   @Test
