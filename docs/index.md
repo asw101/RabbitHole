@@ -143,6 +143,9 @@ repository.
 - [Expand coverage ratchets](./howto/expand-coverage-ratchets.md) - measure no-Sims coverage, choose safe module floors, and document protected hotspot decisions.
 - [Coverage ratchet and hotspot review tutorial](./tutorials/coverage-ratchet-and-hotspot-review.md) - guided ratchet expansion example with conservative thresholds and a hotspot skip/refactor decision.
 - [Coverage reporting reference](./reference/coverage-reporting.md) - aggregate and module JaCoCo reporting, CLI options, CI ratchet gates, configuration, and path toward 70% line coverage.
+- [core/util test coverage reference](./reference/core-util-test-coverage.md) - test inventory table, coverage arithmetic (3.63%→40.2%), excluded AWT/Swing areas, file tree layout, and ratchet configuration.
+- [Raise core/util test coverage](./howto/raise-core-util-test-coverage.md) - prerequisites, test architecture (3-phase), step-by-step guide for adding new tests, static state management, and troubleshooting.
+- [Tutorial: Write headless-safe tests for core/util](./tutorials/core-util-headless-test-coverage.md) - walkthrough writing a BufferUtilitiesTest, plus reusable patterns: TemporaryFolder, static state save/restore, headless guards, and encode→decode round-trips.
 - [CI efficiency notes](./reference/ci-efficiency.md) - current pull request check timing, parallelism status, and safe next targets.
 - [Merge-ready PR recovery](./reference/merge-ready-pr-recovery.md) - Specification for the automated merge-ready blocker resolution script: CLI contract, recovery steps, evidence template, and validation.
 - [Run merge-ready PR recovery](./howto/run-merge-ready-pr-recovery.md) - how to bring a pull request to merge-ready status with QA scenario validation, quality audit cycles, and PR description updates.

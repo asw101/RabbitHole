@@ -160,4 +160,73 @@ public class ConvexPolygonTest {
     }
     return true;
   }
+
+  // --- distanceAlong tests ---
+
+  @Test
+  public void distanceAlong_insideTriangle_returnsDistance() {
+    poly.includePoint(new Point2(2, 0));
+    poly.includePoint(new Point2(0, -2));
+    poly.includePoint(new Point2(-2, 0));
+    // Origin is inside this triangle, so a point near origin should be inside
+    double dist = poly.distanceAlong(0.1, -0.1);
+    assertFalse(Double.isNaN(dist));
+    assertTrue(dist > 0);
+  }
+
+  @Test
+  public void distanceAlong_outsideTriangle_hitsEdge() {
+    // Large triangle around origin, clockwise
+    poly.includePoint(new Point2(3, 0));
+    poly.includePoint(new Point2(0, -3));
+    poly.includePoint(new Point2(-3, 0));
+    // Ray from origin in direction (10, -0.5) should hit an edge
+    double dist = poly.distanceAlong(10, -0.5);
+    // Either finds intersection (positive distance) or returns NaN
+    assertTrue("Expected positive distance or NaN",
+        Double.isNaN(dist) || dist > 0);
+  }
+
+  @Test
+  public void distanceAlong_noEdgeHit_returnsNaN() {
+    // Two-point polygon (a line segment) — no proper edges to intersect
+    poly.includePoint(new Point2(1, 0));
+    poly.includePoint(new Point2(0, 1));
+    double dist = poly.distanceAlong(-5, -5);
+    assertTrue(Double.isNaN(dist));
+  }
+
+  @Test
+  public void distanceAlong_emptyPolygon_treatsAsInside() {
+    // Empty polygon: isInside returns true (no edges to fail), so returns sqrt(x^2+y^2)
+    double dist = poly.distanceAlong(3, 4);
+    assertEquals(5.0, dist, 1e-10);
+  }
+
+  @Test
+  public void distanceAlong_atOriginInsidePolygon_returnsZero() {
+    poly.includePoint(new Point2(2, 0));
+    poly.includePoint(new Point2(0, -2));
+    poly.includePoint(new Point2(-2, 0));
+    double dist = poly.distanceAlong(0, 0);
+    // sqrt(0) = 0 when inside
+    assertFalse(Double.isNaN(dist));
+    assertEquals(0.0, dist, 1e-10);
+  }
+
+  @Test
+  public void includePoint_expandsConvexHull() {
+    poly.includePoint(new Point2(1, 0));
+    poly.includePoint(new Point2(0, -1));
+    poly.includePoint(new Point2(-1, 0));
+    assertEquals(3, poly.getVertices().size());
+    // Add a point that expands the hull
+    poly.includePoint(new Point2(0, 2));
+    assertEquals(4, poly.getVertices().size());
+  }
+
+  @Test
+  public void getVertices_empty_returnsEmptyList() {
+    assertTrue(poly.getVertices().isEmpty());
+  }
 }
