@@ -145,7 +145,8 @@ public class LazyTest {
     }
 
     for (Thread t : threads) {
-      t.join();
+      t.join(5_000);
+      assertFalse("Thread should have completed within timeout", t.isAlive());
     }
 
     for (Integer result : results) {

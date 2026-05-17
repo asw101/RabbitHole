@@ -46,7 +46,6 @@ public class DoTogetherTest {
   @Test
   public void invokeAndWait_multipleRunnables_runConcurrently() throws InterruptedException {
     CountDownLatch allStarted = new CountDownLatch(2);
-    CountDownLatch proceed = new CountDownLatch(1);
     AtomicBoolean bothReachedLatch = new AtomicBoolean(false);
 
     Runnable r1 = () -> {

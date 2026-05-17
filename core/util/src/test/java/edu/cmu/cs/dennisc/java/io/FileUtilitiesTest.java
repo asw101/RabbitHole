@@ -41,10 +41,10 @@ public class FileUtilitiesTest {
 
   @Test
   public void getExtension_dotFile() {
-    // .gitignore has no extension in most interpretations
+    // .gitignore → implementation returns "gitignore" as extension
     String ext = FileUtilities.getExtension(".gitignore");
-    // Implementation-dependent; just ensure it doesn't throw
-    assertNotNull(ext); // .gitignore → "gitignore"
+    assertNotNull(ext);
+    assertEquals("gitignore", ext);
   }
 
   @Test

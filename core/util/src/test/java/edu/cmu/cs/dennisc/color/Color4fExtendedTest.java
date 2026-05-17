@@ -1,10 +1,8 @@
 package edu.cmu.cs.dennisc.color;
 
-import edu.cmu.cs.dennisc.codec.DebugInputStreamBinaryDecoder;
 import edu.cmu.cs.dennisc.codec.DebugOutputStreamBinaryEncoder;
 import org.junit.Test;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.nio.FloatBuffer;
 

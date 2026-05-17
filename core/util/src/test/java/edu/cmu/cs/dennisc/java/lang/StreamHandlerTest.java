@@ -16,10 +16,12 @@ import static org.junit.Assert.*;
  */
 public class StreamHandlerTest {
 
+  private static final int PROCESS_TIMEOUT_MS = 10_000;
+
   private static final File NULL_DIR = null;
   private static final Map<String, String> NULL_ENV = null;
 
-  @Test
+  @Test(timeout = PROCESS_TIMEOUT_MS)
   public void streamHandler_capturesStdout() {
     ByteArrayOutputStream capture = new ByteArrayOutputStream();
     PrintStream ps = new PrintStream(capture);
@@ -29,7 +31,7 @@ public class StreamHandlerTest {
     assertEquals("hello stream", output);
   }
 
-  @Test
+  @Test(timeout = PROCESS_TIMEOUT_MS)
   public void streamHandler_capturesStderr() {
     ByteArrayOutputStream errCapture = new ByteArrayOutputStream();
     PrintStream errPs = new PrintStream(errCapture);
@@ -39,7 +41,7 @@ public class StreamHandlerTest {
     assertEquals("error-msg", errOutput);
   }
 
-  @Test
+  @Test(timeout = PROCESS_TIMEOUT_MS)
   public void streamHandler_capturesMultipleLines() {
     ByteArrayOutputStream capture = new ByteArrayOutputStream();
     PrintStream ps = new PrintStream(capture);
@@ -54,7 +56,7 @@ public class StreamHandlerTest {
     assertEquals("line3", lines[2]);
   }
 
-  @Test
+  @Test(timeout = PROCESS_TIMEOUT_MS)
   public void streamHandler_emptyOutput() {
     ByteArrayOutputStream capture = new ByteArrayOutputStream();
     PrintStream ps = new PrintStream(capture);
@@ -63,13 +65,13 @@ public class StreamHandlerTest {
     assertEquals("", capture.toString().trim());
   }
 
-  @Test
+  @Test(timeout = PROCESS_TIMEOUT_MS)
   public void streamHandler_nullPrintStream_doesNotThrow() {
     int rc = RuntimeUtilities.exec(NULL_DIR, NULL_ENV, new String[]{"echo", "silent"}, null, null);
     assertEquals(0, rc);
   }
 
-  @Test
+  @Test(timeout = PROCESS_TIMEOUT_MS)
   public void streamHandler_bothStreamsCapture() {
     ByteArrayOutputStream outCapture = new ByteArrayOutputStream();
     ByteArrayOutputStream errCapture = new ByteArrayOutputStream();
@@ -81,7 +83,7 @@ public class StreamHandlerTest {
     assertTrue(errCapture.toString().contains("err-msg"));
   }
 
-  @Test
+  @Test(timeout = PROCESS_TIMEOUT_MS)
   public void streamHandler_withEnvironmentVariables() {
     ByteArrayOutputStream capture = new ByteArrayOutputStream();
     PrintStream ps = new PrintStream(capture);
@@ -93,7 +95,7 @@ public class StreamHandlerTest {
     assertEquals("hello_env", capture.toString().trim());
   }
 
-  @Test
+  @Test(timeout = PROCESS_TIMEOUT_MS)
   public void streamHandler_withWorkingDirectory() {
     ByteArrayOutputStream capture = new ByteArrayOutputStream();
     PrintStream ps = new PrintStream(capture);

@@ -182,8 +182,9 @@ public class ConvexPolygonTest {
     poly.includePoint(new Point2(-3, 0));
     // Ray from origin in direction (10, -0.5) should hit an edge
     double dist = poly.distanceAlong(10, -0.5);
-    // Either finds intersection or returns NaN — just verify no exception
-    assertNotNull(dist);
+    // Either finds intersection (positive distance) or returns NaN
+    assertTrue("Expected positive distance or NaN",
+        Double.isNaN(dist) || dist > 0);
   }
 
   @Test

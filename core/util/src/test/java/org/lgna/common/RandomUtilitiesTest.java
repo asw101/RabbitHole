@@ -104,8 +104,17 @@ class RandomUtilitiesTest {
 
   @Test
   void nextBoolean_returnsBooleanValue() {
-    boolean b = RandomUtilities.nextBoolean();
-    assertTrue(b || !b);
+    // Exercise the method; boolean return always true or false by definition.
+    // Run multiple times to exercise the random path.
+    int trueCount = 0;
+    for (int i = 0; i < 100; i++) {
+      if (RandomUtilities.nextBoolean()) {
+        trueCount++;
+      }
+    }
+    // With 100 trials, getting all-true or all-false is astronomically unlikely
+    assertTrue(trueCount > 0, "Expected some true values");
+    assertTrue(trueCount < 100, "Expected some false values");
   }
 
   // --- getRandomValueFrom ---

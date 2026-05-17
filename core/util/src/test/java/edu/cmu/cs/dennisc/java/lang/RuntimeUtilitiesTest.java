@@ -12,20 +12,22 @@ import static org.junit.Assert.*;
 
 public class RuntimeUtilitiesTest {
 
-  @Test
+  private static final int PROCESS_TIMEOUT_MS = 10_000;
+
+  @Test(timeout = PROCESS_TIMEOUT_MS)
   public void exec_echoReturnsZero() {
     int rc = RuntimeUtilities.exec("echo", "hello");
     assertEquals(0, rc);
   }
 
-  @Test
+  @Test(timeout = PROCESS_TIMEOUT_MS)
   public void exec_withWorkingDirectory() {
     File dir = new File(System.getProperty("user.dir"));
     int rc = RuntimeUtilities.exec(dir, "echo", "test");
     assertEquals(0, rc);
   }
 
-  @Test
+  @Test(timeout = PROCESS_TIMEOUT_MS)
   public void exec_withEnvironment() {
     File nullDir = null;
     Map<String, String> env = new HashMap<>();
@@ -34,7 +36,7 @@ public class RuntimeUtilitiesTest {
     assertEquals(0, rc);
   }
 
-  @Test
+  @Test(timeout = PROCESS_TIMEOUT_MS)
   public void exec_withWorkingDirAndEnv() {
     File dir = new File(System.getProperty("user.dir"));
     Map<String, String> env = new HashMap<>();
@@ -43,7 +45,7 @@ public class RuntimeUtilitiesTest {
     assertEquals(0, rc);
   }
 
-  @Test
+  @Test(timeout = PROCESS_TIMEOUT_MS)
   public void exec_capturesStdout() {
     ByteArrayOutputStream capture = new ByteArrayOutputStream();
     try (PrintStream ps = new PrintStream(capture)) {
@@ -55,7 +57,7 @@ public class RuntimeUtilitiesTest {
     assertTrue("Should capture stdout content", capture.toString().contains("captured"));
   }
 
-  @Test
+  @Test(timeout = PROCESS_TIMEOUT_MS)
   public void exec_capturesStdoutAndStderr() {
     ByteArrayOutputStream out = new ByteArrayOutputStream();
     ByteArrayOutputStream err = new ByteArrayOutputStream();
@@ -66,28 +68,30 @@ public class RuntimeUtilitiesTest {
       assertEquals(0, rc);
     }
     assertTrue("Should capture stdout content", out.toString().contains("both"));
+    // echo writes only to stdout; verify stderr stream was connected but empty
+    assertEquals("stderr should be empty for echo command", "", err.toString().trim());
   }
 
-  @Test
+  @Test(timeout = PROCESS_TIMEOUT_MS)
   public void exec_nonZeroExitCode() {
     int rc = RuntimeUtilities.exec("false");
     assertNotEquals(0, rc);
   }
 
-  @Test
+  @Test(timeout = PROCESS_TIMEOUT_MS)
   public void execSilent_echoReturnsZero() {
     int rc = RuntimeUtilities.execSilent("echo", "silent");
     assertEquals(0, rc);
   }
 
-  @Test
+  @Test(timeout = PROCESS_TIMEOUT_MS)
   public void execSilent_withWorkingDirectory() {
     File dir = new File(System.getProperty("user.dir"));
     int rc = RuntimeUtilities.execSilent(dir, "echo", "silent-dir");
     assertEquals(0, rc);
   }
 
-  @Test
+  @Test(timeout = PROCESS_TIMEOUT_MS)
   public void execSilent_withWorkingDirAndEnv() {
     File dir = new File(System.getProperty("user.dir"));
     Map<String, String> env = new HashMap<>();
@@ -96,14 +100,14 @@ public class RuntimeUtilitiesTest {
     assertEquals(0, rc);
   }
 
-  @Test
+  @Test(timeout = PROCESS_TIMEOUT_MS)
   public void exec_nullWorkingDirectory() {
     File nullDir = null;
     int rc = RuntimeUtilities.exec(nullDir, "echo", "null-dir");
     assertEquals(0, rc);
   }
 
-  @Test
+  @Test(timeout = PROCESS_TIMEOUT_MS)
   public void exec_nullEnvironment() {
     File nullDir = null;
     Map<String, String> nullEnv = null;
@@ -111,7 +115,7 @@ public class RuntimeUtilitiesTest {
     assertEquals(0, rc);
   }
 
-  @Test
+  @Test(timeout = PROCESS_TIMEOUT_MS)
   public void exec_nullOutputStreams() {
     File nullDir = null;
     Map<String, String> nullEnv = null;

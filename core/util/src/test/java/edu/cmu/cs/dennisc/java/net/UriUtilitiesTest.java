@@ -31,8 +31,10 @@ public class UriUtilitiesTest {
 
   @Test
   public void getFile_fileUri_directory() {
-    URI uri = new File("/some/directory/").toURI();
+    File dir = new File("/some/directory/");
+    URI uri = dir.toURI();
     File result = UriUtilities.getFile(uri);
     assertNotNull(result);
+    assertEquals(dir.getAbsolutePath(), result.getAbsolutePath());
   }
 }
