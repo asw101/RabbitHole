@@ -42,86 +42,26 @@
  *******************************************************************************/
 package org.lgna.croquet;
 
-import edu.cmu.cs.dennisc.java.util.Lists;
-import edu.cmu.cs.dennisc.java.util.Sets;
 import edu.cmu.cs.dennisc.java.util.logging.Logger;
 import edu.cmu.cs.dennisc.pattern.Lazy;
 import org.lgna.croquet.data.ListData;
 import org.lgna.croquet.edits.Edit;
-import org.lgna.croquet.history.UserActivity;
 import org.lgna.croquet.imp.liststate.SingleSelectListStateMenuModel;
 import org.lgna.croquet.imp.liststate.SingleSelectListStateSwingModel;
-import org.lgna.croquet.triggers.NullTrigger;
 import org.lgna.croquet.views.DefaultRadioButtons;
 import org.lgna.croquet.views.List;
 
-import javax.swing.ComboBoxModel;
-import javax.swing.event.ListDataListener;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.Random;
-import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * @author Dennis Cosgrove
  */
 public class SingleSelectListState<T, D extends ListData<T>> extends ItemState<T> implements Iterable<T> {
-  private class DataIndexPair implements ComboBoxModel {
-    DataIndexPair(D data, int index) {
-      this.data = data;
-      this.index = index;
-    }
-
-    @Override
-    public void addListDataListener(ListDataListener listDataListener) {
-      this.data.addListener(listDataListener);
-    }
-
-    @Override
-    public void removeListDataListener(ListDataListener listDataListener) {
-      this.data.removeListener(listDataListener);
-    }
-
-    @Override
-    public int getSize() {
-      return this.data.getItemCount();
-    }
-
-    @Override
-    public T getElementAt(int index) {
-      if (index != -1) {
-        return this.data.getItemAt(index);
-      } else {
-        return null;
-      }
-    }
-
-    @Override
-    public T getSelectedItem() {
-      if (this.index != -1) {
-        return this.getElementAt(this.index);
-      } else {
-        return null;
-      }
-    }
-
-    @Override
-    public void setSelectedItem(Object item) {
-      int index = this.data.indexOf((T) item);
-      SingleSelectListState.this.swingModel.setSelectionIndex(index);
-
-      //todo: update this.index???
-    }
-
-    private final D data;
-    private int index;
-  }
-
   private static <T> T getItemAt(ListData<T> data, int index) {
     if (index != -1 && index < data.getItemCount()) {
       return data.getItemAt(index);
@@ -131,9 +71,9 @@ public class SingleSelectListState<T, D extends ListData<T>> extends ItemState<T
 
   public SingleSelectListState(Group group, UUID id, int selectionIndex, D data) {
     super(group, id, getItemAt(data, selectionIndex), data.getItemCodec());
-    this.dataIndexPair = new DataIndexPair(data, selectionIndex);
-    swingModel = new SingleSelectListStateSwingModel(this.dataIndexPair);
-    swingModel.getListSelectionModel().addListSelectionListener(this.listSelectionListener);
+    this.dataIndexPair = new DataIndexPair<>(data, selectionIndex, idx -> getSwingModel().setSelectionIndex(idx));
+    this.swingModel = new SingleSelectListStateSwingModel(this.dataIndexPair);
+    swingModel.getListSelectionModel().addListSelectionListener(new ListSelectionListenerAdapter<>(this));
   }
 
   // TODO Remove view from model
@@ -264,13 +204,7 @@ public class SingleSelectListState<T, D extends ListData<T>> extends ItemState<T
 
   public void setRandomSelectedValue() {
     final int N = this.getItemCount();
-    int i;
-    if (N > 0) {
-      Random random = new Random();
-      i = random.nextInt(N);
-    } else {
-      i = -1;
-    }
+    int i = (N > 0) ? ThreadLocalRandom.current().nextInt(N) : -1;
     this.setSelectedIndex(i);
   }
 
@@ -329,7 +263,6 @@ public class SingleSelectListState<T, D extends ListData<T>> extends ItemState<T
     this.pushIsInTheMidstOfAtomicChange();
     try {
       this.dataIndexPair.data.internalAddItem(item);
-
       int index = this.getItemCount() - 1;
       this.fireIntervalAdded(index, index);
     } finally {
@@ -362,28 +295,9 @@ public class SingleSelectListState<T, D extends ListData<T>> extends ItemState<T
   public final void setItems(Collection<T> items) {
     this.pushIsInTheMidstOfAtomicChange();
     try {
-      Set<T> previous = Sets.newHashSet(this.toArray());
-      Set<T> next = Sets.newHashSet(items);
-      java.util.List<T> added = Lists.newLinkedList();
-      java.util.List<T> removed = Lists.newLinkedList();
-
-      for (T item : previous) {
-        if (!next.contains(item)) {
-          removed.add(item);
-        }
-      }
-      for (T item : next) {
-        if (!previous.contains(item)) {
-          added.add(item);
-        }
-      }
-
       T previousSelectedValue = this.getValue();
-
       this.dataIndexPair.data.internalSetAllItems(items);
-
       this.dataIndexPair.index = this.indexOf(previousSelectedValue);
-
       this.fireContentsChanged(0, this.getItemCount());
     } finally {
       this.popIsInTheMidstOfAtomicChange();
@@ -401,13 +315,7 @@ public class SingleSelectListState<T, D extends ListData<T>> extends ItemState<T
 
   @Deprecated
   public void setListData(int selectedIndex, T... items) {
-    this.pushIsInTheMidstOfAtomicChange();
-    try {
-      this.setItems(items);
-      this.setSelectedIndex(selectedIndex);
-    } finally {
-      this.popIsInTheMidstOfAtomicChange();
-    }
+    this.setListData(selectedIndex, Arrays.asList(items));
   }
 
   @Deprecated
@@ -437,30 +345,11 @@ public class SingleSelectListState<T, D extends ListData<T>> extends ItemState<T
     return menuModelLazy.get();
   }
 
-  private class EmptyConditionText extends PlainStringValue {
-    public EmptyConditionText() {
-      super(UUID.fromString("c71e2755-d05a-4676-87db-99b3baec044d"));
-    }
-
-    @Override
-    protected Class<? extends Element> getClassUsedForLocalization() {
-      return SingleSelectListState.this.getClassUsedForLocalization();
-    }
-
-    @Override
-    protected String getSubKeyForLocalization() {
-      StringBuilder sb = new StringBuilder();
-      String subKey = SingleSelectListState.this.getSubKeyForLocalization();
-      if (subKey != null) {
-        sb.append(subKey);
-        sb.append(".");
-      }
-      sb.append("emptyConditionText");
-      return sb.toString();
-    }
+  boolean isSettingSwingValue() {
+    return this.isInTheMidstOfSettingSwingValue;
   }
 
-  private final DataIndexPair dataIndexPair;
+  private final DataIndexPair<T, D> dataIndexPair;
   private final SingleSelectListStateSwingModel swingModel;
   private final Lazy<MenuModel> menuModelLazy = new Lazy<MenuModel>() {
     @Override
@@ -468,28 +357,10 @@ public class SingleSelectListState<T, D extends ListData<T>> extends ItemState<T
       return new SingleSelectListStateMenuModel<T, D>(SingleSelectListState.this);
     }
   };
-  private final PlainStringValue emptyConditionText = new EmptyConditionText();
-  private final ListSelectionListener listSelectionListener = new ListSelectionListener() {
-    @Override
-    public void valueChanged(ListSelectionEvent e) {
-      if (!isInTheMidstOfSettingSwingValue) {
-        int index = swingModel.getSelectionIndex();
-        T nextValue;
-        if (index != -1) {
-          nextValue = (T) swingModel.getComboBoxModel().getElementAt(index);
-        } else {
-          nextValue = null;
-        }
-        // TODO Carry through a user activity on a UI element
-        final UserActivity activity = NullTrigger.createUserActivity();
-        SingleSelectListState.this.changingValueFromSwing(nextValue, e.getValueIsAdjusting(), activity);
-        if (activity.isPending()) {
-          activity.finish();
-        }
-      }
-    }
-  };
-
+  private final PlainStringValue emptyConditionText = new EmptyConditionText(
+      this::getClassUsedForLocalization,
+      this::getSubKeyForLocalization
+  );
   private final Lazy<SingleSelectListStateComboBoxPrepModel<T, D>> comboBoxPrepModelLazy = new Lazy<SingleSelectListStateComboBoxPrepModel<T, D>>() {
     @Override
     protected SingleSelectListStateComboBoxPrepModel<T, D> create() {
