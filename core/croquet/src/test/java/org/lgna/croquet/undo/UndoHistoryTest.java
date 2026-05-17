@@ -1,5 +1,6 @@
 package org.lgna.croquet.undo;
 
+import org.lgna.croquet.CroquetTestUtils;
 import org.lgna.croquet.Group;
 import org.lgna.croquet.edits.Edit;
 import org.lgna.croquet.undo.event.HistoryClearEvent;
@@ -74,7 +75,7 @@ public class UndoHistoryTest {
 
   @Test
   public void push_wrongGroup_doesNotAdd() {
-    Group otherGroup = Group.getInstance(UUID.randomUUID(), "other");
+    Group otherGroup = Group.getInstance(CroquetTestUtils.nextTestUUID(), "other");
     history.push(createEdit(otherGroup));
     assertEquals(0, history.getStack().size());
     assertEquals(0, history.getInsertionIndex());

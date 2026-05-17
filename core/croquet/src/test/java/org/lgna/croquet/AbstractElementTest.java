@@ -190,7 +190,7 @@ public class AbstractElementTest {
     boolean localizedCalled = false;
 
     TestElement() {
-      super(UUID.randomUUID());
+      super(CroquetTestUtils.nextTestUUID());
     }
 
     public UUID getMigrationId() {

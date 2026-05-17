@@ -4,8 +4,6 @@ import org.lgna.croquet.CroquetTestUtils;
 import org.junit.Before;
 import org.junit.Test;
 
-import javax.swing.event.ListDataEvent;
-import javax.swing.event.ListDataListener;
 import java.util.Arrays;
 import java.util.Iterator;
 
@@ -124,21 +122,13 @@ public class ImmutableListDataTest {
 
   @Test
   public void addListener_doesNotThrow() {
-    data.addListener(new ListDataListener() {
-      @Override public void intervalAdded(ListDataEvent e) {}
-      @Override public void intervalRemoved(ListDataEvent e) {}
-      @Override public void contentsChanged(ListDataEvent e) {}
-    });
+    data.addListener(new TestListDataListener());
     // No exception — addListener is a no-op for immutable data
   }
 
   @Test
   public void removeListener_doesNotThrow() {
-    data.removeListener(new ListDataListener() {
-      @Override public void intervalAdded(ListDataEvent e) {}
-      @Override public void intervalRemoved(ListDataEvent e) {}
-      @Override public void contentsChanged(ListDataEvent e) {}
-    });
+    data.removeListener(new TestListDataListener());
     // No exception — removeListener is a no-op for immutable data
   }
 

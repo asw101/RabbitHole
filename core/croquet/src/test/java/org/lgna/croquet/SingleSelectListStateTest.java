@@ -510,7 +510,7 @@ public class SingleSelectListStateTest {
    */
   static class TestSingleSelectListState extends MutableDataSingleSelectListState<String> {
     TestSingleSelectListState(Group group, int selectionIndex, MutableListData<String> data) {
-      super(group, UUID.randomUUID(), selectionIndex, data);
+      super(group, CroquetTestUtils.nextTestUUID(), selectionIndex, data);
     }
   }
 }

@@ -170,7 +170,7 @@ public class PreferenceBooleanStateTest {
 
   static class TestPreferenceBooleanState extends PreferenceBooleanState {
     TestPreferenceBooleanState(Group group, boolean initialValue, String prefKey) {
-      super(group, UUID.randomUUID(), initialValue, prefKey);
+      super(group, CroquetTestUtils.nextTestUUID(), initialValue, prefKey);
     }
 
     @Override
@@ -186,7 +186,7 @@ public class PreferenceBooleanStateTest {
 
   static class TestPreferenceBooleanStateDefaultKey extends PreferenceBooleanState {
     TestPreferenceBooleanStateDefaultKey(Group group, boolean initialValue) {
-      super(group, UUID.randomUUID(), initialValue);
+      super(group, CroquetTestUtils.nextTestUUID(), initialValue);
     }
 
     @Override

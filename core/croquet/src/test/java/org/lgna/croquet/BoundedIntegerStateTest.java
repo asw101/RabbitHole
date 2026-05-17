@@ -27,7 +27,7 @@ public class BoundedIntegerStateTest {
   @Before
   public void setUp() {
     BoundedIntegerState.Details details =
-        new BoundedIntegerState.Details(TEST_GROUP, UUID.randomUUID())
+        new BoundedIntegerState.Details(TEST_GROUP, CroquetTestUtils.nextTestUUID())
             .minimum(0)
             .maximum(100)
             .initialValue(50)
@@ -58,7 +58,7 @@ public class BoundedIntegerStateTest {
   @Test
   public void details_customValues() {
     BoundedIntegerState.Details d =
-        new BoundedIntegerState.Details(TEST_GROUP, UUID.randomUUID())
+        new BoundedIntegerState.Details(TEST_GROUP, CroquetTestUtils.nextTestUUID())
             .minimum(10)
             .maximum(200)
             .initialValue(50)
@@ -209,7 +209,7 @@ public class BoundedIntegerStateTest {
   @Test
   public void initialValueAtMinimum() {
     BoundedIntegerState.Details d =
-        new BoundedIntegerState.Details(TEST_GROUP, UUID.randomUUID())
+        new BoundedIntegerState.Details(TEST_GROUP, CroquetTestUtils.nextTestUUID())
             .minimum(0)
             .maximum(100)
             .initialValue(0);
@@ -223,7 +223,7 @@ public class BoundedIntegerStateTest {
   @Test
   public void initialValueAtMaximum() {
     BoundedIntegerState.Details d =
-        new BoundedIntegerState.Details(TEST_GROUP, UUID.randomUUID())
+        new BoundedIntegerState.Details(TEST_GROUP, CroquetTestUtils.nextTestUUID())
             .minimum(0)
             .maximum(100)
             .initialValue(100);

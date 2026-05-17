@@ -7,7 +7,6 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
-
 import static org.junit.Assert.*;
 
 /**
@@ -327,7 +326,7 @@ public class StringStateTest {
 
   static class TestStringState extends StringState {
     TestStringState(Group group, String initialValue) {
-      super(group, UUID.randomUUID(), initialValue);
+      super(group, CroquetTestUtils.nextTestUUID(), initialValue);
     }
 
     @Override

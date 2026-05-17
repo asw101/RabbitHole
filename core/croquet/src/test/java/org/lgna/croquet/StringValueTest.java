@@ -70,7 +70,7 @@ public class StringValueTest {
 
   static class TestPlainStringValue extends PlainStringValue {
     TestPlainStringValue() {
-      super(UUID.randomUUID());
+      super(CroquetTestUtils.nextTestUUID());
     }
 
     @Override

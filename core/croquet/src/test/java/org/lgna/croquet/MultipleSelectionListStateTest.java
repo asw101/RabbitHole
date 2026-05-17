@@ -176,7 +176,7 @@ public class MultipleSelectionListStateTest {
 
   static class TestMultipleSelectionListState extends MultipleSelectionListState<String> {
     TestMultipleSelectionListState(Group group, MutableListData<String> data) {
-      super(group, UUID.randomUUID(), data);
+      super(group, CroquetTestUtils.nextTestUUID(), data);
     }
 
     @Override

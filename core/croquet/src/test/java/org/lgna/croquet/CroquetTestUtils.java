@@ -12,6 +12,8 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.text.AbstractDocument;
 import javax.swing.text.Document;
 import java.awt.event.ItemListener;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Shared test utilities for croquet unit tests.
@@ -23,6 +25,16 @@ import java.awt.event.ItemListener;
 public final class CroquetTestUtils {
 
   private CroquetTestUtils() {}
+
+  private static final AtomicLong UUID_COUNTER = new AtomicLong();
+
+  /**
+   * Returns a deterministic UUID for test use. Avoids the {@code SecureRandom}
+   * overhead of {@link UUID#randomUUID()} which is unnecessary in tests.
+   */
+  public static UUID nextTestUUID() {
+    return new UUID(0L, UUID_COUNTER.incrementAndGet());
+  }
 
   /**
    * Removes all ItemListeners from a BooleanState's ButtonModel.

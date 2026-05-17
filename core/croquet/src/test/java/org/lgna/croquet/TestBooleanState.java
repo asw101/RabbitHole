@@ -1,7 +1,5 @@
 package org.lgna.croquet;
 
-import java.util.UUID;
-
 /**
  * Minimal concrete {@link BooleanState} subclass for headless testing.
  * Shared across BooleanStateTest, BooleanStateImpTest, and other tests
@@ -10,7 +8,7 @@ import java.util.UUID;
 public class TestBooleanState extends BooleanState {
 
   public TestBooleanState(Group group, boolean initialValue) {
-    super(group, UUID.randomUUID(), initialValue);
+    super(group, CroquetTestUtils.nextTestUUID(), initialValue);
   }
 
   @Override

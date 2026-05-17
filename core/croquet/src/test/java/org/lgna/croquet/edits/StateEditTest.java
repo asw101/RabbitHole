@@ -1,7 +1,6 @@
 package org.lgna.croquet.edits;
 
 import org.lgna.croquet.Group;
-import org.lgna.croquet.history.UserActivity;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -19,11 +18,17 @@ public class StateEditTest {
   private static final Group TEST_GROUP =
       Group.getInstance(java.util.UUID.fromString("00000000-0000-0000-0005-ffffffffffff"), "editTest");
 
+  private StateEdit<String> edit;
+
+  @org.junit.Before
+  public void setUp() {
+    edit = new StateEdit<>(null, "old", "new");
+  }
+
   // ── Construction ──────────────────────────────────────────────────
 
   @Test
   public void constructor_storesPrevAndNext() {
-    StateEdit<String> edit = new StateEdit<>(null, "old", "new");
     assertEquals("old", edit.getPreviousValue());
     assertEquals("new", edit.getNextValue());
   }
@@ -53,14 +58,11 @@ public class StateEditTest {
 
   @Test
   public void canUndo_nullActivity_returnsFalse() {
-    StateEdit<String> edit = new StateEdit<>(null, "old", "new");
-    // getModel() returns null when activity is null, so canUndo returns false
     assertFalse(edit.canUndo());
   }
 
   @Test
   public void canRedo_nullActivity_returnsFalse() {
-    StateEdit<String> edit = new StateEdit<>(null, "old", "new");
     assertFalse(edit.canRedo());
   }
 
@@ -68,7 +70,6 @@ public class StateEditTest {
 
   @Test
   public void getModel_nullActivity_returnsNull() {
-    StateEdit<String> edit = new StateEdit<>(null, "old", "new");
     assertNull(edit.getModel());
   }
 
@@ -76,7 +77,6 @@ public class StateEditTest {
 
   @Test
   public void getGroup_nullModel_returnsNull() {
-    StateEdit<String> edit = new StateEdit<>(null, "old", "new");
     assertNull(edit.getGroup());
   }
 
@@ -94,23 +94,19 @@ public class StateEditTest {
 
   @Test
   public void getTerseDescription_nullModel_usesFallbackToString() {
-    StateEdit<String> edit = new StateEdit<>(null, "old", "new");
     String desc = edit.getTerseDescription();
-    // With null model, appendDescription uses toString on values
     assertTrue(desc.contains("old"));
     assertTrue(desc.contains("new"));
   }
 
   @Test
   public void getDetailedDescription_includesClassName() {
-    StateEdit<String> edit = new StateEdit<>(null, "old", "new");
     String desc = edit.getDetailedDescription();
     assertTrue(desc.contains("StateEdit"));
   }
 
   @Test
   public void getLogDescription_includesClassName() {
-    StateEdit<String> edit = new StateEdit<>(null, "old", "new");
     String desc = edit.getLogDescription();
     assertTrue(desc.contains("StateEdit"));
   }
@@ -119,13 +115,11 @@ public class StateEditTest {
 
   @Test
   public void getUndoPresentation_startsWithUndo() {
-    StateEdit<String> edit = new StateEdit<>(null, "old", "new");
     assertTrue(edit.getUndoPresentation().startsWith("Undo:"));
   }
 
   @Test
   public void getRedoPresentation_startsWithRedo() {
-    StateEdit<String> edit = new StateEdit<>(null, "old", "new");
     assertTrue(edit.getRedoPresentation().startsWith("Redo:"));
   }
 
@@ -133,7 +127,6 @@ public class StateEditTest {
 
   @Test
   public void toString_includesDetailedDescription() {
-    StateEdit<String> edit = new StateEdit<>(null, "old", "new");
     String str = edit.toString();
     assertTrue(str.contains("StateEdit"));
     assertTrue(str.contains("select"));
@@ -169,17 +162,11 @@ public class StateEditTest {
 
   @Test
   public void doOrRedo_isDo_exercisesInternal() {
-    StateEdit<String> edit = new StateEdit<>(null, "old", "new");
-    // doOrRedo(true) calls doOrRedoInternal which for StateEdit
-    // changes the model value. With null activity, model is null
-    // so it's a no-op but doesn't throw.
     edit.doOrRedo(true);
   }
 
   @Test(expected = javax.swing.undo.CannotRedoException.class)
   public void doOrRedo_isRedo_cannotRedoThrows() {
-    StateEdit<String> edit = new StateEdit<>(null, "old", "new");
-    // canRedo() returns false (null model), so throws CannotRedoException
     edit.doOrRedo(false);
   }
 
@@ -187,33 +174,15 @@ public class StateEditTest {
 
   @Test(expected = javax.swing.undo.CannotRedoException.class)
   public void undo_cannotUndo_throws() {
-    StateEdit<String> edit = new StateEdit<>(null, "old", "new");
-    // canUndo() returns false (null model), so throws CannotRedoException
     edit.undo();
   }
 
   // ── AbstractEdit: canUndo/canRedo from base class ─────────────────
 
   @Test
-  public void canUndo_nullActivity_returnsFalse2() {
-    StateEdit<String> edit = new StateEdit<>(null, "old", "new");
-    assertFalse(edit.canUndo());
-  }
-
-  @Test
-  public void canRedo_nullActivity_returnsFalse2() {
-    StateEdit<String> edit = new StateEdit<>(null, "old", "new");
-    assertFalse(edit.canRedo());
-  }
-
-  // ── DescriptionStyle enum ─────────────────────────────────────────
-
-  @Test
   public void terseDescription_isNotDetailed() {
-    StateEdit<String> edit = new StateEdit<>(null, "old", "new");
     String terse = edit.getTerseDescription();
     String detailed = edit.getDetailedDescription();
-    // Detailed contains class name prefix
     assertTrue(detailed.length() >= terse.length());
   }
 
@@ -221,8 +190,6 @@ public class StateEditTest {
 
   @Test
   public void encode_baseClass_doesNotThrow() {
-    StateEdit<String> edit = new StateEdit<>(null, "old", "new");
     // AbstractEdit.encode() is a no-op — just verify no NPE
-    // The full encode calls getModel() which is null, so we only test base
   }
 }
