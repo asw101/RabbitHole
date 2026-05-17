@@ -1,5 +1,6 @@
 package org.alice.serialization.tweedle;
 
+import org.junit.Assume;
 import org.junit.Test;
 import org.lgna.project.ast.AbstractDeclaration;
 import org.lgna.project.ast.AbstractNode;
@@ -12,8 +13,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.HashSet;
-import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -446,9 +445,7 @@ public class ExpressionArgumentEncoderExtractionTest {
   public void tweedleEncoderIsUnder400Lines() throws Exception {
     java.io.File file = new java.io.File(
         "src/main/java/org/alice/serialization/tweedle/TweedleEncoder.java");
-    if (!file.exists()) {
-      return; // skip if run from a different working directory
-    }
+    Assume.assumeTrue("Skipping line-count check — file not found at expected path", file.exists());
     long lineCount;
     try (var reader = new java.io.BufferedReader(new java.io.FileReader(file))) {
       lineCount = reader.lines().count();
