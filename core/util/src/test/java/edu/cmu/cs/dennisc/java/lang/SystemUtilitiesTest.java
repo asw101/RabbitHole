@@ -100,10 +100,8 @@ public class SystemUtilitiesTest {
   @Test
   public void getBitCount_notNull() {
     Integer bits = SystemUtilities.getBitCount();
-    // May be null on some platforms, but on x86_64 should be 64
-    if (bits != null) {
-      assertTrue(bits == 32 || bits == 64);
-    }
+    assertNotNull("Expected non-null on x86_64 Linux", bits);
+    assertTrue("Expected 32 or 64, got " + bits, bits == 32 || bits == 64);
   }
 
   @Test
@@ -233,9 +231,15 @@ public class SystemUtilitiesTest {
   // --- isArmArchitecture ---
 
   @Test
-  public void isArmArchitecture_doesNotThrow() {
-    // Just verify it doesn't throw; actual value depends on platform
-    SystemUtilities.isArmArchitecture();
+  public void isArmArchitecture_returnsBooleanWithoutThrowing() {
+    boolean result = SystemUtilities.isArmArchitecture();
+    // Verify consistency with os.arch
+    String arch = System.getProperty("os.arch", "");
+    if (arch.contains("aarch") || arch.contains("arm")) {
+      assertTrue("Should be true on ARM", result);
+    } else {
+      assertFalse("Should be false on non-ARM (" + arch + ")", result);
+    }
   }
 
   // --- getEnvironmentVariableDirectory ---
@@ -258,8 +262,8 @@ public class SystemUtilitiesTest {
       java.io.File dir = SystemUtilities.getEnvironmentVariableDirectory("NONEXISTENT_VAR_XYZ_123");
       // If assertions disabled, verify it doesn't return a valid directory
       assertFalse("Should not return an existing directory for unset env var", dir.isDirectory());
-    } catch (AssertionError e) {
-      // Expected with -ea
+    } catch (AssertionError expected) {
+      // Expected: getEnvironmentVariableDirectory asserts env var is non-null
     }
   }
 }

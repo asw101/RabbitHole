@@ -57,7 +57,7 @@ public class ThreadUtilitiesTest {
     Runnable r2 = () -> {
       threadNames.add(Thread.currentThread().getName());
       allStarted.countDown();
-      try { allStarted.await(5, TimeUnit.SECONDS); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+      try { assertTrue("r2 timed out", allStarted.await(5, TimeUnit.SECONDS)); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
     };
 
     ThreadUtilities.doTogether(r1, r2);

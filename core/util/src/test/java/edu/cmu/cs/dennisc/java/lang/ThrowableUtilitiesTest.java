@@ -40,7 +40,7 @@ public class ThrowableUtilitiesTest {
 
   @Test
   public void getStackTraceAsString_nestedCause() {
-    Throwable cause = new IOException("io error");
+    Throwable cause = new java.io.IOException("io error");
     Throwable t = new RuntimeException("wrapper", cause);
     String result = ThrowableUtilities.getStackTraceAsString(t);
     assertTrue(result.contains("io error"));
@@ -73,8 +73,4 @@ public class ThrowableUtilitiesTest {
     assertTrue(asString.contains("consistency check"));
   }
 
-  // Need to use the fully-qualified IOException since ThrowableUtilities doesn't import it
-  private static class IOException extends Exception {
-    IOException(String msg) { super(msg); }
-  }
 }

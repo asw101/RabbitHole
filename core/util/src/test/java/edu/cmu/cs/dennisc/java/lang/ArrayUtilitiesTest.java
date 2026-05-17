@@ -89,10 +89,8 @@ public class ArrayUtilitiesTest {
     String[] b = {};
     @SuppressWarnings("unchecked")
     String[] result = ArrayUtilities.concatArrays(String.class, a, b);
-    // concatArrays may return null for empty concatenation
-    if (result != null) {
-      assertEquals(0, result.length);
-    }
+    // concatArrays returns null when total length is zero
+    assertNull(result);
   }
 
   @Test
@@ -183,18 +181,17 @@ public class ArrayUtilitiesTest {
   public void toString_array() {
     Object arr = new String[]{"a", "b"};
     String result = ArrayUtilities.toString(arr);
-    assertNotNull(result);
+    assertEquals("[a, b]", result);
   }
 
   @Test
   public void toString_nonArray() {
     String result = ArrayUtilities.toString("simple");
-    assertNotNull(result);
+    assertEquals("simple", result);
   }
 
   @Test
   public void toString_null() {
-    // ArrayUtilities.toString(null) returns null
     String result = ArrayUtilities.toString(null);
     assertNull(result);
   }
@@ -203,6 +200,6 @@ public class ArrayUtilitiesTest {
   public void toString_primitiveArray() {
     Object arr = new int[]{1, 2, 3};
     String result = ArrayUtilities.toString(arr);
-    assertNotNull(result);
+    assertEquals("[1, 2, 3]", result);
   }
 }

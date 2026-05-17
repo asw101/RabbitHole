@@ -451,9 +451,9 @@ public class BinaryCodecRoundTripTest {
     encoder.flush();
 
     File tempFile = tempFolder.newFile("codec-test.bin");
-    java.io.FileOutputStream fos = new java.io.FileOutputStream(tempFile);
-    fos.write(baos.toByteArray());
-    fos.close();
+    try (java.io.FileOutputStream fos = new java.io.FileOutputStream(tempFile)) {
+      fos.write(baos.toByteArray());
+    }
 
     InputStreamBinaryDecoder decoder = new InputStreamBinaryDecoder(tempFile);
     assertEquals("file-test", decoder.decodeString());
@@ -465,9 +465,9 @@ public class BinaryCodecRoundTripTest {
     encoder.flush();
 
     File tempFile = tempFolder.newFile("codec-path-test.bin");
-    java.io.FileOutputStream fos = new java.io.FileOutputStream(tempFile);
-    fos.write(baos.toByteArray());
-    fos.close();
+    try (java.io.FileOutputStream fos = new java.io.FileOutputStream(tempFile)) {
+      fos.write(baos.toByteArray());
+    }
 
     InputStreamBinaryDecoder decoder = new InputStreamBinaryDecoder(tempFile.getAbsolutePath());
     assertEquals(99, decoder.decodeInt());
@@ -556,6 +556,8 @@ public class BinaryCodecRoundTripTest {
     assertNotNull(result);
     assertEquals(2, result.length);
     assertEquals(1, result[0].getValue());
+    assertEquals("first", result[0].getName());
+    assertEquals(2, result[1].getValue());
     assertEquals("second", result[1].getName());
   }
 

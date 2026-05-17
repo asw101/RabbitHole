@@ -62,7 +62,7 @@ public class DoTogetherTest {
     Runnable r2 = () -> {
       allStarted.countDown();
       try {
-        allStarted.await(2, TimeUnit.SECONDS);
+        assertTrue("r2 timed out waiting for concurrent start", allStarted.await(2, TimeUnit.SECONDS));
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
       }

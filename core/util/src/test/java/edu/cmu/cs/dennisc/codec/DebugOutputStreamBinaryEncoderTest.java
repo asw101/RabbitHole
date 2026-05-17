@@ -2,7 +2,6 @@ package edu.cmu.cs.dennisc.codec;
 
 import org.junit.Test;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 
 import static org.junit.Assert.*;

@@ -46,21 +46,26 @@ public class RuntimeUtilitiesTest {
   @Test
   public void exec_capturesStdout() {
     ByteArrayOutputStream capture = new ByteArrayOutputStream();
-    PrintStream ps = new PrintStream(capture);
-    File nullDir = null;
-    Map<String, String> nullEnv = null;
-    int rc = RuntimeUtilities.exec(nullDir, nullEnv, new String[]{"echo", "captured"}, ps);
-    assertEquals(0, rc);
+    try (PrintStream ps = new PrintStream(capture)) {
+      File nullDir = null;
+      Map<String, String> nullEnv = null;
+      int rc = RuntimeUtilities.exec(nullDir, nullEnv, new String[]{"echo", "captured"}, ps);
+      assertEquals(0, rc);
+    }
+    assertTrue("Should capture stdout content", capture.toString().contains("captured"));
   }
 
   @Test
   public void exec_capturesStdoutAndStderr() {
     ByteArrayOutputStream out = new ByteArrayOutputStream();
     ByteArrayOutputStream err = new ByteArrayOutputStream();
-    File nullDir = null;
-    Map<String, String> nullEnv = null;
-    int rc = RuntimeUtilities.exec(nullDir, nullEnv, new String[]{"echo", "both"}, new PrintStream(out), new PrintStream(err));
-    assertEquals(0, rc);
+    try (PrintStream outPs = new PrintStream(out); PrintStream errPs = new PrintStream(err)) {
+      File nullDir = null;
+      Map<String, String> nullEnv = null;
+      int rc = RuntimeUtilities.exec(nullDir, nullEnv, new String[]{"echo", "both"}, outPs, errPs);
+      assertEquals(0, rc);
+    }
+    assertTrue("Should capture stdout content", out.toString().contains("both"));
   }
 
   @Test
