@@ -4,7 +4,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import javax.swing.text.AbstractDocument;
-import java.util.UUID;
 
 import static org.junit.Assert.*;
 
