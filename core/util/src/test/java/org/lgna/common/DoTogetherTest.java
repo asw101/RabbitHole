@@ -52,8 +52,9 @@ public class DoTogetherTest {
     Runnable r1 = () -> {
       allStarted.countDown();
       try {
-        allStarted.await(2, TimeUnit.SECONDS);
-        bothReachedLatch.set(true);
+        if (allStarted.await(2, TimeUnit.SECONDS)) {
+          bothReachedLatch.set(true);
+        }
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
       }

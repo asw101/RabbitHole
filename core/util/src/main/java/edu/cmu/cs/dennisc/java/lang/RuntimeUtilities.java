@@ -103,15 +103,24 @@ public class RuntimeUtilities {
     }
     try {
       Process process = processBuilder.start();
+      StreamHandler outputHandler = null;
+      StreamHandler errorHandler = null;
       if ((out != null) || IS_READING_FROM_PROCESS_DESIRED_EVEN_WHEN_SILENT) {
-        StreamHandler outputHandler = new StreamHandler(process.getInputStream(), out);
+        outputHandler = new StreamHandler(process.getInputStream(), out);
         outputHandler.start();
       }
       if ((err != null) || IS_READING_FROM_PROCESS_DESIRED_EVEN_WHEN_SILENT) {
-        StreamHandler errorHandler = new StreamHandler(process.getErrorStream(), err);
+        errorHandler = new StreamHandler(process.getErrorStream(), err);
         errorHandler.start();
       }
-      return process.waitFor();
+      int exitCode = process.waitFor();
+      if (outputHandler != null) {
+        outputHandler.join();
+      }
+      if (errorHandler != null) {
+        errorHandler.join();
+      }
+      return exitCode;
     } catch (IOException ioe) {
       throw new RuntimeException(ioe);
     } catch (InterruptedException ie) {

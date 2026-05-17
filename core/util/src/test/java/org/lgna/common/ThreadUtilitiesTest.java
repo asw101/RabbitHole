@@ -43,11 +43,16 @@ public class ThreadUtilitiesTest {
   public void doTogether_allRunConcurrently() throws Exception {
     List<String> threadNames = Collections.synchronizedList(new ArrayList<>());
     CountDownLatch allStarted = new CountDownLatch(2);
+    AtomicBoolean concurrentlyStarted = new AtomicBoolean(false);
 
     Runnable r1 = () -> {
       threadNames.add(Thread.currentThread().getName());
       allStarted.countDown();
-      try { allStarted.await(5, TimeUnit.SECONDS); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+      try {
+        if (allStarted.await(5, TimeUnit.SECONDS)) {
+          concurrentlyStarted.set(true);
+        }
+      } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
     };
     Runnable r2 = () -> {
       threadNames.add(Thread.currentThread().getName());
@@ -57,6 +62,7 @@ public class ThreadUtilitiesTest {
 
     ThreadUtilities.doTogether(r1, r2);
     assertEquals(2, threadNames.size());
+    assertTrue("Runnables did not start concurrently", concurrentlyStarted.get());
   }
 
   @Test(expected = RuntimeException.class)

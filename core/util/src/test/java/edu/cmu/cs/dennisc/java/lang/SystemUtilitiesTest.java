@@ -256,7 +256,8 @@ public class SystemUtilitiesTest {
     // when assertions are enabled; without assertions it returns a File
     try {
       java.io.File dir = SystemUtilities.getEnvironmentVariableDirectory("NONEXISTENT_VAR_XYZ_123");
-      // If assertions disabled, we just verify it doesn't return a valid dir
+      // If assertions disabled, verify it doesn't return a valid directory
+      assertFalse("Should not return an existing directory for unset env var", dir.isDirectory());
     } catch (AssertionError e) {
       // Expected with -ea
     }
