@@ -139,6 +139,10 @@ class ASGDecoder {
   private static String convertClassnameIfNecessary(String className) {
     if (className.equals("edu.cmu.cs.stage3.alice.scenegraph.Color")) {
       return "edu.cmu.cs.dennisc.color.Color4f";
+    } else if (className.equals("edu.cmu.cs.dennisc.math.Matrix4d")) {
+      return "org.alice.math.immutable.AffineMatrix4x4";
+    } else if (className.equals("edu.cmu.cs.dennisc.math.Matrix3d")) {
+      return "org.alice.math.immutable.OrthogonalMatrix3x3";
     } else if (className.startsWith(OLD_PACKAGE)) {
       className = "edu.cmu.cs.dennisc." + className.substring(OLD_PACKAGE.length());
     } else if (className.startsWith("[L" + OLD_PACKAGE)) {

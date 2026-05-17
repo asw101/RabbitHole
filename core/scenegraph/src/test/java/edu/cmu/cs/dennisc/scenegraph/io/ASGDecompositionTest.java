@@ -44,6 +44,7 @@ package edu.cmu.cs.dennisc.scenegraph.io;
 
 import edu.cmu.cs.dennisc.color.Color4f;
 import edu.cmu.cs.dennisc.scenegraph.Component;
+import edu.cmu.cs.dennisc.scenegraph.Composite;
 import edu.cmu.cs.dennisc.scenegraph.Transformable;
 import edu.cmu.cs.dennisc.scenegraph.Vertex;
 import edu.cmu.cs.dennisc.texture.TextureCoordinate2f;
@@ -383,31 +384,37 @@ public class ASGDecompositionTest {
     assertTrue("Encoded output should not be empty", encoded.length > 0);
   }
 
-  // Pre-existing bug: encoder writes class="edu.cmu.cs.dennisc.math.Matrix4d"
-  // for AffineMatrix4x4 values, but that legacy class no longer exists.
-  // The decoder fails with ClassNotFoundException wrapped in RuntimeException.
-  // These tests document this known limitation — behavior must be preserved
-  // (not fixed) during the decomposition.
+  // The encoder writes class="edu.cmu.cs.dennisc.math.Matrix4d" for AffineMatrix4x4
+  // values. The decoder converts this legacy classname to the current
+  // org.alice.math.immutable.AffineMatrix4x4, enabling successful roundtrip.
 
-  @Test(expected = RuntimeException.class)
-  public void decodeTransformableFailsDueToLegacyMatrix4dClassName() {
+  @Test
+  public void decodeTransformableRoundtripsSuccessfully() {
     Transformable original = new Transformable();
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     ASG.encode(original, baos);
-    ASG.decodeZip(new ByteArrayInputStream(baos.toByteArray()));
+    Component decoded = ASG.decodeZip(new ByteArrayInputStream(baos.toByteArray()));
+    assertNotNull(decoded);
+    assertTrue(decoded instanceof Transformable);
   }
 
-  @Test(expected = RuntimeException.class)
-  public void decodeTransformableWithTranslationFailsDueToLegacyMatrix4d() {
+  @Test
+  public void decodeTransformableWithTranslationRoundtripsSuccessfully() {
     Transformable original = new Transformable();
     original.setLocalTransformation(AffineMatrix4x4.createTranslation(10.0, 20.0, 30.0));
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     ASG.encode(original, baos);
-    ASG.decodeZip(new ByteArrayInputStream(baos.toByteArray()));
+    Component decoded = ASG.decodeZip(new ByteArrayInputStream(baos.toByteArray()));
+    assertNotNull(decoded);
+    assertTrue(decoded instanceof Transformable);
+    Transformable decodedT = (Transformable) decoded;
+    assertEquals(10.0, decodedT.getLocalTransformation().translation().x(), 0.000001);
+    assertEquals(20.0, decodedT.getLocalTransformation().translation().y(), 0.000001);
+    assertEquals(30.0, decodedT.getLocalTransformation().translation().z(), 0.000001);
   }
 
-  @Test(expected = RuntimeException.class)
-  public void decodeParentChildHierarchyFailsDueToLegacyMatrix4d() {
+  @Test
+  public void decodeParentChildHierarchyRoundtripsSuccessfully() {
     Transformable parent = new Transformable();
     parent.setLocalTransformation(AffineMatrix4x4.createTranslation(1.0, 0.0, 0.0));
     Transformable child = new Transformable();
@@ -415,7 +422,11 @@ public class ASGDecompositionTest {
     parent.addComponent(child);
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     ASG.encode(parent, baos);
-    ASG.decodeZip(new ByteArrayInputStream(baos.toByteArray()));
+    Component decoded = ASG.decodeZip(new ByteArrayInputStream(baos.toByteArray()));
+    assertNotNull(decoded);
+    assertTrue(decoded instanceof Transformable);
+    Composite decodedParent = (Composite) decoded;
+    assertEquals(1, decodedParent.getComponentCount());
   }
 
   // ═══════════════════════════════════════════════════════════════════
