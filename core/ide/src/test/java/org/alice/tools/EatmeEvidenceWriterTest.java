@@ -250,7 +250,7 @@ public class EatmeEvidenceWriterTest {
     Path evidenceDir = temporaryFolder.newFolder("path").toPath();
     Path artifact = EatmeEvidenceWriter.writeDesktopRunExecution(
         evidenceDir, "P", false, false, 0, 0, "", List.of());
-    assertEquals(evidenceDir.resolve("desktop-run-execution.json"), artifact);
+    assertEquals(evidenceDir.resolve("desktop-run-execution.json").toRealPath(), artifact.toRealPath());
   }
 
   // =========================================================================
