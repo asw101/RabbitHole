@@ -1,7 +1,10 @@
 package org.lgna.common.resources;
 
 import org.junit.Test;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
+import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.FilenameFilter;
 import java.util.Set;
 import java.util.UUID;
@@ -76,5 +79,62 @@ public class AudioResourceTest {
     AudioResource r = new AudioResource(UUID.randomUUID());
     r.setDuration(5.5);
     assertEquals(5.5, r.getDuration(), 1e-10);
+  }
+
+  @Test
+  public void constructor_fileNameContentTypeData() {
+    AudioResource r = new AudioResource(UUID.randomUUID());
+    r.setContent("audio.x_wav", new byte[]{1, 2, 3});
+    r.setName("clip.wav");
+    r.setOriginalFileName("clip.wav");
+    assertEquals("audio.x_wav", r.getContentType());
+    assertEquals("clip.wav", r.getName());
+  }
+
+  @Test
+  public void encodeAttributes_includesDuration() throws Exception {
+    AudioResource r = new AudioResource(UUID.randomUUID());
+    r.setName("song.mp3");
+    r.setOriginalFileName("song.mp3");
+    r.setContent("audio.mpeg", new byte[]{10, 20});
+    r.setDuration(120.5);
+
+    Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
+    Element elem = doc.createElement("audio");
+    r.encodeAttributes(elem);
+
+    assertEquals("120.5", elem.getAttribute("duration"));
+    assertEquals("song.mp3", elem.getAttribute("name"));
+    assertEquals("audio.mpeg", elem.getAttribute("contentType"));
+  }
+
+  @Test
+  public void decodeAttributes_restoresDuration() throws Exception {
+    Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
+    Element elem = doc.createElement("audio");
+    elem.setAttribute("name", "clip.wav");
+    elem.setAttribute("originalFileName", "clip.wav");
+    elem.setAttribute("contentType", "audio.x_wav");
+    elem.setAttribute("duration", "42.5");
+
+    AudioResource r = new AudioResource(UUID.randomUUID());
+    r.decodeAttributes(elem, new byte[]{1, 2});
+    assertEquals("clip.wav", r.getName());
+    assertEquals(42.5, r.getDuration(), 1e-10);
+    assertEquals("audio.x_wav", r.getContentType());
+  }
+
+  @Test
+  public void valueOf_sameUuid_returnsCached() {
+    UUID id = UUID.randomUUID();
+    AudioResource r1 = AudioResource.valueOf(id.toString());
+    AudioResource r2 = AudioResource.valueOf(id.toString());
+    assertSame(r1, r2);
+  }
+
+  @Test
+  public void duration_defaultIsNaN() {
+    AudioResource r = new AudioResource(UUID.randomUUID());
+    assertTrue(Double.isNaN(r.getDuration()));
   }
 }

@@ -814,4 +814,448 @@ public class BinaryCodecRoundTripTest {
     assertEquals("text", decoder.decodeString());
     assertEquals('X', decoder.decodeChar());
   }
+
+  // --- ReferenceableBinaryEncodableAndDecodable round-trips ---
+
+  public static class SimpleReferenceable implements ReferenceableBinaryEncodableAndDecodable {
+    private int id;
+    private String label;
+
+    public SimpleReferenceable() {}
+
+    public SimpleReferenceable(int id, String label) {
+      this.id = id;
+      this.label = label;
+    }
+
+    @Override
+    public void encode(BinaryEncoder binaryEncoder, java.util.Map<ReferenceableBinaryEncodableAndDecodable, Integer> map) {
+      binaryEncoder.encode(id);
+      binaryEncoder.encode(label);
+    }
+
+    @Override
+    public void decode(BinaryDecoder binaryDecoder, java.util.Map<Integer, ReferenceableBinaryEncodableAndDecodable> map) {
+      id = binaryDecoder.decodeInt();
+      label = binaryDecoder.decodeString();
+    }
+
+    public int getId() { return id; }
+    public String getLabel() { return label; }
+
+    @Override
+    public int hashCode() {
+      return id;
+    }
+  }
+
+  @Test
+  public void roundTrip_referenceableSingle() {
+    SimpleReferenceable original = new SimpleReferenceable(1, "ref-one");
+    java.util.Map<ReferenceableBinaryEncodableAndDecodable, Integer> encodeMap = new java.util.HashMap<>();
+    encoder.encode(original, encodeMap);
+    InputStreamBinaryDecoder decoder = decoderFromEncoded();
+    java.util.Map<Integer, ReferenceableBinaryEncodableAndDecodable> decodeMap = new java.util.HashMap<>();
+    SimpleReferenceable result = decoder.decodeReferenceableBinaryEncodableAndDecodable(decodeMap);
+    assertNotNull(result);
+    assertEquals(1, result.getId());
+    assertEquals("ref-one", result.getLabel());
+  }
+
+  @Test
+  public void roundTrip_referenceableNull() {
+    java.util.Map<ReferenceableBinaryEncodableAndDecodable, Integer> encodeMap = new java.util.HashMap<>();
+    encoder.encode((ReferenceableBinaryEncodableAndDecodable) null, encodeMap);
+    InputStreamBinaryDecoder decoder = decoderFromEncoded();
+    java.util.Map<Integer, ReferenceableBinaryEncodableAndDecodable> decodeMap = new java.util.HashMap<>();
+    ReferenceableBinaryEncodableAndDecodable result = decoder.decodeReferenceableBinaryEncodableAndDecodable(decodeMap);
+    assertNull(result);
+  }
+
+  @Test
+  public void roundTrip_referenceableArray() {
+    SimpleReferenceable[] originals = {
+        new SimpleReferenceable(10, "ten"),
+        new SimpleReferenceable(20, "twenty")
+    };
+    java.util.Map<ReferenceableBinaryEncodableAndDecodable, Integer> encodeMap = new java.util.HashMap<>();
+    encoder.encode(originals, encodeMap);
+    InputStreamBinaryDecoder decoder = decoderFromEncoded();
+    java.util.Map<Integer, ReferenceableBinaryEncodableAndDecodable> decodeMap = new java.util.HashMap<>();
+    SimpleReferenceable[] results = decoder.decodeReferenceableBinaryEncodableAndDecodableArray(SimpleReferenceable.class, decodeMap);
+    assertNotNull(results);
+    assertEquals(2, results.length);
+    assertEquals(10, results[0].getId());
+    assertEquals("twenty", results[1].getLabel());
+  }
+
+  @Test
+  public void roundTrip_referenceableArray_empty() {
+    SimpleReferenceable[] originals = {};
+    java.util.Map<ReferenceableBinaryEncodableAndDecodable, Integer> encodeMap = new java.util.HashMap<>();
+    encoder.encode(originals, encodeMap);
+    InputStreamBinaryDecoder decoder = decoderFromEncoded();
+    java.util.Map<Integer, ReferenceableBinaryEncodableAndDecodable> decodeMap = new java.util.HashMap<>();
+    SimpleReferenceable[] results = decoder.decodeReferenceableBinaryEncodableAndDecodableArray(SimpleReferenceable.class, decodeMap);
+    assertNotNull(results);
+    assertEquals(0, results.length);
+  }
+
+  @Test
+  public void roundTrip_referenceableDuplicateReference() {
+    // Encode the same object twice — second should be a reference
+    SimpleReferenceable shared = new SimpleReferenceable(42, "shared");
+    java.util.Map<ReferenceableBinaryEncodableAndDecodable, Integer> encodeMap = new java.util.HashMap<>();
+    encoder.encode(shared, encodeMap);
+    encoder.encode(shared, encodeMap);
+    InputStreamBinaryDecoder decoder = decoderFromEncoded();
+    java.util.Map<Integer, ReferenceableBinaryEncodableAndDecodable> decodeMap = new java.util.HashMap<>();
+    SimpleReferenceable first = decoder.decodeReferenceableBinaryEncodableAndDecodable(decodeMap);
+    SimpleReferenceable second = decoder.decodeReferenceableBinaryEncodableAndDecodable(decodeMap);
+    assertNotNull(first);
+    assertNotNull(second);
+    assertEquals(42, first.getId());
+    assertSame(first, second);
+  }
+
+  @Test
+  public void roundTrip_referenceableArrayWithDuplicates() {
+    SimpleReferenceable item = new SimpleReferenceable(7, "seven");
+    SimpleReferenceable[] originals = {item, item};
+    java.util.Map<ReferenceableBinaryEncodableAndDecodable, Integer> encodeMap = new java.util.HashMap<>();
+    encoder.encode(originals, encodeMap);
+    InputStreamBinaryDecoder decoder = decoderFromEncoded();
+    java.util.Map<Integer, ReferenceableBinaryEncodableAndDecodable> decodeMap = new java.util.HashMap<>();
+    SimpleReferenceable[] results = decoder.decodeReferenceableBinaryEncodableAndDecodableArray(SimpleReferenceable.class, decodeMap);
+    assertEquals(2, results.length);
+    assertSame(results[0], results[1]);
+  }
+
+  @Test
+  public void roundTrip_referenceableMultipleDistinct() {
+    SimpleReferenceable a = new SimpleReferenceable(1, "alpha");
+    SimpleReferenceable b = new SimpleReferenceable(2, "beta");
+    SimpleReferenceable c = new SimpleReferenceable(3, "gamma");
+    java.util.Map<ReferenceableBinaryEncodableAndDecodable, Integer> encodeMap = new java.util.HashMap<>();
+    encoder.encode(a, encodeMap);
+    encoder.encode(b, encodeMap);
+    encoder.encode(c, encodeMap);
+    InputStreamBinaryDecoder decoder = decoderFromEncoded();
+    java.util.Map<Integer, ReferenceableBinaryEncodableAndDecodable> decodeMap = new java.util.HashMap<>();
+    SimpleReferenceable ra = decoder.decodeReferenceableBinaryEncodableAndDecodable(decodeMap);
+    SimpleReferenceable rb = decoder.decodeReferenceableBinaryEncodableAndDecodable(decodeMap);
+    SimpleReferenceable rc = decoder.decodeReferenceableBinaryEncodableAndDecodable(decodeMap);
+    assertEquals("alpha", ra.getLabel());
+    assertEquals("beta", rb.getLabel());
+    assertEquals("gamma", rc.getLabel());
+  }
+
+  @Test
+  public void roundTrip_referenceableSingle_typed() {
+    SimpleReferenceable original = new SimpleReferenceable(5, "five");
+    java.util.Map<ReferenceableBinaryEncodableAndDecodable, Integer> encodeMap = new java.util.HashMap<>();
+    encoder.encode(original, encodeMap);
+    InputStreamBinaryDecoder decoder = decoderFromEncoded();
+    java.util.Map<Integer, ReferenceableBinaryEncodableAndDecodable> decodeMap = new java.util.HashMap<>();
+    SimpleReferenceable result = decoder.decodeReferenceableBinaryEncodableAndDecodable(SimpleReferenceable.class, decodeMap);
+    assertNotNull(result);
+    assertEquals(5, result.getId());
+    assertEquals("five", result.getLabel());
+  }
+
+  @Test
+  public void roundTrip_referenceableEncodeMap_populated() {
+    SimpleReferenceable item = new SimpleReferenceable(99, "mapped");
+    java.util.Map<ReferenceableBinaryEncodableAndDecodable, Integer> encodeMap = new java.util.HashMap<>();
+    encoder.encode(item, encodeMap);
+    assertTrue(encodeMap.containsKey(item));
+    assertEquals(Integer.valueOf(item.hashCode()), encodeMap.get(item));
+  }
+
+  @Test
+  public void roundTrip_referenceableDecodeMap_populated() {
+    SimpleReferenceable original = new SimpleReferenceable(88, "decoded");
+    java.util.Map<ReferenceableBinaryEncodableAndDecodable, Integer> encodeMap = new java.util.HashMap<>();
+    encoder.encode(original, encodeMap);
+    InputStreamBinaryDecoder decoder = decoderFromEncoded();
+    java.util.Map<Integer, ReferenceableBinaryEncodableAndDecodable> decodeMap = new java.util.HashMap<>();
+    SimpleReferenceable result = decoder.decodeReferenceableBinaryEncodableAndDecodable(decodeMap);
+    assertFalse(decodeMap.isEmpty());
+    assertTrue(decodeMap.containsValue(result));
+  }
+
+  @Test
+  public void roundTrip_referenceableMixedWithPrimitives() {
+    encoder.encode(42);
+    SimpleReferenceable ref = new SimpleReferenceable(100, "mixed");
+    java.util.Map<ReferenceableBinaryEncodableAndDecodable, Integer> encodeMap = new java.util.HashMap<>();
+    encoder.encode(ref, encodeMap);
+    encoder.encode("after-ref");
+    InputStreamBinaryDecoder decoder = decoderFromEncoded();
+    assertEquals(42, decoder.decodeInt());
+    java.util.Map<Integer, ReferenceableBinaryEncodableAndDecodable> decodeMap = new java.util.HashMap<>();
+    SimpleReferenceable result = decoder.decodeReferenceableBinaryEncodableAndDecodable(decodeMap);
+    assertEquals(100, result.getId());
+    assertEquals("after-ref", decoder.decodeString());
+  }
+
+  // --- encodeProperties / decodeProperties round-trips ---
+
+  public static class TwoPropertyOwner extends edu.cmu.cs.dennisc.pattern.AbstractInstancePropertyOwner {
+    public final edu.cmu.cs.dennisc.property.InstanceProperty<Integer> alpha =
+        new edu.cmu.cs.dennisc.property.InstanceProperty<>(this, 0);
+    public final edu.cmu.cs.dennisc.property.InstanceProperty<String> beta =
+        new edu.cmu.cs.dennisc.property.InstanceProperty<>(this, null);
+  }
+
+  @Test
+  public void roundTrip_encodeDecodeProperties_intAndString() {
+    TwoPropertyOwner owner = new TwoPropertyOwner();
+    owner.alpha.setValue(42);
+    owner.beta.setValue("hello");
+    java.util.Map<ReferenceableBinaryEncodableAndDecodable, Integer> encodeMap = new java.util.HashMap<>();
+    encoder.encodeProperties(owner, encodeMap);
+    InputStreamBinaryDecoder decoder = decoderFromEncoded();
+    TwoPropertyOwner restored = new TwoPropertyOwner();
+    java.util.Map<Integer, ReferenceableBinaryEncodableAndDecodable> decodeMap = new java.util.HashMap<>();
+    decoder.decodeProperties(restored, decodeMap);
+    assertEquals(Integer.valueOf(42), restored.alpha.getValue());
+    assertEquals("hello", restored.beta.getValue());
+  }
+
+  @Test
+  public void roundTrip_encodeDecodeProperties_nullValue() {
+    TwoPropertyOwner owner = new TwoPropertyOwner();
+    owner.alpha.setValue(7);
+    owner.beta.setValue(null);
+    java.util.Map<ReferenceableBinaryEncodableAndDecodable, Integer> encodeMap = new java.util.HashMap<>();
+    encoder.encodeProperties(owner, encodeMap);
+    InputStreamBinaryDecoder decoder = decoderFromEncoded();
+    TwoPropertyOwner restored = new TwoPropertyOwner();
+    java.util.Map<Integer, ReferenceableBinaryEncodableAndDecodable> decodeMap = new java.util.HashMap<>();
+    decoder.decodeProperties(restored, decodeMap);
+    assertEquals(Integer.valueOf(7), restored.alpha.getValue());
+    assertNull(restored.beta.getValue());
+  }
+
+  public static class DoublePropertyOwner extends edu.cmu.cs.dennisc.pattern.AbstractInstancePropertyOwner {
+    public final edu.cmu.cs.dennisc.property.InstanceProperty<Double> value =
+        new edu.cmu.cs.dennisc.property.InstanceProperty<>(this, 0.0);
+  }
+
+  @Test
+  public void roundTrip_encodeDecodeProperties_double() {
+    DoublePropertyOwner owner = new DoublePropertyOwner();
+    owner.value.setValue(3.14);
+    java.util.Map<ReferenceableBinaryEncodableAndDecodable, Integer> encodeMap = new java.util.HashMap<>();
+    encoder.encodeProperties(owner, encodeMap);
+    InputStreamBinaryDecoder decoder = decoderFromEncoded();
+    DoublePropertyOwner restored = new DoublePropertyOwner();
+    java.util.Map<Integer, ReferenceableBinaryEncodableAndDecodable> decodeMap = new java.util.HashMap<>();
+    decoder.decodeProperties(restored, decodeMap);
+    assertEquals(3.14, restored.value.getValue(), 1e-10);
+  }
+
+  public static class BooleanPropertyOwner extends edu.cmu.cs.dennisc.pattern.AbstractInstancePropertyOwner {
+    public final edu.cmu.cs.dennisc.property.InstanceProperty<Boolean> flag =
+        new edu.cmu.cs.dennisc.property.InstanceProperty<>(this, false);
+  }
+
+  @Test
+  public void roundTrip_encodeDecodeProperties_boolean() {
+    BooleanPropertyOwner owner = new BooleanPropertyOwner();
+    owner.flag.setValue(true);
+    java.util.Map<ReferenceableBinaryEncodableAndDecodable, Integer> encodeMap = new java.util.HashMap<>();
+    encoder.encodeProperties(owner, encodeMap);
+    InputStreamBinaryDecoder decoder = decoderFromEncoded();
+    BooleanPropertyOwner restored = new BooleanPropertyOwner();
+    java.util.Map<Integer, ReferenceableBinaryEncodableAndDecodable> decodeMap = new java.util.HashMap<>();
+    decoder.decodeProperties(restored, decodeMap);
+    assertTrue(restored.flag.getValue());
+  }
+
+  public static class IntArrayPropertyOwner extends edu.cmu.cs.dennisc.pattern.AbstractInstancePropertyOwner {
+    public final edu.cmu.cs.dennisc.property.InstanceProperty<int[]> nums =
+        new edu.cmu.cs.dennisc.property.InstanceProperty<>(this, null);
+  }
+
+  @Test
+  public void roundTrip_encodeDecodeProperties_intArray() {
+    IntArrayPropertyOwner owner = new IntArrayPropertyOwner();
+    owner.nums.setValue(new int[]{10, 20, 30});
+    java.util.Map<ReferenceableBinaryEncodableAndDecodable, Integer> encodeMap = new java.util.HashMap<>();
+    encoder.encodeProperties(owner, encodeMap);
+    InputStreamBinaryDecoder decoder = decoderFromEncoded();
+    IntArrayPropertyOwner restored = new IntArrayPropertyOwner();
+    java.util.Map<Integer, ReferenceableBinaryEncodableAndDecodable> decodeMap = new java.util.HashMap<>();
+    decoder.decodeProperties(restored, decodeMap);
+    assertArrayEquals(new int[]{10, 20, 30}, (int[]) restored.nums.getValue());
+  }
+
+  public static class DoubleArrayPropertyOwner extends edu.cmu.cs.dennisc.pattern.AbstractInstancePropertyOwner {
+    public final edu.cmu.cs.dennisc.property.InstanceProperty<double[]> vals =
+        new edu.cmu.cs.dennisc.property.InstanceProperty<>(this, null);
+  }
+
+  @Test
+  public void roundTrip_encodeDecodeProperties_doubleArray() {
+    DoubleArrayPropertyOwner owner = new DoubleArrayPropertyOwner();
+    owner.vals.setValue(new double[]{1.1, 2.2});
+    java.util.Map<ReferenceableBinaryEncodableAndDecodable, Integer> encodeMap = new java.util.HashMap<>();
+    encoder.encodeProperties(owner, encodeMap);
+    InputStreamBinaryDecoder decoder = decoderFromEncoded();
+    DoubleArrayPropertyOwner restored = new DoubleArrayPropertyOwner();
+    java.util.Map<Integer, ReferenceableBinaryEncodableAndDecodable> decodeMap = new java.util.HashMap<>();
+    decoder.decodeProperties(restored, decodeMap);
+    double[] result = (double[]) restored.vals.getValue();
+    assertEquals(2, result.length);
+    assertEquals(1.1, result[0], 1e-10);
+    assertEquals(2.2, result[1], 1e-10);
+  }
+
+  public static class ByteArrayPropertyOwner extends edu.cmu.cs.dennisc.pattern.AbstractInstancePropertyOwner {
+    public final edu.cmu.cs.dennisc.property.InstanceProperty<byte[]> data =
+        new edu.cmu.cs.dennisc.property.InstanceProperty<>(this, null);
+  }
+
+  @Test
+  public void roundTrip_encodeDecodeProperties_byteArray() {
+    ByteArrayPropertyOwner owner = new ByteArrayPropertyOwner();
+    owner.data.setValue(new byte[]{1, 2, 3});
+    java.util.Map<ReferenceableBinaryEncodableAndDecodable, Integer> encodeMap = new java.util.HashMap<>();
+    encoder.encodeProperties(owner, encodeMap);
+    InputStreamBinaryDecoder decoder = decoderFromEncoded();
+    ByteArrayPropertyOwner restored = new ByteArrayPropertyOwner();
+    java.util.Map<Integer, ReferenceableBinaryEncodableAndDecodable> decodeMap = new java.util.HashMap<>();
+    decoder.decodeProperties(restored, decodeMap);
+    assertArrayEquals(new byte[]{1, 2, 3}, (byte[]) restored.data.getValue());
+  }
+
+  public static class FloatArrayPropertyOwner extends edu.cmu.cs.dennisc.pattern.AbstractInstancePropertyOwner {
+    public final edu.cmu.cs.dennisc.property.InstanceProperty<float[]> data =
+        new edu.cmu.cs.dennisc.property.InstanceProperty<>(this, null);
+  }
+
+  @Test
+  public void roundTrip_encodeDecodeProperties_floatArray() {
+    FloatArrayPropertyOwner owner = new FloatArrayPropertyOwner();
+    owner.data.setValue(new float[]{1.5f, 2.5f});
+    java.util.Map<ReferenceableBinaryEncodableAndDecodable, Integer> encodeMap = new java.util.HashMap<>();
+    encoder.encodeProperties(owner, encodeMap);
+    InputStreamBinaryDecoder decoder = decoderFromEncoded();
+    FloatArrayPropertyOwner restored = new FloatArrayPropertyOwner();
+    java.util.Map<Integer, ReferenceableBinaryEncodableAndDecodable> decodeMap = new java.util.HashMap<>();
+    decoder.decodeProperties(restored, decodeMap);
+    float[] result = (float[]) restored.data.getValue();
+    assertEquals(1.5f, result[0], 1e-5f);
+    assertEquals(2.5f, result[1], 1e-5f);
+  }
+
+  public static class BooleanArrayPropertyOwner extends edu.cmu.cs.dennisc.pattern.AbstractInstancePropertyOwner {
+    public final edu.cmu.cs.dennisc.property.InstanceProperty<boolean[]> flags =
+        new edu.cmu.cs.dennisc.property.InstanceProperty<>(this, null);
+  }
+
+  @Test
+  public void roundTrip_encodeDecodeProperties_booleanArray() {
+    BooleanArrayPropertyOwner owner = new BooleanArrayPropertyOwner();
+    owner.flags.setValue(new boolean[]{true, false, true});
+    java.util.Map<ReferenceableBinaryEncodableAndDecodable, Integer> encodeMap = new java.util.HashMap<>();
+    encoder.encodeProperties(owner, encodeMap);
+    InputStreamBinaryDecoder decoder = decoderFromEncoded();
+    BooleanArrayPropertyOwner restored = new BooleanArrayPropertyOwner();
+    java.util.Map<Integer, ReferenceableBinaryEncodableAndDecodable> decodeMap = new java.util.HashMap<>();
+    decoder.decodeProperties(restored, decodeMap);
+    assertArrayEquals(new boolean[]{true, false, true}, (boolean[]) restored.flags.getValue());
+  }
+
+  public static class ShortArrayPropertyOwner extends edu.cmu.cs.dennisc.pattern.AbstractInstancePropertyOwner {
+    public final edu.cmu.cs.dennisc.property.InstanceProperty<short[]> data =
+        new edu.cmu.cs.dennisc.property.InstanceProperty<>(this, null);
+  }
+
+  @Test
+  public void roundTrip_encodeDecodeProperties_shortArray() {
+    ShortArrayPropertyOwner owner = new ShortArrayPropertyOwner();
+    owner.data.setValue(new short[]{5, 10});
+    java.util.Map<ReferenceableBinaryEncodableAndDecodable, Integer> encodeMap = new java.util.HashMap<>();
+    encoder.encodeProperties(owner, encodeMap);
+    InputStreamBinaryDecoder decoder = decoderFromEncoded();
+    ShortArrayPropertyOwner restored = new ShortArrayPropertyOwner();
+    java.util.Map<Integer, ReferenceableBinaryEncodableAndDecodable> decodeMap = new java.util.HashMap<>();
+    decoder.decodeProperties(restored, decodeMap);
+    assertArrayEquals(new short[]{5, 10}, (short[]) restored.data.getValue());
+  }
+
+  public static class LongArrayPropertyOwner extends edu.cmu.cs.dennisc.pattern.AbstractInstancePropertyOwner {
+    public final edu.cmu.cs.dennisc.property.InstanceProperty<long[]> data =
+        new edu.cmu.cs.dennisc.property.InstanceProperty<>(this, null);
+  }
+
+  @Test
+  public void roundTrip_encodeDecodeProperties_longArray() {
+    LongArrayPropertyOwner owner = new LongArrayPropertyOwner();
+    owner.data.setValue(new long[]{100L, 200L});
+    java.util.Map<ReferenceableBinaryEncodableAndDecodable, Integer> encodeMap = new java.util.HashMap<>();
+    encoder.encodeProperties(owner, encodeMap);
+    InputStreamBinaryDecoder decoder = decoderFromEncoded();
+    LongArrayPropertyOwner restored = new LongArrayPropertyOwner();
+    java.util.Map<Integer, ReferenceableBinaryEncodableAndDecodable> decodeMap = new java.util.HashMap<>();
+    decoder.decodeProperties(restored, decodeMap);
+    assertArrayEquals(new long[]{100L, 200L}, (long[]) restored.data.getValue());
+  }
+
+  public static class CharArrayPropertyOwner extends edu.cmu.cs.dennisc.pattern.AbstractInstancePropertyOwner {
+    public final edu.cmu.cs.dennisc.property.InstanceProperty<char[]> data =
+        new edu.cmu.cs.dennisc.property.InstanceProperty<>(this, null);
+  }
+
+  @Test
+  public void roundTrip_encodeDecodeProperties_charArray() {
+    CharArrayPropertyOwner owner = new CharArrayPropertyOwner();
+    owner.data.setValue(new char[]{'a', 'b'});
+    java.util.Map<ReferenceableBinaryEncodableAndDecodable, Integer> encodeMap = new java.util.HashMap<>();
+    encoder.encodeProperties(owner, encodeMap);
+    InputStreamBinaryDecoder decoder = decoderFromEncoded();
+    CharArrayPropertyOwner restored = new CharArrayPropertyOwner();
+    java.util.Map<Integer, ReferenceableBinaryEncodableAndDecodable> decodeMap = new java.util.HashMap<>();
+    decoder.decodeProperties(restored, decodeMap);
+    assertArrayEquals(new char[]{'a', 'b'}, (char[]) restored.data.getValue());
+  }
+
+  public static class StringArrayPropertyOwner extends edu.cmu.cs.dennisc.pattern.AbstractInstancePropertyOwner {
+    public final edu.cmu.cs.dennisc.property.InstanceProperty<String[]> data =
+        new edu.cmu.cs.dennisc.property.InstanceProperty<>(this, null);
+  }
+
+  @Test
+  public void roundTrip_encodeDecodeProperties_stringArray() {
+    StringArrayPropertyOwner owner = new StringArrayPropertyOwner();
+    owner.data.setValue(new String[]{"foo", "bar"});
+    java.util.Map<ReferenceableBinaryEncodableAndDecodable, Integer> encodeMap = new java.util.HashMap<>();
+    encoder.encodeProperties(owner, encodeMap);
+    InputStreamBinaryDecoder decoder = decoderFromEncoded();
+    StringArrayPropertyOwner restored = new StringArrayPropertyOwner();
+    java.util.Map<Integer, ReferenceableBinaryEncodableAndDecodable> decodeMap = new java.util.HashMap<>();
+    decoder.decodeProperties(restored, decodeMap);
+    assertArrayEquals(new String[]{"foo", "bar"}, (String[]) restored.data.getValue());
+  }
+
+  public static class EnumPropertyOwner extends edu.cmu.cs.dennisc.pattern.AbstractInstancePropertyOwner {
+    public final edu.cmu.cs.dennisc.property.InstanceProperty<java.util.concurrent.TimeUnit> unit =
+        new edu.cmu.cs.dennisc.property.InstanceProperty<>(this, null);
+  }
+
+  @Test
+  public void roundTrip_encodeDecodeProperties_enum() {
+    EnumPropertyOwner owner = new EnumPropertyOwner();
+    owner.unit.setValue(java.util.concurrent.TimeUnit.HOURS);
+    java.util.Map<ReferenceableBinaryEncodableAndDecodable, Integer> encodeMap = new java.util.HashMap<>();
+    encoder.encodeProperties(owner, encodeMap);
+    InputStreamBinaryDecoder decoder = decoderFromEncoded();
+    EnumPropertyOwner restored = new EnumPropertyOwner();
+    java.util.Map<Integer, ReferenceableBinaryEncodableAndDecodable> decodeMap = new java.util.HashMap<>();
+    decoder.decodeProperties(restored, decodeMap);
+    assertEquals(java.util.concurrent.TimeUnit.HOURS, restored.unit.getValue());
+  }
 }

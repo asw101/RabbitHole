@@ -335,4 +335,180 @@ public class BufferUtilitiesTest {
     int[] result = BufferUtilities.convertIntBufferToArray(buf);
     assertArrayEquals(original, result);
   }
+
+  // --- Null handling for createDirect* ---
+
+  @Test
+  public void createDirectDoubleBuffer_null() {
+    assertNull(BufferUtilities.createDirectDoubleBuffer(null));
+  }
+
+  @Test
+  public void createDirectFloatBuffer_null() {
+    assertNull(BufferUtilities.createDirectFloatBuffer(null));
+  }
+
+  @Test
+  public void createDirectIntBuffer_null() {
+    assertNull(BufferUtilities.createDirectIntBuffer(null));
+  }
+
+  @Test
+  public void createDirectLongBuffer_null() {
+    assertNull(BufferUtilities.createDirectLongBuffer(null));
+  }
+
+  @Test
+  public void createDirectByteBuffer_null() {
+    assertNull(BufferUtilities.createDirectByteBuffer(null));
+  }
+
+  @Test
+  public void createDirectCharBuffer_null() {
+    assertNull(BufferUtilities.createDirectCharBuffer(null));
+  }
+
+  @Test
+  public void createDirectShortBuffer_null() {
+    assertNull(BufferUtilities.createDirectShortBuffer(null));
+  }
+
+  // --- Direct buffer conversions (non-array-backed) ---
+
+  @Test
+  public void convertCharBufferToArray_directBuffer() {
+    char[] original = {'x', 'y', 'z'};
+    CharBuffer buf = BufferUtilities.createDirectCharBuffer(original);
+    char[] result = BufferUtilities.convertCharBufferToArray(buf);
+    assertArrayEquals(original, result);
+  }
+
+  @Test
+  public void convertShortBufferToArray_directBuffer() {
+    short[] original = {10, 20, 30};
+    ShortBuffer buf = BufferUtilities.createDirectShortBuffer(original);
+    short[] result = BufferUtilities.convertShortBufferToArray(buf);
+    assertArrayEquals(original, result);
+  }
+
+  @Test
+  public void convertIntBufferToArray_directBuffer() {
+    int[] original = {100, 200, 300};
+    IntBuffer buf = BufferUtilities.createDirectIntBuffer(original);
+    int[] result = BufferUtilities.convertIntBufferToArray(buf);
+    assertArrayEquals(original, result);
+  }
+
+  @Test
+  public void convertLongBufferToArray_directBuffer() {
+    long[] original = {1000L, 2000L};
+    LongBuffer buf = BufferUtilities.createDirectLongBuffer(original);
+    long[] result = BufferUtilities.convertLongBufferToArray(buf);
+    assertArrayEquals(original, result);
+  }
+
+  @Test
+  public void convertFloatBufferToArray_directBuffer() {
+    float[] original = {1.1f, 2.2f, 3.3f};
+    FloatBuffer buf = BufferUtilities.createDirectFloatBuffer(original);
+    float[] result = BufferUtilities.convertFloatBufferToArray(buf);
+    assertEquals(original.length, result.length);
+    for (int i = 0; i < original.length; i++) {
+      assertEquals(original[i], result[i], 0.0f);
+    }
+  }
+
+  @Test
+  public void convertDoubleBufferToArray_directBuffer() {
+    double[] original = {1.1, 2.2, 3.3};
+    DoubleBuffer buf = BufferUtilities.createDirectDoubleBuffer(original);
+    double[] result = BufferUtilities.convertDoubleBufferToArray(buf);
+    assertArrayEquals(original, result, DELTA);
+  }
+
+  // --- Round-trip through copy for remaining buffer types ---
+
+  @Test
+  public void roundTrip_longArrayThroughDirectBuffer() {
+    long[] original = {100L, 200L, 300L};
+    LongBuffer buf = BufferUtilities.createDirectLongBuffer(original);
+    long[] result = BufferUtilities.convertLongBufferToArray(buf);
+    assertArrayEquals(original, result);
+  }
+
+  @Test
+  public void roundTrip_byteArrayThroughDirectBuffer() {
+    byte[] original = {1, 2, 3, 4};
+    ByteBuffer buf = BufferUtilities.createDirectByteBuffer(original);
+    byte[] result = BufferUtilities.convertByteBufferToArray(buf);
+    assertArrayEquals(original, result);
+  }
+
+  @Test
+  public void roundTrip_charArrayThroughDirectBuffer() {
+    char[] original = {'a', 'b', 'c'};
+    CharBuffer buf = BufferUtilities.createDirectCharBuffer(original);
+    char[] result = BufferUtilities.convertCharBufferToArray(buf);
+    assertArrayEquals(original, result);
+  }
+
+  @Test
+  public void roundTrip_shortArrayThroughDirectBuffer() {
+    short[] original = {5, 10, 15};
+    ShortBuffer buf = BufferUtilities.createDirectShortBuffer(original);
+    short[] result = BufferUtilities.convertShortBufferToArray(buf);
+    assertArrayEquals(original, result);
+  }
+
+  // --- Copy isolation for remaining types ---
+
+  @Test
+  public void copyByteBuffer_isolatedFromOriginal() {
+    byte[] data = {1, 2};
+    ByteBuffer original = BufferUtilities.createDirectByteBuffer(data);
+    ByteBuffer copy = BufferUtilities.copyByteBuffer(original);
+    copy.put(0, (byte) 99);
+    assertEquals(1, original.get(0));
+    assertEquals(99, copy.get(0));
+  }
+
+  @Test
+  public void copyShortBuffer_isolatedFromOriginal() {
+    short[] data = {1, 2};
+    ShortBuffer original = BufferUtilities.createDirectShortBuffer(data);
+    ShortBuffer copy = BufferUtilities.copyShortBuffer(original);
+    copy.put(0, (short) 99);
+    assertEquals(1, original.get(0));
+    assertEquals(99, copy.get(0));
+  }
+
+  @Test
+  public void copyLongBuffer_isolatedFromOriginal() {
+    long[] data = {1L, 2L};
+    LongBuffer original = BufferUtilities.createDirectLongBuffer(data);
+    LongBuffer copy = BufferUtilities.copyLongBuffer(original);
+    copy.put(0, 99L);
+    assertEquals(1L, original.get(0));
+    assertEquals(99L, copy.get(0));
+  }
+
+  @Test
+  public void copyCharBuffer_isolatedFromOriginal() {
+    char[] data = {'a', 'b'};
+    CharBuffer original = BufferUtilities.createDirectCharBuffer(data);
+    CharBuffer copy = BufferUtilities.copyCharBuffer(original);
+    copy.put(0, 'Z');
+    assertEquals('a', original.get(0));
+    assertEquals('Z', copy.get(0));
+  }
+
+  @Test
+  public void copyFloatBuffer_isolatedFromOriginal() {
+    float[] data = {1.5f, 2.5f};
+    FloatBuffer original = BufferUtilities.createDirectFloatBuffer(data);
+    FloatBuffer copy = BufferUtilities.copyFloatBuffer(original);
+    copy.put(0, 99.0f);
+    assertEquals(1.5f, original.get(0), 0.0f);
+    assertEquals(99.0f, copy.get(0), 0.0f);
+  }
 }
