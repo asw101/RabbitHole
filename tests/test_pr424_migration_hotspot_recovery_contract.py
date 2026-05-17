@@ -32,9 +32,13 @@ EXPECTED_PR_SCOPE = {
     "core/story-api-migration/src/test/java/org/lgna/project/migration/ProjectMigrationManagerTest.java",
     "docs/concepts/migration-hotspot-characterization.md",
     "docs/howto/characterize-project-migration-manager.md",
+    "docs/howto/review-standalone-project-test-reliability.md",
     "docs/index.md",
     "docs/reference/project-migration-manager-characterization.md",
+    "docs/reference/standalone-project-test-process-drain-and-macos-guard.md",
     "docs/tutorials/project-migration-manager-characterization.md",
+    "netbeans/src/test/java/org/alice/netbeans/project/ProjectCodeGeneratorStandaloneProjectTest.java",
+    "netbeans/src/test/java/org/alice/netbeans/project/RunCommandStreamDrainTest.java",
     "pyproject.toml",
     "qa/outside-in/alice-desktop/runners/run-scenario.sh",
     "qa/outside-in/alice-desktop/runners/validate-scenarios.sh",
@@ -96,7 +100,7 @@ class Pr424MigrationHotspotRecoveryContractTest(unittest.TestCase):
         self.assertIsNotNone(version_match, "pyproject.toml must declare a project version.")
         assert version_match is not None
         self.assertEqual(
-            "0.13.24",
+            "0.13.25",
             version_match.group("version"),
             "PR #424 recovery must keep origin/develop package metadata unless migration scope requires otherwise.",
         )
