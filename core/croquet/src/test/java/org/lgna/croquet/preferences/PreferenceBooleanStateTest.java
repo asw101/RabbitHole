@@ -1,13 +1,12 @@
 package org.lgna.croquet.preferences;
 
 import org.lgna.croquet.BooleanState;
+import org.lgna.croquet.CroquetTestUtils;
 import org.lgna.croquet.Element;
 import org.lgna.croquet.Group;
 import org.junit.Before;
 import org.junit.Test;
 
-import javax.swing.DefaultButtonModel;
-import java.awt.event.ItemListener;
 import java.util.UUID;
 import java.util.prefs.Preferences;
 
@@ -31,16 +30,9 @@ public class PreferenceBooleanStateTest {
   @Before
   public void setUp() {
     stateTrue = new TestPreferenceBooleanState(TEST_GROUP, true, "testPrefTrue");
-    removeItemListeners(stateTrue);
+    CroquetTestUtils.removeItemListeners(stateTrue);
     stateFalse = new TestPreferenceBooleanState(TEST_GROUP, false, "testPrefFalse");
-    removeItemListeners(stateFalse);
-  }
-
-  private static void removeItemListeners(BooleanState s) {
-    DefaultButtonModel bm = (DefaultButtonModel) s.getImp().getSwingModel().getButtonModel();
-    for (ItemListener il : bm.getItemListeners()) {
-      bm.removeItemListener(il);
-    }
+    CroquetTestUtils.removeItemListeners(stateFalse);
   }
 
   // ── Construction ──────────────────────────────────────────────────
@@ -147,7 +139,7 @@ public class PreferenceBooleanStateTest {
   public void constructor_withoutPreferenceKey_usesUUID() {
     TestPreferenceBooleanStateDefaultKey s =
         new TestPreferenceBooleanStateDefaultKey(TEST_GROUP, true);
-    removeItemListeners(s);
+    CroquetTestUtils.removeItemListeners(s);
     assertTrue(s.getValue());
   }
 

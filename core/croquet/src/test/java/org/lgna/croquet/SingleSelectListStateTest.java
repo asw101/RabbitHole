@@ -1,14 +1,10 @@
 package org.lgna.croquet;
 
-import edu.cmu.cs.dennisc.codec.BinaryDecoder;
-import edu.cmu.cs.dennisc.codec.BinaryEncoder;
 import org.lgna.croquet.data.MutableListData;
 import org.junit.Before;
 import org.junit.Test;
 
 import javax.swing.ComboBoxModel;
-import javax.swing.DefaultListSelectionModel;
-import javax.swing.event.ListSelectionListener;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.UUID;
@@ -38,21 +34,9 @@ public class SingleSelectListStateTest {
 
   @Before
   public void setUp() {
-    data = new MutableListData<>(STRING_CODEC, new String[]{"alpha", "bravo", "charlie"});
+    data = new MutableListData<>(CroquetTestUtils.STRING_CODEC, new String[]{"alpha", "bravo", "charlie"});
     state = new TestSingleSelectListState(TEST_GROUP, 1, data);
-    // Remove the ListSelectionListener to decouple from Application context.
-    // The listener invokes NullTrigger → Application.getActiveInstance() which
-    // is null in unit tests. Characterization tests verify state management
-    // logic, not Swing event dispatch integration.
-    removeListSelectionListeners(state);
-  }
-
-  private static void removeListSelectionListeners(TestSingleSelectListState s) {
-    DefaultListSelectionModel lsm =
-        (DefaultListSelectionModel) s.getSwingModel().getListSelectionModel();
-    for (ListSelectionListener l : lsm.getListSelectionListeners()) {
-      lsm.removeListSelectionListener(l);
-    }
+    CroquetTestUtils.removeListSelectionListeners(state);
   }
 
   // ── Construction and initial state ──────────────────────────────────
@@ -529,29 +513,4 @@ public class SingleSelectListStateTest {
       super(group, UUID.randomUUID(), selectionIndex, data);
     }
   }
-
-  /**
-   * Minimal {@link ItemCodec} for String values.
-   */
-  private static final ItemCodec<String> STRING_CODEC = new ItemCodec<String>() {
-    @Override
-    public Class<String> getValueClass() {
-      return String.class;
-    }
-
-    @Override
-    public String decodeValue(BinaryDecoder binaryDecoder) {
-      return binaryDecoder.decodeString();
-    }
-
-    @Override
-    public void encodeValue(BinaryEncoder binaryEncoder, String value) {
-      binaryEncoder.encode(value);
-    }
-
-    @Override
-    public void appendRepresentation(StringBuilder sb, String value) {
-      sb.append(value);
-    }
-  };
 }

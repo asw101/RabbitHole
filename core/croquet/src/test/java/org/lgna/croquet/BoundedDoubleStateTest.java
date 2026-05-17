@@ -3,8 +3,6 @@ package org.lgna.croquet;
 import org.junit.Before;
 import org.junit.Test;
 
-import javax.swing.SpinnerNumberModel;
-import javax.swing.event.ChangeListener;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -34,14 +32,7 @@ public class BoundedDoubleStateTest {
             .initialValue(0.5)
             .stepSize(0.01);
     state = new TestBoundedDoubleState(details);
-    removeSpinnerChangeListeners(state);
-  }
-
-  private static void removeSpinnerChangeListeners(TestBoundedDoubleState s) {
-    SpinnerNumberModel spinner = s.getSwingModel().getSpinnerModel();
-    for (ChangeListener cl : spinner.getChangeListeners()) {
-      spinner.removeChangeListener(cl);
-    }
+    CroquetTestUtils.removeSpinnerChangeListeners(state);
   }
 
   // ── Construction ──────────────────────────────────────────────────
@@ -72,7 +63,7 @@ public class BoundedDoubleStateTest {
             .initialValue(0.0)
             .stepSize(0.5);
     TestBoundedDoubleState custom = new TestBoundedDoubleState(d);
-    removeSpinnerChangeListeners(custom);
+    CroquetTestUtils.removeSpinnerChangeListeners(custom);
     assertEquals(0.0, custom.getValue(), 0.001);
     assertEquals(-10.0, custom.getMinimum(), 0.001);
     assertEquals(10.0, custom.getMaximum(), 0.001);
@@ -197,7 +188,7 @@ public class BoundedDoubleStateTest {
             .initialValue(0.0)
             .stepSize(0.01);
     TestBoundedDoubleState s = new TestBoundedDoubleState(d);
-    removeSpinnerChangeListeners(s);
+    CroquetTestUtils.removeSpinnerChangeListeners(s);
     assertEquals(0.0, s.getValue(), 0.001);
   }
 
@@ -212,7 +203,7 @@ public class BoundedDoubleStateTest {
             .initialValue(1.0)
             .stepSize(0.01);
     TestBoundedDoubleState s = new TestBoundedDoubleState(d);
-    removeSpinnerChangeListeners(s);
+    CroquetTestUtils.removeSpinnerChangeListeners(s);
     assertEquals(1.0, s.getValue(), 0.001);
   }
 

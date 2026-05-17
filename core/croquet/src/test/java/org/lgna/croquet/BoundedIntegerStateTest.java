@@ -3,9 +3,7 @@ package org.lgna.croquet;
 import org.junit.Before;
 import org.junit.Test;
 
-import javax.swing.BoundedRangeModel;
 import javax.swing.SpinnerNumberModel;
-import javax.swing.event.ChangeListener;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -35,14 +33,7 @@ public class BoundedIntegerStateTest {
             .initialValue(50)
             .stepSize(1);
     state = new TestBoundedIntegerState(details);
-    removeSpinnerChangeListeners(state);
-  }
-
-  private static void removeSpinnerChangeListeners(TestBoundedIntegerState s) {
-    SpinnerNumberModel spinner = s.getSwingModel().getSpinnerModel();
-    for (ChangeListener cl : spinner.getChangeListeners()) {
-      spinner.removeChangeListener(cl);
-    }
+    CroquetTestUtils.removeSpinnerChangeListeners(state);
   }
 
   // ── Construction ──────────────────────────────────────────────────
@@ -74,7 +65,7 @@ public class BoundedIntegerStateTest {
             .stepSize(5)
             .extent(10);
     TestBoundedIntegerState custom = new TestBoundedIntegerState(d);
-    removeSpinnerChangeListeners(custom);
+    CroquetTestUtils.removeSpinnerChangeListeners(custom);
     assertEquals(Integer.valueOf(50), custom.getValue());
     assertEquals(Integer.valueOf(10), custom.getMinimum());
     assertEquals(Integer.valueOf(200), custom.getMaximum());
@@ -223,7 +214,7 @@ public class BoundedIntegerStateTest {
             .maximum(100)
             .initialValue(0);
     TestBoundedIntegerState s = new TestBoundedIntegerState(d);
-    removeSpinnerChangeListeners(s);
+    CroquetTestUtils.removeSpinnerChangeListeners(s);
     assertEquals(Integer.valueOf(0), s.getValue());
   }
 
@@ -237,7 +228,7 @@ public class BoundedIntegerStateTest {
             .maximum(100)
             .initialValue(100);
     TestBoundedIntegerState s = new TestBoundedIntegerState(d);
-    removeSpinnerChangeListeners(s);
+    CroquetTestUtils.removeSpinnerChangeListeners(s);
     assertEquals(Integer.valueOf(100), s.getValue());
   }
 

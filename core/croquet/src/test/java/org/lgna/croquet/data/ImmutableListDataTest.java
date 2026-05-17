@@ -1,5 +1,6 @@
 package org.lgna.croquet.data;
 
+import org.lgna.croquet.CroquetTestUtils;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -21,7 +22,7 @@ public class ImmutableListDataTest {
 
   @Before
   public void setUp() {
-    data = new ImmutableListData<>(MutableListDataTest.STRING_CODEC,
+    data = new ImmutableListData<>(CroquetTestUtils.STRING_CODEC,
         new String[]{"alpha", "bravo", "charlie"});
   }
 
@@ -145,7 +146,7 @@ public class ImmutableListDataTest {
 
   @Test
   public void getItemCodec_returnsSameCodec() {
-    assertSame(MutableListDataTest.STRING_CODEC, data.getItemCodec());
+    assertSame(CroquetTestUtils.STRING_CODEC, data.getItemCodec());
   }
 
   // ── Empty immutable list ──────────────────────────────────────────
@@ -153,14 +154,14 @@ public class ImmutableListDataTest {
   @Test
   public void emptyList_hasZeroCount() {
     ImmutableListData<String> empty =
-        new ImmutableListData<>(MutableListDataTest.STRING_CODEC, new String[]{});
+        new ImmutableListData<>(CroquetTestUtils.STRING_CODEC, new String[]{});
     assertEquals(0, empty.getItemCount());
   }
 
   @Test
   public void emptyList_iterator_hasNoElements() {
     ImmutableListData<String> empty =
-        new ImmutableListData<>(MutableListDataTest.STRING_CODEC, new String[]{});
+        new ImmutableListData<>(CroquetTestUtils.STRING_CODEC, new String[]{});
     assertFalse(empty.iterator().hasNext());
   }
 }

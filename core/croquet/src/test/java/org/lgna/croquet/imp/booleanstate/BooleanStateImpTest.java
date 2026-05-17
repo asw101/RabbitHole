@@ -1,15 +1,16 @@
 package org.lgna.croquet.imp.booleanstate;
 
 import org.lgna.croquet.BooleanState;
+import org.lgna.croquet.CroquetTestUtils;
 import org.lgna.croquet.Group;
 import org.lgna.croquet.PrepModel;
+import org.lgna.croquet.TestBooleanState;
 import org.lgna.croquet.edits.Edit;
 import org.junit.Before;
 import org.junit.Test;
 
 import javax.swing.ButtonModel;
 import javax.swing.DefaultButtonModel;
-import java.awt.event.ItemListener;
 import java.util.List;
 import java.util.UUID;
 
@@ -34,15 +35,8 @@ public class BooleanStateImpTest {
   @Before
   public void setUp() {
     state = new TestBooleanState(TEST_GROUP, false);
-    removeItemListeners(state);
+    CroquetTestUtils.removeItemListeners(state);
     imp = state.getImp();
-  }
-
-  private static void removeItemListeners(TestBooleanState s) {
-    DefaultButtonModel bm = (DefaultButtonModel) s.getImp().getSwingModel().getButtonModel();
-    for (ItemListener il : bm.getItemListeners()) {
-      bm.removeItemListener(il);
-    }
   }
 
   // ── Construction ──────────────────────────────────────────────────
@@ -79,7 +73,7 @@ public class BooleanStateImpTest {
   @Test
   public void getButtonModel_selectedMatchesStateValue_true() {
     TestBooleanState trueState = new TestBooleanState(TEST_GROUP, true);
-    removeItemListeners(trueState);
+    CroquetTestUtils.removeItemListeners(trueState);
     assertTrue(trueState.getImp().getSwingModel().getButtonModel().isSelected());
   }
 
@@ -240,7 +234,7 @@ public class BooleanStateImpTest {
   public void getPotentialPrepModelPaths_beforeMenuPrepInit_returnsEmpty() {
     // Create a fresh state where menuPrepModel has not been initialized
     TestBooleanState fresh = new TestBooleanState(TEST_GROUP, false);
-    removeItemListeners(fresh);
+    CroquetTestUtils.removeItemListeners(fresh);
     List<List<PrepModel>> paths = fresh.getImp().getPotentialPrepModelPaths(null);
     assertTrue("Should be empty when menuPrepModel not initialized", paths.isEmpty());
   }
@@ -270,21 +264,4 @@ public class BooleanStateImpTest {
     assertFalse(bm.isSelected());
   }
 
-  // ── Test infrastructure ───────────────────────────────────────────
-
-  static class TestBooleanState extends BooleanState {
-    TestBooleanState(Group group, boolean initialValue) {
-      super(group, UUID.randomUUID(), initialValue);
-    }
-
-    @Override
-    protected Class<? extends org.lgna.croquet.Element> getClassUsedForLocalization() {
-      return TestBooleanState.class;
-    }
-
-    @Override
-    protected String getSubKeyForLocalization() {
-      return "test";
-    }
-  }
 }

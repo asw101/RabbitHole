@@ -1,5 +1,6 @@
 package org.lgna.croquet.data;
 
+import org.lgna.croquet.CroquetTestUtils;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -220,7 +221,7 @@ public class RefreshableListDataTest {
     int createValuesCallCount = 0;
 
     TestRefreshableListData(List<String> source) {
-      super(MutableListDataTest.STRING_CODEC);
+      super(CroquetTestUtils.STRING_CODEC);
       this.source = source;
     }
 
@@ -229,16 +230,5 @@ public class RefreshableListDataTest {
       createValuesCallCount++;
       return new ArrayList<>(source);
     }
-  }
-
-  private static class TestListDataListener implements ListDataListener {
-    @Override
-    public void intervalAdded(ListDataEvent e) {}
-
-    @Override
-    public void intervalRemoved(ListDataEvent e) {}
-
-    @Override
-    public void contentsChanged(ListDataEvent e) {}
   }
 }

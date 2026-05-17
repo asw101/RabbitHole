@@ -3,7 +3,6 @@ package org.lgna.croquet;
 import org.junit.Before;
 import org.junit.Test;
 
-import javax.swing.event.DocumentListener;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import java.util.UUID;
@@ -29,14 +28,7 @@ public class StringStateTest {
   @Before
   public void setUp() {
     state = new TestStringState(TEST_GROUP, "hello");
-    removeDocumentListeners(state);
-  }
-
-  private static void removeDocumentListeners(TestStringState s) {
-    Document doc = s.getSwingModel().getDocument();
-    for (DocumentListener dl : ((javax.swing.text.AbstractDocument) doc).getDocumentListeners()) {
-      doc.removeDocumentListener(dl);
-    }
+    CroquetTestUtils.removeDocumentListeners(state);
   }
 
   // ── Construction ──────────────────────────────────────────────────
@@ -56,7 +48,7 @@ public class StringStateTest {
   @Test
   public void constructor_emptyString() {
     TestStringState empty = new TestStringState(TEST_GROUP, "");
-    removeDocumentListeners(empty);
+    CroquetTestUtils.removeDocumentListeners(empty);
     assertEquals("", empty.getValue());
   }
 

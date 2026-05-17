@@ -3,8 +3,6 @@ package org.lgna.croquet;
 import org.junit.Before;
 import org.junit.Test;
 
-import javax.swing.DefaultButtonModel;
-import java.awt.event.ItemListener;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -28,14 +26,7 @@ public class BooleanStateTest {
   @Before
   public void setUp() {
     state = new TestBooleanState(TEST_GROUP, false);
-    removeItemListeners(state);
-  }
-
-  private static void removeItemListeners(TestBooleanState s) {
-    DefaultButtonModel bm = (DefaultButtonModel) s.getImp().getSwingModel().getButtonModel();
-    for (ItemListener il : bm.getItemListeners()) {
-      bm.removeItemListener(il);
-    }
+    CroquetTestUtils.removeItemListeners(state);
   }
 
   // ── Construction ──────────────────────────────────────────────────
@@ -48,7 +39,7 @@ public class BooleanStateTest {
   @Test
   public void constructor_setsInitialTrue() {
     TestBooleanState trueState = new TestBooleanState(TEST_GROUP, true);
-    removeItemListeners(trueState);
+    CroquetTestUtils.removeItemListeners(trueState);
     assertTrue(trueState.getValue());
   }
 
@@ -352,21 +343,4 @@ public class BooleanStateTest {
     assertNotNull(state.getMigrationId());
   }
 
-  // ── Test infrastructure ───────────────────────────────────────────
-
-  static class TestBooleanState extends BooleanState {
-    TestBooleanState(Group group, boolean initialValue) {
-      super(group, UUID.randomUUID(), initialValue);
-    }
-
-    @Override
-    protected Class<? extends Element> getClassUsedForLocalization() {
-      return TestBooleanState.class;
-    }
-
-    @Override
-    protected String getSubKeyForLocalization() {
-      return "test";
-    }
-  }
 }
