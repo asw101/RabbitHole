@@ -25,7 +25,7 @@ public class StreamHandlerTest {
     PrintStream ps = new PrintStream(capture);
     int rc = RuntimeUtilities.exec(NULL_DIR, NULL_ENV, new String[]{"echo", "hello stream"}, ps, null);
     assertEquals(0, rc);
-    Thread.sleep(200);
+    Thread.sleep(50);
     String output = capture.toString().trim();
     assertEquals("hello stream", output);
   }
@@ -36,7 +36,7 @@ public class StreamHandlerTest {
     PrintStream errPs = new PrintStream(errCapture);
     int rc = RuntimeUtilities.exec(NULL_DIR, NULL_ENV, new String[]{"bash", "-c", "echo error-msg >&2"}, null, errPs);
     assertEquals(0, rc);
-    Thread.sleep(200);
+    Thread.sleep(50);
     String errOutput = errCapture.toString().trim();
     assertEquals("error-msg", errOutput);
   }
@@ -48,7 +48,7 @@ public class StreamHandlerTest {
     int rc = RuntimeUtilities.exec(NULL_DIR, NULL_ENV,
         new String[]{"bash", "-c", "echo line1; echo line2; echo line3"}, ps, null);
     assertEquals(0, rc);
-    Thread.sleep(200);
+    Thread.sleep(50);
     String output = capture.toString().trim();
     String[] lines = output.split("\\R");
     assertEquals(3, lines.length);
@@ -63,7 +63,7 @@ public class StreamHandlerTest {
     PrintStream ps = new PrintStream(capture);
     int rc = RuntimeUtilities.exec(NULL_DIR, NULL_ENV, new String[]{"true"}, ps, null);
     assertEquals(0, rc);
-    Thread.sleep(200);
+    Thread.sleep(50);
     assertEquals("", capture.toString().trim());
   }
 
@@ -81,7 +81,7 @@ public class StreamHandlerTest {
         new String[]{"bash", "-c", "echo out-msg; echo err-msg >&2"},
         new PrintStream(outCapture), new PrintStream(errCapture));
     assertEquals(0, rc);
-    Thread.sleep(200);
+    Thread.sleep(50);
     assertTrue(outCapture.toString().contains("out-msg"));
     assertTrue(errCapture.toString().contains("err-msg"));
   }
@@ -95,7 +95,7 @@ public class StreamHandlerTest {
     int rc = RuntimeUtilities.exec(NULL_DIR, env,
         new String[]{"bash", "-c", "echo $MY_VAR"}, ps, null);
     assertEquals(0, rc);
-    Thread.sleep(200);
+    Thread.sleep(50);
     assertEquals("hello_env", capture.toString().trim());
   }
 
@@ -106,7 +106,7 @@ public class StreamHandlerTest {
     File dir = new File(System.getProperty("user.dir"));
     int rc = RuntimeUtilities.exec(dir, NULL_ENV, new String[]{"pwd"}, ps, null);
     assertEquals(0, rc);
-    Thread.sleep(200);
+    Thread.sleep(50);
     assertFalse(capture.toString().trim().isEmpty());
   }
 }
