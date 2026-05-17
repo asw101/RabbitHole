@@ -8,6 +8,7 @@ import org.junit.Test;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static edu.cmu.cs.dennisc.scenegraph.ScenegraphTestAssertions.assertPointEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -16,7 +17,6 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 public class SphereBoundsTest {
-  private static final double EPSILON = 0.000001;
 
   @Test
   public void defaultSphereBoundsAreHalfUnit() {
@@ -84,9 +84,4 @@ public class SphereBoundsTest {
     assertFalse(sphere.isChanged());
   }
 
-  private static void assertPointEquals(Point3 expected, Point3 actual) {
-    assertEquals(expected.x(), actual.x(), EPSILON);
-    assertEquals(expected.y(), actual.y(), EPSILON);
-    assertEquals(expected.z(), actual.z(), EPSILON);
-  }
 }

@@ -8,12 +8,12 @@ import org.junit.Test;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static edu.cmu.cs.dennisc.scenegraph.ScenegraphTestAssertions.assertPointEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 public class TorusBoundsTest {
-  private static final double EPSILON = 0.000001;
 
   @Test
   public void defaultTorusBoundsUseXZPlane() {
@@ -117,9 +117,4 @@ public class TorusBoundsTest {
     assertPointEquals("max", new Point3(expectedYes, expectedNo, expectedYes), bbox.maximum());
   }
 
-  private static void assertPointEquals(String msg, Point3 expected, Point3 actual) {
-    assertEquals(msg + " x", expected.x(), actual.x(), EPSILON);
-    assertEquals(msg + " y", expected.y(), actual.y(), EPSILON);
-    assertEquals(msg + " z", expected.z(), actual.z(), EPSILON);
-  }
 }

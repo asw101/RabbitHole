@@ -22,12 +22,13 @@ import java.io.IOException;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import static edu.cmu.cs.dennisc.scenegraph.ScenegraphTestAssertions.EPSILON;
+import static edu.cmu.cs.dennisc.scenegraph.ScenegraphTestAssertions.assertPointEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 public class ASGRoundtripTest {
-  private static final double EPSILON = 0.000001;
 
   @Rule
   public TemporaryFolder tempFolder = new TemporaryFolder();
@@ -406,11 +407,5 @@ public class ASGRoundtripTest {
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     ASG.encode(original, baos);
     return ASG.decodeZip(new ByteArrayInputStream(baos.toByteArray()));
-  }
-
-  private static void assertPointEquals(Point3 expected, Point3 actual) {
-    assertEquals("x", expected.x(), actual.x(), EPSILON);
-    assertEquals("y", expected.y(), actual.y(), EPSILON);
-    assertEquals("z", expected.z(), actual.z(), EPSILON);
   }
 }

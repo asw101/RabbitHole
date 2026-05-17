@@ -8,12 +8,13 @@ import org.junit.Test;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static edu.cmu.cs.dennisc.scenegraph.ScenegraphTestAssertions.EPSILON;
+import static edu.cmu.cs.dennisc.scenegraph.ScenegraphTestAssertions.assertPointEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 public class CylinderBoundsTest {
-  private static final double EPSILON = 0.000001;
 
   @Test
   public void allAxisAlignmentCombinationsProduceCorrectBounds() {
@@ -191,9 +192,4 @@ public class CylinderBoundsTest {
     };
   }
 
-  private static void assertPointEquals(String msg, Point3 expected, Point3 actual) {
-    assertEquals(msg + " x", expected.x(), actual.x(), EPSILON);
-    assertEquals(msg + " y", expected.y(), actual.y(), EPSILON);
-    assertEquals(msg + " z", expected.z(), actual.z(), EPSILON);
-  }
 }

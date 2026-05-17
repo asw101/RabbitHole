@@ -15,6 +15,9 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static edu.cmu.cs.dennisc.scenegraph.ScenegraphTestAssertions.EPSILON;
+import static edu.cmu.cs.dennisc.scenegraph.ScenegraphTestAssertions.assertBoxEquals;
+import static edu.cmu.cs.dennisc.scenegraph.ScenegraphTestAssertions.assertPointEquals;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -22,7 +25,6 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 public class ScenegraphModelTest {
-  private static final double EPSILON = 0.000001;
 
   @Test
   public void meshVertexBufferInvalidatesCachedBoundsAndNotifiesListeners() {
@@ -318,16 +320,5 @@ public class ScenegraphModelTest {
       values[index] = iterator.next();
     }
     return values;
-  }
-
-  private static void assertBoxEquals(AxisAlignedBox expected, AxisAlignedBox actual) {
-    assertPointEquals(expected.minimum(), actual.minimum());
-    assertPointEquals(expected.maximum(), actual.maximum());
-  }
-
-  private static void assertPointEquals(Point3 expected, Point3 actual) {
-    assertEquals(expected.x(), actual.x(), EPSILON);
-    assertEquals(expected.y(), actual.y(), EPSILON);
-    assertEquals(expected.z(), actual.z(), EPSILON);
   }
 }

@@ -5,6 +5,8 @@ import org.alice.math.immutable.AffineMatrix4x4;
 import org.alice.math.immutable.Point3;
 import org.junit.Test;
 
+import static edu.cmu.cs.dennisc.scenegraph.ScenegraphTestAssertions.EPSILON;
+import static edu.cmu.cs.dennisc.scenegraph.ScenegraphTestAssertions.assertPointEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -12,7 +14,6 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 public class SceneAndLightTest {
-  private static final double EPSILON = 0.000001;
 
   // ── Scene ──────────────────────────────────────────
 
@@ -201,9 +202,4 @@ public class SceneAndLightTest {
     assertEquals(3, holder.getComponentCount());
   }
 
-  private static void assertPointEquals(Point3 expected, Point3 actual) {
-    assertEquals("x", expected.x(), actual.x(), EPSILON);
-    assertEquals("y", expected.y(), actual.y(), EPSILON);
-    assertEquals("z", expected.z(), actual.z(), EPSILON);
-  }
 }

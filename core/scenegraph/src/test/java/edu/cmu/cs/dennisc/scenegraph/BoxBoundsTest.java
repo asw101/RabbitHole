@@ -8,13 +8,14 @@ import org.junit.Test;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static edu.cmu.cs.dennisc.scenegraph.ScenegraphTestAssertions.EPSILON;
+import static edu.cmu.cs.dennisc.scenegraph.ScenegraphTestAssertions.assertPointEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 
 public class BoxBoundsTest {
-  private static final double EPSILON = 0.000001;
 
   @Test
   public void defaultBoxBoundsAreHalfUnit() {
@@ -133,9 +134,4 @@ public class BoxBoundsTest {
     assertPointEquals(new Point3(1, 2, 3), bbox.maximum());
   }
 
-  private static void assertPointEquals(Point3 expected, Point3 actual) {
-    assertEquals("x", expected.x(), actual.x(), EPSILON);
-    assertEquals("y", expected.y(), actual.y(), EPSILON);
-    assertEquals("z", expected.z(), actual.z(), EPSILON);
-  }
 }

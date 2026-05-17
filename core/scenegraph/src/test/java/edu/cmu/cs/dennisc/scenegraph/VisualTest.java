@@ -11,6 +11,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 
+import static edu.cmu.cs.dennisc.scenegraph.ScenegraphTestAssertions.assertPointEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -18,7 +19,6 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 public class VisualTest {
-  private static final double EPSILON = 0.000001;
 
   @Test
   public void getAxisAlignedMinimumBoundingBoxDelegatesToGeometryAndAppliesScale() {
@@ -132,9 +132,4 @@ public class VisualTest {
     assertTrue(releasingCalls.contains("Sphere"));
   }
 
-  private static void assertPointEquals(Point3 expected, Point3 actual) {
-    assertEquals(expected.x(), actual.x(), EPSILON);
-    assertEquals(expected.y(), actual.y(), EPSILON);
-    assertEquals(expected.z(), actual.z(), EPSILON);
-  }
 }

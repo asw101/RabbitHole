@@ -7,12 +7,13 @@ import org.junit.Test;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static edu.cmu.cs.dennisc.scenegraph.ScenegraphTestAssertions.EPSILON;
+import static edu.cmu.cs.dennisc.scenegraph.ScenegraphTestAssertions.assertPointEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 public class DiscAndCapsuleTest {
-  private static final double EPSILON = 0.000001;
 
   // ── Disc ──────────────────────────────────────────
 
@@ -167,9 +168,4 @@ public class DiscAndCapsuleTest {
     assertEquals(0, events.get());
   }
 
-  private static void assertPointEquals(Point3 expected, Point3 actual) {
-    assertEquals("x", expected.x(), actual.x(), EPSILON);
-    assertEquals("y", expected.y(), actual.y(), EPSILON);
-    assertEquals("z", expected.z(), actual.z(), EPSILON);
-  }
 }

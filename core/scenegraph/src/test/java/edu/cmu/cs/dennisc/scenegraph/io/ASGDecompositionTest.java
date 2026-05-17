@@ -63,6 +63,8 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
 
+import static edu.cmu.cs.dennisc.scenegraph.ScenegraphTestAssertions.EPSILON;
+import static edu.cmu.cs.dennisc.scenegraph.ScenegraphTestAssertions.assertPointEquals;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -76,7 +78,6 @@ import static org.junit.Assert.fail;
  * Characterization tests capture existing behavior and must PASS before and after.
  */
 public class ASGDecompositionTest {
-  private static final double EPSILON = 0.000001;
 
   // ═══════════════════════════════════════════════════════════════════
   // STRUCTURAL: These tests FAIL until ASGEncoder/ASGDecoder exist.
@@ -448,11 +449,5 @@ public class ASGDecompositionTest {
       }
     }
     assertTrue(cls.getSimpleName() + " should have static method " + name, found);
-  }
-
-  private static void assertPointEquals(Point3 expected, Point3 actual) {
-    assertEquals("x", expected.x(), actual.x(), EPSILON);
-    assertEquals("y", expected.y(), actual.y(), EPSILON);
-    assertEquals("z", expected.z(), actual.z(), EPSILON);
   }
 }

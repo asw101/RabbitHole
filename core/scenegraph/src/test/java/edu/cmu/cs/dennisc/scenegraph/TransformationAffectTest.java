@@ -5,12 +5,13 @@ import org.alice.math.immutable.OrthogonalMatrix3x3;
 import org.alice.math.immutable.Point3;
 import org.junit.Test;
 
+import static edu.cmu.cs.dennisc.scenegraph.ScenegraphTestAssertions.EPSILON;
+import static edu.cmu.cs.dennisc.scenegraph.ScenegraphTestAssertions.assertPointEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 
 public class TransformationAffectTest {
-  private static final double EPSILON = 0.000001;
 
   private static final AffineMatrix4x4 OLD = AffineMatrix4x4.createTranslation(1, 2, 3);
   private static final AffineMatrix4x4 CHANGE = AffineMatrix4x4.createTranslation(10, 20, 30);
@@ -100,9 +101,4 @@ public class TransformationAffectTest {
     assertSame(TransformationAffect.AFFECT_TRANSLATION_ONLY, TransformationAffect.getTranslationAffect(V, V, V));
   }
 
-  private static void assertPointEquals(Point3 expected, Point3 actual) {
-    assertEquals(expected.x(), actual.x(), EPSILON);
-    assertEquals(expected.y(), actual.y(), EPSILON);
-    assertEquals(expected.z(), actual.z(), EPSILON);
-  }
 }
