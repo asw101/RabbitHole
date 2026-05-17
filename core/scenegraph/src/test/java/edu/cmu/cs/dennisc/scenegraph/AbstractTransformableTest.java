@@ -484,8 +484,11 @@ public class AbstractTransformableTest {
 
     Vector3 localDir = new Vector3(1, 0, 0);
     Vector3 absDir = t.transformToAbsolute(localDir);
-    // Vectors are direction-only, so translation shouldn't apply in direction transform
+    // With identity orientation, direction (1,0,0) stays (1,0,0) regardless of translation
     assertNotNull(absDir);
+    assertEquals(1.0, absDir.x(), EPSILON);
+    assertEquals(0.0, absDir.y(), EPSILON);
+    assertEquals(0.0, absDir.z(), EPSILON);
   }
 
   @Test
@@ -497,7 +500,11 @@ public class AbstractTransformableTest {
 
     Vector3 absDir = new Vector3(1, 0, 0);
     Vector3 localDir = t.transformFromAbsolute(absDir);
+    // With identity orientation, direction (1,0,0) stays (1,0,0) regardless of translation
     assertNotNull(localDir);
+    assertEquals(1.0, localDir.x(), EPSILON);
+    assertEquals(0.0, localDir.y(), EPSILON);
+    assertEquals(0.0, localDir.z(), EPSILON);
   }
 
   @Test
@@ -602,9 +609,12 @@ public class AbstractTransformableTest {
     scene.addComponent(a);
     scene.addComponent(b);
 
-    // Directions transform differently than points
+    // Both have identity orientation, so direction (1,0,0) stays unchanged
     Vector3 result = a.transformTo(new Vector3(1, 0, 0), b);
     assertNotNull(result);
+    assertEquals(1.0, result.x(), EPSILON);
+    assertEquals(0.0, result.y(), EPSILON);
+    assertEquals(0.0, result.z(), EPSILON);
   }
 
   @Test
@@ -618,8 +628,12 @@ public class AbstractTransformableTest {
     scene.addComponent(a);
     scene.addComponent(b);
 
+    // Both have identity orientation, so direction (1,0,0) stays unchanged
     Vector3 result = a.transformFrom(new Vector3(1, 0, 0), b);
     assertNotNull(result);
+    assertEquals(1.0, result.x(), EPSILON);
+    assertEquals(0.0, result.y(), EPSILON);
+    assertEquals(0.0, result.z(), EPSILON);
   }
 
   @Test
@@ -722,6 +736,9 @@ public class AbstractTransformableTest {
 
     AffineMatrix4x4 result = t.getLocalTransformation();
     assertNotNull(result);
+    assertPointEquals(Point3.ORIGIN, result.translation());
+    // After π/4 Z rotation, right().x() should be cos(π/4) ≈ 0.707
+    assertEquals(Math.cos(Math.PI / 4), result.orientation().right().x(), 0.001);
   }
 
   @Test
@@ -735,6 +752,9 @@ public class AbstractTransformableTest {
 
     AffineMatrix4x4 result = t.getLocalTransformation();
     assertNotNull(result);
+    assertPointEquals(Point3.ORIGIN, result.translation());
+    // After π/3 Y rotation, right().x() should be cos(π/3) = 0.5
+    assertEquals(0.5, result.orientation().right().x(), 0.001);
   }
 
   @Test
@@ -748,6 +768,9 @@ public class AbstractTransformableTest {
 
     AffineMatrix4x4 result = t.getLocalTransformation();
     assertNotNull(result);
+    assertPointEquals(Point3.ORIGIN, result.translation());
+    // After π/6 Z rotation, right().x() should be cos(π/6) ≈ 0.866
+    assertEquals(Math.cos(Math.PI / 6), result.orientation().right().x(), 0.001);
   }
 
   @Test

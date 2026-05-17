@@ -7,11 +7,13 @@ tests for the Alice 3 scene graph model. All tests run without OpenGL or any ren
 context and use **JUnit 4** (`org.junit.Test`).
 
 **Coverage:** 40%+ line coverage (up from 19.1% baseline).
-**Module stats:** 3,937 JaCoCo-countable lines; ~880 newly-covered lines across 8 new test classes.
+**Module stats:** 3,937 JaCoCo-countable lines; 36 test files total (8 detailed characterization test classes documented below, plus supporting model/IO/utility tests).
 
 ---
 
 ## Test Class Inventory
+
+### Characterization Tests (documented in detail below)
 
 | Test Class | Package | Target Code | Est. Lines Covered |
 |---|---|---|---|
@@ -24,12 +26,53 @@ context and use **JUnit 4** (`org.junit.Test`).
 | `TransformationAffectTest` | `scenegraph` | `TransformationAffect.java` | ~80 |
 | `ASGRoundtripTest` | `scenegraph.io` | `ASGEncoder.java`, `ASGDecoder.java`, `ASG.java` | ~160 |
 
-**Existing tests (not modified, no overlap):**
-- `ScenegraphModelTest` — Mesh, WeightedMesh, SkeletonVisual, Joint, basic add/remove
-- `ASGDecompositionTest` — Structural decomposition of ASG facade
-- `ASGOutsideInTest` — API contract + binary roundtrip fidelity
-- `ASGDecoderExtractionTest` — BinaryArrayDecoder/PropertyValueParser extraction
-- `BinaryArrayEncoderTest` — BinaryArrayEncoder contract
+### Model and Property Tests
+
+| Test Class | Package | Purpose |
+|---|---|---|
+| `ScenegraphModelTest` | `scenegraph` | Mesh, WeightedMesh, SkeletonVisual, Joint, add/remove |
+| `ElementAndAppearanceTest` | `scenegraph` | Element name/bonus data, SimpleAppearance, Light defaults |
+| `BoxBoundsTest` | `scenegraph` | Box bounding-box, property dirty/cache/events |
+| `DiscAndCapsuleTest` | `scenegraph` | Disc and Capsule geometry bounds |
+| `HorizontalSurfaceTest` | `scenegraph` | HorizontalSurface geometry |
+| `IndicesTest` | `scenegraph` | IndexedTriangleArray index handling |
+| `LayerAndGraphicTest` | `scenegraph` | Layer/Graphic/Background composition |
+| `MeshTest` | `scenegraph` | Mesh vertex/index buffer operations |
+| `OldMeshTest` | `scenegraph` | Legacy OldMesh API |
+| `SceneAndLightTest` | `scenegraph` | Scene, Light subtypes, fog properties |
+| `SkeletonVisualTest` | `scenegraph` | SkeletonVisual weight/scale/bounds |
+| `TextTest` | `scenegraph` | Text3D and Text2D properties |
+| `TexturedAppearanceTest` | `scenegraph` | TexturedAppearance properties |
+| `VertexTest` | `scenegraph` | Vertex creation and field access |
+| `WeightInfoTest` | `scenegraph` | WeightInfo reference map and normalization |
+| `QualityAssuranceTest` | `scenegraph.qa` | QA inspect/mend for NaN/bad transforms |
+
+### IO and Serialization Tests
+
+| Test Class | Package | Purpose |
+|---|---|---|
+| `ASGDecompositionTest` | `scenegraph.io` | Structural decomposition of ASG facade |
+| `ASGOutsideInTest` | `scenegraph.io` | API contract + binary roundtrip fidelity |
+| `ASGDecoderExtractionTest` | `scenegraph.io` | BinaryArrayDecoder/PropertyValueParser extraction |
+| `BinaryArrayEncoderTest` | `scenegraph.io` | BinaryArrayEncoder contract |
+
+### Utility and Bounds Tests
+
+| Test Class | Package | Purpose |
+|---|---|---|
+| `BoundUtilitiesTest` | `scenegraph.bound` | Bound computation utilities |
+| `CumulativeBoundTest` | `scenegraph.bound` | Cumulative bounding box aggregation |
+| `ArrowTest` | `scenegraph.util` | Arrow composite geometry |
+| `ExtravagantAxesTest` | `scenegraph.util` | Axes visual composite |
+| `GeometryUtilitiesTest` | `scenegraph.util` | Geometry helper functions |
+| `LimbTest` | `scenegraph.util` | Limb utility class |
+| `PickResultTest` | `render` | PickResult data structure |
+
+### Shared Utilities
+
+| File | Package | Purpose |
+|---|---|---|
+| `ScenegraphTestAssertions` | `scenegraph` | Shared `assertPointEquals`, `assertBoxEquals`, `EPSILON` |
 
 ---
 

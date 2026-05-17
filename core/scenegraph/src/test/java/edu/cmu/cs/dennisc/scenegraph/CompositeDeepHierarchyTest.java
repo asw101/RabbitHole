@@ -23,7 +23,6 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 public class CompositeDeepHierarchyTest {
-  private static final double EPSILON = 0.000001;
 
   @Test
   public void visitorTraversesEntireSubtreeInDepthFirstOrder() {
@@ -349,7 +348,7 @@ public class CompositeDeepHierarchyTest {
     Transformable child = named("child");
     scene.addComponent(child);
 
-    java.util.concurrent.atomic.AtomicInteger removeCount = new java.util.concurrent.atomic.AtomicInteger();
+    AtomicInteger removeCount = new AtomicInteger();
     scene.addChildrenListener(new ComponentsListener() {
       @Override
       public void componentAdded(ComponentAddedEvent event) {}

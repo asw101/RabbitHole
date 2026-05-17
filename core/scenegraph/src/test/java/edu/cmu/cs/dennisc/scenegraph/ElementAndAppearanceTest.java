@@ -5,6 +5,7 @@ import org.alice.math.immutable.AffineMatrix4x4;
 import org.alice.math.immutable.Point3;
 import org.junit.Test;
 
+import static edu.cmu.cs.dennisc.scenegraph.ScenegraphTestAssertions.EPSILON;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -12,7 +13,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class ElementAndAppearanceTest {
-  private static final double EPSILON = 0.000001;
 
   // ── Element base class ──────────────────────────────────────────
 
