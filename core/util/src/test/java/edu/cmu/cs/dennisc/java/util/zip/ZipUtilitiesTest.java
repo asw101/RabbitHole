@@ -237,11 +237,12 @@ public class ZipUtilitiesTest {
     zos.closeEntry();
     zos.close();
 
-    ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(baos.toByteArray()));
-    ZipEntry entry = zis.getNextEntry();
-    assertNotNull(entry);
-    byte[] extracted = ZipUtilities.extractBytes(zis, entry);
-    assertArrayEquals(content, extracted);
+    try (ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(baos.toByteArray()))) {
+      ZipEntry entry = zis.getNextEntry();
+      assertNotNull(entry);
+      byte[] extracted = ZipUtilities.extractBytes(zis, entry);
+      assertArrayEquals(content, extracted);
+    }
   }
 
   // --- DataSource write ---

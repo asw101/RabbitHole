@@ -21,8 +21,8 @@ the module (both are on the classpath).
 mvn test -pl core/util
 ```
 
-This skips unrelated modules and runs in under 60 seconds. All 16 new test
-files plus the 6 existing test files execute.
+This skips unrelated modules and runs in under 60 seconds. All 71 new test
+files plus the 12 existing test files execute.
 
 ### Full coverage report
 

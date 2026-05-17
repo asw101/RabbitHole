@@ -3,8 +3,11 @@
 The `core/util` module contains low-level utility classes used across the entire
 Alice codebase — binary codecs, buffer conversions, reflection helpers, file and
 zip operations, logging, printing, and collection factories. Issue #736 raised
-line coverage from 3.63% to 40%+ by adding 16 headless-safe JUnit test files
-covering 26 source classes (~5,360 raw source lines).
+line coverage from 3.63% to 40%+ by adding 71 headless-safe JUnit test files
+(83 total including pre-existing). The table below lists the 16 primary
+high-impact test files covering 26 source classes (~5,360 raw source lines);
+the remaining tests cover immutable math types, pattern utilities, property
+helpers, lgna-common concurrency, and resource types.
 
 All tests run headlessly in CI without Swing, AWT rendering, or display
 dependencies. Methods that require a live display (e.g.,
