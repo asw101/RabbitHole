@@ -20,6 +20,7 @@ import org.lgna.story.SProgram;
 
 import java.io.File;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.PrintStream;
 import java.io.StringWriter;
 import java.lang.reflect.Field;
@@ -417,6 +418,9 @@ public class ProjectCodeGeneratorStandaloneProjectTest {
     org.junit.Assume.assumeTrue(
         "xvfb-run is required to prove the real JavaFX display launch path",
         xvfbRun != null);
+    org.junit.Assume.assumeFalse(
+        "xvfb-run behaves differently on macOS even if found on PATH",
+        System.getProperty("os.name").toLowerCase().contains("mac"));
 
     Path projectDirectory = temporaryFolder.newFolder("template-real-javafx-xvfb-runtime").toPath();
     extractProjectTemplate(projectDirectory);
@@ -1332,12 +1336,27 @@ public class ProjectCodeGeneratorStandaloneProjectTest {
         .directory(workingDirectory.toFile())
         .redirectErrorStream(true)
         .start();
+    ByteArrayOutputStream drainBuffer = new ByteArrayOutputStream(4096);
+    Thread drainThread = new Thread(() -> {
+      byte[] buf = new byte[8192];
+      try {
+        int n;
+        while ((n = process.getInputStream().read(buf)) != -1) {
+          drainBuffer.write(buf, 0, n);
+        }
+      } catch (IOException ignored) {
+        // Stream closed by destroyForcibly — partial output preserved in drainBuffer
+      }
+    }, "process-stdout-drain");
+    drainThread.setDaemon(true);
+    drainThread.start();
     boolean exited = process.waitFor(10, TimeUnit.SECONDS);
     if (!exited) {
       process.destroyForcibly();
       assertTrue("Timed out waiting for forked java to terminate", process.waitFor(5, TimeUnit.SECONDS));
     }
-    String output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+    drainThread.join(5000);
+    String output = drainBuffer.toString(StandardCharsets.UTF_8);
     return new ProcessResult(exited ? process.exitValue() : -1, output, !exited);
   }
 
