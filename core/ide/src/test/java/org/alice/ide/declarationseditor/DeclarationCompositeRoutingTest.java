@@ -50,23 +50,30 @@ public class DeclarationCompositeRoutingTest {
   }
 
   // ---- NamedUserType routing → TypeComposite ----
-  // Note: TypeComposite construction requires heavy IDE infrastructure
-  // (ToolPaletteComposites, ImportOperation etc.), so we test the routing
-  // logic via reflection on the instanceof check instead.
+  // Note: TypeComposite construction requires ToolPaletteComposites and other
+  // heavy IDE infrastructure, so we verify the routing disambiguation via
+  // the AbstractDeclaration hierarchy and test CodeComposite path end-to-end.
 
   @Test
-  public void getInstance_routingLogic_namedUserType_isRecognized() {
-    // Verify the routing: NamedUserType instanceof check in getInstance
+  public void namedUserType_isAbstractDeclaration_butNotAbstractCode() {
+    // Routing depends on: first check for AbstractCode, else check for NamedUserType.
+    // Verify that NamedUserType IS an AbstractDeclaration (the method parameter type)
+    // but is on a separate branch from AbstractCode in the class hierarchy.
     NamedUserType userType = AstUtilities.createType("TestType", JavaType.OBJECT_TYPE);
-    assertTrue("NamedUserType should be recognized by the routing logic",
-        userType instanceof org.lgna.project.ast.NamedUserType);
+    assertTrue("NamedUserType should be an AbstractDeclaration",
+        userType instanceof org.lgna.project.ast.AbstractDeclaration);
+    // The compiler enforces that NamedUserType is NOT AbstractCode —
+    // they are on disjoint branches of the type hierarchy.
   }
 
   @Test
-  public void getInstance_routingLogic_userMethod_isAbstractCode() {
+  public void userMethod_isAbstractCode() {
+    // Verify routing: UserMethod matches the AbstractCode branch.
     UserMethod method = new UserMethod("proc", JavaType.VOID_TYPE, new UserParameter[0], new BlockStatement());
-    assertTrue("UserMethod should be recognized as AbstractCode",
+    assertTrue("UserMethod should be an AbstractCode",
         method instanceof org.lgna.project.ast.AbstractCode);
+    assertTrue("UserMethod should also be an AbstractDeclaration",
+        method instanceof org.lgna.project.ast.AbstractDeclaration);
   }
 
   // ---- CodeComposite properties ----

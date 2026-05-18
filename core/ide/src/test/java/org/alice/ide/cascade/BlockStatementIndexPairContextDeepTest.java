@@ -7,45 +7,10 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 /**
- * Tests for {@link BlockStatementIndexPairContext} covering its ExpressionCascadeContext
- * contract: always returns null for previous expression, and returns the stored pair.
+ * Extended tests for {@link BlockStatementIndexPairContext} — edge cases not covered
+ * by {@link BlockStatementIndexPairContextTest}: populated blocks and non-zero indices.
  */
 public class BlockStatementIndexPairContextDeepTest {
-
-  @Test
-  public void getPreviousExpression_alwaysReturnsNull() {
-    BlockStatement block = new BlockStatement();
-    BlockStatementIndexPair pair = new BlockStatementIndexPair(block, 0);
-    BlockStatementIndexPairContext ctx = new BlockStatementIndexPairContext(pair);
-    assertNull(ctx.getPreviousExpression());
-  }
-
-  @Test
-  public void getBlockStatementIndexPair_returnsStoredPair() {
-    BlockStatement block = new BlockStatement();
-    BlockStatementIndexPair pair = new BlockStatementIndexPair(block, 3);
-    BlockStatementIndexPairContext ctx = new BlockStatementIndexPairContext(pair);
-    assertSame(pair, ctx.getBlockStatementIndexPair());
-  }
-
-  @Test
-  public void getBlockStatementIndexPair_preservesBlockAndIndex() {
-    BlockStatement block = new BlockStatement();
-    block.statements.add(new ExpressionStatement(new NullLiteral()));
-    block.statements.add(new ExpressionStatement(new IntegerLiteral(42)));
-    BlockStatementIndexPair pair = new BlockStatementIndexPair(block, 2);
-    BlockStatementIndexPairContext ctx = new BlockStatementIndexPairContext(pair);
-    assertEquals(2, ctx.getBlockStatementIndexPair().getIndex());
-    assertSame(block, ctx.getBlockStatementIndexPair().getBlockStatement());
-  }
-
-  @Test
-  public void implementsExpressionCascadeContext() {
-    BlockStatement block = new BlockStatement();
-    BlockStatementIndexPair pair = new BlockStatementIndexPair(block, 0);
-    BlockStatementIndexPairContext ctx = new BlockStatementIndexPairContext(pair);
-    assertTrue(ctx instanceof ExpressionCascadeContext);
-  }
 
   @Test
   public void getPreviousExpression_withPopulatedBlock_stillReturnsNull() {
@@ -58,10 +23,13 @@ public class BlockStatementIndexPairContextDeepTest {
   }
 
   @Test
-  public void zeroIndex_returnsCorrectPair() {
+  public void getBlockStatementIndexPair_withPopulatedBlock_preservesBlockAndIndex() {
     BlockStatement block = new BlockStatement();
-    BlockStatementIndexPair pair = new BlockStatementIndexPair(block, 0);
+    block.statements.add(new ExpressionStatement(new NullLiteral()));
+    block.statements.add(new ExpressionStatement(new IntegerLiteral(42)));
+    BlockStatementIndexPair pair = new BlockStatementIndexPair(block, 2);
     BlockStatementIndexPairContext ctx = new BlockStatementIndexPairContext(pair);
-    assertEquals(0, ctx.getBlockStatementIndexPair().getIndex());
+    assertEquals(2, ctx.getBlockStatementIndexPair().getIndex());
+    assertSame(block, ctx.getBlockStatementIndexPair().getBlockStatement());
   }
 }

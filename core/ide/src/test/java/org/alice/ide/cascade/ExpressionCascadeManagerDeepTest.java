@@ -195,25 +195,17 @@ public class ExpressionCascadeManagerDeepTest {
     assertFalse("second should not be visible", names.contains("second"));
   }
 
-  // ---- Context interaction with getAccessibleLocals ----
+  // ---- Local visibility at later indices in same block ----
 
   @Test
-  public void getAccessibleLocals_nestedBlockInsideParentBlock_seesParentLocals() {
-    // Outer block has a local, inner block should see it via parent traversal
-    BlockStatement outerBlock = new BlockStatement();
-    UserLocal outerLocal = new UserLocal("outerVar", JavaType.DOUBLE_OBJECT_TYPE, false);
-    outerBlock.statements.add(new LocalDeclarationStatement(outerLocal, new DoubleLiteral(3.14)));
+  public void getAccessibleLocals_sameBlock_laterIndex_seesEarlierLocals() {
+    BlockStatement block = new BlockStatement();
+    UserLocal local = new UserLocal("outerVar", JavaType.DOUBLE_OBJECT_TYPE, false);
+    block.statements.add(new LocalDeclarationStatement(local, new DoubleLiteral(3.14)));
 
-    // Inner block nested inside outer at index 1
-    BlockStatement innerBlock = new BlockStatement();
-    UserLocal innerLocal = new UserLocal("innerVar", JavaType.STRING_TYPE, false);
-    innerBlock.statements.add(new LocalDeclarationStatement(innerLocal, new StringLiteral("inner")));
-
-    // We can't directly nest blocks (they need to be inside a statement like if/else),
-    // but we can test that locals within the same block at different indices are found
-    BlockStatementIndexPair pair = new BlockStatementIndexPair(outerBlock, 1);
+    BlockStatementIndexPair pair = new BlockStatementIndexPair(block, 1);
     List<String> names = toList(manager.getAccessibleLocals(pair)).stream()
         .map(UserLocal::getName).collect(Collectors.toList());
-    assertTrue("outerVar should be accessible", names.contains("outerVar"));
+    assertTrue("outerVar should be accessible at index 1", names.contains("outerVar"));
   }
 }

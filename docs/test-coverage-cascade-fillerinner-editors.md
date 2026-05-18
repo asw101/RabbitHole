@@ -239,11 +239,16 @@ Tests the static routing logic in `DeclarationComposite.getInstance()` and
 | Method | What It Tests |
 |---|---|
 | `getInstance_null_returnsNull` | `DeclarationComposite.getInstance(null)` returns null without throwing. |
-| `codeComposite_getInstance_null_returnsNull` | `CodeComposite.getInstance(null)` returns null without throwing. |
-| `codeComposite_cacheField_exists` | Reflective check: `CodeComposite` has a static `map` field that is a `Map`. |
-| `declarationComposite_getInstance_withProcedure_returnsCodeComposite` | Passing a `UserMethod` (procedure) to `DeclarationComposite.getInstance()` returns an instance of `CodeComposite`. |
-| `declarationComposite_getInstance_sameMethod_sameInstance` | Calling twice with the same `UserMethod` returns the same cached instance (cache lives in `CodeComposite.map`). |
-| `codeComposite_getDeclaration_roundTrip` | After obtaining a `CodeComposite` for a method, `getDeclaration()` returns that method. |
+| `getInstance_userMethod_returnsCodeComposite` | Passing a `UserMethod` to `DeclarationComposite.getInstance()` returns a `CodeComposite`. |
+| `getInstance_sameMethod_returnsSameComposite` | Calling twice with the same `UserMethod` returns the same cached instance. |
+| `getInstance_differentMethods_returnsDifferentComposites` | Different methods produce different composites. |
+| `namedUserType_isAbstractDeclaration_butNotAbstractCode` | Verifies `NamedUserType` is an `AbstractDeclaration` but on a disjoint branch from `AbstractCode`. |
+| `userMethod_isAbstractCode` | Verifies `UserMethod` matches the `AbstractCode` routing branch. |
+| `codeComposite_getDeclaration_returnsOriginalCode` | After obtaining a `CodeComposite`, `getDeclaration()` returns the original method. |
+| `codeComposite_getInstance_nullCode_returnsNull` | `CodeComposite.getInstance(null)` returns null. |
+| `codeComposite_isValid_voidProcedure_valid` | Method attached to a type produces a valid composite. |
+| `codeComposite_isValid_orphanMethod_notValid` | Orphan method (no declaring type) produces an invalid composite. |
+| `codeComposite_getType_returnsDeclaringType` | `getType()` returns the method's declaring type. |
 
 #### Usage
 
@@ -258,18 +263,24 @@ mvn test -pl core/ide -am -Dtest=DeclarationCompositeRoutingTest -q
 **Location:** `core/ide/src/test/java/org/alice/ide/codeeditor/CodeEditorDeepTest.java`
 
 Extended structural and reflective tests for the `CodeEditor` class, verifying
-field presence and constructor contract without instantiating a GUI.
+class hierarchy, inner class contracts, key public methods, and constructor
+shape without instantiating a GUI.
 
 #### Test Cases
 
 | Method | What It Tests |
 |---|---|
-| `codeEditor_hasCodeProperty` | Reflective check that `CodeEditor` declares or inherits a field/method for the code composite. |
+| `codeEditor_extendsCodePanelWithDropReceptor` | The superclass is `CodePanelWithDropReceptor`. |
 | `codeEditor_isNotAbstract` | The class is concrete and instantiable (given correct parameters). |
-| `codeEditor_implementsExpectedInterface` | Verifies the class implements `Transferable`-related or drag-drop interfaces used by the IDE. |
-| `codeEditor_constructorParameterTypes` | The primary constructor accepts `(AbstractProjectEditorAstI18nFactory, AbstractCode)` (verified via reflection). |
-| `codeEditor_superclass_isCroquetComponent` | The superclass chain includes `CodePanelWithDropReceptor` (a croquet component base class). |
-| `statementListPropertyPaneInfo_usedInCodeEditor` | Reflective check that `CodeEditor` references `StatementListPropertyPaneInfo` (field type or method return type). |
+| `codeEditor_isPublic` | The class has public visibility. |
+| `codeEditor_hasStatementListIndexTrackableShapeInnerClass` | Verifies the `StatementListIndexTrackableShape` inner class exists. |
+| `statementListIndexTrackableShape_implementsTrackableShape` | The inner class implements `TrackableShape`. |
+| `statementListIndexTrackableShape_hasGetBlockStatementMethod` | Inner class has `getBlockStatement()` method. |
+| `statementListIndexTrackableShape_hasGetIndexMethod` | Inner class has `getIndex()` returning `int`. |
+| `statementListIndexTrackableShape_hasIsInViewMethod` | Inner class has `isInView()` returning `boolean`. |
+| `codeEditor_hasGetCodeMethod` | `getCode()` exists and returns `AbstractCode`. |
+| `codeEditor_hasGetTrackableShapeMethod` | `getTrackableShape(DropSite)` exists. |
+| `codeEditor_hasExpectedConstructor` | Constructor accepts `(AbstractProjectEditorAstI18nFactory, AbstractCode)`. |
 
 #### Usage
 

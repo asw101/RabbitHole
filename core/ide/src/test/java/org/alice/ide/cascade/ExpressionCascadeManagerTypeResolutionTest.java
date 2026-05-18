@@ -198,6 +198,7 @@ public class ExpressionCascadeManagerTypeResolutionTest {
 
   @Test
   public void addRelationalType_multipleClasses_doesNotThrow() {
+    // Smoke test: no exception when registering multiple relational types
     manager.addRelationalTypeToBooleanFillerInner(Double.class);
     manager.addRelationalTypeToBooleanFillerInner(Integer.class);
     manager.addRelationalTypeToBooleanFillerInner(String.class);
@@ -205,6 +206,7 @@ public class ExpressionCascadeManagerTypeResolutionTest {
 
   @Test
   public void addRelationalType_sameTypeMultipleTimes_doesNotThrow() {
+    // Smoke test: no exception on duplicate registration
     manager.addRelationalTypeToBooleanFillerInner(Double.class);
     manager.addRelationalTypeToBooleanFillerInner(Double.class);
   }

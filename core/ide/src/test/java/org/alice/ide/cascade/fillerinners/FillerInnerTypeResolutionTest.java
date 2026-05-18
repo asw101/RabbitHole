@@ -35,6 +35,7 @@ public class FillerInnerTypeResolutionTest {
 
   @Test
   public void booleanFiller_addMultipleRelationalTypes_doesNotThrow() {
+    // Smoke test: verifies no exception when adding multiple relational types
     BooleanFillerInner filler = new BooleanFillerInner();
     filler.addRelationalType(JavaType.DOUBLE_OBJECT_TYPE);
     filler.addRelationalType(JavaType.INTEGER_OBJECT_TYPE);

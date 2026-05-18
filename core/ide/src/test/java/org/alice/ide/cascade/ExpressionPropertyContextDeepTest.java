@@ -25,7 +25,9 @@ public class ExpressionPropertyContextDeepTest {
     // When property created with NullLiteral, getPreviousExpression returns it
     ExpressionProperty prop = createExpressionPropertyWithValue(null);
     ExpressionPropertyContext ctx = new ExpressionPropertyContext(prop);
-    assertNotNull("Value should be the NullLiteral used as fallback", ctx.getPreviousExpression());
+    Expression result = ctx.getPreviousExpression();
+    assertNotNull("Value should be the NullLiteral used as fallback", result);
+    assertTrue("Should be a NullLiteral instance", result instanceof NullLiteral);
   }
 
   @Test

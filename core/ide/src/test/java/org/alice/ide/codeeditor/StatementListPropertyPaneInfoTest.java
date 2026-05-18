@@ -1,6 +1,5 @@
 package org.alice.ide.codeeditor;
 
-import org.alice.ide.x.components.StatementListPropertyView;
 import org.junit.Test;
 
 import java.awt.Point;
