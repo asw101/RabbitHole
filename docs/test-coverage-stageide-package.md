@@ -248,7 +248,7 @@ constructor, and vice versa — every registration target exists as a class.
 | `constructor_registersAllKnownFillerInners` | Source-analysis of `ExpressionCascadeManager.java` constructor confirms references to all 21 registered filler-inner class names (16 event-listener + 2 resource + 3 expression). Note: `ModelResourceFillerInner` exists in the package but is intentionally not registered — it is an orphan class. |
 | `noOrphanedFillerInnerClasses` | Every `.java` file in `cascade/fillerinners/` (excluding `SourceFillerInner` abstract base and `ModelResourceFillerInner` known-orphan) is referenced in `ExpressionCascadeManager.java`. Catches new additions that lack registration. |
 | `noPhantomRegistrations` | Every class name referenced in the constructor's filler-inner setup resolves via `Class.forName()`. Catches stale registrations after renames. |
-| `registeredFillerInnerCount_isExactly21` | Exactly 21 `addExpressionFillerInner` calls exist in the constructor. Package has 23 files (21 registered + 1 abstract base + 1 known orphan). |
+| `registeredFillerInnerCount_isExactly21` | Exactly 21 uncommented `addExpressionFillerInner` calls exist in the constructor (1 additional call is commented out). Package has 23 files (21 registered + 1 abstract base + 1 known orphan). |
 | `expressionCascadeManager_extendsBaseManager` | `o.a.stageide.cascade.ExpressionCascadeManager` extends `o.a.ide.cascade.ExpressionCascadeManager`. |
 | `expressionCascadeManager_hasPublicConstructor` | Required for `StoryApiConfigurationManager` to instantiate it. |
 | `relationalTypeRegistrations_includeExpectedTypes` | Source confirms relational-to-boolean filler registrations for `SThing`, `MoveDirection`, `TurnDirection`, `RollDirection`, `Key`, `Color`, `Paint`. |
@@ -380,14 +380,14 @@ gap-fill tests for `ShowJointedModelJointAxesState` and `ThumbnailGenerator`.
 | `isTabClosable_methodExists` | Tab-closability check method is present. |
 | `augmentTypeIfNecessary_methodExists` | Type-augmentation hook is present. |
 | `createReplacementForFieldAccessIfAppropriate_methodExists` | Field-access replacement factory is present. |
-| `constructor_registersCustomExpressionCreators` | Source-analysis confirms constructor wiring of custom expression creators (Key, Color, AudioSource, VolumeLevel). |
+| `constructor_registersIconFactoriesAndSubComposites` | Source-analysis confirms constructor wires icon factories (SSphere, SCylinder, SCone, SDisc, etc.) and initializes 4 sub-composite lists (categoryProcedure, categoryFunction, and their alphabetical variants). |
 | `singleton_usesLazyHolderPattern` | Source contains `SingletonHolder` inner class and `getInstance()`. |
 | `showJointedModelJointAxesState_existsInSceneeditor` | `ShowJointedModelJointAxesState` class resolves in `org.alice.stageide.sceneeditor`. |
 | `showJointedModelJointAxesState_isPublic` | Public visibility required for sceneeditor panel wiring. |
 | `thumbnailGenerator_existsInSceneeditor` | `ThumbnailGenerator` class resolves in `org.alice.stageide.sceneeditor`. |
 | `thumbnailGenerator_isPublic` | Public visibility. |
-| `thumbnailGenerator_declaresTakeThumbnail` | Source or reflection confirms a thumbnail-generation method exists. |
-| `cameraOption_existsInSceneeditor` | `CameraOption` class resolves in `org.alice.stageide.sceneeditor`. |
+| `thumbnailGenerator_declaresCreateThumbnail` | Source or reflection confirms the `createThumbnail()` method exists. |
+| `cameraOption_existsInSceneeditor` | `CameraOption` enum resolves in `org.alice.stageide.sceneeditor`. |
 
 #### Usage
 
@@ -432,12 +432,13 @@ behavior). No additional configuration is needed.
 
 ## Guard Tests
 
-Three tests act as **guards** that break when the production code changes
+Four tests act as **guards** that break when the production code changes
 without corresponding test updates:
 
 | Guard Test | Breaks When |
 |---|---|
 | `eventListenerFillerInnerCount_isExactly16` | A new event-listener filler-inner is added or one is removed |
+| `registeredFillerInnerCount_isExactly21` | A filler-inner registration is added or removed from `ExpressionCascadeManager`'s constructor |
 | `noOrphanedFillerInnerClasses` | A new filler-inner is added to `cascade/fillerinners/` but not registered in `ExpressionCascadeManager` (excludes known orphan `ModelResourceFillerInner`) |
 | `programContext_adapterRegistrationCount` | An adapter registration is added or removed from `ProgramContext`'s constructor |
 
@@ -503,11 +504,10 @@ When adding a new filler-inner (e.g., `DoubleClickListenerFillerInner`):
 
 When adding a new custom expression creator composite:
 
-1. Create the composite class in `custom/`
-2. Wire it in `StoryApiConfigurationManager`'s constructor
+1. Create the composite class in `custom/` with the `SingletonHolder` pattern
+2. Create the view class in `custom/components/`
 3. Add contract tests following the `KeyCustomExpressionCreatorContractTest` pattern
-4. Update `StoryApiConfigManagerBehavioralTest.constructor_registersCustomExpressionCreators`
-5. Run: `mvn test -pl core/ide -am -Dtest='*ContractTest,*BehavioralTest' -q`
+4. Run: `mvn test -pl core/ide -am -Dtest='*ContractTest,*BehavioralTest' -q`
 
 ### Verifying Registration Completeness
 
