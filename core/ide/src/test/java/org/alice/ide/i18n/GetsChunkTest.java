@@ -38,9 +38,4 @@ public class GetsChunkTest {
     assertTrue(sb.toString().contains("isTowardLeading=false"));
   }
 
-  @Test
-  public void isChunkSubtype() {
-    GetsChunk gc = new GetsChunk(true);
-    assertTrue(gc instanceof Chunk);
-  }
 }

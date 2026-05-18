@@ -1,8 +1,6 @@
 package org.alice.ide.member;
 
 import org.junit.Test;
-import org.lgna.project.ast.JavaMethod;
-import org.lgna.project.ast.JavaType;
 
 import static org.junit.Assert.*;
 
@@ -44,23 +42,17 @@ public class MemberTabCompositeStaticTest {
 
   @Test
   public void isInclusionDesired_publicNonStaticMethod_true() {
-    JavaType objectType = JavaType.getInstance(Object.class);
-    for (var m : objectType.getDeclaredMethods()) {
-      if ("toString".equals(m.getName())) {
-        assertTrue(MemberTabComposite.isInclusionDesired(m));
-        return;
-      }
+    var method = MemberTestHelper.methodNamed(Object.class, "toString");
+    if (method != null) {
+      assertTrue(MemberTabComposite.isInclusionDesired(method));
     }
   }
 
   @Test
   public void isInclusionDesired_staticMethod_false() {
-    JavaType mathType = JavaType.getInstance(Math.class);
-    for (var m : mathType.getDeclaredMethods()) {
-      if ("abs".equals(m.getName())) {
-        assertFalse(MemberTabComposite.isInclusionDesired(m));
-        return;
-      }
+    var method = MemberTestHelper.methodNamed(Math.class, "abs");
+    if (method != null) {
+      assertFalse(MemberTabComposite.isInclusionDesired(method));
     }
   }
 }
