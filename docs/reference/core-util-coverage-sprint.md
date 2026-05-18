@@ -52,7 +52,7 @@ overrides `prologue()`, `update()`, `epilogue()` to record invocations. A
 | `ListPropertyTest` | `e.c.c.d.property` | `ListProperty` | 80 |
 | `CopyableArrayPropertyTest` | `e.c.c.d.property` | `CopyableArrayProperty` | 60 |
 | `PropertyUtilitiesTest` | `e.c.c.d.property` | `PropertyUtilities` | 60 |
-| `SineCosinesCacheTest` | `e.c.c.d.math` | `SineCosineCache` | 40 |
+| `SineCosineCacheTest` | `e.c.c.d.math` | `SineCosineCache` | 40 |
 | `EpsilonUtilitiesTest` | `e.c.c.d.math` | `EpsilonUtilities` | 40 |
 
 ### Tier 4 — Binary codec edge cases and XML (~400 lines)
@@ -74,7 +74,7 @@ empty arrays, null strings, boundary values (NaN, Infinity, MIN/MAX), and
 | `GoldenRatioTest` | `e.c.c.d.math` | `GoldenRatio` | 20 |
 | `BreakExceptionTest` | `e.c.c.d.animation` | `BreakException` | 20 |
 | `AnglePropertyTest` | `e.c.c.d.math.property` | `AngleProperty` | 40 |
-| `TranslationDerivativeTest` | `e.c.c.d.math.rigidbody` | `TranslationDerivative`, `TranslationFunction` | 60 |
+| Extended `TranslationFunctionTest` | `e.c.c.d.math.rigidbody` | `TranslationDerivative`, `TranslationFunction` | 60 |
 | Extended `BufferUtilitiesTest` | `e.c.c.d.java.util` | Additional buffer conversion paths | 80 |
 | Extended `ReflectionUtilitiesTest` | `e.c.c.d.java.lang.reflect` | Edge-case reflection lookups | 80 |
 | Extended `ZipUtilitiesTest` | `e.c.c.d.java.util.zip` | Nested zip, empty entries | 100 |

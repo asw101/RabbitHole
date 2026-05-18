@@ -74,7 +74,7 @@ To check coverage after writing a batch of tests without running the full
 reactor:
 
 ```sh
-mvn test -pl core/util jacoco:report -pl core/util
+mvn test jacoco:report -pl core/util
 # Then open core/util/target/site/jacoco/index.html
 ```
 
