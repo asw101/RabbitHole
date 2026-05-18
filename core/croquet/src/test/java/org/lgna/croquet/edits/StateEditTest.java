@@ -185,11 +185,4 @@ public class StateEditTest {
     String detailed = edit.getDetailedDescription();
     assertTrue(detailed.length() >= terse.length());
   }
-
-  // ── encode (base class) does not throw ────────────────────────────
-
-  @Test
-  public void encode_baseClass_doesNotThrow() {
-    // AbstractEdit.encode() is a no-op — just verify no NPE
-  }
 }
