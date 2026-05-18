@@ -1,14 +1,12 @@
 package org.lgna.croquet.undo.event;
-
-/**
- * No-op {@link HistoryListener} base for undo-history tests.
- * Subclass and override only the callback(s) you want to verify.
- */
+import java.util.ArrayList;
+import java.util.List;
 public class TestHistoryListener implements HistoryListener {
-  @Override public void operationPushing(HistoryPushEvent e) {}
-  @Override public void operationPushed(HistoryPushEvent e) {}
-  @Override public void insertionIndexChanging(HistoryInsertionIndexEvent e) {}
-  @Override public void insertionIndexChanged(HistoryInsertionIndexEvent e) {}
-  @Override public void clearing(HistoryClearEvent e) {}
-  @Override public void cleared(HistoryClearEvent e) {}
+  public final List<HistoryEvent> events = new ArrayList<>();
+  @Override public void operationPushing(HistoryPushEvent e){events.add(e);}
+  @Override public void operationPushed(HistoryPushEvent e){events.add(e);}
+  @Override public void insertionIndexChanging(HistoryInsertionIndexEvent e){events.add(e);}
+  @Override public void insertionIndexChanged(HistoryInsertionIndexEvent e){events.add(e);}
+  @Override public void clearing(HistoryClearEvent e){events.add(e);}
+  @Override public void cleared(HistoryClearEvent e){events.add(e);}
 }

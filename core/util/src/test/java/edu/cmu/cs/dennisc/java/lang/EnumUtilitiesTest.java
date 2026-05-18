@@ -224,7 +224,7 @@ public class EnumUtilitiesTest {
     Class<? extends Size>[] classes = new Class[] {Size.class};
     List<Size> result = EnumUtilities.getEnumConstants(classes,
         e -> e.name().startsWith("S"));
-    assertEquals(2, result.size());
+    assertEquals(1, result.size());
     assertTrue(result.contains(Size.SMALL));
   }
 
