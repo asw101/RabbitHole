@@ -17,8 +17,10 @@ import static org.junit.Assert.*;
 
 /**
  * Tests for {@link GlrMesh} — buffer field management, structural API,
- * getIntersectionInSource returning NaN, isAlphaBlended returning false,
- * and NIO buffer preparation logic. Avoids actual GL calls.
+ * getIntersectionInSource returning NaN, and isAlphaBlended returning false.
+ * Also documents the NIO buffer indexing conventions (index×2 for texcoords,
+ * index×3 for normals/vertices) assumed by {@code renderMeshAsArrays}.
+ * Avoids actual GL calls.
  */
 public class GlrMeshBufferSelectionTest {
 
@@ -210,7 +212,7 @@ public class GlrMeshBufferSelectionTest {
     assertTrue(Modifier.isPublic(m.getModifiers()));
   }
 
-  // ── buffer capacity and position tests with NIO ────────────────────
+  // ── NIO buffer indexing conventions used by renderMeshAsArrays ──────
 
   @Test
   public void doubleBuffer_vertexCapacity_isMultipleOfThree() {

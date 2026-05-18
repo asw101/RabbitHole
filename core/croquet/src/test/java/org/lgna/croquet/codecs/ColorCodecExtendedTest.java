@@ -67,17 +67,7 @@ public class ColorCodecExtendedTest {
     assertRoundTrip(new Color(255, 255, 255, 255));
   }
 
-  // ── encode + decode: boundary channel values ───────────────────────
-
-  @Test
-  public void roundTrip_minValues() {
-    assertRoundTrip(new Color(0, 0, 0, 0));
-  }
-
-  @Test
-  public void roundTrip_maxValues() {
-    assertRoundTrip(new Color(255, 255, 255, 255));
-  }
+  // ── encode + decode: mixed boundary channel values ──────────────────
 
   @Test
   public void roundTrip_mixedBoundary() {
