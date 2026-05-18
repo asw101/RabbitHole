@@ -68,4 +68,25 @@ public class TrashIconTest {
     }
     assertEquals(32, image.getWidth());
   }
+
+  @Test
+  public void openTrash_fillColorCanBeReadAndUpdated() {
+    assumeAwtAvailable();
+    Assume.assumeTrue(name.equals("OpenTrashIcon"));
+    OpenTrashIcon icon = new OpenTrashIcon(20, 24, Color.RED);
+    assertEquals(Color.RED, icon.getFillColor());
+    icon.setFillColor(Color.BLUE);
+    assertEquals(Color.BLUE, icon.getFillColor());
+  }
+
+  @Test
+  public void closedTrash_originalBoundsMatchSvgDimensions() {
+    assumeAwtAvailable();
+    Assume.assumeTrue(name.equals("ClosedTrashIcon"));
+    ClosedTrashIcon icon = new ClosedTrashIcon(20, 24, Color.RED);
+    assertEquals(0, icon.getOrigX());
+    assertEquals(0, icon.getOrigY());
+    assertEquals(15, icon.getOrigWidth());
+    assertEquals(16, icon.getOrigHeight());
+  }
 }

@@ -59,4 +59,11 @@ public class NumberpadOperationCachingTest {
     assertNotSame(factory.getInstance(IntegerModel.getInstance()),
         factory.getInstance(DoubleModel.getInstance()));
   }
+
+  @Test
+  public void localizedNameMatchesExpectedSymbol() {
+    assumeNotHeadless();
+    org.lgna.croquet.ActionOperation op = (org.lgna.croquet.ActionOperation) factory.getInstance(IntegerModel.getInstance());
+    assertEquals(expectedSymbol, op.getImp().getName());
+  }
 }
