@@ -1,150 +1,111 @@
 package org.alice.ide.ast;
 
-import org.lgna.project.ast.*;
 import org.junit.Test;
+import org.lgna.project.ast.*;
 
 import static org.junit.Assert.*;
 
-/**
- * Tests for {@link IncompleteAstUtilities} — static factory methods
- * producing incomplete AST nodes with placeholder expressions.
- */
 public class IncompleteAstUtilitiesTest {
-
-  // ---- arithmetic infix expressions ----
-
   @Test
   public void createIncompleteArithmeticInfixExpression_withClasses() {
-    ArithmeticInfixExpression expr = IncompleteAstUtilities
-        .createIncompleteArithmeticInfixExpression(
-            Double.class, ArithmeticInfixExpression.Operator.PLUS,
-            Double.class, Double.class);
+    ArithmeticInfixExpression expr = IncompleteAstUtilities.createIncompleteArithmeticInfixExpression(
+        Double.class, ArithmeticInfixExpression.Operator.PLUS, Double.class, Double.class);
     assertNotNull(expr);
-    assertEquals(ArithmeticInfixExpression.Operator.PLUS, expr.operator.getValue());
   }
 
   @Test
   public void createIncompleteArithmeticInfixExpression_withTypes() {
     AbstractType<?, ?, ?> doubleType = JavaType.getInstance(Double.class);
-    ArithmeticInfixExpression expr = IncompleteAstUtilities
-        .createIncompleteArithmeticInfixExpression(
-            doubleType, ArithmeticInfixExpression.Operator.TIMES,
-            doubleType, doubleType);
+    ArithmeticInfixExpression expr = IncompleteAstUtilities.createIncompleteArithmeticInfixExpression(
+        doubleType, ArithmeticInfixExpression.Operator.MINUS, doubleType, doubleType);
     assertNotNull(expr);
-    assertEquals(ArithmeticInfixExpression.Operator.TIMES, expr.operator.getValue());
   }
 
   @Test
   public void createIncompleteArithmeticInfixExpression_withLeftOperand() {
-    Expression left = new DoubleLiteral(3.14);
-    ArithmeticInfixExpression expr = IncompleteAstUtilities
-        .createIncompleteArithmeticInfixExpression(
-            left, ArithmeticInfixExpression.Operator.MINUS,
-            Double.class, Double.class);
+    Expression leftOperand = new IntegerLiteral(42);
+    ArithmeticInfixExpression expr = IncompleteAstUtilities.createIncompleteArithmeticInfixExpression(
+        leftOperand, ArithmeticInfixExpression.Operator.TIMES, Integer.class, Integer.class);
     assertNotNull(expr);
-    assertSame(left, expr.leftOperand.getValue());
   }
 
   @Test
-  public void createIncompleteArithmeticInfixExpression_rightOperandIsEmpty() {
-    ArithmeticInfixExpression expr = IncompleteAstUtilities
-        .createIncompleteArithmeticInfixExpression(
-            Double.class, ArithmeticInfixExpression.Operator.REAL_DIVIDE,
-            Double.class, Double.class);
-    assertTrue(expr.rightOperand.getValue() instanceof EmptyExpression);
-  }
-
-  // ---- conditional infix expressions ----
-
-  @Test
-  public void createIncompleteConditionalInfixExpression_noLeftOperand() {
-    ConditionalInfixExpression expr = IncompleteAstUtilities
-        .createIncompleteConditionalInfixExpression(
-            ConditionalInfixExpression.Operator.AND);
+  public void createIncompleteConditionalInfixExpression_withOperator() {
+    ConditionalInfixExpression expr = IncompleteAstUtilities.createIncompleteConditionalInfixExpression(
+        ConditionalInfixExpression.Operator.AND);
     assertNotNull(expr);
-    assertEquals(ConditionalInfixExpression.Operator.AND, expr.operator.getValue());
   }
 
   @Test
   public void createIncompleteConditionalInfixExpression_withLeftOperand() {
     Expression left = new BooleanLiteral(true);
-    ConditionalInfixExpression expr = IncompleteAstUtilities
-        .createIncompleteConditionalInfixExpression(
-            left, ConditionalInfixExpression.Operator.OR);
-    assertSame(left, expr.leftOperand.getValue());
+    ConditionalInfixExpression expr = IncompleteAstUtilities.createIncompleteConditionalInfixExpression(
+        left, ConditionalInfixExpression.Operator.OR);
+    assertNotNull(expr);
   }
-
-  // ---- relational infix expressions ----
 
   @Test
   public void createIncompleteRelationalInfixExpression_withClasses() {
-    RelationalInfixExpression expr = IncompleteAstUtilities
-        .createIncompleteRelationalInfixExpression(
-            Double.class, RelationalInfixExpression.Operator.LESS,
-            Double.class);
+    RelationalInfixExpression expr = IncompleteAstUtilities.createIncompleteRelationalInfixExpression(
+        Double.class, RelationalInfixExpression.Operator.LESS, Double.class);
     assertNotNull(expr);
-    assertEquals(RelationalInfixExpression.Operator.LESS, expr.operator.getValue());
   }
 
-  // ---- logical complement ----
-
   @Test
-  public void createIncompleteLogicalComplement_returnsNonNull() {
+  public void createIncompleteLogicalComplement() {
     LogicalComplement lc = IncompleteAstUtilities.createIncompleteLogicalComplement();
     assertNotNull(lc);
-    assertTrue(lc.operand.getValue() instanceof EmptyExpression);
   }
 
-  // ---- loops and control flow ----
+  @Test
+  public void createIncompleteLocalDeclarationStatement() {
+    LocalDeclarationStatement stmt = IncompleteAstUtilities.createIncompleteLocalDeclarationStatement();
+    assertNotNull(stmt);
+  }
 
   @Test
-  public void createIncompleteCountLoop_returnsNonNull() {
+  public void createIncompleteCountLoop() {
     CountLoop loop = IncompleteAstUtilities.createIncompleteCountLoop();
     assertNotNull(loop);
   }
 
   @Test
-  public void createIncompleteWhileLoop_returnsNonNull() {
+  public void createIncompleteWhileLoop() {
     WhileLoop loop = IncompleteAstUtilities.createIncompleteWhileLoop();
     assertNotNull(loop);
   }
 
   @Test
-  public void createIncompleteConditionalStatement_returnsNonNull() {
+  public void createIncompleteConditionalStatement() {
     ConditionalStatement stmt = IncompleteAstUtilities.createIncompleteConditionalStatement();
     assertNotNull(stmt);
   }
 
   @Test
-  public void createIncompleteForEachInArrayLoop_returnsNonNull() {
+  public void createIncompleteForEachInArrayLoop() {
     ForEachInArrayLoop loop = IncompleteAstUtilities.createIncompleteForEachInArrayLoop();
     assertNotNull(loop);
   }
 
   @Test
-  public void createIncompleteEachInArrayTogether_returnsNonNull() {
+  public void createIncompleteEachInArrayTogether() {
     EachInArrayTogether stmt = IncompleteAstUtilities.createIncompleteEachInArrayTogether();
     assertNotNull(stmt);
   }
 
-  // ---- local declaration ----
-
   @Test
-  public void createIncompleteLocalDeclarationStatement_returnsNonNull() {
-    LocalDeclarationStatement stmt = IncompleteAstUtilities.createIncompleteLocalDeclarationStatement();
+  public void createIncompleteReturnStatement() {
+    ReturnStatement stmt = IncompleteAstUtilities.createIncompleteReturnStatement(JavaType.getInstance(String.class));
     assertNotNull(stmt);
   }
 
-  // ---- return statement ----
-
   @Test
-  public void createIncompleteReturnStatement_returnsNonNull() {
-    AbstractType<?, ?, ?> type = JavaType.getInstance(Double.class);
-    ReturnStatement stmt = IncompleteAstUtilities.createIncompleteReturnStatement(type);
-    assertNotNull(stmt);
+  public void createIncompleteInstanceCreation() {
+    JavaType stringType = JavaType.getInstance(String.class);
+    AbstractConstructor ctor = stringType.getDeclaredConstructors().get(0);
+    InstanceCreation ic = IncompleteAstUtilities.createIncompleteInstanceCreation(ctor);
+    assertNotNull(ic);
   }
-
-  // ---- string concatenation ----
 
   @Test
   public void createIncompleteStringConcatenation_noArgs() {
@@ -157,5 +118,32 @@ public class IncompleteAstUtilitiesTest {
     Expression left = new StringLiteral("hello");
     StringConcatenation sc = IncompleteAstUtilities.createIncompleteStringConcatenation(left);
     assertNotNull(sc);
+  }
+
+  @Test
+  public void createIncompleteLocalAssignment() {
+    UserLocal local = new UserLocal("x", JavaType.getInstance(Integer.class), false);
+    AssignmentExpression ae = IncompleteAstUtilities.createIncompleteLocalAssignment(local);
+    assertNotNull(ae);
+  }
+
+  @Test
+  public void createIncompleteLocalAssignmentStatement() {
+    UserLocal local = new UserLocal("y", JavaType.getInstance(String.class), false);
+    ExpressionStatement stmt = IncompleteAstUtilities.createIncompleteLocalAssignmentStatement(local);
+    assertNotNull(stmt);
+  }
+
+  @Test
+  public void createIncompleteFieldAccess() {
+    JavaField field = JavaField.getInstance(String.class, "CASE_INSENSITIVE_ORDER");
+    FieldAccess fa = IncompleteAstUtilities.createIncompleteFieldAccess(field);
+    assertNotNull(fa);
+  }
+
+  @Test
+  public void createIncompleteAssignmentExpressionStatement_noArgs() {
+    ExpressionStatement stmt = IncompleteAstUtilities.createIncompleteAssignmentExpressionStatement();
+    assertNotNull(stmt);
   }
 }

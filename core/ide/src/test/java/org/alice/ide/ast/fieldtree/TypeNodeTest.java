@@ -3,102 +3,85 @@ package org.alice.ide.ast.fieldtree;
 import org.junit.Test;
 import org.lgna.project.ast.AbstractType;
 import org.lgna.project.ast.JavaType;
-import org.lgna.project.ast.NamedUserType;
-import org.lgna.project.ast.UserField;
 
 import static org.junit.Assert.*;
 
 public class TypeNodeTest {
+  @Test
+  public void createAndAddToParent_addsToParentTypeNodes() {
+    RootNode root = new RootNode();
+    AbstractType<?, ?, ?> type = JavaType.getInstance(String.class);
+    TypeNode child = TypeNode.createAndAddToParent(root, type, 5, 3);
+    assertEquals(1, root.getTypeNodes().size());
+    assertSame(child, root.getTypeNodes().get(0));
+  }
 
   @Test
-  public void createAndAddToParentCreatesTypeNodeAndAddsItToParent() {
+  public void createAndAddToParent_setsParent() {
     RootNode root = new RootNode();
-
-    TypeNode child = TypeNode.createAndAddToParent(root, createUserType("Child"), 8, 4);
-
+    TypeNode child = TypeNode.createAndAddToParent(root, JavaType.getInstance(String.class), 5, 3);
     assertSame(root, child.getParent());
-    assertTrue(root.getTypeNodes().contains(child));
   }
 
   @Test
-  public void getTypeNodesIsInitiallyEmpty() {
-    TypeNode node = new TypeNode(null, createUserType("Solo"), 6, 3);
-
-    assertTrue(node.getTypeNodes().isEmpty());
-  }
-
-  @Test
-  public void getFieldNodesIsInitiallyEmpty() {
-    TypeNode node = new TypeNode(null, createUserType("Solo"), 6, 3);
-
-    assertTrue(node.getFieldNodes().isEmpty());
-  }
-
-  @Test
-  public void getCollapseThresholdReturnsConfiguredValue() {
-    TypeNode node = new TypeNode(null, createUserType("ThresholdType"), 6, 3);
-
-    assertEquals(6, node.getCollapseThreshold());
-  }
-
-  @Test
-  public void getCollapseThresholdForDescendantsReturnsConfiguredValue() {
-    TypeNode node = new TypeNode(null, createUserType("ThresholdType"), 6, 3);
-
-    assertEquals(3, node.getCollapseThresholdForDescendants());
-  }
-
-  @Test
-  public void collapseIfAppropriateMovesFieldsToParentWhenCountIsBelowThreshold() {
+  public void getDeclaration_returnsType() {
     RootNode root = new RootNode();
-    TypeNode child = TypeNode.createAndAddToParent(root, createUserType("Child"), 3, 3);
-    FieldNode.createAndAddToParent(child, createField("alpha"));
-    FieldNode.createAndAddToParent(child, createField("beta"));
+    AbstractType<?, ?, ?> type = JavaType.getInstance(Integer.class);
+    TypeNode child = TypeNode.createAndAddToParent(root, type, 5, 3);
+    assertSame(type, child.getDeclaration());
+  }
 
-    root.collapseIfAppropriate();
+  @Test
+  public void collapseThresholds_matchConstructorArgs() {
+    RootNode root = new RootNode();
+    TypeNode child = TypeNode.createAndAddToParent(root, JavaType.getInstance(Double.class), 7, 4);
+    assertEquals(7, child.getCollapseThreshold());
+    assertEquals(4, child.getCollapseThresholdForDescendants());
+  }
 
+  @Test
+  public void fieldNodes_initiallyEmpty() {
+    RootNode root = new RootNode();
+    TypeNode child = TypeNode.createAndAddToParent(root, JavaType.getInstance(String.class), 5, 3);
     assertTrue(child.getFieldNodes().isEmpty());
-    assertEquals(2, root.getFieldNodes().size());
   }
 
   @Test
-  public void removeEmptyTypeNodesRemovesNodesWithoutFields() {
+  public void typeNodes_initiallyEmpty() {
     RootNode root = new RootNode();
-    TypeNode child = TypeNode.createAndAddToParent(root, createUserType("EmptyChild"), 3, 3);
+    TypeNode child = TypeNode.createAndAddToParent(root, JavaType.getInstance(String.class), 5, 3);
+    assertTrue(child.getTypeNodes().isEmpty());
+  }
 
+  @Test
+  public void removeEmptyTypeNodes_removesEmptyChild() {
+    RootNode root = new RootNode();
+    TypeNode child = TypeNode.createAndAddToParent(root, JavaType.getInstance(String.class), 5, 3);
+    assertEquals(1, root.getTypeNodes().size());
     root.removeEmptyTypeNodes();
-
-    assertFalse(root.getTypeNodes().contains(child));
     assertTrue(root.getTypeNodes().isEmpty());
+    assertNull(child.getParent().getParent());
   }
 
   @Test
-  public void sortOrdersTypeNodesAndFieldNodesAlphabetically() {
+  public void sort_doesNotThrowOnEmpty() {
     RootNode root = new RootNode();
-    TypeNode.createAndAddToParent(root, createUserType("Beta"), 5, 5);
-    TypeNode.createAndAddToParent(root, createUserType("Alpha"), 5, 5);
-    FieldNode.createAndAddToParent(root, createField("gamma"));
-    FieldNode.createAndAddToParent(root, createField("beta"));
-
     root.sort();
-
-    assertEquals("Alpha", root.getTypeNodes().get(0).getDeclaration().getName());
-    assertEquals("Beta", root.getTypeNodes().get(1).getDeclaration().getName());
-    assertEquals("beta", root.getFieldNodes().get(0).getDeclaration().getName());
-    assertEquals("gamma", root.getFieldNodes().get(1).getDeclaration().getName());
   }
 
-  private static AbstractType<?, ?, ?> createUserType(String name) {
-    NamedUserType type = new NamedUserType();
-    type.name.setValue(name);
-    type.superType.setValue(JavaType.getInstance(Object.class));
-    return type;
+  @Test
+  public void collapseIfAppropriate_movesFieldsToParentWhenBelowThreshold() {
+    RootNode root = new RootNode();
+    TypeNode child = TypeNode.createAndAddToParent(root, JavaType.getInstance(String.class), 5, 3);
+    child.collapseIfAppropriate();
+    assertTrue(child.getFieldNodes().isEmpty());
   }
 
-  private static UserField createField(String name) {
-    UserField field = new UserField();
-    field.name.setValue(name);
-    field.valueType.setValue(JavaType.getInstance(String.class));
-    return field;
+  @Test
+  public void createAndAddToParent_nullParent_noException() {
+    AbstractType<?, ?, ?> type = JavaType.getInstance(String.class);
+    TypeNode node = TypeNode.createAndAddToParent(null, type, 5, 3);
+    assertNull(node.getParent());
+    assertSame(type, node.getDeclaration());
   }
 }

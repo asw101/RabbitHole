@@ -66,6 +66,7 @@ public class NodeCodec<T extends Node> implements ItemCodec<T> {
     NodeCodec<?> rv = map.get(cls);
     if (rv == null) {
       rv = new NodeCodec<T>(cls);
+      map.put(cls, rv);
     }
     return (NodeCodec<T>) rv;
   }

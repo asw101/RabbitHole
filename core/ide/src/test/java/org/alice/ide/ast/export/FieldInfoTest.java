@@ -5,6 +5,7 @@ import org.junit.Test;
 import org.lgna.project.Project;
 import org.lgna.project.ast.JavaType;
 import org.lgna.project.ast.NamedUserType;
+import org.lgna.project.ast.NullLiteral;
 import org.lgna.project.ast.UserField;
 
 import java.awt.GraphicsEnvironment;
@@ -12,68 +13,51 @@ import java.awt.GraphicsEnvironment;
 import static org.junit.Assert.*;
 
 public class FieldInfoTest {
-
-  @Test
-  public void constructionViaTypeInfoCreatesFieldInfo() {
-    Assume.assumeFalse(GraphicsEnvironment.isHeadless());
-    FieldFixture fixture = createFieldFixture();
-
-    assertNotNull(fixture.typeInfo.getInfoForField(fixture.firstField));
+  private ProjectInfo createProjectInfo() {
+    NamedUserType programType = new NamedUserType();
+    programType.name.setValue("Program");
+    programType.superType.setValue(JavaType.getInstance(Object.class));
+    NamedUserType sceneType = new NamedUserType();
+    sceneType.name.setValue("Scene");
+    sceneType.superType.setValue(JavaType.getInstance(Object.class));
+    UserField sf = new UserField();
+    sf.name.setValue("scene");
+    sf.valueType.setValue(sceneType);
+    sf.initializer.setValue(new NullLiteral());
+    programType.fields.add(sf);
+    return new ProjectInfo(new Project(programType, Project.SceneCameraType.WindowCamera));
   }
 
   @Test
-  public void getDeclarationReturnsTheUserField() {
+  public void constructor_setsDeclaration() {
     Assume.assumeFalse(GraphicsEnvironment.isHeadless());
-    FieldFixture fixture = createFieldFixture();
-
-    FieldInfo fieldInfo = fixture.typeInfo.getInfoForField(fixture.firstField);
-
-    assertSame(fixture.firstField, fieldInfo.getDeclaration());
-  }
-
-  @Test
-  public void multipleFieldsInOneTypeEachGetTheirOwnFieldInfo() {
-    Assume.assumeFalse(GraphicsEnvironment.isHeadless());
-    FieldFixture fixture = createFieldFixture();
-
-    FieldInfo firstInfo = fixture.typeInfo.getInfoForField(fixture.firstField);
-    FieldInfo secondInfo = fixture.typeInfo.getInfoForField(fixture.secondField);
-
-    assertNotNull(firstInfo);
-    assertNotNull(secondInfo);
-    assertNotSame(firstInfo, secondInfo);
-  }
-
-  private static FieldFixture createFieldFixture() {
-    NamedUserType type = new NamedUserType();
-    type.name.setValue("FieldType");
-    type.superType.setValue(JavaType.getInstance(Object.class));
-
-    UserField firstField = createField("firstField");
-    UserField secondField = createField("secondField");
-    type.fields.add(firstField);
-    type.fields.add(secondField);
-
-    ProjectInfo projectInfo = new ProjectInfo(new Project(type, Project.SceneCameraType.WindowCamera));
-    return new FieldFixture(projectInfo.getInfoForType(type), firstField, secondField);
-  }
-
-  private static UserField createField(String name) {
+    ProjectInfo pInfo = createProjectInfo();
     UserField field = new UserField();
-    field.name.setValue(name);
+    field.name.setValue("testField");
     field.valueType.setValue(JavaType.getInstance(String.class));
-    return field;
+    FieldInfo info = new FieldInfo(pInfo, field);
+    assertSame(field, info.getDeclaration());
   }
 
-  private static class FieldFixture {
-    private final TypeInfo typeInfo;
-    private final UserField firstField;
-    private final UserField secondField;
+  @Test
+  public void getProjectInfo_returnsSameInstance() {
+    Assume.assumeFalse(GraphicsEnvironment.isHeadless());
+    ProjectInfo pInfo = createProjectInfo();
+    UserField field = new UserField();
+    field.name.setValue("f");
+    field.valueType.setValue(JavaType.getInstance(Integer.class));
+    FieldInfo info = new FieldInfo(pInfo, field);
+    assertSame(pInfo, info.getProjectInfo());
+  }
 
-    private FieldFixture(TypeInfo typeInfo, UserField firstField, UserField secondField) {
-      this.typeInfo = typeInfo;
-      this.firstField = firstField;
-      this.secondField = secondField;
-    }
+  @Test
+  public void getCheckBox_returnsNonNull() {
+    Assume.assumeFalse(GraphicsEnvironment.isHeadless());
+    ProjectInfo pInfo = createProjectInfo();
+    UserField field = new UserField();
+    field.name.setValue("boxField");
+    field.valueType.setValue(JavaType.getInstance(String.class));
+    FieldInfo info = new FieldInfo(pInfo, field);
+    assertNotNull(info.getCheckBox());
   }
 }

@@ -2,116 +2,72 @@ package org.alice.stageide.modelresource;
 
 import org.junit.Test;
 
+import java.util.HashSet;
+
 import static org.junit.Assert.*;
 
-/**
- * Tests for {@link RootResourceKey} — the root node key in the resource gallery tree.
- */
 public class RootResourceKeyTest {
-
-  private RootResourceKey createKey(String keyText, String defaultText) {
-    return new RootResourceKey(keyText, defaultText);
+  private RootResourceKey createKey(String keyText, String defaultDisplayText) {
+    return new RootResourceKey(keyText, defaultDisplayText);
   }
-
-  // ---- getSearchText ----
 
   @Test
   public void getSearchText_returnsNull() {
-    RootResourceKey key = createKey("allClasses", "All Classes");
-    assertNull(key.getSearchText());
+    assertNull(createKey("AllClasses", "all classes").getSearchText());
   }
-
-  // ---- getInternalName ----
 
   @Test
   public void getInternalName_returnsDefaultDisplayText() {
-    RootResourceKey key = createKey("allClasses", "All Classes");
-    assertEquals("All Classes", key.getInternalName());
+    assertEquals("all classes", createKey("AllClasses", "all classes").getInternalName());
   }
-
-  // ---- getLocalizedCreationText ----
 
   @Test
-  public void getLocalizedCreationText_returnsLocalizedName() {
-    RootResourceKey key = createKey("nonExistentKey", "Fallback Name");
-    // Since the key won't exist in the resource bundle, it should fall back to default
-    String text = key.getLocalizedCreationText();
-    assertNotNull(text);
+  public void getLocalizedName_existingKey_notNull() {
+    String localizedName = createKey("AllClasses", "all classes").getLocalizedName();
+    assertNotNull(localizedName);
+    assertFalse(localizedName.isEmpty());
   }
-
-  // ---- isLeaf ----
 
   @Test
-  public void isLeaf_returnsFalse() {
-    RootResourceKey key = createKey("root", "Root");
-    assertFalse(key.isLeaf());
+  public void getLocalizedCreationText_matchesLocalizedName() {
+    RootResourceKey key = createKey("AllClasses", "all classes");
+    assertEquals(key.getLocalizedName(), key.getLocalizedCreationText());
   }
-
-  // ---- isInstanceCreator ----
 
   @Test
-  public void isInstanceCreator_returnsFalse() {
-    RootResourceKey key = createKey("root", "Root");
-    assertFalse(key.isInstanceCreator());
+  public void getLocalizedName_missingKey_fallsBackToDefault() {
+    assertEquals("Default Value", createKey("doesNotExist", "Default Value").getLocalizedName());
   }
-
-  // ---- getIconFactory ----
 
   @Test
   public void getIconFactory_returnsNull() {
-    RootResourceKey key = createKey("root", "Root");
-    assertNull(key.getIconFactory());
+    assertNull(createKey("AllClasses", "all classes").getIconFactory());
   }
-
-  // ---- createInstanceCreation ----
 
   @Test(expected = Error.class)
   public void createInstanceCreation_throwsError() {
-    RootResourceKey key = createKey("root", "Root");
-    key.createInstanceCreation(new java.util.HashSet<>());
+    createKey("AllClasses", "all classes").createInstanceCreation(new HashSet<>());
   }
 
-  // ---- getTags ----
+  @Test
+  public void isNotLeafOrInstanceCreator() {
+    RootResourceKey key = createKey("AllClasses", "all classes");
+    assertFalse(key.isLeaf());
+    assertFalse(key.isInstanceCreator());
+  }
 
   @Test
-  public void getTags_returnsNull() {
-    RootResourceKey key = createKey("root", "Root");
+  public void tagsAndOperations_returnNull() {
+    RootResourceKey key = createKey("AllClasses", "all classes");
     assertNull(key.getTags());
-  }
-
-  @Test
-  public void getGroupTags_returnsNull() {
-    RootResourceKey key = createKey("root", "Root");
     assertNull(key.getGroupTags());
-  }
-
-  @Test
-  public void getThemeTags_returnsNull() {
-    RootResourceKey key = createKey("root", "Root");
     assertNull(key.getThemeTags());
-  }
-
-  // ---- getLeftClickOperation / getDropOperation ----
-
-  @Test
-  public void getLeftClickOperation_returnsNull() {
-    RootResourceKey key = createKey("root", "Root");
     assertNull(key.getLeftClickOperation(null, null));
-  }
-
-  @Test
-  public void getDropOperation_returnsNull() {
-    RootResourceKey key = createKey("root", "Root");
     assertNull(key.getDropOperation(null, null, null));
   }
 
-  // ---- toString ----
-
-  // ---- getLocalizedName with missing bundle key uses default ----
-
   @Test
-  public void getLocalizedName_missingBundleKey_fallsBackToDefault() {
-    RootResourceKey key = createKey("thisKeyWontExistInAnyBundle", "Default Value");
-    assertEquals("Default Value", key.getLocalizedName());
+  public void toString_containsClassName() {
+    assertTrue(createKey("AllClasses", "all classes").toString().contains("RootResourceKey"));
   }
 }

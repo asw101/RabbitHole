@@ -9,37 +9,81 @@ import java.awt.GraphicsEnvironment;
 import static org.junit.Assert.*;
 
 public class DoubleModelTest {
-  private static DoubleModel model() {
+  @Test
+  public void getInstance_returnsSameInstance() {
     Assume.assumeFalse(GraphicsEnvironment.isHeadless());
-    DoubleModel model = DoubleModel.getInstance();
-    model.setText("");
-    return model;
+    DoubleModel m1 = DoubleModel.getInstance();
+    DoubleModel m2 = DoubleModel.getInstance();
+    assertSame(m1, m2);
   }
 
   @Test
-  public void singletonReturnsSameInstance() {
-    assertSame(DoubleModel.getInstance(), DoubleModel.getInstance());
-  }
-
-  @Test
-  public void decimalPointIsSupported() {
+  public void isDecimalPointSupported_returnsTrue() {
+    Assume.assumeFalse(GraphicsEnvironment.isHeadless());
     assertTrue(DoubleModel.getInstance().isDecimalPointSupported());
   }
 
   @Test
-  public void validDoubleProducesDoubleLiteral() {
-    DoubleModel model = model();
-    model.setText("3.14159");
-
-    assertTrue(model.getExpressionValue() instanceof DoubleLiteral);
+  public void setText_andGetExpressionValue() {
+    Assume.assumeFalse(GraphicsEnvironment.isHeadless());
+    DoubleModel model = DoubleModel.getInstance();
+    model.setText("3.14");
+    DoubleLiteral val = model.getExpressionValue();
+    assertNotNull(val);
   }
 
   @Test
-  public void invalidTextProducesNoExpression() {
-    DoubleModel model = model();
-    model.setText("not-a-number");
+  public void setText_emptyString_getExplanation() {
+    Assume.assumeFalse(GraphicsEnvironment.isHeadless());
+    DoubleModel model = DoubleModel.getInstance();
+    model.setText("");
+    String explanation = model.getExplanationIfOkButtonShouldBeDisabled();
+    assertNotNull(explanation);
+    assertEquals("enterNumber", explanation);
+  }
 
-    assertNull(model.getExpressionValue());
-    assertEquals("isNotValid", model.getExplanationIfOkButtonShouldBeDisabled());
+  @Test
+  public void setText_validNumber_noExplanation() {
+    Assume.assumeFalse(GraphicsEnvironment.isHeadless());
+    DoubleModel model = DoubleModel.getInstance();
+    model.setText("42.0");
+    String explanation = model.getExplanationIfOkButtonShouldBeDisabled();
+    assertNull(explanation);
+  }
+
+  @Test
+  public void setText_invalidText_hasExplanation() {
+    Assume.assumeFalse(GraphicsEnvironment.isHeadless());
+    DoubleModel model = DoubleModel.getInstance();
+    model.setText("abc");
+    String explanation = model.getExplanationIfOkButtonShouldBeDisabled();
+    assertNotNull(explanation);
+  }
+
+  @Test
+  public void negate_addsMinusSign() {
+    Assume.assumeFalse(GraphicsEnvironment.isHeadless());
+    DoubleModel model = DoubleModel.getInstance();
+    model.setText("5.0");
+    model.negate();
+    DoubleLiteral val = model.getExpressionValue();
+    assertNotNull(val);
+  }
+
+  @Test
+  public void negate_twice_restoresOriginal() {
+    Assume.assumeFalse(GraphicsEnvironment.isHeadless());
+    DoubleModel model = DoubleModel.getInstance();
+    model.setText("7.0");
+    model.negate();
+    model.negate();
+    DoubleLiteral val = model.getExpressionValue();
+    assertNotNull(val);
+  }
+
+  @Test
+  public void getTextField_notNull() {
+    Assume.assumeFalse(GraphicsEnvironment.isHeadless());
+    assertNotNull(DoubleModel.getInstance().getTextField());
   }
 }

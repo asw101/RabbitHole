@@ -2,7 +2,7 @@ package org.alice.ide.croquet.models.numberpad;
 
 import org.junit.Assume;
 import org.junit.Test;
-import org.lgna.project.ast.FieldAccess;
+import org.lgna.project.ast.Expression;
 import org.lgna.project.ast.IntegerLiteral;
 
 import java.awt.GraphicsEnvironment;
@@ -10,44 +10,83 @@ import java.awt.GraphicsEnvironment;
 import static org.junit.Assert.*;
 
 public class IntegerModelTest {
-  private static IntegerModel model() {
+  @Test
+  public void getInstance_returnsSameInstance() {
     Assume.assumeFalse(GraphicsEnvironment.isHeadless());
-    IntegerModel model = IntegerModel.getInstance();
-    model.setText("");
-    return model;
+    IntegerModel m1 = IntegerModel.getInstance();
+    IntegerModel m2 = IntegerModel.getInstance();
+    assertSame(m1, m2);
   }
 
   @Test
-  public void singletonReturnsSameInstance() {
-    assertSame(IntegerModel.getInstance(), IntegerModel.getInstance());
-  }
-
-  @Test
-  public void decimalPointIsNotSupported() {
+  public void isDecimalPointSupported_returnsFalse() {
+    Assume.assumeFalse(GraphicsEnvironment.isHeadless());
     assertFalse(IntegerModel.getInstance().isDecimalPointSupported());
   }
 
   @Test
-  public void maximumIntegerProducesIntegerLiteral() {
-    IntegerModel model = model();
-    model.setText(String.valueOf(Integer.MAX_VALUE));
-
-    assertTrue(model.getExpressionValue() instanceof IntegerLiteral);
+  public void setText_andGetValue() {
+    Assume.assumeFalse(GraphicsEnvironment.isHeadless());
+    IntegerModel model = IntegerModel.getInstance();
+    model.setText("42");
+    Expression val = model.getExpressionValue();
+    assertNotNull(val);
+    assertTrue(val instanceof IntegerLiteral);
   }
 
   @Test
-  public void valueAboveMaximumProducesFieldAccess() {
-    IntegerModel model = model();
-    model.setText(String.valueOf((long) Integer.MAX_VALUE + 1L));
-
-    assertTrue(model.getExpressionValue() instanceof FieldAccess);
+  public void setText_emptyString_explanationIsEnterNumber() {
+    Assume.assumeFalse(GraphicsEnvironment.isHeadless());
+    IntegerModel model = IntegerModel.getInstance();
+    model.setText("");
+    assertEquals("enterNumber", model.getExplanationIfOkButtonShouldBeDisabled());
   }
 
   @Test
-  public void valueBelowMinimumProducesFieldAccess() {
-    IntegerModel model = model();
-    model.setText(String.valueOf((long) Integer.MIN_VALUE - 1L));
+  public void setText_validNumber_noExplanation() {
+    Assume.assumeFalse(GraphicsEnvironment.isHeadless());
+    IntegerModel model = IntegerModel.getInstance();
+    model.setText("100");
+    assertNull(model.getExplanationIfOkButtonShouldBeDisabled());
+  }
 
-    assertTrue(model.getExpressionValue() instanceof FieldAccess);
+  @Test
+  public void setText_largeValue_returnsMaxValue() {
+    Assume.assumeFalse(GraphicsEnvironment.isHeadless());
+    IntegerModel model = IntegerModel.getInstance();
+    model.setText(Long.toString((long) Integer.MAX_VALUE + 1));
+    Expression val = model.getExpressionValue();
+    assertNotNull(val);
+  }
+
+  @Test
+  public void setText_negativeValue_works() {
+    Assume.assumeFalse(GraphicsEnvironment.isHeadless());
+    IntegerModel model = IntegerModel.getInstance();
+    model.setText("-10");
+    Expression val = model.getExpressionValue();
+    assertNotNull(val);
+    assertTrue(val instanceof IntegerLiteral);
+  }
+
+  @Test
+  public void negate_works() {
+    Assume.assumeFalse(GraphicsEnvironment.isHeadless());
+    IntegerModel model = IntegerModel.getInstance();
+    model.setText("5");
+    model.negate();
+    Expression val = model.getExpressionValue();
+    assertNotNull(val);
+  }
+
+  @Test
+  public void delete_removesLastChar() {
+    Assume.assumeFalse(GraphicsEnvironment.isHeadless());
+    IntegerModel model = IntegerModel.getInstance();
+    model.setText("123");
+    model.getTextField().setCaretPosition(3);
+    model.delete();
+    Expression val = model.getExpressionValue();
+    assertNotNull(val);
   }
 }

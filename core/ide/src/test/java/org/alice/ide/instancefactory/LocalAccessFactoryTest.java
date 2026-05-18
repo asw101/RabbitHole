@@ -6,44 +6,40 @@ import org.lgna.project.ast.*;
 import static org.junit.Assert.*;
 
 public class LocalAccessFactoryTest {
-  private UserLocal createLocal(String name) {
-    UserLocal local = new UserLocal();
-    local.name.setValue(name);
-    local.valueType.setValue(JavaType.getInstance(String.class));
-    return local;
-  }
-
   @Test
-  public void getInstance_returnsNonNull() {
-    LocalAccessFactory factory = LocalAccessFactory.getInstance(createLocal("x"));
-    assertNotNull(factory);
-  }
-
-  @Test
-  public void getInstance_sameSingleton() {
-    UserLocal local = createLocal("y");
+  public void getInstance_returnsSameForSameLocal() {
+    UserLocal local = new UserLocal("x", JavaType.getInstance(String.class), false);
     LocalAccessFactory f1 = LocalAccessFactory.getInstance(local);
     LocalAccessFactory f2 = LocalAccessFactory.getInstance(local);
     assertSame(f1, f2);
   }
 
   @Test
-  public void getLocal_returnsLocal() {
-    UserLocal local = createLocal("z");
+  public void getLocal_returnsSameLocal() {
+    UserLocal local = new UserLocal("myVar", JavaType.getInstance(Integer.class), false);
     LocalAccessFactory factory = LocalAccessFactory.getInstance(local);
     assertSame(local, factory.getLocal());
   }
 
   @Test
-  public void getValueType_returnsLocalValueType() {
-    UserLocal local = createLocal("w");
+  public void getValueType_matchesLocalType() {
+    UserLocal local = new UserLocal("v", JavaType.getInstance(Double.class), false);
     LocalAccessFactory factory = LocalAccessFactory.getInstance(local);
-    assertEquals(JavaType.getInstance(String.class), factory.getValueType());
+    assertEquals(JavaType.getInstance(Double.class), factory.getValueType());
+  }
+
+  @Test
+  public void createExpression_returnsLocalAccess() {
+    UserLocal local = new UserLocal("a", JavaType.getInstance(String.class), false);
+    LocalAccessFactory factory = LocalAccessFactory.getInstance(local);
+    Expression expr = factory.createExpression();
+    assertNotNull(expr);
+    assertTrue(expr instanceof LocalAccess);
   }
 
   @Test
   public void createTransientExpression_returnsLocalAccess() {
-    UserLocal local = createLocal("v");
+    UserLocal local = new UserLocal("b", JavaType.getInstance(String.class), false);
     LocalAccessFactory factory = LocalAccessFactory.getInstance(local);
     Expression expr = factory.createTransientExpression();
     assertNotNull(expr);
@@ -51,11 +47,9 @@ public class LocalAccessFactoryTest {
   }
 
   @Test
-  public void createExpression_returnsLocalAccess() {
-    UserLocal local = createLocal("u");
+  public void getRepr_containsLocalName() {
+    UserLocal local = new UserLocal("myLocal", JavaType.getInstance(String.class), false);
     LocalAccessFactory factory = LocalAccessFactory.getInstance(local);
-    Expression expr = factory.createExpression();
-    assertNotNull(expr);
-    assertTrue(expr instanceof LocalAccess);
+    assertTrue(factory.getRepr().contains("myLocal"));
   }
 }

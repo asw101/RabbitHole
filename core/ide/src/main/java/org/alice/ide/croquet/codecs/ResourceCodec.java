@@ -64,6 +64,7 @@ public class ResourceCodec<R extends Resource> implements ItemCodec<R> {
     ResourceCodec<?> rv = map.get(cls);
     if (rv == null) {
       rv = new ResourceCodec<R>(cls);
+      map.put((Class<Resource>) cls, (ResourceCodec<Resource>) rv);
     }
     return (ResourceCodec<R>) rv;
   }

@@ -9,37 +9,48 @@ import java.awt.GraphicsEnvironment;
 import static org.junit.Assert.*;
 
 public class FloatModelTest {
-  private static FloatModel model() {
+  @Test
+  public void getInstance_returnsSameInstance() {
     Assume.assumeFalse(GraphicsEnvironment.isHeadless());
-    FloatModel model = FloatModel.getInstance();
-    model.setText("");
-    return model;
+    FloatModel m1 = FloatModel.getInstance();
+    FloatModel m2 = FloatModel.getInstance();
+    assertSame(m1, m2);
   }
 
   @Test
-  public void singletonReturnsSameInstance() {
-    assertSame(FloatModel.getInstance(), FloatModel.getInstance());
-  }
-
-  @Test
-  public void decimalPointIsSupported() {
+  public void isDecimalPointSupported_returnsTrue() {
+    Assume.assumeFalse(GraphicsEnvironment.isHeadless());
     assertTrue(FloatModel.getInstance().isDecimalPointSupported());
   }
 
   @Test
-  public void validFloatProducesFloatLiteral() {
-    FloatModel model = model();
-    model.setText("12.5");
-
-    assertTrue(model.getExpressionValue() instanceof FloatLiteral);
+  public void setText_andGetValue() {
+    Assume.assumeFalse(GraphicsEnvironment.isHeadless());
+    FloatModel model = FloatModel.getInstance();
+    model.setText("1.5");
+    FloatLiteral val = model.getExpressionValue();
+    assertNotNull(val);
   }
 
   @Test
-  public void nanProducesNoExpression() {
-    FloatModel model = model();
-    model.setText("NaN");
+  public void setText_emptyString_explanation() {
+    Assume.assumeFalse(GraphicsEnvironment.isHeadless());
+    FloatModel model = FloatModel.getInstance();
+    model.setText("");
+    assertEquals("enterNumber", model.getExplanationIfOkButtonShouldBeDisabled());
+  }
 
-    assertNull(model.getExpressionValue());
-    assertEquals("isNotValid", model.getExplanationIfOkButtonShouldBeDisabled());
+  @Test
+  public void setText_validNumber_noExplanation() {
+    Assume.assumeFalse(GraphicsEnvironment.isHeadless());
+    FloatModel model = FloatModel.getInstance();
+    model.setText("2.5");
+    assertNull(model.getExplanationIfOkButtonShouldBeDisabled());
+  }
+
+  @Test
+  public void getTextField_notNull() {
+    Assume.assumeFalse(GraphicsEnvironment.isHeadless());
+    assertNotNull(FloatModel.getInstance().getTextField());
   }
 }

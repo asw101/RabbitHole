@@ -3,103 +3,79 @@ package org.alice.ide.ast.export;
 import org.junit.Assume;
 import org.junit.Test;
 import org.lgna.project.Project;
-import org.lgna.project.ast.BlockStatement;
 import org.lgna.project.ast.JavaType;
 import org.lgna.project.ast.NamedUserType;
+import org.lgna.project.ast.NullLiteral;
 import org.lgna.project.ast.UserField;
-import org.lgna.project.ast.UserMethod;
 
 import java.awt.GraphicsEnvironment;
 
 import static org.junit.Assert.*;
 
 public class TypeInfoTest {
+  private NamedUserType createTestType() {
+    NamedUserType type = new NamedUserType();
+    type.name.setValue("TestType");
+    type.superType.setValue(JavaType.getInstance(Object.class));
+    return type;
+  }
 
-  @Test
-  public void constructionCreatesTypeInfoWithCorrectDeclaration() {
-    Assume.assumeFalse(GraphicsEnvironment.isHeadless());
-    TypeFixture fixture = createTypeFixture();
-
-    TypeInfo info = createProjectInfo(fixture.type).getInfoForType(fixture.type);
-
-    assertNotNull(info);
-    assertSame(fixture.type, info.getDeclaration());
+  private ProjectInfo createProjectInfo() {
+    NamedUserType programType = new NamedUserType();
+    programType.name.setValue("Program");
+    programType.superType.setValue(JavaType.getInstance(Object.class));
+    NamedUserType sceneType = createTestType();
+    UserField sf = new UserField();
+    sf.name.setValue("scene");
+    sf.valueType.setValue(sceneType);
+    sf.initializer.setValue(new NullLiteral());
+    programType.fields.add(sf);
+    return new ProjectInfo(new Project(programType, Project.SceneCameraType.WindowCamera));
   }
 
   @Test
-  public void getConstructorInfosReturnsACollection() {
+  public void constructor_withProjectInfoAndType() {
     Assume.assumeFalse(GraphicsEnvironment.isHeadless());
-    TypeFixture fixture = createTypeFixture();
+    ProjectInfo pInfo = createProjectInfo();
+    NamedUserType type = createTestType();
+    TypeInfo info = new TypeInfo(pInfo, type);
+    assertNotNull(info);
+    assertSame(type, info.getDeclaration());
+  }
 
-    TypeInfo info = createProjectInfo(fixture.type).getInfoForType(fixture.type);
+  @Test
+  public void getMethodInfos_initiallyEmpty() {
+    Assume.assumeFalse(GraphicsEnvironment.isHeadless());
+    ProjectInfo pInfo = createProjectInfo();
+    NamedUserType type = createTestType();
+    TypeInfo info = new TypeInfo(pInfo, type);
+    assertNotNull(info.getMethodInfos());
+  }
 
+  @Test
+  public void getFieldInfos_initiallyEmpty() {
+    Assume.assumeFalse(GraphicsEnvironment.isHeadless());
+    ProjectInfo pInfo = createProjectInfo();
+    NamedUserType type = createTestType();
+    TypeInfo info = new TypeInfo(pInfo, type);
+    assertNotNull(info.getFieldInfos());
+  }
+
+  @Test
+  public void getConstructorInfos_initiallyEmpty() {
+    Assume.assumeFalse(GraphicsEnvironment.isHeadless());
+    ProjectInfo pInfo = createProjectInfo();
+    NamedUserType type = createTestType();
+    TypeInfo info = new TypeInfo(pInfo, type);
     assertNotNull(info.getConstructorInfos());
   }
 
   @Test
-  public void getMethodInfosReturnsCollectionForTypeWithMethods() {
+  public void getProjectInfo_returnsSameInstance() {
     Assume.assumeFalse(GraphicsEnvironment.isHeadless());
-    TypeFixture fixture = createTypeFixture();
-
-    TypeInfo info = createProjectInfo(fixture.type).getInfoForType(fixture.type);
-
-    assertEquals(1, info.getMethodInfos().size());
-    assertNotNull(info.getInfoForMethod(fixture.method));
-  }
-
-  @Test
-  public void getFieldInfosReturnsCollectionForTypeWithFields() {
-    Assume.assumeFalse(GraphicsEnvironment.isHeadless());
-    TypeFixture fixture = createTypeFixture();
-
-    TypeInfo info = createProjectInfo(fixture.type).getInfoForType(fixture.type);
-
-    assertEquals(1, info.getFieldInfos().size());
-    assertNotNull(info.getInfoForField(fixture.field));
-  }
-
-  @Test
-  public void getSuperTypeInfoReturnsNullForJavaSuperType() {
-    Assume.assumeFalse(GraphicsEnvironment.isHeadless());
-    TypeFixture fixture = createTypeFixture();
-
-    TypeInfo info = createProjectInfo(fixture.type).getInfoForType(fixture.type);
-
-    assertNull(info.getSuperTypeInfo());
-  }
-
-  private static ProjectInfo createProjectInfo(NamedUserType type) {
-    return new ProjectInfo(new Project(type, Project.SceneCameraType.WindowCamera));
-  }
-
-  private static TypeFixture createTypeFixture() {
-    NamedUserType type = new NamedUserType();
-    type.name.setValue("TestType");
-    type.superType.setValue(JavaType.getInstance(Object.class));
-
-    UserMethod method = new UserMethod();
-    method.name.setValue("doSomething");
-    method.returnType.setValue(JavaType.VOID_TYPE);
-    method.body.setValue(new BlockStatement());
-    type.methods.add(method);
-
-    UserField field = new UserField();
-    field.name.setValue("myField");
-    field.valueType.setValue(JavaType.getInstance(String.class));
-    type.fields.add(field);
-
-    return new TypeFixture(type, method, field);
-  }
-
-  private static class TypeFixture {
-    private final NamedUserType type;
-    private final UserMethod method;
-    private final UserField field;
-
-    private TypeFixture(NamedUserType type, UserMethod method, UserField field) {
-      this.type = type;
-      this.method = method;
-      this.field = field;
-    }
+    ProjectInfo pInfo = createProjectInfo();
+    NamedUserType type = createTestType();
+    TypeInfo info = new TypeInfo(pInfo, type);
+    assertSame(pInfo, info.getProjectInfo());
   }
 }

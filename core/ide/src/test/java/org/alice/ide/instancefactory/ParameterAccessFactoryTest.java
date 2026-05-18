@@ -6,49 +6,62 @@ import org.lgna.project.ast.*;
 import static org.junit.Assert.*;
 
 public class ParameterAccessFactoryTest {
-  private UserParameter createParam(String name) {
+  @Test
+  public void getInstance_returnsSameForSameParameter() {
     UserParameter param = new UserParameter();
-    param.name.setValue(name);
+    param.name.setValue("p1");
+    param.valueType.setValue(JavaType.getInstance(String.class));
+    ParameterAccessFactory f1 = ParameterAccessFactory.getInstance(param);
+    ParameterAccessFactory f2 = ParameterAccessFactory.getInstance(param);
+    assertSame(f1, f2);
+  }
+
+  @Test
+  public void getParameter_returnsSameParameter() {
+    UserParameter param = new UserParameter();
+    param.name.setValue("param");
+    param.valueType.setValue(JavaType.getInstance(Integer.class));
+    ParameterAccessFactory factory = ParameterAccessFactory.getInstance(param);
+    assertSame(param, factory.getParameter());
+  }
+
+  @Test
+  public void getValueType_matchesParameterType() {
+    UserParameter param = new UserParameter();
+    param.name.setValue("val");
     param.valueType.setValue(JavaType.getInstance(Double.class));
-    return param;
-  }
-
-  @Test
-  public void getInstance_returnsNonNull() {
-    assertNotNull(ParameterAccessFactory.getInstance(createParam("p1")));
-  }
-
-  @Test
-  public void getInstance_sameSingleton() {
-    UserParameter p = createParam("p2");
-    assertSame(ParameterAccessFactory.getInstance(p), ParameterAccessFactory.getInstance(p));
-  }
-
-  @Test
-  public void getParameter_returnsParameter() {
-    UserParameter p = createParam("p3");
-    assertSame(p, ParameterAccessFactory.getInstance(p).getParameter());
-  }
-
-  @Test
-  public void getValueType_returnsParameterType() {
-    UserParameter p = createParam("p4");
-    assertEquals(JavaType.getInstance(Double.class), ParameterAccessFactory.getInstance(p).getValueType());
-  }
-
-  @Test
-  public void createTransientExpression_returnsParameterAccess() {
-    UserParameter p = createParam("p5");
-    Expression expr = ParameterAccessFactory.getInstance(p).createTransientExpression();
-    assertNotNull(expr);
-    assertTrue(expr instanceof ParameterAccess);
+    ParameterAccessFactory factory = ParameterAccessFactory.getInstance(param);
+    assertEquals(JavaType.getInstance(Double.class), factory.getValueType());
   }
 
   @Test
   public void createExpression_returnsParameterAccess() {
-    UserParameter p = createParam("p6");
-    Expression expr = ParameterAccessFactory.getInstance(p).createExpression();
+    UserParameter param = new UserParameter();
+    param.name.setValue("x");
+    param.valueType.setValue(JavaType.getInstance(String.class));
+    ParameterAccessFactory factory = ParameterAccessFactory.getInstance(param);
+    Expression expr = factory.createExpression();
     assertNotNull(expr);
     assertTrue(expr instanceof ParameterAccess);
+  }
+
+  @Test
+  public void createTransientExpression_returnsParameterAccess() {
+    UserParameter param = new UserParameter();
+    param.name.setValue("y");
+    param.valueType.setValue(JavaType.getInstance(String.class));
+    ParameterAccessFactory factory = ParameterAccessFactory.getInstance(param);
+    Expression expr = factory.createTransientExpression();
+    assertNotNull(expr);
+    assertTrue(expr instanceof ParameterAccess);
+  }
+
+  @Test
+  public void getRepr_containsParameterName() {
+    UserParameter param = new UserParameter();
+    param.name.setValue("myParam");
+    param.valueType.setValue(JavaType.getInstance(String.class));
+    ParameterAccessFactory factory = ParameterAccessFactory.getInstance(param);
+    assertTrue(factory.getRepr().contains("myParam"));
   }
 }

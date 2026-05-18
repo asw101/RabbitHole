@@ -7,67 +7,70 @@ import org.lgna.project.ast.UserField;
 import static org.junit.Assert.*;
 
 public class FieldNodeTest {
-
-  @Test
-  public void createAndAddToParentCreatesFieldNodeAndAddsItToParent() {
-    TypeNode parent = createParent();
-    UserField field = createField("myField");
-
-    FieldNode node = FieldNode.createAndAddToParent(parent, field);
-
-    assertSame(parent, node.getParent());
-    assertTrue(parent.getFieldNodes().contains(node));
-  }
-
-  @Test
-  public void getDeclarationReturnsTheUserField() {
-    TypeNode parent = createParent();
-    UserField field = createField("myField");
-
-    FieldNode node = FieldNode.createAndAddToParent(parent, field);
-
-    assertSame(field, node.getDeclaration());
-  }
-
-  @Test
-  public void getParentReturnsTheParentTypeNode() {
-    TypeNode parent = createParent();
-
-    FieldNode node = FieldNode.createAndAddToParent(parent, createField("myField"));
-
-    assertSame(parent, node.getParent());
-  }
-
-  @Test
-  public void toStringContainsClassNameAndFieldName() {
-    TypeNode parent = createParent();
-
-    FieldNode node = FieldNode.createAndAddToParent(parent, createField("myField"));
-    String text = node.toString();
-
-    assertTrue(text.contains("FieldNode"));
-    assertTrue(text.contains("myField"));
-  }
-
-  @Test
-  public void compareToComparesFieldNamesCaseInsensitively() {
-    TypeNode parent = createParent();
-    FieldNode alpha = FieldNode.createAndAddToParent(parent, createField("alpha"));
-    FieldNode beta = FieldNode.createAndAddToParent(parent, createField("Beta"));
-
-    assertTrue(alpha.compareTo(beta) < 0);
-    assertTrue(beta.compareTo(alpha) > 0);
-  }
-
-  private static TypeNode createParent() {
-    RootNode root = new RootNode();
-    return TypeNode.createAndAddToParent(root, JavaType.getInstance(Object.class), 10, 10);
-  }
-
-  private static UserField createField(String name) {
+  private UserField createTestField(String name) {
     UserField field = new UserField();
     field.name.setValue(name);
     field.valueType.setValue(JavaType.getInstance(String.class));
     return field;
+  }
+
+  @Test
+  public void createAndAddToParent_addsToParentFieldNodes() {
+    RootNode root = new RootNode();
+    TypeNode typeNode = TypeNode.createAndAddToParent(root, JavaType.getInstance(Object.class), 10, 5);
+    UserField field = createTestField("myField");
+    FieldNode fieldNode = FieldNode.createAndAddToParent(typeNode, field);
+    assertEquals(1, typeNode.getFieldNodes().size());
+    assertSame(fieldNode, typeNode.getFieldNodes().get(0));
+  }
+
+  @Test
+  public void getDeclaration_returnsField() {
+    RootNode root = new RootNode();
+    TypeNode typeNode = TypeNode.createAndAddToParent(root, JavaType.getInstance(Object.class), 10, 5);
+    UserField field = createTestField("testField");
+    FieldNode fieldNode = FieldNode.createAndAddToParent(typeNode, field);
+    assertSame(field, fieldNode.getDeclaration());
+  }
+
+  @Test
+  public void getParent_returnsTypeNode() {
+    RootNode root = new RootNode();
+    TypeNode typeNode = TypeNode.createAndAddToParent(root, JavaType.getInstance(Object.class), 10, 5);
+    UserField field = createTestField("parentField");
+    FieldNode fieldNode = FieldNode.createAndAddToParent(typeNode, field);
+    assertSame(typeNode, fieldNode.getParent());
+  }
+
+  @Test
+  public void compareTo_alphabeticalOrder() {
+    RootNode root = new RootNode();
+    TypeNode typeNode = TypeNode.createAndAddToParent(root, JavaType.getInstance(Object.class), 10, 5);
+    UserField fieldA = createTestField("alpha");
+    UserField fieldB = createTestField("beta");
+    FieldNode nodeA = FieldNode.createAndAddToParent(typeNode, fieldA);
+    FieldNode nodeB = FieldNode.createAndAddToParent(typeNode, fieldB);
+    assertTrue(nodeA.compareTo(nodeB) < 0);
+    assertTrue(nodeB.compareTo(nodeA) > 0);
+  }
+
+  @Test
+  public void compareTo_caseInsensitive() {
+    RootNode root = new RootNode();
+    TypeNode typeNode = TypeNode.createAndAddToParent(root, JavaType.getInstance(Object.class), 10, 5);
+    UserField fieldA = createTestField("Alpha");
+    UserField fielda = createTestField("alpha");
+    FieldNode nodeA = FieldNode.createAndAddToParent(typeNode, fieldA);
+    FieldNode nodea = FieldNode.createAndAddToParent(typeNode, fielda);
+    assertEquals(0, nodeA.compareTo(nodea));
+  }
+
+  @Test
+  public void toString_containsFieldName() {
+    RootNode root = new RootNode();
+    TypeNode typeNode = TypeNode.createAndAddToParent(root, JavaType.getInstance(Object.class), 10, 5);
+    UserField field = createTestField("mySpecialField");
+    FieldNode fieldNode = FieldNode.createAndAddToParent(typeNode, field);
+    assertTrue(fieldNode.toString().contains("FieldNode"));
   }
 }

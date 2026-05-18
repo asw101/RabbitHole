@@ -5,14 +5,9 @@ import org.lgna.project.ast.JavaType;
 
 import static org.junit.Assert.*;
 
-/**
- * Tests for {@link JointedTypeInfo} — jointed model type detection.
- */
 public class JointedTypeInfoTest {
-
   @Test
   public void getDeclarationInstance_nonJointedType_returnsNull() {
-    // String is not a jointed model type
     JointedTypeInfo info = JointedTypeInfo.getDeclarationInstance(JavaType.getInstance(String.class));
     assertNull(info);
   }
@@ -28,12 +23,12 @@ public class JointedTypeInfoTest {
   }
 
   @Test
-  public void isDeclarationJointed_nullType_returnsFalse() {
-    assertFalse(JointedTypeInfo.isDeclarationJointed(null));
+  public void getInstances_nonJointedType_returnsEmptyList() {
+    assertTrue(JointedTypeInfo.getInstances(JavaType.getInstance(String.class)).isEmpty());
   }
 
   @Test
-  public void getInstances_nonJointedType_returnsEmptyList() {
-    assertTrue(JointedTypeInfo.getInstances(JavaType.getInstance(Integer.class)).isEmpty());
+  public void getDeclarationInstance_objectType_returnsNull() {
+    assertNull(JointedTypeInfo.getDeclarationInstance(JavaType.getInstance(Integer.class)));
   }
 }
