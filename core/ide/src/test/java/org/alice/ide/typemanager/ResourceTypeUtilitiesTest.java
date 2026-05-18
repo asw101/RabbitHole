@@ -17,6 +17,8 @@ import static org.junit.Assert.*;
  */
 public class ResourceTypeUtilitiesTest {
 
+  private static final JavaType OBJECT_TYPE = JavaType.getInstance(Object.class);
+
   // ── AST helpers ─────────────────────────────────────────────────────
 
   /**
@@ -27,7 +29,7 @@ public class ResourceTypeUtilitiesTest {
   private static NamedUserType buildZeroArgSuperType() {
     NamedUserType type = new NamedUserType();
     type.name.setValue("ZeroArgType");
-    type.superType.setValue(JavaType.getInstance(Object.class));
+    type.superType.setValue(OBJECT_TYPE);
 
     NamedUserConstructor ctor = new NamedUserConstructor();
     ConstructorBlockStatement body = new ConstructorBlockStatement();
@@ -47,7 +49,7 @@ public class ResourceTypeUtilitiesTest {
   private static NamedUserType buildOneFieldAccessArgType() {
     NamedUserType type = new NamedUserType();
     type.name.setValue("OneFieldArgType");
-    type.superType.setValue(JavaType.getInstance(Object.class));
+    type.superType.setValue(OBJECT_TYPE);
 
     NamedUserConstructor ctor = new NamedUserConstructor();
     ConstructorBlockStatement body = new ConstructorBlockStatement();
@@ -63,7 +65,7 @@ public class ResourceTypeUtilitiesTest {
     // Since Object() has no params, we fabricate via a UserParameter as the "parameter" identity.
     UserParameter fakeParam = new UserParameter();
     fakeParam.name.setValue("resource");
-    fakeParam.valueType.setValue(JavaType.getInstance(Object.class));
+    fakeParam.valueType.setValue(OBJECT_TYPE);
 
     SimpleArgument arg = new SimpleArgument(fakeParam, fieldAccess);
     superInvocation.requiredArguments.add(arg);
@@ -82,7 +84,7 @@ public class ResourceTypeUtilitiesTest {
   private static NamedUserType buildOneNonFieldAccessArgType() {
     NamedUserType type = new NamedUserType();
     type.name.setValue("NonFieldArgType");
-    type.superType.setValue(JavaType.getInstance(Object.class));
+    type.superType.setValue(OBJECT_TYPE);
 
     NamedUserConstructor ctor = new NamedUserConstructor();
     ConstructorBlockStatement body = new ConstructorBlockStatement();
@@ -90,7 +92,7 @@ public class ResourceTypeUtilitiesTest {
 
     UserParameter fakeParam = new UserParameter();
     fakeParam.name.setValue("arg");
-    fakeParam.valueType.setValue(JavaType.getInstance(Object.class));
+    fakeParam.valueType.setValue(OBJECT_TYPE);
 
     SimpleArgument arg = new SimpleArgument(fakeParam, new NullLiteral());
     superInvocation.requiredArguments.add(arg);
@@ -109,7 +111,7 @@ public class ResourceTypeUtilitiesTest {
   private static NamedUserType buildMultiArgSuperType() {
     NamedUserType type = new NamedUserType();
     type.name.setValue("MultiArgType");
-    type.superType.setValue(JavaType.getInstance(Object.class));
+    type.superType.setValue(OBJECT_TYPE);
 
     NamedUserConstructor ctor = new NamedUserConstructor();
     ConstructorBlockStatement body = new ConstructorBlockStatement();
@@ -117,10 +119,10 @@ public class ResourceTypeUtilitiesTest {
 
     UserParameter p1 = new UserParameter();
     p1.name.setValue("a");
-    p1.valueType.setValue(JavaType.getInstance(Object.class));
+    p1.valueType.setValue(OBJECT_TYPE);
     UserParameter p2 = new UserParameter();
     p2.name.setValue("b");
-    p2.valueType.setValue(JavaType.getInstance(Object.class));
+    p2.valueType.setValue(OBJECT_TYPE);
 
     superInvocation.requiredArguments.add(new SimpleArgument(p1, new NullLiteral()));
     superInvocation.requiredArguments.add(new SimpleArgument(p2, new NullLiteral()));
@@ -138,7 +140,7 @@ public class ResourceTypeUtilitiesTest {
   private static NamedUserType buildOneRequiredParamType() {
     NamedUserType type = new NamedUserType();
     type.name.setValue("OneParamType");
-    type.superType.setValue(JavaType.getInstance(Object.class));
+    type.superType.setValue(OBJECT_TYPE);
 
     NamedUserConstructor ctor = new NamedUserConstructor();
     ConstructorBlockStatement body = new ConstructorBlockStatement();
@@ -162,7 +164,7 @@ public class ResourceTypeUtilitiesTest {
   private static NamedUserType buildMultiRequiredParamType() {
     NamedUserType type = new NamedUserType();
     type.name.setValue("MultiParamType");
-    type.superType.setValue(JavaType.getInstance(Object.class));
+    type.superType.setValue(OBJECT_TYPE);
 
     NamedUserConstructor ctor = new NamedUserConstructor();
     ConstructorBlockStatement body = new ConstructorBlockStatement();
@@ -190,7 +192,7 @@ public class ResourceTypeUtilitiesTest {
   private static NamedUserType buildNoConstructorType() {
     NamedUserType type = new NamedUserType();
     type.name.setValue("NoCtorType");
-    type.superType.setValue(JavaType.getInstance(Object.class));
+    type.superType.setValue(OBJECT_TYPE);
     // no constructors added
     return type;
   }
@@ -202,7 +204,7 @@ public class ResourceTypeUtilitiesTest {
   private static NamedUserType buildMultiConstructorType() {
     NamedUserType type = new NamedUserType();
     type.name.setValue("MultiCtorType");
-    type.superType.setValue(JavaType.getInstance(Object.class));
+    type.superType.setValue(OBJECT_TYPE);
 
     NamedUserConstructor ctor1 = new NamedUserConstructor();
     ConstructorBlockStatement body1 = new ConstructorBlockStatement();

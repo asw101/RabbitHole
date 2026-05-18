@@ -16,6 +16,8 @@ import static org.junit.Assert.*;
  */
 public class IdentifierNameGeneratorComprehensiveTest {
 
+  private static final JavaType OBJECT_TYPE = JavaType.getInstance(Object.class);
+
   private final IdentifierNameGenerator gen = IdentifierNameGenerator.SINGLETON;
 
   // ── createIdentifierNameFromInstanceCreation: AST-backed tests ─────
@@ -59,7 +61,7 @@ public class IdentifierNameGeneratorComprehensiveTest {
     // NamedUserType named "SMyThing" — NOT a JavaType, so S-prefix NOT stripped
     NamedUserType userType = new NamedUserType();
     userType.name.setValue("SMyThing");
-    userType.superType.setValue(JavaType.getInstance(Object.class));
+    userType.superType.setValue(OBJECT_TYPE);
 
     NamedUserConstructor ctor = new NamedUserConstructor();
     ConstructorBlockStatement body = new ConstructorBlockStatement();
@@ -317,7 +319,7 @@ public class IdentifierNameGeneratorComprehensiveTest {
   public void getUserTypeDepth_namedUserType_withJavaSuperType_returnsZero() {
     NamedUserType type = new NamedUserType();
     type.name.setValue("MyType");
-    type.superType.setValue(JavaType.getInstance(Object.class));
+    type.superType.setValue(OBJECT_TYPE);
     // depth = 1 + getUserTypeDepth(JavaType) = 1 + (-1) = 0
     assertEquals(0, StaticAnalysisUtilities.getUserTypeDepth(type));
   }
@@ -326,7 +328,7 @@ public class IdentifierNameGeneratorComprehensiveTest {
   public void getUserTypeDepth_nestedUserTypes_returnsCorrectDepth() {
     NamedUserType parent = new NamedUserType();
     parent.name.setValue("Parent");
-    parent.superType.setValue(JavaType.getInstance(Object.class));
+    parent.superType.setValue(OBJECT_TYPE);
 
     NamedUserType child = new NamedUserType();
     child.name.setValue("Child");
@@ -340,7 +342,7 @@ public class IdentifierNameGeneratorComprehensiveTest {
   public void getUserTypeDepth_threeDeep_returnsTwo() {
     NamedUserType grandparent = new NamedUserType();
     grandparent.name.setValue("Grandparent");
-    grandparent.superType.setValue(JavaType.getInstance(Object.class));
+    grandparent.superType.setValue(OBJECT_TYPE);
 
     NamedUserType parent = new NamedUserType();
     parent.name.setValue("Parent");

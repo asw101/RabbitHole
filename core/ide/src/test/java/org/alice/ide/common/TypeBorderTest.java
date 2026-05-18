@@ -22,6 +22,16 @@ import static org.junit.Assert.*;
  */
 public class TypeBorderTest {
 
+  private static final JavaType STRING_TYPE = JavaType.getInstance(String.class);
+  private static final JavaType OBJECT_TYPE = JavaType.getInstance(Object.class);
+
+  private static NamedUserType namedType(String name) {
+    NamedUserType t = new NamedUserType();
+    t.name.setValue(name);
+    t.superType.setValue(OBJECT_TYPE);
+    return t;
+  }
+
   // ── Static initializer guard ───────────────────────────────────────
   // TypeBorder loads FILL_COLOR = ThemeUtilities.getActiveTheme().getColorFor(...)
   // In headless without IDE, this uses DefaultTheme and should not throw.
@@ -55,31 +65,23 @@ public class TypeBorderTest {
   @Test
   public void getSingletonFor_javaType_returnsSingletonForJava() {
     assumeInitialized();
-    TypeBorder border = TypeBorder.getSingletonFor(JavaType.getInstance(String.class));
+    TypeBorder border = TypeBorder.getSingletonFor(STRING_TYPE);
     assertNotNull(border);
   }
 
   @Test
   public void getSingletonFor_namedUserType_returnsSingletonForUser() {
     assumeInitialized();
-    NamedUserType userType = new NamedUserType();
-    userType.name.setValue("MyType");
-    userType.superType.setValue(JavaType.getInstance(Object.class));
-
-    TypeBorder border = TypeBorder.getSingletonFor(userType);
+    TypeBorder border = TypeBorder.getSingletonFor(namedType("MyType"));
     assertNotNull(border);
   }
 
   @Test
   public void getSingletonForUserType_returnsSameAsUserSingleton() {
     assumeInitialized();
-    NamedUserType userType = new NamedUserType();
-    userType.name.setValue("Test");
-    userType.superType.setValue(JavaType.getInstance(Object.class));
-
     assertSame("getSingletonForUserType should match getSingletonFor(NamedUserType)",
         TypeBorder.getSingletonForUserType(),
-        TypeBorder.getSingletonFor(userType));
+        TypeBorder.getSingletonFor(namedType("Test")));
   }
 
   // ── singleton identity ─────────────────────────────────────────────
@@ -87,7 +89,7 @@ public class TypeBorderTest {
   @Test
   public void getSingletonFor_sameTypeCategory_returnsSameInstance() {
     assumeInitialized();
-    TypeBorder b1 = TypeBorder.getSingletonFor(JavaType.getInstance(String.class));
+    TypeBorder b1 = TypeBorder.getSingletonFor(STRING_TYPE);
     TypeBorder b2 = TypeBorder.getSingletonFor(JavaType.getInstance(Integer.class));
     assertSame("All Java types share same singleton", b1, b2);
   }
@@ -96,11 +98,8 @@ public class TypeBorderTest {
   public void getSingletonFor_differentCategories_returnDifferentInstances() {
     assumeInitialized();
     TypeBorder nullBorder = TypeBorder.getSingletonFor(null);
-    TypeBorder javaBorder = TypeBorder.getSingletonFor(JavaType.getInstance(Object.class));
-    NamedUserType userType = new NamedUserType();
-    userType.name.setValue("X");
-    userType.superType.setValue(JavaType.getInstance(Object.class));
-    TypeBorder userBorder = TypeBorder.getSingletonFor(userType);
+    TypeBorder javaBorder = TypeBorder.getSingletonFor(OBJECT_TYPE);
+    TypeBorder userBorder = TypeBorder.getSingletonFor(namedType("X"));
 
     assertNotSame("Null and Java singletons differ", nullBorder, javaBorder);
     assertNotSame("Java and User singletons differ", javaBorder, userBorder);
@@ -112,7 +111,7 @@ public class TypeBorderTest {
   @Test
   public void getBorderInsets_returnsNonNull() {
     assumeInitialized();
-    TypeBorder border = TypeBorder.getSingletonFor(JavaType.getInstance(String.class));
+    TypeBorder border = TypeBorder.getSingletonFor(STRING_TYPE);
     Insets insets = border.getBorderInsets(null);
     assertNotNull(insets);
   }
@@ -120,7 +119,7 @@ public class TypeBorderTest {
   @Test
   public void getBorderInsets_hasPositiveInsets() {
     assumeInitialized();
-    TypeBorder border = TypeBorder.getSingletonFor(JavaType.getInstance(String.class));
+    TypeBorder border = TypeBorder.getSingletonFor(STRING_TYPE);
     Insets insets = border.getBorderInsets(null);
     assertTrue("Left inset should be positive", insets.left > 0);
     assertTrue("Right inset should be positive", insets.right > 0);
@@ -131,7 +130,7 @@ public class TypeBorderTest {
   @Test
   public void getBorderInsets_symmetricHorizontal() {
     assumeInitialized();
-    TypeBorder border = TypeBorder.getSingletonFor(JavaType.getInstance(String.class));
+    TypeBorder border = TypeBorder.getSingletonFor(STRING_TYPE);
     Insets insets = border.getBorderInsets(null);
     assertEquals("Left and right insets should match", insets.left, insets.right);
   }
@@ -139,7 +138,7 @@ public class TypeBorderTest {
   @Test
   public void getBorderInsets_symmetricVertical() {
     assumeInitialized();
-    TypeBorder border = TypeBorder.getSingletonFor(JavaType.getInstance(String.class));
+    TypeBorder border = TypeBorder.getSingletonFor(STRING_TYPE);
     Insets insets = border.getBorderInsets(null);
     assertEquals("Top and bottom insets should match", insets.top, insets.bottom);
   }
@@ -147,12 +146,9 @@ public class TypeBorderTest {
   @Test
   public void getBorderInsets_sameAcrossAllSingletons() {
     assumeInitialized();
-    Insets javaInsets = TypeBorder.getSingletonFor(JavaType.getInstance(String.class)).getBorderInsets(null);
+    Insets javaInsets = TypeBorder.getSingletonFor(STRING_TYPE).getBorderInsets(null);
     Insets nullInsets = TypeBorder.getSingletonFor(null).getBorderInsets(null);
-    NamedUserType ut = new NamedUserType();
-    ut.name.setValue("T");
-    ut.superType.setValue(JavaType.getInstance(Object.class));
-    Insets userInsets = TypeBorder.getSingletonFor(ut).getBorderInsets(null);
+    Insets userInsets = TypeBorder.getSingletonFor(namedType("T")).getBorderInsets(null);
 
     assertEquals(javaInsets, nullInsets);
     assertEquals(nullInsets, userInsets);
@@ -161,7 +157,7 @@ public class TypeBorderTest {
   @Test
   public void isBorderOpaque_returnsFalse() {
     assumeInitialized();
-    TypeBorder border = TypeBorder.getSingletonFor(JavaType.getInstance(String.class));
+    TypeBorder border = TypeBorder.getSingletonFor(STRING_TYPE);
     assertFalse("TypeBorder should not be opaque", border.isBorderOpaque());
   }
 

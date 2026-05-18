@@ -24,12 +24,16 @@ import static org.junit.Assert.*;
  */
 public class TypeIconTest {
 
+  private static final JavaType STRING_TYPE = JavaType.getInstance(String.class);
+  private static final JavaType OBJECT_TYPE = JavaType.getInstance(Object.class);
+  private static final JavaType INTEGER_TYPE = JavaType.getInstance(Integer.class);
+
   // ── factory / constructor tests (always safe) ──────────────────────
 
   @Test
   public void getInstance_returnsNonNull() {
     try {
-      TypeIcon icon = TypeIcon.getInstance(JavaType.getInstance(String.class));
+      TypeIcon icon = TypeIcon.getInstance(STRING_TYPE);
       assertNotNull(icon);
     } catch (ExceptionInInitializerError | NoClassDefFoundError e) {
       Assume.assumeNoException("TypeBorder init failed in headless", e);
@@ -39,8 +43,8 @@ public class TypeIconTest {
   @Test
   public void getInstance_differentTypes_returnDifferentInstances() {
     try {
-      TypeIcon a = TypeIcon.getInstance(JavaType.getInstance(String.class));
-      TypeIcon b = TypeIcon.getInstance(JavaType.getInstance(Integer.class));
+      TypeIcon a = TypeIcon.getInstance(STRING_TYPE);
+      TypeIcon b = TypeIcon.getInstance(INTEGER_TYPE);
       assertNotSame("Different types → different icons", a, b);
     } catch (ExceptionInInitializerError | NoClassDefFoundError e) {
       Assume.assumeNoException("TypeBorder init failed in headless", e);
@@ -50,7 +54,7 @@ public class TypeIconTest {
   @Test
   public void getInstance_returnsIconInterface() {
     try {
-      TypeIcon icon = TypeIcon.getInstance(JavaType.getInstance(Object.class));
+      TypeIcon icon = TypeIcon.getInstance(OBJECT_TYPE);
       assertTrue("TypeIcon should implement Icon", icon instanceof Icon);
     } catch (ExceptionInInitializerError | NoClassDefFoundError e) {
       Assume.assumeNoException("TypeBorder init failed in headless", e);
@@ -111,7 +115,7 @@ public class TypeIconTest {
   public void constructor_fourArg_createsIcon() {
     try {
       Font font = new Font(Font.SANS_SERIF, Font.PLAIN, 12);
-      TypeIcon icon = new TypeIcon(JavaType.getInstance(String.class), true, font, font);
+      TypeIcon icon = new TypeIcon(STRING_TYPE, true, font, font);
       assertNotNull(icon);
     } catch (ExceptionInInitializerError | NoClassDefFoundError e) {
       Assume.assumeNoException("TypeBorder init failed", e);
@@ -123,7 +127,7 @@ public class TypeIconTest {
     try {
       NamedUserType type = new NamedUserType();
       type.name.setValue("TestType");
-      type.superType.setValue(JavaType.getInstance(Object.class));
+      type.superType.setValue(OBJECT_TYPE);
       TypeIcon icon = TypeIcon.getInstance(type);
       assertNotNull(icon);
     } catch (ExceptionInInitializerError | NoClassDefFoundError e) {
@@ -147,7 +151,7 @@ public class TypeIconTest {
   @Test
   public void getBonusFont_defaultConstructor_returnsNull() {
     try {
-      TypeIcon icon = TypeIcon.getInstance(JavaType.getInstance(String.class));
+      TypeIcon icon = TypeIcon.getInstance(STRING_TYPE);
       assertNull("Default constructor → null bonusFont", icon.getBonusFont());
     } catch (ExceptionInInitializerError | NoClassDefFoundError e) {
       Assume.assumeNoException("TypeBorder init failed", e);
@@ -158,7 +162,7 @@ public class TypeIconTest {
   public void getBonusFont_withExplicitFont_returnsThatFont() {
     try {
       Font bonus = new Font(Font.MONOSPACED, Font.ITALIC, 10);
-      TypeIcon icon = new TypeIcon(JavaType.getInstance(String.class), false, null, bonus);
+      TypeIcon icon = new TypeIcon(STRING_TYPE, false, null, bonus);
       assertSame(bonus, icon.getBonusFont());
     } catch (ExceptionInInitializerError | NoClassDefFoundError e) {
       Assume.assumeNoException("TypeBorder init failed", e);
@@ -172,7 +176,7 @@ public class TypeIconTest {
   public void getIconWidth_headless_returnsPositive() {
     Assume.assumeFalse("Requires display", GraphicsEnvironment.isHeadless());
     try {
-      TypeIcon icon = TypeIcon.getInstance(JavaType.getInstance(String.class));
+      TypeIcon icon = TypeIcon.getInstance(STRING_TYPE);
       int width = icon.getIconWidth();
       assertTrue("Icon width should be positive", width > 0);
     } catch (Exception e) {
@@ -184,7 +188,7 @@ public class TypeIconTest {
   public void getIconHeight_headless_returnsPositive() {
     Assume.assumeFalse("Requires display", GraphicsEnvironment.isHeadless());
     try {
-      TypeIcon icon = TypeIcon.getInstance(JavaType.getInstance(String.class));
+      TypeIcon icon = TypeIcon.getInstance(STRING_TYPE);
       int height = icon.getIconHeight();
       assertTrue("Icon height should be positive", height > 0);
     } catch (Exception e) {
@@ -197,8 +201,8 @@ public class TypeIconTest {
     Assume.assumeFalse("Requires display", GraphicsEnvironment.isHeadless());
     try {
       Font font = new Font(Font.SANS_SERIF, Font.PLAIN, 12);
-      TypeIcon withoutIndent = new TypeIcon(JavaType.getInstance(String.class), false, font, null);
-      TypeIcon withIndent = new TypeIcon(JavaType.getInstance(String.class), true, font, font);
+      TypeIcon withoutIndent = new TypeIcon(STRING_TYPE, false, font, null);
+      TypeIcon withIndent = new TypeIcon(STRING_TYPE, true, font, font);
       // With indent, extra width includes BONUS_GAP + bonus text
       // Width difference depends on context; just verify both return > 0
       assertTrue(withoutIndent.getIconWidth() > 0);

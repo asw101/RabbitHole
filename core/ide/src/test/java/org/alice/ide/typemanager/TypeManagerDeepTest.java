@@ -12,116 +12,99 @@ import static org.junit.Assert.*;
  */
 public class TypeManagerDeepTest {
 
+  private static final JavaType OBJECT_TYPE = JavaType.getInstance(Object.class);
+  private static final JavaType STRING_TYPE = JavaType.getInstance(String.class);
+  private static final JavaType BIPED_TYPE = JavaType.getInstance(org.lgna.story.SBiped.class);
+  private static final JavaType CAMERA_TYPE = JavaType.getInstance(org.lgna.story.SCamera.class);
+  private static final JavaType SCENE_TYPE = JavaType.getInstance(org.lgna.story.SScene.class);
+  private static final JavaType FLYER_TYPE = JavaType.getInstance(org.lgna.story.SFlyer.class);
+  private static final JavaType QUAD_TYPE = JavaType.getInstance(org.lgna.story.SQuadruped.class);
+
+  private static NamedUserType namedType(String name) {
+    NamedUserType t = new NamedUserType();
+    t.name.setValue(name);
+    t.superType.setValue(OBJECT_TYPE);
+    return t;
+  }
+
   // --- createClassNameFromSuperType ---
 
   @Test
   public void createClassNameFromSuperType_SBiped_returnsBiped() {
-    JavaType bipedType = JavaType.getInstance(org.lgna.story.SBiped.class);
-    String name = TypeManager.createClassNameFromSuperType(bipedType);
-    assertEquals("Biped", name);
+    assertEquals("Biped", TypeManager.createClassNameFromSuperType(BIPED_TYPE));
   }
 
   @Test
   public void createClassNameFromSuperType_SCamera_returnsCamera() {
-    JavaType cameraType = JavaType.getInstance(org.lgna.story.SCamera.class);
-    String name = TypeManager.createClassNameFromSuperType(cameraType);
-    assertEquals("Camera", name);
+    assertEquals("Camera", TypeManager.createClassNameFromSuperType(CAMERA_TYPE));
   }
 
   @Test
   public void createClassNameFromSuperType_SScene_returnsScene() {
-    JavaType sceneType = JavaType.getInstance(org.lgna.story.SScene.class);
-    String name = TypeManager.createClassNameFromSuperType(sceneType);
-    assertEquals("Scene", name);
+    assertEquals("Scene", TypeManager.createClassNameFromSuperType(SCENE_TYPE));
   }
 
   @Test
   public void createClassNameFromSuperType_SModel_returnsModel() {
     JavaType modelType = JavaType.getInstance(org.lgna.story.SModel.class);
-    String name = TypeManager.createClassNameFromSuperType(modelType);
-    assertEquals("Model", name);
+    assertEquals("Model", TypeManager.createClassNameFromSuperType(modelType));
   }
 
   @Test
   public void createClassNameFromSuperType_SFlyer_returnsFlyer() {
-    JavaType flyerType = JavaType.getInstance(org.lgna.story.SFlyer.class);
-    String name = TypeManager.createClassNameFromSuperType(flyerType);
-    assertEquals("Flyer", name);
+    assertEquals("Flyer", TypeManager.createClassNameFromSuperType(FLYER_TYPE));
   }
 
   @Test
   public void createClassNameFromSuperType_SQuadruped_returnsQuadruped() {
-    JavaType quadType = JavaType.getInstance(org.lgna.story.SQuadruped.class);
-    String name = TypeManager.createClassNameFromSuperType(quadType);
-    assertEquals("Quadruped", name);
+    assertEquals("Quadruped", TypeManager.createClassNameFromSuperType(QUAD_TYPE));
   }
 
   @Test
   public void createClassNameFromSuperType_nonSPrefix_returnsSameName() {
-    // String has no "S" prefix convention
-    JavaType stringType = JavaType.getInstance(String.class);
-    String name = TypeManager.createClassNameFromSuperType(stringType);
-    assertEquals("String", name);
+    assertEquals("String", TypeManager.createClassNameFromSuperType(STRING_TYPE));
   }
 
   @Test
   public void createClassNameFromSuperType_singleCharName_returnsSame() {
-    // Create a NamedUserType with single char name
-    NamedUserType singleChar = new NamedUserType();
-    singleChar.name.setValue("X");
-    singleChar.superType.setValue(JavaType.getInstance(Object.class));
-    String name = TypeManager.createClassNameFromSuperType(singleChar);
-    assertEquals("X", name);
+    assertEquals("X", TypeManager.createClassNameFromSuperType(namedType("X")));
   }
 
   @Test
   public void createClassNameFromSuperType_sLowerCase_returnsSame() {
-    // "string" starts with lowercase 's' so doesn't match the S-prefix pattern
-    NamedUserType type = new NamedUserType();
-    type.name.setValue("sLowerCase");
-    type.superType.setValue(JavaType.getInstance(Object.class));
-    String name = TypeManager.createClassNameFromSuperType(type);
-    assertEquals("sLowerCase", name);
+    assertEquals("sLowerCase", TypeManager.createClassNameFromSuperType(namedType("sLowerCase")));
   }
 
   @Test
   public void createClassNameFromSuperType_SFollowedByLowerCase_returnsSame() {
-    NamedUserType type = new NamedUserType();
-    type.name.setValue("Slower");
-    type.superType.setValue(JavaType.getInstance(Object.class));
-    String name = TypeManager.createClassNameFromSuperType(type);
-    assertEquals("Slower", name);
+    assertEquals("Slower", TypeManager.createClassNameFromSuperType(namedType("Slower")));
   }
 
   // --- getNamedUserTypeFromSuperType ---
 
   @Test
   public void getNamedUserTypeFromSuperType_SBiped_createsType() {
-    JavaType bipedType = JavaType.getInstance(org.lgna.story.SBiped.class);
-    NamedUserType result = TypeManager.getNamedUserTypeFromSuperType(bipedType);
+    NamedUserType result = TypeManager.getNamedUserTypeFromSuperType(BIPED_TYPE);
     assertNotNull(result);
     assertEquals("Biped", result.getName());
   }
 
   @Test
   public void getNamedUserTypeFromSuperType_hasSuperTypeSet() {
-    JavaType bipedType = JavaType.getInstance(org.lgna.story.SBiped.class);
-    NamedUserType result = TypeManager.getNamedUserTypeFromSuperType(bipedType);
+    NamedUserType result = TypeManager.getNamedUserTypeFromSuperType(BIPED_TYPE);
     assertNotNull(result.superType.getValue());
-    assertEquals(bipedType, result.superType.getValue());
+    assertEquals(BIPED_TYPE, result.superType.getValue());
   }
 
   @Test
   public void getNamedUserTypeFromSuperType_hasConstructors() {
-    JavaType bipedType = JavaType.getInstance(org.lgna.story.SBiped.class);
-    NamedUserType result = TypeManager.getNamedUserTypeFromSuperType(bipedType);
+    NamedUserType result = TypeManager.getNamedUserTypeFromSuperType(BIPED_TYPE);
     assertFalse(result.constructors.isEmpty());
   }
 
   @Test
   public void getNamedUserTypeFromSuperType_SScene_createsSceneType() {
-    JavaType sceneType = JavaType.getInstance(org.lgna.story.SScene.class);
-    NamedUserType result = TypeManager.getNamedUserTypeFromSuperType(sceneType);
+    NamedUserType result = TypeManager.getNamedUserTypeFromSuperType(SCENE_TYPE);
     assertNotNull(result);
     assertEquals("Scene", result.getName());
     assertNotNull(result.superType.getValue());
@@ -129,16 +112,14 @@ public class TypeManagerDeepTest {
 
   @Test
   public void getNamedUserTypeFromSuperType_SCamera_createsCameraType() {
-    JavaType cameraType = JavaType.getInstance(org.lgna.story.SCamera.class);
-    NamedUserType result = TypeManager.getNamedUserTypeFromSuperType(cameraType);
+    NamedUserType result = TypeManager.getNamedUserTypeFromSuperType(CAMERA_TYPE);
     assertNotNull(result);
     assertEquals("Camera", result.getName());
   }
 
   @Test
   public void getNamedUserTypeFromSuperType_constructorHasBody() {
-    JavaType bipedType = JavaType.getInstance(org.lgna.story.SBiped.class);
-    NamedUserType result = TypeManager.getNamedUserTypeFromSuperType(bipedType);
+    NamedUserType result = TypeManager.getNamedUserTypeFromSuperType(BIPED_TYPE);
     for (NamedUserConstructor constructor : result.constructors) {
       assertNotNull(constructor.body.getValue());
       assertNotNull(constructor.body.getValue().constructorInvocationStatement.getValue());
@@ -149,31 +130,27 @@ public class TypeManagerDeepTest {
 
   @Test
   public void createClassNameFromSuperType_SMarker_returnsMarker() {
-    JavaType markerType = JavaType.getInstance(org.lgna.story.SMarker.class);
-    String name = TypeManager.createClassNameFromSuperType(markerType);
-    assertEquals("Marker", name);
+    assertEquals("Marker", TypeManager.createClassNameFromSuperType(
+        JavaType.getInstance(org.lgna.story.SMarker.class)));
   }
 
   @Test
   public void createClassNameFromSuperType_SThing_returnsThing() {
-    JavaType thingType = JavaType.getInstance(org.lgna.story.SThing.class);
-    String name = TypeManager.createClassNameFromSuperType(thingType);
-    assertEquals("Thing", name);
+    assertEquals("Thing", TypeManager.createClassNameFromSuperType(
+        JavaType.getInstance(org.lgna.story.SThing.class)));
   }
 
   @Test
   public void getNamedUserTypeFromSuperType_SFlyer_createsFlyerType() {
-    JavaType flyerType = JavaType.getInstance(org.lgna.story.SFlyer.class);
-    NamedUserType result = TypeManager.getNamedUserTypeFromSuperType(flyerType);
+    NamedUserType result = TypeManager.getNamedUserTypeFromSuperType(FLYER_TYPE);
     assertNotNull(result);
     assertEquals("Flyer", result.getName());
-    assertEquals(flyerType, result.superType.getValue());
+    assertEquals(FLYER_TYPE, result.superType.getValue());
   }
 
   @Test
   public void getNamedUserTypeFromSuperType_SQuadruped_createsQuadrupedType() {
-    JavaType quadType = JavaType.getInstance(org.lgna.story.SQuadruped.class);
-    NamedUserType result = TypeManager.getNamedUserTypeFromSuperType(quadType);
+    NamedUserType result = TypeManager.getNamedUserTypeFromSuperType(QUAD_TYPE);
     assertNotNull(result);
     assertEquals("Quadruped", result.getName());
   }

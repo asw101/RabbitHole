@@ -21,12 +21,16 @@ import static org.junit.Assert.*;
  */
 public class TypeComponentTest {
 
+  private static final JavaType STRING_TYPE = JavaType.getInstance(String.class);
+  private static final JavaType OBJECT_TYPE = JavaType.getInstance(Object.class);
+  private static final JavaType INTEGER_TYPE = JavaType.getInstance(Integer.class);
+
   // ── factory method ─────────────────────────────────────────────────
 
   @Test
   public void createInstance_returnsNonNull() {
     try {
-      TypeComponent tc = TypeComponent.createInstance(JavaType.getInstance(String.class));
+      TypeComponent tc = TypeComponent.createInstance(STRING_TYPE);
       assertNotNull(tc);
     } catch (ExceptionInInitializerError | NoClassDefFoundError e) {
       Assume.assumeNoException("TypeBorder init failed in headless", e);
@@ -38,7 +42,7 @@ public class TypeComponentTest {
     try {
       NamedUserType type = new NamedUserType();
       type.name.setValue("TestType");
-      type.superType.setValue(JavaType.getInstance(Object.class));
+      type.superType.setValue(OBJECT_TYPE);
       TypeComponent tc = TypeComponent.createInstance(type);
       assertNotNull(tc);
     } catch (ExceptionInInitializerError | NoClassDefFoundError e) {
@@ -49,8 +53,8 @@ public class TypeComponentTest {
   @Test
   public void createInstance_differentTypes_returnDifferentInstances() {
     try {
-      TypeComponent a = TypeComponent.createInstance(JavaType.getInstance(String.class));
-      TypeComponent b = TypeComponent.createInstance(JavaType.getInstance(Integer.class));
+      TypeComponent a = TypeComponent.createInstance(STRING_TYPE);
+      TypeComponent b = TypeComponent.createInstance(INTEGER_TYPE);
       assertNotSame(a, b);
     } catch (ExceptionInInitializerError | NoClassDefFoundError e) {
       Assume.assumeNoException("TypeBorder init failed in headless", e);

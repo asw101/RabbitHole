@@ -14,12 +14,14 @@ import static org.junit.Assert.*;
  */
 public class ResourceTypeUtilitiesEdgeCaseTest {
 
+  private static final JavaType OBJECT_TYPE = JavaType.getInstance(Object.class);
+
   // ── Helper: build type with a UserField but no constructors ────────
 
   private static NamedUserType buildTypeWithFieldsNoCtors() {
     NamedUserType type = new NamedUserType();
     type.name.setValue("HasFields");
-    type.superType.setValue(JavaType.getInstance(Object.class));
+    type.superType.setValue(OBJECT_TYPE);
     UserField field = new UserField();
     field.name.setValue("myField");
     field.valueType.setValue(JavaType.getInstance(String.class));
@@ -32,7 +34,7 @@ public class ResourceTypeUtilitiesEdgeCaseTest {
   private static NamedUserType buildTypeWithEmptyBodyCtor() {
     NamedUserType type = new NamedUserType();
     type.name.setValue("EmptyBodyCtor");
-    type.superType.setValue(JavaType.getInstance(Object.class));
+    type.superType.setValue(OBJECT_TYPE);
 
     NamedUserConstructor ctor = new NamedUserConstructor();
     ConstructorBlockStatement body = new ConstructorBlockStatement();
@@ -69,7 +71,7 @@ public class ResourceTypeUtilitiesEdgeCaseTest {
   public void getResourceFieldOrType_oneParamReturnsExpectedType() {
     NamedUserType type = new NamedUserType();
     type.name.setValue("IntParamType");
-    type.superType.setValue(JavaType.getInstance(Object.class));
+    type.superType.setValue(OBJECT_TYPE);
 
     NamedUserConstructor ctor = new NamedUserConstructor();
     ConstructorBlockStatement body = new ConstructorBlockStatement();
@@ -93,7 +95,7 @@ public class ResourceTypeUtilitiesEdgeCaseTest {
     // When getResourceFieldOrType returns a JavaType, getResourceType should return it directly
     NamedUserType type = new NamedUserType();
     type.name.setValue("ConsistencyTest");
-    type.superType.setValue(JavaType.getInstance(Object.class));
+    type.superType.setValue(OBJECT_TYPE);
 
     NamedUserConstructor ctor = new NamedUserConstructor();
     ConstructorBlockStatement body = new ConstructorBlockStatement();
@@ -120,7 +122,7 @@ public class ResourceTypeUtilitiesEdgeCaseTest {
     // Build a type whose super invocation has a FieldAccess to Thread.State.RUNNABLE
     NamedUserType type = new NamedUserType();
     type.name.setValue("RunnableFieldType");
-    type.superType.setValue(JavaType.getInstance(Object.class));
+    type.superType.setValue(OBJECT_TYPE);
 
     NamedUserConstructor ctor = new NamedUserConstructor();
     ConstructorBlockStatement body = new ConstructorBlockStatement();
@@ -150,7 +152,7 @@ public class ResourceTypeUtilitiesEdgeCaseTest {
   public void getResourceType_multipleFieldAccess_returnsDeclaringType() {
     NamedUserType type = new NamedUserType();
     type.name.setValue("TerminatedFieldType");
-    type.superType.setValue(JavaType.getInstance(Object.class));
+    type.superType.setValue(OBJECT_TYPE);
 
     NamedUserConstructor ctor = new NamedUserConstructor();
     ConstructorBlockStatement body = new ConstructorBlockStatement();
@@ -179,7 +181,7 @@ public class ResourceTypeUtilitiesEdgeCaseTest {
   public void getResourceFieldOrType_superWithNullLiteral_returnsNull() {
     NamedUserType type = new NamedUserType();
     type.name.setValue("NullLiteralType");
-    type.superType.setValue(JavaType.getInstance(Object.class));
+    type.superType.setValue(OBJECT_TYPE);
 
     NamedUserConstructor ctor = new NamedUserConstructor();
     ConstructorBlockStatement body = new ConstructorBlockStatement();
@@ -187,7 +189,7 @@ public class ResourceTypeUtilitiesEdgeCaseTest {
 
     UserParameter fakeParam = new UserParameter();
     fakeParam.name.setValue("x");
-    fakeParam.valueType.setValue(JavaType.getInstance(Object.class));
+    fakeParam.valueType.setValue(OBJECT_TYPE);
 
     superInv.requiredArguments.add(new SimpleArgument(fakeParam, new NullLiteral()));
     body.constructorInvocationStatement.setValue(superInv);
@@ -202,7 +204,7 @@ public class ResourceTypeUtilitiesEdgeCaseTest {
   public void getResourceFieldOrType_superWithIntegerLiteral_returnsNull() {
     NamedUserType type = new NamedUserType();
     type.name.setValue("IntLiteralType");
-    type.superType.setValue(JavaType.getInstance(Object.class));
+    type.superType.setValue(OBJECT_TYPE);
 
     NamedUserConstructor ctor = new NamedUserConstructor();
     ConstructorBlockStatement body = new ConstructorBlockStatement();

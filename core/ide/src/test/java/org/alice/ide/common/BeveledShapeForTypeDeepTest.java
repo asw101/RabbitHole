@@ -15,17 +15,24 @@ import static org.junit.Assert.*;
  */
 public class BeveledShapeForTypeDeepTest {
 
+  private static final JavaType INTEGER_TYPE = JavaType.getInstance(Integer.class);
+  private static final JavaType DOUBLE_TYPE = JavaType.getInstance(Double.class);
+  private static final JavaType STRING_TYPE = JavaType.getInstance(String.class);
+  private static final JavaType BOOLEAN_TYPE = JavaType.getInstance(Boolean.class);
+  private static final JavaType OBJECT_TYPE = JavaType.getInstance(Object.class);
+  private static final JavaType NUMBER_TYPE = JavaType.getInstance(Number.class);
+
   @Test
   public void createBeveledShapeFor_integerType_returnsNonNull() {
     BeveledShapeForType shape = BeveledShapeForType.createBeveledShapeFor(
-        JavaType.getInstance(Integer.class), 0f, 0f, 100f, 20f);
+        INTEGER_TYPE, 0f, 0f, 100f, 20f);
     assertNotNull("Integer (Number) type should produce a shape", shape);
   }
 
   @Test
   public void createBeveledShapeFor_doubleType_returnsNonNull() {
     BeveledShapeForType shape = BeveledShapeForType.createBeveledShapeFor(
-        JavaType.getInstance(Double.class), 0f, 0f, 100f, 20f);
+        DOUBLE_TYPE, 0f, 0f, 100f, 20f);
     assertNotNull("Double (Number) type should produce a shape", shape);
   }
 
@@ -43,7 +50,7 @@ public class BeveledShapeForTypeDeepTest {
   @Test
   public void createBeveledShapeFor_stringType_boundsWithinExpected() {
     BeveledShapeForType shape = BeveledShapeForType.createBeveledShapeFor(
-        JavaType.getInstance(String.class), 0f, 0f, 100f, 20f);
+        STRING_TYPE, 0f, 0f, 100f, 20f);
     assertNotNull(shape);
     Rectangle2D bounds = shape.getBaseShape().getBounds2D();
     assertTrue("String shape width should be positive", bounds.getWidth() > 0);
@@ -53,7 +60,7 @@ public class BeveledShapeForTypeDeepTest {
   @Test
   public void createBeveledShapeFor_booleanType_boundsWithinExpected() {
     BeveledShapeForType shape = BeveledShapeForType.createBeveledShapeFor(
-        JavaType.getInstance(Boolean.class), 0f, 0f, 100f, 20f);
+        BOOLEAN_TYPE, 0f, 0f, 100f, 20f);
     assertNotNull(shape);
     Rectangle2D bounds = shape.getBaseShape().getBounds2D();
     assertTrue("Boolean shape width should be positive", bounds.getWidth() > 0);
@@ -71,13 +78,13 @@ public class BeveledShapeForTypeDeepTest {
     BeveledShapeForType voidShape = BeveledShapeForType.createBeveledShapeFor(
         JavaType.VOID_TYPE, 0f, 0f, 100f, 20f);
     BeveledShapeForType stringShape = BeveledShapeForType.createBeveledShapeFor(
-        JavaType.getInstance(String.class), 0f, 0f, 100f, 20f);
+        STRING_TYPE, 0f, 0f, 100f, 20f);
     BeveledShapeForType numberShape = BeveledShapeForType.createBeveledShapeFor(
-        JavaType.getInstance(Integer.class), 0f, 0f, 100f, 20f);
+        INTEGER_TYPE, 0f, 0f, 100f, 20f);
     BeveledShapeForType boolShape = BeveledShapeForType.createBeveledShapeFor(
-        JavaType.getInstance(Boolean.class), 0f, 0f, 100f, 20f);
+        BOOLEAN_TYPE, 0f, 0f, 100f, 20f);
     BeveledShapeForType defaultShape = BeveledShapeForType.createBeveledShapeFor(
-        JavaType.getInstance(Object.class), 0f, 0f, 100f, 20f);
+        OBJECT_TYPE, 0f, 0f, 100f, 20f);
 
     // Void has empty bounds; all others have non-empty bounds
     Rectangle2D voidBounds = voidShape.getBaseShape().getBounds2D();
@@ -95,7 +102,7 @@ public class BeveledShapeForTypeDeepTest {
   public void createBeveledShapeFor_withRoundRect_returnsNonNull() {
     RoundRectangle2D.Float roundRect = new RoundRectangle2D.Float(50f, 0f, 100f, 20f, 8f, 8f);
     BeveledShapeForType shape = BeveledShapeForType.createBeveledShapeFor(
-        JavaType.getInstance(String.class), roundRect, 30f, 20f);
+        STRING_TYPE, roundRect, 30f, 20f);
     assertNotNull("RoundRect variant should produce a shape", shape);
   }
 
@@ -103,10 +110,10 @@ public class BeveledShapeForTypeDeepTest {
   public void createBeveledShapeFor_withRoundRect_expandsBounds() {
     RoundRectangle2D.Float roundRect = new RoundRectangle2D.Float(50f, 0f, 100f, 20f, 8f, 8f);
     BeveledShapeForType shapeWithRound = BeveledShapeForType.createBeveledShapeFor(
-        JavaType.getInstance(Object.class), roundRect, 30f, 20f);
+        OBJECT_TYPE, roundRect, 30f, 20f);
 
     BeveledShapeForType shapeWithoutRound = BeveledShapeForType.createBeveledShapeFor(
-        JavaType.getInstance(Object.class), 20f, 0f, 30f, 20f);
+        OBJECT_TYPE, 20f, 0f, 30f, 20f);
 
     Rectangle2D boundsWithRound = shapeWithRound.getBaseShape().getBounds2D();
     Rectangle2D boundsWithoutRound = shapeWithoutRound.getBaseShape().getBounds2D();
@@ -119,7 +126,7 @@ public class BeveledShapeForTypeDeepTest {
   @Test
   public void union_modifiesBaseShape() {
     BeveledShapeForType shape = BeveledShapeForType.createBeveledShapeFor(
-        JavaType.getInstance(Object.class), 0f, 0f, 50f, 20f);
+        OBJECT_TYPE, 0f, 0f, 50f, 20f);
     Rectangle2D boundsBefore = shape.getBaseShape().getBounds2D();
     double widthBefore = boundsBefore.getWidth();
 
@@ -151,7 +158,7 @@ public class BeveledShapeForTypeDeepTest {
   @Test
   public void createBeveledShapeFor_objectType_producesDefaultRectShape() {
     BeveledShapeForType shape = BeveledShapeForType.createBeveledShapeFor(
-        JavaType.getInstance(Object.class), 10f, 5f, 80f, 30f);
+        OBJECT_TYPE, 10f, 5f, 80f, 30f);
     assertNotNull(shape);
     Rectangle2D bounds = shape.getBaseShape().getBounds2D();
     // Default shape is a rectangular path from (x0,y0) to (x1,y1)
@@ -164,7 +171,7 @@ public class BeveledShapeForTypeDeepTest {
   @Test
   public void createBeveledShapeFor_numberType_hasSteppedBounds() {
     BeveledShapeForType shape = BeveledShapeForType.createBeveledShapeFor(
-        JavaType.getInstance(Number.class), 0f, 0f, 100f, 30f);
+        NUMBER_TYPE, 0f, 0f, 100f, 30f);
     assertNotNull(shape);
     Rectangle2D bounds = shape.getBaseShape().getBounds2D();
     // Number (stepped) shape spans the full width/height given

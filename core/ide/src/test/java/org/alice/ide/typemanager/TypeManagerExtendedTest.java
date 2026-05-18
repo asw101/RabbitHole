@@ -17,6 +17,16 @@ import static org.junit.Assert.*;
  */
 public class TypeManagerExtendedTest {
 
+  private static final JavaType OBJECT_TYPE = JavaType.getInstance(Object.class);
+  private static final Class<?>[] DECLARED_CLASSES = TypeManager.class.getDeclaredClasses();
+
+  private static NamedUserType namedType(String name) {
+    NamedUserType t = new NamedUserType();
+    t.name.setValue(name);
+    t.superType.setValue(OBJECT_TYPE);
+    return t;
+  }
+
   // ── constructor guard ──────────────────────────────────────────────
 
   @Test(expected = InvocationTargetException.class)
@@ -46,9 +56,7 @@ public class TypeManagerExtendedTest {
   @Test
   public void getTypeCache_returnsModifiableSet() {
     Set<NamedUserType> cache = TypeManager.getTypeCache();
-    NamedUserType dummy = new NamedUserType();
-    dummy.name.setValue("Dummy");
-    dummy.superType.setValue(JavaType.getInstance(Object.class));
+    NamedUserType dummy = namedType("Dummy");
     cache.add(dummy);
     assertTrue("Should be able to add to cache set", cache.contains(dummy));
   }
@@ -114,42 +122,27 @@ public class TypeManagerExtendedTest {
 
   @Test
   public void createClassNameFromSuperType_emptyName_returnsEmpty() {
-    NamedUserType type = new NamedUserType();
-    type.name.setValue("");
-    type.superType.setValue(JavaType.getInstance(Object.class));
-    assertEquals("", TypeManager.createClassNameFromSuperType(type));
+    assertEquals("", TypeManager.createClassNameFromSuperType(namedType("")));
   }
 
   @Test
   public void createClassNameFromSuperType_singleS_returnsS() {
-    NamedUserType type = new NamedUserType();
-    type.name.setValue("S");
-    type.superType.setValue(JavaType.getInstance(Object.class));
-    assertEquals("S", TypeManager.createClassNameFromSuperType(type));
+    assertEquals("S", TypeManager.createClassNameFromSuperType(namedType("S")));
   }
 
   @Test
   public void createClassNameFromSuperType_SFollowedByDigit_returnsSame() {
-    NamedUserType type = new NamedUserType();
-    type.name.setValue("S3D");
-    type.superType.setValue(JavaType.getInstance(Object.class));
-    assertEquals("S3D", TypeManager.createClassNameFromSuperType(type));
+    assertEquals("S3D", TypeManager.createClassNameFromSuperType(namedType("S3D")));
   }
 
   @Test
   public void createClassNameFromSuperType_SsLowerCase_returnsSame() {
-    NamedUserType type = new NamedUserType();
-    type.name.setValue("Ss");
-    type.superType.setValue(JavaType.getInstance(Object.class));
-    assertEquals("Ss", TypeManager.createClassNameFromSuperType(type));
+    assertEquals("Ss", TypeManager.createClassNameFromSuperType(namedType("Ss")));
   }
 
   @Test
   public void createClassNameFromSuperType_SUpperCase_stripsS() {
-    NamedUserType type = new NamedUserType();
-    type.name.setValue("SA");
-    type.superType.setValue(JavaType.getInstance(Object.class));
-    assertEquals("A", TypeManager.createClassNameFromSuperType(type));
+    assertEquals("A", TypeManager.createClassNameFromSuperType(namedType("SA")));
   }
 
   // ── getEnumConstantFieldIfOneAndOnly ───────────────────────────────
@@ -161,10 +154,7 @@ public class TypeManagerExtendedTest {
 
   @Test
   public void getEnumConstantField_namedUserType_returnsNull() {
-    NamedUserType type = new NamedUserType();
-    type.name.setValue("CustomType");
-    type.superType.setValue(JavaType.getInstance(Object.class));
-    assertNull(TypeManager.getEnumConstantFieldIfOneAndOnly(type));
+    assertNull(TypeManager.getEnumConstantFieldIfOneAndOnly(namedType("CustomType")));
   }
 
   @Test
@@ -206,10 +196,9 @@ public class TypeManagerExtendedTest {
   // ── inner criterion classes (reflection) ───────────────────────────
 
   @Test
-  public void matchesNameTypeCriterion_existsAsPrivateStaticClass() throws Exception {
-    Class<?>[] declaredClasses = TypeManager.class.getDeclaredClasses();
+  public void matchesNameTypeCriterion_existsAsPrivateStaticClass() {
     boolean found = false;
-    for (Class<?> cls : declaredClasses) {
+    for (Class<?> cls : DECLARED_CLASSES) {
       if (cls.getSimpleName().equals("MatchesNameTypeCriterion")) {
         assertTrue("Should be private", Modifier.isPrivate(cls.getModifiers()));
         assertTrue("Should be static", Modifier.isStatic(cls.getModifiers()));
@@ -221,10 +210,9 @@ public class TypeManagerExtendedTest {
   }
 
   @Test
-  public void extendsTypeCriterion_existsAsPrivateAbstractStaticClass() throws Exception {
-    Class<?>[] declaredClasses = TypeManager.class.getDeclaredClasses();
+  public void extendsTypeCriterion_existsAsPrivateAbstractStaticClass() {
     boolean found = false;
-    for (Class<?> cls : declaredClasses) {
+    for (Class<?> cls : DECLARED_CLASSES) {
       if (cls.getSimpleName().equals("ExtendsTypeCriterion")) {
         assertTrue("Should be private", Modifier.isPrivate(cls.getModifiers()));
         assertTrue("Should be abstract", Modifier.isAbstract(cls.getModifiers()));
@@ -238,9 +226,8 @@ public class TypeManagerExtendedTest {
 
   @Test
   public void defaultConstructorExtendsTypeCriterion_existsAsFinalStaticClass() {
-    Class<?>[] declaredClasses = TypeManager.class.getDeclaredClasses();
     boolean found = false;
-    for (Class<?> cls : declaredClasses) {
+    for (Class<?> cls : DECLARED_CLASSES) {
       if (cls.getSimpleName().equals("DefaultConstructorExtendsTypeCriterion")) {
         assertTrue("Should be final", Modifier.isFinal(cls.getModifiers()));
         assertTrue("Should be static", Modifier.isStatic(cls.getModifiers()));
@@ -253,9 +240,8 @@ public class TypeManagerExtendedTest {
 
   @Test
   public void extendsTypeWithConstructorParameterTypeCriterion_exists() {
-    Class<?>[] declaredClasses = TypeManager.class.getDeclaredClasses();
     boolean found = false;
-    for (Class<?> cls : declaredClasses) {
+    for (Class<?> cls : DECLARED_CLASSES) {
       if (cls.getSimpleName().equals("ExtendsTypeWithConstructorParameterTypeCriterion")) {
         found = true;
         break;
@@ -266,9 +252,8 @@ public class TypeManagerExtendedTest {
 
   @Test
   public void extendsTypeWithSuperArgumentFieldCriterion_exists() {
-    Class<?>[] declaredClasses = TypeManager.class.getDeclaredClasses();
     boolean found = false;
-    for (Class<?> cls : declaredClasses) {
+    for (Class<?> cls : DECLARED_CLASSES) {
       if (cls.getSimpleName().equals("ExtendsTypeWithSuperArgumentFieldCriterion")) {
         found = true;
         break;
@@ -279,9 +264,8 @@ public class TypeManagerExtendedTest {
 
   @Test
   public void extendsTypeWithSuperArgumentExpressionsCriterion_exists() {
-    Class<?>[] declaredClasses = TypeManager.class.getDeclaredClasses();
     boolean found = false;
-    for (Class<?> cls : declaredClasses) {
+    for (Class<?> cls : DECLARED_CLASSES) {
       if (cls.getSimpleName().equals("ExtendsTypeWithSuperArgumentExpressionsCriterion")) {
         found = true;
         break;
@@ -292,7 +276,6 @@ public class TypeManagerExtendedTest {
 
   @Test
   public void innerCriterionClasses_totalCount() {
-    Class<?>[] declaredClasses = TypeManager.class.getDeclaredClasses();
-    assertTrue("Should have at least 5 inner classes", declaredClasses.length >= 5);
+    assertTrue("Should have at least 5 inner classes", DECLARED_CLASSES.length >= 5);
   }
 }
