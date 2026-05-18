@@ -430,3 +430,62 @@ If Maven reports missing generated parser classes:
 ```bash
 git submodule update --init tweedle-lang
 ```
+
+---
+
+## Phase 2 — Issue #775 coverage push (52.3% → 70%)
+
+Phase 2 adds 30 test files covering the IK solver math layer, interact
+conditions, handle/input state, manipulator snap math, implementation
+helpers, and event data classes. All follow the same headless patterns
+and test double strategies above.
+
+For the full test inventory, see
+[core/story-api coverage push phase 2](../../docs/reference/core-story-api-coverage-push-phase2.md).
+
+For running and troubleshooting instructions, see
+[How to run Issue #775 coverage push](../../docs/howto/run-issue-775-coverage-push.md).
+
+### New test packages
+
+| Package | Files | Focus |
+| --- | --- | --- |
+| `o.l.ik.core.solver` | 5 | Bone.Axis rotation math, chain traversal, solver convergence |
+| `o.l.ik.core` | 1 | Top-level IK orchestration |
+| `o.l.ik.core.enforcer` | 2 | IK enforcer data flow and thresholds |
+| `o.a.interact.condition` | 7 | Input conditions: mouse, key, drag, modifier matching |
+| `o.a.interact.handle` | 2 | Handle set registration and filtering |
+| `o.a.interact` | 2 | InputState tracking and PickHint flags |
+| `o.a.interact.manipulator` | 5 | Snap math, grid alignment, rotation increment |
+| `o.l.story.implementation` | 2 | Camera marker, dialog delegate |
+| `o.l.story.implementation.alice` | 2 | Dynamic resource, resource utilities |
+| `o.l.story.resourceutilities` | 2 | Resource loading and storytelling resources |
+
+### IK solver test pattern
+
+```java
+@Test
+public void axis_invertDirection_negatesVector() {
+  Bone bone = createTestBone();
+  Bone.Axis axis = new Bone.Axis(bone, 0);
+  axis.setCurrentValue(new Vector3(1, 0, 0));
+  axis.invertDirection();
+  Vector3 result = axis.getCurrentValue();
+  assertEquals(-1.0, result.x, 1e-10);
+}
+```
+
+### Interact condition test pattern
+
+```java
+@Test
+public void mouseDragCondition_stateChanged_detectsNewDrag() {
+  InputState current = new InputState();
+  current.setMouseState(MouseEvent.BUTTON1, true);
+  current.setIsDragEvent(true);
+  InputState previous = new InputState();
+  MouseDragCondition condition = new MouseDragCondition(
+      MouseEvent.BUTTON1, new PickCondition(PickHint.getAnything()));
+  assertTrue(condition.stateChanged(current, previous));
+}
+```
