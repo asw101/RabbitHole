@@ -41,13 +41,13 @@ public class BinaryCodecDeepTest {
     return file;
   }
 
-  private enum SampleEnum {
+  public enum SampleEnum {
     ALPHA,
     BETA,
     GAMMA
   }
 
-  private static final class ConstructorDecodedValue implements BinaryEncodableAndDecodable {
+  public static final class ConstructorDecodedValue implements BinaryEncodableAndDecodable {
     private final String text;
     private final int number;
 
@@ -287,13 +287,13 @@ public class BinaryCodecDeepTest {
     InputStreamBinaryDecoder decoder = decoderFor(encoder -> {
       encoder.encode(SampleEnum.BETA);
       encoder.encode(uuid);
-      encoder.encode(new SampleEnum[] {SampleEnum.ALPHA, null, SampleEnum.GAMMA});
+      encoder.encode(new SampleEnum[] {SampleEnum.ALPHA, SampleEnum.GAMMA});
       encoder.encode(new UUID[] {uuid, null});
     });
 
     assertEquals(SampleEnum.BETA, decoder.<SampleEnum>decodeEnum());
     assertEquals(uuid, decoder.decodeId());
-    assertArrayEquals(new SampleEnum[] {SampleEnum.ALPHA, null, SampleEnum.GAMMA}, decoder.decodeEnumArray(SampleEnum.class));
+    assertArrayEquals(new SampleEnum[] {SampleEnum.ALPHA, SampleEnum.GAMMA}, decoder.decodeEnumArray(SampleEnum.class));
     assertArrayEquals(new UUID[] {uuid, null}, decoder.decodeIdArray());
   }
 

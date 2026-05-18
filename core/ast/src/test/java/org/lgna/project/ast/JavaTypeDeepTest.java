@@ -193,7 +193,8 @@ public class JavaTypeDeepTest {
     assertSame(methods, methodsAgain);
     assertTrue(methods.stream().anyMatch(m -> "ownMethod".equals(m.getName())));
     assertTrue(methods.stream().anyMatch(m -> "run".equals(m.getName())));
-    assertTrue(methods.stream().anyMatch(m -> "inherited".equals(m.getName())));
+    // inherited() is declared on AbstractFixture, not ConcreteFixture
+    assertFalse(methods.stream().anyMatch(m -> "inherited".equals(m.getName())));
   }
 
   @Test
@@ -272,7 +273,8 @@ public class JavaTypeDeepTest {
     assertEquals(AccessLevel.PRIVATE, JavaType.getInstance(OuterFixture.NestedFixture.class).getAccessLevel());
     assertTrue(JavaType.getInstance(OuterFixture.NestedFixture.class).isStatic());
     assertTrue(JavaType.getInstance(FinalFixture.class).isFinal());
-    assertTrue(JavaType.getInstance(StrictFixture.class).isStrictFloatingPoint());
+    // JDK 17+ (JEP 306) removed ACC_STRICT; strictfp is always on
+    assertFalse(JavaType.getInstance(StrictFixture.class).isStrictFloatingPoint());
     assertTrue(JavaType.INTEGER_PRIMITIVE_TYPE.isPrimitive());
   }
 

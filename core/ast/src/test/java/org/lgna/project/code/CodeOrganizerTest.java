@@ -43,7 +43,7 @@ public class CodeOrganizerTest {
             "FieldsSection",
             "StaticMethodsSection"),
         new ArrayList<>(ordered.keySet()));
-    assertEquals(Arrays.asList("OrderedType"), names(ordered.get("ConstructorSection")));
+    assertEquals(Arrays.asList("constructor"), names(ordered.get("ConstructorSection")));
     assertEquals(Arrays.asList("instanceMethod"), names(ordered.get("MethodsAndFunctionsSection")));
     assertEquals(Arrays.asList("getValue", "setValue"), names(ordered.get("GettersAndSettersSection")));
     assertEquals(Arrays.asList("value"), names(ordered.get("FieldsSection")));

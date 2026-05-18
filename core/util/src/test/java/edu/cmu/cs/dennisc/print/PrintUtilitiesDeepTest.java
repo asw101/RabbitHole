@@ -158,7 +158,7 @@ public class PrintUtilitiesDeepTest {
 
   @Test
   public void appendSupportsObjectArraysOnSingleLine() {
-    String rendered = PrintUtilities.toString(new String[] {"alpha", "beta"});
+    String rendered = PrintUtilities.toString((Object) new String[] {"alpha", "beta"});
     assertTrue(rendered.contains("java.lang.String[]"));
     assertTrue(rendered.contains("alpha"));
     assertTrue(rendered.contains("beta"));
@@ -166,7 +166,7 @@ public class PrintUtilitiesDeepTest {
 
   @Test
   public void appendLinesSupportsObjectArraysWithLineBreaks() {
-    String rendered = PrintUtilities.toStringLines(new Object[] {"alpha", "beta"});
+    String rendered = PrintUtilities.toStringLines((Object) new Object[] {"alpha", "beta"});
     assertTrue(rendered.contains("java.lang.Object[]"));
     assertTrue(rendered.contains("\n"));
   }
@@ -296,7 +296,7 @@ public class PrintUtilitiesDeepTest {
     PrintUtilities.setSeparatorText("/");
 
     assertSame(System.err, PrintUtilities.accessPrintStream());
-    assertEquals("0", PrintUtilities.accessDecimalFormat().toPattern());
+    assertEquals("#0", PrintUtilities.accessDecimalFormat().toPattern());
     assertEquals("##", PrintUtilities.getIndentText());
     assertEquals("/", PrintUtilities.getSeparatorText());
 

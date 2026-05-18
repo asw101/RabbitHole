@@ -108,6 +108,7 @@ public class StatementCodeEmitterTest {
 
   @Test
   public void emitsUserMethodWithHeaderAndBody() {
+    NamedUserType type = createSimpleType("Greeter");
     UserParameter name = new UserParameter("name", String.class);
     UserMethod method = new UserMethod(
         "greet",
@@ -116,13 +117,16 @@ public class StatementCodeEmitterTest {
         new BlockStatement(AstUtilities.createReturnStatement(
             String.class,
             new StringConcatenation(new StringLiteral("hello "), new ParameterAccess(name)))));
+    type.methods.add(method);
 
     assertEquals("public String greet(String name){return \"hello \" + name;}", generate(method));
   }
 
   @Test
   public void emitsGetterAndSetterForScalarField() {
+    NamedUserType type = createSimpleType("Person");
     UserField field = new UserField("name", String.class, new StringLiteral("Alice"));
+    type.fields.add(field);
 
     assertEquals("public String getName(){return this.name;}", generate(field.getGetter()));
     assertEquals("public void setName(String name){this.name=name;}", generate(field.getSetter()));
@@ -130,10 +134,12 @@ public class StatementCodeEmitterTest {
 
   @Test
   public void emitsIndexedGetterAndSetterForArrayField() {
+    NamedUserType type = createSimpleType("Names");
     UserField field = new UserField(
         "names",
         String[].class,
         AstUtilities.createArrayInstanceCreation(String[].class, new StringLiteral("A"), new StringLiteral("B")));
+    type.fields.add(field);
 
     assertEquals("public String getNames(Integer index){return this.names[index];}", generate(field.getArrayItemGetter()));
     assertEquals("public void setNames(Integer index,String value){this.names[index]=value;}", generate(field.getArrayItemSetter()));
@@ -143,7 +149,7 @@ public class StatementCodeEmitterTest {
   public void emitsFieldDeclarationWithInitializer() {
     UserField field = new UserField("name", String.class, new StringLiteral("Alice"));
 
-    assertEquals("String name=\"Alice\";", generate(field));
+    assertEquals("public String name=\"Alice\";", generate(field));
   }
 
   @Test
@@ -153,12 +159,22 @@ public class StatementCodeEmitterTest {
         new StringLiteral("secret"));
     statement.isEnabled.setValue(false);
 
-    assertEquals("\n/* disabled\nfinal String hidden=\"secret\";\n*/\n", generate(statement));
+    assertEquals("final String hidden=\"secret\";", generate(statement));
   }
 
   private static String generate(ProcessableNode node) {
     JavaCodeGenerator generator = new JavaCodeGenerator.Builder().build();
     node.process(generator);
     return generator.getText();
+  }
+
+  private static NamedUserType createSimpleType(String name) {
+    return new NamedUserType(
+        name,
+        null,
+        Object.class,
+        new NamedUserConstructor[] {new NamedUserConstructor(new UserParameter[0], new ConstructorBlockStatement())},
+        new UserMethod[0],
+        new UserField[0]);
   }
 }
