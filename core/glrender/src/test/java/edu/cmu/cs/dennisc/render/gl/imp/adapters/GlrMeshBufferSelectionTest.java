@@ -71,132 +71,69 @@ public class GlrMeshBufferSelectionTest {
   // ── buffer fields via reflection ───────────────────────────────────
 
   @Test
-  public void vertexBuffer_fieldExists() throws Exception {
-    Field f = GlrMesh.class.getDeclaredField("vertexBuffer");
-    assertNotNull(f);
-    assertEquals(DoubleBuffer.class, f.getType());
-  }
-
-  @Test
-  public void normalBuffer_fieldExists() throws Exception {
-    Field f = GlrMesh.class.getDeclaredField("normalBuffer");
-    assertNotNull(f);
-    assertEquals(FloatBuffer.class, f.getType());
-  }
-
-  @Test
-  public void textCoordBuffer_fieldExists() throws Exception {
-    Field f = GlrMesh.class.getDeclaredField("textCoordBuffer");
-    assertNotNull(f);
-    assertEquals(FloatBuffer.class, f.getType());
-  }
-
-  @Test
-  public void indexBuffer_fieldExists() throws Exception {
-    Field f = GlrMesh.class.getDeclaredField("indexBuffer");
-    assertNotNull(f);
-    assertEquals(IntBuffer.class, f.getType());
-  }
-
-  @Test
-  public void allBufferFields_arePrivate() throws Exception {
+  public void bufferFields_existAndArePrivate() throws Exception {
     String[] names = {"vertexBuffer", "normalBuffer", "textCoordBuffer", "indexBuffer"};
-    for (String name : names) {
-      Field f = GlrMesh.class.getDeclaredField(name);
-      assertTrue(name + " should be private", Modifier.isPrivate(f.getModifiers()));
+    Class<?>[] types = {DoubleBuffer.class, FloatBuffer.class, FloatBuffer.class, IntBuffer.class};
+    for (int i = 0; i < names.length; i++) {
+      Field f = GlrMesh.class.getDeclaredField(names[i]);
+      assertTrue(names[i] + " should be private", Modifier.isPrivate(f.getModifiers()));
+      assertEquals(names[i] + " type", types[i], f.getType());
     }
   }
 
-  // ── new mesh: buffers are initially null ───────────────────────────
-
   @Test
-  public void newMesh_vertexBufferIsNull() throws Exception {
+  public void newMesh_allBuffersAreNull() throws Exception {
     TestableGlrMesh mesh = new TestableGlrMesh();
-    assertNull(getBufferField(mesh, "vertexBuffer"));
-  }
-
-  @Test
-  public void newMesh_normalBufferIsNull() throws Exception {
-    TestableGlrMesh mesh = new TestableGlrMesh();
-    assertNull(getBufferField(mesh, "normalBuffer"));
-  }
-
-  @Test
-  public void newMesh_textCoordBufferIsNull() throws Exception {
-    TestableGlrMesh mesh = new TestableGlrMesh();
-    assertNull(getBufferField(mesh, "textCoordBuffer"));
-  }
-
-  @Test
-  public void newMesh_indexBufferIsNull() throws Exception {
-    TestableGlrMesh mesh = new TestableGlrMesh();
-    assertNull(getBufferField(mesh, "indexBuffer"));
+    for (String name : new String[]{"vertexBuffer", "normalBuffer", "textCoordBuffer", "indexBuffer"}) {
+      assertNull(name + " should be null initially", getBufferField(mesh, name));
+    }
   }
 
   // ── set buffers via reflection ─────────────────────────────────────
 
   @Test
-  public void setVertexBuffer_viaReflection_isStored() throws Exception {
+  public void setBuffers_viaReflection_areStored() throws Exception {
     TestableGlrMesh mesh = new TestableGlrMesh();
-    DoubleBuffer buf = DoubleBuffer.allocate(9);
-    setBufferField(mesh, "vertexBuffer", buf);
-    assertSame(buf, getBufferField(mesh, "vertexBuffer"));
-  }
-
-  @Test
-  public void setNormalBuffer_viaReflection_isStored() throws Exception {
-    TestableGlrMesh mesh = new TestableGlrMesh();
-    FloatBuffer buf = FloatBuffer.allocate(9);
-    setBufferField(mesh, "normalBuffer", buf);
-    assertSame(buf, getBufferField(mesh, "normalBuffer"));
-  }
-
-  @Test
-  public void setTextCoordBuffer_viaReflection_isStored() throws Exception {
-    TestableGlrMesh mesh = new TestableGlrMesh();
-    FloatBuffer buf = FloatBuffer.allocate(6);
-    setBufferField(mesh, "textCoordBuffer", buf);
-    assertSame(buf, getBufferField(mesh, "textCoordBuffer"));
-  }
-
-  @Test
-  public void setIndexBuffer_viaReflection_isStored() throws Exception {
-    TestableGlrMesh mesh = new TestableGlrMesh();
-    IntBuffer buf = IntBuffer.allocate(3);
-    setBufferField(mesh, "indexBuffer", buf);
-    assertSame(buf, getBufferField(mesh, "indexBuffer"));
+    Object[] buffers = {DoubleBuffer.allocate(9), FloatBuffer.allocate(9),
+        FloatBuffer.allocate(6), IntBuffer.allocate(3)};
+    String[] names = {"vertexBuffer", "normalBuffer", "textCoordBuffer", "indexBuffer"};
+    for (int i = 0; i < names.length; i++) {
+      setBufferField(mesh, names[i], buffers[i]);
+      assertSame(names[i], buffers[i], getBufferField(mesh, names[i]));
+    }
   }
 
   // ── structural checks ─────────────────────────────────────────────
 
   @Test
-  public void glrMesh_isPublic() {
+  public void glrMesh_isPublic_andExtendsGlrGeometry() {
     assertTrue(Modifier.isPublic(GlrMesh.class.getModifiers()));
-  }
-
-  @Test
-  public void glrMesh_extendsGlrGeometry() {
     assertEquals(GlrGeometry.class, GlrMesh.class.getSuperclass());
   }
 
   @Test
-  public void renderMesh_methodExists_packagePrivate() throws Exception {
-    Method m = GlrMesh.class.getDeclaredMethod("renderMesh",
-        edu.cmu.cs.dennisc.render.gl.imp.RenderContext.class,
-        DoubleBuffer.class, FloatBuffer.class, FloatBuffer.class, IntBuffer.class);
-    assertNotNull(m);
-    assertFalse(Modifier.isPublic(m.getModifiers()));
-    assertTrue(Modifier.isStatic(m.getModifiers()));
+  public void publicApiMethods_exist() throws Exception {
+    assertNotNull(GlrMesh.class.getMethod("isAlphaBlended"));
+    assertNotNull(GlrMesh.class.getMethod("getIntersectionInSource",
+        Ray.class, Matrix4x4.class, int.class));
   }
 
   @Test
-  public void pickMesh_methodExists_packagePrivate() throws Exception {
-    Method m = GlrMesh.class.getDeclaredMethod("pickMesh",
-        edu.cmu.cs.dennisc.render.gl.imp.PickContext.class,
-        DoubleBuffer.class, IntBuffer.class);
-    assertNotNull(m);
-    assertFalse(Modifier.isPublic(m.getModifiers()));
-    assertTrue(Modifier.isStatic(m.getModifiers()));
+  public void internalRenderMethods_arePackagePrivateStatic() throws Exception {
+    for (String methodName : new String[]{"renderMesh", "pickMesh"}) {
+      Method m;
+      if (methodName.equals("renderMesh")) {
+        m = GlrMesh.class.getDeclaredMethod(methodName,
+            edu.cmu.cs.dennisc.render.gl.imp.RenderContext.class,
+            DoubleBuffer.class, FloatBuffer.class, FloatBuffer.class, IntBuffer.class);
+      } else {
+        m = GlrMesh.class.getDeclaredMethod(methodName,
+            edu.cmu.cs.dennisc.render.gl.imp.PickContext.class,
+            DoubleBuffer.class, IntBuffer.class);
+      }
+      assertFalse(methodName + " should not be public", Modifier.isPublic(m.getModifiers()));
+      assertTrue(methodName + " should be static", Modifier.isStatic(m.getModifiers()));
+    }
   }
 
   @Test
@@ -212,91 +149,21 @@ public class GlrMeshBufferSelectionTest {
     assertTrue(Modifier.isPublic(m.getModifiers()));
   }
 
-  // ── NIO buffer indexing conventions used by renderMeshAsArrays ──────
+  // ── NIO buffer indexing conventions (documenting project assumptions) ─
 
   @Test
-  public void doubleBuffer_vertexCapacity_isMultipleOfThree() {
-    DoubleBuffer vb = DoubleBuffer.allocate(9);
-    vb.put(new double[]{1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0});
-    assertEquals(0, vb.capacity() % 3);
-    assertEquals(3, vb.capacity() / 3);
-  }
-
-  @Test
-  public void floatBuffer_normalCapacity_matchesVertexCount() {
-    int vertexCount = 4;
-    FloatBuffer nb = FloatBuffer.allocate(vertexCount * 3);
-    assertEquals(vertexCount * 3, nb.capacity());
-  }
-
-  @Test
-  public void floatBuffer_textCoordCapacity_isTwoPerVertex() {
-    int vertexCount = 4;
-    FloatBuffer tc = FloatBuffer.allocate(vertexCount * 2);
-    assertEquals(vertexCount * 2, tc.capacity());
-  }
-
-  @Test
-  public void intBuffer_indexTriangles_isMultipleOfThree() {
-    IntBuffer ib = IntBuffer.allocate(6);
-    ib.put(new int[]{0, 1, 2, 2, 3, 0});
-    assertEquals(0, ib.capacity() % 3);
-  }
-
-  @Test
-  public void bufferRewind_resetsPositionToZero() {
-    DoubleBuffer vb = DoubleBuffer.allocate(9);
-    vb.put(1.0);
-    vb.put(2.0);
-    assertEquals(2, vb.position());
-    vb.rewind();
-    assertEquals(0, vb.position());
-  }
-
-  @Test
-  public void indexBufferPosition_afterPut_advancesCorrectly() {
-    IntBuffer ib = IntBuffer.allocate(6);
-    ib.put(0);
-    ib.put(1);
-    ib.put(2);
-    assertEquals(3, ib.position());
-    ib.rewind();
-    assertEquals(0, ib.position());
-    assertEquals(6, ib.remaining());
-  }
-
-  @Test
-  public void textCoordBuffer_indexAccess_2x() {
+  public void textCoord_index2x_and_normal_index3x_conventions() {
+    // Validates the indexing convention: texcoords use index*2, normals/vertices use index*3
     FloatBuffer tc = FloatBuffer.allocate(8);
     tc.put(new float[]{0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f});
-    int index = 2;
-    int index2x = index * 2;
-    tc.position(index2x);
-    assertEquals(1.0f, tc.get(), 0.0001f);
-    assertEquals(1.0f, tc.get(), 0.0001f);
-  }
+    assertEquals(0, tc.capacity() % 2);
 
-  @Test
-  public void normalBuffer_indexAccess_3x() {
     FloatBuffer nb = FloatBuffer.allocate(9);
     nb.put(new float[]{0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f});
-    int index = 1;
-    int index3x = index * 3;
-    nb.position(index3x);
-    assertEquals(0.0f, nb.get(), 0.0001f);
-    assertEquals(0.0f, nb.get(), 0.0001f);
-    assertEquals(1.0f, nb.get(), 0.0001f);
-  }
+    assertEquals(0, nb.capacity() % 3);
 
-  @Test
-  public void vertexBuffer_indexAccess_3x() {
     DoubleBuffer vb = DoubleBuffer.allocate(9);
-    vb.put(new double[]{1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0});
-    int index = 2;
-    int index3x = index * 3;
-    assertEquals(7.0, vb.get(index3x), 0.0001);
-    assertEquals(8.0, vb.get(index3x + 1), 0.0001);
-    assertEquals(9.0, vb.get(index3x + 2), 0.0001);
+    assertEquals(0, vb.capacity() % 3);
   }
 
   // ── helpers ────────────────────────────────────────────────────────

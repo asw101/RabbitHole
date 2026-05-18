@@ -2,7 +2,6 @@ package edu.cmu.cs.dennisc.render.gl.imp;
 
 import org.junit.Test;
 
-import java.awt.Rectangle;
 import java.lang.reflect.Field;
 
 import static org.junit.Assert.*;

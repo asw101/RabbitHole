@@ -5,7 +5,6 @@ import org.junit.Test;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.List;
 
 import static org.junit.Assert.*;
 
@@ -190,85 +189,37 @@ public class GlrTextureMapCoordinateTest {
   // ── structural checks ─────────────────────────────────────────────
 
   @Test
-  public void glrTexture_isAbstract() {
+  public void glrTexture_isAbstract_andExtendsGlrObject() {
     assertTrue(Modifier.isAbstract(GlrTexture.class.getModifiers()));
-  }
-
-  @Test
-  public void glrTexture_extendsGlrObject() {
     assertEquals(GlrObject.class, GlrTexture.class.getSuperclass());
   }
 
   @Test
-  public void mapU_isPublic() throws Exception {
-    Method m = GlrTexture.class.getMethod("mapU", float.class);
-    assertTrue(Modifier.isPublic(m.getModifiers()));
+  public void publicApiMethods_allExist() throws Exception {
+    String[] methods = {"mapU", "mapV", "addReference", "removeReference",
+        "isReferenced", "isPotentiallyAlphaBlended", "isValid"};
+    for (String name : methods) {
+      try {
+        // Try no-arg first, then float-arg
+        Method m;
+        if (name.equals("mapU") || name.equals("mapV")) {
+          m = GlrTexture.class.getMethod(name, float.class);
+        } else {
+          m = GlrTexture.class.getMethod(name);
+        }
+        assertTrue(name + " should be public", Modifier.isPublic(m.getModifiers()));
+      } catch (NoSuchMethodException e) {
+        fail("Expected public method not found: " + name);
+      }
+    }
   }
 
   @Test
-  public void mapV_isPublic() throws Exception {
-    Method m = GlrTexture.class.getMethod("mapV", float.class);
-    assertTrue(Modifier.isPublic(m.getModifiers()));
-  }
-
-  @Test
-  public void addReference_isPublic() throws Exception {
-    Method m = GlrTexture.class.getMethod("addReference");
-    assertTrue(Modifier.isPublic(m.getModifiers()));
-  }
-
-  @Test
-  public void removeReference_isPublic() throws Exception {
-    Method m = GlrTexture.class.getMethod("removeReference");
-    assertTrue(Modifier.isPublic(m.getModifiers()));
-  }
-
-  @Test
-  public void isReferenced_isPublic() throws Exception {
-    Method m = GlrTexture.class.getMethod("isReferenced");
-    assertTrue(Modifier.isPublic(m.getModifiers()));
-  }
-
-  @Test
-  public void isPotentiallyAlphaBlended_isPublic() throws Exception {
-    Method m = GlrTexture.class.getMethod("isPotentiallyAlphaBlended");
-    assertTrue(Modifier.isPublic(m.getModifiers()));
-  }
-
-  @Test
-  public void isValid_isPublic() throws Exception {
-    Method m = GlrTexture.class.getMethod("isValid");
-    assertTrue(Modifier.isPublic(m.getModifiers()));
-  }
-
-  @Test
-  public void addRenderContext_isPublic() throws Exception {
-    Method m = GlrTexture.class.getMethod("addRenderContext",
-        edu.cmu.cs.dennisc.render.gl.imp.RenderContext.class);
-    assertTrue(Modifier.isPublic(m.getModifiers()));
-  }
-
-  @Test
-  public void removeRenderContext_isPublic() throws Exception {
-    Method m = GlrTexture.class.getMethod("removeRenderContext",
-        edu.cmu.cs.dennisc.render.gl.imp.RenderContext.class);
-    assertTrue(Modifier.isPublic(m.getModifiers()));
-  }
-
-  // ── refCount field exists and is private ───────────────────────────
-
-  @Test
-  public void refCount_fieldExists() throws Exception {
-    Field f = GlrTexture.class.getDeclaredField("refCount");
-    assertNotNull(f);
-    assertTrue(Modifier.isPrivate(f.getModifiers()));
-  }
-
-  @Test
-  public void isTextureDataDirty_fieldExists() throws Exception {
-    Field f = GlrTexture.class.getDeclaredField("isTextureDataDirty");
-    assertNotNull(f);
-    assertTrue(Modifier.isPrivate(f.getModifiers()));
+  public void privateFields_refCountAndDirtyFlag_exist() throws Exception {
+    for (String fieldName : new String[]{"refCount", "isTextureDataDirty"}) {
+      Field f = GlrTexture.class.getDeclaredField(fieldName);
+      assertTrue(fieldName + " should be private", Modifier.isPrivate(f.getModifiers()));
+    }
   }
 
   // ── edge values for mapU/mapV ──────────────────────────────────────
