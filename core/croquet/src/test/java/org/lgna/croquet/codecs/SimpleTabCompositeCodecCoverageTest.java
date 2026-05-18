@@ -150,7 +150,7 @@ public class SimpleTabCompositeCodecCoverageTest {
   @Test
   public void fileCodec_appendRepresentation_file() {
     StringBuilder sb = new StringBuilder();
-    FileCodec.SINGLETON.appendRepresentation(sb, new java.io.File("/tmp/x.txt"));
+    FileCodec.SINGLETON.appendRepresentation(sb, new java.io.File(System.getProperty("java.io.tmpdir"), "x.txt"));
     assertFalse(sb.toString().isEmpty());
   }
 }

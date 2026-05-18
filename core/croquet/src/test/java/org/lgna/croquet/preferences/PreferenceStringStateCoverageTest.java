@@ -156,7 +156,7 @@ public class PreferenceStringStateCoverageTest {
 
   @Test
   public void getEncryptionKey_nonNull_returnsBytes() {
-    byte[] key = PreferenceStringState.getEncryptionKey("secret");
+    byte[] key = PreferenceStringState.getEncryptionKey("test-passphrase");
     assertNotNull(key);
     assertTrue(key.length > 0);
   }
