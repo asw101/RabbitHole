@@ -1,5 +1,6 @@
 package org.alice.ide.issue;
 
+import com.jogamp.opengl.GL;
 import com.jogamp.opengl.GLException;
 import edu.cmu.cs.dennisc.javax.swing.components.JBrowserHtmlView;
 import edu.cmu.cs.dennisc.system.graphics.ConformanceTestResults;
@@ -7,13 +8,14 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import sun.misc.Unsafe;
 
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import java.awt.Color;
 import java.awt.Component;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.Proxy;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -22,7 +24,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class AliceIssueConfigurationTest {
-  private static final Unsafe UNSAFE = getUnsafe();
   private static final Field SHARED_DETAILS_FIELD = getAccessibleField("sharedDetails");
   private static final Field SYNCHRONOUS_PICK_DETAILS_FIELD = getAccessibleField("synchronousPickDetails");
 
@@ -161,16 +162,6 @@ public class AliceIssueConfigurationTest {
     assertTrue(text.contains("video drivers might help"));
   }
 
-  private static Unsafe getUnsafe() {
-    try {
-      Field field = Unsafe.class.getDeclaredField("theUnsafe");
-      field.setAccessible(true);
-      return (Unsafe) field.get(null);
-    } catch (Exception e) {
-      throw new AssertionError(e);
-    }
-  }
-
   private static Field getAccessibleField(String name) {
     try {
       Field field = ConformanceTestResults.class.getDeclaredField(name);
@@ -209,32 +200,59 @@ public class AliceIssueConfigurationTest {
     SYNCHRONOUS_PICK_DETAILS_FIELD.set(ConformanceTestResults.SINGLETON, createSynchronousPickDetails(successfulPick, reportingHardwareAcceleration, actualHardwareAcceleration));
   }
 
+  // Uses GL Proxy to construct SharedDetails without a real OpenGL context.
+  // The constructor only calls gl.glGetString() for version/vendor/renderer/extensions.
   private static Object createSharedDetails(String renderer) throws Exception {
-    Object sharedDetails = UNSAFE.allocateInstance(ConformanceTestResults.SharedDetails.class);
-    setObjectField(sharedDetails, ConformanceTestResults.SharedDetails.class, "version", "4.6");
-    setObjectField(sharedDetails, ConformanceTestResults.SharedDetails.class, "vendor", "Test Vendor");
-    setObjectField(sharedDetails, ConformanceTestResults.SharedDetails.class, "renderer", renderer);
-    setObjectField(sharedDetails, ConformanceTestResults.SharedDetails.class, "extensions", new String[] {});
-    return sharedDetails;
+    GL glProxy = (GL) Proxy.newProxyInstance(
+        GL.class.getClassLoader(),
+        new Class<?>[] { GL.class },
+        (proxy, method, args) -> {
+          if ("glGetString".equals(method.getName())) {
+            int param = (int) args[0];
+            if (param == GL.GL_VERSION) return "4.6";
+            if (param == GL.GL_VENDOR) return "Test Vendor";
+            if (param == GL.GL_RENDERER) return renderer;
+            if (param == GL.GL_EXTENSIONS) return "";
+          }
+          return defaultReturnValue(method.getReturnType());
+        });
+    Constructor<?> ctor = ConformanceTestResults.SharedDetails.class.getDeclaredConstructor(GL.class);
+    ctor.setAccessible(true);
+    return ctor.newInstance(glProxy);
   }
 
+  // Creates SynchronousPickDetails without a real OpenGL context by bypassing the
+  // GL2-dependent constructor via ReflectionFactory (Java's serialization support API).
+  // GL2 Proxy is infeasible here — GL2 has too many constants for the JVM's 64KB method limit.
+  @SuppressWarnings("sunapi")
   private static Object createSynchronousPickDetails(boolean successfulPick, boolean reportingHardwareAcceleration, boolean actualHardwareAcceleration) throws Exception {
-    Object synchronousPickDetails = UNSAFE.allocateInstance(ConformanceTestResults.SynchronousPickDetails.class);
-    setBooleanField(synchronousPickDetails, ConformanceTestResults.PickDetails.class, "isPickFunctioningCorrectly", successfulPick);
-    setBooleanField(synchronousPickDetails, ConformanceTestResults.SynchronousPickDetails.class, "isReportingPickCanBeHardwareAccelerated", reportingHardwareAcceleration);
-    setBooleanField(synchronousPickDetails, ConformanceTestResults.SynchronousPickDetails.class, "isPickActuallyHardwareAccelerated", actualHardwareAcceleration);
-    return synchronousPickDetails;
+    sun.reflect.ReflectionFactory rf = sun.reflect.ReflectionFactory.getReflectionFactory();
+    Constructor<?> ctor = rf.newConstructorForSerialization(
+        ConformanceTestResults.SynchronousPickDetails.class,
+        Object.class.getDeclaredConstructor());
+    Object details = ctor.newInstance();
+    setFieldValue(ConformanceTestResults.PickDetails.class, details, "isPickFunctioningCorrectly", successfulPick);
+    setFieldValue(ConformanceTestResults.SynchronousPickDetails.class, details, "isReportingPickCanBeHardwareAccelerated", reportingHardwareAcceleration);
+    setFieldValue(ConformanceTestResults.SynchronousPickDetails.class, details, "isPickActuallyHardwareAccelerated", actualHardwareAcceleration);
+    return details;
   }
 
-  private static void setObjectField(Object target, Class<?> declaringClass, String name, Object value) throws Exception {
+  private static void setFieldValue(Class<?> declaringClass, Object target, String name, Object value) throws Exception {
     Field field = declaringClass.getDeclaredField(name);
     field.setAccessible(true);
-    UNSAFE.putObject(target, UNSAFE.objectFieldOffset(field), value);
+    field.set(target, value);
   }
 
-  private static void setBooleanField(Object target, Class<?> declaringClass, String name, boolean value) throws Exception {
-    Field field = declaringClass.getDeclaredField(name);
-    field.setAccessible(true);
-    UNSAFE.putBoolean(target, UNSAFE.objectFieldOffset(field), value);
+  private static Object defaultReturnValue(Class<?> type) {
+    if (type == void.class) return null;
+    if (type == int.class) return 0;
+    if (type == long.class) return 0L;
+    if (type == boolean.class) return false;
+    if (type == float.class) return 0.0f;
+    if (type == double.class) return 0.0;
+    if (type == byte.class) return (byte) 0;
+    if (type == short.class) return (short) 0;
+    if (type == char.class) return '\0';
+    return null;
   }
 }
