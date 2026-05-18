@@ -199,15 +199,6 @@ public class DeclarationsEditorDataTest {
     assertFalse(data.isAcceptableItem(func));
   }
 
-  // ---- FieldData through subclass ----
-
-  @Test
-  public void fieldData_constructorBindsToFieldsProperty() {
-    // UnmanagedFieldData is a concrete subclass of FieldData
-    // but to avoid import issues, we just verify the hierarchy
-    assertTrue(FilteredMemberData.class.isAssignableFrom(FieldData.class));
-  }
-
   // ---- ConstructorData with empty type ----
 
   @Test

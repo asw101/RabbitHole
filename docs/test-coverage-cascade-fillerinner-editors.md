@@ -1,8 +1,8 @@
 # Core/IDE Deep Test Coverage — Cascade, FillerInner, CodeEditor, DeclarationsEditor
 
 > **Issue:** [#747](https://github.com/rysweet/RabbitHole/issues/747)  
-> **Scope:** 9 new JUnit 4 test files covering logic-heavy headless paths in `core/ide`  
-> **Line target:** 500+ additional lines of test code  
+> **Scope:** 19 new JUnit 4 test files covering logic-heavy headless paths in `core/ide`  
+> **Line target:** 2500+ additional lines of test code  
 > **Build verification:** `mvn test -pl core/ide -am -q`
 
 ---
@@ -14,10 +14,13 @@ significant logic exercisable without a GUI:
 
 | Package | Classes Under Test | New Test File(s) |
 |---|---|---|
-| `o.a.ide.cascade` | `ExpressionCascadeManager`, `ExpressionPropertyContext`, `BlockStatementIndexPairContext` | `ExpressionCascadeManagerDeepTest`, `ExpressionPropertyContextTest`, `BlockStatementIndexPairContextTest` |
-| `o.a.ide.cascade.fillerinners` | `BooleanFillerInner`, `ConstantsOwningFillerInner`, `IntegerFillerInner`, `DoubleFillerInner` | `BooleanFillerInnerDeepTest`, `ConstantsOwningFillerInnerTest`, `NumberFillerInnerDeepTest` |
-| `o.a.ide.codeeditor` | `StatementListPropertyPaneInfo`, `CodeEditor` | `StatementListPropertyPaneInfoTest`, `CodeEditorDeepTest` |
+| `o.a.ide.ast.code` | `EnvelopStatementsOperation`, `ShiftDragStatementUtilities` | `EnvelopStatementsOperationTest`, `ShiftDragStatementUtilitiesDeepTest` |
+| `o.a.ide.cascade` | `ExpressionCascadeManager`, `ExpressionPropertyContext`, `BlockStatementIndexPairContext`, `ExpressionCascadeContextStack` | `ExpressionCascadeManagerDeepTest`, `ExpressionCascadeManagerTypeResolutionTest`, `ExpressionPropertyContextTest`, `ExpressionPropertyContextDeepTest`, `BlockStatementIndexPairContextTest`, `BlockStatementIndexPairContextDeepTest`, `ExpressionCascadeContextStackTest` |
+| `o.a.ide.cascade.fillerinners` | `BooleanFillerInner`, `ConstantsOwningFillerInner`, `IntegerFillerInner`, `DoubleFillerInner` | `BooleanFillerInnerDeepTest`, `ConstantsOwningFillerInnerTest`, `NumberFillerInnerDeepTest`, `FillerInnerTypeResolutionTest` |
+| `o.a.ide.codeeditor` | `StatementListPropertyPaneInfo`, `CodeEditor` | `StatementListPropertyPaneInfoTest`, `StatementListPropertyPaneInfoDeepTest`, `CodeEditorDeepTest` |
+| `o.a.ide.croquet.models.cascade.arithmetic` | `ArithmeticUtilities` | `ArithmeticUtilitiesDeepTest` |
 | `o.a.ide.declarationseditor` | `DeclarationComposite`, `CodeComposite` | `DeclarationCompositeRoutingTest` |
+| `o.a.ide.declarationseditor.type.data` | `FieldData`, `ConstructorData`, `ProcedureData`, `FunctionData` | `DeclarationsEditorDataTest` |
 
 All tests are JUnit 4 (`@Test`, `@Before`, `static org.junit.Assert.*`) and run
 headlessly — no display, no croquet Application boot, no IDE singleton required.
@@ -276,6 +279,96 @@ mvn test -pl core/ide -am -Dtest=CodeEditorDeepTest -q
 
 ---
 
+### 10. `BlockStatementIndexPairContextDeepTest`
+
+**Location:** `core/ide/src/test/java/org/alice/ide/cascade/BlockStatementIndexPairContextDeepTest.java`
+(6 tests, 67 lines)
+
+Extended coverage for `BlockStatementIndexPairContext` covering edge cases in block statement navigation and index pair resolution.
+
+---
+
+### 11. `ExpressionCascadeContextStackTest`
+
+**Location:** `core/ide/src/test/java/org/alice/ide/cascade/ExpressionCascadeContextStackTest.java`
+(15 tests, 266 lines)
+
+Tests the `ExpressionCascadeContextStack` which manages the push/pop lifecycle of cascade menu contexts during expression editing.
+
+---
+
+### 12. `ExpressionCascadeManagerTypeResolutionTest`
+
+**Location:** `core/ide/src/test/java/org/alice/ide/cascade/ExpressionCascadeManagerTypeResolutionTest.java`
+(22 tests, 211 lines)
+
+Focused tests for the type-resolution paths in `ExpressionCascadeManager` — covers `getTypeFor`, `isNullLiteralAllowed`, `getEnumTypeForInterfaceType`, and relational/arithmetic type mappings.
+
+---
+
+### 13. `ExpressionPropertyContextDeepTest`
+
+**Location:** `core/ide/src/test/java/org/alice/ide/cascade/ExpressionPropertyContextDeepTest.java`
+(6 tests, 89 lines)
+
+Extended coverage for `ExpressionPropertyContext` beyond the base test file, covering additional edge cases in property ownership and block statement resolution.
+
+---
+
+### 14. `FillerInnerTypeResolutionTest`
+
+**Location:** `core/ide/src/test/java/org/alice/ide/cascade/fillerinners/FillerInnerTypeResolutionTest.java`
+(27 tests, 222 lines)
+
+Tests the type-resolution and constant-generation paths across all `FillerInner` subclasses (`BooleanFillerInner`, `IntegerFillerInner`, `DoubleFillerInner`, `ConstantsOwningFillerInner`).
+
+---
+
+### 15. `StatementListPropertyPaneInfoDeepTest`
+
+**Location:** `core/ide/src/test/java/org/alice/ide/codeeditor/StatementListPropertyPaneInfoDeepTest.java`
+(8 tests, 81 lines)
+
+Extended tests for `StatementListPropertyPaneInfo` covering edge cases in property-pane info construction and equality semantics.
+
+---
+
+### 16. `ArithmeticUtilitiesDeepTest`
+
+**Location:** `core/ide/src/test/java/org/alice/ide/croquet/models/cascade/arithmetic/ArithmeticUtilitiesDeepTest.java`
+(11 tests, 123 lines)
+
+Tests the `ArithmeticUtilities` helper methods used by the cascade arithmetic fill-in system, covering operator selection and type compatibility.
+
+---
+
+### 17. `DeclarationsEditorDataTest`
+
+**Location:** `core/ide/src/test/java/org/alice/ide/declarationseditor/type/data/DeclarationsEditorDataTest.java`
+(23 tests, 253 lines)
+
+Tests the data model classes (`FieldData`, `ConstructorData`, `ProcedureData`, `FunctionData`) that back the declarations editor panel, covering type binding, member filtering, and hierarchy relationships.
+
+---
+
+### 18. `EnvelopStatementsOperationTest`
+
+**Location:** `core/ide/src/test/java/org/alice/ide/ast/code/EnvelopStatementsOperationTest.java`
+(5 tests, 72 lines)
+
+Tests the `EnvelopStatementsOperation` which wraps selected statements in control structures (if/while/for), covering statement selection and block creation.
+
+---
+
+### 19. `ShiftDragStatementUtilitiesDeepTest`
+
+**Location:** `core/ide/src/test/java/org/alice/ide/ast/code/ShiftDragStatementUtilitiesDeepTest.java`
+(10 tests, 153 lines)
+
+Tests the drag-and-drop statement reordering utilities, covering index calculation, validity checks, and boundary conditions.
+
+---
+
 ## Running All New Tests
 
 ```bash
@@ -284,7 +377,7 @@ mvn test -pl core/ide -am -Dtest=ExpressionCascadeManagerDeepTest -q
 
 # All new tests at once
 mvn test -pl core/ide -am \
-  -Dtest="ExpressionCascadeManagerDeepTest,ExpressionPropertyContextTest,BlockStatementIndexPairContextTest,BooleanFillerInnerDeepTest,ConstantsOwningFillerInnerTest,NumberFillerInnerDeepTest,StatementListPropertyPaneInfoTest,DeclarationCompositeRoutingTest,CodeEditorDeepTest" \
+  -Dtest="ExpressionCascadeManagerDeepTest,ExpressionCascadeManagerTypeResolutionTest,ExpressionPropertyContextTest,ExpressionPropertyContextDeepTest,BlockStatementIndexPairContextTest,BlockStatementIndexPairContextDeepTest,ExpressionCascadeContextStackTest,BooleanFillerInnerDeepTest,ConstantsOwningFillerInnerTest,NumberFillerInnerDeepTest,FillerInnerTypeResolutionTest,StatementListPropertyPaneInfoTest,StatementListPropertyPaneInfoDeepTest,CodeEditorDeepTest,ArithmeticUtilitiesDeepTest,DeclarationCompositeRoutingTest,DeclarationsEditorDataTest,EnvelopStatementsOperationTest,ShiftDragStatementUtilitiesDeepTest" \
   -q
 
 # Full core/ide test suite (regression check)
@@ -366,25 +459,38 @@ BlockStatementIndexPair pair = new BlockStatementIndexPair(block, 0);
 
 ```
 core/ide/src/test/java/org/alice/ide/
+├── ast/code/
+│   ├── EnvelopStatementsOperationTest.java          ← NEW (5 tests)
+│   └── ShiftDragStatementUtilitiesDeepTest.java     ← NEW (10 tests)
 ├── cascade/
-│   ├── ExpressionCascadeManagerTest.java        (existing, 280 lines)
-│   ├── ExpressionCascadeManagerDeepTest.java     ← NEW
-│   ├── ExpressionPropertyContextTest.java        ← NEW
-│   ├── BlockStatementIndexPairContextTest.java   ← NEW
+│   ├── ExpressionCascadeManagerTest.java            (existing, 280 lines)
+│   ├── ExpressionCascadeManagerDeepTest.java        ← NEW (10 tests)
+│   ├── ExpressionCascadeManagerTypeResolutionTest.java ← NEW (22 tests)
+│   ├── ExpressionCascadeContextStackTest.java       ← NEW (15 tests)
+│   ├── ExpressionPropertyContextTest.java           ← NEW (10 tests)
+│   ├── ExpressionPropertyContextDeepTest.java       ← NEW (6 tests)
+│   ├── BlockStatementIndexPairContextTest.java      ← NEW (5 tests)
+│   ├── BlockStatementIndexPairContextDeepTest.java  ← NEW (6 tests)
 │   └── fillerinners/
-│       ├── CascadeFillerInnersTest.java          (existing, 149 lines)
-│       ├── BooleanFillerInnerDeepTest.java       ← NEW
-│       ├── ConstantsOwningFillerInnerTest.java   ← NEW
-│       └── NumberFillerInnerDeepTest.java        ← NEW
+│       ├── CascadeFillerInnersTest.java             (existing, 149 lines)
+│       ├── BooleanFillerInnerDeepTest.java          ← NEW (12 tests)
+│       ├── ConstantsOwningFillerInnerTest.java      ← NEW (12 tests)
+│       ├── NumberFillerInnerDeepTest.java            ← NEW (14 tests)
+│       └── FillerInnerTypeResolutionTest.java       ← NEW (27 tests)
 ├── codeeditor/
-│   ├── CodeEditorTest.java                       (existing, 43 lines)
-│   ├── CodeEditorDeepTest.java                   ← NEW
-│   └── StatementListPropertyPaneInfoTest.java    ← NEW
+│   ├── CodeEditorTest.java                          (existing, 43 lines)
+│   ├── CodeEditorDeepTest.java                      ← NEW (11 tests)
+│   ├── StatementListPropertyPaneInfoTest.java       ← NEW (13 tests)
+│   └── StatementListPropertyPaneInfoDeepTest.java   ← NEW (8 tests)
+├── croquet/models/cascade/arithmetic/
+│   └── ArithmeticUtilitiesDeepTest.java             ← NEW (11 tests)
 └── declarationseditor/
-    ├── ProcedureTabSelectionTest.java            (existing, 155 lines)
-    └── DeclarationCompositeRoutingTest.java      ← NEW
+    ├── ProcedureTabSelectionTest.java               (existing, 155 lines)
+    ├── DeclarationCompositeRoutingTest.java         ← NEW (11 tests)
+    └── type/data/
+        └── DeclarationsEditorDataTest.java          ← NEW (23 tests)
 ```
 
-**Total new test files:** 9  
-**Estimated new test lines:** 550–650  
-**Estimated new test methods:** ~70
+**Total new test files:** 19  
+**Total new test lines:** ~2,800  
+**Total new test methods:** ~231
