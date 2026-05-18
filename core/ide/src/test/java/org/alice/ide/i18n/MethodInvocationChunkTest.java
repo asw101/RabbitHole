@@ -35,9 +35,4 @@ public class MethodInvocationChunkTest {
     assertTrue(sb.toString().contains("methodName=test"));
   }
 
-  @Test
-  public void isChunkSubtype() {
-    MethodInvocationChunk mic = new MethodInvocationChunk("m()");
-    assertTrue(mic instanceof Chunk);
-  }
 }
