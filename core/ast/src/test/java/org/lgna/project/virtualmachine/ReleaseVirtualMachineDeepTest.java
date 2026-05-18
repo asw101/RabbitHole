@@ -12,7 +12,7 @@ import org.lgna.project.ast.UserMethod;
 import org.lgna.project.ast.IntegerLiteral;
 import org.lgna.project.ast.StringLiteral;
 import org.lgna.project.ast.LocalDeclarationStatement;
-import org.lgna.project.ast.LgnaStackTraceElement;
+
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;

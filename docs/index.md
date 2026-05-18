@@ -161,6 +161,7 @@ repository.
 - [Scene-Object-Added Evidence](./reference/scene-object-added-evidence.md) - Reference for the property-gated proof hook that records JSON evidence when a student adds a scene object via gallery drag-drop, enabling eatme harness verification of the Building a Scene lesson step.
 - [Run the Scene-Object-Added Evidence Proof](./howto/run-scene-object-added-evidence-proof.md) - How to run and review the unit tests for the scene-object-added evidence hook.
 - [Tutorial: Trace the Scene-Object-Added Evidence Hook](./tutorials/trace-scene-object-added-evidence.md) - Guided walkthrough from gallery drag-drop trigger through property gate, data extraction, directory validation, and atomic JSON write.
+- [core/ide stageide package coverage](./test-coverage-stageide-package.md) - 8 new test files (2100+ lines) covering cascade filler-inners, custom expression creators, program composition, StoryApiConfigurationManager behavioral gaps, and sceneeditor helpers.
 
 ## Modernization evidence and scorecards
 
