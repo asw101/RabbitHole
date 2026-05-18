@@ -1,5 +1,6 @@
 package org.alice.stageide.cascade;
 
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.lang.reflect.Constructor;
@@ -25,6 +26,38 @@ import static org.junit.Assert.*;
 public class CascadeFillerTest {
 
   private static final String CASCADE_PKG = "org.alice.stageide.cascade.";
+
+  private static final String[] FILLER_INNER_NAMES = {
+      "ArrowKeyListenerFillerInner", "AudioSourceFillerInner",
+      "ColorFillerInner", "ComesIntoViewEventListenerFillerInner",
+      "EndCollisionListenerFillerInner", "EndOcclusionEventListenerFillerInner",
+      "EnterProximityEventListenerFillerInner", "ExitProximityEventListenerFillerInner",
+      "ImagePaintFillerInner", "ImageSourceFillerInner",
+      "KeyFillerInner", "KeyListenerFillerInner",
+      "LeavesViewEventListenerFillerInner", "ModelResourceFillerInner",
+      "MouseClickOnObjectFillerInner", "MouseClickedOnScreenFillerInner",
+      "NumberKeyListenerFillerInner", "SceneActivationEventFillerInner",
+      "SourceFillerInner", "StartCollisionListenerFillerInner",
+      "StartOcclusionEventListenerFillerInner", "TimerEventListenerFillerInner",
+      "TransformationListenerFillerInner"
+  };
+
+  // Cached across tests — ExpressionCascadeManager constructor is expensive
+  // (registers all filler-inners), so we share a single instance.
+  private static ExpressionCascadeManager sharedManager;
+  private static Method areEnumConstantsDesiredMethod;
+  private static Method getEnumTypeForInterfaceTypeMethod;
+
+  @BeforeClass
+  public static void setUpReflection() throws Exception {
+    sharedManager = new ExpressionCascadeManager();
+    areEnumConstantsDesiredMethod = ExpressionCascadeManager.class.getDeclaredMethod(
+        "areEnumConstantsDesired", org.lgna.project.ast.AbstractType.class);
+    areEnumConstantsDesiredMethod.setAccessible(true);
+    getEnumTypeForInterfaceTypeMethod = ExpressionCascadeManager.class.getDeclaredMethod(
+        "getEnumTypeForInterfaceType", org.lgna.project.ast.AbstractType.class);
+    getEnumTypeForInterfaceTypeMethod.setAccessible(true);
+  }
 
   // -- ExpressionCascadeManager class structure ----------------------------
 
@@ -128,22 +161,8 @@ public class CascadeFillerTest {
 
   @Test
   public void allFillerInnerClasses_loadFromPackage() throws ClassNotFoundException {
-    String[] fillerInners = {
-        "ArrowKeyListenerFillerInner", "AudioSourceFillerInner",
-        "ColorFillerInner", "ComesIntoViewEventListenerFillerInner",
-        "EndCollisionListenerFillerInner", "EndOcclusionEventListenerFillerInner",
-        "EnterProximityEventListenerFillerInner", "ExitProximityEventListenerFillerInner",
-        "ImagePaintFillerInner", "ImageSourceFillerInner",
-        "KeyFillerInner", "KeyListenerFillerInner",
-        "LeavesViewEventListenerFillerInner", "ModelResourceFillerInner",
-        "MouseClickOnObjectFillerInner", "MouseClickedOnScreenFillerInner",
-        "NumberKeyListenerFillerInner", "SceneActivationEventFillerInner",
-        "SourceFillerInner", "StartCollisionListenerFillerInner",
-        "StartOcclusionEventListenerFillerInner", "TimerEventListenerFillerInner",
-        "TransformationListenerFillerInner"
-    };
     String pkg = "org.alice.stageide.cascade.fillerinners.";
-    for (String name : fillerInners) {
+    for (String name : FILLER_INNER_NAMES) {
       Class<?> c = Class.forName(pkg + name);
       assertNotNull(name + " must load", c);
     }
@@ -151,21 +170,7 @@ public class CascadeFillerTest {
 
   @Test
   public void fillerInnerPackage_has23Classes() {
-    String[] expected = {
-        "ArrowKeyListenerFillerInner", "AudioSourceFillerInner",
-        "ColorFillerInner", "ComesIntoViewEventListenerFillerInner",
-        "EndCollisionListenerFillerInner", "EndOcclusionEventListenerFillerInner",
-        "EnterProximityEventListenerFillerInner", "ExitProximityEventListenerFillerInner",
-        "ImagePaintFillerInner", "ImageSourceFillerInner",
-        "KeyFillerInner", "KeyListenerFillerInner",
-        "LeavesViewEventListenerFillerInner", "ModelResourceFillerInner",
-        "MouseClickOnObjectFillerInner", "MouseClickedOnScreenFillerInner",
-        "NumberKeyListenerFillerInner", "SceneActivationEventFillerInner",
-        "SourceFillerInner", "StartCollisionListenerFillerInner",
-        "StartOcclusionEventListenerFillerInner", "TimerEventListenerFillerInner",
-        "TransformationListenerFillerInner"
-    };
-    assertEquals(23, expected.length);
+    assertEquals(23, FILLER_INNER_NAMES.length);
   }
 
   // -- relational type registration completeness --------------------------
@@ -205,25 +210,17 @@ public class CascadeFillerTest {
 
   @Test
   public void areEnumConstantsDesired_returnsFalseForKey() throws Exception {
-    ExpressionCascadeManager manager = new ExpressionCascadeManager();
-    Method m = ExpressionCascadeManager.class.getDeclaredMethod(
-        "areEnumConstantsDesired", org.lgna.project.ast.AbstractType.class);
-    m.setAccessible(true);
     org.lgna.project.ast.JavaType keyType =
         org.lgna.project.ast.JavaType.getInstance(org.lgna.story.Key.class);
-    Boolean result = (Boolean) m.invoke(manager, keyType);
+    Boolean result = (Boolean) areEnumConstantsDesiredMethod.invoke(sharedManager, keyType);
     assertFalse("Key enum constants should not be desired", result);
   }
 
   @Test
   public void areEnumConstantsDesired_returnsTrueForMoveDirection() throws Exception {
-    ExpressionCascadeManager manager = new ExpressionCascadeManager();
-    Method m = ExpressionCascadeManager.class.getDeclaredMethod(
-        "areEnumConstantsDesired", org.lgna.project.ast.AbstractType.class);
-    m.setAccessible(true);
     org.lgna.project.ast.JavaType moveType =
         org.lgna.project.ast.JavaType.getInstance(org.lgna.story.MoveDirection.class);
-    Boolean result = (Boolean) m.invoke(manager, moveType);
+    Boolean result = (Boolean) areEnumConstantsDesiredMethod.invoke(sharedManager, moveType);
     assertTrue("MoveDirection enum constants should be desired", result);
   }
 
@@ -231,14 +228,11 @@ public class CascadeFillerTest {
 
   @Test
   public void getEnumTypeForInterfaceType_mapsStyleToAnimationStyle() throws Exception {
-    ExpressionCascadeManager manager = new ExpressionCascadeManager();
-    Method m = ExpressionCascadeManager.class.getDeclaredMethod(
-        "getEnumTypeForInterfaceType", org.lgna.project.ast.AbstractType.class);
-    m.setAccessible(true);
     org.lgna.project.ast.AbstractType<?, ?, ?> styleType =
         org.lgna.project.ast.JavaType.getInstance(org.lgna.story.Style.class);
     org.lgna.project.ast.AbstractType<?, ?, ?> result =
-        (org.lgna.project.ast.AbstractType<?, ?, ?>) m.invoke(manager, styleType);
+        (org.lgna.project.ast.AbstractType<?, ?, ?>) getEnumTypeForInterfaceTypeMethod.invoke(
+            sharedManager, styleType);
     assertEquals(org.lgna.project.ast.JavaType.getInstance(
         org.lgna.story.AnimationStyle.class), result);
   }

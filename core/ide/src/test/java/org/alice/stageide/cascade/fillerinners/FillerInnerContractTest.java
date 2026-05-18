@@ -23,6 +23,14 @@ public class FillerInnerContractTest {
 
   private static final String PKG = "org.alice.stageide.cascade.fillerinners.";
 
+  // Cached to avoid 22 redundant Class[] allocations per test run
+  private static final Class<?>[] APPEND_ITEMS_PARAM_TYPES = {
+      java.util.List.class,
+      org.lgna.project.annotations.ValueDetails.class,
+      boolean.class,
+      org.lgna.project.ast.Expression.class
+  };
+
   // ---- helper -----------------------------------------------------------
 
   private Class<?> load(String simpleName) throws ClassNotFoundException {
@@ -52,11 +60,7 @@ public class FillerInnerContractTest {
     assertTrue(simpleName + ".isAssignableTo(" + expectedStoryType.getSimpleName() + ")",
         instance.isAssignableTo(expectedType));
 
-    Method appendItems = cls.getMethod("appendItems",
-        java.util.List.class,
-        org.lgna.project.annotations.ValueDetails.class,
-        boolean.class,
-        org.lgna.project.ast.Expression.class);
+    Method appendItems = cls.getMethod("appendItems", APPEND_ITEMS_PARAM_TYPES);
     assertNotNull(appendItems);
   }
 
@@ -262,7 +266,8 @@ public class FillerInnerContractTest {
 
   @Test
   public void allConcreteFillerInners_arePublic() throws ClassNotFoundException {
-    String[] names = {
+    // SourceFillerInner excluded — it's abstract
+    String[] concreteNames = {
         "ArrowKeyListenerFillerInner", "AudioSourceFillerInner",
         "ColorFillerInner", "ComesIntoViewEventListenerFillerInner",
         "EndCollisionListenerFillerInner", "EndOcclusionEventListenerFillerInner",
@@ -275,7 +280,7 @@ public class FillerInnerContractTest {
         "StartCollisionListenerFillerInner", "StartOcclusionEventListenerFillerInner",
         "TimerEventListenerFillerInner", "TransformationListenerFillerInner"
     };
-    for (String name : names) {
+    for (String name : concreteNames) {
       Class<?> cls = load(name);
       assertTrue(name + " must be public", Modifier.isPublic(cls.getModifiers()));
     }

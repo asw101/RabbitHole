@@ -234,84 +234,30 @@ public class ProgramContextTest {
 
   // ---- adapter registration patterns ------------------------------------
 
-  @Test
-  public void adapterClassesExist_sceneActivation() throws ClassNotFoundException {
-    Class.forName("org.alice.stageide.apis.story.event.SceneActivationAdapter");
-  }
+  private static final String[] ADAPTER_CLASSES = {
+      "org.alice.stageide.apis.story.event.SceneActivationAdapter",
+      "org.alice.stageide.apis.story.event.MouseClickOnScreenAdapter",
+      "org.alice.stageide.apis.story.event.MouseClickOnObjectAdapter",
+      "org.alice.stageide.apis.story.event.KeyAdapter",
+      "org.alice.stageide.apis.story.event.ArrowKeyAdapter",
+      "org.alice.stageide.apis.story.event.NumberKeyAdapter",
+      "org.alice.stageide.apis.story.event.TransformationEventAdapter",
+      "org.alice.stageide.apis.story.event.ComesIntoViewEventAdapter",
+      "org.alice.stageide.apis.story.event.ComesOutOfViewEventAdapter",
+      "org.alice.stageide.apis.story.event.StartCollisionAdapter",
+      "org.alice.stageide.apis.story.event.EndCollisionAdapter",
+      "org.alice.stageide.apis.story.event.EnterProximityAdapter",
+      "org.alice.stageide.apis.story.event.ExitProximityAdapter",
+      "org.alice.stageide.apis.story.event.StartOcclusionEventAdapter",
+      "org.alice.stageide.apis.story.event.EndOcclusionEventAdapter",
+      "org.alice.stageide.apis.story.event.TimerEventAdapter"
+  };
 
   @Test
-  public void adapterClassesExist_mouseClickOnScreen() throws ClassNotFoundException {
-    Class.forName("org.alice.stageide.apis.story.event.MouseClickOnScreenAdapter");
-  }
-
-  @Test
-  public void adapterClassesExist_mouseClickOnObject() throws ClassNotFoundException {
-    Class.forName("org.alice.stageide.apis.story.event.MouseClickOnObjectAdapter");
-  }
-
-  @Test
-  public void adapterClassesExist_keyAdapter() throws ClassNotFoundException {
-    Class.forName("org.alice.stageide.apis.story.event.KeyAdapter");
-  }
-
-  @Test
-  public void adapterClassesExist_arrowKeyAdapter() throws ClassNotFoundException {
-    Class.forName("org.alice.stageide.apis.story.event.ArrowKeyAdapter");
-  }
-
-  @Test
-  public void adapterClassesExist_numberKeyAdapter() throws ClassNotFoundException {
-    Class.forName("org.alice.stageide.apis.story.event.NumberKeyAdapter");
-  }
-
-  @Test
-  public void adapterClassesExist_transformationEvent() throws ClassNotFoundException {
-    Class.forName("org.alice.stageide.apis.story.event.TransformationEventAdapter");
-  }
-
-  @Test
-  public void adapterClassesExist_comesIntoView() throws ClassNotFoundException {
-    Class.forName("org.alice.stageide.apis.story.event.ComesIntoViewEventAdapter");
-  }
-
-  @Test
-  public void adapterClassesExist_comesOutOfView() throws ClassNotFoundException {
-    Class.forName("org.alice.stageide.apis.story.event.ComesOutOfViewEventAdapter");
-  }
-
-  @Test
-  public void adapterClassesExist_collisionStart() throws ClassNotFoundException {
-    Class.forName("org.alice.stageide.apis.story.event.StartCollisionAdapter");
-  }
-
-  @Test
-  public void adapterClassesExist_collisionEnd() throws ClassNotFoundException {
-    Class.forName("org.alice.stageide.apis.story.event.EndCollisionAdapter");
-  }
-
-  @Test
-  public void adapterClassesExist_proximityEnter() throws ClassNotFoundException {
-    Class.forName("org.alice.stageide.apis.story.event.EnterProximityAdapter");
-  }
-
-  @Test
-  public void adapterClassesExist_proximityExit() throws ClassNotFoundException {
-    Class.forName("org.alice.stageide.apis.story.event.ExitProximityAdapter");
-  }
-
-  @Test
-  public void adapterClassesExist_occlusionStart() throws ClassNotFoundException {
-    Class.forName("org.alice.stageide.apis.story.event.StartOcclusionEventAdapter");
-  }
-
-  @Test
-  public void adapterClassesExist_occlusionEnd() throws ClassNotFoundException {
-    Class.forName("org.alice.stageide.apis.story.event.EndOcclusionEventAdapter");
-  }
-
-  @Test
-  public void adapterClassesExist_timerEvent() throws ClassNotFoundException {
-    Class.forName("org.alice.stageide.apis.story.event.TimerEventAdapter");
+  public void allAdapterClasses_exist() throws ClassNotFoundException {
+    for (String className : ADAPTER_CLASSES) {
+      assertNotNull(className + " must be loadable", Class.forName(className));
+    }
   }
 
   @Test

@@ -1,5 +1,6 @@
 package org.alice.stageide.sceneeditor;
 
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.lang.reflect.Constructor;
@@ -19,6 +20,15 @@ import static org.junit.Assert.*;
  * and class layout without requiring a running OpenGL context.
  */
 public class SceneEditorGapFillTest {
+
+  // Cached to avoid 4 redundant Class.forName lookups
+  private static Class<?> storytellingSceneEditorClass;
+
+  @BeforeClass
+  public static void cacheClasses() throws Exception {
+    storytellingSceneEditorClass = Class.forName(
+        "org.alice.stageide.sceneeditor.StorytellingSceneEditor");
+  }
 
   // ======== ThumbnailGenerator ===========================================
 
@@ -151,36 +161,32 @@ public class SceneEditorGapFillTest {
   // ======== StorytellingSceneEditor singleton pattern ====================
 
   @Test
-  public void storytellingSceneEditor_classIsLoadable() throws ClassNotFoundException {
-    Class.forName("org.alice.stageide.sceneeditor.StorytellingSceneEditor");
+  public void storytellingSceneEditor_classIsLoadable() {
+    assertNotNull(storytellingSceneEditorClass);
   }
 
   @Test
   public void storytellingSceneEditor_getInstanceMethod_exists() throws Exception {
-    Class<?> cls = Class.forName("org.alice.stageide.sceneeditor.StorytellingSceneEditor");
-    Method m = cls.getMethod("getInstance");
+    Method m = storytellingSceneEditorClass.getMethod("getInstance");
     assertTrue(Modifier.isPublic(m.getModifiers()));
     assertTrue(Modifier.isStatic(m.getModifiers()));
   }
 
   @Test
   public void storytellingSceneEditor_getSgCameraMethod_exists() throws Exception {
-    Class<?> cls = Class.forName("org.alice.stageide.sceneeditor.StorytellingSceneEditor");
-    Method m = cls.getMethod("getSgCameraForCreatingThumbnails");
+    Method m = storytellingSceneEditorClass.getMethod("getSgCameraForCreatingThumbnails");
     assertTrue(Modifier.isPublic(m.getModifiers()));
   }
 
   @Test
   public void storytellingSceneEditor_preScreenCaptureMethod_exists() throws Exception {
-    Class<?> cls = Class.forName("org.alice.stageide.sceneeditor.StorytellingSceneEditor");
-    Method m = cls.getDeclaredMethod("preScreenCapture");
+    Method m = storytellingSceneEditorClass.getDeclaredMethod("preScreenCapture");
     assertNotNull(m);
   }
 
   @Test
   public void storytellingSceneEditor_postScreenCaptureMethod_exists() throws Exception {
-    Class<?> cls = Class.forName("org.alice.stageide.sceneeditor.StorytellingSceneEditor");
-    Method m = cls.getDeclaredMethod("postScreenCapture");
+    Method m = storytellingSceneEditorClass.getDeclaredMethod("postScreenCapture");
     assertNotNull(m);
   }
 }
