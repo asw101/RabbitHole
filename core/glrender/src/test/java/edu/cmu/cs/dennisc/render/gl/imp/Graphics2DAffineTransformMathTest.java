@@ -3,8 +3,6 @@ package edu.cmu.cs.dennisc.render.gl.imp;
 import org.junit.Test;
 
 import java.awt.geom.AffineTransform;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 
 import static org.junit.Assert.*;
 
@@ -247,6 +245,10 @@ public class Graphics2DAffineTransformMathTest {
   }
 
   // ── Helper: simulate the conversion from Graphics2D.glUpdateTransform ──
+  // NOTE: This reimplements the matrix conversion logic from production code.
+  // It validates the math independently but does not call the production method
+  // (which requires a live GL context). If glUpdateTransform changes, this
+  // helper must be updated manually to stay in sync.
 
   private static double[] convertToGlMatrix(AffineTransform at) {
     double[] s_matrix = new double[6];

@@ -79,7 +79,7 @@ public class GroupExtendedTest {
     UUID id = UUID.fromString("00000000-0000-0000-eeee-888888888888");
     Group g1 = Group.getInstance(id);
     Group g2 = Group.getInstance(id);
-    assertTrue(g1 == g2);
+    assertSame(g1, g2);
   }
 
   @Test
@@ -88,7 +88,7 @@ public class GroupExtendedTest {
     UUID id2 = UUID.fromString("00000000-0000-0000-eeee-999999999992");
     Group g1 = Group.getInstance(id1);
     Group g2 = Group.getInstance(id2);
-    assertFalse(g1 == g2);
+    assertNotSame(g1, g2);
   }
 
   // ── Multiple groups ───────────────────────────────────────────────

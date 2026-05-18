@@ -80,10 +80,8 @@ public class OperationExtendedTest {
   // ── isEnabled and fire interaction ────────────────────────────────
 
   @Test
-  public void fire_whenDisabled_doesNotCallPerform() {
+  public void setEnabled_false_disablesOperation() {
     op.setEnabled(false);
-    // We can't test fire() without Application context, but we can
-    // verify the enabled state
     assertFalse(op.isEnabled());
   }
 

@@ -131,8 +131,8 @@ public class GlDrawableUtilsComparisonTest {
   private static GLCapabilities[] createCapabilitiesPair() {
     try {
       return new GLCapabilities[]{new GLCapabilities(null), new GLCapabilities(null)};
-    } catch (Exception e) {
-      // No display available (headless CI) — skip tests that need GLCapabilities
+    } catch (Throwable e) {
+      // Native GL libs or display unavailable (headless CI) — skip tests
       return null;
     }
   }

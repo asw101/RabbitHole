@@ -104,11 +104,14 @@ public class CodecExtendedTest {
   // ── FileCodec round-trip ──────────────────────────────────────────
 
   @Test
-  public void fileCodec_roundTrip_nonNull() {
+  public void fileCodec_roundTrip_nonNull_throwsTodo() {
     // FileCodec.encodeValue throws RuntimeException("todo") for non-null files
-    // that are not absolute paths returning null parent. Test the null case instead.
-    File original = null;
-    assertNull(roundTripFile(original));
+    try {
+      roundTripFile(new File("/tmp/test.txt"));
+      fail("Expected RuntimeException");
+    } catch (RuntimeException e) {
+      assertEquals("todo", e.getMessage());
+    }
   }
 
   @Test

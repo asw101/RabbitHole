@@ -197,16 +197,18 @@ public class RenderContextExtendedTest {
   }
 
   @Test
-  public void initialize_resetsOpacityStack() throws Exception {
+  public void opacityStack_nestedMultiply_accumulatesCorrectly() throws Exception {
     RenderContext rc = new RenderContext();
     rc.pushGlobalOpacity();
     rc.multiplyGlobalOpacity(0.5f);
-    // initialize() calls gl.glDisable which would NPE, but we only test
-    // the opacity via calling it directly
+    assertEquals(0.5f, getOpacity(rc), 0.0001f);
     rc.pushGlobalOpacity();
     rc.multiplyGlobalOpacity(0.3f);
-    // We can't call initialize() because it calls disableNormalize → gl.glDisable
-    // But we can verify the manual reset path
+    assertEquals(0.15f, getOpacity(rc), 0.0001f);
+    rc.popGlobalOpacity();
+    assertEquals(0.5f, getOpacity(rc), 0.0001f);
+    rc.popGlobalOpacity();
+    assertEquals(1.0f, getOpacity(rc), 0.0001f);
   }
 
   @Test
