@@ -56,9 +56,7 @@ public class CurveRendererConstantsTest {
     assertNotSame(a, b);
   }
 
-  // ── Reflection helpers (cached) ───────────────────────────────────
-
-  private static volatile Field[] cachedFields;
+  // ── Reflection helpers ──────────────────────────────────────────────
 
   private static int getStaticInt(String name) throws Exception {
     Field f = CurveRenderer.class.getDeclaredField(name);

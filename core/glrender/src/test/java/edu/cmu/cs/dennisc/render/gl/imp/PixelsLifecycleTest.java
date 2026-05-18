@@ -210,34 +210,34 @@ public class PixelsLifecycleTest {
     pixels.getHeight();
   }
 
-  // ── Helper — listener field cached to avoid repeated hierarchy walk ─
+  // ── Helper — listener field found once at class load ────────────────
 
-  private static volatile Field cachedListenersField;
-
-  private int getListenerCount(Texture texture) throws Exception {
-    Field f = cachedListenersField;
-    if (f == null) {
-      Class<?> cls = texture.getClass();
-      while (cls != null) {
+  private static final Field LISTENERS_FIELD;
+  static {
+    Field found = null;
+    Class<?> cls = BufferedImageTexture.class;
+    while (cls != null) {
+      try {
+        found = cls.getDeclaredField("textureListeners");
+        break;
+      } catch (NoSuchFieldException e) {
         try {
-          f = cls.getDeclaredField("textureListeners");
+          found = cls.getDeclaredField("m_textureListeners");
           break;
-        } catch (NoSuchFieldException e) {
-          try {
-            f = cls.getDeclaredField("m_textureListeners");
-            break;
-          } catch (NoSuchFieldException e2) {
-            cls = cls.getSuperclass();
-          }
+        } catch (NoSuchFieldException e2) {
+          cls = cls.getSuperclass();
         }
       }
-      if (f != null) {
-        f.setAccessible(true);
-        cachedListenersField = f;
-      }
     }
-    if (f != null) {
-      Object listeners = f.get(texture);
+    if (found != null) {
+      found.setAccessible(true);
+    }
+    LISTENERS_FIELD = found;
+  }
+
+  private int getListenerCount(Texture texture) throws Exception {
+    if (LISTENERS_FIELD != null) {
+      Object listeners = LISTENERS_FIELD.get(texture);
       if (listeners instanceof java.util.List) {
         return ((java.util.List<?>) listeners).size();
       }
