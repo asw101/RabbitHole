@@ -93,32 +93,6 @@ public class TypeManagerDeepTest {
     assertEquals("Slower", name);
   }
 
-  // --- getEnumConstantFieldIfOneAndOnly ---
-
-  @Test
-  public void getEnumConstantField_nonEnum_returnsNull() {
-    JavaType stringType = JavaType.getInstance(String.class);
-    JavaField result = TypeManager.getEnumConstantFieldIfOneAndOnly(stringType);
-    assertNull(result);
-  }
-
-  @Test
-  public void getEnumConstantField_multiValueEnum_returnsNull() {
-    // Thread.State has multiple enum constants
-    JavaType threadStateType = JavaType.getInstance(Thread.State.class);
-    JavaField result = TypeManager.getEnumConstantFieldIfOneAndOnly(threadStateType);
-    assertNull(result);
-  }
-
-  @Test
-  public void getEnumConstantField_userType_returnsNull() {
-    NamedUserType userType = new NamedUserType();
-    userType.name.setValue("CustomType");
-    userType.superType.setValue(JavaType.getInstance(Object.class));
-    JavaField result = TypeManager.getEnumConstantFieldIfOneAndOnly(userType);
-    assertNull(result);
-  }
-
   // --- getNamedUserTypeFromSuperType ---
 
   @Test

@@ -11,8 +11,8 @@ import static org.junit.Assert.*;
  * S-prefix stripping in instance creation context, convertConstant edge cases,
  * and createIdentifierNameFromResourceKey null/empty handling.
  *
- * <p>Complements the existing {@link IdentifierNameGeneratorTest} and
- * {@link IdentifierNameGeneratorExtendedTest} with deeper AST-backed scenarios.
+ * <p>Complements the existing {@link IdentifierNameGeneratorTest} with deeper
+ * AST-backed scenarios and comprehensive edge-case coverage.
  */
 public class IdentifierNameGeneratorComprehensiveTest {
 
@@ -22,10 +22,8 @@ public class IdentifierNameGeneratorComprehensiveTest {
 
   @Test
   public void createFromInstanceCreation_withJavaTypeConstructor_lowercasesTypeName() {
-    // Build an InstanceCreation for String (a JavaType)
     JavaType stringType = JavaType.getInstance(String.class);
     AbstractConstructor[] ctors = stringType.getDeclaredConstructors().toArray(new AbstractConstructor[0]);
-    // Find the no-arg constructor
     AbstractConstructor noArgCtor = null;
     for (AbstractConstructor c : ctors) {
       if (c.getRequiredParameters().isEmpty()) {
@@ -33,38 +31,27 @@ public class IdentifierNameGeneratorComprehensiveTest {
         break;
       }
     }
-    if (noArgCtor != null) {
-      InstanceCreation creation = new InstanceCreation(noArgCtor);
-      String result = gen.createIdentifierNameFromInstanceCreation(creation);
-      assertEquals("string", result);
-    }
-    // If no no-arg ctor found, the test is effectively skipped — acceptable
+    assertNotNull("String should have a no-arg constructor", noArgCtor);
+    InstanceCreation creation = new InstanceCreation(noArgCtor);
+    assertEquals("string", gen.createIdentifierNameFromInstanceCreation(creation));
   }
 
   @Test
   public void createFromInstanceCreation_withSPrefixType_stripsS() {
-    // Build using SBiped — S prefix should be stripped
     JavaType bipedType = JavaType.getInstance(org.lgna.story.SBiped.class);
     AbstractConstructor[] ctors = bipedType.getDeclaredConstructors().toArray(new AbstractConstructor[0]);
-    if (ctors.length > 0) {
-      InstanceCreation creation = new InstanceCreation(ctors[0]);
-      String result = gen.createIdentifierNameFromInstanceCreation(creation);
-      // SBiped → strips S → Biped → lowercases first char → biped
-      assertEquals("biped", result);
-    }
+    assertTrue("SBiped should have constructors", ctors.length > 0);
+    InstanceCreation creation = new InstanceCreation(ctors[0]);
+    assertEquals("biped", gen.createIdentifierNameFromInstanceCreation(creation));
   }
 
   @Test
   public void createFromInstanceCreation_withNonSPrefixType_preservesName() {
-    // Integer is a JavaType that does NOT start with S+uppercase
     JavaType intType = JavaType.getInstance(Integer.class);
     AbstractConstructor[] ctors = intType.getDeclaredConstructors().toArray(new AbstractConstructor[0]);
-    if (ctors.length > 0) {
-      InstanceCreation creation = new InstanceCreation(ctors[0]);
-      String result = gen.createIdentifierNameFromInstanceCreation(creation);
-      // Integer → lowercase first → integer
-      assertEquals("integer", result);
-    }
+    assertTrue("Integer should have constructors", ctors.length > 0);
+    InstanceCreation creation = new InstanceCreation(ctors[0]);
+    assertEquals("integer", gen.createIdentifierNameFromInstanceCreation(creation));
   }
 
   @Test
@@ -133,6 +120,11 @@ public class IdentifierNameGeneratorComprehensiveTest {
     assertEquals("myclass", gen.createIdentifierNameFromClassName("myclass"));
   }
 
+  @Test
+  public void createFromClassName_preservesNumbers() {
+    assertEquals("class123", gen.createIdentifierNameFromClassName("Class123"));
+  }
+
   // ── convertConstantNameToMethodName comprehensive ──────────────────
 
   @Test
@@ -190,8 +182,27 @@ public class IdentifierNameGeneratorComprehensiveTest {
 
   @Test
   public void convertConstant_mixedCaseNoUnderscore() {
-    // No underscores → isUpperNext stays false → all chars lowercased
     assertEquals("helloworld", gen.convertConstantNameToMethodName("HelloWorld"));
+  }
+
+  @Test
+  public void convertConstant_preservesDigits() {
+    assertEquals("point3d", gen.convertConstantNameToMethodName("POINT_3D"));
+  }
+
+  @Test
+  public void convertConstant_trailingUnderscore() {
+    assertEquals("hello", gen.convertConstantNameToMethodName("HELLO_"));
+  }
+
+  @Test
+  public void convertConstant_mixedCase() {
+    assertEquals("helloWorld", gen.convertConstantNameToMethodName("Hello_World"));
+  }
+
+  @Test
+  public void convertConstant_withIsPrefix() {
+    assertEquals("isReady", gen.convertConstantNameToMethodName("READY", "is"));
   }
 
   // ── createIdentifierNameFromResourceKey ────────────────────────────
