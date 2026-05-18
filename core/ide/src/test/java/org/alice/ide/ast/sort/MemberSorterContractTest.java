@@ -3,9 +3,7 @@ package org.alice.ide.ast.sort;
 import org.junit.Test;
 import org.lgna.project.ast.UserMethod;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.*;
@@ -22,6 +20,8 @@ public class MemberSorterContractTest {
     return method;
   }
 
+  // Only unique tests remain here — duplicates consolidated into MemberSorterTest
+
   @Test
   public void createSortedListWithNullElementsInList() {
     List<UserMethod> input = Arrays.asList(createMethod("beta"), null, createMethod("alpha"));
@@ -32,36 +32,5 @@ public class MemberSorterContractTest {
     assertNull(result.get(0));
     assertEquals("alpha", result.get(1).getName());
     assertEquals("beta", result.get(2).getName());
-  }
-
-  @Test
-  public void createSortedListWithSingleNullNameMember() {
-    UserMethod unnamedMethod = createMethod(null);
-
-    List<UserMethod> result = sorter.createSortedList(Collections.singletonList(unnamedMethod));
-
-    assertEquals(1, result.size());
-    assertSame(unnamedMethod, result.get(0));
-    assertNull(result.get(0).getName());
-  }
-
-  @Test
-  public void createSortedListPreservesListSize() {
-    List<UserMethod> input = Arrays.asList(createMethod("beta"), createMethod(null), null, createMethod("alpha"));
-
-    List<UserMethod> result = sorter.createSortedList(input);
-
-    assertEquals(input.size(), result.size());
-  }
-
-  @Test
-  public void createSortedListReturnsNewListReference() {
-    List<UserMethod> input = new ArrayList<>(Arrays.asList(createMethod("beta"), createMethod("alpha")));
-
-    List<UserMethod> result = sorter.createSortedList(input);
-
-    assertNotSame(input, result);
-    assertEquals("beta", input.get(0).getName());
-    assertEquals("alpha", input.get(1).getName());
   }
 }

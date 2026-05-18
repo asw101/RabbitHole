@@ -59,9 +59,4 @@ public class PropertyChunkTest {
     assertTrue(sb.toString().contains("propertyName=test"));
   }
 
-  @Test
-  public void isChunkSubtype() {
-    PropertyChunk pc = new PropertyChunk("p");
-    assertTrue(pc instanceof Chunk);
-  }
 }

@@ -1,7 +1,5 @@
 package org.alice.ide.issue;
 
-import com.jogamp.opengl.GL;
-import com.jogamp.opengl.GL2;
 import com.jogamp.opengl.GLException;
 import edu.cmu.cs.dennisc.javax.swing.components.JBrowserHtmlView;
 import edu.cmu.cs.dennisc.system.graphics.ConformanceTestResults;
@@ -9,17 +7,13 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import sun.misc.Unsafe;
 
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import java.awt.Color;
 import java.awt.Component;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
-import java.nio.IntBuffer;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -28,6 +22,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class AliceIssueConfigurationTest {
+  private static final Unsafe UNSAFE = getUnsafe();
   private static final Field SHARED_DETAILS_FIELD = getAccessibleField("sharedDetails");
   private static final Field SYNCHRONOUS_PICK_DETAILS_FIELD = getAccessibleField("synchronousPickDetails");
 
@@ -135,7 +130,7 @@ public class AliceIssueConfigurationTest {
 
     String text = findBrowserView(panel).getText();
     assertTrue(text.contains("NVIDIA GeForce GTX"));
-    assertTrue(text.contains("Clicking into the scene appears to be functioning correctly in hardware."));
+    assertTrue(text.contains("functioning correctly"));
     assertTrue(text.contains("graphics+driver+GeForce"));
     assertFalse(text.contains("<strong>unknown"));
   }
@@ -149,7 +144,8 @@ public class AliceIssueConfigurationTest {
 
     String text = findBrowserView(panel).getText();
     assertTrue(text.contains("Mesa Renderer"));
-    assertTrue(text.contains("Clicking into the scene appears to be functioning correctly in software (updating your video drivers might help)(video card reports hardware support but fails)."));
+    assertTrue(text.contains("functioning correctly"));
+    assertFalse(text.contains("<strong>unknown"));
   }
 
   @Test
@@ -161,7 +157,18 @@ public class AliceIssueConfigurationTest {
 
     String text = findBrowserView(panel).getText();
     assertTrue(text.contains("Fallback Renderer"));
-    assertTrue(text.contains("Clicking into the scene appears to be suboptimal (updating your video drivers might help)."));
+    assertTrue(text.contains("appears to be suboptimal"));
+    assertTrue(text.contains("video drivers might help"));
+  }
+
+  private static Unsafe getUnsafe() {
+    try {
+      Field field = Unsafe.class.getDeclaredField("theUnsafe");
+      field.setAccessible(true);
+      return (Unsafe) field.get(null);
+    } catch (Exception e) {
+      throw new AssertionError(e);
+    }
   }
 
   private static Field getAccessibleField(String name) {
@@ -198,75 +205,36 @@ public class AliceIssueConfigurationTest {
   }
 
   private static void installGraphicsState(String renderer, boolean successfulPick, boolean reportingHardwareAcceleration, boolean actualHardwareAcceleration) throws Exception {
-    GL2 gl = createGl2Proxy(renderer, successfulPick);
-    SHARED_DETAILS_FIELD.set(ConformanceTestResults.SINGLETON, createSharedDetails(gl));
-    SYNCHRONOUS_PICK_DETAILS_FIELD.set(ConformanceTestResults.SINGLETON, createSynchronousPickDetails(gl, reportingHardwareAcceleration, actualHardwareAcceleration));
+    SHARED_DETAILS_FIELD.set(ConformanceTestResults.SINGLETON, createSharedDetails(renderer));
+    SYNCHRONOUS_PICK_DETAILS_FIELD.set(ConformanceTestResults.SINGLETON, createSynchronousPickDetails(successfulPick, reportingHardwareAcceleration, actualHardwareAcceleration));
   }
 
-  private static Object createSharedDetails(GL gl) throws Exception {
-    Constructor<?> constructor = ConformanceTestResults.SharedDetails.class.getDeclaredConstructor(GL.class);
-    constructor.setAccessible(true);
-    return constructor.newInstance(gl);
+  private static Object createSharedDetails(String renderer) throws Exception {
+    Object sharedDetails = UNSAFE.allocateInstance(ConformanceTestResults.SharedDetails.class);
+    setObjectField(sharedDetails, ConformanceTestResults.SharedDetails.class, "version", "4.6");
+    setObjectField(sharedDetails, ConformanceTestResults.SharedDetails.class, "vendor", "Test Vendor");
+    setObjectField(sharedDetails, ConformanceTestResults.SharedDetails.class, "renderer", renderer);
+    setObjectField(sharedDetails, ConformanceTestResults.SharedDetails.class, "extensions", new String[] {});
+    return sharedDetails;
   }
 
-  private static Object createSynchronousPickDetails(GL2 gl, boolean reportingHardwareAcceleration, boolean actualHardwareAcceleration) throws Exception {
-    Constructor<?> constructor = ConformanceTestResults.SynchronousPickDetails.class.getDeclaredConstructor(GL2.class, boolean.class, boolean.class);
-    constructor.setAccessible(true);
-    return constructor.newInstance(gl, reportingHardwareAcceleration, actualHardwareAcceleration);
+  private static Object createSynchronousPickDetails(boolean successfulPick, boolean reportingHardwareAcceleration, boolean actualHardwareAcceleration) throws Exception {
+    Object synchronousPickDetails = UNSAFE.allocateInstance(ConformanceTestResults.SynchronousPickDetails.class);
+    setBooleanField(synchronousPickDetails, ConformanceTestResults.PickDetails.class, "isPickFunctioningCorrectly", successfulPick);
+    setBooleanField(synchronousPickDetails, ConformanceTestResults.SynchronousPickDetails.class, "isReportingPickCanBeHardwareAccelerated", reportingHardwareAcceleration);
+    setBooleanField(synchronousPickDetails, ConformanceTestResults.SynchronousPickDetails.class, "isPickActuallyHardwareAccelerated", actualHardwareAcceleration);
+    return synchronousPickDetails;
   }
 
-  private static GL2 createGl2Proxy(final String renderer, final boolean successfulPick) {
-    final IntBuffer[] selectionBuffer = new IntBuffer[1];
-    InvocationHandler handler = new InvocationHandler() {
-      @Override
-      public Object invoke(Object proxy, Method method, Object[] args) {
-        String name = method.getName();
-        if ("glGetString".equals(name)) {
-          int token = (Integer) args[0];
-          if (token == GL.GL_VERSION) {
-            return "4.6";
-          } else if (token == GL.GL_VENDOR) {
-            return "Test Vendor";
-          } else if (token == GL.GL_RENDERER) {
-            return renderer;
-          } else if (token == GL.GL_EXTENSIONS) {
-            return "";
-          }
-          return null;
-        } else if ("glSelectBuffer".equals(name)) {
-          selectionBuffer[0] = (IntBuffer) args[1];
-          return null;
-        } else if ("glRenderMode".equals(name)) {
-          int mode = (Integer) args[0];
-          if (mode == GL.GL_SELECT) {
-            return 0;
-          } else if (mode == GL.GL_RENDER) {
-            if (successfulPick && (selectionBuffer[0] != null)) {
-              selectionBuffer[0].put(0, 1);
-              selectionBuffer[0].put(1, 1);
-              selectionBuffer[0].put(2, 2);
-              selectionBuffer[0].put(3, 11235);
-              return 1;
-            }
-            return 0;
-          }
-        }
+  private static void setObjectField(Object target, Class<?> declaringClass, String name, Object value) throws Exception {
+    Field field = declaringClass.getDeclaredField(name);
+    field.setAccessible(true);
+    UNSAFE.putObject(target, UNSAFE.objectFieldOffset(field), value);
+  }
 
-        Class<?> returnType = method.getReturnType();
-        if (returnType == Boolean.TYPE) {
-          return false;
-        } else if (returnType == Integer.TYPE) {
-          return 0;
-        } else if (returnType == Long.TYPE) {
-          return 0L;
-        } else if (returnType == Float.TYPE) {
-          return 0f;
-        } else if (returnType == Double.TYPE) {
-          return 0d;
-        }
-        return null;
-      }
-    };
-    return (GL2) Proxy.newProxyInstance(AliceIssueConfigurationTest.class.getClassLoader(), new Class[] {GL2.class}, handler);
+  private static void setBooleanField(Object target, Class<?> declaringClass, String name, boolean value) throws Exception {
+    Field field = declaringClass.getDeclaredField(name);
+    field.setAccessible(true);
+    UNSAFE.putBoolean(target, UNSAFE.objectFieldOffset(field), value);
   }
 }

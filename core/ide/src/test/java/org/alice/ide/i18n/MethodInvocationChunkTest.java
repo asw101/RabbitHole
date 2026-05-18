@@ -11,20 +11,9 @@ public class MethodInvocationChunkTest {
 
   @Test
   public void stripsTrailingParens() {
-    MethodInvocationChunk mic = new MethodInvocationChunk("doWork()");
-    assertEquals("doWork", mic.getMethodName());
-  }
-
-  @Test
-  public void longerMethodName_stripsCorrectly() {
-    MethodInvocationChunk mic = new MethodInvocationChunk("calculateTotal()");
-    assertEquals("calculateTotal", mic.getMethodName());
-  }
-
-  @Test
-  public void shortMethodName_stripsCorrectly() {
-    MethodInvocationChunk mic = new MethodInvocationChunk("go()");
-    assertEquals("go", mic.getMethodName());
+    assertEquals("doWork", new MethodInvocationChunk("doWork()").getMethodName());
+    assertEquals("calculateTotal", new MethodInvocationChunk("calculateTotal()").getMethodName());
+    assertEquals("go", new MethodInvocationChunk("go()").getMethodName());
   }
 
   @Test
@@ -35,9 +24,4 @@ public class MethodInvocationChunkTest {
     assertTrue(sb.toString().contains("methodName=test"));
   }
 
-  @Test
-  public void isChunkSubtype() {
-    MethodInvocationChunk mic = new MethodInvocationChunk("m()");
-    assertTrue(mic instanceof Chunk);
-  }
 }

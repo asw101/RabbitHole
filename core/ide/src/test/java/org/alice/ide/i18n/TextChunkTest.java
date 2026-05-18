@@ -37,9 +37,4 @@ public class TextChunkTest {
     assertTrue(repr.contains("world"));
   }
 
-  @Test
-  public void isChunkSubtype() {
-    TextChunk tc = new TextChunk("x");
-    assertTrue(tc instanceof Chunk);
-  }
 }

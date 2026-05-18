@@ -25,46 +25,7 @@ public class FieldtreeNodeTest {
     return TypeNode.createAndAddToParent(null, type, 0, 0);
   }
 
-  @Test
-  public void fieldNode_getDeclaration_returnsField() {
-    TypeNode parent = createTypeNode("Parent");
-    UserField field = createField("speed");
-    FieldNode node = FieldNode.createAndAddToParent(parent, field);
-    assertSame(field, node.getDeclaration());
-  }
-
-  @Test
-  public void fieldNode_getParent_returnsTypeNode() {
-    TypeNode parent = createTypeNode("Parent");
-    UserField field = createField("speed");
-    FieldNode node = FieldNode.createAndAddToParent(parent, field);
-    assertSame(parent, node.getParent());
-  }
-
-  @Test
-  public void fieldNode_toString_containsClassName() {
-    TypeNode parent = createTypeNode("Parent");
-    UserField field = createField("myField");
-    FieldNode node = FieldNode.createAndAddToParent(parent, field);
-    assertTrue(node.toString().contains("FieldNode"));
-  }
-
-  @Test
-  public void fieldNode_toString_containsFieldName() {
-    TypeNode parent = createTypeNode("Parent");
-    UserField field = createField("myField");
-    FieldNode node = FieldNode.createAndAddToParent(parent, field);
-    assertTrue(node.toString().contains("myField"));
-  }
-
-  @Test
-  public void fieldNode_compareTo_alphabetical() {
-    TypeNode parent = createTypeNode("Parent");
-    FieldNode nodeA = FieldNode.createAndAddToParent(parent, createField("alpha"));
-    FieldNode nodeB = FieldNode.createAndAddToParent(parent, createField("bravo"));
-    assertTrue(nodeA.compareTo(nodeB) < 0);
-    assertTrue(nodeB.compareTo(nodeA) > 0);
-  }
+  // Unique tests below — declaration/parent/alphabetical tests already in FieldNodeTest
 
   @Test
   public void fieldNode_compareTo_sameNameReturnsZero() {
@@ -80,20 +41,5 @@ public class FieldtreeNodeTest {
     FieldNode nodeUpper = FieldNode.createAndAddToParent(parent, createField("ALPHA"));
     FieldNode nodeLower = FieldNode.createAndAddToParent(parent, createField("alpha"));
     assertEquals(0, nodeUpper.compareTo(nodeLower));
-  }
-
-  @Test
-  public void createAndAddToParent_addsToParentFieldNodes() {
-    TypeNode parent = createTypeNode("Parent");
-    int before = parent.getFieldNodes().size();
-    FieldNode.createAndAddToParent(parent, createField("newField"));
-    assertEquals(before + 1, parent.getFieldNodes().size());
-  }
-
-  @Test
-  public void fieldNode_getDeclarationName() {
-    TypeNode parent = createTypeNode("Parent");
-    FieldNode node = FieldNode.createAndAddToParent(parent, createField("speed"));
-    assertEquals("speed", node.getDeclaration().getName());
   }
 }
