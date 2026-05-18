@@ -281,3 +281,40 @@ mvn -pl core/croquet test \
 | `HeadlessException` | Missing `-Djava.awt.headless=true` | Add to Maven Surefire or IDE run config |
 | `Group already registered` | Two tests using the same UUID | Use `UUID.randomUUID()` for every State constructor |
 | `ClassCastException` on spinner model | Wrong cast in listener removal | Cast to `AbstractSpinnerModel` for `getChangeListeners()` |
+
+## Phase 2 — Issue #775 coverage push (30.4% → 50%)
+
+Phase 2 adds 27 test files covering trigger classes, cascade runtime
+internals, history steps, preferences, codec/icon helpers, and deeper
+state/model/composite paths. All follow the same headless patterns above.
+
+For the full test inventory, see
+[core/croquet coverage push](../../docs/reference/core-croquet-coverage-push.md).
+
+For running and troubleshooting instructions, see
+[How to run Issue #775 coverage push](../../docs/howto/run-issue-775-coverage-push.md).
+
+### New test packages
+
+| Package | Files | Focus |
+| --- | --- | --- |
+| `o.l.croquet.triggers` | 6 | All 21 trigger classes — data holders, no Application |
+| `o.l.croquet.imp.cascade` | 6 | Cascade runtime tree: `RtNode`, `RtItem`, `RtBlank` |
+| `o.l.croquet.history` | 5 | History step recording: `DragStep`, `MenuSelection` |
+| `o.l.croquet.preferences` | 3 | Type-safe preference wrappers |
+| `o.l.croquet.codecs/icon/data/meta` | 4 | Codec, icon factory, list data, meta-state |
+| `o.l.croquet` (deep) | 6 | Edge cases: null values, Unicode, disabled state |
+| `o.l.croquet.imp.*` (composite) | 4 | Wizard logic, menu-state binding, frame visibility |
+
+### Trigger test pattern
+
+```java
+@Test
+public void actionEventTrigger_getEvent_returnsWrappedEvent() {
+  ActionEvent ae = new ActionEvent(new Object(), ActionEvent.ACTION_PERFORMED, "test");
+  ActionEventTrigger trigger = new ActionEventTrigger(ae);
+  assertSame(ae, trigger.getEvent());
+}
+```
+
+Trigger classes are pure data holders — no listener removal needed.
