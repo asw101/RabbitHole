@@ -146,6 +146,10 @@ repository.
 - [core/util test coverage reference](./reference/core-util-test-coverage.md) - test inventory table, coverage arithmetic (3.63%→40.2%), excluded AWT/Swing areas, file tree layout, and ratchet configuration.
 - [Raise core/util test coverage](./howto/raise-core-util-test-coverage.md) - prerequisites, test architecture (3-phase), step-by-step guide for adding new tests, static state management, and troubleshooting.
 - [Tutorial: Write headless-safe tests for core/util](./tutorials/core-util-headless-test-coverage.md) - walkthrough writing a BufferUtilitiesTest, plus reusable patterns: TemporaryFolder, static state save/restore, headless guards, and encode→decode round-trips.
+- [core/story-api coverage sprint](./reference/core-story-api-coverage-sprint.md) - test inventory (50.2%→70%), 6 tiers covering Jama matrix, implementation facades, transforms, shapes, facade layer, and resource utilities.
+- [core/util coverage sprint](./reference/core-util-coverage-sprint.md) - test inventory (42.7%→70%), 5 tiers covering animation framework, math interpolation, property system, codec edge cases, and gap-fillers.
+- [core/ast coverage sprint](./reference/core-ast-coverage-sprint.md) - test inventory (50.4%→70%), 6 tiers covering VM events, exception types, VM core, code generators, AST nodes, and Tweedle serialization.
+- [Run coverage sprint tests](./howto/run-coverage-sprint-tests.md) - how to run, verify, and troubleshoot the Issue #751 coverage sprint tests across all three modules.
 - [CI efficiency notes](./reference/ci-efficiency.md) - current pull request check timing, parallelism status, and safe next targets.
 - [Merge-ready PR recovery](./reference/merge-ready-pr-recovery.md) - Specification for the automated merge-ready blocker resolution script: CLI contract, recovery steps, evidence template, and validation.
 - [Run merge-ready PR recovery](./howto/run-merge-ready-pr-recovery.md) - how to bring a pull request to merge-ready status with QA scenario validation, quality audit cycles, and PR description updates.
