@@ -53,17 +53,6 @@ public class BlockStatementIndexPairContextTest {
   }
 
   @Test
-  public void getPreviousExpression_nullForDifferentIndices() {
-    BlockStatement block = new BlockStatement();
-    // Test at various indices
-    for (int i = 0; i < 5; i++) {
-      BlockStatementIndexPair pair = new BlockStatementIndexPair(block, i);
-      BlockStatementIndexPairContext ctx = new BlockStatementIndexPairContext(pair);
-      assertNull("Should always be null, regardless of index " + i, ctx.getPreviousExpression());
-    }
-  }
-
-  @Test
   public void getBlockStatementIndexPair_zeroIndex() {
     BlockStatement block = new BlockStatement();
     BlockStatementIndexPair pair = new BlockStatementIndexPair(block, 0);

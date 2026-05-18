@@ -17,6 +17,15 @@ import static org.junit.Assert.*;
  */
 public class CodeEditorDeepTest {
 
+  private static Class<?> findInnerClass(String simpleName) {
+    for (Class<?> inner : CodeEditor.class.getDeclaredClasses()) {
+      if (simpleName.equals(inner.getSimpleName())) {
+        return inner;
+      }
+    }
+    return null;
+  }
+
   // ---- Class hierarchy ----
 
   @Test
@@ -41,69 +50,39 @@ public class CodeEditorDeepTest {
 
   @Test
   public void codeEditor_hasStatementListIndexTrackableShapeInnerClass() {
-    Class<?>[] innerClasses = CodeEditor.class.getDeclaredClasses();
-    boolean found = false;
-    for (Class<?> inner : innerClasses) {
-      if ("StatementListIndexTrackableShape".equals(inner.getSimpleName())) {
-        found = true;
-        break;
-      }
-    }
-    assertTrue("Should have StatementListIndexTrackableShape inner class", found);
+    assertNotNull("Should have StatementListIndexTrackableShape inner class",
+        findInnerClass("StatementListIndexTrackableShape"));
   }
 
   @Test
   public void statementListIndexTrackableShape_implementsTrackableShape() {
-    Class<?>[] innerClasses = CodeEditor.class.getDeclaredClasses();
-    for (Class<?> inner : innerClasses) {
-      if ("StatementListIndexTrackableShape".equals(inner.getSimpleName())) {
-        assertTrue("StatementListIndexTrackableShape should implement TrackableShape",
-            TrackableShape.class.isAssignableFrom(inner));
-        return;
-      }
-    }
-    fail("StatementListIndexTrackableShape not found");
+    Class<?> inner = findInnerClass("StatementListIndexTrackableShape");
+    assertNotNull("StatementListIndexTrackableShape not found", inner);
+    assertTrue("StatementListIndexTrackableShape should implement TrackableShape",
+        TrackableShape.class.isAssignableFrom(inner));
   }
 
   @Test
   public void statementListIndexTrackableShape_hasGetBlockStatementMethod() throws Exception {
-    Class<?>[] innerClasses = CodeEditor.class.getDeclaredClasses();
-    for (Class<?> inner : innerClasses) {
-      if ("StatementListIndexTrackableShape".equals(inner.getSimpleName())) {
-        Method m = inner.getMethod("getBlockStatement");
-        assertNotNull(m);
-        return;
-      }
-    }
-    fail("StatementListIndexTrackableShape not found");
+    Class<?> inner = findInnerClass("StatementListIndexTrackableShape");
+    assertNotNull("StatementListIndexTrackableShape not found", inner);
+    assertNotNull(inner.getMethod("getBlockStatement"));
   }
 
   @Test
   public void statementListIndexTrackableShape_hasGetIndexMethod() throws Exception {
-    Class<?>[] innerClasses = CodeEditor.class.getDeclaredClasses();
-    for (Class<?> inner : innerClasses) {
-      if ("StatementListIndexTrackableShape".equals(inner.getSimpleName())) {
-        Method m = inner.getMethod("getIndex");
-        assertNotNull(m);
-        assertEquals(int.class, m.getReturnType());
-        return;
-      }
-    }
-    fail("StatementListIndexTrackableShape not found");
+    Class<?> inner = findInnerClass("StatementListIndexTrackableShape");
+    assertNotNull("StatementListIndexTrackableShape not found", inner);
+    Method m = inner.getMethod("getIndex");
+    assertEquals(int.class, m.getReturnType());
   }
 
   @Test
   public void statementListIndexTrackableShape_hasIsInViewMethod() throws Exception {
-    Class<?>[] innerClasses = CodeEditor.class.getDeclaredClasses();
-    for (Class<?> inner : innerClasses) {
-      if ("StatementListIndexTrackableShape".equals(inner.getSimpleName())) {
-        Method m = inner.getMethod("isInView");
-        assertNotNull(m);
-        assertEquals(boolean.class, m.getReturnType());
-        return;
-      }
-    }
-    fail("StatementListIndexTrackableShape not found");
+    Class<?> inner = findInnerClass("StatementListIndexTrackableShape");
+    assertNotNull("StatementListIndexTrackableShape not found", inner);
+    Method m = inner.getMethod("isInView");
+    assertEquals(boolean.class, m.getReturnType());
   }
 
   // ---- Key public methods ----

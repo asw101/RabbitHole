@@ -97,7 +97,6 @@ public class ExpressionCascadeManagerDeepTest {
   public void getAccessibleLocals_countLoop_defaultAliceMode_hidesVariable() {
     // In default Alice mode, FormatterState.isJava() returns false,
     // so CountLoop variable should NOT be accessible.
-    // Note: This test may need a Croquet Application for FormatterState singleton.
     UserLocal variable = new UserLocal("i", JavaType.INTEGER_OBJECT_TYPE, false);
     UserLocal constant = new UserLocal("count", JavaType.INTEGER_OBJECT_TYPE, true);
     BlockStatement body = new BlockStatement();

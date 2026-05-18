@@ -117,22 +117,6 @@ public class ExpressionPropertyContextTest {
     assertNull("Orphan statement should yield null pair", pair);
   }
 
-  // ---- getBlockStatementIndexPair — ConstructorInvocationStatement ----
-  // When the first ancestor statement is a ConstructorInvocationStatement,
-  // the method returns null (the "//todo" branch).
-
-  @Test
-  public void getBlockStatementIndexPair_constructorInvocation_returnsNull() {
-    // The method has a special branch: if the ancestor statement is
-    // ConstructorInvocationStatement, it returns null.
-    // We can't easily construct one headlessly (it's abstract), so this is
-    // a documentation test verifying the orphan path returns null.
-    ExpressionStatement orphan = new ExpressionStatement(new NullLiteral());
-    ExpressionPropertyContext ctx = new ExpressionPropertyContext(orphan.expression);
-
-    assertNull(ctx.getBlockStatementIndexPair());
-  }
-
   // ---- ExpressionPropertyContext is an ExpressionCascadeContext ----
 
   @Test
