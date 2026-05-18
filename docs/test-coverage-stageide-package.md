@@ -206,6 +206,10 @@ Contract tests for the four standalone expression filler-inners that handle
 non-event, non-resource value types: `ColorFillerInner`, `KeyFillerInner`,
 `ImagePaintFillerInner`, and `ModelResourceFillerInner`.
 
+> **Note:** `ModelResourceFillerInner` exists in the package but is **not registered**
+> in `ExpressionCascadeManager`. It is tested here for structural contracts but
+> flagged as a known orphan in the registration tests.
+
 #### Test Cases
 
 | Method | What It Tests |
@@ -479,6 +483,7 @@ No existing test files are modified.
 | AWT headless prevents custom composite instantiation | Reflection-only approach — no `getInstance()` calls |
 | Source path resolution depends on Maven layout | Standard Maven convention; would only break on project restructure |
 | New filler-inners added without registration | `noOrphanedFillerInnerClasses` guard test catches this automatically |
+| `ModelResourceFillerInner` is an orphan (not registered) | Documented as known orphan; excluded from orphan guard. Could indicate dead code or future feature |
 
 ---
 

@@ -108,6 +108,13 @@ public void getInstance_returnsSameInstance() {
 }
 ```
 
+> **Discovered bug:** `NodeCodec.getInstance` creates a new instance when the
+> class is absent from the cache but never calls `map.put(cls, rv)` to store it.
+> The `assertSame` test will **fail** and expose this caching defect.
+> `PropertyOfNodeCodec`, `ResourceCodec`, and `SingletonCodec` should be checked
+> for the same pattern. Tests should either fix the production code or use
+> `assertNotNull` + `assertEquals(getValueClass)` until the bug is addressed.
+
 ### Pattern: getValueClass contract
 
 Every `ItemCodec<T>` must return the class passed at construction:
@@ -133,6 +140,13 @@ public void appendRepresentation_nullValue_doesNotThrow() {
   // Should complete without NPE
 }
 ```
+
+> **Caution:** `NodeCodec.appendRepresentation` calls
+> `NodeUtilities.safeAppendRepr(sb, value, Application.getLocale())`. If no
+> `Application` has been initialized, `Application.getLocale()` may throw.
+> Tests should either set up a minimal `Application` context or catch and
+> document the expected exception. The `DeclarationCompositeCodec` non-null
+> path similarly calls `FormatterState.getInstance()` which requires IDE context.
 
 ### Pattern: encodeValue null-safety
 
@@ -350,30 +364,13 @@ public void construct_withoutBody_defaultsToEmpty() {
 }
 ```
 
-### DeclareMethodEdit doOrRedo / undo round-trip
+### DeclareMethodEdit — no doOrRedo testing
 
-When constructed with real AST nodes, `doOrRedoInternal` adds the method to the
-declaring type and `undoInternal` removes it:
-
-```java
-@Test
-public void doAndUndo_roundTrip() {
-  NamedUserType type = new NamedUserType();
-  type.name.setValue("TestType");
-  BlockStatement body = new BlockStatement();
-
-  DeclareMethodEdit edit = new DeclareMethodEdit(
-    null, type, "testMethod", JavaType.VOID_TYPE, body
-  );
-
-  int methodCountBefore = type.methods.size();
-  edit.doOrRedoInternal(true);
-  assertEquals(methodCountBefore + 1, type.methods.size());
-
-  edit.undoInternal();
-  assertEquals(methodCountBefore, type.methods.size());
-}
-```
+> **Important:** `DeclareMethodEdit.doOrRedoInternal` calls
+> `IDE.getActiveInstance().getDocumentFrame().getDeclarationsEditorComposite()`
+> (line 142), and `undoInternal` does the same (line 153). Both will NPE without
+> a running IDE instance. Tests are therefore **limited to construction and
+> accessor contracts only** — do not attempt `doOrRedo`/`undo` round-trips.
 
 ### RenameDeclarationEdit
 
@@ -408,8 +405,9 @@ public void undo_restoresOldName() {
 
 ### DependentEdit
 
-A minimal wrapper edit. Tests verify construction and that the description
-accessor does not throw:
+A minimal wrapper edit that delegates all operations (`doOrRedoInternal`,
+`undoInternal`, `appendDescription`) to a `ResponsibleModel` obtained via
+`getModel()`. Tests are limited to construction:
 
 ```java
 @Test
@@ -418,6 +416,11 @@ public void construct_withNullActivity() {
   assertNotNull(edit);
 }
 ```
+
+> **Note:** Calling `appendDescription`, `doOrRedoInternal`, or `undoInternal`
+> on a `DependentEdit` without a model will throw `RuntimeException` because
+> `getResponsibleModel()` casts `getModel()` to `ResponsibleModel`. Tests
+> should not call these methods without first wiring a model.
 
 ### BlockStatementEdit (abstract)
 
@@ -609,8 +612,15 @@ public void bugSubmitVisibility_hasTwoValues() {
 ### ShowPathPropertyComposite hierarchy
 
 `ShowClassPathPropertyComposite` and `ShowLibraryPathPropertyComposite` extend
-`ShowPathPropertyComposite`. Tests verify construction and property name
-contracts:
+`ShowPathPropertyComposite`, which itself extends
+`SimpleOperationUnadornedDialogCoreComposite`. The constructors pass a `UUID`
+migration ID and a `Group` (`Application.INFORMATION_GROUP`) to the superclass.
+
+> **Caution:** Constructing these composites may require a Croquet
+> `Application` to be initialized (for `Group` registration). If construction
+> throws in headless CI, wrap with
+> `Assume.assumeTrue("Croquet Application required", applicationAvailable())`.
+> The property name can be verified only if construction succeeds:
 
 ```java
 @Test
@@ -698,7 +708,7 @@ open core/ide/target/site/jacoco/index.html
 | Class | Constructor pattern | Key methods tested |
 |-------|--------------------|--------------------|
 | `ExpressionPropertyEdit` | `(null, ExpressionProperty, Expression, Expression)` | construction, accessors |
-| `DeclareMethodEdit` | `(null, UserType, String, AbstractType[, BlockStatement])` | `getDeclaringType`, `getMethodName`, `getReturnType`, `doOrRedoInternal`, `undoInternal` |
+| `DeclareMethodEdit` | `(null, UserType, String, AbstractType[, BlockStatement])` | `getDeclaringType`, `getMethodName`, `getReturnType` (no do/undo — requires IDE) |
 | `BlockStatementEdit` | `(null, BlockStatement)` via subclass | `getBlockStatement` |
 | `DependentEdit` | `(null)` | construction |
 | `RenameDeclarationEdit` | `(null, AbstractDeclaration, String, String)` | `doOrRedoInternal`, `undoInternal` |
@@ -729,9 +739,12 @@ open core/ide/target/site/jacoco/index.html
 
 | Risk | Mitigation |
 |------|-----------|
-| Edit `doOrRedo`/`undo` requires `IDE.getActiveInstance()` | Tests limited to construction + accessors; only `DeclareMethodEdit` and `RenameDeclarationEdit` can safely exercise do/undo with pure AST |
+| **Codec `getInstance` never caches** — `NodeCodec`, `PropertyOfNodeCodec`, `ResourceCodec`, and `SingletonCodec` all create new instances but never call `map.put(cls, rv)` | `assertSame` tests will expose this as a production bug. Use `assertNotNull` + `assertEquals(getValueClass)` as fallback until the bug is fixed |
+| Edit `doOrRedo`/`undo` requires `IDE.getActiveInstance()` | Tests limited to construction + accessors; only `RenameDeclarationEdit` can safely exercise do/undo with pure AST (`DeclareMethodEdit` calls IDE on both paths) |
 | NumberModel constructors create `JTextField` | Headless guard: `Assume.assumeFalse(GraphicsEnvironment.isHeadless())` |
-| `DeclarationCompositeCodec.decodeValue` needs IDE instance | Test only `getValueClass` and `appendRepresentation` |
+| `DeclarationCompositeCodec.decodeValue` needs IDE instance | Test only `getValueClass` and `appendRepresentation` (null case only — non-null calls `FormatterState`) |
+| `NodeCodec.appendRepresentation` calls `Application.getLocale()` | May throw if no `Application` initialized; guard or mock the `Application` singleton |
+| `ShowPathPropertyComposite` constructor requires Croquet `Application` | Guard with `Assume`; test `getPropertyName` only if construction succeeds |
 | `SearchResult.getIcon()` needs `DeclarationTabState` | Not tested headless; test only data accessors |
 | `AcceptIfNotGenerated.accept()` needs a `UserMethod` ancestor | Test singleton identity only; `accept()` tested separately in `FindCrawlerTest` |
 
