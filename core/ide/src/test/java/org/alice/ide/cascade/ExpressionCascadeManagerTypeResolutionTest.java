@@ -53,6 +53,9 @@ public class ExpressionCascadeManagerTypeResolutionTest {
     boolean testIsApplicableForFillIn(AbstractType<?, ?, ?> desired, AbstractType<?, ?, ?> expression) {
       return isApplicableForFillIn(desired, expression);
     }
+    boolean testIsNullLiteralAllowedForType(AbstractType<?, ?, ?> type, List<CascadeBlankChild> items) {
+      return isNullLiteralAllowedForType(type, items);
+    }
     List<CascadeBlankChild> testAddCustomFillIns(List<CascadeBlankChild> rv, AbstractType<?, ?, ?> type) {
       return addCustomFillIns(rv, null, type);
     }
@@ -177,8 +180,7 @@ public class ExpressionCascadeManagerTypeResolutionTest {
   @Test
   public void isNullLiteralAllowed_defaultFalse() {
     manager.setNullLiteralAllowed(false);
-    // This tests that the default behavior returns false
-    // (actual appendItems tests would need IDE context)
+    assertFalse(manager.testIsNullLiteralAllowedForType(JavaType.STRING_TYPE, java.util.Collections.emptyList()));
   }
 
   // ---- getEnumTypeForInterfaceType ----
