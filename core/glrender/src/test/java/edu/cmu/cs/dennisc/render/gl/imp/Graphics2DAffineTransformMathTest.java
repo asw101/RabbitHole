@@ -3,8 +3,6 @@ package edu.cmu.cs.dennisc.render.gl.imp;
 import org.junit.Test;
 
 import java.awt.geom.AffineTransform;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 
 import static org.junit.Assert.*;
 
