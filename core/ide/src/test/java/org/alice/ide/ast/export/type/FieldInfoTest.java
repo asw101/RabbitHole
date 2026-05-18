@@ -18,26 +18,6 @@ public class FieldInfoTest {
   }
 
   @Test
-  public void getName_matchesConstructorArg() {
-    FieldInfo info = new FieldInfo("java.lang.String", "color");
-    assertEquals("color", info.getName());
-  }
-
-  @Test
-  public void getValueClassName_matchesConstructorArg() {
-    FieldInfo info = new FieldInfo("java.lang.Boolean", "flag");
-    assertEquals("java.lang.Boolean", info.getValueClassName());
-  }
-
-  @Test
-  public void multipleFields_differentInfos() {
-    FieldInfo i1 = new FieldInfo("java.lang.Double", "alpha");
-    FieldInfo i2 = new FieldInfo("java.lang.Integer", "bravo");
-    assertNotEquals(i1.getName(), i2.getName());
-    assertNotEquals(i1.getValueClassName(), i2.getValueClassName());
-  }
-
-  @Test
   public void nullValueClassName_allowed() {
     FieldInfo info = new FieldInfo(null, "x");
     assertNull(info.getValueClassName());

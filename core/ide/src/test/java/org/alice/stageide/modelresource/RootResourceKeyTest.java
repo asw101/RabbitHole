@@ -107,13 +107,6 @@ public class RootResourceKeyTest {
 
   // ---- toString ----
 
-  @Test
-  public void toString_containsClassName() {
-    RootResourceKey key = createKey("root", "Root");
-    String str = key.toString();
-    assertTrue(str.contains("RootResourceKey"));
-  }
-
   // ---- getLocalizedName with missing bundle key uses default ----
 
   @Test

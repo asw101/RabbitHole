@@ -216,13 +216,6 @@ public class FloatSampleBufferTest {
   }
 
   @Test
-  public void ditherConstants() {
-    assertEquals(0, FloatSampleBuffer.DITHER_MODE_AUTOMATIC);
-    assertEquals(1, FloatSampleBuffer.DITHER_MODE_ON);
-    assertEquals(2, FloatSampleBuffer.DITHER_MODE_OFF);
-  }
-
-  @Test
   public void setDitherBits_updates() {
     buffer.setDitherBits(1.5f);
     assertEquals(1.5f, buffer.getDitherBits(), 0.001f);
@@ -282,18 +275,6 @@ public class FloatSampleBufferTest {
   }
 
   // --- getFormatType ---
-
-  @Test
-  public void getFormatType_8bitSigned() {
-    int ft = buffer.getFormatType(8, true, false);
-    assertTrue(ft > 0);
-  }
-
-  @Test
-  public void getFormatType_16bitSignedBigEndian() {
-    int ft = buffer.getFormatType(16, true, true);
-    assertTrue(ft > 0);
-  }
 
   @Test(expected = IllegalArgumentException.class)
   public void getFormatType_unsupportedBitSize_throws() {

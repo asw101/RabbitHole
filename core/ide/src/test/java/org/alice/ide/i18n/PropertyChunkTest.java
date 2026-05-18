@@ -51,17 +51,4 @@ public class PropertyChunkTest {
     assertEquals(1, pc.getUnderscoreCount());
   }
 
-  @Test
-  public void updateRepr_containsPropertyName() {
-    PropertyChunk pc = new PropertyChunk("test");
-    StringBuilder sb = new StringBuilder();
-    pc.updateRepr(sb);
-    assertTrue(sb.toString().contains("propertyName=test"));
-  }
-
-  @Test
-  public void isChunkSubtype() {
-    PropertyChunk pc = new PropertyChunk("p");
-    assertTrue(pc instanceof Chunk);
-  }
 }

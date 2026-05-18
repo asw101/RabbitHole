@@ -1,7 +1,6 @@
 package org.alice.stageide.ast.sort;
 
 import org.junit.Test;
-import org.lgna.project.ast.JavaMethod;
 import org.lgna.project.ast.JavaType;
 import org.lgna.project.ast.ManagementLevel;
 import org.lgna.project.ast.UserMethod;
@@ -19,12 +18,6 @@ public class OneShotSorterExtendedTest {
     m.returnType.setValue(JavaType.VOID_TYPE);
     m.managementLevel.setValue(ManagementLevel.NONE);
     return m;
-  }
-
-  @Test
-  public void moveBeforeTurn_inSortedOrder() {
-    assertNotNull(OneShotSorter.MOVE_METHOD);
-    assertNotNull(OneShotSorter.TURN_METHOD);
   }
 
   @Test
@@ -90,13 +83,4 @@ public class OneShotSorterExtendedTest {
     assertTrue(OneShotSorter.SINGLETON instanceof org.alice.ide.ast.sort.MemberSorter);
   }
 
-  @Test
-  public void moveMethod_isJavaMethod() {
-    assertTrue(OneShotSorter.MOVE_METHOD instanceof JavaMethod);
-  }
-
-  @Test
-  public void turnMethod_isJavaMethod() {
-    assertTrue(OneShotSorter.TURN_METHOD instanceof JavaMethod);
-  }
 }

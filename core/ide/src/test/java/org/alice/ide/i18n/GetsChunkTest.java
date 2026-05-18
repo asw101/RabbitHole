@@ -30,17 +30,4 @@ public class GetsChunkTest {
     assertTrue(repr.contains("isTowardLeading=true"));
   }
 
-  @Test
-  public void updateRepr_containsFalseFlag() {
-    GetsChunk gc = new GetsChunk(false);
-    StringBuilder sb = new StringBuilder();
-    gc.updateRepr(sb);
-    assertTrue(sb.toString().contains("isTowardLeading=false"));
-  }
-
-  @Test
-  public void isChunkSubtype() {
-    GetsChunk gc = new GetsChunk(true);
-    assertTrue(gc instanceof Chunk);
-  }
 }

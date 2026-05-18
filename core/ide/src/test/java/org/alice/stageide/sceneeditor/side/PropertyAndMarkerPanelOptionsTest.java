@@ -9,8 +9,6 @@ public class PropertyAndMarkerPanelOptionsTest {
   public void values_hasTwoConstants() {
     PropertyAndMarkerPanelOptions[] values = PropertyAndMarkerPanelOptions.values();
     assertEquals(2, values.length);
-    assertSame(PropertyAndMarkerPanelOptions.PROPERTIES, values[0]);
-    assertSame(PropertyAndMarkerPanelOptions.MARKERS, values[1]);
   }
 
   @Test

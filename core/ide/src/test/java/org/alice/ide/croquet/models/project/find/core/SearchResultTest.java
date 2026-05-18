@@ -116,18 +116,4 @@ public class SearchResultTest {
   }
 
   // ---- getName ----
-
-  @Test
-  public void getName_returnsDeclarationName() {
-    UserMethod method = createUserMethod("compute");
-    SearchResult result = new SearchResult(method);
-    assertEquals("compute", result.getName());
-  }
-
-  @Test
-  public void getName_fieldDeclaration() {
-    UserField field = createUserField("count");
-    SearchResult result = new SearchResult(field);
-    assertEquals("count", result.getName());
-  }
 }

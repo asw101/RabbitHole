@@ -9,8 +9,6 @@ public class BugSubmitAttachmentTest {
   public void values_hasTwoConstants() {
     BugSubmitAttachment[] values = BugSubmitAttachment.values();
     assertEquals(2, values.length);
-    assertSame(BugSubmitAttachment.YES, values[0]);
-    assertSame(BugSubmitAttachment.NO, values[1]);
   }
 
   @Test

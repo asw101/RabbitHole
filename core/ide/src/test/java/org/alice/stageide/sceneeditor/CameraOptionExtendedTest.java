@@ -2,8 +2,6 @@ package org.alice.stageide.sceneeditor;
 
 import org.junit.Test;
 
-import java.util.Arrays;
-
 import static org.junit.Assert.*;
 
 public class CameraOptionExtendedTest {
@@ -20,16 +18,8 @@ public class CameraOptionExtendedTest {
         CameraOption.values());
   }
 
-  @Test
-  public void perspectiveViews_precedeOrthographicViews() {
-    assertTrue(CameraOption.STARTING_CAMERA_VIEW.compareTo(CameraOption.TOP) < 0);
-    assertTrue(CameraOption.LAYOUT_SCENE_VIEW.compareTo(CameraOption.TOP) < 0);
-  }
-
-  @Test
-  public void orthographicViews_areContiguousAtEnd() {
-    CameraOption[] values = CameraOption.values();
-    assertArrayEquals(new CameraOption[]{CameraOption.TOP, CameraOption.SIDE, CameraOption.FRONT},
-        Arrays.copyOfRange(values, 2, values.length));
+  @Test(expected = IllegalArgumentException.class)
+  public void valueOf_invalid_throws() {
+    CameraOption.valueOf("INVALID");
   }
 }

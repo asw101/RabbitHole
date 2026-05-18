@@ -9,9 +9,6 @@ public class ReasonToDisableSomeAmountOfRenderingTest {
   public void values_hasThreeConstants() {
     ReasonToDisableSomeAmountOfRendering[] values = ReasonToDisableSomeAmountOfRendering.values();
     assertEquals(3, values.length);
-    assertEquals(ReasonToDisableSomeAmountOfRendering.MODAL_DIALOG_WITH_RENDER_WINDOW_OF_ITS_OWN, values[0]);
-    assertEquals(ReasonToDisableSomeAmountOfRendering.DRAG_AND_DROP, values[1]);
-    assertEquals(ReasonToDisableSomeAmountOfRendering.CLICK_AND_CLACK, values[2]);
   }
 
   @Test

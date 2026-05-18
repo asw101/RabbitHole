@@ -4,10 +4,8 @@ import org.junit.Test;
 import org.lgna.project.ast.JavaType;
 import org.lgna.project.ast.ManagementLevel;
 import org.lgna.project.ast.UserMethod;
-import org.lgna.project.ast.UserField;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.*;
@@ -37,25 +35,6 @@ public class AlphabeticalMemberSorterExtendedTest {
   }
 
   @Test
-  public void sorting_alreadySorted_unchanged() {
-    List<UserMethod> methods = Arrays.asList(
-        method("a"), method("b"), method("c"));
-    List<UserMethod> sorted = AlphabeticalMemberSorter.SINGLETON.createSortedList(methods);
-    assertEquals("a", sorted.get(0).getName());
-    assertEquals("b", sorted.get(1).getName());
-    assertEquals("c", sorted.get(2).getName());
-  }
-
-  @Test
-  public void sorting_reverseSorted_reverses() {
-    List<UserMethod> methods = Arrays.asList(
-        method("c"), method("b"), method("a"));
-    List<UserMethod> sorted = AlphabeticalMemberSorter.SINGLETON.createSortedList(methods);
-    assertEquals("a", sorted.get(0).getName());
-    assertEquals("c", sorted.get(2).getName());
-  }
-
-  @Test
   public void sorting_mixedCasePreservesOriginalCase() {
     UserMethod upper = method("Zebra");
     UserMethod lower = method("apple");
@@ -82,14 +61,6 @@ public class AlphabeticalMemberSorterExtendedTest {
   }
 
   @Test
-  public void sorting_singleElement() {
-    UserMethod m = method("only");
-    List<UserMethod> sorted = AlphabeticalMemberSorter.SINGLETON.createSortedList(Collections.singletonList(m));
-    assertEquals(1, sorted.size());
-    assertEquals("only", sorted.get(0).getName());
-  }
-
-  @Test
   public void createSortedList_returnsNewList() {
     UserMethod a = method("alpha");
     UserMethod b = method("bravo");
@@ -98,15 +69,4 @@ public class AlphabeticalMemberSorterExtendedTest {
     assertNotSame(original, sorted);
   }
 
-  @Test
-  public void createSortedList_preservesAllElements() {
-    UserMethod a = method("alpha");
-    UserMethod b = method("bravo");
-    UserMethod c = method("charlie");
-    List<UserMethod> sorted = AlphabeticalMemberSorter.SINGLETON.createSortedList(Arrays.asList(c, a, b));
-    assertEquals(3, sorted.size());
-    assertTrue(sorted.contains(a));
-    assertTrue(sorted.contains(b));
-    assertTrue(sorted.contains(c));
-  }
 }

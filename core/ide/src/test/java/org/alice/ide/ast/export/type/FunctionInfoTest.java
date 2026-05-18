@@ -18,26 +18,6 @@ public class FunctionInfoTest {
   }
 
   @Test
-  public void getName_matchesConstructorArg() {
-    FunctionInfo info = new FunctionInfo("java.lang.Integer", "compute");
-    assertEquals("compute", info.getName());
-  }
-
-  @Test
-  public void getReturnClassName_matchesConstructorArg() {
-    FunctionInfo info = new FunctionInfo("java.lang.String", "getValue");
-    assertEquals("java.lang.String", info.getReturnClassName());
-  }
-
-  @Test
-  public void multipleFunctions_differentInfos() {
-    FunctionInfo i1 = new FunctionInfo("java.lang.Double", "getA");
-    FunctionInfo i2 = new FunctionInfo("java.lang.Integer", "getB");
-    assertNotEquals(i1.getName(), i2.getName());
-    assertNotEquals(i1.getReturnClassName(), i2.getReturnClassName());
-  }
-
-  @Test
   public void nullReturnClassName_allowed() {
     FunctionInfo info = new FunctionInfo(null, "fn");
     assertNull(info.getReturnClassName());

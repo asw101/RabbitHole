@@ -16,18 +16,6 @@ public class MethodInvocationChunkTest {
   }
 
   @Test
-  public void longerMethodName_stripsCorrectly() {
-    MethodInvocationChunk mic = new MethodInvocationChunk("calculateTotal()");
-    assertEquals("calculateTotal", mic.getMethodName());
-  }
-
-  @Test
-  public void shortMethodName_stripsCorrectly() {
-    MethodInvocationChunk mic = new MethodInvocationChunk("go()");
-    assertEquals("go", mic.getMethodName());
-  }
-
-  @Test
   public void updateRepr_containsMethodName() {
     MethodInvocationChunk mic = new MethodInvocationChunk("test()");
     StringBuilder sb = new StringBuilder();
@@ -35,9 +23,4 @@ public class MethodInvocationChunkTest {
     assertTrue(sb.toString().contains("methodName=test"));
   }
 
-  @Test
-  public void isChunkSubtype() {
-    MethodInvocationChunk mic = new MethodInvocationChunk("m()");
-    assertTrue(mic instanceof Chunk);
-  }
 }

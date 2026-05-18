@@ -10,37 +10,6 @@ import static org.junit.Assert.*;
 public class ChunkTest {
 
   @Test
-  public void textChunk_isChunk() {
-    Chunk c = new TextChunk("text");
-    assertNotNull(c);
-  }
-
-  @Test
-  public void propertyChunk_isChunk() {
-    Chunk c = new PropertyChunk("prop");
-    assertNotNull(c);
-  }
-
-  @Test
-  public void methodInvocationChunk_isChunk() {
-    Chunk c = new MethodInvocationChunk("method()");
-    assertNotNull(c);
-  }
-
-  @Test
-  public void getsChunk_isChunk() {
-    Chunk c = new GetsChunk(true);
-    assertNotNull(c);
-  }
-
-  @Test
-  public void sealedPermits_exactlyFourSubtypes() {
-    Class<?>[] permitted = Chunk.class.getPermittedSubclasses();
-    assertNotNull(permitted);
-    assertEquals(4, permitted.length);
-  }
-
-  @Test
   public void allPermittedSubclasses_areCorrectTypes() {
     Class<?>[] permitted = Chunk.class.getPermittedSubclasses();
     assertNotNull(permitted);

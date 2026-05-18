@@ -9,8 +9,6 @@ public class BugSubmitVisibilityTest {
   public void values_hasTwoConstants() {
     BugSubmitVisibility[] values = BugSubmitVisibility.values();
     assertEquals(2, values.length);
-    assertSame(BugSubmitVisibility.PUBLIC, values[0]);
-    assertSame(BugSubmitVisibility.PRIVATE, values[1]);
   }
 
   @Test

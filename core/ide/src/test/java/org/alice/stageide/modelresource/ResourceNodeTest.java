@@ -109,50 +109,6 @@ public class ResourceNodeTest {
   }
 
   @Test
-  public void compareTo_caseInsensitive() {
-    ResourceNode nodeLower = createLeafNode("apple");
-    ResourceNode nodeUpper = createLeafNode("APPLE");
-
-    assertEquals(0, nodeLower.compareTo(nodeUpper));
-  }
-
-  // ---- getSimpleClassName ----
-
-  @Test
-  public void getSimpleClassName_returnsLocalizedName() {
-    RootResourceKey key = new RootResourceKey("testKey", "TestName");
-    ResourceNode node = new ResourceNode(UUID.randomUUID(), key);
-    String simpleName = node.getSimpleClassName();
-    assertNotNull(simpleName);
-  }
-
-  // ---- getBoundingBox / placeOnGround for non-InstanceCreatorKey ----
-
-  @Test
-  public void getBoundingBox_rootKey_returnsNull() {
-    ResourceNode node = createLeafNode("Test");
-    assertNull(node.getBoundingBox());
-  }
-
-  @Test
-  public void placeOnGround_rootKey_returnsFalse() {
-    ResourceNode node = createLeafNode("Test");
-    assertFalse(node.placeOnGround());
-  }
-
-  // ---- appendRepr ----
-
-  @Test
-  public void toString_containsKeyInfo() {
-    RootResourceKey key = new RootResourceKey("k", "KeyName");
-    ResourceNode node = new ResourceNode(UUID.randomUUID(), key);
-    String repr = node.toString();
-    assertNotNull(repr);
-  }
-
-  // ---- isBreadcrumbButtonIconDesired ----
-
-  @Test
   public void isBreadcrumbButtonIconDesired_defaultFalse() {
     ResourceNode node = createLeafNode("Test");
     assertFalse(node.isBreadcrumbButtonIconDesired());

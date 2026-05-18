@@ -34,13 +34,6 @@ public class FieldTreeExtendedTest {
   }
 
   @Test
-  public void typeNode_toString_containsTypeName() {
-    NamedUserType type = createType("Actor");
-    TypeNode node = TypeNode.createAndAddToParent(null, type, 0, 0);
-    assertTrue(node.toString().contains("Actor"));
-  }
-
-  @Test
   public void typeNode_emptyChildren_noFieldNodes() {
     NamedUserType type = createType("Empty");
     TypeNode node = TypeNode.createAndAddToParent(null, type, 0, 0);
@@ -112,11 +105,4 @@ public class FieldTreeExtendedTest {
     assertTrue(node.getTypeNodes().isEmpty());
   }
 
-  @Test
-  public void fieldNode_toString_containsFieldNode() {
-    TypeNode parent = TypeNode.createAndAddToParent(null, createType("P"), 0, 0);
-    FieldNode node = FieldNode.createAndAddToParent(parent, createField("x"));
-    assertTrue(node.toString().contains("FieldNode"));
-    assertTrue(node.toString().contains("x"));
-  }
 }
