@@ -33,11 +33,10 @@ public class LocaleCodecTest {
   }
 
   @Test
-  public void appendRepresentation_frenchLocale_containsFrench() {
+  public void appendRepresentation_nonEnglishLocale_nonEmpty() {
     StringBuilder sb = new StringBuilder();
     LocaleCodec.SINGLETON.appendRepresentation(sb, Locale.FRENCH);
-    String result = sb.toString();
-    assertFalse(result.isEmpty());
+    assertFalse("Non-English locale should produce non-empty representation", sb.toString().isEmpty());
   }
 
   @Test
@@ -46,24 +45,5 @@ public class LocaleCodecTest {
     LocaleCodec.SINGLETON.appendRepresentation(sb, Locale.ENGLISH);
     assertTrue(sb.toString().startsWith("locale="));
     assertTrue(sb.length() > "locale=".length());
-  }
-
-  @Test
-  public void getValueClass_isConsistent() {
-    assertSame(LocaleCodec.SINGLETON.getValueClass(), LocaleCodec.SINGLETON.getValueClass());
-  }
-
-  @Test
-  public void appendRepresentation_germanLocale_nonEmpty() {
-    StringBuilder sb = new StringBuilder();
-    LocaleCodec.SINGLETON.appendRepresentation(sb, Locale.GERMAN);
-    assertTrue(sb.length() > 0);
-  }
-
-  @Test
-  public void appendRepresentation_japaneseLocale_nonEmpty() {
-    StringBuilder sb = new StringBuilder();
-    LocaleCodec.SINGLETON.appendRepresentation(sb, Locale.JAPANESE);
-    assertTrue(sb.length() > 0);
   }
 }

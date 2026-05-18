@@ -5,59 +5,11 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 /**
- * Tests for help-related enums and utilities.
- * Covers BugSubmitVisibility, BugSubmitAttachment enums
- * and structural checks on help composites.
+ * Structural checks on help composite classes.
+ * Enum contracts for BugSubmitVisibility/BugSubmitAttachment are in
+ * {@link BugSubmitVisibilityTest} and {@link BugSubmitAttachmentTest}.
  */
 public class HelpUtilitiesTest {
-
-  // -- BugSubmitVisibility -----------------------------------------------
-
-  @Test
-  public void bugSubmitVisibility_hasPublicValue() {
-    assertEquals(BugSubmitVisibility.PUBLIC, BugSubmitVisibility.valueOf("PUBLIC"));
-  }
-
-  @Test
-  public void bugSubmitVisibility_hasPrivateValue() {
-    assertEquals(BugSubmitVisibility.PRIVATE, BugSubmitVisibility.valueOf("PRIVATE"));
-  }
-
-  @Test
-  public void bugSubmitVisibility_valueCount() {
-    assertEquals(2, BugSubmitVisibility.values().length);
-  }
-
-  @Test
-  public void bugSubmitVisibility_ordinals() {
-    assertEquals(0, BugSubmitVisibility.PUBLIC.ordinal());
-    assertEquals(1, BugSubmitVisibility.PRIVATE.ordinal());
-  }
-
-  // -- BugSubmitAttachment -----------------------------------------------
-
-  @Test
-  public void bugSubmitAttachment_hasYesValue() {
-    assertEquals(BugSubmitAttachment.YES, BugSubmitAttachment.valueOf("YES"));
-  }
-
-  @Test
-  public void bugSubmitAttachment_hasNoValue() {
-    assertEquals(BugSubmitAttachment.NO, BugSubmitAttachment.valueOf("NO"));
-  }
-
-  @Test
-  public void bugSubmitAttachment_valueCount() {
-    assertEquals(2, BugSubmitAttachment.values().length);
-  }
-
-  @Test
-  public void bugSubmitAttachment_ordinals() {
-    assertEquals(0, BugSubmitAttachment.YES.ordinal());
-    assertEquals(1, BugSubmitAttachment.NO.ordinal());
-  }
-
-  // -- Structural checks on composites -----------------------------------
 
   @Test
   public void showAllSystemPropertiesComposite_classLoadable() throws ClassNotFoundException {

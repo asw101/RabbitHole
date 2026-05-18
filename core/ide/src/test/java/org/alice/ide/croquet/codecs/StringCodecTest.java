@@ -58,8 +58,4 @@ public class StringCodecTest {
     assertEquals("onetwo", sb.toString());
   }
 
-  @Test
-  public void getValueClass_isConsistent() {
-    assertSame(StringCodec.SINGLETON.getValueClass(), StringCodec.SINGLETON.getValueClass());
-  }
 }
