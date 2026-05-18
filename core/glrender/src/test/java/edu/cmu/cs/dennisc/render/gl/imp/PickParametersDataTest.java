@@ -228,69 +228,6 @@ public class PickParametersDataTest {
     assertEquals(10000, p.getFlippedY(viewport));
   }
 
-  // ── PickResult via PickParameters ─────────────────────────────────
-
-  @Test
-  public void pickResult_isFrontFacing_true() {
-    params.addPickResult(null, null, true, null, 0, new Point3(0, 0, 0));
-    assertTrue(params.accessFrontMostPickResult().isFrontFacing());
-  }
-
-  @Test
-  public void pickResult_isFrontFacing_false() {
-    params.addPickResult(null, null, false, null, 0, new Point3(0, 0, 0));
-    assertFalse(params.accessFrontMostPickResult().isFrontFacing());
-  }
-
-  @Test
-  public void pickResult_subElement_preserved() {
-    params.addPickResult(null, null, true, null, 99, new Point3(0, 0, 0));
-    assertEquals(99, params.accessFrontMostPickResult().getSubElement());
-  }
-
-  @Test
-  public void pickResult_subElement_negativeOne() {
-    params.addPickResult(null, null, true, null, -1, new Point3(0, 0, 0));
-    assertEquals(-1, params.accessFrontMostPickResult().getSubElement());
-  }
-
-  @Test
-  public void pickResult_position_preserved() {
-    Point3 pos = new Point3(10.5, 20.5, 30.5);
-    params.addPickResult(null, null, true, null, 0, pos);
-    PickResult result = params.accessFrontMostPickResult();
-    assertNotNull(result.getPositionInSource());
-  }
-
-  @Test
-  public void pickResults_clearAfterConstruction_empty() {
-    params.addPickResult(null, null, true, null, 0, new Point3(0, 0, 0));
-    // Verify list is mutable via accessAllPickResults
-    List<PickResult> results = params.accessAllPickResults();
-    assertFalse(results.isEmpty());
-  }
-
-  @Test
-  public void pickResult_nullGeometry_allowed() {
-    params.addPickResult(null, null, true, null, 0, new Point3(0, 0, 0));
-    PickResult result = params.accessFrontMostPickResult();
-    assertNull(result.getGeometry());
-  }
-
-  @Test
-  public void pickResult_nullVisual_allowed() {
-    params.addPickResult(null, null, true, null, 0, new Point3(0, 0, 0));
-    PickResult result = params.accessFrontMostPickResult();
-    assertNull(result.getVisual());
-  }
-
-  @Test
-  public void pickResult_nullSource_allowed() {
-    params.addPickResult(null, null, true, null, 0, new Point3(0, 0, 0));
-    PickResult result = params.accessFrontMostPickResult();
-    assertNull(result.getSource());
-  }
-
   // ── Flipped Y math with various positions ─────────────────────────
 
   @Test

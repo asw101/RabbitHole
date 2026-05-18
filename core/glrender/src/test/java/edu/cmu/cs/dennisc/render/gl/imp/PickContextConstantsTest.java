@@ -149,71 +149,7 @@ public class PickContextConstantsTest {
     assertFalse(pc.isLightingEnabled());
   }
 
-  // ── scaled count (inherited from Context) ─────────────────────────
-
-  @Test
-  public void isScaled_initiallyFalse() {
-    PickContext pc = new PickContext(true);
-    assertFalse(pc.isScaled());
-  }
-
-  @Test
-  public void incrementScaledCount_setsScaledTrue() {
-    PickContext pc = new PickContext(true);
-    pc.incrementScaledCount();
-    assertTrue(pc.isScaled());
-  }
-
-  @Test
-  public void decrementScaledCount_setsScaledFalse() {
-    PickContext pc = new PickContext(true);
-    pc.incrementScaledCount();
-    pc.decrementScaledCount();
-    assertFalse(pc.isScaled());
-  }
-
-  @Test
-  public void multipleIncrements_decrementsToZero() {
-    PickContext pc = new PickContext(true);
-    pc.incrementScaledCount();
-    pc.incrementScaledCount();
-    pc.incrementScaledCount();
-    assertTrue(pc.isScaled());
-    pc.decrementScaledCount();
-    assertTrue(pc.isScaled());
-    pc.decrementScaledCount();
-    assertTrue(pc.isScaled());
-    pc.decrementScaledCount();
-    assertFalse(pc.isScaled());
-  }
-
-  @Test
-  public void pushAndPopScaledCount() {
-    PickContext pc = new PickContext(true);
-    pc.incrementScaledCount();
-    assertTrue(pc.isScaled());
-    pc.pushScaledCountAndSetToZero();
-    assertFalse(pc.isScaled());
-    pc.popAndRestoreScaledCount();
-    assertTrue(pc.isScaled());
-  }
-
-  @Test
-  public void nestedPushPopScaledCount() {
-    PickContext pc = new PickContext(true);
-    pc.incrementScaledCount();
-    pc.incrementScaledCount();
-    pc.pushScaledCountAndSetToZero();
-    assertFalse(pc.isScaled());
-    pc.incrementScaledCount();
-    assertTrue(pc.isScaled());
-    pc.pushScaledCountAndSetToZero();
-    assertFalse(pc.isScaled());
-    pc.popAndRestoreScaledCount();
-    assertTrue(pc.isScaled());
-    pc.popAndRestoreScaledCount();
-    assertTrue(pc.isScaled());
-  }
+  // Scaled count tests are in ContextScaledCountTest — not duplicated here.
 
   // ── getPickNameForVisualAdapter ───────────────────────────────────
 
