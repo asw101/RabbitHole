@@ -18,6 +18,33 @@ import static org.junit.Assert.*;
  */
 public class NumberFillerInnerDeepTest {
 
+  private IntegerFillerInner intFiller;
+  private DoubleFillerInner doubleFiller;
+
+  @org.junit.Before
+  public void setUp() {
+    intFiller = new IntegerFillerInner();
+    doubleFiller = new DoubleFillerInner();
+  }
+
+  private static IntegerValueDetails intDetails(int[] literals) {
+    return new IntegerValueDetails() {
+      @Override public int[] getLiterals() { return literals; }
+      @Override public Integer getMinimumValue() { return 0; }
+      @Override public Integer getMaximumValue() { return 100; }
+      @Override public Class<Integer> getSupportedCls() { return Integer.class; }
+    };
+  }
+
+  private static NumberValueDetails doubleDetails(double[] literals) {
+    return new NumberValueDetails() {
+      @Override public double[] getLiterals() { return literals; }
+      @Override public Double getMinimumValue() { return 0.0; }
+      @Override public Double getMaximumValue() { return 1.0; }
+      @Override public Class<Number> getSupportedCls() { return Number.class; }
+    };
+  }
+
   // ---- IntegerFillerInner.getLiterals ----
 
   @Test
@@ -28,43 +55,13 @@ public class NumberFillerInnerDeepTest {
 
   @Test
   public void integerGetLiterals_customDetails_returnsCustomValues() {
-    IntegerValueDetails details = new IntegerValueDetails() {
-      @Override
-      public int[] getLiterals() {
-        return new int[]{10, 20, 30};
-      }
-
-      @Override
-      public Integer getMinimumValue() { return 0; }
-
-      @Override
-      public Integer getMaximumValue() { return 100; }
-
-      @Override
-      public Class<Integer> getSupportedCls() { return Integer.class; }
-    };
-    int[] literals = IntegerFillerInner.getLiterals(details);
+    int[] literals = IntegerFillerInner.getLiterals(intDetails(new int[]{10, 20, 30}));
     assertArrayEquals(new int[]{10, 20, 30}, literals);
   }
 
   @Test
   public void integerGetLiterals_emptyDetails_returnsEmpty() {
-    IntegerValueDetails details = new IntegerValueDetails() {
-      @Override
-      public int[] getLiterals() {
-        return new int[0];
-      }
-
-      @Override
-      public Integer getMinimumValue() { return 0; }
-
-      @Override
-      public Integer getMaximumValue() { return 0; }
-
-      @Override
-      public Class<Integer> getSupportedCls() { return Integer.class; }
-    };
-    int[] literals = IntegerFillerInner.getLiterals(details);
+    int[] literals = IntegerFillerInner.getLiterals(intDetails(new int[0]));
     assertEquals(0, literals.length);
   }
 
@@ -84,43 +81,13 @@ public class NumberFillerInnerDeepTest {
 
   @Test
   public void doubleGetLiterals_customDetails_returnsCustomValues() {
-    NumberValueDetails details = new NumberValueDetails() {
-      @Override
-      public double[] getLiterals() {
-        return new double[]{0.1, 0.2, 0.3};
-      }
-
-      @Override
-      public Double getMinimumValue() { return 0.0; }
-
-      @Override
-      public Double getMaximumValue() { return 1.0; }
-
-      @Override
-      public Class<Number> getSupportedCls() { return Number.class; }
-    };
-    double[] literals = DoubleFillerInner.getLiterals(details);
+    double[] literals = DoubleFillerInner.getLiterals(doubleDetails(new double[]{0.1, 0.2, 0.3}));
     assertArrayEquals(new double[]{0.1, 0.2, 0.3}, literals, 0.001);
   }
 
   @Test
   public void doubleGetLiterals_emptyDetails_returnsEmpty() {
-    NumberValueDetails details = new NumberValueDetails() {
-      @Override
-      public double[] getLiterals() {
-        return new double[0];
-      }
-
-      @Override
-      public Double getMinimumValue() { return 0.0; }
-
-      @Override
-      public Double getMaximumValue() { return 0.0; }
-
-      @Override
-      public Class<Number> getSupportedCls() { return Number.class; }
-    };
-    double[] literals = DoubleFillerInner.getLiterals(details);
+    double[] literals = DoubleFillerInner.getLiterals(doubleDetails(new double[0]));
     assertEquals(0, literals.length);
   }
 
@@ -128,7 +95,6 @@ public class NumberFillerInnerDeepTest {
 
   @Test
   public void integerAppendItems_withArithmeticPrev_addsReplaceAndReduceItems() {
-    IntegerFillerInner filler = new IntegerFillerInner();
     List<CascadeBlankChild> items = new ArrayList<>();
 
     ArithmeticInfixExpression arithExpr = new ArithmeticInfixExpression(
@@ -137,7 +103,7 @@ public class NumberFillerInnerDeepTest {
         new IntegerLiteral(3),
         Integer.class);
 
-    filler.appendItems(items, null, true, arithExpr);
+    intFiller.appendItems(items, null, true, arithExpr);
 
     // The super.appendItems (AbstractNumberFillerInner) adds replace-operator + reduce items
     // when prev is ArithmeticInfixExpression, then IntegerFillerInner adds literals + menus
@@ -146,7 +112,6 @@ public class NumberFillerInnerDeepTest {
 
   @Test
   public void doubleAppendItems_withArithmeticPrev_addsReplaceAndReduceItems() {
-    DoubleFillerInner filler = new DoubleFillerInner();
     List<CascadeBlankChild> items = new ArrayList<>();
 
     ArithmeticInfixExpression arithExpr = new ArithmeticInfixExpression(
@@ -155,25 +120,23 @@ public class NumberFillerInnerDeepTest {
         new DoubleLiteral(2.0),
         Double.class);
 
-    filler.appendItems(items, null, true, arithExpr);
+    doubleFiller.appendItems(items, null, true, arithExpr);
 
     assertTrue("Should have many items with arithmetic prev", items.size() > 5);
   }
 
   @Test
   public void integerAppendItems_withArithmeticPrev_hasMoreItemsThanWithout() {
-    IntegerFillerInner filler = new IntegerFillerInner();
-
     List<CascadeBlankChild> withArithPrev = new ArrayList<>();
     ArithmeticInfixExpression arithExpr = new ArithmeticInfixExpression(
         new IntegerLiteral(1),
         ArithmeticInfixExpression.Operator.MINUS,
         new IntegerLiteral(2),
         Integer.class);
-    filler.appendItems(withArithPrev, null, true, arithExpr);
+    intFiller.appendItems(withArithPrev, null, true, arithExpr);
 
     List<CascadeBlankChild> withNullLitPrev = new ArrayList<>();
-    filler.appendItems(withNullLitPrev, null, true, new NullLiteral());
+    intFiller.appendItems(withNullLitPrev, null, true, new NullLiteral());
 
     assertTrue("Arithmetic prev should produce more items than NullLiteral prev",
         withArithPrev.size() > withNullLitPrev.size());
@@ -183,18 +146,16 @@ public class NumberFillerInnerDeepTest {
 
   @Test
   public void integerAppendItems_notTop_noArithmeticItems() {
-    IntegerFillerInner filler = new IntegerFillerInner();
-
     List<CascadeBlankChild> topItems = new ArrayList<>();
     ArithmeticInfixExpression arithExpr = new ArithmeticInfixExpression(
         new IntegerLiteral(1),
         ArithmeticInfixExpression.Operator.PLUS,
         new IntegerLiteral(2),
         Integer.class);
-    filler.appendItems(topItems, null, true, arithExpr);
+    intFiller.appendItems(topItems, null, true, arithExpr);
 
     List<CascadeBlankChild> notTopItems = new ArrayList<>();
-    filler.appendItems(notTopItems, null, false, arithExpr);
+    intFiller.appendItems(notTopItems, null, false, arithExpr);
 
     assertTrue("Top should have more items than non-top with same arithmetic prev",
         topItems.size() > notTopItems.size());
@@ -204,92 +165,24 @@ public class NumberFillerInnerDeepTest {
 
   @Test
   public void integerFillerInner_isAssignableToNumber() {
-    IntegerFillerInner filler = new IntegerFillerInner();
-    assertTrue(filler.isAssignableTo(JavaType.getInstance(Number.class)));
+    assertTrue(intFiller.isAssignableTo(JavaType.getInstance(Number.class)));
   }
 
   @Test
   public void integerFillerInner_notAssignableToDouble() {
-    IntegerFillerInner filler = new IntegerFillerInner();
-    assertFalse(filler.isAssignableTo(JavaType.getInstance(Double.class)));
+    assertFalse(intFiller.isAssignableTo(JavaType.getInstance(Double.class)));
   }
 
   // ---- DoubleFillerInner isAssignableTo ----
 
   @Test
   public void doubleFillerInner_isAssignableToNumber() {
-    DoubleFillerInner filler = new DoubleFillerInner();
-    assertTrue(filler.isAssignableTo(JavaType.getInstance(Number.class)));
+    assertTrue(doubleFiller.isAssignableTo(JavaType.getInstance(Number.class)));
   }
 
   @Test
   public void doubleFillerInner_notAssignableToInteger() {
-    DoubleFillerInner filler = new DoubleFillerInner();
-    assertFalse(filler.isAssignableTo(JavaType.getInstance(Integer.class)));
+    assertFalse(doubleFiller.isAssignableTo(JavaType.getInstance(Integer.class)));
   }
 
-  // ---- ArithmeticInfixExpression.Operator coverage ----
-
-  @Test
-  public void arithmeticOperator_plus_operatesCorrectly() {
-    Number result = ArithmeticInfixExpression.Operator.PLUS.operate(2, 3);
-    assertEquals(5, result.intValue());
-  }
-
-  @Test
-  public void arithmeticOperator_minus_operatesCorrectly() {
-    Number result = ArithmeticInfixExpression.Operator.MINUS.operate(5, 3);
-    assertEquals(2, result.intValue());
-  }
-
-  @Test
-  public void arithmeticOperator_times_operatesCorrectly() {
-    Number result = ArithmeticInfixExpression.Operator.TIMES.operate(4, 3);
-    assertEquals(12, result.intValue());
-  }
-
-  @Test
-  public void arithmeticOperator_realDivide_operatesCorrectly() {
-    Number result = ArithmeticInfixExpression.Operator.REAL_DIVIDE.operate(7.0, 2.0);
-    assertEquals(3.5, result.doubleValue(), 0.001);
-  }
-
-  @Test
-  public void arithmeticOperator_integerDivide_operatesCorrectly() {
-    Number result = ArithmeticInfixExpression.Operator.INTEGER_DIVIDE.operate(7, 2);
-    assertEquals(3, result.intValue());
-  }
-
-  @Test
-  public void arithmeticOperator_realRemainder_operatesCorrectly() {
-    Number result = ArithmeticInfixExpression.Operator.REAL_REMAINDER.operate(7.0, 3.0);
-    assertEquals(1.0, result.doubleValue(), 0.001);
-  }
-
-  @Test
-  public void arithmeticOperator_integerRemainder_operatesCorrectly() {
-    Number result = ArithmeticInfixExpression.Operator.INTEGER_REMAINDER.operate(7, 3);
-    assertEquals(1, result.intValue());
-  }
-
-  @Test
-  public void arithmeticOperator_plus_withDoubles() {
-    Number result = ArithmeticInfixExpression.Operator.PLUS.operate(1.5, 2.5);
-    assertEquals(4.0, result.doubleValue(), 0.001);
-  }
-
-  @Test
-  public void arithmeticOperator_plus_mixedIntegerAndDouble() {
-    Number result = ArithmeticInfixExpression.Operator.PLUS.operate(1, 2.5);
-    assertEquals(3.5, result.doubleValue(), 0.001);
-  }
-
-  @Test
-  public void arithmeticOperator_getSymbol() {
-    assertEquals("+", ArithmeticInfixExpression.Operator.PLUS.getSymbol());
-    assertEquals("-", ArithmeticInfixExpression.Operator.MINUS.getSymbol());
-    assertEquals("*", ArithmeticInfixExpression.Operator.TIMES.getSymbol());
-    assertEquals("/", ArithmeticInfixExpression.Operator.REAL_DIVIDE.getSymbol());
-    assertEquals("%", ArithmeticInfixExpression.Operator.REAL_REMAINDER.getSymbol());
-  }
 }

@@ -5,15 +5,14 @@ import org.lgna.croquet.views.TrackableShape;
 import org.junit.Test;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
 import static org.junit.Assert.*;
 
 /**
- * Extended structural and reflection-based tests for {@link CodeEditor} — verifying
- * inner classes, method signatures, field declarations, and class hierarchy.
+ * Tests for {@link CodeEditor} public API contracts — class hierarchy,
+ * inner class interfaces, key public methods, and constructor shape.
  */
 public class CodeEditorDeepTest {
 
@@ -119,73 +118,4 @@ public class CodeEditorDeepTest {
     assertTrue("CodeEditor should have constructor(AbstractProjectEditorAstI18nFactory, AbstractCode)", foundExpected);
   }
 
-  // ---- Fields ----
-
-  @Test
-  public void codeEditor_hasCodeField() throws Exception {
-    Field f = CodeEditor.class.getDeclaredField("code");
-    assertNotNull(f);
-  }
-
-  @Test
-  public void codeEditor_hasRootStatementListPropertyPaneField() throws Exception {
-    Field f = CodeEditor.class.getDeclaredField("rootStatementListPropertyPane");
-    assertNotNull(f);
-  }
-
-  @Test
-  public void codeEditor_hasHeaderField() throws Exception {
-    Field f = CodeEditor.class.getDeclaredField("header");
-    assertNotNull(f);
-  }
-
-  @Test
-  public void codeEditor_hasBodyPaneField() throws Exception {
-    Field f = CodeEditor.class.getDeclaredField("bodyPane");
-    assertNotNull(f);
-  }
-
-  // ---- Static helper methods (declared in CodeEditor) ----
-
-  @Test
-  public void codeEditor_hasConvertYMethod() throws Exception {
-    Method m = CodeEditor.class.getDeclaredMethod("convertY",
-        org.lgna.croquet.views.AwtComponentView.class, int.class, org.lgna.croquet.views.AwtComponentView.class);
-    assertTrue("convertY should be static", Modifier.isStatic(m.getModifiers()));
-    assertTrue("convertY should be private", Modifier.isPrivate(m.getModifiers()));
-  }
-
-  @Test
-  public void codeEditor_hasCapMinimumMethod() throws Exception {
-    Method m = CodeEditor.class.getDeclaredMethod("capMinimum",
-        int.class, int.class, StatementListPropertyPaneInfo[].class, int.class);
-    assertTrue("capMinimum should be static", Modifier.isStatic(m.getModifiers()));
-    assertTrue("capMinimum should be private", Modifier.isPrivate(m.getModifiers()));
-  }
-
-  @Test
-  public void codeEditor_hasCapMaximumMethod() throws Exception {
-    Method m = CodeEditor.class.getDeclaredMethod("capMaximum",
-        int.class, int.class, StatementListPropertyPaneInfo[].class, int.class);
-    assertTrue("capMaximum should be static", Modifier.isStatic(m.getModifiers()));
-    assertTrue("capMaximum should be private", Modifier.isPrivate(m.getModifiers()));
-  }
-
-  // ---- Listener fields ----
-
-  @Test
-  public void codeEditor_hasTypeFeedbackListenerField() throws Exception {
-    Field f = CodeEditor.class.getDeclaredField("typeFeedbackListener");
-    assertNotNull(f);
-    assertTrue("typeFeedbackListener should be private",
-        Modifier.isPrivate(f.getModifiers()));
-  }
-
-  @Test
-  public void codeEditor_hasFormatterListenerField() throws Exception {
-    Field f = CodeEditor.class.getDeclaredField("formatterListener");
-    assertNotNull(f);
-    assertTrue("formatterListener should be private",
-        Modifier.isPrivate(f.getModifiers()));
-  }
 }

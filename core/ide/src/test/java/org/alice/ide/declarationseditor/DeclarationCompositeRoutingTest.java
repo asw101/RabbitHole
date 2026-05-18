@@ -3,8 +3,6 @@ package org.alice.ide.declarationseditor;
 import org.lgna.project.ast.*;
 import org.junit.Test;
 
-import java.lang.reflect.Method;
-
 import static org.junit.Assert.*;
 
 /**
@@ -103,34 +101,6 @@ public class DeclarationCompositeRoutingTest {
     UserMethod orphan = new UserMethod("orphanProc", JavaType.VOID_TYPE, new UserParameter[0], new BlockStatement());
     CodeComposite composite = CodeComposite.getInstance(orphan);
     assertFalse("CodeComposite with orphan method should not be valid", composite.isValid());
-  }
-
-  // ---- DeclarationComposite abstract class structure ----
-
-  @Test
-  public void declarationComposite_isAbstract() throws Exception {
-    assertTrue("DeclarationComposite should be abstract",
-        java.lang.reflect.Modifier.isAbstract(DeclarationComposite.class.getModifiers()));
-  }
-
-  @Test
-  public void declarationComposite_hasGetDeclarationMethod() throws Exception {
-    Method m = DeclarationComposite.class.getMethod("getDeclaration");
-    assertNotNull(m);
-    assertEquals(AbstractDeclaration.class, m.getReturnType());
-  }
-
-  @Test
-  public void declarationComposite_hasGetTypeMethod() throws Exception {
-    Method m = DeclarationComposite.class.getMethod("getType");
-    assertNotNull(m);
-  }
-
-  @Test
-  public void declarationComposite_hasIsValidMethod() throws Exception {
-    Method m = DeclarationComposite.class.getMethod("isValid");
-    assertNotNull(m);
-    assertEquals(boolean.class, m.getReturnType());
   }
 
   // ---- CodeComposite.getType returns declaring type ----

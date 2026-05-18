@@ -16,11 +16,17 @@ import static org.junit.Assert.*;
  */
 public class BooleanFillerInnerDeepTest {
 
+  private BooleanFillerInner filler;
+
+  @org.junit.Before
+  public void setUp() {
+    filler = new BooleanFillerInner();
+  }
+
   // ---- appendItems: base case (isTop=false, no prevExpression) ----
 
   @Test
   public void appendItems_notTopNoPrev_addsTrueFalseLiterals() {
-    BooleanFillerInner filler = new BooleanFillerInner();
     List<CascadeBlankChild> items = new ArrayList<>();
 
     filler.appendItems(items, null, false, null);
@@ -31,7 +37,6 @@ public class BooleanFillerInnerDeepTest {
 
   @Test
   public void appendItems_notTopNoPrev_minimumItemCount() {
-    BooleanFillerInner filler = new BooleanFillerInner();
     List<CascadeBlankChild> items = new ArrayList<>();
 
     filler.appendItems(items, null, false, null);
@@ -44,7 +49,6 @@ public class BooleanFillerInnerDeepTest {
 
   @Test
   public void appendItems_topWithPrevNullLiteral_addsMoreItems() {
-    BooleanFillerInner filler = new BooleanFillerInner();
     List<CascadeBlankChild> items = new ArrayList<>();
     NullLiteral prev = new NullLiteral();
 
@@ -61,7 +65,6 @@ public class BooleanFillerInnerDeepTest {
 
   @Test
   public void appendItems_topWithConditionalPrev_addsReplaceOperatorItems() {
-    BooleanFillerInner filler = new BooleanFillerInner();
     List<CascadeBlankChild> items = new ArrayList<>();
 
     // Create a ConditionalInfixExpression as prev expression
@@ -82,7 +85,6 @@ public class BooleanFillerInnerDeepTest {
 
   @Test
   public void appendItems_topWithLogicalComplementPrev_addsReduceToInner() {
-    BooleanFillerInner filler = new BooleanFillerInner();
     List<CascadeBlankChild> items = new ArrayList<>();
 
     LogicalComplement logComp = new LogicalComplement(new BooleanLiteral(true));
@@ -98,7 +100,6 @@ public class BooleanFillerInnerDeepTest {
 
   @Test
   public void appendItems_afterAddRelationalType_addsRelationalObjectMenu() {
-    BooleanFillerInner filler = new BooleanFillerInner();
     filler.addRelationalType(JavaType.DOUBLE_OBJECT_TYPE);
 
     List<CascadeBlankChild> items = new ArrayList<>();
@@ -116,7 +117,6 @@ public class BooleanFillerInnerDeepTest {
 
   @Test
   public void appendItems_multipleRelationalTypes_addsMultipleMenus() {
-    BooleanFillerInner filler = new BooleanFillerInner();
     filler.addRelationalType(JavaType.DOUBLE_OBJECT_TYPE);
     filler.addRelationalType(JavaType.INTEGER_OBJECT_TYPE);
 
@@ -136,21 +136,16 @@ public class BooleanFillerInnerDeepTest {
 
   @Test
   public void isAssignableTo_booleanPrimitive_returnsTrue() {
-    BooleanFillerInner filler = new BooleanFillerInner();
-    // Boolean.class (object type) should be assignable to Boolean
     assertTrue(filler.isAssignableTo(JavaType.BOOLEAN_OBJECT_TYPE));
   }
 
   @Test
   public void isAssignableTo_objectType_returnsTrue() {
-    BooleanFillerInner filler = new BooleanFillerInner();
-    // Boolean is assignable to Object
     assertTrue(filler.isAssignableTo(JavaType.OBJECT_TYPE));
   }
 
   @Test
   public void isAssignableTo_integerType_returnsFalse() {
-    BooleanFillerInner filler = new BooleanFillerInner();
     assertFalse(filler.isAssignableTo(JavaType.INTEGER_OBJECT_TYPE));
   }
 
@@ -158,7 +153,6 @@ public class BooleanFillerInnerDeepTest {
 
   @Test
   public void appendItems_notTopWithPrev_onlyAddsTrueFalse() {
-    BooleanFillerInner filler = new BooleanFillerInner();
     List<CascadeBlankChild> items = new ArrayList<>();
 
     filler.appendItems(items, null, false, new NullLiteral());
@@ -172,7 +166,6 @@ public class BooleanFillerInnerDeepTest {
 
   @Test
   public void appendItems_baseCase_containsExactlyOneSeparator() {
-    BooleanFillerInner filler = new BooleanFillerInner();
     List<CascadeBlankChild> items = new ArrayList<>();
 
     filler.appendItems(items, null, false, null);

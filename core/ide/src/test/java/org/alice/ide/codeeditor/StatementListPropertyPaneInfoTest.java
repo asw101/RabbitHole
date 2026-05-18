@@ -16,6 +16,14 @@ import static org.junit.Assert.*;
  */
 public class StatementListPropertyPaneInfoTest {
 
+  private static final Rectangle STD_BOUNDS = new Rectangle(0, 0, 100, 50);
+  private final JPanel source = new JPanel();
+
+  private MouseEvent mouseAt(int x, int y) {
+    return new MouseEvent(source, MouseEvent.MOUSE_CLICKED,
+        System.currentTimeMillis(), 0, x, y, 1, false);
+  }
+
   // ---- Constructor and getters ----
 
   @Test
@@ -66,57 +74,32 @@ public class StatementListPropertyPaneInfoTest {
 
   @Test
   public void contains_pointInside_returnsTrue() {
-    Rectangle bounds = new Rectangle(0, 0, 100, 50);
-    StatementListPropertyPaneInfo info = new StatementListPropertyPaneInfo(null, bounds);
-
-    JPanel source = new JPanel();
-    MouseEvent inside = new MouseEvent(source, MouseEvent.MOUSE_CLICKED, System.currentTimeMillis(),
-        0, 25, 25, 1, false);
-    assertTrue("Point (25,25) should be inside (0,0,100,50)", info.contains(inside));
+    StatementListPropertyPaneInfo info = new StatementListPropertyPaneInfo(null, STD_BOUNDS);
+    assertTrue("Point (25,25) should be inside (0,0,100,50)", info.contains(mouseAt(25, 25)));
   }
 
   @Test
   public void contains_pointOutside_returnsFalse() {
-    Rectangle bounds = new Rectangle(0, 0, 100, 50);
-    StatementListPropertyPaneInfo info = new StatementListPropertyPaneInfo(null, bounds);
-
-    JPanel source = new JPanel();
-    MouseEvent outside = new MouseEvent(source, MouseEvent.MOUSE_CLICKED, System.currentTimeMillis(),
-        0, 200, 200, 1, false);
-    assertFalse("Point (200,200) should be outside (0,0,100,50)", info.contains(outside));
+    StatementListPropertyPaneInfo info = new StatementListPropertyPaneInfo(null, STD_BOUNDS);
+    assertFalse("Point (200,200) should be outside (0,0,100,50)", info.contains(mouseAt(200, 200)));
   }
 
   @Test
   public void contains_pointOnBorder_returnsTrue() {
-    Rectangle bounds = new Rectangle(0, 0, 100, 50);
-    StatementListPropertyPaneInfo info = new StatementListPropertyPaneInfo(null, bounds);
-
-    JPanel source = new JPanel();
-    MouseEvent onBorder = new MouseEvent(source, MouseEvent.MOUSE_CLICKED, System.currentTimeMillis(),
-        0, 0, 0, 1, false);
-    assertTrue("Point (0,0) on border should be inside", info.contains(onBorder));
+    StatementListPropertyPaneInfo info = new StatementListPropertyPaneInfo(null, STD_BOUNDS);
+    assertTrue("Point (0,0) on border should be inside", info.contains(mouseAt(0, 0)));
   }
 
   @Test
   public void contains_pointJustOutsideRight_returnsFalse() {
-    Rectangle bounds = new Rectangle(0, 0, 100, 50);
-    StatementListPropertyPaneInfo info = new StatementListPropertyPaneInfo(null, bounds);
-
-    JPanel source = new JPanel();
-    MouseEvent justOutside = new MouseEvent(source, MouseEvent.MOUSE_CLICKED, System.currentTimeMillis(),
-        0, 100, 25, 1, false);
-    assertFalse("Point (100,25) should be outside (width is exclusive)", info.contains(justOutside));
+    StatementListPropertyPaneInfo info = new StatementListPropertyPaneInfo(null, STD_BOUNDS);
+    assertFalse("Point (100,25) should be outside (width is exclusive)", info.contains(mouseAt(100, 25)));
   }
 
   @Test
   public void contains_pointJustOutsideBottom_returnsFalse() {
-    Rectangle bounds = new Rectangle(0, 0, 100, 50);
-    StatementListPropertyPaneInfo info = new StatementListPropertyPaneInfo(null, bounds);
-
-    JPanel source = new JPanel();
-    MouseEvent justOutside = new MouseEvent(source, MouseEvent.MOUSE_CLICKED, System.currentTimeMillis(),
-        0, 50, 50, 1, false);
-    assertFalse("Point (50,50) should be outside", info.contains(justOutside));
+    StatementListPropertyPaneInfo info = new StatementListPropertyPaneInfo(null, STD_BOUNDS);
+    assertFalse("Point (50,50) should be outside", info.contains(mouseAt(50, 50)));
   }
 
   // ---- Bounds offset ----
@@ -125,22 +108,14 @@ public class StatementListPropertyPaneInfoTest {
   public void contains_offsetBounds_pointInsideOffset() {
     Rectangle bounds = new Rectangle(100, 200, 50, 50);
     StatementListPropertyPaneInfo info = new StatementListPropertyPaneInfo(null, bounds);
-
-    JPanel source = new JPanel();
-    MouseEvent inside = new MouseEvent(source, MouseEvent.MOUSE_CLICKED, System.currentTimeMillis(),
-        0, 120, 220, 1, false);
-    assertTrue("Point (120,220) should be inside (100,200,50,50)", info.contains(inside));
+    assertTrue("Point (120,220) should be inside (100,200,50,50)", info.contains(mouseAt(120, 220)));
   }
 
   @Test
   public void contains_offsetBounds_pointBeforeOffset() {
     Rectangle bounds = new Rectangle(100, 200, 50, 50);
     StatementListPropertyPaneInfo info = new StatementListPropertyPaneInfo(null, bounds);
-
-    JPanel source = new JPanel();
-    MouseEvent before = new MouseEvent(source, MouseEvent.MOUSE_CLICKED, System.currentTimeMillis(),
-        0, 50, 150, 1, false);
-    assertFalse("Point (50,150) should be outside offset bounds", info.contains(before));
+    assertFalse("Point (50,150) should be outside offset bounds", info.contains(mouseAt(50, 150)));
   }
 
   // ---- setBounds then check contains ----
@@ -150,13 +125,7 @@ public class StatementListPropertyPaneInfoTest {
     StatementListPropertyPaneInfo info = new StatementListPropertyPaneInfo(null, new Rectangle(0, 0, 10, 10));
     info.setBounds(new Rectangle(50, 50, 100, 100));
 
-    JPanel source = new JPanel();
-    MouseEvent inside = new MouseEvent(source, MouseEvent.MOUSE_CLICKED, System.currentTimeMillis(),
-        0, 75, 75, 1, false);
-    assertTrue(info.contains(inside));
-
-    MouseEvent oldBounds = new MouseEvent(source, MouseEvent.MOUSE_CLICKED, System.currentTimeMillis(),
-        0, 5, 5, 1, false);
-    assertFalse("Old bounds area should no longer match", info.contains(oldBounds));
+    assertTrue(info.contains(mouseAt(75, 75)));
+    assertFalse("Old bounds area should no longer match", info.contains(mouseAt(5, 5)));
   }
 }

@@ -1,7 +1,6 @@
 package org.alice.ide.cascade.fillerinners;
 
 import org.lgna.croquet.CascadeBlankChild;
-import org.lgna.project.ast.AbstractField;
 import org.lgna.project.ast.AbstractType;
 import org.lgna.project.ast.JavaType;
 import org.junit.Test;

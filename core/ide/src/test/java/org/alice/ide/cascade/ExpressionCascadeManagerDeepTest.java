@@ -8,6 +8,8 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import static org.junit.Assert.*;
 
@@ -43,6 +45,11 @@ public class ExpressionCascadeManagerDeepTest {
     manager = new TestableManager();
   }
 
+  private static <T> List<T> toList(Iterable<T> iterable) {
+    return StreamSupport.stream(iterable.spliterator(), false)
+        .collect(Collectors.toList());
+  }
+
   // ---- ForEachInArrayLoop locals ----
 
   @Test
@@ -57,10 +64,7 @@ public class ExpressionCascadeManagerDeepTest {
     BlockStatementIndexPair pair = new BlockStatementIndexPair(innerBlock, 0);
     Iterable<UserLocal> locals = manager.getAccessibleLocals(pair);
 
-    List<UserLocal> localList = new ArrayList<>();
-    for (UserLocal l : locals) {
-      localList.add(l);
-    }
+    List<UserLocal> localList = toList(locals);
     assertTrue("ForEachInArrayLoop item should be accessible", localList.contains(itemLocal));
   }
 
@@ -83,10 +87,8 @@ public class ExpressionCascadeManagerDeepTest {
     BlockStatementIndexPair pair = new BlockStatementIndexPair(innerBlock, 0);
     Iterable<UserLocal> locals = manager.getAccessibleLocals(pair);
 
-    List<String> names = new ArrayList<>();
-    for (UserLocal l : locals) {
-      names.add(l.getName());
-    }
+    List<String> names = toList(locals).stream()
+        .map(UserLocal::getName).collect(Collectors.toList());
     assertTrue("Inner item should be accessible", names.contains("innerItem"));
     assertTrue("Outer item should be accessible", names.contains("outerItem"));
   }
@@ -105,10 +107,7 @@ public class ExpressionCascadeManagerDeepTest {
     BlockStatementIndexPair pair = new BlockStatementIndexPair(body, 0);
     Iterable<UserLocal> locals = manager.getAccessibleLocals(pair);
 
-    List<UserLocal> localList = new ArrayList<>();
-    for (UserLocal l : locals) {
-      localList.add(l);
-    }
+    List<UserLocal> localList = toList(locals);
     // In default (Alice) mode, CountLoop variable is hidden
     assertFalse("CountLoop variable should be hidden in Alice mode", localList.contains(variable));
   }
@@ -127,10 +126,7 @@ public class ExpressionCascadeManagerDeepTest {
     Iterable<UserLocal> locals = manager.getAccessibleLocals(pair);
 
     // Should not throw — it internally catches the IOOBE and adjusts
-    List<UserLocal> localList = new ArrayList<>();
-    for (UserLocal l : locals) {
-      localList.add(l);
-    }
+    List<UserLocal> localList = toList(locals);
     // The local should still be found after index correction
     assertTrue("Local should be found after index correction", localList.contains(local));
   }
@@ -177,10 +173,7 @@ public class ExpressionCascadeManagerDeepTest {
     block.statements.add(new ExpressionStatement(new NullLiteral()));
 
     BlockStatementIndexPair pair = new BlockStatementIndexPair(block, 2);
-    List<UserLocal> localList = new ArrayList<>();
-    for (UserLocal l : manager.getAccessibleLocals(pair)) {
-      localList.add(l);
-    }
+    List<UserLocal> localList = toList(manager.getAccessibleLocals(pair));
     assertEquals("Should only find the one local declaration", 1, localList.size());
     assertEquals("myVar", localList.get(0).getName());
   }
@@ -195,10 +188,8 @@ public class ExpressionCascadeManagerDeepTest {
 
     // At index 1, only 'first' should be visible (before index)
     BlockStatementIndexPair pair = new BlockStatementIndexPair(block, 1);
-    List<String> names = new ArrayList<>();
-    for (UserLocal l : manager.getAccessibleLocals(pair)) {
-      names.add(l.getName());
-    }
+    List<String> names = toList(manager.getAccessibleLocals(pair)).stream()
+        .map(UserLocal::getName).collect(Collectors.toList());
     assertEquals(1, names.size());
     assertTrue("first should be visible", names.contains("first"));
     assertFalse("second should not be visible", names.contains("second"));
@@ -221,10 +212,8 @@ public class ExpressionCascadeManagerDeepTest {
     // We can't directly nest blocks (they need to be inside a statement like if/else),
     // but we can test that locals within the same block at different indices are found
     BlockStatementIndexPair pair = new BlockStatementIndexPair(outerBlock, 1);
-    List<String> names = new ArrayList<>();
-    for (UserLocal l : manager.getAccessibleLocals(pair)) {
-      names.add(l.getName());
-    }
+    List<String> names = toList(manager.getAccessibleLocals(pair)).stream()
+        .map(UserLocal::getName).collect(Collectors.toList());
     assertTrue("outerVar should be accessible", names.contains("outerVar"));
   }
 }
