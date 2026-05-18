@@ -1,14 +1,10 @@
 package org.lgna.croquet;
 
-import edu.cmu.cs.dennisc.codec.BinaryDecoder;
-import edu.cmu.cs.dennisc.codec.BinaryEncoder;
 import org.lgna.croquet.data.MutableListData;
 import org.junit.Before;
 import org.junit.Test;
 
 import javax.swing.ComboBoxModel;
-import javax.swing.DefaultListSelectionModel;
-import javax.swing.event.ListSelectionListener;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.UUID;
@@ -38,21 +34,9 @@ public class SingleSelectListStateTest {
 
   @Before
   public void setUp() {
-    data = new MutableListData<>(STRING_CODEC, new String[]{"alpha", "bravo", "charlie"});
+    data = new MutableListData<>(CroquetTestUtils.STRING_CODEC, new String[]{"alpha", "bravo", "charlie"});
     state = new TestSingleSelectListState(TEST_GROUP, 1, data);
-    // Remove the ListSelectionListener to decouple from Application context.
-    // The listener invokes NullTrigger → Application.getActiveInstance() which
-    // is null in unit tests. Characterization tests verify state management
-    // logic, not Swing event dispatch integration.
-    removeListSelectionListeners(state);
-  }
-
-  private static void removeListSelectionListeners(TestSingleSelectListState s) {
-    DefaultListSelectionModel lsm =
-        (DefaultListSelectionModel) s.getSwingModel().getListSelectionModel();
-    for (ListSelectionListener l : lsm.getListSelectionListeners()) {
-      lsm.removeListSelectionListener(l);
-    }
+    CroquetTestUtils.removeListSelectionListeners(state);
   }
 
   // ── Construction and initial state ──────────────────────────────────
@@ -418,6 +402,57 @@ public class SingleSelectListStateTest {
     assertEquals(2, state.getSelectedIndex());
   }
 
+  // ── appendUserRepr ──────────────────────────────────────────────────
+
+  @Test
+  public void appendUserRepr_appendsSelectedValue() {
+    StringBuilder sb = new StringBuilder();
+    state.appendUserRepr(sb);
+    assertEquals("bravo", sb.toString());
+  }
+
+  @Test
+  public void appendUserRepr_clearedSelection_appendsNull() {
+    state.clearSelection();
+    StringBuilder sb = new StringBuilder();
+    state.appendUserRepr(sb);
+    assertEquals("null", sb.toString());
+  }
+
+  // ── isEnabled / setEnabled ────────────────────────────────────────
+
+  @Test
+  public void isEnabled_defaultTrue() {
+    assertTrue(state.isEnabled());
+  }
+
+  @Test
+  public void setEnabled_false() {
+    state.setEnabled(false);
+    assertFalse(state.isEnabled());
+  }
+
+  @Test
+  public void setEnabled_true_afterFalse() {
+    state.setEnabled(false);
+    state.setEnabled(true);
+    assertTrue(state.isEnabled());
+  }
+
+  // ── initializeIfNecessary ─────────────────────────────────────────
+
+  @Test
+  public void initializeIfNecessary_doesNotThrow() {
+    state.initializeIfNecessary();
+  }
+
+  // ── getMigrationId ────────────────────────────────────────────────
+
+  @Test
+  public void getMigrationId_returnsNonNull() {
+    assertNotNull(state.getMigrationId());
+  }
+
   // ── EmptyConditionText ─────────────────────────────────────────────
 
   @Test
@@ -475,32 +510,7 @@ public class SingleSelectListStateTest {
    */
   static class TestSingleSelectListState extends MutableDataSingleSelectListState<String> {
     TestSingleSelectListState(Group group, int selectionIndex, MutableListData<String> data) {
-      super(group, UUID.randomUUID(), selectionIndex, data);
+      super(group, CroquetTestUtils.nextTestUUID(), selectionIndex, data);
     }
   }
-
-  /**
-   * Minimal {@link ItemCodec} for String values.
-   */
-  private static final ItemCodec<String> STRING_CODEC = new ItemCodec<String>() {
-    @Override
-    public Class<String> getValueClass() {
-      return String.class;
-    }
-
-    @Override
-    public String decodeValue(BinaryDecoder binaryDecoder) {
-      return binaryDecoder.decodeString();
-    }
-
-    @Override
-    public void encodeValue(BinaryEncoder binaryEncoder, String value) {
-      binaryEncoder.encode(value);
-    }
-
-    @Override
-    public void appendRepresentation(StringBuilder sb, String value) {
-      sb.append(value);
-    }
-  };
 }
