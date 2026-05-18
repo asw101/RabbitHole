@@ -151,6 +151,9 @@ repository.
 - [core/ast coverage sprint](./reference/core-ast-coverage-sprint.md) - test inventory (50.4%→70%), 6 tiers covering VM events, exception types, VM core, code generators, AST nodes, and Tweedle serialization.
 - [core/glrender coverage sprint](./reference/core-glrender-coverage-sprint.md) - test inventory (4.6%→30%), 4 tiers covering selection buffer z-math, geometry intersection, camera projection, and curve/mesh utilities.
 - [Run coverage sprint tests](./howto/run-coverage-sprint-tests.md) - how to run, verify, and troubleshoot the Issue #751 coverage sprint tests across all three modules.
+- [core/croquet state management coverage](./reference/core-croquet-state-management-coverage.md) - test inventory (22 files, 465 tests, 4606 lines), covering state classes, codecs, edits, triggers, meta-state, and preferences with headless testing patterns.
+- [Run core/croquet state management coverage tests](./howto/run-core-croquet-state-management-coverage-tests.md) - how to run, verify, and troubleshoot the Issue #778 state management deep dive coverage tests.
+- [Tutorial: Trace the core/croquet state management coverage tests](./tutorials/core-croquet-state-management-coverage.md) - guided walkthrough of headless testing patterns, codec round-trip, reflection hierarchy testing, listener verification, and extending the suite.
 - [CI efficiency notes](./reference/ci-efficiency.md) - current pull request check timing, parallelism status, and safe next targets.
 - [Merge-ready PR recovery](./reference/merge-ready-pr-recovery.md) - Specification for the automated merge-ready blocker resolution script: CLI contract, recovery steps, evidence template, and validation.
 - [Run merge-ready PR recovery](./howto/run-merge-ready-pr-recovery.md) - how to bring a pull request to merge-ready status with QA scenario validation, quality audit cycles, and PR description updates.
