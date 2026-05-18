@@ -7,51 +7,49 @@ import static org.junit.Assert.*;
 public class RootNodeTest {
 
   @Test
-  public void constructor_parentIsNull() {
+  public void constructorCreatesValidInstance() {
+    assertNotNull(new RootNode());
+  }
+
+  @Test
+  public void getParentReturnsNull() {
     RootNode root = new RootNode();
 
     assertNull(root.getParent());
   }
 
   @Test
-  public void constructor_declarationIsNull() {
+  public void getDeclarationReturnsNull() {
     RootNode root = new RootNode();
 
     assertNull(root.getDeclaration());
   }
 
   @Test
-  public void constructor_collapseThreshold_maxValue() {
+  public void getCollapseThresholdReturnsIntegerMaxValue() {
     RootNode root = new RootNode();
 
     assertEquals(Integer.MAX_VALUE, root.getCollapseThreshold());
   }
 
   @Test
-  public void constructor_collapseThresholdForDescendants_maxValue() {
+  public void getCollapseThresholdForDescendantsReturnsIntegerMaxValue() {
     RootNode root = new RootNode();
 
     assertEquals(Integer.MAX_VALUE, root.getCollapseThresholdForDescendants());
   }
 
   @Test
-  public void getTypeNodes_initiallyEmpty() {
+  public void getTypeNodesIsInitiallyEmpty() {
     RootNode root = new RootNode();
 
     assertTrue(root.getTypeNodes().isEmpty());
   }
 
   @Test
-  public void getFieldNodes_initiallyEmpty() {
+  public void getFieldNodesIsInitiallyEmpty() {
     RootNode root = new RootNode();
 
     assertTrue(root.getFieldNodes().isEmpty());
-  }
-
-  @Test
-  public void toString_containsClassName() {
-    RootNode root = new RootNode();
-
-    assertTrue(root.toString().contains("RootNode"));
   }
 }

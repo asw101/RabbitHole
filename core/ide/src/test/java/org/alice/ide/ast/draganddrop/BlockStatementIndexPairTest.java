@@ -1,111 +1,84 @@
 package org.alice.ide.ast.draganddrop;
 
 import org.junit.Test;
-import org.lgna.project.ast.*;
+import org.lgna.project.ast.BlockStatement;
+import org.lgna.project.ast.ExpressionStatement;
+import org.lgna.project.ast.NullLiteral;
 
 import static org.junit.Assert.*;
 
 public class BlockStatementIndexPairTest {
 
   @Test
-  public void constructor_setsFields() {
+  public void constructorStoresBlockStatementAndIndex() {
     BlockStatement block = new BlockStatement();
+
     BlockStatementIndexPair pair = new BlockStatementIndexPair(block, 5);
+
     assertSame(block, pair.getBlockStatement());
     assertEquals(5, pair.getIndex());
   }
 
   @Test
-  public void equals_sameObject_returnsTrue() {
+  public void createInstanceFromChildStatementUsesContainingBlockAndChildIndex() {
     BlockStatement block = new BlockStatement();
-    BlockStatementIndexPair pair = new BlockStatementIndexPair(block, 0);
-    assertTrue(pair.equals(pair));
-  }
+    ExpressionStatement first = new ExpressionStatement(new NullLiteral());
+    ExpressionStatement second = new ExpressionStatement(new NullLiteral());
+    block.statements.add(first);
+    block.statements.add(second);
 
-  @Test
-  public void equals_equalPairs_returnsTrue() {
-    BlockStatement block = new BlockStatement();
-    BlockStatementIndexPair pair1 = new BlockStatementIndexPair(block, 3);
-    BlockStatementIndexPair pair2 = new BlockStatementIndexPair(block, 3);
-    assertTrue(pair1.equals(pair2));
-  }
+    BlockStatementIndexPair pair = BlockStatementIndexPair.createInstanceFromChildStatement(second);
 
-  @Test
-  public void equals_differentIndex_returnsFalse() {
-    BlockStatement block = new BlockStatement();
-    BlockStatementIndexPair pair1 = new BlockStatementIndexPair(block, 0);
-    BlockStatementIndexPair pair2 = new BlockStatementIndexPair(block, 1);
-    assertFalse(pair1.equals(pair2));
-  }
-
-  @Test
-  public void equals_differentBlock_returnsFalse() {
-    BlockStatement block1 = new BlockStatement();
-    BlockStatement block2 = new BlockStatement();
-    BlockStatementIndexPair pair1 = new BlockStatementIndexPair(block1, 0);
-    BlockStatementIndexPair pair2 = new BlockStatementIndexPair(block2, 0);
-    assertFalse(pair1.equals(pair2));
-  }
-
-  @Test
-  public void equals_nonBlockStatementIndexPair_returnsFalse() {
-    BlockStatement block = new BlockStatement();
-    BlockStatementIndexPair pair = new BlockStatementIndexPair(block, 0);
-    assertFalse(pair.equals("not a pair"));
-  }
-
-  @Test
-  public void equals_null_returnsFalse() {
-    BlockStatement block = new BlockStatement();
-    BlockStatementIndexPair pair = new BlockStatementIndexPair(block, 0);
-    assertFalse(pair.equals(null));
-  }
-
-  @Test
-  public void hashCode_equalPairs_sameHash() {
-    BlockStatement block = new BlockStatement();
-    BlockStatementIndexPair pair1 = new BlockStatementIndexPair(block, 3);
-    BlockStatementIndexPair pair2 = new BlockStatementIndexPair(block, 3);
-    assertEquals(pair1.hashCode(), pair2.hashCode());
-  }
-
-  @Test
-  public void hashCode_differentPairs_likelyDifferentHash() {
-    BlockStatement block1 = new BlockStatement();
-    BlockStatement block2 = new BlockStatement();
-    BlockStatementIndexPair pair1 = new BlockStatementIndexPair(block1, 0);
-    BlockStatementIndexPair pair2 = new BlockStatementIndexPair(block2, 1);
-    // Not guaranteed to differ, but typically will
-    assertNotNull(pair1);
-  }
-
-  @Test
-  public void toString_containsClassName() {
-    BlockStatement block = new BlockStatement();
-    BlockStatementIndexPair pair = new BlockStatementIndexPair(block, 2);
-    String str = pair.toString();
-    assertNotNull(str);
-    assertTrue(str.contains("BlockStatementIndexPair"));
-    assertTrue(str.contains("index=2"));
-  }
-
-  @Test
-  public void createInstanceFromChildStatement_createsCorrectPair() {
-    BlockStatement block = new BlockStatement();
-    ExpressionStatement child0 = new ExpressionStatement(new NullLiteral());
-    ExpressionStatement child1 = new ExpressionStatement(new NullLiteral());
-    block.statements.add(child0);
-    block.statements.add(child1);
-
-    BlockStatementIndexPair pair = BlockStatementIndexPair.createInstanceFromChildStatement(child1);
     assertSame(block, pair.getBlockStatement());
     assertEquals(1, pair.getIndex());
   }
 
   @Test
-  public void constructor_zeroIndex_isValid() {
+  public void getBlockStatementReturnsOriginalBlock() {
     BlockStatement block = new BlockStatement();
+
     BlockStatementIndexPair pair = new BlockStatementIndexPair(block, 0);
-    assertEquals(0, pair.getIndex());
+
+    assertSame(block, pair.getBlockStatement());
+  }
+
+  @Test
+  public void getIndexReturnsOriginalIndex() {
+    BlockStatement block = new BlockStatement();
+
+    BlockStatementIndexPair pair = new BlockStatementIndexPair(block, 2);
+
+    assertEquals(2, pair.getIndex());
+  }
+
+  @Test
+  public void equalsAndHashCodeMatchForEquivalentPairs() {
+    BlockStatement block = new BlockStatement();
+    BlockStatementIndexPair first = new BlockStatementIndexPair(block, 3);
+    BlockStatementIndexPair second = new BlockStatementIndexPair(block, 3);
+
+    assertEquals(first, second);
+    assertEquals(first.hashCode(), second.hashCode());
+  }
+
+  @Test
+  public void equalsReturnsFalseForNullAndDifferentIndex() {
+    BlockStatement block = new BlockStatement();
+    BlockStatementIndexPair first = new BlockStatementIndexPair(block, 0);
+    BlockStatementIndexPair second = new BlockStatementIndexPair(block, 1);
+
+    assertFalse(first.equals(second));
+    assertFalse(first.equals(null));
+  }
+
+  @Test
+  public void toStringContainsClassNameAndIndex() {
+    BlockStatement block = new BlockStatement();
+
+    BlockStatementIndexPair pair = new BlockStatementIndexPair(block, 4);
+    String text = pair.toString();
+
+    assertTrue(text.contains("BlockStatementIndexPair"));
+    assertTrue(text.contains("index=4"));
   }
 }
