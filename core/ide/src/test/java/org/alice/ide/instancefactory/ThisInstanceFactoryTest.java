@@ -8,20 +8,17 @@ import static org.junit.Assert.*;
 
 public class ThisInstanceFactoryTest {
   @Test
-  public void getInstance_returnsSameInstance() {
+  public void getInstance_returnsSingleton() {
     ThisInstanceFactory f1 = ThisInstanceFactory.getInstance();
     ThisInstanceFactory f2 = ThisInstanceFactory.getInstance();
     assertSame(f1, f2);
   }
 
   @Test
-  public void getRepr_returnsThis() {
-    assertEquals("this", ThisInstanceFactory.getInstance().getRepr());
-  }
-
-  @Test
-  public void toString_returnsThis() {
-    assertEquals("this", ThisInstanceFactory.getInstance().toString());
+  public void reprAndToString_returnThis() {
+    ThisInstanceFactory instance = ThisInstanceFactory.getInstance();
+    assertEquals("this", instance.getRepr());
+    assertEquals("this", instance.toString());
   }
 
   @Test
@@ -33,17 +30,13 @@ public class ThisInstanceFactoryTest {
 
   @Test
   public void createTransientExpression_returnsNonNull() {
-    Expression expr = ThisInstanceFactory.getInstance().createTransientExpression();
-    assertNotNull(expr);
+    assertNotNull(ThisInstanceFactory.getInstance().createTransientExpression());
   }
 
   @Test
-  public void getIconFactory_returnsNonNull() {
-    assertNotNull(ThisInstanceFactory.getInstance().getIconFactory());
-  }
-
-  @Test
-  public void getMutablePropertiesOfInterest_returnsEmpty() {
-    assertEquals(0, ThisInstanceFactory.getInstance().getMutablePropertiesOfInterest().length);
+  public void accessors_returnExpectedDefaults() {
+    ThisInstanceFactory instance = ThisInstanceFactory.getInstance();
+    assertNotNull(instance.getIconFactory());
+    assertEquals(0, instance.getMutablePropertiesOfInterest().length);
   }
 }

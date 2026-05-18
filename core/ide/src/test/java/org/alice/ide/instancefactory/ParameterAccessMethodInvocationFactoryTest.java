@@ -8,46 +8,38 @@ import org.lgna.project.ast.UserParameter;
 import static org.junit.Assert.*;
 
 public class ParameterAccessMethodInvocationFactoryTest {
-  private static UserMethod createMethod(String name) {
+  private static UserMethod method(String name) {
     return new UserMethod(name, String.class, new UserParameter[0], new BlockStatement());
   }
 
   @Test
-  public void getInstanceCachesFactoriesForSameParameterAndMethod() {
-    UserParameter parameter = new UserParameter("target", String.class);
-    UserMethod method = createMethod("getName");
-
-    ParameterAccessMethodInvocationFactory first = ParameterAccessMethodInvocationFactory.getInstance(parameter, method);
-    ParameterAccessMethodInvocationFactory second = ParameterAccessMethodInvocationFactory.getInstance(parameter, method);
-
-    assertSame(first, second);
+  public void getInstance_cachesSameInputs() {
+    UserParameter param = new UserParameter("target", String.class);
+    UserMethod m = method("getName");
+    assertSame(
+        ParameterAccessMethodInvocationFactory.getInstance(param, m),
+        ParameterAccessMethodInvocationFactory.getInstance(param, m));
   }
 
   @Test
-  public void getInstanceReturnsDifferentFactoriesForDifferentParameters() {
-    UserMethod method = createMethod("getName");
-
-    ParameterAccessMethodInvocationFactory first = ParameterAccessMethodInvocationFactory.getInstance(new UserParameter("first", String.class), method);
-    ParameterAccessMethodInvocationFactory second = ParameterAccessMethodInvocationFactory.getInstance(new UserParameter("second", String.class), method);
-
-    assertNotSame(first, second);
+  public void getInstance_differentiatesByParameter() {
+    UserMethod m = method("getName");
+    assertNotSame(
+        ParameterAccessMethodInvocationFactory.getInstance(new UserParameter("first", String.class), m),
+        ParameterAccessMethodInvocationFactory.getInstance(new UserParameter("second", String.class), m));
   }
 
   @Test
-  public void getParameterReturnsOriginalParameter() {
-    UserParameter parameter = new UserParameter("target", String.class);
-    ParameterAccessMethodInvocationFactory factory = ParameterAccessMethodInvocationFactory.getInstance(parameter, createMethod("getName"));
-
-    assertSame(parameter, factory.getParameter());
+  public void getParameter_returnsOriginal() {
+    UserParameter param = new UserParameter("target", String.class);
+    assertSame(param, ParameterAccessMethodInvocationFactory.getInstance(param, method("getName")).getParameter());
   }
 
   @Test
-  public void getReprIncludesParameterNameAndMethodSuffix() {
-    ParameterAccessMethodInvocationFactory factory = ParameterAccessMethodInvocationFactory.getInstance(
-        new UserParameter("target", String.class),
-        createMethod("getName"));
-
-    assertTrue(factory.getRepr().contains("target"));
-    assertTrue(factory.getRepr().contains("Name"));
+  public void getRepr_includesParameterNameAndMethodSuffix() {
+    String repr = ParameterAccessMethodInvocationFactory.getInstance(
+        new UserParameter("target", String.class), method("getName")).getRepr();
+    assertTrue(repr.contains("target"));
+    assertTrue(repr.contains("Name"));
   }
 }

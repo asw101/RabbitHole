@@ -64,7 +64,7 @@ public class AbstractImplementationPropertyAdapterTest {
 
     adapter.setValue("updated");
 
-    waitForValue(property, "updated");
+    PropertyAdapterTestHelper.waitForValue(property::getValue, "updated");
     assertEquals("updated", property.getValue());
   }
 
@@ -86,20 +86,5 @@ public class AbstractImplementationPropertyAdapterTest {
 
     assertEquals(adapter.getValue(), adapter.getValueCopyIfMutable());
     assertNotSame(adapter.getValue(), adapter.getValueCopyIfMutable());
-  }
-
-  private static void waitForValue(TestProperty property, String expected) {
-    long deadline = System.currentTimeMillis() + 2000;
-    while (System.currentTimeMillis() < deadline) {
-      if (expected.equals(property.getValue())) {
-        return;
-      }
-      try {
-        Thread.sleep(10);
-      } catch (InterruptedException e) {
-        throw new AssertionError(e);
-      }
-    }
-    fail("Timed out waiting for property value " + expected);
   }
 }

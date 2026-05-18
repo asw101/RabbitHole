@@ -9,46 +9,38 @@ import org.lgna.project.ast.UserParameter;
 import static org.junit.Assert.*;
 
 public class ThisFieldAccessMethodInvocationFactoryTest {
-  private static UserMethod createMethod(String name) {
+  private static UserMethod method(String name) {
     return new UserMethod(name, String.class, new UserParameter[0], new BlockStatement());
   }
 
   @Test
-  public void getInstanceCachesFactoriesForSameFieldAndMethod() {
+  public void getInstance_cachesSameInputs() {
     UserField field = new UserField("camera", String.class);
-    UserMethod method = createMethod("getName");
-
-    ThisFieldAccessMethodInvocationFactory first = ThisFieldAccessMethodInvocationFactory.getInstance(field, method);
-    ThisFieldAccessMethodInvocationFactory second = ThisFieldAccessMethodInvocationFactory.getInstance(field, method);
-
-    assertSame(first, second);
+    UserMethod m = method("getName");
+    assertSame(
+        ThisFieldAccessMethodInvocationFactory.getInstance(field, m),
+        ThisFieldAccessMethodInvocationFactory.getInstance(field, m));
   }
 
   @Test
-  public void getInstanceReturnsDifferentFactoriesForDifferentFields() {
-    UserMethod method = createMethod("getName");
-
-    ThisFieldAccessMethodInvocationFactory first = ThisFieldAccessMethodInvocationFactory.getInstance(new UserField("camera", String.class), method);
-    ThisFieldAccessMethodInvocationFactory second = ThisFieldAccessMethodInvocationFactory.getInstance(new UserField("light", String.class), method);
-
-    assertNotSame(first, second);
+  public void getInstance_differentiatesByField() {
+    UserMethod m = method("getName");
+    assertNotSame(
+        ThisFieldAccessMethodInvocationFactory.getInstance(new UserField("camera", String.class), m),
+        ThisFieldAccessMethodInvocationFactory.getInstance(new UserField("light", String.class), m));
   }
 
   @Test
-  public void getFieldReturnsOriginalField() {
+  public void getField_returnsOriginal() {
     UserField field = new UserField("camera", String.class);
-    ThisFieldAccessMethodInvocationFactory factory = ThisFieldAccessMethodInvocationFactory.getInstance(field, createMethod("getName"));
-
-    assertSame(field, factory.getField());
+    assertSame(field, ThisFieldAccessMethodInvocationFactory.getInstance(field, method("getName")).getField());
   }
 
   @Test
-  public void getReprIncludesFieldNameAndMethodSuffix() {
-    ThisFieldAccessMethodInvocationFactory factory = ThisFieldAccessMethodInvocationFactory.getInstance(
-        new UserField("camera", String.class),
-        createMethod("getName"));
-
-    assertTrue(factory.getRepr().contains("this.camera"));
-    assertTrue(factory.getRepr().contains("Name"));
+  public void getRepr_includesFieldNameAndMethodSuffix() {
+    String repr = ThisFieldAccessMethodInvocationFactory.getInstance(
+        new UserField("camera", String.class), method("getName")).getRepr();
+    assertTrue(repr.contains("this.camera"));
+    assertTrue(repr.contains("Name"));
   }
 }

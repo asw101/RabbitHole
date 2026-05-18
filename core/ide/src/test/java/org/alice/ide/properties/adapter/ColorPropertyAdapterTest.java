@@ -67,22 +67,7 @@ public class ColorPropertyAdapterTest {
 
     adapter.setValue(Color.BLUE);
 
-    waitForValue(property, Color.BLUE);
+    PropertyAdapterTestHelper.waitForValue(property::getValue, Color.BLUE);
     assertEquals(Color.BLUE, property.getValue());
-  }
-
-  private static void waitForValue(TestColorProperty property, Color expected) {
-    long deadline = System.currentTimeMillis() + 2000;
-    while (System.currentTimeMillis() < deadline) {
-      if (expected.equals(property.getValue())) {
-        return;
-      }
-      try {
-        Thread.sleep(10);
-      } catch (InterruptedException e) {
-        throw new AssertionError(e);
-      }
-    }
-    fail("Timed out waiting for property value " + expected);
   }
 }

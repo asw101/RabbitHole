@@ -9,46 +9,41 @@ import org.lgna.project.ast.UserParameter;
 import static org.junit.Assert.*;
 
 public class LocalAccessMethodInvocationFactoryTest {
-  private static UserMethod createMethod(String name) {
+  private static UserMethod method(String name) {
     return new UserMethod(name, String.class, new UserParameter[0], new BlockStatement());
   }
 
-  @Test
-  public void getInstanceCachesFactoriesForSameLocalAndMethod() {
-    UserLocal local = new UserLocal("hero", String.class, false);
-    UserMethod method = createMethod("getName");
-
-    LocalAccessMethodInvocationFactory first = LocalAccessMethodInvocationFactory.getInstance(local, method);
-    LocalAccessMethodInvocationFactory second = LocalAccessMethodInvocationFactory.getInstance(local, method);
-
-    assertSame(first, second);
+  private static UserLocal local(String name) {
+    return new UserLocal(name, String.class, false);
   }
 
   @Test
-  public void getInstanceReturnsDifferentFactoriesForDifferentLocals() {
-    UserMethod method = createMethod("getName");
-
-    LocalAccessMethodInvocationFactory first = LocalAccessMethodInvocationFactory.getInstance(new UserLocal("hero", String.class, false), method);
-    LocalAccessMethodInvocationFactory second = LocalAccessMethodInvocationFactory.getInstance(new UserLocal("villain", String.class, false), method);
-
-    assertNotSame(first, second);
+  public void getInstance_cachesSameInputs() {
+    UserLocal local = local("hero");
+    UserMethod m = method("getName");
+    assertSame(
+        LocalAccessMethodInvocationFactory.getInstance(local, m),
+        LocalAccessMethodInvocationFactory.getInstance(local, m));
   }
 
   @Test
-  public void getLocalReturnsOriginalLocal() {
-    UserLocal local = new UserLocal("hero", String.class, false);
-    LocalAccessMethodInvocationFactory factory = LocalAccessMethodInvocationFactory.getInstance(local, createMethod("getName"));
-
-    assertSame(local, factory.getLocal());
+  public void getInstance_differentiatesByLocal() {
+    UserMethod m = method("getName");
+    assertNotSame(
+        LocalAccessMethodInvocationFactory.getInstance(local("hero"), m),
+        LocalAccessMethodInvocationFactory.getInstance(local("villain"), m));
   }
 
   @Test
-  public void getReprIncludesLocalNameAndMethodSuffix() {
-    LocalAccessMethodInvocationFactory factory = LocalAccessMethodInvocationFactory.getInstance(
-        new UserLocal("hero", String.class, false),
-        createMethod("getName"));
+  public void getLocal_returnsOriginal() {
+    UserLocal local = local("hero");
+    assertSame(local, LocalAccessMethodInvocationFactory.getInstance(local, method("getName")).getLocal());
+  }
 
-    assertTrue(factory.getRepr().contains("hero"));
-    assertTrue(factory.getRepr().contains("Name"));
+  @Test
+  public void getRepr_includesLocalNameAndMethodSuffix() {
+    String repr = LocalAccessMethodInvocationFactory.getInstance(local("hero"), method("getName")).getRepr();
+    assertTrue(repr.contains("hero"));
+    assertTrue(repr.contains("Name"));
   }
 }

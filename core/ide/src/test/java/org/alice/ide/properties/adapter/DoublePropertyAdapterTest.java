@@ -69,7 +69,7 @@ public class DoublePropertyAdapterTest {
 
     adapter.setValue(3.75);
 
-    waitForValue(property, 3.75);
+    PropertyAdapterTestHelper.waitForValue(property::getValue, 3.75);
     assertEquals(Double.valueOf(3.75), property.getValue());
   }
 
@@ -83,20 +83,5 @@ public class DoublePropertyAdapterTest {
     property.setValue(4.5);
 
     assertEquals(Double.valueOf(4.5), observed[0]);
-  }
-
-  private static void waitForValue(TestProperty property, double expected) {
-    long deadline = System.currentTimeMillis() + 2000;
-    while (System.currentTimeMillis() < deadline) {
-      if (Double.valueOf(expected).equals(property.getValue())) {
-        return;
-      }
-      try {
-        Thread.sleep(10);
-      } catch (InterruptedException e) {
-        throw new AssertionError(e);
-      }
-    }
-    fail("Timed out waiting for property value " + expected);
   }
 }
