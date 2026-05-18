@@ -75,7 +75,7 @@ org.alice.ide.croquet
 | 3 | `ResourceCodecTest` | `codecs` | ResourceCodec | ~70 |
 | 4 | `SingletonCodecTest` | `codecs` | SingletonCodec | ~60 |
 | 5 | `DeclarationCompositeCodecTest` | `codecs.typeeditor` | DeclarationCompositeCodec | ~60 |
-| 6 | `ExpressionPropertyEditTest` | `edits.ast` | ExpressionPropertyEdit | ~150 |
+| 6 | `ExpressionPropertyEditTest` | `edits.ast` | ExpressionPropertyEdit | ~180 |
 | 7 | `DeclareMethodEditTest` | `edits.ast` | DeclareMethodEdit | ~160 |
 | 8 | `BlockStatementEditTest` | `edits.ast` | BlockStatementEdit (via concrete subclass) | ~120 |
 | 9 | `DependentEditTest` | `edits` | DependentEdit | ~100 |
@@ -89,7 +89,7 @@ org.alice.ide.croquet
 | 17 | `ShowPathPropertyCompositeTest` | `models.help` | ShowPathPropertyComposite hierarchy | ~80 |
 | 18 | `AbstractIssueCompositeTest` | `models.help` | AbstractIssueComposite + enums | ~100 |
 
-Total: ~2050 lines across 18 test files.
+Total: ~2080 lines across 18 test files.
 
 ## Phase 1: Codec tests (~350 LOC)
 
@@ -277,6 +277,12 @@ Tests verify:
 - Operations hold a reference to the correct `NumberModel`
 - `NumeralOperation.getInstance(model, 5)` is identity-equal on repeat calls
 
+> **Note:** Unlike the codec `getInstance` methods (which have a caching bug —
+> see [Risks](#risks-and-mitigations)), operation `getInstance` methods
+> correctly call `map.put` to cache new instances. `NumeralOperation` uses
+> `MapToMap.getInitializingIfAbsent` which handles caching atomically. The
+> `assertSame` tests will **pass** for operations.
+
 ```java
 @Test
 public void numeralOperation_cachedPerModelAndDigit() {
@@ -295,7 +301,7 @@ public void differentDigits_differentInstances() {
 }
 ```
 
-## Phase 3: Edit tests (~700 LOC)
+## Phase 3: Edit tests (~730 LOC)
 
 ### Pattern: null UserActivity construction
 
@@ -312,12 +318,21 @@ ExpressionPropertyEdit edit = new ExpressionPropertyEdit(
 ```
 
 This works because `AbstractEdit` stores the activity reference without
-dereferencing it during construction. Tests are limited to constructors and
-accessors; `doOrRedoInternal` and `undoInternal` require IDE context.
+dereferencing it during construction.
+
+> **Key insight:** `ExpressionPropertyEdit.doOrRedoInternal` and `undoInternal`
+> are **headless-safe** — they call `expressionProperty.setValue(expression)`
+> which is pure AST manipulation with no IDE dependency. Only
+> `appendDescription` calls `Application.getLocale()` and requires IDE context.
+> This makes `ExpressionPropertyEdit` the only edit (besides
+> `RenameDeclarationEdit`) that supports full do/undo round-trip testing.
 
 ### ExpressionPropertyEdit
 
-Tests verify construction and accessor contracts with real AST nodes:
+Tests verify construction, do/undo round-trips, and accessor contracts with
+real AST nodes. Because `doOrRedoInternal` just calls
+`expressionProperty.setValue(nextExpression)` (no IDE calls), full round-trip
+testing is safe headless:
 
 ```java
 @Test
@@ -330,7 +345,35 @@ public void construct_storesExpressions() {
   );
   assertNotNull(edit);
 }
+
+@Test
+public void doOrRedo_setsNextExpression() {
+  ExpressionStatement stmt = new ExpressionStatement(new NullLiteral());
+  ExpressionProperty prop = stmt.expression;
+  NullLiteral prev = (NullLiteral) prop.getValue();
+  NullLiteral next = new NullLiteral();
+
+  ExpressionPropertyEdit edit = new ExpressionPropertyEdit(null, prop, prev, next);
+  edit.doOrRedoInternal(true);
+  assertSame(next, prop.getValue());
+}
+
+@Test
+public void undo_restoresPreviousExpression() {
+  ExpressionStatement stmt = new ExpressionStatement(new NullLiteral());
+  ExpressionProperty prop = stmt.expression;
+  NullLiteral prev = (NullLiteral) prop.getValue();
+  NullLiteral next = new NullLiteral();
+
+  ExpressionPropertyEdit edit = new ExpressionPropertyEdit(null, prop, prev, next);
+  edit.doOrRedoInternal(true);
+  edit.undoInternal();
+  assertSame(prev, prop.getValue());
+}
 ```
+
+> **Caution:** `appendDescription` calls `Application.getLocale()` — do not
+> test `appendDescription` without an Application context.
 
 ### DeclareMethodEdit
 
@@ -552,8 +595,10 @@ public void getValue_returnsExpression() {
 ### SearchResult
 
 `SearchResult` aggregates an `AbstractDeclaration` with a list of
-`Expression` references. The constructor validates the declaration type via
-an assertion. Tests use `UserMethod` (which is an `AbstractMethod`):
+`Expression` references. The constructor validates via `assert checkClass(object)`
+that the declaration is an `AbstractField`, `AbstractMethod`, `UserParameter`,
+or `UserLocal`. This assertion is only enforced when running with `-ea`.
+Tests use `UserMethod` (which is an `AbstractMethod`):
 
 ```java
 @Test
@@ -707,7 +752,7 @@ open core/ide/target/site/jacoco/index.html
 
 | Class | Constructor pattern | Key methods tested |
 |-------|--------------------|--------------------|
-| `ExpressionPropertyEdit` | `(null, ExpressionProperty, Expression, Expression)` | construction, accessors |
+| `ExpressionPropertyEdit` | `(null, ExpressionProperty, Expression, Expression)` | construction, `doOrRedoInternal`, `undoInternal` round-trip (headless-safe; only `appendDescription` requires IDE) |
 | `DeclareMethodEdit` | `(null, UserType, String, AbstractType[, BlockStatement])` | `getDeclaringType`, `getMethodName`, `getReturnType` (no do/undo — requires IDE) |
 | `BlockStatementEdit` | `(null, BlockStatement)` via subclass | `getBlockStatement` |
 | `DependentEdit` | `(null)` | construction |
@@ -740,12 +785,13 @@ open core/ide/target/site/jacoco/index.html
 | Risk | Mitigation |
 |------|-----------|
 | **Codec `getInstance` never caches** — `NodeCodec`, `PropertyOfNodeCodec`, `ResourceCodec`, and `SingletonCodec` all create new instances but never call `map.put(cls, rv)` | `assertSame` tests will expose this as a production bug. Use `assertNotNull` + `assertEquals(getValueClass)` as fallback until the bug is fixed |
-| Edit `doOrRedo`/`undo` requires `IDE.getActiveInstance()` | Tests limited to construction + accessors; only `RenameDeclarationEdit` can safely exercise do/undo with pure AST (`DeclareMethodEdit` calls IDE on both paths) |
+| Edit `doOrRedo`/`undo` requires `IDE.getActiveInstance()` for most edits | `RenameDeclarationEdit` and `ExpressionPropertyEdit` can do/undo headless (pure AST operations). `DeclareMethodEdit`, `DependentEdit`, `BlockStatementEdit` subclass edits require IDE — test construction + accessors only |
 | NumberModel constructors create `JTextField` | Headless guard: `Assume.assumeFalse(GraphicsEnvironment.isHeadless())` |
 | `DeclarationCompositeCodec.decodeValue` needs IDE instance | Test only `getValueClass` and `appendRepresentation` (null case only — non-null calls `FormatterState`) |
-| `NodeCodec.appendRepresentation` calls `Application.getLocale()` | May throw if no `Application` initialized; guard or mock the `Application` singleton |
+| `NodeCodec.appendRepresentation` calls `Application.getLocale()` | May throw if no `Application` initialized; test only `null` value path or guard with try/catch. Same applies to `ExpressionPropertyEdit.appendDescription` and `InsertStatementEdit.appendDescription` |
 | `ShowPathPropertyComposite` constructor requires Croquet `Application` | Guard with `Assume`; test `getPropertyName` only if construction succeeds |
 | `SearchResult.getIcon()` needs `DeclarationTabState` | Not tested headless; test only data accessors |
+| `SearchResult` constructor uses `assert checkClass(object)` | Assertion only enforced with `-ea` flag; tests should use `-ea` to catch type violations. Only `AbstractField`, `AbstractMethod`, `UserParameter`, `UserLocal` are accepted |
 | `AcceptIfNotGenerated.accept()` needs a `UserMethod` ancestor | Test singleton identity only; `accept()` tested separately in `FindCrawlerTest` |
 
 ## Security considerations
