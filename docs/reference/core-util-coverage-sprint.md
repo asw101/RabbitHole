@@ -1,10 +1,10 @@
 # core/util coverage sprint — 42.7% → 70%
 
-Issue #751 raised `core/util` line coverage from 42.7% to 70%+ by adding test
-files for the animation framework, binary codec edge cases, math animations,
-property system, pattern utilities, and collection helpers. All new tests are
-JUnit 4, headless-safe, and require no external dependencies beyond the
-existing test classpath.
+Issue #751 targets raising `core/util` line coverage from 42.7% to 70%+ by
+adding test files for the animation framework, binary codec edge cases, math
+animations, property system, pattern utilities, and collection helpers. All
+new tests will be JUnit 4, headless-safe, and require no external dependencies
+beyond the existing test classpath.
 
 This sprint builds on the earlier #736 push that brought coverage from 3.63%
 to ~42.7%. The incremental work targets the animation subsystem (previously at

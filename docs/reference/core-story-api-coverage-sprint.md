@@ -1,11 +1,12 @@
 # core/story-api coverage sprint — 50.2% → 70%
 
-Issue #751 raised `core/story-api` line coverage from 50.2% to 70%+ by adding
-test files across the implementation, event-handling, and resource-utility
-packages. All new tests are JUnit 4, headless-safe, and use hand-rolled stubs
-(no Mockito). The sprint focused on pure-logic paths that were previously
-untested: property hierarchies, animation helpers, event dispatching, camera
-and scene lifecycle, matrix decomposition (Jama), and facade accessors.
+Issue #751 targets raising `core/story-api` line coverage from 50.2% to 70%+
+by adding test files across the implementation, event-handling, and
+resource-utility packages. All new tests will be JUnit 4, headless-safe, and
+use hand-rolled stubs (no Mockito). The sprint focuses on pure-logic paths
+that are currently untested: property hierarchies, animation helpers, event
+dispatching, camera and scene lifecycle, matrix decomposition (Jama), and
+facade accessors.
 
 ## Test inventory
 

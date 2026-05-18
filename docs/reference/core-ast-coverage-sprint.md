@@ -1,9 +1,9 @@
 # core/ast coverage sprint — 50.4% → 70%
 
-Issue #751 raised `core/ast` line coverage from 50.4% to 70%+ by adding test
-files for virtual machine events, exception types, code generator delegates,
-type resolution helpers, and AST node construction. All new tests are JUnit 4,
-headless-safe, and use hand-rolled stubs (no Mockito).
+Issue #751 targets raising `core/ast` line coverage from 50.4% to 70%+ by
+adding test files for virtual machine events, exception types, code generator
+delegates, type resolution helpers, and AST node construction. All new tests
+will be JUnit 4, headless-safe, and use hand-rolled stubs (no Mockito).
 
 This sprint builds on existing VM characterization tests, Tweedle
 encoder/decoder boundary tests, and source code generator tests. The

@@ -1,6 +1,6 @@
 # How to run the coverage sprint tests
 
-This guide explains how to run, verify, and troubleshoot the tests added by
+This guide explains how to run, verify, and troubleshoot the tests defined by
 the Issue #751 coverage sprint across `core/story-api`, `core/util`, and
 `core/ast`.
 
