@@ -135,8 +135,10 @@ public class CameraMarkerConfigurationTest {
     return tracker;
   }
 
+  // CameraMarkerTracker and CameraMarkerImp have complex initialization that
+  // requires a running scene. We bypass constructors to test configuration logic.
   private static <T> T allocate(Class<T> type) throws Exception {
-    return type.cast(getUnsafe().allocateInstance(type));
+    return type.cast(UNSAFE.allocateInstance(type));
   }
 
   private static void setField(Class<?> type, Object target, String name, Object value) throws Exception {
@@ -145,10 +147,16 @@ public class CameraMarkerConfigurationTest {
     field.set(target, value);
   }
 
-  private static sun.misc.Unsafe getUnsafe() throws Exception {
-    Field field = sun.misc.Unsafe.class.getDeclaredField("theUnsafe");
-    field.setAccessible(true);
-    return (sun.misc.Unsafe) field.get(null);
+  private static final sun.misc.Unsafe UNSAFE;
+
+  static {
+    try {
+      Field field = sun.misc.Unsafe.class.getDeclaredField("theUnsafe");
+      field.setAccessible(true);
+      UNSAFE = (sun.misc.Unsafe) field.get(null);
+    } catch (Exception e) {
+      throw new ExceptionInInitializerError(e);
+    }
   }
 
   private static class TestCameraMarkerConfiguration extends CameraMarkerConfiguration<CameraMarkerImp> {

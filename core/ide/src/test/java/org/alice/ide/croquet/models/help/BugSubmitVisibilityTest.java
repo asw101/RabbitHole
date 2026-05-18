@@ -7,47 +7,21 @@ public class BugSubmitVisibilityTest {
 
   @Test
   public void values_hasTwoConstants() {
-    assertEquals(2, BugSubmitVisibility.values().length);
+    BugSubmitVisibility[] values = BugSubmitVisibility.values();
+    assertEquals(2, values.length);
+    assertSame(BugSubmitVisibility.PUBLIC, values[0]);
+    assertSame(BugSubmitVisibility.PRIVATE, values[1]);
   }
 
   @Test
-  public void valueOf_public() {
-    assertEquals(BugSubmitVisibility.PUBLIC, BugSubmitVisibility.valueOf("PUBLIC"));
-  }
-
-  @Test
-  public void valueOf_private() {
-    assertEquals(BugSubmitVisibility.PRIVATE, BugSubmitVisibility.valueOf("PRIVATE"));
-  }
-
-  @Test
-  public void ordinals_correct() {
-    assertEquals(0, BugSubmitVisibility.PUBLIC.ordinal());
-    assertEquals(1, BugSubmitVisibility.PRIVATE.ordinal());
-  }
-
-  @Test
-  public void name_matchesConstant() {
-    assertEquals("PUBLIC", BugSubmitVisibility.PUBLIC.name());
-    assertEquals("PRIVATE", BugSubmitVisibility.PRIVATE.name());
-  }
-
-  @Test
-  public void toString_matchesName() {
+  public void valueOf_roundTrips() {
     for (BugSubmitVisibility v : BugSubmitVisibility.values()) {
-      assertEquals(v.name(), v.toString());
+      assertEquals(v, BugSubmitVisibility.valueOf(v.name()));
     }
   }
 
   @Test(expected = IllegalArgumentException.class)
   public void valueOf_invalid_throws() {
     BugSubmitVisibility.valueOf("UNKNOWN");
-  }
-
-  @Test
-  public void valuesArray_containsBothConstants() {
-    BugSubmitVisibility[] values = BugSubmitVisibility.values();
-    assertSame(BugSubmitVisibility.PUBLIC, values[0]);
-    assertSame(BugSubmitVisibility.PRIVATE, values[1]);
   }
 }

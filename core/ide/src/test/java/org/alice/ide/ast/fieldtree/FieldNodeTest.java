@@ -45,6 +45,25 @@ public class FieldNodeTest {
     FieldNode beta = FieldNode.createAndAddToParent(root, createField("beta"));
 
     assertTrue(alpha.compareTo(beta) < 0);
+    assertTrue(beta.compareTo(alpha) > 0);
+  }
+
+  @Test
+  public void compareTo_sameDeclaration_returnsZero() {
+    RootNode root = new RootNode();
+    FieldNode left = FieldNode.createAndAddToParent(root, createField("alpha"));
+    FieldNode right = FieldNode.createAndAddToParent(root, createField("alpha"));
+
+    assertEquals(0, left.compareTo(right));
+  }
+
+  @Test
+  public void compareTo_caseInsensitive() {
+    RootNode root = new RootNode();
+    FieldNode upper = FieldNode.createAndAddToParent(root, createField("Alpha"));
+    FieldNode lower = FieldNode.createAndAddToParent(root, createField("alpha"));
+
+    assertEquals(0, upper.compareTo(lower));
   }
 
   @Test
@@ -53,6 +72,13 @@ public class FieldNodeTest {
     FieldNode fieldNode = FieldNode.createAndAddToParent(root, createField("alpha"));
 
     assertTrue(fieldNode.toString().contains("alpha"));
+  }
+
+  @Test
+  public void toString_rootNode_containsDash() {
+    RootNode root = new RootNode();
+
+    assertTrue(root.toString().contains(" - "));
   }
 
   private static UserField createField(String name) {

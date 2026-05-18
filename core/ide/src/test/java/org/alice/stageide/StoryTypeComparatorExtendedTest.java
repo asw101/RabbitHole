@@ -11,7 +11,47 @@ import java.util.List;
 
 import static org.junit.Assert.*;
 
+/**
+ * Comprehensive tests for {@link StoryTypeComparator} — ordering and contract.
+ */
 public class StoryTypeComparatorExtendedTest {
+
+  @Test
+  public void singleton_isNotNull() {
+    assertNotNull(StoryTypeComparator.SINGLETON);
+  }
+
+  // ---- primitive/known type ordering ----
+
+  @Test
+  public void compare_booleanBeforeDouble() {
+    assertTrue(StoryTypeComparator.SINGLETON.compare(
+        JavaType.BOOLEAN_OBJECT_TYPE, JavaType.DOUBLE_OBJECT_TYPE) < 0);
+  }
+
+  @Test
+  public void compare_doubleBeforeInteger() {
+    assertTrue(StoryTypeComparator.SINGLETON.compare(
+        JavaType.DOUBLE_OBJECT_TYPE, JavaType.INTEGER_OBJECT_TYPE) < 0);
+  }
+
+  @Test
+  public void compare_integerBeforeString() {
+    assertTrue(StoryTypeComparator.SINGLETON.compare(
+        JavaType.INTEGER_OBJECT_TYPE, JavaType.STRING_TYPE) < 0);
+  }
+
+  @Test
+  public void compare_stringBeforeSThing() {
+    assertTrue(StoryTypeComparator.SINGLETON.compare(
+        JavaType.STRING_TYPE, JavaType.getInstance(SThing.class)) < 0);
+  }
+
+  @Test
+  public void compare_sThingBeforeColor() {
+    assertTrue(StoryTypeComparator.SINGLETON.compare(
+        JavaType.getInstance(SThing.class), JavaType.getInstance(Color.class)) < 0);
+  }
 
   @Test
   public void primitiveTypes_orderedCorrectly() {
@@ -27,41 +67,62 @@ public class StoryTypeComparatorExtendedTest {
     assertEquals(JavaType.STRING_TYPE, types.get(3));
   }
 
+  // ---- story types ----
+
   @Test
   public void colorBeforePaint() {
-    AbstractType<?, ?, ?> colorType = JavaType.getInstance(Color.class);
-    AbstractType<?, ?, ?> paintType = JavaType.getInstance(Paint.class);
-    assertTrue(StoryTypeComparator.SINGLETON.compare(colorType, paintType) < 0);
+    assertTrue(StoryTypeComparator.SINGLETON.compare(
+        JavaType.getInstance(Color.class), JavaType.getInstance(Paint.class)) < 0);
   }
 
   @Test
   public void positionBeforeOrientation() {
-    AbstractType<?, ?, ?> posType = JavaType.getInstance(Position.class);
-    AbstractType<?, ?, ?> oriType = JavaType.getInstance(Orientation.class);
-    assertTrue(StoryTypeComparator.SINGLETON.compare(posType, oriType) < 0);
+    assertTrue(StoryTypeComparator.SINGLETON.compare(
+        JavaType.getInstance(Position.class), JavaType.getInstance(Orientation.class)) < 0);
   }
 
   @Test
   public void orientationBeforeVantagePoint() {
-    AbstractType<?, ?, ?> oriType = JavaType.getInstance(Orientation.class);
-    AbstractType<?, ?, ?> vpType = JavaType.getInstance(VantagePoint.class);
-    assertTrue(StoryTypeComparator.SINGLETON.compare(oriType, vpType) < 0);
+    assertTrue(StoryTypeComparator.SINGLETON.compare(
+        JavaType.getInstance(Orientation.class), JavaType.getInstance(VantagePoint.class)) < 0);
   }
 
   @Test
   public void sjoint_hasHighPriority() {
-    AbstractType<?, ?, ?> jointType = JavaType.getInstance(SJoint.class);
-    AbstractType<?, ?, ?> stringType = JavaType.STRING_TYPE;
-    assertTrue(StoryTypeComparator.SINGLETON.compare(jointType, stringType) > 0);
+    assertTrue(StoryTypeComparator.SINGLETON.compare(
+        JavaType.getInstance(SJoint.class), JavaType.STRING_TYPE) > 0);
+  }
+
+  // ---- unknown types and contract ----
+
+  @Test
+  public void compare_primitiveBeforeUnknown() {
+    assertTrue(StoryTypeComparator.SINGLETON.compare(
+        JavaType.BOOLEAN_OBJECT_TYPE, JavaType.getInstance(Runnable.class)) < 0);
   }
 
   @Test
-  public void twoUnknownTypes_sortedByName() {
-    AbstractType<?, ?, ?> typeA = JavaType.getInstance(Appendable.class);
-    AbstractType<?, ?, ?> typeB = JavaType.getInstance(Readable.class);
+  public void compare_unknownTypes_comparesByName() {
+    AbstractType<?, ?, ?> typeA = JavaType.getInstance(Runnable.class);
+    AbstractType<?, ?, ?> typeB = JavaType.getInstance(Comparable.class);
     int result = StoryTypeComparator.SINGLETON.compare(typeA, typeB);
     int expected = typeA.getName().compareTo(typeB.getName());
     assertEquals(Integer.signum(expected), Integer.signum(result));
+  }
+
+  @Test
+  public void compare_sameType_returnsZero() {
+    assertEquals(0, StoryTypeComparator.SINGLETON.compare(
+        JavaType.BOOLEAN_OBJECT_TYPE, JavaType.BOOLEAN_OBJECT_TYPE));
+  }
+
+  @Test
+  public void compare_isAntiSymmetric() {
+    AbstractType<?, ?, ?> a = JavaType.BOOLEAN_OBJECT_TYPE;
+    AbstractType<?, ?, ?> b = JavaType.STRING_TYPE;
+    int ab = StoryTypeComparator.SINGLETON.compare(a, b);
+    int ba = StoryTypeComparator.SINGLETON.compare(b, a);
+    assertEquals(-Integer.signum(ab), Integer.signum(ba));
   }
 
   @Test
@@ -74,14 +135,6 @@ public class StoryTypeComparatorExtendedTest {
     int ac = StoryTypeComparator.SINGLETON.compare(a, c);
     if (ab < 0 && bc < 0) {
       assertTrue(ac < 0);
-    }
-  }
-
-  @Test
-  public void sameType_alwaysZero() {
-    AbstractType<?, ?, ?> type = JavaType.getInstance(Position.class);
-    for (int i = 0; i < 10; i++) {
-      assertEquals(0, StoryTypeComparator.SINGLETON.compare(type, type));
     }
   }
 }

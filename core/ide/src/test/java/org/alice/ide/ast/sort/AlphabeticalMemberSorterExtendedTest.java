@@ -90,7 +90,23 @@ public class AlphabeticalMemberSorterExtendedTest {
   }
 
   @Test
-  public void singleton_implementsMemberSorter() {
-    assertTrue(AlphabeticalMemberSorter.SINGLETON instanceof MemberSorter);
+  public void createSortedList_returnsNewList() {
+    UserMethod a = method("alpha");
+    UserMethod b = method("bravo");
+    List<UserMethod> original = Arrays.asList(b, a);
+    List<UserMethod> sorted = AlphabeticalMemberSorter.SINGLETON.createSortedList(original);
+    assertNotSame(original, sorted);
+  }
+
+  @Test
+  public void createSortedList_preservesAllElements() {
+    UserMethod a = method("alpha");
+    UserMethod b = method("bravo");
+    UserMethod c = method("charlie");
+    List<UserMethod> sorted = AlphabeticalMemberSorter.SINGLETON.createSortedList(Arrays.asList(c, a, b));
+    assertEquals(3, sorted.size());
+    assertTrue(sorted.contains(a));
+    assertTrue(sorted.contains(b));
+    assertTrue(sorted.contains(c));
   }
 }

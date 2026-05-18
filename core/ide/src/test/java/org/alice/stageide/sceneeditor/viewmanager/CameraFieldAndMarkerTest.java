@@ -7,8 +7,6 @@ import org.lgna.story.OrthographicCameraMarker;
 import org.lgna.story.implementation.CameraMarkerImp;
 import org.lgna.story.implementation.OrthographicCameraMarkerImp;
 
-import java.lang.reflect.Field;
-
 import static org.junit.Assert.*;
 
 public class CameraFieldAndMarkerTest {
@@ -111,16 +109,30 @@ public class CameraFieldAndMarkerTest {
   }
 
   private static NamedOrthographicCameraMarker createOrthographicMarker(String name) throws Exception {
-    NamedOrthographicCameraMarker marker = allocate(NamedOrthographicCameraMarker.class);
+    NamedOrthographicCameraMarker marker = UnsafeAllocator.allocate(NamedOrthographicCameraMarker.class);
     marker.setName(name);
     return marker;
   }
 
-  private static <T> T allocate(Class<T> type) throws Exception {
-    Field field = sun.misc.Unsafe.class.getDeclaredField("theUnsafe");
-    field.setAccessible(true);
-    sun.misc.Unsafe unsafe = (sun.misc.Unsafe) field.get(null);
-    return type.cast(unsafe.allocateInstance(type));
+  // OrthographicCameraMarker's field initializer creates a heavyweight implementation,
+  // so we bypass the constructor to test CameraFieldAndMarker in isolation.
+  private static final class UnsafeAllocator {
+    private static final sun.misc.Unsafe UNSAFE;
+
+    static {
+      try {
+        java.lang.reflect.Field field = sun.misc.Unsafe.class.getDeclaredField("theUnsafe");
+        field.setAccessible(true);
+        UNSAFE = (sun.misc.Unsafe) field.get(null);
+      } catch (Exception e) {
+        throw new ExceptionInInitializerError(e);
+      }
+    }
+
+    @SuppressWarnings("unchecked")
+    static <T> T allocate(Class<T> type) throws Exception {
+      return (T) UNSAFE.allocateInstance(type);
+    }
   }
 
   private static class NamedCameraMarker extends CameraMarker {
