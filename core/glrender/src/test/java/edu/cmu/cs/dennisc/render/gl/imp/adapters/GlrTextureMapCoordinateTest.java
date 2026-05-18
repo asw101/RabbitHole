@@ -254,18 +254,27 @@ public class GlrTextureMapCoordinateTest {
     assertEquals(Float.NEGATIVE_INFINITY, tex.mapU(Float.NEGATIVE_INFINITY), 0.0f);
   }
 
-  // ── helpers ────────────────────────────────────────────────────────
+  // ── helpers — Method objects cached to avoid repeated lookup ────────
+
+  private static final Method IS_DIRTY;
+  private static final Method SET_DIRTY;
+  static {
+    try {
+      IS_DIRTY = GlrTexture.class.getDeclaredMethod("isDirty");
+      IS_DIRTY.setAccessible(true);
+      SET_DIRTY = GlrTexture.class.getDeclaredMethod("setDirty", boolean.class);
+      SET_DIRTY.setAccessible(true);
+    } catch (NoSuchMethodException e) {
+      throw new ExceptionInInitializerError(e);
+    }
+  }
 
   private boolean invokeDirtyCheck(TestableGlrTexture tex) throws Exception {
-    Method m = GlrTexture.class.getDeclaredMethod("isDirty");
-    m.setAccessible(true);
-    return (boolean) m.invoke(tex);
+    return (boolean) IS_DIRTY.invoke(tex);
   }
 
   private void invokeSetDirty(TestableGlrTexture tex, boolean dirty) throws Exception {
-    Method m = GlrTexture.class.getDeclaredMethod("setDirty", boolean.class);
-    m.setAccessible(true);
-    m.invoke(tex, dirty);
+    SET_DIRTY.invoke(tex, dirty);
   }
 
   /**

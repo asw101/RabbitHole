@@ -113,18 +113,30 @@ public class ReferencedObjectTest {
     assertSame(obj, getObject(ref));
   }
 
-  // ── Helpers ───────────────────────────────────────────────────────
+  // ── Helpers — all reflection cached in static init ─────────────────
 
   private static final Class<?> CLAZZ;
   private static final Constructor<?> CTOR;
+  private static final java.lang.reflect.Method GET_OBJECT;
+  private static final java.lang.reflect.Method IS_REFERENCED;
+  private static final java.lang.reflect.Method ADD_REFERENCE;
+  private static final java.lang.reflect.Method REMOVE_REFERENCE;
 
   static {
     try {
       CLAZZ = Class.forName("edu.cmu.cs.dennisc.render.gl.imp.ReferencedObject");
       CTOR = CLAZZ.getDeclaredConstructor(Object.class, int.class);
       CTOR.setAccessible(true);
+      GET_OBJECT = CLAZZ.getDeclaredMethod("getObject");
+      GET_OBJECT.setAccessible(true);
+      IS_REFERENCED = CLAZZ.getDeclaredMethod("isReferenced");
+      IS_REFERENCED.setAccessible(true);
+      ADD_REFERENCE = CLAZZ.getDeclaredMethod("addReference");
+      ADD_REFERENCE.setAccessible(true);
+      REMOVE_REFERENCE = CLAZZ.getDeclaredMethod("removeReference");
+      REMOVE_REFERENCE.setAccessible(true);
     } catch (Exception e) {
-      throw new RuntimeException(e);
+      throw new ExceptionInInitializerError(e);
     }
   }
 
@@ -133,26 +145,18 @@ public class ReferencedObjectTest {
   }
 
   private static Object getObject(Object ref) throws Exception {
-    var m = CLAZZ.getDeclaredMethod("getObject");
-    m.setAccessible(true);
-    return m.invoke(ref);
+    return GET_OBJECT.invoke(ref);
   }
 
   private static boolean isReferenced(Object ref) throws Exception {
-    var m = CLAZZ.getDeclaredMethod("isReferenced");
-    m.setAccessible(true);
-    return (boolean) m.invoke(ref);
+    return (boolean) IS_REFERENCED.invoke(ref);
   }
 
   private static void addReference(Object ref) throws Exception {
-    var m = CLAZZ.getDeclaredMethod("addReference");
-    m.setAccessible(true);
-    m.invoke(ref);
+    ADD_REFERENCE.invoke(ref);
   }
 
   private static void removeReference(Object ref) throws Exception {
-    var m = CLAZZ.getDeclaredMethod("removeReference");
-    m.setAccessible(true);
-    m.invoke(ref);
+    REMOVE_REFERENCE.invoke(ref);
   }
 }

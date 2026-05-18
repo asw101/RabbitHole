@@ -189,9 +189,9 @@ public class PixelsLifecycleTest {
   }
 
   @Test
-  public void getRGBA_128x128() {
-    Pixels pixels = new Pixels(createTexture(128, 128));
-    assertEquals(128 * 128 * 4, pixels.getRGBA().capacity());
+  public void getRGBA_32x32() {
+    Pixels pixels = new Pixels(createTexture(32, 32));
+    assertEquals(32 * 32 * 4, pixels.getRGBA().capacity());
   }
 
   // ── Dimensions after release ──────────────────────────────────────
@@ -210,27 +210,34 @@ public class PixelsLifecycleTest {
     pixels.getHeight();
   }
 
-  // ── Helper ────────────────────────────────────────────────────────
+  // ── Helper — listener field cached to avoid repeated hierarchy walk ─
+
+  private static volatile Field cachedListenersField;
 
   private int getListenerCount(Texture texture) throws Exception {
-    Field listenersField = null;
-    Class<?> cls = texture.getClass();
-    while (cls != null) {
-      try {
-        listenersField = cls.getDeclaredField("textureListeners");
-        break;
-      } catch (NoSuchFieldException e) {
+    Field f = cachedListenersField;
+    if (f == null) {
+      Class<?> cls = texture.getClass();
+      while (cls != null) {
         try {
-          listenersField = cls.getDeclaredField("m_textureListeners");
+          f = cls.getDeclaredField("textureListeners");
           break;
-        } catch (NoSuchFieldException e2) {
-          cls = cls.getSuperclass();
+        } catch (NoSuchFieldException e) {
+          try {
+            f = cls.getDeclaredField("m_textureListeners");
+            break;
+          } catch (NoSuchFieldException e2) {
+            cls = cls.getSuperclass();
+          }
         }
       }
+      if (f != null) {
+        f.setAccessible(true);
+        cachedListenersField = f;
+      }
     }
-    if (listenersField != null) {
-      listenersField.setAccessible(true);
-      Object listeners = listenersField.get(texture);
+    if (f != null) {
+      Object listeners = f.get(texture);
       if (listeners instanceof java.util.List) {
         return ((java.util.List<?>) listeners).size();
       }

@@ -166,18 +166,27 @@ public class GlrMeshBufferSelectionTest {
     assertEquals(0, vb.capacity() % 3);
   }
 
-  // ── helpers ────────────────────────────────────────────────────────
+  // ── helpers — Field objects cached to avoid repeated lookup ─────────
+
+  private static final java.util.Map<String, Field> BUFFER_FIELDS = new java.util.HashMap<>();
+  static {
+    for (String name : new String[]{"vertexBuffer", "normalBuffer", "textCoordBuffer", "indexBuffer"}) {
+      try {
+        Field f = GlrMesh.class.getDeclaredField(name);
+        f.setAccessible(true);
+        BUFFER_FIELDS.put(name, f);
+      } catch (NoSuchFieldException e) {
+        throw new ExceptionInInitializerError(e);
+      }
+    }
+  }
 
   private Object getBufferField(TestableGlrMesh mesh, String fieldName) throws Exception {
-    Field f = GlrMesh.class.getDeclaredField(fieldName);
-    f.setAccessible(true);
-    return f.get(mesh);
+    return BUFFER_FIELDS.get(fieldName).get(mesh);
   }
 
   private void setBufferField(TestableGlrMesh mesh, String fieldName, Object value) throws Exception {
-    Field f = GlrMesh.class.getDeclaredField(fieldName);
-    f.setAccessible(true);
-    f.set(mesh, value);
+    BUFFER_FIELDS.get(fieldName).set(mesh, value);
   }
 
   /**

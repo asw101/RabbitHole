@@ -555,12 +555,20 @@ public class RenderContextTest {
   }
 
   // ═══════════════════════════════════════════════════════════════════
-  // Reflection helper
+  // Reflection helper — Field cached to avoid repeated lookup
   // ═══════════════════════════════════════════════════════════════════
 
+  private static final Field GLOBAL_OPACITY_FIELD;
+  static {
+    try {
+      GLOBAL_OPACITY_FIELD = RenderContext.class.getDeclaredField("globalOpacity");
+      GLOBAL_OPACITY_FIELD.setAccessible(true);
+    } catch (NoSuchFieldException e) {
+      throw new ExceptionInInitializerError(e);
+    }
+  }
+
   private static float getGlobalOpacity(RenderContext rc) throws Exception {
-    Field f = RenderContext.class.getDeclaredField("globalOpacity");
-    f.setAccessible(true);
-    return f.getFloat(rc);
+    return GLOBAL_OPACITY_FIELD.getFloat(rc);
   }
 }
