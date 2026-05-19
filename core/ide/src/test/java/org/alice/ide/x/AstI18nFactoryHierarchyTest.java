@@ -83,9 +83,8 @@ public class AstI18nFactoryHierarchyTest {
   }
 
   @Test
-  public void i18nFactory_hasNoPublicConstructors() {
+  public void i18nFactory_publicConstructorsAreZeroArg() {
     Constructor<?>[] ctors = I18nFactory.class.getConstructors();
-    // Abstract class: only default or protected constructors expected
     for (Constructor<?> ctor : ctors) {
       assertTrue("Public constructor should have 0 params",
           ctor.getParameterCount() == 0);
