@@ -1,6 +1,6 @@
 # How to run the core/croquet state management coverage tests
 
-This guide explains how to run, verify, and troubleshoot the 22 coverage test
+This guide explains how to run, verify, and troubleshoot the 25 coverage test
 files added by Issue #778 for the `core/croquet` state management framework.
 
 ## Prerequisites
@@ -20,7 +20,7 @@ No display, GPU, or network connection is required. All tests run headlessly.
 mvn test -pl core/croquet -Dtest="*CoverageTest" -DfailIfNoTests=false -q
 ```
 
-Expected: 465 tests, 0 failures, 0 errors.
+Expected: 530 tests, 0 failures, 0 errors.
 
 ## Run all core/croquet tests (including pre-existing)
 
@@ -142,26 +142,29 @@ fully qualified class name in the test.
 
 | # | File | Package | Lines | Tests |
 |---|---|---|---:|---:|
-| 1 | `BooleanStateCoverageTest.java` | `o.l.croquet` | 288 | 20 |
-| 2 | `BoundedIntegerStateCoverageTest.java` | `o.l.croquet` | 244 | 22 |
+| 1 | `BooleanStateCoverageTest.java` | `o.l.croquet` | 287 | 20 |
+| 2 | `BoundedIntegerStateCoverageTest.java` | `o.l.croquet` | 243 | 22 |
 | 3 | `BoundedDoubleStateCoverageTest.java` | `o.l.croquet` | 244 | 22 |
-| 4 | `StringStateCoverageTest.java` | `o.l.croquet` | 218 | 20 |
-| 5 | `EnumConstantStateCoverageTest.java` | `o.l.croquet` | 237 | 22 |
+| 4 | `StringStateCoverageTest.java` | `o.l.croquet` | 217 | 20 |
+| 5 | `EnumConstantStateCoverageTest.java` | `o.l.croquet` | 236 | 22 |
 | 6 | `ImmutableDataSingleSelectListStateCoverageTest.java` | `o.l.croquet` | 191 | 22 |
 | 7 | `MutableDataSingleSelectListStateCoverageTest.java` | `o.l.croquet` | 222 | 21 |
 | 8 | `RefreshableDataSingleSelectListStateCoverageTest.java` | `o.l.croquet` | 181 | 17 |
 | 9 | `ItemStateCoverageTest.java` | `o.l.croquet` | 224 | 19 |
-| 10 | `ColorStateCoverageTest.java` | `o.l.croquet` | 103 | 11 |
+| 10 | `ColorStateCoverageTest.java` | `o.l.croquet` | 87 | 11 |
 | 11 | `TabStateCoverageTest.java` | `o.l.croquet` | 103 | 15 |
 | 12 | `CustomItemStateCoverageTest.java` | `o.l.croquet` | 98 | 13 |
-| 13 | `EnumCodecCoverageTest.java` | `o.l.croquet.codecs` | 197 | 22 |
-| 14 | `AbstractItemCodecCoverageTest.java` | `o.l.croquet.codecs` | 157 | 13 |
-| 15 | `SimpleTabCompositeCodecCoverageTest.java` | `o.l.croquet.codecs` | 156 | 18 |
-| 16 | `AbstractEditCoverageTest.java` | `o.l.croquet.edits` | 262 | 29 |
-| 17 | `StateEditCoverageTest.java` | `o.l.croquet.edits` | 240 | 30 |
-| 18 | `StateTrackingMetaStateCoverageTest.java` | `o.l.croquet.meta` | 138 | 12 |
-| 19 | `PreferenceStringStateCoverageTest.java` | `o.l.croquet.preferences` | 185 | 18 |
-| 20 | `PreferenceMutableDataSingleSelectListStateCoverageTest.java` | `o.l.croquet.preferences` | 114 | 11 |
-| 21 | `TriggerBehaviorCoverageTest.java` | `o.l.croquet.triggers` | 250 | 25 |
-| 22 | `TriggerHierarchyCoverageTest.java` | `o.l.croquet.triggers` | 554 | 63 |
-| | **Total** | | **4,606** | **465** |
+| 13 | `EnumCodecCoverageTest.java` | `o.l.croquet.codecs` | 196 | 22 |
+| 14 | `AbstractItemCodecCoverageTest.java` | `o.l.croquet.codecs` | 150 | 13 |
+| 15 | `ColorCodecCoverageTest.java` | `o.l.croquet.codecs` | 221 | 28 |
+| 16 | `DefaultItemCodecCoverageTest.java` | `o.l.croquet.codecs` | 172 | 21 |
+| 17 | `FileCodecCoverageTest.java` | `o.l.croquet.codecs` | 151 | 17 |
+| 18 | `SimpleTabCompositeCodecCoverageTest.java` | `o.l.croquet.codecs` | 137 | 18 |
+| 19 | `AbstractEditCoverageTest.java` | `o.l.croquet.edits` | 262 | 29 |
+| 20 | `StateEditCoverageTest.java` | `o.l.croquet.edits` | 238 | 30 |
+| 21 | `StateTrackingMetaStateCoverageTest.java` | `o.l.croquet.meta` | 138 | 12 |
+| 22 | `PreferenceStringStateCoverageTest.java` | `o.l.croquet.preferences` | 185 | 18 |
+| 23 | `PreferenceMutableDataSingleSelectListStateCoverageTest.java` | `o.l.croquet.preferences` | 114 | 11 |
+| 24 | `TriggerBehaviorCoverageTest.java` | `o.l.croquet.triggers` | 235 | 25 |
+| 25 | `TriggerHierarchyCoverageTest.java` | `o.l.croquet.triggers` | 474 | 62 |
+| | **Total** | | **5,006** | **530** |

@@ -1,9 +1,9 @@
 # core/croquet state management deep dive — coverage reference
 
 > **Issue:** [#778](https://github.com/rysweet/RabbitHole/issues/778)
-> **Scope:** 22 new JUnit 4 test files covering state classes, codecs, edits, triggers, meta-state, and preferences in `core/croquet`
-> **Line count:** 4,606 lines of test code
-> **Tests:** 465 tests, all passing
+> **Scope:** 25 new JUnit 4 test files covering state classes, codecs, edits, triggers, meta-state, and preferences in `core/croquet`
+> **Line count:** 5,006 lines of test code
+> **Tests:** 530 tests, all passing
 > **Build verification:** `mvn test -pl core/croquet -Dtest="*CoverageTest" -DfailIfNoTests=false -q`
 
 ---
@@ -16,13 +16,13 @@ UI components. The tests cover six functional areas across six packages:
 
 | Area | Package(s) | Test Files | Tests | Lines |
 |---|---|---|---:|---:|
-| State classes | `o.l.croquet` | 12 | 247 | 2,553 |
-| Codecs | `o.l.croquet.codecs` | 3 | 53 | 510 |
-| Edits | `o.l.croquet.edits` | 2 | 59 | 502 |
-| Triggers | `o.l.croquet.triggers` | 2 | 88 | 804 |
+| State classes | `o.l.croquet` | 12 | 224 | 2,333 |
+| Codecs | `o.l.croquet.codecs` | 6 | 119 | 1,027 |
+| Edits | `o.l.croquet.edits` | 2 | 59 | 500 |
+| Triggers | `o.l.croquet.triggers` | 2 | 87 | 709 |
 | Meta-state | `o.l.croquet.meta` | 1 | 12 | 138 |
 | Preferences | `o.l.croquet.preferences` | 2 | 29 | 299 |
-| **Total** | | **22** | **465** | **4,606** |
+| **Total** | | **25** | **530** | **5,006** |
 
 All tests are JUnit 4 (`@Test`, `@Before`, `static org.junit.Assert.*`) and run
 headlessly — no display, no `Application` boot, no AWT event dispatch thread.

@@ -171,7 +171,7 @@ This pattern:
 5. Verifies package location
 
 `TriggerHierarchyCoverageTest` applies this pattern to all 21 trigger classes,
-making it the most comprehensive hierarchy test (63 tests, 554 lines).
+making it the most comprehensive hierarchy test (62 tests, 474 lines).
 
 ## Lesson 6: Edit testing patterns
 
