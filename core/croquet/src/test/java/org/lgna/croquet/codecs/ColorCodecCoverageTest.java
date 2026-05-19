@@ -148,13 +148,6 @@ public class ColorCodecCoverageTest {
     assertNull(ColorCodec.SINGLETON.decodeValue(decoder));
   }
 
-  @Test
-  public void encode_null_doesNotThrow() {
-    ByteArrayBinaryEncoder encoder = new ByteArrayBinaryEncoder();
-    ColorCodec.SINGLETON.encodeValue(encoder, null);
-    // success if no exception
-  }
-
   // ── multiple sequential encode/decode ──────────────────────────────
 
   @Test

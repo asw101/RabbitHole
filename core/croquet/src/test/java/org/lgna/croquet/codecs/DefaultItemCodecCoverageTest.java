@@ -98,17 +98,10 @@ public class DefaultItemCodecCoverageTest {
     assertEquals("prefix:val", sb.toString());
   }
 
-  // ── encode characterization: throws RuntimeException ──────────────
-
-  @Test(expected = RuntimeException.class)
-  public void encodeValue_throwsRuntimeException() {
-    DefaultItemCodec<String> codec = DefaultItemCodec.createInstance(String.class);
-    ByteArrayBinaryEncoder encoder = new ByteArrayBinaryEncoder();
-    codec.encodeValue(encoder, "test");
-  }
+  // ── encode characterization: throws RuntimeException("todo") ────
 
   @Test
-  public void encodeValue_exceptionMessage_containsTodo() {
+  public void encodeValue_throwsRuntimeExceptionWithTodoMessage() {
     DefaultItemCodec<String> codec = DefaultItemCodec.createInstance(String.class);
     ByteArrayBinaryEncoder encoder = new ByteArrayBinaryEncoder();
     try {
@@ -119,17 +112,10 @@ public class DefaultItemCodecCoverageTest {
     }
   }
 
-  // ── decode characterization: throws RuntimeException ──────────────
-
-  @Test(expected = RuntimeException.class)
-  public void decodeValue_throwsRuntimeException() {
-    DefaultItemCodec<String> codec = DefaultItemCodec.createInstance(String.class);
-    ByteArrayBinaryEncoder encoder = new ByteArrayBinaryEncoder();
-    codec.decodeValue(encoder.createDecoder());
-  }
+  // ── decode characterization: throws RuntimeException("todo") ────
 
   @Test
-  public void decodeValue_exceptionMessage_containsTodo() {
+  public void decodeValue_throwsRuntimeExceptionWithTodoMessage() {
     DefaultItemCodec<String> codec = DefaultItemCodec.createInstance(String.class);
     ByteArrayBinaryEncoder encoder = new ByteArrayBinaryEncoder();
     try {

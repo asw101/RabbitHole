@@ -36,62 +36,27 @@ public class TriggerHierarchyCoverageTest {
 
   @Test
   public void trigger_hasShowPopupMenu() {
-    boolean found = false;
-    for (Method m : Trigger.class.getDeclaredMethods()) {
-      if ("showPopupMenu".equals(m.getName())) {
-        found = true;
-        break;
-      }
-    }
-    assertTrue("Trigger should have showPopupMenu method", found);
+    assertHasMethod(Trigger.class, "showPopupMenu");
   }
 
   @Test
   public void trigger_hasEncode() {
-    boolean found = false;
-    for (Method m : Trigger.class.getDeclaredMethods()) {
-      if ("encode".equals(m.getName())) {
-        found = true;
-        break;
-      }
-    }
-    assertTrue("Trigger should have encode method", found);
+    assertHasMethod(Trigger.class, "encode");
   }
 
   @Test
   public void trigger_hasGetUserActivity() {
-    boolean found = false;
-    for (Method m : Trigger.class.getDeclaredMethods()) {
-      if ("getUserActivity".equals(m.getName())) {
-        found = true;
-        break;
-      }
-    }
-    assertTrue("Trigger should have getUserActivity method", found);
+    assertHasMethod(Trigger.class, "getUserActivity");
   }
 
   @Test
   public void trigger_hasGetViewController() {
-    boolean found = false;
-    for (Method m : Trigger.class.getDeclaredMethods()) {
-      if ("getViewController".equals(m.getName())) {
-        found = true;
-        break;
-      }
-    }
-    assertTrue("Trigger should have getViewController method", found);
+    assertHasMethod(Trigger.class, "getViewController");
   }
 
   @Test
   public void trigger_hasAppendRepr() {
-    boolean found = false;
-    for (Method m : Trigger.class.getDeclaredMethods()) {
-      if ("appendRepr".equals(m.getName())) {
-        found = true;
-        break;
-      }
-    }
-    assertTrue("Trigger should have appendRepr method", found);
+    assertHasMethod(Trigger.class, "appendRepr");
   }
 
   // ═══════════════════════════════════════════════════════════════════
@@ -110,14 +75,7 @@ public class TriggerHierarchyCoverageTest {
 
   @Test
   public void eventObjectTrigger_hasGetEvent() {
-    boolean found = false;
-    for (Method m : EventObjectTrigger.class.getDeclaredMethods()) {
-      if ("getEvent".equals(m.getName())) {
-        found = true;
-        break;
-      }
-    }
-    assertTrue("EventObjectTrigger should have getEvent", found);
+    assertHasMethod(EventObjectTrigger.class, "getEvent");
   }
 
   // ═══════════════════════════════════════════════════════════════════
@@ -332,14 +290,7 @@ public class TriggerHierarchyCoverageTest {
 
   @Test
   public void nullTrigger_hasCreateUserActivity() {
-    boolean found = false;
-    for (Method m : NullTrigger.class.getDeclaredMethods()) {
-      if ("createUserActivity".equals(m.getName()) && Modifier.isStatic(m.getModifiers())) {
-        found = true;
-        break;
-      }
-    }
-    assertTrue("NullTrigger should have static createUserActivity method", found);
+    assertHasStaticMethod(NullTrigger.class, "createUserActivity");
   }
 
   // ═══════════════════════════════════════════════════════════════════
@@ -366,14 +317,7 @@ public class TriggerHierarchyCoverageTest {
 
   @Test
   public void iterationTrigger_hasCreateUserInstance() {
-    boolean found = false;
-    for (Method m : IterationTrigger.class.getDeclaredMethods()) {
-      if ("createUserInstance".equals(m.getName()) && Modifier.isStatic(m.getModifiers())) {
-        found = true;
-        break;
-      }
-    }
-    assertTrue("IterationTrigger should have static createUserInstance", found);
+    assertHasStaticMethod(IterationTrigger.class, "createUserInstance");
   }
 
   // ═══════════════════════════════════════════════════════════════════
@@ -392,14 +336,7 @@ public class TriggerHierarchyCoverageTest {
 
   @Test
   public void changeEventTrigger_hasCreateUserInstance() {
-    boolean found = false;
-    for (Method m : ChangeEventTrigger.class.getDeclaredMethods()) {
-      if ("createUserInstance".equals(m.getName()) && Modifier.isStatic(m.getModifiers())) {
-        found = true;
-        break;
-      }
-    }
-    assertTrue("ChangeEventTrigger should have static createUserInstance", found);
+    assertHasStaticMethod(ChangeEventTrigger.class, "createUserInstance");
   }
 
   // ═══════════════════════════════════════════════════════════════════
@@ -418,14 +355,7 @@ public class TriggerHierarchyCoverageTest {
 
   @Test
   public void cascadeTrigger_hasCreateChildActivity() {
-    boolean found = false;
-    for (Method m : CascadeAutomaticDeterminationTrigger.class.getDeclaredMethods()) {
-      if ("createChildActivity".equals(m.getName()) && Modifier.isStatic(m.getModifiers())) {
-        found = true;
-        break;
-      }
-    }
-    assertTrue("CascadeAutomaticDeterminationTrigger should have static createChildActivity", found);
+    assertHasStaticMethod(CascadeAutomaticDeterminationTrigger.class, "createChildActivity");
   }
 
   // ═══════════════════════════════════════════════════════════════════
@@ -543,12 +473,24 @@ public class TriggerHierarchyCoverageTest {
   }
 
   // ═══════════════════════════════════════════════════════════════════
-  // Trigger count verification
+  // Helpers
   // ═══════════════════════════════════════════════════════════════════
 
-  @Test
-  public void triggerClassCount_is21() {
-    // 21 trigger classes in org.lgna.croquet.triggers package
-    assertEquals(21, 21);
+  private static void assertHasMethod(Class<?> cls, String methodName) {
+    for (Method m : cls.getDeclaredMethods()) {
+      if (methodName.equals(m.getName())) {
+        return;
+      }
+    }
+    fail(cls.getSimpleName() + " should have method " + methodName);
+  }
+
+  private static void assertHasStaticMethod(Class<?> cls, String methodName) {
+    for (Method m : cls.getDeclaredMethods()) {
+      if (methodName.equals(m.getName()) && Modifier.isStatic(m.getModifiers())) {
+        return;
+      }
+    }
+    fail(cls.getSimpleName() + " should have static method " + methodName);
   }
 }

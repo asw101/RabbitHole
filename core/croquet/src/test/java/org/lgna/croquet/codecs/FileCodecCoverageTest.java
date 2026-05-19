@@ -57,13 +57,6 @@ public class FileCodecCoverageTest {
   }
 
   @Test
-  public void encode_null_doesNotThrow() {
-    ByteArrayBinaryEncoder encoder = new ByteArrayBinaryEncoder();
-    FileCodec.SINGLETON.encodeValue(encoder, null);
-    // success if no exception
-  }
-
-  @Test
   public void roundTrip_multipleNulls_sequential() {
     ByteArrayBinaryEncoder encoder = new ByteArrayBinaryEncoder();
     FileCodec.SINGLETON.encodeValue(encoder, null);
@@ -73,16 +66,10 @@ public class FileCodecCoverageTest {
     assertNull(FileCodec.SINGLETON.decodeValue(decoder));
   }
 
-  // ── non-null encode characterization: throws RuntimeException ─────
-
-  @Test(expected = RuntimeException.class)
-  public void encodeValue_nonNull_throwsRuntimeException() {
-    ByteArrayBinaryEncoder encoder = new ByteArrayBinaryEncoder();
-    FileCodec.SINGLETON.encodeValue(encoder, new File("/tmp/test.txt"));
-  }
+  // ── non-null encode characterization: throws RuntimeException("todo") ─
 
   @Test
-  public void encodeValue_nonNull_exceptionMessage_containsTodo() {
+  public void encodeValue_nonNull_throwsRuntimeExceptionWithTodoMessage() {
     ByteArrayBinaryEncoder encoder = new ByteArrayBinaryEncoder();
     try {
       FileCodec.SINGLETON.encodeValue(encoder, new File("/tmp/test.txt"));
@@ -92,19 +79,10 @@ public class FileCodecCoverageTest {
     }
   }
 
-  // ── non-null decode characterization: throws RuntimeException ─────
-
-  @Test(expected = RuntimeException.class)
-  public void decodeValue_nonNull_throwsRuntimeException() {
-    // Encode a "not null" flag (true) followed by attempt to decode
-    ByteArrayBinaryEncoder encoder = new ByteArrayBinaryEncoder();
-    encoder.encode(true); // write isNotNull = true
-    BinaryDecoder decoder = encoder.createDecoder();
-    FileCodec.SINGLETON.decodeValue(decoder);
-  }
+  // ── non-null decode characterization: throws RuntimeException("todo") ─
 
   @Test
-  public void decodeValue_nonNull_exceptionMessage_containsTodo() {
+  public void decodeValue_nonNull_throwsRuntimeExceptionWithTodoMessage() {
     ByteArrayBinaryEncoder encoder = new ByteArrayBinaryEncoder();
     encoder.encode(true); // write isNotNull = true
     BinaryDecoder decoder = encoder.createDecoder();
