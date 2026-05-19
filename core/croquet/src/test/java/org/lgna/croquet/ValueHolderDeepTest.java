@@ -124,6 +124,60 @@ public class ValueHolderDeepTest {
     assertTrue(captured.isEmpty());
   }
 
+  // ── Same-value no-op ─────────────────────────────────────────────
+
+  @Test
+  public void setValue_sameValue_isNoOp() {
+    holder.addValueListener(listener);
+    holder.setValue(0);
+    assertTrue(events.isEmpty());
+    assertEquals(Integer.valueOf(0), holder.getValue());
+  }
+
+  @Test
+  public void setValue_nonNullToNull_firesEvent() {
+    ValueHolder<String> h = ValueHolder.createInstance("hello");
+    List<ValueEvent<String>> captured = new ArrayList<>();
+    h.addValueListener(captured::add);
+
+    h.setValue(null);
+
+    assertNull(h.getValue());
+    assertEquals(1, captured.size());
+    assertEquals("hello", captured.get(0).getPreviousValue());
+    assertNull(captured.get(0).getNextValue());
+  }
+
+  // ── Remove listener stops notifications ────────────────────────────
+
+  @Test
+  public void removeValueListener_stopsNotifications() {
+    holder.addValueListener(listener);
+    holder.removeValueListener(listener);
+    holder.setValue(99);
+    assertTrue(events.isEmpty());
+  }
+
+  // ── Add listener during notification ───────────────────────────────
+
+  @Test
+  public void addListenerDuringNotification_doesNotFail() {
+    final AtomicInteger firstCount = new AtomicInteger();
+    final AtomicInteger secondCount = new AtomicInteger();
+    final ValueListener<Integer> secondListener = e -> secondCount.incrementAndGet();
+
+    holder.addValueListener(e -> {
+      firstCount.incrementAndGet();
+      holder.addValueListener(secondListener);
+    });
+
+    holder.setValue(1);
+    holder.setValue(2);
+
+    assertEquals(2, firstCount.get());
+    assertEquals(1, secondCount.get());
+  }
+
   // ── Remove during iteration ────────────────────────────────────────
 
   @Test

@@ -10,6 +10,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Proxy;
 import java.util.UUID;
 
 import static org.junit.Assert.*;
@@ -199,6 +200,68 @@ public class LabelMenuSeparatorModelTest {
   @Test
   public void inheritsFromAbstractElement() {
     assertTrue(AbstractElement.class.isAssignableFrom(LabelMenuSeparatorModel.class));
+  }
+
+  // ── createMenuItemAndAddTo behavior ─────────────────────────────────
+
+  @Test
+  public void createMenuItemAndAddTo_withName_addsTextSeparator() throws Exception {
+    Field nameField = LabelMenuSeparatorModel.class.getDeclaredField("name");
+    nameField.setAccessible(true);
+    model.initializeIfNecessary();
+    nameField.set(model, "Visible Label");
+    SeparatorCapture capture = new SeparatorCapture();
+
+    org.lgna.croquet.views.MenuTextSeparator separator =
+        model.createMenuItemAndAddTo(createMenuItemContainer(capture));
+
+    assertNotNull(separator);
+    assertSame(separator, capture.textSeparator);
+    assertFalse(capture.plainSeparatorAdded);
+  }
+
+  @Test
+  public void createMenuItemAndAddTo_withoutNameOrIcon_addsPlainSeparator() {
+    SeparatorCapture capture = new SeparatorCapture();
+
+    org.lgna.croquet.views.MenuTextSeparator separator =
+        model.createMenuItemAndAddTo(createMenuItemContainer(capture));
+
+    assertNull(separator);
+    assertTrue(capture.plainSeparatorAdded);
+    assertNull(capture.textSeparator);
+  }
+
+  private static org.lgna.croquet.views.MenuItemContainer createMenuItemContainer(
+      final SeparatorCapture capture) {
+    return (org.lgna.croquet.views.MenuItemContainer) Proxy.newProxyInstance(
+        LabelMenuSeparatorModelTest.class.getClassLoader(),
+        new Class<?>[] { org.lgna.croquet.views.MenuItemContainer.class },
+        (proxy, method, args) -> {
+          if ("addSeparator".equals(method.getName())) {
+            if ((args == null) || (args.length == 0)) {
+              capture.plainSeparatorAdded = true;
+            } else {
+              capture.textSeparator = (org.lgna.croquet.views.MenuTextSeparator) args[0];
+            }
+            return null;
+          }
+          Class<?> rt = method.getReturnType();
+          if (rt == boolean.class) return false;
+          if (rt == int.class) return 0;
+          if (rt == long.class) return 0L;
+          if (rt == double.class) return 0.0d;
+          if (rt == float.class) return 0.0f;
+          if (rt == short.class) return (short) 0;
+          if (rt == byte.class) return (byte) 0;
+          if (rt == char.class) return (char) 0;
+          return null;
+        });
+  }
+
+  private static final class SeparatorCapture {
+    private boolean plainSeparatorAdded;
+    private org.lgna.croquet.views.MenuTextSeparator textSeparator;
   }
 
   private static Icon createTestIcon(int w, int h) {
