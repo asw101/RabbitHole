@@ -1,6 +1,7 @@
 package org.alice.imageeditor.croquet;
 
 import org.alice.imageeditor.croquet.views.SaveOverPane;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.lang.reflect.Method;
@@ -14,36 +15,34 @@ import static org.junit.Assert.*;
 
 public class SaveOverPaneCoverageTest {
 
-  @Test
-  public void construction_throughCompositeChain_succeeds() throws Exception {
+  private static TestSupport.HeadlessImageEditorFrame sharedFrame;
+  private static SaveOperation sharedOp;
+  private static SaveOverComposite sharedComposite;
+  private static SaveOverPane sharedPane;
+
+  @BeforeClass
+  public static void setUpClass() throws Exception {
     TestSupport.onEdt(() -> {
-      TestSupport.HeadlessImageEditorFrame frame = new TestSupport.HeadlessImageEditorFrame();
-      SaveOperation op = new SaveOperation(frame);
-      SaveOverComposite composite = new SaveOverComposite(op);
-      SaveOverPane pane = new SaveOverPane(composite);
-      assertNotNull(pane);
+      sharedFrame = new TestSupport.HeadlessImageEditorFrame();
+      sharedOp = new SaveOperation(sharedFrame);
+      sharedComposite = new SaveOverComposite(sharedOp);
+      sharedPane = new SaveOverPane(sharedComposite);
     });
   }
 
   @Test
-  public void getComposite_returnsExpectedComposite() throws Exception {
-    TestSupport.onEdt(() -> {
-      TestSupport.HeadlessImageEditorFrame frame = new TestSupport.HeadlessImageEditorFrame();
-      SaveOperation op = new SaveOperation(frame);
-      SaveOverComposite composite = new SaveOverComposite(op);
-      SaveOverPane pane = new SaveOverPane(composite);
-      assertSame(composite, pane.getComposite());
-    });
+  public void construction_throughCompositeChain_succeeds() {
+    assertNotNull(sharedPane);
   }
 
   @Test
-  public void compositeOwner_isOriginalOperation() throws Exception {
-    TestSupport.onEdt(() -> {
-      TestSupport.HeadlessImageEditorFrame frame = new TestSupport.HeadlessImageEditorFrame();
-      SaveOperation op = new SaveOperation(frame);
-      SaveOverComposite composite = new SaveOverComposite(op);
-      assertSame(op, composite.getOwner());
-    });
+  public void getComposite_returnsExpectedComposite() {
+    assertSame(sharedComposite, sharedPane.getComposite());
+  }
+
+  @Test
+  public void compositeOwner_isOriginalOperation() {
+    assertSame(sharedOp, sharedComposite.getOwner());
   }
 
   @Test

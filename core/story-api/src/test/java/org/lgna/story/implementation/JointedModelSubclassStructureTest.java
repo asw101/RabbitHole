@@ -12,15 +12,6 @@ import org.lgna.story.STransport;
 import org.lgna.story.SVRHand;
 import org.lgna.story.SVRHeadset;
 import org.lgna.story.SVRUser;
-import org.lgna.story.resources.BasicResource;
-import org.lgna.story.resources.BipedResource;
-import org.lgna.story.resources.FlyerResource;
-import org.lgna.story.resources.JointedModelResource;
-import org.lgna.story.resources.QuadrupedResource;
-import org.lgna.story.resources.SlithererResource;
-import org.lgna.story.resources.SwimmerResource;
-import org.lgna.story.resources.TransportResource;
-
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -47,27 +38,6 @@ public class JointedModelSubclassStructureTest {
       SwimmerImp.class,
       TransportImp.class,
       BasicJointedModelImp.class
-  );
-
-  @SuppressWarnings("rawtypes")
-  private static final List<Class<? extends JointedModelResource>> RESOURCE_TYPES = List.of(
-      BipedResource.class,
-      FlyerResource.class,
-      QuadrupedResource.class,
-      SlithererResource.class,
-      SwimmerResource.class,
-      TransportResource.class,
-      BasicResource.class
-  );
-
-  private static final List<Class<?>> ABSTRACTION_TYPES = List.of(
-      SBiped.class,
-      SFlyer.class,
-      SQuadruped.class,
-      SSlitherer.class,
-      SSwimmer.class,
-      STransport.class,
-      SJointedModel.class
   );
 
   // ══════════════════════════════════════════════════════════════════════
@@ -176,21 +146,10 @@ public class JointedModelSubclassStructureTest {
   @Test
   public void allJointedModelSubclasses_declareGetResource() {
     for (Class<?> cls : JOINTED_MODEL_SUBCLASSES) {
-      // getResource is inherited from JointedModelImp — verify it's accessible
-      boolean found = Arrays.stream(cls.getMethods())
-          .anyMatch(m -> m.getName().equals("getResource"));
-      assertTrue(cls.getSimpleName() + " missing getResource", found);
-    }
-  }
-
-  @Test
-  public void allJointedModelSubclasses_getResourceReturnsCorrectType() {
-    for (int i = 0; i < JOINTED_MODEL_SUBCLASSES.size(); i++) {
-      Class<?> cls = JOINTED_MODEL_SUBCLASSES.get(i);
       Method getResource = Arrays.stream(cls.getMethods())
           .filter(m -> m.getName().equals("getResource"))
           .findFirst().orElse(null);
-      assertNotNull(cls.getSimpleName() + " should have getResource", getResource);
+      assertNotNull(cls.getSimpleName() + " missing getResource", getResource);
     }
   }
 

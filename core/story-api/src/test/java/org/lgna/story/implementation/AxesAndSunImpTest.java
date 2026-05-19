@@ -95,10 +95,9 @@ public class AxesAndSunImpTest {
   public void axes_instanceRegistryWorks() {
     SAxes axes = new SAxes();
     Visual[] visuals = axes.getImplementation().getSgVisuals();
-    if (visuals.length > 0) {
-      EntityImp imp = EntityImp.getInstance(visuals[0]);
-      assertSame(axes.getImplementation(), imp);
-    }
+    assertTrue("Axes should have visuals for registry test", visuals.length > 0);
+    EntityImp imp = EntityImp.getInstance(visuals[0]);
+    assertSame(axes.getImplementation(), imp);
   }
 
   @Test

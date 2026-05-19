@@ -1,6 +1,7 @@
 package org.alice.imageeditor.croquet;
 
 import org.alice.imageeditor.croquet.views.ImageEditorPane;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.lang.reflect.Method;
@@ -14,22 +15,25 @@ import static org.junit.Assert.*;
 
 public class ImageEditorPaneCoverageTest {
 
-  @Test
-  public void headlessConstruction_succeeds() throws Exception {
+  private static TestSupport.HeadlessImageEditorFrame sharedFrame;
+  private static TestSupport.HeadlessImageEditorPane sharedPane;
+
+  @BeforeClass
+  public static void setUpClass() throws Exception {
     TestSupport.onEdt(() -> {
-      TestSupport.HeadlessImageEditorFrame frame = new TestSupport.HeadlessImageEditorFrame();
-      TestSupport.HeadlessImageEditorPane pane = new TestSupport.HeadlessImageEditorPane(frame);
-      assertNotNull(pane);
+      sharedFrame = new TestSupport.HeadlessImageEditorFrame();
+      sharedPane = new TestSupport.HeadlessImageEditorPane(sharedFrame);
     });
   }
 
   @Test
-  public void headlessPane_getComposite_returnsFrame() throws Exception {
-    TestSupport.onEdt(() -> {
-      TestSupport.HeadlessImageEditorFrame frame = new TestSupport.HeadlessImageEditorFrame();
-      TestSupport.HeadlessImageEditorPane pane = new TestSupport.HeadlessImageEditorPane(frame);
-      assertSame(frame, pane.getComposite());
-    });
+  public void headlessConstruction_succeeds() {
+    assertNotNull(sharedPane);
+  }
+
+  @Test
+  public void headlessPane_getComposite_returnsFrame() {
+    assertSame(sharedFrame, sharedPane.getComposite());
   }
 
   @Test

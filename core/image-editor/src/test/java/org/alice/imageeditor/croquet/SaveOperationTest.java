@@ -10,26 +10,31 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+import org.junit.BeforeClass;
+
 import static org.junit.Assert.*;
 
 public class SaveOperationTest {
 
-  @Test
-  public void construction_headlessFrame_succeeds() throws Exception {
+  private static TestSupport.HeadlessImageEditorFrame sharedFrame;
+  private static SaveOperation sharedOp;
+
+  @BeforeClass
+  public static void setUpClass() throws Exception {
     TestSupport.onEdt(() -> {
-      TestSupport.HeadlessImageEditorFrame frame = new TestSupport.HeadlessImageEditorFrame();
-      SaveOperation op = new SaveOperation(frame);
-      assertNotNull(op);
+      sharedFrame = new TestSupport.HeadlessImageEditorFrame();
+      sharedOp = new SaveOperation(sharedFrame);
     });
   }
 
   @Test
-  public void getOwner_returnsConstructorArgument() throws Exception {
-    TestSupport.onEdt(() -> {
-      TestSupport.HeadlessImageEditorFrame frame = new TestSupport.HeadlessImageEditorFrame();
-      SaveOperation op = new SaveOperation(frame);
-      assertSame(frame, op.getOwner());
-    });
+  public void construction_headlessFrame_succeeds() {
+    assertNotNull(sharedOp);
+  }
+
+  @Test
+  public void getOwner_returnsConstructorArgument() {
+    assertSame(sharedFrame, sharedOp.getOwner());
   }
 
   @Test
