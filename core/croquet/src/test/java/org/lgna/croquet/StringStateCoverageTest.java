@@ -9,7 +9,6 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.*;
 

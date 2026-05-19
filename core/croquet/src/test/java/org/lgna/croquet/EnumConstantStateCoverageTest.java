@@ -2,7 +2,6 @@ package org.lgna.croquet;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.lgna.croquet.codecs.EnumCodec;
 import org.lgna.croquet.data.ImmutableListData;
 
 import java.util.UUID;

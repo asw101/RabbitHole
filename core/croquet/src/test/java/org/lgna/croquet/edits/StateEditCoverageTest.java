@@ -1,9 +1,7 @@
 package org.lgna.croquet.edits;
 
-import org.junit.Before;
 import org.junit.Test;
 import org.lgna.croquet.*;
-import org.lgna.croquet.history.UserActivity;
 
 import java.lang.reflect.Modifier;
 import java.util.UUID;

@@ -5,7 +5,6 @@ import edu.cmu.cs.dennisc.codec.ByteArrayBinaryEncoder;
 import org.junit.Before;
 import org.junit.Test;
 
-import javax.swing.DefaultButtonModel;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
