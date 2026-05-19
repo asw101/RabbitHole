@@ -7,7 +7,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Map;
-import java.util.UUID;
 
 import static org.junit.Assert.*;
 
@@ -103,35 +102,21 @@ public class AstI18nFactoryCroquetTest {
   @Test
   public void cascade_hasCreateExpressionPropertyEdit() throws ClassNotFoundException {
     Class<?> cls = Class.forName(CASCADE_FQN);
-    boolean found = false;
     for (Method m : cls.getDeclaredMethods()) {
       if (m.getName().equals("createExpressionPropertyEdit")) {
-        found = true;
         assertTrue(Modifier.isProtected(m.getModifiers()));
         assertFalse(Modifier.isAbstract(m.getModifiers()));
+        return;
       }
     }
-    assertTrue("createExpressionPropertyEdit not found", found);
+    fail("createExpressionPropertyEdit not found");
   }
 
   @Test
   public void cascade_hasUuidField() throws ClassNotFoundException {
     Class<?> cls = Class.forName(CASCADE_FQN);
-    // The UUID is in the superclass AbstractArgumentCascade -> ExpressionPropertyCascade -> CascadeRoot
-    // Verify the class has inherited ID by checking it's a Cascade (which has UUID)
-    boolean hasId = false;
-    Class<?> current = cls;
-    while (current != null && !current.equals(Object.class)) {
-      for (Field f : current.getDeclaredFields()) {
-        if (f.getType().equals(UUID.class)) {
-          hasId = true;
-          break;
-        }
-      }
-      current = current.getSuperclass();
-    }
-    // UUID may be in CascadeRoot or higher — just verify the class loads and
-    // can be inspected through its hierarchy
+    // UUID is inherited from CascadeRoot or higher in the hierarchy;
+    // verify the hierarchy is inspectable
     assertNotNull(cls.getSuperclass());
   }
 
@@ -227,16 +212,15 @@ public class AstI18nFactoryCroquetTest {
   @Test
   public void edit_hasSetValue() throws ClassNotFoundException {
     Class<?> cls = Class.forName(EDIT_FQN);
-    boolean found = false;
     for (Method m : cls.getDeclaredMethods()) {
       if (m.getName().equals("setValue")) {
-        found = true;
         assertTrue(Modifier.isProtected(m.getModifiers()));
         assertEquals(1, m.getParameterCount());
         assertEquals("Expression", m.getParameterTypes()[0].getSimpleName());
+        return;
       }
     }
-    assertTrue("setValue method not found", found);
+    fail("setValue method not found");
   }
 
   @Test

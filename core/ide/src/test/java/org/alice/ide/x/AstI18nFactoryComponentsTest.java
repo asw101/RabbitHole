@@ -9,6 +9,8 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.junit.Assert.*;
 
@@ -23,13 +25,30 @@ import static org.junit.Assert.*;
 public class AstI18nFactoryComponentsTest {
 
   private static final String PKG = "org.alice.ide.x.components.";
+  private static final Map<String, Class<?>> CLASS_CACHE = new HashMap<>();
+
+  private static final String[] ALL_COMPONENT_NAMES = {
+      "AbstractExpressionView", "ExpressionView", "ExpressionPropertyView",
+      "ArgumentView", "ArgumentListPropertyView", "ArgumentListPropertyPane",
+      "KeyedArgumentView", "KeyedArgumentListPropertyView",
+      "NodePropertyView", "FieldAccessView", "InfixExpressionView",
+      "InstanceCreationView", "InstancePropertyLabelView", "ListPropertyLabelsView",
+      "ResourcePropertyView", "StatementListPropertyView",
+      "ExpressionListPropertyPane", "ThisExpressionLikeView"
+  };
 
   // ========================================================================
   // Helper methods
   // ========================================================================
 
   private Class<?> loadComponent(String simpleName) throws ClassNotFoundException {
-    return Class.forName(PKG + simpleName);
+    Class<?> cached = CLASS_CACHE.get(simpleName);
+    if (cached != null) {
+      return cached;
+    }
+    Class<?> cls = Class.forName(PKG + simpleName);
+    CLASS_CACHE.put(simpleName, cls);
+    return cls;
   }
 
   // ========================================================================
@@ -445,15 +464,14 @@ public class AstI18nFactoryComponentsTest {
   @Test
   public void argumentListPropertyPane_hasIsComponentDesiredFor() throws ClassNotFoundException {
     Class<?> cls = loadComponent("ArgumentListPropertyPane");
-    boolean found = false;
     for (Method m : cls.getDeclaredMethods()) {
       if (m.getName().equals("isComponentDesiredFor")) {
-        found = true;
         assertTrue(Modifier.isProtected(m.getModifiers()));
         assertEquals(boolean.class, m.getReturnType());
+        return;
       }
     }
-    assertTrue("isComponentDesiredFor method not found", found);
+    fail("isComponentDesiredFor method not found");
   }
 
   // ========================================================================
@@ -579,14 +597,13 @@ public class AstI18nFactoryComponentsTest {
   @Test
   public void nodePropertyView_hasCreateComponent() throws ClassNotFoundException {
     Class<?> cls = loadComponent("NodePropertyView");
-    boolean found = false;
     for (Method m : cls.getDeclaredMethods()) {
       if (m.getName().equals("createComponent") && m.getParameterCount() == 1) {
-        found = true;
         assertTrue(Modifier.isProtected(m.getModifiers()));
+        return;
       }
     }
-    assertTrue("createComponent method not found", found);
+    fail("createComponent method not found");
   }
 
   @Test
@@ -791,14 +808,13 @@ public class AstI18nFactoryComponentsTest {
   @Test
   public void listPropertyLabelsView_hasCreateComponent() throws ClassNotFoundException {
     Class<?> cls = loadComponent("ListPropertyLabelsView");
-    boolean found = false;
     for (Method m : cls.getDeclaredMethods()) {
       if (m.getName().equals("createComponent")) {
-        found = true;
         assertTrue(Modifier.isProtected(m.getModifiers()));
+        return;
       }
     }
-    assertTrue("createComponent not found", found);
+    fail("createComponent not found");
   }
 
   @Test
@@ -1013,29 +1029,27 @@ public class AstI18nFactoryComponentsTest {
   @Test
   public void statementListPropertyView_hasFeedbackJPanelInnerClass() throws ClassNotFoundException {
     Class<?> cls = loadComponent("StatementListPropertyView");
-    boolean found = false;
     for (Class<?> inner : cls.getDeclaredClasses()) {
       if (inner.getSimpleName().equals("FeedbackJPanel")) {
-        found = true;
         assertTrue(Modifier.isPublic(inner.getModifiers()));
         assertFalse(Modifier.isStatic(inner.getModifiers()));
+        return;
       }
     }
-    assertTrue("FeedbackJPanel inner class not found", found);
+    fail("FeedbackJPanel inner class not found");
   }
 
   @Test
   public void statementListPropertyView_hasBoundInformationInnerClass() throws ClassNotFoundException {
     Class<?> cls = loadComponent("StatementListPropertyView");
-    boolean found = false;
     for (Class<?> inner : cls.getDeclaredClasses()) {
       if (inner.getSimpleName().equals("BoundInformation")) {
-        found = true;
         assertTrue(Modifier.isPublic(inner.getModifiers()));
         assertTrue(Modifier.isStatic(inner.getModifiers()));
+        return;
       }
     }
-    assertTrue("BoundInformation inner class not found", found);
+    fail("BoundInformation inner class not found");
   }
 
   @Test
@@ -1071,27 +1085,25 @@ public class AstI18nFactoryComponentsTest {
   @Test
   public void expressionListPropertyPane_hasCreateInterstitial() throws ClassNotFoundException {
     Class<?> cls = loadComponent("ExpressionListPropertyPane");
-    boolean found = false;
     for (Method m : cls.getDeclaredMethods()) {
       if (m.getName().equals("createInterstitial")) {
-        found = true;
         assertTrue(Modifier.isProtected(m.getModifiers()));
+        return;
       }
     }
-    assertTrue("createInterstitial not found", found);
+    fail("createInterstitial not found");
   }
 
   @Test
   public void expressionListPropertyPane_hasCreateComponent() throws ClassNotFoundException {
     Class<?> cls = loadComponent("ExpressionListPropertyPane");
-    boolean found = false;
     for (Method m : cls.getDeclaredMethods()) {
       if (m.getName().equals("createComponent")) {
-        found = true;
         assertTrue(Modifier.isProtected(m.getModifiers()));
+        return;
       }
     }
-    assertTrue("createComponent not found", found);
+    fail("createComponent not found");
   }
 
   @Test
@@ -1199,16 +1211,7 @@ public class AstI18nFactoryComponentsTest {
 
   @Test
   public void allComponentClasses_inCorrectPackage() throws ClassNotFoundException {
-    String[] names = {
-        "AbstractExpressionView", "ExpressionView", "ExpressionPropertyView",
-        "ArgumentView", "ArgumentListPropertyView", "ArgumentListPropertyPane",
-        "KeyedArgumentView", "KeyedArgumentListPropertyView",
-        "NodePropertyView", "FieldAccessView", "InfixExpressionView",
-        "InstanceCreationView", "InstancePropertyLabelView", "ListPropertyLabelsView",
-        "ResourcePropertyView", "StatementListPropertyView",
-        "ExpressionListPropertyPane", "ThisExpressionLikeView"
-    };
-    for (String name : names) {
+    for (String name : ALL_COMPONENT_NAMES) {
       Class<?> cls = loadComponent(name);
       assertEquals("org.alice.ide.x.components", cls.getPackage().getName());
     }
@@ -1216,16 +1219,7 @@ public class AstI18nFactoryComponentsTest {
 
   @Test
   public void allComponentClasses_arePublic() throws ClassNotFoundException {
-    String[] names = {
-        "AbstractExpressionView", "ExpressionView", "ExpressionPropertyView",
-        "ArgumentView", "ArgumentListPropertyView", "ArgumentListPropertyPane",
-        "KeyedArgumentView", "KeyedArgumentListPropertyView",
-        "NodePropertyView", "FieldAccessView", "InfixExpressionView",
-        "InstanceCreationView", "InstancePropertyLabelView", "ListPropertyLabelsView",
-        "ResourcePropertyView", "StatementListPropertyView",
-        "ExpressionListPropertyPane", "ThisExpressionLikeView"
-    };
-    for (String name : names) {
+    for (String name : ALL_COMPONENT_NAMES) {
       Class<?> cls = loadComponent(name);
       assertTrue(name + " should be public", Modifier.isPublic(cls.getModifiers()));
     }
@@ -1233,7 +1227,8 @@ public class AstI18nFactoryComponentsTest {
 
   @Test
   public void allComponentClasses_firstConstructorParamIsFactory() throws ClassNotFoundException {
-    String[] names = {
+    // ArgumentView and ThisExpressionLikeView have different constructor patterns
+    String[] factoryCtorNames = {
         "AbstractExpressionView", "ExpressionView", "ExpressionPropertyView",
         "ArgumentListPropertyView", "ArgumentListPropertyPane",
         "KeyedArgumentView", "KeyedArgumentListPropertyView",
@@ -1242,7 +1237,7 @@ public class AstI18nFactoryComponentsTest {
         "ResourcePropertyView", "StatementListPropertyView",
         "ExpressionListPropertyPane"
     };
-    for (String name : names) {
+    for (String name : factoryCtorNames) {
       Class<?> cls = loadComponent(name);
       Constructor<?>[] ctors = cls.getDeclaredConstructors();
       assertTrue(name + " should have at least one constructor", ctors.length > 0);

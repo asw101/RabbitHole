@@ -8,7 +8,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.UUID;
 
 import static org.junit.Assert.*;
 
@@ -205,13 +204,12 @@ public class JavaCodeViewTest {
   @Test
   public void composite_hasSingletonHolder() throws ClassNotFoundException {
     Class<?> cls = Class.forName(COMPOSITE_FQN);
-    boolean found = false;
     for (Class<?> inner : cls.getDeclaredClasses()) {
       if (inner.getSimpleName().equals("SingletonHolder")) {
-        found = true;
+        return;
       }
     }
-    assertTrue("SingletonHolder not found", found);
+    fail("SingletonHolder not found");
   }
 
   @Test

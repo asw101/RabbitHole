@@ -39,15 +39,14 @@ public class AstI18nFactoryHierarchyTest {
   }
 
   private void assertSingletonHolder(Class<?> cls) {
-    boolean found = false;
     for (Class<?> c : cls.getDeclaredClasses()) {
       if (c.getSimpleName().equals("SingletonHolder")) {
-        found = true;
         assertTrue(Modifier.isPrivate(c.getModifiers()));
         assertTrue(Modifier.isStatic(c.getModifiers()));
+        return;
       }
     }
-    assertTrue("SingletonHolder inner class not found", found);
+    fail("SingletonHolder inner class not found in " + cls.getSimpleName());
   }
 
   private void assertInheritanceChain(Class<?> cls, Class<?>... chain) {
