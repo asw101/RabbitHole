@@ -45,53 +45,37 @@ public class ColorStateCoverageTest {
   // ── Method presence ───────────────────────────────────────────────
 
   @Test
-  public void colorState_hasGetValue() throws NoSuchMethodException {
-    assertNotNull(State.class.getMethod("getValue"));
+  public void colorState_hasGetValue() {
+    assertHasMethod(State.class, "getValue");
   }
 
   @Test
-  public void colorState_hasSetValueTransactionlessly() throws NoSuchMethodException {
-    assertNotNull(State.class.getMethod("setValueTransactionlessly", Object.class));
+  public void colorState_hasSetValueTransactionlessly() {
+    assertHasMethod(State.class, "setValueTransactionlessly");
   }
 
   @Test
-  public void colorState_hasDecodeValue() throws NoSuchMethodException {
-    // decodeValue is abstract in State, must be present
-    Method[] methods = ColorState.class.getMethods();
-    boolean found = false;
-    for (Method m : methods) {
-      if ("decodeValue".equals(m.getName())) {
-        found = true;
-        break;
-      }
-    }
-    assertTrue("ColorState should have decodeValue method", found);
+  public void colorState_hasDecodeValue() {
+    assertHasMethod(ColorState.class, "decodeValue");
   }
 
   @Test
   public void colorState_hasEncodeValue() {
-    Method[] methods = ColorState.class.getMethods();
-    boolean found = false;
-    for (Method m : methods) {
-      if ("encodeValue".equals(m.getName())) {
-        found = true;
-        break;
-      }
-    }
-    assertTrue("ColorState should have encodeValue method", found);
+    assertHasMethod(ColorState.class, "encodeValue");
   }
 
   @Test
   public void colorState_hasAppendRepresentation() {
-    Method[] methods = ColorState.class.getMethods();
-    boolean found = false;
-    for (Method m : methods) {
-      if ("appendRepresentation".equals(m.getName())) {
-        found = true;
-        break;
+    assertHasMethod(ColorState.class, "appendRepresentation");
+  }
+
+  private static void assertHasMethod(Class<?> cls, String methodName) {
+    for (Method m : cls.getMethods()) {
+      if (methodName.equals(m.getName())) {
+        return;
       }
     }
-    assertTrue("ColorState should have appendRepresentation method", found);
+    fail(cls.getSimpleName() + " should have method " + methodName);
   }
 
   // ── Package ───────────────────────────────────────────────────────

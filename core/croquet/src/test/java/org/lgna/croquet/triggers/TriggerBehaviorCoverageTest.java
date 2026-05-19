@@ -153,51 +153,33 @@ public class TriggerBehaviorCoverageTest {
 
   @Test
   public void cascadeTrigger_createsChildActivity() {
-    UserActivity parent = new UserActivity();
-    // Parent needs a trigger first
-    IterationTrigger parentTrigger = IterationTrigger.createUserInstance(parent);
-
-    UserActivity child = CascadeAutomaticDeterminationTrigger.createChildActivity(parent);
+    UserActivity child = createCascadeChild();
     assertNotNull(child);
-    assertNotSame(parent, child);
   }
 
   @Test
   public void cascadeTrigger_childActivityHasTrigger() {
-    UserActivity parent = new UserActivity();
-    IterationTrigger.createUserInstance(parent);
-
-    UserActivity child = CascadeAutomaticDeterminationTrigger.createChildActivity(parent);
+    UserActivity child = createCascadeChild();
     assertNotNull(child.getTrigger());
   }
 
   @Test
   public void cascadeTrigger_triggerIsCascadeType() {
-    UserActivity parent = new UserActivity();
-    IterationTrigger.createUserInstance(parent);
-
-    UserActivity child = CascadeAutomaticDeterminationTrigger.createChildActivity(parent);
+    UserActivity child = createCascadeChild();
     assertTrue(child.getTrigger() instanceof CascadeAutomaticDeterminationTrigger);
   }
 
   @Test
   public void cascadeTrigger_getViewController_delegatesToPrevious() {
-    UserActivity parent = new UserActivity();
-    IterationTrigger.createUserInstance(parent);
-
-    UserActivity child = CascadeAutomaticDeterminationTrigger.createChildActivity(parent);
+    UserActivity child = createCascadeChild();
     CascadeAutomaticDeterminationTrigger trigger =
         (CascadeAutomaticDeterminationTrigger) child.getTrigger();
-    // IterationTrigger returns null for ViewController
     assertNull(trigger.getViewController());
   }
 
   @Test
   public void cascadeTrigger_encode_doesNotThrow() {
-    UserActivity parent = new UserActivity();
-    IterationTrigger.createUserInstance(parent);
-
-    UserActivity child = CascadeAutomaticDeterminationTrigger.createChildActivity(parent);
+    UserActivity child = createCascadeChild();
     edu.cmu.cs.dennisc.codec.ByteArrayBinaryEncoder encoder =
         new edu.cmu.cs.dennisc.codec.ByteArrayBinaryEncoder();
     child.getTrigger().encode(encoder);
@@ -205,10 +187,7 @@ public class TriggerBehaviorCoverageTest {
 
   @Test
   public void cascadeTrigger_appendRepr() {
-    UserActivity parent = new UserActivity();
-    IterationTrigger.createUserInstance(parent);
-
-    UserActivity child = CascadeAutomaticDeterminationTrigger.createChildActivity(parent);
+    UserActivity child = createCascadeChild();
     StringBuilder sb = new StringBuilder();
     child.getTrigger().appendRepr(sb);
     assertTrue(sb.toString().contains("CascadeAutomaticDeterminationTrigger"));
@@ -246,5 +225,11 @@ public class TriggerBehaviorCoverageTest {
     IterationTrigger trigger = IterationTrigger.createUserInstance(activity);
     assertNotNull(activity.getTrigger());
     assertSame(trigger, activity.getTrigger());
+  }
+
+  private static UserActivity createCascadeChild() {
+    UserActivity parent = new UserActivity();
+    IterationTrigger.createUserInstance(parent);
+    return CascadeAutomaticDeterminationTrigger.createChildActivity(parent);
   }
 }

@@ -35,50 +35,22 @@ public class SimpleTabCompositeCodecCoverageTest {
 
   @Test
   public void hasGetValueClass() {
-    boolean found = false;
-    for (Method m : SimpleTabCompositeCodec.class.getMethods()) {
-      if ("getValueClass".equals(m.getName())) {
-        found = true;
-        break;
-      }
-    }
-    assertTrue("Should have getValueClass", found);
+    assertHasMethod(SimpleTabCompositeCodec.class, "getValueClass");
   }
 
   @Test
   public void hasDecodeValue() {
-    boolean found = false;
-    for (Method m : SimpleTabCompositeCodec.class.getMethods()) {
-      if ("decodeValue".equals(m.getName())) {
-        found = true;
-        break;
-      }
-    }
-    assertTrue("Should have decodeValue", found);
+    assertHasMethod(SimpleTabCompositeCodec.class, "decodeValue");
   }
 
   @Test
   public void hasEncodeValue() {
-    boolean found = false;
-    for (Method m : SimpleTabCompositeCodec.class.getMethods()) {
-      if ("encodeValue".equals(m.getName())) {
-        found = true;
-        break;
-      }
-    }
-    assertTrue("Should have encodeValue", found);
+    assertHasMethod(SimpleTabCompositeCodec.class, "encodeValue");
   }
 
   @Test
   public void hasAppendRepresentation() {
-    boolean found = false;
-    for (Method m : SimpleTabCompositeCodec.class.getMethods()) {
-      if ("appendRepresentation".equals(m.getName())) {
-        found = true;
-        break;
-      }
-    }
-    assertTrue("Should have appendRepresentation", found);
+    assertHasMethod(SimpleTabCompositeCodec.class, "appendRepresentation");
   }
 
   // ── Constructor presence ──────────────────────────────────────────
@@ -152,5 +124,14 @@ public class SimpleTabCompositeCodecCoverageTest {
     StringBuilder sb = new StringBuilder();
     FileCodec.SINGLETON.appendRepresentation(sb, new java.io.File(System.getProperty("java.io.tmpdir"), "x.txt"));
     assertFalse(sb.toString().isEmpty());
+  }
+
+  private static void assertHasMethod(Class<?> cls, String methodName) {
+    for (Method m : cls.getMethods()) {
+      if (methodName.equals(m.getName())) {
+        return;
+      }
+    }
+    fail(cls.getSimpleName() + " should have method " + methodName);
   }
 }

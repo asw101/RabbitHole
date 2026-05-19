@@ -417,22 +417,23 @@ public class TriggerHierarchyCoverageTest {
   // All triggers are in the correct package
   // ═══════════════════════════════════════════════════════════════════
 
+  private static final Class<?>[] ALL_TRIGGER_CLASSES = {
+      Trigger.class, EventObjectTrigger.class, ComponentEventTrigger.class,
+      InputEventTrigger.class, AbstractMouseEventTrigger.class,
+      MouseEventTrigger.class, ActionEventTrigger.class,
+      ItemEventTrigger.class, DocumentEventTrigger.class,
+      KeyEventTrigger.class, TreeSelectionEventTrigger.class,
+      PropertyChangeEventTrigger.class, PopupMenuEventTrigger.class,
+      WindowEventTrigger.class, NullTrigger.class,
+      IterationTrigger.class, ChangeEventTrigger.class,
+      CascadeAutomaticDeterminationTrigger.class,
+      DragTrigger.class, DropTrigger.class,
+      AppleApplicationEventTrigger.class
+  };
+
   @Test
   public void allTriggers_inTriggersPackage() {
-    Class<?>[] triggerClasses = {
-        Trigger.class, EventObjectTrigger.class, ComponentEventTrigger.class,
-        InputEventTrigger.class, AbstractMouseEventTrigger.class,
-        MouseEventTrigger.class, ActionEventTrigger.class,
-        ItemEventTrigger.class, DocumentEventTrigger.class,
-        KeyEventTrigger.class, TreeSelectionEventTrigger.class,
-        PropertyChangeEventTrigger.class, PopupMenuEventTrigger.class,
-        WindowEventTrigger.class, NullTrigger.class,
-        IterationTrigger.class, ChangeEventTrigger.class,
-        CascadeAutomaticDeterminationTrigger.class,
-        DragTrigger.class, DropTrigger.class,
-        AppleApplicationEventTrigger.class
-    };
-    for (Class<?> cls : triggerClasses) {
+    for (Class<?> cls : ALL_TRIGGER_CLASSES) {
       assertEquals("org.lgna.croquet.triggers", cls.getPackage().getName());
     }
   }
@@ -443,32 +444,9 @@ public class TriggerHierarchyCoverageTest {
 
   @Test
   public void allTriggerClasses_loadable() throws ClassNotFoundException {
-    String[] classNames = {
-        "org.lgna.croquet.triggers.Trigger",
-        "org.lgna.croquet.triggers.EventObjectTrigger",
-        "org.lgna.croquet.triggers.ComponentEventTrigger",
-        "org.lgna.croquet.triggers.InputEventTrigger",
-        "org.lgna.croquet.triggers.AbstractMouseEventTrigger",
-        "org.lgna.croquet.triggers.MouseEventTrigger",
-        "org.lgna.croquet.triggers.ActionEventTrigger",
-        "org.lgna.croquet.triggers.ItemEventTrigger",
-        "org.lgna.croquet.triggers.DocumentEventTrigger",
-        "org.lgna.croquet.triggers.KeyEventTrigger",
-        "org.lgna.croquet.triggers.TreeSelectionEventTrigger",
-        "org.lgna.croquet.triggers.PropertyChangeEventTrigger",
-        "org.lgna.croquet.triggers.PopupMenuEventTrigger",
-        "org.lgna.croquet.triggers.WindowEventTrigger",
-        "org.lgna.croquet.triggers.NullTrigger",
-        "org.lgna.croquet.triggers.IterationTrigger",
-        "org.lgna.croquet.triggers.ChangeEventTrigger",
-        "org.lgna.croquet.triggers.CascadeAutomaticDeterminationTrigger",
-        "org.lgna.croquet.triggers.DragTrigger",
-        "org.lgna.croquet.triggers.DropTrigger",
-        "org.lgna.croquet.triggers.AppleApplicationEventTrigger"
-    };
-    for (String name : classNames) {
-      Class<?> cls = Class.forName(name);
-      assertNotNull(name + " should be loadable", cls);
+    for (Class<?> cls : ALL_TRIGGER_CLASSES) {
+      Class<?> loaded = Class.forName(cls.getName());
+      assertNotNull(cls.getName() + " should be loadable", loaded);
     }
   }
 

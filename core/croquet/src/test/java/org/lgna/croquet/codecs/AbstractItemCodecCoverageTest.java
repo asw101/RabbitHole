@@ -20,47 +20,41 @@ public class AbstractItemCodecCoverageTest {
 
   @Test
   public void getValueClass_returnsConstructorArg() {
-    TestStringCodec codec = new TestStringCodec();
-    assertEquals(String.class, codec.getValueClass());
+    assertEquals(String.class, STRING_CODEC.getValueClass());
   }
 
   @Test
   public void getValueClass_integerCodec() {
-    TestIntegerCodec codec = new TestIntegerCodec();
-    assertEquals(Integer.class, codec.getValueClass());
+    assertEquals(Integer.class, INTEGER_CODEC.getValueClass());
   }
 
   // ── appendRepresentation (default implementation) ─────────────────
 
   @Test
   public void appendRepresentation_defaultUsesToString() {
-    TestStringCodec codec = new TestStringCodec();
     StringBuilder sb = new StringBuilder();
-    codec.appendRepresentation(sb, "hello");
+    STRING_CODEC.appendRepresentation(sb, "hello");
     assertEquals("hello", sb.toString());
   }
 
   @Test
   public void appendRepresentation_integer() {
-    TestIntegerCodec codec = new TestIntegerCodec();
     StringBuilder sb = new StringBuilder();
-    codec.appendRepresentation(sb, 42);
+    INTEGER_CODEC.appendRepresentation(sb, 42);
     assertEquals("42", sb.toString());
   }
 
   @Test
   public void appendRepresentation_null() {
-    TestStringCodec codec = new TestStringCodec();
     StringBuilder sb = new StringBuilder();
-    codec.appendRepresentation(sb, null);
+    STRING_CODEC.appendRepresentation(sb, null);
     assertEquals("null", sb.toString());
   }
 
   @Test
   public void appendRepresentation_appendsToExisting() {
-    TestStringCodec codec = new TestStringCodec();
     StringBuilder sb = new StringBuilder("prefix:");
-    codec.appendRepresentation(sb, "value");
+    STRING_CODEC.appendRepresentation(sb, "value");
     assertEquals("prefix:value", sb.toString());
   }
 
@@ -68,40 +62,36 @@ public class AbstractItemCodecCoverageTest {
 
   @Test
   public void encodeAndDecode_string_roundTrips() {
-    TestStringCodec codec = new TestStringCodec();
     ByteArrayBinaryEncoder encoder = new ByteArrayBinaryEncoder();
-    codec.encodeValue(encoder, "test");
+    STRING_CODEC.encodeValue(encoder, "test");
     BinaryDecoder decoder = encoder.createDecoder();
-    assertEquals("test", codec.decodeValue(decoder));
+    assertEquals("test", STRING_CODEC.decodeValue(decoder));
   }
 
   @Test
   public void encodeAndDecode_integer_roundTrips() {
-    TestIntegerCodec codec = new TestIntegerCodec();
     ByteArrayBinaryEncoder encoder = new ByteArrayBinaryEncoder();
-    codec.encodeValue(encoder, 99);
+    INTEGER_CODEC.encodeValue(encoder, 99);
     BinaryDecoder decoder = encoder.createDecoder();
-    assertEquals(Integer.valueOf(99), codec.decodeValue(decoder));
+    assertEquals(Integer.valueOf(99), INTEGER_CODEC.decodeValue(decoder));
   }
 
   @Test
   public void encodeAndDecode_emptyString() {
-    TestStringCodec codec = new TestStringCodec();
     ByteArrayBinaryEncoder encoder = new ByteArrayBinaryEncoder();
-    codec.encodeValue(encoder, "");
+    STRING_CODEC.encodeValue(encoder, "");
     BinaryDecoder decoder = encoder.createDecoder();
-    assertEquals("", codec.decodeValue(decoder));
+    assertEquals("", STRING_CODEC.decodeValue(decoder));
   }
 
   @Test
   public void encodeAndDecode_multipleValues() {
-    TestStringCodec codec = new TestStringCodec();
     ByteArrayBinaryEncoder encoder = new ByteArrayBinaryEncoder();
-    codec.encodeValue(encoder, "alpha");
-    codec.encodeValue(encoder, "bravo");
+    STRING_CODEC.encodeValue(encoder, "alpha");
+    STRING_CODEC.encodeValue(encoder, "bravo");
     BinaryDecoder decoder = encoder.createDecoder();
-    assertEquals("alpha", codec.decodeValue(decoder));
-    assertEquals("bravo", codec.decodeValue(decoder));
+    assertEquals("alpha", STRING_CODEC.decodeValue(decoder));
+    assertEquals("bravo", STRING_CODEC.decodeValue(decoder));
   }
 
   // ── class structure ───────────────────────────────────────────────
@@ -122,6 +112,9 @@ public class AbstractItemCodecCoverageTest {
   }
 
   // ── Test infrastructure ───────────────────────────────────────────
+
+  private static final TestStringCodec STRING_CODEC = new TestStringCodec();
+  private static final TestIntegerCodec INTEGER_CODEC = new TestIntegerCodec();
 
   static class TestStringCodec extends AbstractItemCodec<String> {
     TestStringCodec() {
