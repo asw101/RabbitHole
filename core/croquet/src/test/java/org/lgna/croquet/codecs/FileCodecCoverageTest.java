@@ -72,7 +72,7 @@ public class FileCodecCoverageTest {
   public void encodeValue_nonNull_throwsRuntimeExceptionWithTodoMessage() {
     ByteArrayBinaryEncoder encoder = new ByteArrayBinaryEncoder();
     try {
-      FileCodec.SINGLETON.encodeValue(encoder, new File("/tmp/test.txt"));
+      FileCodec.SINGLETON.encodeValue(encoder, new File(System.getProperty("java.io.tmpdir"), "test.txt"));
       fail("Expected RuntimeException");
     } catch (RuntimeException e) {
       assertEquals("todo", e.getMessage());
@@ -99,7 +99,7 @@ public class FileCodecCoverageTest {
   @Test
   public void appendRepresentation_file() {
     StringBuilder sb = new StringBuilder();
-    File file = new File("/tmp/test.txt");
+    File file = new File(System.getProperty("java.io.tmpdir"), "test.txt");
     FileCodec.SINGLETON.appendRepresentation(sb, file);
     assertTrue(sb.toString().contains("test.txt"));
   }
