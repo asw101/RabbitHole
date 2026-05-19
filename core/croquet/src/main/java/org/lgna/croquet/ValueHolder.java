@@ -90,7 +90,12 @@ public final class ValueHolder<T> {
   }
 
   public void removeValueListener(ValueListener<T> listener) {
-    this.valueListeners.add(listener);
+    this.valueListeners.remove(listener);
+  }
+
+  @Override
+  public String toString() {
+    return this.getClass().getName() + "[value=" + this.value + "]";
   }
 
 }

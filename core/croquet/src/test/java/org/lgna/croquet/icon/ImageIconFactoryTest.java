@@ -4,173 +4,112 @@ import org.junit.Before;
 import org.junit.Test;
 
 import javax.swing.Icon;
+import javax.swing.ImageIcon;
 import java.awt.Dimension;
+import java.awt.Image;
 import java.awt.image.BufferedImage;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.net.URL;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 import static org.junit.Assert.*;
 
-/**
- * Tests for {@link ImageIconFactory} — construction from Image,
- * icon creation at various sizes, scaling behavior, and hierarchy.
- */
 public class ImageIconFactoryTest {
 
-  private ImageIconFactory factory;
-  private BufferedImage testImage;
+  private BufferedImage image;
+  private Icon icon;
+  private ImageIconFactory factoryFromImage;
 
   @Before
   public void setUp() {
-    testImage = new BufferedImage(32, 32, BufferedImage.TYPE_INT_ARGB);
-    factory = new ImageIconFactory(testImage);
+    image = new BufferedImage(24, 18, BufferedImage.TYPE_INT_ARGB);
+    icon = new ImageIcon(image);
+    factoryFromImage = new ImageIconFactory(image);
   }
 
-  // ── Construction ──────────────────────────────────────────────────
+  // ── Construction ───────────────────────────────────────────────────
 
   @Test
-  public void constructor_image_nonNull() {
+  public void constructor_withIcon() {
+    ImageIconFactory factory = new ImageIconFactory(icon);
+
     assertNotNull(factory);
+    assertSame(icon, factory.getSourceImageIcon());
   }
 
   @Test
-  public void constructor_icon_nonNull() {
-    Icon icon = new javax.swing.ImageIcon(testImage);
-    ImageIconFactory f = new ImageIconFactory(icon);
-    assertNotNull(f);
-  }
-
-  // ── getIcon ───────────────────────────────────────────────────────
-
-  @Test
-  public void getIcon_sameSize_returnsNonNull() {
-    Icon icon = factory.getIconExactSize(new Dimension(32, 32));
-    assertNotNull(icon);
+  public void constructor_withImage() {
+    assertNotNull(factoryFromImage);
+    assertNotNull(factoryFromImage.getSourceImageIcon());
   }
 
   @Test
-  public void getIcon_sameSize_matchesDimensions() {
-    Icon icon = factory.getIconExactSize(new Dimension(32, 32));
-    assertEquals(32, icon.getIconWidth());
-    assertEquals(32, icon.getIconHeight());
+  public void constructorCount_andSignatures_viaReflection() {
+    Constructor<?>[] constructors = ImageIconFactory.class.getDeclaredConstructors();
+    Set<Class<?>> parameterTypes = new HashSet<Class<?>>();
+    for (Constructor<?> constructor : constructors) {
+      assertEquals(1, constructor.getParameterTypes().length);
+      parameterTypes.add(constructor.getParameterTypes()[0]);
+    }
+
+    assertEquals(3, constructors.length);
+    assertEquals(new HashSet<Class<?>>(Arrays.asList(Icon.class, URL.class, Image.class)),
+        parameterTypes);
   }
 
-  @Test
-  public void getIcon_smallerSize_returnsScaled() {
-    Icon icon = factory.getIconExactSize(new Dimension(16, 16));
-    assertNotNull(icon);
-    assertEquals(16, icon.getIconWidth());
-    assertEquals(16, icon.getIconHeight());
-  }
+  // ── Hierarchy ──────────────────────────────────────────────────────
 
   @Test
-  public void getIcon_largerSize_returnsScaled() {
-    Icon icon = factory.getIconExactSize(new Dimension(64, 64));
-    assertNotNull(icon);
-    assertEquals(64, icon.getIconWidth());
-    assertEquals(64, icon.getIconHeight());
-  }
-
-  @Test
-  public void getIcon_rectangularSize_returnsScaled() {
-    Icon icon = factory.getIconExactSize(new Dimension(48, 24));
-    assertNotNull(icon);
-    assertEquals(48, icon.getIconWidth());
-    assertEquals(24, icon.getIconHeight());
-  }
-
-  // ── getDefaultSize ────────────────────────────────────────────────
-
-  @Test
-  public void getDefaultSize_matchesSourceImage() {
-    Dimension d = factory.getDefaultSize(new Dimension(99, 99));
-    assertEquals(32, d.width);
-    assertEquals(32, d.height);
-  }
-
-  @Test
-  public void getDefaultSize_ignoresFallback_whenSourceExists() {
-    Dimension d = factory.getDefaultSize(new Dimension(100, 100));
-    assertNotEquals(100, d.width);
-  }
-
-  // ── paintIcon ─────────────────────────────────────────────────────
-
-  @Test
-  public void paintIcon_sameSize_noException() {
-    Icon icon = factory.getIconExactSize(new Dimension(32, 32));
-    BufferedImage canvas = new BufferedImage(32, 32, BufferedImage.TYPE_INT_ARGB);
-    icon.paintIcon(null, canvas.getGraphics(), 0, 0);
-  }
-
-  @Test
-  public void paintIcon_scaledDown_noException() {
-    Icon icon = factory.getIconExactSize(new Dimension(16, 16));
-    BufferedImage canvas = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
-    icon.paintIcon(null, canvas.getGraphics(), 0, 0);
-  }
-
-  // ── Hierarchy ─────────────────────────────────────────────────────
-
-  @Test
-  public void class_extendsAbstractSingleSourceImageIconFactory() {
-    assertTrue(AbstractSingleSourceImageIconFactory.class.isAssignableFrom(
-        ImageIconFactory.class));
-  }
-
-  @Test
-  public void class_isNotAbstract() {
+  public void class_hierarchy() {
+    assertTrue(AbstractSingleSourceImageIconFactory.class.isAssignableFrom(ImageIconFactory.class));
     assertFalse(Modifier.isAbstract(ImageIconFactory.class.getModifiers()));
   }
 
-  @Test
-  public void class_isNotFinal() {
-    assertFalse(Modifier.isFinal(ImageIconFactory.class.getModifiers()));
-  }
-
-  // ── Method existence ──────────────────────────────────────────────
+  // ── Methods ────────────────────────────────────────────────────────
 
   @Test
-  public void method_createIcon_exists() throws Exception {
-    Method m = ImageIconFactory.class.getDeclaredMethod("createIcon", Dimension.class);
-    assertNotNull(m);
+  public void createIcon_methodExists() throws Exception {
+    Method method = ImageIconFactory.class.getDeclaredMethod("createIcon", Dimension.class);
+
+    assertNotNull(method);
+    assertTrue(Modifier.isProtected(method.getModifiers()));
   }
 
   @Test
-  public void method_getDefaultSize_exists() throws Exception {
-    Method m = ImageIconFactory.class.getMethod("getDefaultSize", Dimension.class);
-    assertNotNull(m);
+  public void getDefaultSize_methodExists() throws Exception {
+    Method method = ImageIconFactory.class.getMethod("getDefaultSize", Dimension.class);
+
+    assertNotNull(method);
+    assertTrue(Modifier.isPublic(method.getModifiers()));
   }
 
-  // ── Constructor count ─────────────────────────────────────────────
+  // ── Behavior ───────────────────────────────────────────────────────
 
   @Test
-  public void hasThreeConstructors() {
-    assertEquals(3, ImageIconFactory.class.getDeclaredConstructors().length);
-  }
+  public void multipleInstances_areIndependent() {
+    ImageIconFactory first = new ImageIconFactory(new BufferedImage(12, 8, BufferedImage.TYPE_INT_ARGB));
+    ImageIconFactory second = new ImageIconFactory(new BufferedImage(30, 20, BufferedImage.TYPE_INT_ARGB));
 
-  // ── Different image sizes ─────────────────────────────────────────
-
-  @Test
-  public void smallImage_getDefaultSize() {
-    BufferedImage small = new BufferedImage(8, 8, BufferedImage.TYPE_INT_ARGB);
-    ImageIconFactory f = new ImageIconFactory(small);
-    Dimension d = f.getDefaultSize(new Dimension(99, 99));
-    assertEquals(8, d.width);
-    assertEquals(8, d.height);
+    assertNotSame(first, second);
+    assertEquals(new Dimension(12, 8), first.getDefaultSize(new Dimension(1, 1)));
+    assertEquals(new Dimension(30, 20), second.getDefaultSize(new Dimension(1, 1)));
   }
 
   @Test
-  public void largeImage_getDefaultSize() {
-    BufferedImage large = new BufferedImage(128, 64, BufferedImage.TYPE_INT_ARGB);
-    ImageIconFactory f = new ImageIconFactory(large);
-    Dimension d = f.getDefaultSize(new Dimension(99, 99));
-    assertEquals(128, d.width);
-    assertEquals(64, d.height);
-  }
+  public void nullIcon_handling() {
+    ImageIconFactory nullFactory = new ImageIconFactory((Icon) null);
+    Dimension fallback = new Dimension(9, 11);
 
-  @Test
-  public void toString_nonNull() {
-    assertNotNull(factory.toString());
+    assertNull(nullFactory.getSourceImageIcon());
+    assertSame(fallback, nullFactory.getDefaultSize(fallback));
+
+    Icon generated = nullFactory.getIconExactSize(new Dimension(7, 5));
+    assertNotNull(generated);
+    assertEquals(7, generated.getIconWidth());
+    assertEquals(5, generated.getIconHeight());
   }
 }

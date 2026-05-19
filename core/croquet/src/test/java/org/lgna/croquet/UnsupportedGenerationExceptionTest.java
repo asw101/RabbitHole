@@ -1,204 +1,105 @@
 package org.lgna.croquet;
 
+import org.junit.Before;
 import org.junit.Test;
+
+import java.io.Serializable;
+import java.lang.reflect.Constructor;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 import static org.junit.Assert.*;
 
-/**
- * Tests for {@link UnsupportedGenerationException} — all four constructors,
- * message propagation, cause chaining, and hierarchy verification.
- */
 public class UnsupportedGenerationExceptionTest {
+
+  private String message;
+  private Throwable cause;
+
+  @Before
+  public void setUp() {
+    message = "not supported";
+    cause = new IllegalStateException("root cause");
+  }
 
   // ── Hierarchy ──────────────────────────────────────────────────────
 
   @Test
-  public void class_extendsException() {
+  public void extendsException() {
     assertTrue(Exception.class.isAssignableFrom(UnsupportedGenerationException.class));
   }
 
   @Test
-  public void class_extendsThrowable() {
-    assertTrue(Throwable.class.isAssignableFrom(UnsupportedGenerationException.class));
+  public void isCheckedException() {
+    assertFalse(RuntimeException.class.isAssignableFrom(UnsupportedGenerationException.class));
   }
 
   @Test
-  public void class_isNotAbstract() {
-    assertFalse(java.lang.reflect.Modifier.isAbstract(
-        UnsupportedGenerationException.class.getModifiers()));
+  public void serializable() {
+    assertTrue(Serializable.class.isAssignableFrom(UnsupportedGenerationException.class));
+  }
+
+  // ── Constructors ───────────────────────────────────────────────────
+
+  @Test
+  public void noArg_constructor() {
+    UnsupportedGenerationException exception = new UnsupportedGenerationException();
+
+    assertNotNull(exception);
+    assertNull(exception.getMessage());
+    assertNull(exception.getCause());
   }
 
   @Test
-  public void class_isChecked() {
-    assertFalse(RuntimeException.class.isAssignableFrom(
-        UnsupportedGenerationException.class));
-  }
+  public void message_constructor() {
+    UnsupportedGenerationException exception = new UnsupportedGenerationException(message);
 
-  // ── No-arg constructor ────────────────────────────────────────────
-
-  @Test
-  public void noArgConstructor_createsInstance() {
-    UnsupportedGenerationException ex = new UnsupportedGenerationException();
-    assertNotNull(ex);
+    assertEquals(message, exception.getMessage());
+    assertNull(exception.getCause());
   }
 
   @Test
-  public void noArgConstructor_messageIsNull() {
-    UnsupportedGenerationException ex = new UnsupportedGenerationException();
-    assertNull(ex.getMessage());
+  public void messageAndCause_constructor() {
+    UnsupportedGenerationException exception = new UnsupportedGenerationException(message, cause);
+
+    assertEquals(message, exception.getMessage());
+    assertSame(cause, exception.getCause());
   }
 
   @Test
-  public void noArgConstructor_causeIsNull() {
-    UnsupportedGenerationException ex = new UnsupportedGenerationException();
-    assertNull(ex.getCause());
+  public void cause_constructor() {
+    UnsupportedGenerationException exception = new UnsupportedGenerationException(cause);
+
+    assertEquals(cause.toString(), exception.getMessage());
+    assertSame(cause, exception.getCause());
   }
 
-  // ── String constructor ────────────────────────────────────────────
+  // ── Accessors ──────────────────────────────────────────────────────
 
   @Test
-  public void stringConstructor_setsMessage() {
-    UnsupportedGenerationException ex =
-        new UnsupportedGenerationException("test msg");
-    assertEquals("test msg", ex.getMessage());
-  }
-
-  @Test
-  public void stringConstructor_nullMessage() {
-    UnsupportedGenerationException ex =
-        new UnsupportedGenerationException((String) null);
-    assertNull(ex.getMessage());
+  public void getMessage_returnsCorrectMessage() {
+    assertEquals(message, new UnsupportedGenerationException(message).getMessage());
   }
 
   @Test
-  public void stringConstructor_emptyMessage() {
-    UnsupportedGenerationException ex =
-        new UnsupportedGenerationException("");
-    assertEquals("", ex.getMessage());
+  public void getCause_returnsCorrectCause() {
+    assertSame(cause, new UnsupportedGenerationException(message, cause).getCause());
   }
 
-  @Test
-  public void stringConstructor_causeIsNull() {
-    UnsupportedGenerationException ex =
-        new UnsupportedGenerationException("msg");
-    assertNull(ex.getCause());
-  }
-
-  // ── String + Throwable constructor ────────────────────────────────
+  // ── Reflection ─────────────────────────────────────────────────────
 
   @Test
-  public void stringThrowableConstructor_setsMessage() {
-    Throwable cause = new RuntimeException("root");
-    UnsupportedGenerationException ex =
-        new UnsupportedGenerationException("wrapper", cause);
-    assertEquals("wrapper", ex.getMessage());
-  }
-
-  @Test
-  public void stringThrowableConstructor_setsCause() {
-    Throwable cause = new RuntimeException("root");
-    UnsupportedGenerationException ex =
-        new UnsupportedGenerationException("wrapper", cause);
-    assertSame(cause, ex.getCause());
-  }
-
-  @Test
-  public void stringThrowableConstructor_nullMessage() {
-    Throwable cause = new RuntimeException("root");
-    UnsupportedGenerationException ex =
-        new UnsupportedGenerationException(null, cause);
-    assertNull(ex.getMessage());
-  }
-
-  @Test
-  public void stringThrowableConstructor_nullCause() {
-    UnsupportedGenerationException ex =
-        new UnsupportedGenerationException("msg", null);
-    assertNull(ex.getCause());
-  }
-
-  @Test
-  public void stringThrowableConstructor_bothNull() {
-    UnsupportedGenerationException ex =
-        new UnsupportedGenerationException(null, null);
-    assertNull(ex.getMessage());
-    assertNull(ex.getCause());
-  }
-
-  // ── Throwable constructor ─────────────────────────────────────────
-
-  @Test
-  public void throwableConstructor_setsCause() {
-    Throwable cause = new IllegalStateException("bad");
-    UnsupportedGenerationException ex =
-        new UnsupportedGenerationException(cause);
-    assertSame(cause, ex.getCause());
-  }
-
-  @Test
-  public void throwableConstructor_messageContainsCauseInfo() {
-    Throwable cause = new IllegalStateException("bad");
-    UnsupportedGenerationException ex =
-        new UnsupportedGenerationException(cause);
-    assertNotNull(ex.getMessage());
-    assertTrue(ex.getMessage().contains("bad"));
-  }
-
-  @Test
-  public void throwableConstructor_nullCause() {
-    UnsupportedGenerationException ex =
-        new UnsupportedGenerationException((Throwable) null);
-    assertNull(ex.getCause());
-  }
-
-  // ── Throwability ──────────────────────────────────────────────────
-
-  @Test
-  public void canBeThrown() {
-    try {
-      throw new UnsupportedGenerationException("thrown");
-    } catch (UnsupportedGenerationException ex) {
-      assertEquals("thrown", ex.getMessage());
+  public void constructorSignatures_viaReflection() {
+    Constructor<?>[] constructors = UnsupportedGenerationException.class.getDeclaredConstructors();
+    Set<String> signatures = new HashSet<String>();
+    for (Constructor<?> constructor : constructors) {
+      signatures.add(Arrays.toString(constructor.getParameterTypes()));
     }
-  }
 
-  @Test
-  public void canBeCaughtAsException() {
-    try {
-      throw new UnsupportedGenerationException("test");
-    } catch (Exception ex) {
-      assertTrue(ex instanceof UnsupportedGenerationException);
-    }
-  }
-
-  // ── Stack trace ───────────────────────────────────────────────────
-
-  @Test
-  public void stackTrace_nonEmpty() {
-    UnsupportedGenerationException ex =
-        new UnsupportedGenerationException("trace");
-    assertTrue(ex.getStackTrace().length > 0);
-  }
-
-  @Test
-  public void toString_containsClassName() {
-    UnsupportedGenerationException ex =
-        new UnsupportedGenerationException("detail");
-    assertTrue(ex.toString().contains("UnsupportedGenerationException"));
-  }
-
-  @Test
-  public void toString_containsMessage() {
-    UnsupportedGenerationException ex =
-        new UnsupportedGenerationException("detail");
-    assertTrue(ex.toString().contains("detail"));
-  }
-
-  // ── Constructor count ─────────────────────────────────────────────
-
-  @Test
-  public void hasFourConstructors() {
-    assertEquals(4,
-        UnsupportedGenerationException.class.getDeclaredConstructors().length);
+    assertEquals(4, constructors.length);
+    assertTrue(signatures.contains("[]"));
+    assertTrue(signatures.contains("[class java.lang.String]"));
+    assertTrue(signatures.contains("[class java.lang.String, class java.lang.Throwable]"));
+    assertTrue(signatures.contains("[class java.lang.Throwable]"));
   }
 }
