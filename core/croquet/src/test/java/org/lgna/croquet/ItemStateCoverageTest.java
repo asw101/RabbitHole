@@ -67,8 +67,8 @@ public class ItemStateCoverageTest {
     edu.cmu.cs.dennisc.codec.ByteArrayBinaryEncoder encoder =
         new edu.cmu.cs.dennisc.codec.ByteArrayBinaryEncoder();
     state.encodeValue(encoder, "hello");
-    // If no exception, encoding succeeded
-    assertNotNull(encoder);
+    edu.cmu.cs.dennisc.codec.BinaryDecoder decoder = encoder.createDecoder();
+    assertEquals("hello", state.decodeValue(decoder));
   }
 
   @Test

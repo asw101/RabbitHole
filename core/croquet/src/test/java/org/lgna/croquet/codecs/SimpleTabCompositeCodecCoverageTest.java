@@ -68,64 +68,6 @@ public class SimpleTabCompositeCodecCoverageTest {
     assertEquals("org.lgna.croquet.codecs", SimpleTabCompositeCodec.class.getPackage().getName());
   }
 
-  // ── DefaultItemCodec tests ────────────────────────────────────────
-
-  @Test
-  public void defaultItemCodec_getValueClass() {
-    DefaultItemCodec<String> codec = DefaultItemCodec.createInstance(String.class);
-    assertEquals(String.class, codec.getValueClass());
-  }
-
-  @Test
-  public void defaultItemCodec_isPublic() {
-    assertTrue(Modifier.isPublic(DefaultItemCodec.class.getModifiers()));
-  }
-
-  @Test
-  public void defaultItemCodec_extendsAbstractItemCodec() {
-    assertTrue(AbstractItemCodec.class.isAssignableFrom(DefaultItemCodec.class));
-  }
-
-  @Test
-  public void defaultItemCodec_appendRepresentation_string() {
-    DefaultItemCodec<String> codec = DefaultItemCodec.createInstance(String.class);
-    StringBuilder sb = new StringBuilder();
-    codec.appendRepresentation(sb, "test");
-    assertEquals("test", sb.toString());
-  }
-
-  @Test
-  public void defaultItemCodec_appendRepresentation_null() {
-    DefaultItemCodec<String> codec = DefaultItemCodec.createInstance(String.class);
-    StringBuilder sb = new StringBuilder();
-    codec.appendRepresentation(sb, null);
-    assertEquals("null", sb.toString());
-  }
-
-  // ── FileCodec tests ───────────────────────────────────────────────
-
-  @Test
-  public void fileCodec_implementsItemCodec() {
-    assertTrue(org.lgna.croquet.ItemCodec.class.isAssignableFrom(FileCodec.class));
-  }
-
-  @Test
-  public void fileCodec_getValueClass() {
-    assertEquals(java.io.File.class, FileCodec.SINGLETON.getValueClass());
-  }
-
-  @Test
-  public void fileCodec_singleton_notNull() {
-    assertNotNull(FileCodec.SINGLETON);
-  }
-
-  @Test
-  public void fileCodec_appendRepresentation_file() {
-    StringBuilder sb = new StringBuilder();
-    FileCodec.SINGLETON.appendRepresentation(sb, new java.io.File(System.getProperty("java.io.tmpdir"), "x.txt"));
-    assertFalse(sb.toString().isEmpty());
-  }
-
   private static void assertHasMethod(Class<?> cls, String methodName) {
     for (Method m : cls.getMethods()) {
       if (methodName.equals(m.getName())) {

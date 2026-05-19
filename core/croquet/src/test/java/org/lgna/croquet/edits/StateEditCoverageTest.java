@@ -78,6 +78,8 @@ public class StateEditCoverageTest {
 
   // ── doOrRedo isRedo when canRedo false ────────────────────────────
 
+  // Characterization: AbstractEdit.doOrRedo(false) throws CannotRedoException
+  // when canRedo() returns false, which is correct behavior.
   @Test(expected = javax.swing.undo.CannotRedoException.class)
   public void doOrRedo_isRedo_cannotRedoThrows() {
     StateEdit<String> edit = new StateEdit<>(null, "a", "b");
@@ -86,6 +88,9 @@ public class StateEditCoverageTest {
 
   // ── undo when canUndo false ───────────────────────────────────────
 
+  // Characterization: AbstractEdit.undo() throws CannotRedoException instead
+  // of CannotUndoException — a pre-existing production bug in AbstractEdit
+  // line 130. This test pins the actual (buggy) behavior.
   @Test(expected = javax.swing.undo.CannotRedoException.class)
   public void undo_cannotUndo_throws() {
     StateEdit<String> edit = new StateEdit<>(null, "a", "b");

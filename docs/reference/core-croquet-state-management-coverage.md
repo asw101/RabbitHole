@@ -2,8 +2,8 @@
 
 > **Issue:** [#778](https://github.com/rysweet/RabbitHole/issues/778)
 > **Scope:** 25 new JUnit 4 test files covering state classes, codecs, edits, triggers, meta-state, and preferences in `core/croquet`
-> **Line count:** 5,006 lines of test code
-> **Tests:** 530 tests, all passing
+> **Line count:** 4,948 lines of test code
+> **Tests:** 521 tests, all passing
 > **Build verification:** `mvn test -pl core/croquet -Dtest="*CoverageTest" -DfailIfNoTests=false -q`
 
 ---
@@ -17,12 +17,12 @@ UI components. The tests cover six functional areas across six packages:
 | Area | Package(s) | Test Files | Tests | Lines |
 |---|---|---|---:|---:|
 | State classes | `o.l.croquet` | 12 | 224 | 2,333 |
-| Codecs | `o.l.croquet.codecs` | 6 | 119 | 1,027 |
+| Codecs | `o.l.croquet.codecs` | 6 | 110 | 969 |
 | Edits | `o.l.croquet.edits` | 2 | 59 | 500 |
 | Triggers | `o.l.croquet.triggers` | 2 | 87 | 709 |
 | Meta-state | `o.l.croquet.meta` | 1 | 12 | 138 |
 | Preferences | `o.l.croquet.preferences` | 2 | 29 | 299 |
-| **Total** | | **25** | **530** | **5,006** |
+| **Total** | | **25** | **521** | **4,948** |
 
 All tests are JUnit 4 (`@Test`, `@Before`, `static org.junit.Assert.*`) and run
 headlessly — no display, no `Application` boot, no AWT event dispatch thread.
@@ -67,7 +67,7 @@ pattern `*CoverageTest` selects exactly this suite.
 | `TestBoundedIntegerState` | Inner class in `BoundedIntegerStateCoverageTest` | Minimal concrete `BoundedIntegerState` subclass |
 | `TestBoundedDoubleState` | Inner class in `BoundedDoubleStateCoverageTest` | Minimal concrete `BoundedDoubleState` subclass |
 | `TestStringState` | Inner class in `StringStateCoverageTest` | Minimal concrete `StringState` subclass |
-| `TestDirection` enum | Inner enum in `EnumConstantStateCoverageTest` | Three-value enum for state tests |
+| `TestDirection` enum | Inner enum in `EnumConstantStateCoverageTest` | Four-value enum for state tests |
 
 ---
 
@@ -478,12 +478,11 @@ and class structure via concrete test subclasses of `AbstractItemCodec<T>`.
 | `abstractItemCodec_isAbstract` | Abstract modifier |
 | `abstractItemCodec_isPublic` | Public modifier |
 
-#### 15. `SimpleTabCompositeCodecCoverageTest` (156 lines, 18 tests)
+#### 15. `SimpleTabCompositeCodecCoverageTest` (79 lines, 9 tests)
 
 **Location:** `core/croquet/src/test/java/org/lgna/croquet/codecs/SimpleTabCompositeCodecCoverageTest.java`
 
-Covers `SimpleTabCompositeCodec` structure tests, plus `DefaultItemCodec` and
-`FileCodec` companion classes in the codecs package.
+Covers `SimpleTabCompositeCodec` structure tests via reflection.
 
 | Method | What It Tests |
 |---|---|
@@ -496,15 +495,6 @@ Covers `SimpleTabCompositeCodec` structure tests, plus `DefaultItemCodec` and
 | `hasAppendRepresentation` | Method presence |
 | `hasConstructor` | Constructor presence |
 | `isInCodecsPackage` | Package assertion |
-| `defaultItemCodec_getValueClass` | Default codec value class |
-| `defaultItemCodec_isPublic` | Default codec modifier |
-| `defaultItemCodec_extendsAbstractItemCodec` | Default codec hierarchy |
-| `defaultItemCodec_appendRepresentation_string` | Default codec representation |
-| `defaultItemCodec_appendRepresentation_null` | Default codec null representation |
-| `fileCodec_implementsItemCodec` | FileCodec implements ItemCodec |
-| `fileCodec_getValueClass` | FileCodec value class |
-| `fileCodec_singleton_notNull` | FileCodec singleton not null |
-| `fileCodec_appendRepresentation_file` | FileCodec representation |
 
 ---
 
@@ -757,9 +747,9 @@ Covers construction, data management, and hierarchy verification for
   `StateTrackingMetaState`. Reflection-only coverage for `ColorState`,
   `TabState`, and `CustomItemState`.
 
-- **Codecs:** Full behavioral coverage for `EnumCodec` and
-  `AbstractItemCodec`. Reflection + companion class coverage for
-  `SimpleTabCompositeCodec`, `DefaultItemCodec`, and `FileCodec`.
+- **Codecs:** Full behavioral coverage for `EnumCodec`, `AbstractItemCodec`,
+  `ColorCodec`, `DefaultItemCodec`, and `FileCodec`. Reflection-based structure
+  coverage for `SimpleTabCompositeCodec`.
 
 - **Edits:** Full behavioral coverage for `AbstractEdit` and `StateEdit`,
   including `DescriptionStyle` enum, undo/redo semantics, and multi-type

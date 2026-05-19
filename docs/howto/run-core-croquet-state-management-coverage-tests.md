@@ -20,7 +20,7 @@ No display, GPU, or network connection is required. All tests run headlessly.
 mvn test -pl core/croquet -Dtest="*CoverageTest" -DfailIfNoTests=false -q
 ```
 
-Expected: 530 tests, 0 failures, 0 errors.
+Expected: 521 tests, 0 failures, 0 errors.
 
 ## Run all core/croquet tests (including pre-existing)
 
@@ -159,7 +159,7 @@ fully qualified class name in the test.
 | 15 | `ColorCodecCoverageTest.java` | `o.l.croquet.codecs` | 221 | 28 |
 | 16 | `DefaultItemCodecCoverageTest.java` | `o.l.croquet.codecs` | 172 | 21 |
 | 17 | `FileCodecCoverageTest.java` | `o.l.croquet.codecs` | 151 | 17 |
-| 18 | `SimpleTabCompositeCodecCoverageTest.java` | `o.l.croquet.codecs` | 137 | 18 |
+| 18 | `SimpleTabCompositeCodecCoverageTest.java` | `o.l.croquet.codecs` | 79 | 9 |
 | 19 | `AbstractEditCoverageTest.java` | `o.l.croquet.edits` | 262 | 29 |
 | 20 | `StateEditCoverageTest.java` | `o.l.croquet.edits` | 238 | 30 |
 | 21 | `StateTrackingMetaStateCoverageTest.java` | `o.l.croquet.meta` | 138 | 12 |
@@ -167,4 +167,4 @@ fully qualified class name in the test.
 | 23 | `PreferenceMutableDataSingleSelectListStateCoverageTest.java` | `o.l.croquet.preferences` | 114 | 11 |
 | 24 | `TriggerBehaviorCoverageTest.java` | `o.l.croquet.triggers` | 235 | 25 |
 | 25 | `TriggerHierarchyCoverageTest.java` | `o.l.croquet.triggers` | 474 | 62 |
-| | **Total** | | **5,006** | **530** |
+| | **Total** | | **4,948** | **521** |
