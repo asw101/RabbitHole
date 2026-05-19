@@ -113,7 +113,7 @@ public class AstI18nFactoryCroquetTest {
   }
 
   @Test
-  public void cascade_hasUuidField() throws ClassNotFoundException {
+  public void cascade_superclassIsNotNull() throws ClassNotFoundException {
     Class<?> cls = Class.forName(CASCADE_FQN);
     // UUID is inherited from CascadeRoot or higher in the hierarchy;
     // verify the hierarchy is inspectable

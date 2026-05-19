@@ -688,14 +688,10 @@ public class JavaCodeRenderingTest {
   // ========================================================================
 
   @Test
-  public void javaCodeResourceDirectory_exists() {
-    String resourceDir = "/org/alice/ide/javacode";
-    java.net.URL url = getClass().getResource(resourceDir);
-    // Resource directory may or may not be on the classpath depending on build;
-    // log its presence for diagnostics but do not fail the build.
-    if (url == null) {
-      System.out.println("[INFO] Resource directory not on classpath: " + resourceDir);
-    }
+  public void javaCodePackage_existsOnClasspath() throws ClassNotFoundException {
+    // Verify that at least one class from the javacode package is loadable,
+    // confirming the package is on the classpath.
+    Class.forName(VIEW_FQN);
   }
 
   // ========================================================================

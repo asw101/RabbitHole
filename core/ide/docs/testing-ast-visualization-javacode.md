@@ -61,7 +61,7 @@ mvn test -pl core/ide -Dtest='AstI18nFactoryHierarchyTest#previewAstI18nFactory_
 ### Verify existing tests still pass
 
 ```bash
-mvn test -pl core/ide -Dtest='I18nFactoryTest,JavaCodeUtilitiesTest'
+mvn test -pl core/ide -Dtest='JavaCodeUtilitiesTest'
 ```
 
 ### Run the full `core/ide` test suite
@@ -159,7 +159,7 @@ Tests for the 13 factory classes in `org.alice.ide.x`:
 
 | Factory class | Test categories |
 |---|---|
-| `I18nFactory` | *(covered by existing `I18nFactoryTest`)* |
+| `I18nFactory` | loadability, abstract modifier, extends `Object`, public constructors, `createComponent` methods, abstract protected methods (`createGetsComponent`, `createPropertyComponent`) |
 | `AstI18nFactory` | loadability, abstract modifier, extends `I18nFactory`, method signatures (`createExpressionPane`, `createExpressionPropertyPane`, `createStatementPane`, `isCommentMutable`, `isStatementListPropertyMutable`) |
 | `IdeAstI18nFactory` | loadability, abstract modifier, extends `AstI18nFactory`, constructor params, `createGetsPane` / `createLocalDeclarationPane` methods |
 | `ImmutableAstI18nFactory` | loadability, abstract modifier, extends `IdeAstI18nFactory` |
