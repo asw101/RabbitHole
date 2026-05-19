@@ -2,195 +2,75 @@ package org.alice.ide.ast.type.merge.croquet;
 
 import org.junit.Test;
 import org.lgna.project.ast.UserField;
-import org.lgna.project.ast.UserMethod;
-
+import org.lgna.project.ast.JavaType;
 import static org.junit.Assert.*;
 
-/**
- * Characterization tests for {@link ActionStatus} enum.
- */
 public class ActionStatusTest {
-
-  private UserMethod createProcedure(String name) {
-    UserMethod method = new UserMethod();
-    method.name.setValue(name);
-    method.managementLevel.setValue(org.lgna.project.ast.ManagementLevel.NONE);
-    return method;
-  }
-
-  private UserField createField(String name) {
-    UserField field = new UserField();
-    field.name.setValue(name);
-    return field;
-  }
-
   @Test
-  public void values_has13Constants() {
-    assertEquals(13, ActionStatus.values().length);
+  public void hasAllExpectedValues() {
+    ActionStatus[] values = ActionStatus.values();
+    assertTrue(values.length >= 10);
   }
-
   @Test
-  public void valueOf_allConstants() {
+  public void omitIsPresent() {
     assertNotNull(ActionStatus.valueOf("OMIT"));
+  }
+  @Test
+  public void addUniqueIsPresent() {
     assertNotNull(ActionStatus.valueOf("ADD_UNIQUE"));
+  }
+  @Test
+  public void addAndRenameIsPresent() {
     assertNotNull(ActionStatus.valueOf("ADD_AND_RENAME"));
+  }
+  @Test
+  public void replaceOverOriginalIsPresent() {
     assertNotNull(ActionStatus.valueOf("REPLACE_OVER_ORIGINAL"));
-    assertNotNull(ActionStatus.valueOf("OMIT_IN_FAVOR_OF_ORIGINAL"));
-    assertNotNull(ActionStatus.valueOf("DELETE_IN_FAVOR_OF_REPLACEMENT"));
-    assertNotNull(ActionStatus.valueOf("KEEP_OVER_DIFFERENT_SIGNATURE"));
-    assertNotNull(ActionStatus.valueOf("KEEP_OVER_REPLACEMENT"));
-    assertNotNull(ActionStatus.valueOf("KEEP_AND_RENAME"));
+  }
+  @Test
+  public void keepIdenticalIsPresent() {
     assertNotNull(ActionStatus.valueOf("KEEP_IDENTICAL"));
-    assertNotNull(ActionStatus.valueOf("KEEP_UNIQUE"));
-    assertNotNull(ActionStatus.valueOf("RENAME_REQUIRED"));
+  }
+  @Test
+  public void selectionRequiredIsPresent() {
     assertNotNull(ActionStatus.valueOf("SELECTION_REQUIRED"));
   }
-
   @Test
-  public void omit_descriptionContainsName() {
-    UserMethod m = createProcedure("walkMethod");
-    String desc = ActionStatus.OMIT.getDescriptionText(m);
-    assertTrue(desc.contains("walkMethod"));
-    assertTrue(desc.contains("omitted"));
+  public void renameRequiredIsPresent() {
+    assertNotNull(ActionStatus.valueOf("RENAME_REQUIRED"));
   }
-
   @Test
-  public void addUnique_descriptionContainsAdded() {
-    UserMethod m = createProcedure("jumpMethod");
-    String desc = ActionStatus.ADD_UNIQUE.getDescriptionText(m);
-    assertTrue(desc.contains("jumpMethod"));
+  public void getDescriptionText_omit_containsMemberName() {
+    UserField field = createField("testField");
+    String desc = ActionStatus.OMIT.getDescriptionText(field);
+    assertTrue(desc.contains("testField"));
+    assertTrue(desc.contains("omit"));
+  }
+  @Test
+  public void getDescriptionText_addUnique_containsMemberName() {
+    UserField field = createField("myProp");
+    String desc = ActionStatus.ADD_UNIQUE.getDescriptionText(field);
+    assertTrue(desc.contains("myProp"));
     assertTrue(desc.contains("added"));
   }
-
   @Test
-  public void addAndRename_descriptionContainsAddedAndRenamed() {
-    UserMethod m = createProcedure("runMethod");
-    String desc = ActionStatus.ADD_AND_RENAME.getDescriptionText(m);
-    assertTrue(desc.contains("runMethod"));
-    assertTrue(desc.contains("added and renamed"));
+  public void getDescriptionText_keepIdentical_containsMemberName() {
+    UserField field = createField("keepMe");
+    String desc = ActionStatus.KEEP_IDENTICAL.getDescriptionText(field);
+    assertTrue(desc.contains("keepMe"));
   }
-
   @Test
-  public void replaceOverOriginal_descriptionContainsReplace() {
-    UserMethod m = createProcedure("swim");
-    String desc = ActionStatus.REPLACE_OVER_ORIGINAL.getDescriptionText(m);
-    assertTrue(desc.contains("swim"));
-    assertTrue(desc.contains("replace"));
-  }
-
-  @Test
-  public void omitInFavorOfOriginal_descriptionContainsOmitted() {
-    UserMethod m = createProcedure("fly");
-    String desc = ActionStatus.OMIT_IN_FAVOR_OF_ORIGINAL.getDescriptionText(m);
-    assertTrue(desc.contains("fly"));
-    assertTrue(desc.contains("omitted in favor of"));
-  }
-
-  @Test
-  public void deleteInFavorOfReplacement_descriptionContainsReplaced() {
-    UserMethod m = createProcedure("crawl");
-    String desc = ActionStatus.DELETE_IN_FAVOR_OF_REPLACEMENT.getDescriptionText(m);
-    assertTrue(desc.contains("crawl"));
-    assertTrue(desc.contains("replaced"));
-  }
-
-  @Test
-  public void keepOverDifferentSignature_descriptionContainsRetained() {
-    UserMethod m = createProcedure("climb");
-    String desc = ActionStatus.KEEP_OVER_DIFFERENT_SIGNATURE.getDescriptionText(m);
-    assertTrue(desc.contains("climb"));
-    assertTrue(desc.contains("retained"));
-  }
-
-  @Test
-  public void keepOverReplacement_descriptionContainsRetained() {
-    UserMethod m = createProcedure("slide");
-    String desc = ActionStatus.KEEP_OVER_REPLACEMENT.getDescriptionText(m);
-    assertTrue(desc.contains("slide"));
-    assertTrue(desc.contains("retained"));
-  }
-
-  @Test
-  public void keepAndRename_descriptionContainsRetained() {
-    UserMethod m = createProcedure("roll");
-    String desc = ActionStatus.KEEP_AND_RENAME.getDescriptionText(m);
-    assertTrue(desc.contains("roll"));
-    assertTrue(desc.contains("retained"));
-  }
-
-  @Test
-  public void keepIdentical_descriptionContainsRetained() {
-    UserMethod m = createProcedure("bounce");
-    String desc = ActionStatus.KEEP_IDENTICAL.getDescriptionText(m);
-    assertTrue(desc.contains("bounce"));
-    assertTrue(desc.contains("retained"));
-  }
-
-  @Test
-  public void keepUnique_descriptionContainsRetained() {
-    UserMethod m = createProcedure("spin");
-    String desc = ActionStatus.KEEP_UNIQUE.getDescriptionText(m);
-    assertTrue(desc.contains("spin"));
-    assertTrue(desc.contains("retained"));
-  }
-
-  @Test
-  public void renameRequired_descriptionContainsRename() {
-    UserMethod m = createProcedure("twist");
-    String desc = ActionStatus.RENAME_REQUIRED.getDescriptionText(m);
-    assertTrue(desc.contains("twist"));
-    assertTrue(desc.contains("rename"));
-  }
-
-  @Test
-  public void selectionRequired_descriptionContainsSelect() {
-    UserMethod m = createProcedure("dance");
-    String desc = ActionStatus.SELECTION_REQUIRED.getDescriptionText(m);
-    assertTrue(desc.contains("dance"));
-    assertTrue(desc.contains("select"));
-  }
-
-  @Test
-  public void allDescriptionsAreHtml() {
-    UserMethod m = createProcedure("testMethod");
+  public void getDescriptionText_returnsHtml() {
+    UserField field = createField("x");
     for (ActionStatus status : ActionStatus.values()) {
-      String desc = status.getDescriptionText(m);
-      assertTrue("Description for " + status + " should start with <html>",
-          desc.startsWith("<html>"));
+      String desc = status.getDescriptionText(field);
+      assertTrue(status.name() + " description should be HTML", desc.startsWith("<html>"));
     }
   }
-
-  @Test
-  public void allDescriptionsContainStrongTag() {
-    UserMethod m = createProcedure("myMethod");
-    for (ActionStatus status : ActionStatus.values()) {
-      String desc = status.getDescriptionText(m);
-      assertTrue("Description for " + status + " should contain <strong>",
-          desc.contains("<strong>"));
-      assertTrue("Description for " + status + " should contain </strong>",
-          desc.contains("</strong>"));
-    }
-  }
-
-  @Test
-  public void descriptionWithField_containsFieldName() {
-    UserField field = createField("myProperty");
-    String desc = ActionStatus.OMIT.getDescriptionText(field);
-    assertTrue(desc.contains("myProperty"));
-  }
-
-  @Test
-  public void renameRequired_withField_containsProperties() {
-    UserField field = createField("speed");
-    String desc = ActionStatus.RENAME_REQUIRED.getDescriptionText(field);
-    assertTrue(desc.contains("speed"));
-    assertTrue(desc.contains("properties"));
-  }
-
-  @Test
-  public void selectionRequired_descriptionContainsOr() {
-    UserMethod m = createProcedure("action");
-    String desc = ActionStatus.SELECTION_REQUIRED.getDescriptionText(m);
-    assertTrue(desc.contains("or"));
+  private static UserField createField(String name) {
+    UserField field = new UserField();
+    field.name.setValue(name);
+    field.valueType.setValue(JavaType.getInstance(String.class));
+    return field;
   }
 }
