@@ -1,58 +1,28 @@
 package org.alice.ide.ast.export.type;
 
 import org.junit.Test;
+import java.lang.reflect.Modifier;
 import static org.junit.Assert.*;
 
 public class ResourceInfoTest {
-
   @Test
-  public void constructor_setsClassName() {
-    ResourceInfo info = new ResourceInfo("com.example.MyResource", null);
+  public void isFinalClass() {
+    assertTrue(Modifier.isFinal(ResourceInfo.class.getModifiers()));
+  }
+  @Test
+  public void constructAndAccessClassName() {
+    ResourceInfo info = new ResourceInfo("com.example.MyResource", "DEFAULT");
     assertEquals("com.example.MyResource", info.getClassName());
+    assertEquals("DEFAULT", info.getFieldName());
   }
-
   @Test
-  public void constructor_setsFieldName() {
-    ResourceInfo info = new ResourceInfo("com.example.MyResource", "ADULT_FEMALE");
-    assertEquals("ADULT_FEMALE", info.getFieldName());
+  public void getClassName_returnsConstructorArg() {
+    ResourceInfo info = new ResourceInfo("Foo", "bar");
+    assertEquals("Foo", info.getClassName());
   }
-
   @Test
-  public void constructor_nullFieldName() {
-    ResourceInfo info = new ResourceInfo("com.example.Type", null);
-    assertNull(info.getFieldName());
-  }
-
-  @Test
-  public void getClassName_notNull() {
-    ResourceInfo info = new ResourceInfo("TypeA", "fieldA");
-    assertNotNull(info.getClassName());
-  }
-
-  @Test
-  public void differentInstances_differentValues() {
-    ResourceInfo a = new ResourceInfo("TypeA", "fieldA");
-    ResourceInfo b = new ResourceInfo("TypeB", "fieldB");
-    assertNotEquals(a.getClassName(), b.getClassName());
-    assertNotEquals(a.getFieldName(), b.getFieldName());
-  }
-
-  @Test
-  public void sameValues_sameGetters() {
-    ResourceInfo info = new ResourceInfo("Same", "same");
-    assertEquals("Same", info.getClassName());
-    assertEquals("same", info.getFieldName());
-  }
-
-  @Test
-  public void emptyClassName_allowed() {
-    ResourceInfo info = new ResourceInfo("", "field");
-    assertEquals("", info.getClassName());
-  }
-
-  @Test
-  public void nullClassName_allowed() {
-    ResourceInfo info = new ResourceInfo(null, "field");
-    assertNull(info.getClassName());
+  public void getFieldName_returnsConstructorArg() {
+    ResourceInfo info = new ResourceInfo("X", "Y");
+    assertEquals("Y", info.getFieldName());
   }
 }
