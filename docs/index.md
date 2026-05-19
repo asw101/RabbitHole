@@ -223,6 +223,12 @@ repository.
 - [Validate the JavaCodeGenerator Extraction](./howto/validate-java-code-generator-extraction.md) - step-by-step validation for the `JavaCodeGenerator` extraction: delegate visibility, line counts, protected method retention, NetBeans compatibility, and compilation checks.
 - [Tutorial: Trace the JavaCodeGenerator Extraction](./tutorials/trace-java-code-generator-extraction.md) - guided walkthrough of import collection, localized comment formatting, and concurrency emission flows through `JavaCodeGenerator` and its three delegates.
 
+## Croquet framework test coverage
+
+- [Core Croquet Test Coverage — 70%+ Push](./testing/core-croquet-coverage.md) - Reference for ~3,790 new test lines covering all State subclasses, all Operation subclasses, all Codec implementations, all EditFactory implementations, ListData, and MenuModel (issue #794).
+- [Run the Core Croquet Coverage Tests](./howto/run-core-croquet-coverage-tests.md) - How to run, verify, and extend the core/croquet coverage tests.
+- [Tutorial: Trace the Core Croquet Coverage Push](./tutorials/trace-core-croquet-coverage-push.md) - Guided walkthrough of test strategies, headless patterns, and coverage verification.
+
 ## Croquet framework decomposition
 
 - [CompositeResourceManager Extraction](./reference/composite-resource-manager-extraction.md) - Reference for extraction of 13 inner state classes into `InternalStateTypes` and localization methods into `CompositeLocalizationDelegate` from `CompositeResourceManager` (issue #631), reducing 649 lines to ~225.
