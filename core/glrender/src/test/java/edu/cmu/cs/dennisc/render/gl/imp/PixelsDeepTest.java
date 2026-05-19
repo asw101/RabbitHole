@@ -11,8 +11,9 @@ import static org.junit.Assert.*;
 public class PixelsDeepTest {
 
   @Test
-  public void class_isPublic() {
-    assertTrue(Modifier.isPublic(Pixels.class.getModifiers()));
+  public void class_isPackagePrivate() {
+    assertFalse("Pixels should be package-private",
+        Modifier.isPublic(Pixels.class.getModifiers()));
   }
 
   @Test

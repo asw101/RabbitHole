@@ -15,15 +15,15 @@ public class NetbeansJavaCodeGeneratorStructureTest {
   }
 
   @Test
-  public void hasGenerateMethods() {
+  public void hasOverriddenMethods() {
     boolean found = false;
     for (Method m : NetbeansJavaCodeGenerator.class.getDeclaredMethods()) {
-      if (m.getName().toLowerCase().contains("generat")) {
+      if (m.getName().contains("getImports") || m.getName().contains("appendSection")) {
         found = true;
         break;
       }
     }
-    assertTrue("Should have generate methods", found);
+    assertTrue("Should have overridden code-generation methods", found);
   }
 
   @Test

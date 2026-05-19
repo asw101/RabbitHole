@@ -27,8 +27,9 @@ public class GlPrimitiveShapeRendererStructureTest {
   }
 
   @Test
-  public void isPublicClass() {
-    assertTrue(Modifier.isPublic(GlPrimitiveShapeRenderer.class.getModifiers()));
+  public void isPackagePrivateClass() {
+    assertFalse("GlPrimitiveShapeRenderer should be package-private",
+        Modifier.isPublic(GlPrimitiveShapeRenderer.class.getModifiers()));
   }
 
   @Test

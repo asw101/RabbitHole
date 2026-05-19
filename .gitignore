@@ -41,3 +41,5 @@ qa/outside-in/alice-desktop/logs/
 
 # Git worktrees used during refactoring — never track
 worktrees/
+test.classpath
+*/core/ide/test.classpath

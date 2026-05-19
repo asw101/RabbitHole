@@ -35,12 +35,12 @@ public class TextureBindingStructureTest {
   public void hasMethodsRelatedToTexture() {
     boolean found = false;
     for (Method m : TextureBinding.class.getDeclaredMethods()) {
-      if (m.getName().toLowerCase().contains("texture") || m.getName().toLowerCase().contains("bind")) {
+      if (m.getName().contains("ensureUpToDate") || m.getName().contains("forget") || m.getName().contains("getData")) {
         found = true;
         break;
       }
     }
-    assertTrue("Should have texture-related methods", found);
+    assertTrue("Should have texture-management methods", found);
   }
 
   @Test

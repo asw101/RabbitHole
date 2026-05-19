@@ -17,15 +17,17 @@ public class LauncherTemplateStructureTest {
 
   @Test
   public void hasFileNameConstant() throws Exception {
-    Field f = LauncherTemplate.class.getField("FILE_NAME");
+    Field f = LauncherTemplate.class.getDeclaredField("FILE_NAME");
     assertTrue(Modifier.isStatic(f.getModifiers()));
     assertTrue(Modifier.isFinal(f.getModifiers()));
+    f.setAccessible(true);
     assertNotNull(f.get(null));
   }
 
   @Test
   public void fileNameIsJavaFile() throws Exception {
-    Field f = LauncherTemplate.class.getField("FILE_NAME");
+    Field f = LauncherTemplate.class.getDeclaredField("FILE_NAME");
+    f.setAccessible(true);
     String name = (String) f.get(null);
     assertTrue("FILE_NAME should end with .java", name.endsWith(".java"));
   }

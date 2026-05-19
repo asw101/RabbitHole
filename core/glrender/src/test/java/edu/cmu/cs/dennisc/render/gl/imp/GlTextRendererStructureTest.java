@@ -18,16 +18,17 @@ public class GlTextRendererStructureTest {
   public void hasRenderMethods() {
     boolean found = false;
     for (Method m : GlTextRenderer.class.getDeclaredMethods()) {
-      if (m.getName().toLowerCase().contains("render") || m.getName().toLowerCase().contains("text")) {
+      if (m.getName().contains("drawString") || m.getName().contains("remember") || m.getName().contains("forget")) {
         found = true;
         break;
       }
     }
-    assertTrue("Should have render/text methods", found);
+    assertTrue("Should have text rendering methods", found);
   }
 
   @Test
-  public void isPublicClass() {
-    assertTrue(Modifier.isPublic(GlTextRenderer.class.getModifiers()));
+  public void isPackagePrivateClass() {
+    assertFalse("GlTextRenderer should be package-private",
+        Modifier.isPublic(GlTextRenderer.class.getModifiers()));
   }
 }

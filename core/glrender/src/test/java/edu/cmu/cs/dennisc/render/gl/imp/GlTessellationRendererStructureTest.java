@@ -18,16 +18,17 @@ public class GlTessellationRendererStructureTest {
   public void hasRenderMethods() {
     boolean found = false;
     for (Method m : GlTessellationRenderer.class.getDeclaredMethods()) {
-      if (m.getName().toLowerCase().contains("render") || m.getName().toLowerCase().contains("tessellat")) {
+      if (m.getName().contains("fill")) {
         found = true;
         break;
       }
     }
-    assertTrue("Should have render/tessellation methods", found);
+    assertTrue("Should have fill method for tessellation", found);
   }
 
   @Test
-  public void isPublicClass() {
-    assertTrue(Modifier.isPublic(GlTessellationRenderer.class.getModifiers()));
+  public void isPackagePrivateClass() {
+    assertFalse("GlTessellationRenderer should be package-private",
+        Modifier.isPublic(GlTessellationRenderer.class.getModifiers()));
   }
 }

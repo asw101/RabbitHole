@@ -19,8 +19,9 @@ public class GlrOnscreenRenderTargetStructureTest {
   }
 
   @Test
-  public void isPublicClass() {
-    assertTrue(Modifier.isPublic(GlrOnscreenRenderTarget.class.getModifiers()));
+  public void isPackagePrivateClass() {
+    assertFalse("GlrOnscreenRenderTarget should be package-private",
+        Modifier.isPublic(GlrOnscreenRenderTarget.class.getModifiers()));
   }
 
   @Test

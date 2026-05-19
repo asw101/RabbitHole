@@ -27,7 +27,8 @@ public class GlImageRendererStructureTest {
   }
 
   @Test
-  public void isPublicClass() {
-    assertTrue(Modifier.isPublic(GlImageRenderer.class.getModifiers()));
+  public void isPackagePrivateClass() {
+    int mods = GlImageRenderer.class.getModifiers();
+    assertFalse("GlImageRenderer should be package-private", Modifier.isPublic(mods));
   }
 }

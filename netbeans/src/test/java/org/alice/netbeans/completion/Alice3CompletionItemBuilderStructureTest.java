@@ -15,8 +15,9 @@ public class Alice3CompletionItemBuilderStructureTest {
   }
 
   @Test
-  public void isPublicClass() {
-    assertTrue(Modifier.isPublic(Alice3CompletionItemBuilder.class.getModifiers()));
+  public void isPackagePrivateClass() {
+    assertFalse("Alice3CompletionItemBuilder should be package-private",
+        Modifier.isPublic(Alice3CompletionItemBuilder.class.getModifiers()));
   }
 
   @Test
