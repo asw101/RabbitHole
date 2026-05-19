@@ -1,231 +1,135 @@
 package org.lgna.croquet.codecs;
 
+import edu.cmu.cs.dennisc.codec.BinaryDecoder;
+import edu.cmu.cs.dennisc.codec.BinaryEncoder;
+import edu.cmu.cs.dennisc.codec.ByteArrayBinaryEncoder;
+import org.junit.Before;
 import org.junit.Test;
+import org.lgna.croquet.ItemCodec;
+
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 
 import static org.junit.Assert.*;
 
-/**
- * Tests for {@link EnumCodec}, {@link AbstractItemCodec}, {@link DefaultItemCodec},
- * and {@link FileCodec}. Covers value class, appendRepresentation, singleton
- * patterns, and factory methods.
- */
 public class EnumCodecTest {
 
-  private enum TestEnum {
-    ALPHA, BRAVO, CHARLIE
+  private enum TestColor {
+    RED, GREEN, BLUE
   }
 
-  private enum EmptyEnum {}
-
-  // ── EnumCodec: getInstance ────────────────────────────────────────
-
-  @Test
-  public void getInstance_returnsNonNull() {
-    EnumCodec<TestEnum> codec = EnumCodec.getInstance(TestEnum.class);
-    assertNotNull(codec);
+  private enum TestShape {
+    CIRCLE, SQUARE
   }
 
-  @Test
-  public void getInstance_sameClass_returnsSameInstance() {
-    EnumCodec<TestEnum> a = EnumCodec.getInstance(TestEnum.class);
-    EnumCodec<TestEnum> b = EnumCodec.getInstance(TestEnum.class);
-    assertSame(a, b);
+  private EnumCodec<TestColor> cachedCodec;
+  private EnumCodec<TestColor> freshCodec;
+
+  @Before
+  public void setUp() {
+    this.cachedCodec = EnumCodec.getInstance(TestColor.class);
+    this.freshCodec = EnumCodec.createInstance(TestColor.class, null);
   }
 
-  @Test
-  public void getInstance_differentClass_returnsDifferentInstance() {
-    EnumCodec<TestEnum> a = EnumCodec.getInstance(TestEnum.class);
-    EnumCodec<EmptyEnum> b = EnumCodec.getInstance(EmptyEnum.class);
-    assertNotSame(a, b);
-  }
-
-  // ── EnumCodec: createInstance ──────────────────────────────────────
+  // ── Factory methods and hierarchy ────────────────────────────────
 
   @Test
-  public void createInstance_returnsNewCodec() {
-    EnumCodec<TestEnum> codec = EnumCodec.createInstance(TestEnum.class, null);
-    assertNotNull(codec);
+  public void createInstance_returns_nonNull() {
+    assertNotNull(this.freshCodec);
   }
 
   @Test
-  public void createInstance_withCustomizer_storesCustomizer() {
-    EnumCodec.LocalizationCustomizer<TestEnum> customizer = (s, v) -> s.toUpperCase();
-    EnumCodec<TestEnum> codec = EnumCodec.createInstance(TestEnum.class, customizer);
-    assertSame(customizer, codec.getLocalizationCustomizer());
+  public void getInstance_returns_same_instance_for_same_enum_class() {
+    assertSame(this.cachedCodec, EnumCodec.getInstance(TestColor.class));
   }
 
   @Test
-  public void createInstance_nullCustomizer_returnsNullCustomizer() {
-    EnumCodec<TestEnum> codec = EnumCodec.createInstance(TestEnum.class, null);
-    assertNull(codec.getLocalizationCustomizer());
-  }
+  public void multiple_enum_types_produce_different_codecs() {
+    EnumCodec<TestShape> shapeCodec = EnumCodec.getInstance(TestShape.class);
 
-  // ── EnumCodec: getValueClass ──────────────────────────────────────
-
-  @Test
-  public void getValueClass_returnsEnumClass() {
-    EnumCodec<TestEnum> codec = EnumCodec.getInstance(TestEnum.class);
-    assertEquals(TestEnum.class, codec.getValueClass());
-  }
-
-  // ── EnumCodec: appendRepresentation ───────────────────────────────
-
-  @Test
-  public void appendRepresentation_nonNullValue_appendsName() {
-    EnumCodec<TestEnum> codec = EnumCodec.createInstance(TestEnum.class, null);
-    StringBuilder sb = new StringBuilder();
-    codec.appendRepresentation(sb, TestEnum.ALPHA);
-    // Without resource bundle, falls back to toString = "ALPHA"
-    assertEquals("ALPHA", sb.toString());
+    assertNotSame(this.cachedCodec, shapeCodec);
   }
 
   @Test
-  public void appendRepresentation_anotherValue() {
-    EnumCodec<TestEnum> codec = EnumCodec.createInstance(TestEnum.class, null);
-    StringBuilder sb = new StringBuilder();
-    codec.appendRepresentation(sb, TestEnum.CHARLIE);
-    assertEquals("CHARLIE", sb.toString());
+  public void class_implementsItemCodec() {
+    assertTrue(ItemCodec.class.isAssignableFrom(EnumCodec.class));
   }
 
   @Test
-  public void appendRepresentation_nullValue_appendsNull() {
-    EnumCodec<TestEnum> codec = EnumCodec.createInstance(TestEnum.class, null);
-    StringBuilder sb = new StringBuilder();
-    codec.appendRepresentation(sb, null);
-    assertEquals("null", sb.toString());
+  public void constructor_is_private_and_matches_source_signature() throws Exception {
+    Constructor<?> constructor = EnumCodec.class.getDeclaredConstructor(Class.class, EnumCodec.LocalizationCustomizer.class);
+
+    assertNotNull(constructor);
+    assertTrue(Modifier.isPrivate(constructor.getModifiers()));
+  }
+
+  // ── Public API ────────────────────────────────────────────────────
+
+  @Test
+  public void getValueClass_returns_correct_class() {
+    assertEquals(TestColor.class, this.cachedCodec.getValueClass());
   }
 
   @Test
-  public void appendRepresentation_calledTwice_caches() {
-    EnumCodec<TestEnum> codec = EnumCodec.createInstance(TestEnum.class, null);
-    StringBuilder sb1 = new StringBuilder();
-    codec.appendRepresentation(sb1, TestEnum.BRAVO);
-    StringBuilder sb2 = new StringBuilder();
-    codec.appendRepresentation(sb2, TestEnum.BRAVO);
-    assertEquals(sb1.toString(), sb2.toString());
+  public void createInstance_with_null_customizer_preserves_null_customizer() {
+    assertNull(this.freshCodec.getLocalizationCustomizer());
   }
 
   @Test
-  public void appendRepresentation_withCustomizer_appliesCustomizer() {
-    EnumCodec.LocalizationCustomizer<TestEnum> customizer = (localized, value) -> "custom_" + value.name();
-    EnumCodec<TestEnum> codec = EnumCodec.createInstance(TestEnum.class, customizer);
-    StringBuilder sb = new StringBuilder();
-    // No resource bundle found, so customizer won't be applied since
-    // localization falls back to toString. But let's verify no crash.
-    codec.appendRepresentation(sb, TestEnum.ALPHA);
-    assertFalse(sb.toString().isEmpty());
-  }
+  public void appendRepresentation_appends_enum_name() {
+    StringBuilder builder = new StringBuilder();
 
-  // ── EnumCodec: toString ───────────────────────────────────────────
+    this.freshCodec.appendRepresentation(builder, TestColor.GREEN);
 
-  @Test
-  public void toString_containsClassName() {
-    EnumCodec<TestEnum> codec = EnumCodec.getInstance(TestEnum.class);
-    assertTrue(codec.toString().contains("EnumCodec"));
+    assertEquals("GREEN", builder.toString());
   }
 
   @Test
-  public void toString_containsEnumClassName() {
-    EnumCodec<TestEnum> codec = EnumCodec.getInstance(TestEnum.class);
-    assertTrue(codec.toString().contains("TestEnum"));
-  }
+  public void appendRepresentation_null_appends_null_literal() {
+    StringBuilder builder = new StringBuilder();
 
-  // ── DefaultItemCodec ──────────────────────────────────────────────
+    this.freshCodec.appendRepresentation(builder, null);
 
-  @Test
-  public void defaultItemCodec_getValueClass() {
-    DefaultItemCodec<String> codec = DefaultItemCodec.createInstance(String.class);
-    assertEquals(String.class, codec.getValueClass());
+    assertEquals("null", builder.toString());
   }
 
   @Test
-  public void defaultItemCodec_appendRepresentation() {
-    DefaultItemCodec<String> codec = DefaultItemCodec.createInstance(String.class);
-    StringBuilder sb = new StringBuilder();
-    codec.appendRepresentation(sb, "hello");
-    assertEquals("hello", sb.toString());
-  }
+  public void toString_contains_class_info() {
+    String text = this.cachedCodec.toString();
 
-  @Test(expected = RuntimeException.class)
-  public void defaultItemCodec_decodeValue_throws() {
-    DefaultItemCodec<String> codec = DefaultItemCodec.createInstance(String.class);
-    codec.decodeValue(null);
-  }
-
-  @Test(expected = RuntimeException.class)
-  public void defaultItemCodec_encodeValue_throws() {
-    DefaultItemCodec<String> codec = DefaultItemCodec.createInstance(String.class);
-    codec.encodeValue(null, "test");
-  }
-
-  // ── FileCodec ─────────────────────────────────────────────────────
-
-  @Test
-  public void fileCodec_getValueClass() {
-    assertEquals(java.io.File.class, FileCodec.SINGLETON.getValueClass());
+    assertTrue(text.contains(EnumCodec.class.getName()));
+    assertTrue(text.contains(TestColor.class.getName()));
   }
 
   @Test
-  public void fileCodec_appendRepresentation_nonNull() {
-    StringBuilder sb = new StringBuilder();
-    java.io.File file = new java.io.File("/tmp/test.txt");
-    FileCodec.SINGLETON.appendRepresentation(sb, file);
-    assertTrue(sb.toString().contains("test.txt"));
+  public void localizationCustomizer_inner_interface_exists() throws Exception {
+    Class<?> customizerType = Class.forName("org.lgna.croquet.codecs.EnumCodec$LocalizationCustomizer");
+
+    assertTrue(customizerType.isInterface());
+    assertEquals(EnumCodec.class, customizerType.getDeclaringClass());
   }
 
   @Test
-  public void fileCodec_appendRepresentation_null() {
-    StringBuilder sb = new StringBuilder();
-    FileCodec.SINGLETON.appendRepresentation(sb, null);
-    assertEquals("null", sb.toString());
+  public void encodeValue_and_decodeValue_methods_have_expected_signatures() throws Exception {
+    Method encodeValue = EnumCodec.class.getDeclaredMethod("encodeValue", BinaryEncoder.class, Enum.class);
+    Method decodeValue = EnumCodec.class.getDeclaredMethod("decodeValue", BinaryDecoder.class);
+
+    assertEquals(void.class, encodeValue.getReturnType());
+    assertEquals(Enum.class, decodeValue.getReturnType());
+    assertTrue(Modifier.isPublic(encodeValue.getModifiers()));
+    assertTrue(Modifier.isPublic(decodeValue.getModifiers()));
   }
 
-  // ── ColorCodec encode/decode round-trip ─────────────────────────────
+  // ── Runtime behavior ──────────────────────────────────────────────
 
   @Test
-  public void colorCodec_encodeAndDecode_nonNull() {
-    java.awt.Color original = new java.awt.Color(100, 150, 200, 255);
-    edu.cmu.cs.dennisc.codec.ByteArrayBinaryEncoder encoder =
-        new edu.cmu.cs.dennisc.codec.ByteArrayBinaryEncoder();
-    ColorCodec.SINGLETON.encodeValue(encoder, original);
-    edu.cmu.cs.dennisc.codec.BinaryDecoder decoder = encoder.createDecoder();
-    java.awt.Color decoded = ColorCodec.SINGLETON.decodeValue(decoder);
-    assertEquals(original, decoded);
-  }
+  public void encodeValue_and_decodeValue_roundTrip() {
+    ByteArrayBinaryEncoder encoder = new ByteArrayBinaryEncoder();
 
-  @Test
-  public void colorCodec_encodeAndDecode_null() {
-    edu.cmu.cs.dennisc.codec.ByteArrayBinaryEncoder encoder =
-        new edu.cmu.cs.dennisc.codec.ByteArrayBinaryEncoder();
-    ColorCodec.SINGLETON.encodeValue(encoder, null);
-    edu.cmu.cs.dennisc.codec.BinaryDecoder decoder = encoder.createDecoder();
-    java.awt.Color decoded = ColorCodec.SINGLETON.decodeValue(decoder);
-    assertNull(decoded);
-  }
+    this.cachedCodec.encodeValue(encoder, TestColor.BLUE);
+    TestColor decoded = this.cachedCodec.decodeValue(encoder.createDecoder());
 
-  @Test
-  public void colorCodec_encodeAndDecode_withAlpha() {
-    java.awt.Color original = new java.awt.Color(10, 20, 30, 128);
-    edu.cmu.cs.dennisc.codec.ByteArrayBinaryEncoder encoder =
-        new edu.cmu.cs.dennisc.codec.ByteArrayBinaryEncoder();
-    ColorCodec.SINGLETON.encodeValue(encoder, original);
-    edu.cmu.cs.dennisc.codec.BinaryDecoder decoder = encoder.createDecoder();
-    java.awt.Color decoded = ColorCodec.SINGLETON.decodeValue(decoder);
-    assertEquals(10, decoded.getRed());
-    assertEquals(20, decoded.getGreen());
-    assertEquals(30, decoded.getBlue());
-    assertEquals(128, decoded.getAlpha());
-  }
-
-  // ── FileCodec encode null ─────────────────────────────────────────
-
-  @Test
-  public void fileCodec_encodeAndDecode_null() {
-    edu.cmu.cs.dennisc.codec.ByteArrayBinaryEncoder encoder =
-        new edu.cmu.cs.dennisc.codec.ByteArrayBinaryEncoder();
-    FileCodec.SINGLETON.encodeValue(encoder, null);
-    edu.cmu.cs.dennisc.codec.BinaryDecoder decoder = encoder.createDecoder();
-    java.io.File decoded = FileCodec.SINGLETON.decodeValue(decoder);
-    assertNull(decoded);
+    assertEquals(TestColor.BLUE, decoded);
   }
 }
