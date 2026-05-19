@@ -6,8 +6,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 
 import static org.junit.Assert.*;
 
@@ -21,6 +19,45 @@ import static org.junit.Assert.*;
  * and never invoke getInstance() or methods that would trigger IDE bootstrap.
  */
 public class AstI18nFactoryHierarchyTest {
+
+  // ========================================================================
+  // Shared helpers for recurring singleton-factory assertions
+  // ========================================================================
+
+  private void assertOnlyPrivateNoArgConstructor(Class<?> cls) {
+    Constructor<?>[] ctors = cls.getDeclaredConstructors();
+    assertEquals(1, ctors.length);
+    assertTrue(Modifier.isPrivate(ctors[0].getModifiers()));
+    assertEquals(0, ctors[0].getParameterCount());
+  }
+
+  private void assertStaticGetInstance(Class<?> cls) throws NoSuchMethodException {
+    Method m = cls.getMethod("getInstance");
+    assertTrue(Modifier.isPublic(m.getModifiers()));
+    assertTrue(Modifier.isStatic(m.getModifiers()));
+    assertEquals(cls, m.getReturnType());
+  }
+
+  private void assertSingletonHolder(Class<?> cls) {
+    boolean found = false;
+    for (Class<?> c : cls.getDeclaredClasses()) {
+      if (c.getSimpleName().equals("SingletonHolder")) {
+        found = true;
+        assertTrue(Modifier.isPrivate(c.getModifiers()));
+        assertTrue(Modifier.isStatic(c.getModifiers()));
+      }
+    }
+    assertTrue("SingletonHolder inner class not found", found);
+  }
+
+  private void assertInheritanceChain(Class<?> cls, Class<?>... chain) {
+    Class<?> current = cls;
+    for (Class<?> expected : chain) {
+      current = current.getSuperclass();
+      assertNotNull("Unexpected end of chain at " + cls.getSimpleName(), current);
+      assertEquals(expected, current);
+    }
+  }
 
   // ========================================================================
   // I18nFactory — root of the hierarchy
@@ -443,32 +480,17 @@ public class AstI18nFactoryHierarchyTest {
 
   @Test
   public void previewAstI18nFactory_hasPrivateConstructor() {
-    Constructor<?>[] ctors = PreviewAstI18nFactory.class.getDeclaredConstructors();
-    assertEquals(1, ctors.length);
-    assertTrue(Modifier.isPrivate(ctors[0].getModifiers()));
-    assertEquals(0, ctors[0].getParameterCount());
+    assertOnlyPrivateNoArgConstructor(PreviewAstI18nFactory.class);
   }
 
   @Test
   public void previewAstI18nFactory_hasGetInstance() throws NoSuchMethodException {
-    Method m = PreviewAstI18nFactory.class.getMethod("getInstance");
-    assertTrue(Modifier.isPublic(m.getModifiers()));
-    assertTrue(Modifier.isStatic(m.getModifiers()));
-    assertEquals(PreviewAstI18nFactory.class, m.getReturnType());
+    assertStaticGetInstance(PreviewAstI18nFactory.class);
   }
 
   @Test
   public void previewAstI18nFactory_hasSingletonHolderInnerClass() {
-    Class<?>[] inner = PreviewAstI18nFactory.class.getDeclaredClasses();
-    boolean found = false;
-    for (Class<?> c : inner) {
-      if (c.getSimpleName().equals("SingletonHolder")) {
-        found = true;
-        assertTrue(Modifier.isPrivate(c.getModifiers()));
-        assertTrue(Modifier.isStatic(c.getModifiers()));
-      }
-    }
-    assertTrue("SingletonHolder inner class not found", found);
+    assertSingletonHolder(PreviewAstI18nFactory.class);
   }
 
   @Test
@@ -489,12 +511,9 @@ public class AstI18nFactoryHierarchyTest {
 
   @Test
   public void previewAstI18nFactory_fullInheritanceChain() {
-    Class<?> cls = PreviewAstI18nFactory.class;
-    assertEquals(ImmutableAstI18nFactory.class, cls.getSuperclass());
-    assertEquals(IdeAstI18nFactory.class, cls.getSuperclass().getSuperclass());
-    assertEquals(AstI18nFactory.class, cls.getSuperclass().getSuperclass().getSuperclass());
-    assertEquals(I18nFactory.class, cls.getSuperclass().getSuperclass().getSuperclass().getSuperclass());
-    assertEquals(Object.class, cls.getSuperclass().getSuperclass().getSuperclass().getSuperclass().getSuperclass());
+    assertInheritanceChain(PreviewAstI18nFactory.class,
+        ImmutableAstI18nFactory.class, IdeAstI18nFactory.class,
+        AstI18nFactory.class, I18nFactory.class, Object.class);
   }
 
   // ========================================================================
@@ -572,40 +591,23 @@ public class AstI18nFactoryHierarchyTest {
 
   @Test
   public void dialogAstI18nFactory_hasPrivateConstructor() {
-    Constructor<?>[] ctors = DialogAstI18nFactory.class.getDeclaredConstructors();
-    assertEquals(1, ctors.length);
-    assertTrue(Modifier.isPrivate(ctors[0].getModifiers()));
-    assertEquals(0, ctors[0].getParameterCount());
+    assertOnlyPrivateNoArgConstructor(DialogAstI18nFactory.class);
   }
 
   @Test
   public void dialogAstI18nFactory_hasGetInstance() throws NoSuchMethodException {
-    Method m = DialogAstI18nFactory.class.getMethod("getInstance");
-    assertTrue(Modifier.isPublic(m.getModifiers()));
-    assertTrue(Modifier.isStatic(m.getModifiers()));
-    assertEquals(DialogAstI18nFactory.class, m.getReturnType());
+    assertStaticGetInstance(DialogAstI18nFactory.class);
   }
 
   @Test
   public void dialogAstI18nFactory_hasSingletonHolder() {
-    Class<?>[] inner = DialogAstI18nFactory.class.getDeclaredClasses();
-    boolean found = false;
-    for (Class<?> c : inner) {
-      if (c.getSimpleName().equals("SingletonHolder")) {
-        found = true;
-        assertTrue(Modifier.isPrivate(c.getModifiers()));
-        assertTrue(Modifier.isStatic(c.getModifiers()));
-      }
-    }
-    assertTrue("SingletonHolder inner class not found", found);
+    assertSingletonHolder(DialogAstI18nFactory.class);
   }
 
   @Test
   public void dialogAstI18nFactory_fullInheritanceChain() {
-    Class<?> cls = DialogAstI18nFactory.class;
-    assertEquals(MutableAstI18nFactory.class, cls.getSuperclass());
-    assertEquals(AstI18nFactory.class, cls.getSuperclass().getSuperclass());
-    assertEquals(I18nFactory.class, cls.getSuperclass().getSuperclass().getSuperclass());
+    assertInheritanceChain(DialogAstI18nFactory.class,
+        MutableAstI18nFactory.class, AstI18nFactory.class, I18nFactory.class);
   }
 
   // ========================================================================
@@ -634,29 +636,17 @@ public class AstI18nFactoryHierarchyTest {
 
   @Test
   public void templateAstI18nFactory_hasPrivateConstructor() {
-    Constructor<?>[] ctors = TemplateAstI18nFactory.class.getDeclaredConstructors();
-    assertEquals(1, ctors.length);
-    assertTrue(Modifier.isPrivate(ctors[0].getModifiers()));
+    assertOnlyPrivateNoArgConstructor(TemplateAstI18nFactory.class);
   }
 
   @Test
   public void templateAstI18nFactory_hasGetInstance() throws NoSuchMethodException {
-    Method m = TemplateAstI18nFactory.class.getMethod("getInstance");
-    assertTrue(Modifier.isPublic(m.getModifiers()));
-    assertTrue(Modifier.isStatic(m.getModifiers()));
-    assertEquals(TemplateAstI18nFactory.class, m.getReturnType());
+    assertStaticGetInstance(TemplateAstI18nFactory.class);
   }
 
   @Test
   public void templateAstI18nFactory_hasSingletonHolder() {
-    Class<?>[] inner = TemplateAstI18nFactory.class.getDeclaredClasses();
-    boolean found = false;
-    for (Class<?> c : inner) {
-      if (c.getSimpleName().equals("SingletonHolder")) {
-        found = true;
-      }
-    }
-    assertTrue("SingletonHolder inner class not found", found);
+    assertSingletonHolder(TemplateAstI18nFactory.class);
   }
 
   @Test
@@ -685,10 +675,8 @@ public class AstI18nFactoryHierarchyTest {
 
   @Test
   public void templateAstI18nFactory_fullInheritanceChain() {
-    Class<?> cls = TemplateAstI18nFactory.class;
-    assertEquals(IdeAstI18nFactory.class, cls.getSuperclass());
-    assertEquals(AstI18nFactory.class, cls.getSuperclass().getSuperclass());
-    assertEquals(I18nFactory.class, cls.getSuperclass().getSuperclass().getSuperclass());
+    assertInheritanceChain(TemplateAstI18nFactory.class,
+        IdeAstI18nFactory.class, AstI18nFactory.class, I18nFactory.class);
   }
 
   // ========================================================================
@@ -717,29 +705,17 @@ public class AstI18nFactoryHierarchyTest {
 
   @Test
   public void menuIconIdeAstI18nFactory_hasPrivateConstructor() {
-    Constructor<?>[] ctors = MenuIconIdeAstI18nFactory.class.getDeclaredConstructors();
-    assertEquals(1, ctors.length);
-    assertTrue(Modifier.isPrivate(ctors[0].getModifiers()));
+    assertOnlyPrivateNoArgConstructor(MenuIconIdeAstI18nFactory.class);
   }
 
   @Test
   public void menuIconIdeAstI18nFactory_hasGetInstance() throws NoSuchMethodException {
-    Method m = MenuIconIdeAstI18nFactory.class.getMethod("getInstance");
-    assertTrue(Modifier.isPublic(m.getModifiers()));
-    assertTrue(Modifier.isStatic(m.getModifiers()));
-    assertEquals(MenuIconIdeAstI18nFactory.class, m.getReturnType());
+    assertStaticGetInstance(MenuIconIdeAstI18nFactory.class);
   }
 
   @Test
   public void menuIconIdeAstI18nFactory_hasSingletonHolder() {
-    Class<?>[] inner = MenuIconIdeAstI18nFactory.class.getDeclaredClasses();
-    boolean found = false;
-    for (Class<?> c : inner) {
-      if (c.getSimpleName().equals("SingletonHolder")) {
-        found = true;
-      }
-    }
-    assertTrue("SingletonHolder inner class not found", found);
+    assertSingletonHolder(MenuIconIdeAstI18nFactory.class);
   }
 
   @Test
@@ -758,10 +734,8 @@ public class AstI18nFactoryHierarchyTest {
 
   @Test
   public void menuIconIdeAstI18nFactory_fullInheritanceChain() {
-    Class<?> cls = MenuIconIdeAstI18nFactory.class;
-    assertEquals(ImmutableAstI18nFactory.class, cls.getSuperclass());
-    assertEquals(IdeAstI18nFactory.class, cls.getSuperclass().getSuperclass());
-    assertEquals(AstI18nFactory.class, cls.getSuperclass().getSuperclass().getSuperclass());
+    assertInheritanceChain(MenuIconIdeAstI18nFactory.class,
+        ImmutableAstI18nFactory.class, IdeAstI18nFactory.class, AstI18nFactory.class);
   }
 
   // ========================================================================
@@ -873,29 +847,17 @@ public class AstI18nFactoryHierarchyTest {
 
   @Test
   public void projectEditorAstI18nFactory_hasPrivateConstructor() {
-    Constructor<?>[] ctors = ProjectEditorAstI18nFactory.class.getDeclaredConstructors();
-    assertEquals(1, ctors.length);
-    assertTrue(Modifier.isPrivate(ctors[0].getModifiers()));
+    assertOnlyPrivateNoArgConstructor(ProjectEditorAstI18nFactory.class);
   }
 
   @Test
   public void projectEditorAstI18nFactory_hasGetInstance() throws NoSuchMethodException {
-    Method m = ProjectEditorAstI18nFactory.class.getMethod("getInstance");
-    assertTrue(Modifier.isPublic(m.getModifiers()));
-    assertTrue(Modifier.isStatic(m.getModifiers()));
-    assertEquals(ProjectEditorAstI18nFactory.class, m.getReturnType());
+    assertStaticGetInstance(ProjectEditorAstI18nFactory.class);
   }
 
   @Test
   public void projectEditorAstI18nFactory_hasSingletonHolder() {
-    Class<?>[] inner = ProjectEditorAstI18nFactory.class.getDeclaredClasses();
-    boolean found = false;
-    for (Class<?> c : inner) {
-      if (c.getSimpleName().equals("SingletonHolder")) {
-        found = true;
-      }
-    }
-    assertTrue("SingletonHolder inner class not found", found);
+    assertSingletonHolder(ProjectEditorAstI18nFactory.class);
   }
 
   @Test
@@ -908,11 +870,9 @@ public class AstI18nFactoryHierarchyTest {
 
   @Test
   public void projectEditorAstI18nFactory_fullInheritanceChain() {
-    Class<?> cls = ProjectEditorAstI18nFactory.class;
-    assertEquals(AbstractProjectEditorAstI18nFactory.class, cls.getSuperclass());
-    assertEquals(MutableAstI18nFactory.class, cls.getSuperclass().getSuperclass());
-    assertEquals(AstI18nFactory.class, cls.getSuperclass().getSuperclass().getSuperclass());
-    assertEquals(I18nFactory.class, cls.getSuperclass().getSuperclass().getSuperclass().getSuperclass());
+    assertInheritanceChain(ProjectEditorAstI18nFactory.class,
+        AbstractProjectEditorAstI18nFactory.class, MutableAstI18nFactory.class,
+        AstI18nFactory.class, I18nFactory.class);
   }
 
   // ========================================================================
@@ -944,29 +904,17 @@ public class AstI18nFactoryHierarchyTest {
 
   @Test
   public void sceneEditorUpdatingFactory_hasPrivateConstructor() {
-    Constructor<?>[] ctors = SceneEditorUpdatingProjectEditorAstI18nFactory.class.getDeclaredConstructors();
-    assertEquals(1, ctors.length);
-    assertTrue(Modifier.isPrivate(ctors[0].getModifiers()));
+    assertOnlyPrivateNoArgConstructor(SceneEditorUpdatingProjectEditorAstI18nFactory.class);
   }
 
   @Test
   public void sceneEditorUpdatingFactory_hasGetInstance() throws NoSuchMethodException {
-    Method m = SceneEditorUpdatingProjectEditorAstI18nFactory.class.getMethod("getInstance");
-    assertTrue(Modifier.isPublic(m.getModifiers()));
-    assertTrue(Modifier.isStatic(m.getModifiers()));
-    assertEquals(SceneEditorUpdatingProjectEditorAstI18nFactory.class, m.getReturnType());
+    assertStaticGetInstance(SceneEditorUpdatingProjectEditorAstI18nFactory.class);
   }
 
   @Test
   public void sceneEditorUpdatingFactory_hasSingletonHolder() {
-    Class<?>[] inner = SceneEditorUpdatingProjectEditorAstI18nFactory.class.getDeclaredClasses();
-    boolean found = false;
-    for (Class<?> c : inner) {
-      if (c.getSimpleName().equals("SingletonHolder")) {
-        found = true;
-      }
-    }
-    assertTrue("SingletonHolder inner class not found", found);
+    assertSingletonHolder(SceneEditorUpdatingProjectEditorAstI18nFactory.class);
   }
 
   @Test
@@ -979,9 +927,8 @@ public class AstI18nFactoryHierarchyTest {
 
   @Test
   public void sceneEditorUpdatingFactory_fullInheritanceChain() {
-    Class<?> cls = SceneEditorUpdatingProjectEditorAstI18nFactory.class;
-    assertEquals(AbstractProjectEditorAstI18nFactory.class, cls.getSuperclass());
-    assertEquals(MutableAstI18nFactory.class, cls.getSuperclass().getSuperclass());
-    assertEquals(AstI18nFactory.class, cls.getSuperclass().getSuperclass().getSuperclass());
+    assertInheritanceChain(SceneEditorUpdatingProjectEditorAstI18nFactory.class,
+        AbstractProjectEditorAstI18nFactory.class, MutableAstI18nFactory.class,
+        AstI18nFactory.class);
   }
 }
