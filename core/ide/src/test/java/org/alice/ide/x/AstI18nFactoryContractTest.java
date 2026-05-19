@@ -1,9 +1,6 @@
 package org.alice.ide.x;
 
 import org.junit.Test;
-import org.junit.Assume;
-
-import java.awt.GraphicsEnvironment;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -33,10 +30,6 @@ import static org.junit.Assert.*;
  * All tests are headless-safe (pure reflection, no GUI instantiation).
  */
 public class AstI18nFactoryContractTest {
-
-  private static boolean isHeadless() {
-    return GraphicsEnvironment.isHeadless();
-  }
 
   // ========================================================================
   // Package and class FQN constants

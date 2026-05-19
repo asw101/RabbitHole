@@ -8,8 +8,8 @@
 
 ## Overview
 
-This test suite adds **1,500+ lines** of JUnit 4 reflection-based characterization tests
-across four test classes. The tests lock down the structural contracts (class hierarchy,
+This test suite adds **5,200+ lines** of JUnit 4 reflection-based characterization tests
+across six test classes. The tests lock down the structural contracts (class hierarchy,
 method signatures, modifiers, fields, inner classes) of 35 production classes without
 instantiating any Swing components or triggering the IDE bootstrap sequence.
 
@@ -28,10 +28,12 @@ instantiating any Swing components or triggering the IDE bootstrap sequence.
 
 | Test class | Location | Lines | Scope |
 |---|---|---|---|
-| `AstI18nFactoryHierarchyTest` | `core/ide/src/test/java/org/alice/ide/x/` | ~450 | 13 factory classes |
-| `AstI18nFactoryComponentsTest` | `core/ide/src/test/java/org/alice/ide/x/` | ~700 | 18 component views |
-| `AstI18nFactoryCroquetTest` | `core/ide/src/test/java/org/alice/ide/x/croquet/` | ~200 | 2 croquet classes |
-| `JavaCodeViewTest` | `core/ide/src/test/java/org/alice/ide/javacode/croquet/` | ~200 | 2 javacode classes |
+| `AstI18nFactoryHierarchyTest` | `core/ide/src/test/java/org/alice/ide/x/` | ~930 | 13 factory classes |
+| `AstI18nFactoryComponentsTest` | `core/ide/src/test/java/org/alice/ide/x/` | ~1,260 | 18 component views |
+| `AstI18nFactoryContractTest` | `core/ide/src/test/java/org/alice/ide/x/` | ~1,650 | Deep behavioral contracts |
+| `AstI18nFactoryCroquetTest` | `core/ide/src/test/java/org/alice/ide/x/croquet/` | ~280 | 2 croquet classes |
+| `JavaCodeViewTest` | `core/ide/src/test/java/org/alice/ide/javacode/croquet/` | ~340 | 2 javacode classes |
+| `JavaCodeRenderingTest` | `core/ide/src/test/java/org/alice/ide/javacode/croquet/` | ~740 | Rendering & lifecycle |
 
 ---
 
@@ -41,7 +43,7 @@ instantiating any Swing components or triggering the IDE bootstrap sequence.
 
 ```bash
 mvn test -pl core/ide \
-  -Dtest='AstI18nFactoryHierarchyTest,AstI18nFactoryComponentsTest,AstI18nFactoryCroquetTest,JavaCodeViewTest'
+  -Dtest='AstI18nFactoryHierarchyTest,AstI18nFactoryComponentsTest,AstI18nFactoryContractTest,AstI18nFactoryCroquetTest,JavaCodeViewTest,JavaCodeRenderingTest'
 ```
 
 ### Run a single test class
@@ -68,31 +70,14 @@ mvn test -pl core/ide -Dtest='I18nFactoryTest,JavaCodeUtilitiesTest'
 mvn test -pl core/ide
 ```
 
-> **CI note:** All tests guard against headless environments with
-> `Assume.assumeFalse(GraphicsEnvironment.isHeadless())`. On headless CI runners,
-> these tests are silently skipped, not failed.
+> **CI note:** All tests use pure reflection and do not instantiate Swing
+> components, so they run successfully on headless CI runners without Xvfb.
 
 ---
 
 ## Test patterns
 
-### Headless guard
-
-Every test class begins with a `@BeforeClass` guard:
-
-```java
-@BeforeClass
-public static void checkHeadless() {
-    Assume.assumeFalse("Skipping in headless environment",
-        GraphicsEnvironment.isHeadless());
-}
-```
-
-This prevents Swing class-loading failures on headless CI runners (e.g., GitHub Actions
-without Xvfb). The guard uses JUnit 4's `Assume` — a failed assumption marks the test
-as **ignored**, not **failed**.
-
-### Reflection-only testing
+### Reflection-only testing (headless-safe)
 
 All tests use `java.lang.reflect` to inspect class structure without instantiation:
 
@@ -282,27 +267,18 @@ and `setDeclaration`).
 These tests use only:
 - **JUnit 4** — already declared in `core/ide/pom.xml`
 - **`java.lang.reflect`** — standard JDK
-- **`java.awt.GraphicsEnvironment`** — standard JDK (for headless check)
 
 No new dependencies, test frameworks, or build plugins are needed.
 
 ### Headless behavior
 
+All tests use pure reflection — no Swing instantiation, no display server required.
+
 | Environment | Behavior |
 |---|---|
 | Desktop (X11/Wayland) | Tests run normally |
-| Headless CI (no display) | Tests are skipped via `Assume.assumeFalse` |
+| Headless CI (no display) | Tests run normally (reflection-only) |
 | CI with Xvfb | Tests run normally |
-
-To force headless mode locally for testing:
-
-```bash
-mvn test -pl core/ide \
-  -Dtest=AstI18nFactoryHierarchyTest \
-  -Djava.awt.headless=true
-```
-
-All tests will report as **skipped** (not failed).
 
 ---
 
@@ -414,17 +390,17 @@ Using `Class.forName("...")` with string literals:
 The `core/ide` module uses JUnit 4 throughout. Mixing JUnit versions in the same module
 adds complexity without benefit. All new tests follow the same JUnit 4 conventions:
 - `@Test` annotation
-- `@BeforeClass` for setup
 - `Assert.*` static imports
-- `Assume.*` for conditional execution
 
 ### Why separate test classes instead of one large class?
 
-Four test classes map to four distinct production sub-packages:
-- `x/` → `AstI18nFactoryHierarchyTest`
+Six test classes map to distinct production sub-packages and concern axes:
+- `x/` hierarchy → `AstI18nFactoryHierarchyTest`
 - `x/components/` → `AstI18nFactoryComponentsTest`
+- `x/` deep contracts → `AstI18nFactoryContractTest`
 - `x/croquet/` + `x/croquet/edits/` → `AstI18nFactoryCroquetTest`
-- `javacode/` → `JavaCodeViewTest`
+- `javacode/` structure → `JavaCodeViewTest`
+- `javacode/` rendering & lifecycle → `JavaCodeRenderingTest`
 
 This keeps each test class focused, enables selective test execution (run only the
 tests for the package you changed), and keeps file sizes manageable.
