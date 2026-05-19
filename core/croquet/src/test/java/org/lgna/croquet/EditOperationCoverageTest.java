@@ -45,11 +45,22 @@ public class EditOperationCoverageTest {
   }
 
   @Test
+  public void class_isNotFinal() {
+    assertFalse(Modifier.isFinal(EditOperation.class.getModifiers()));
+  }
+
+  @Test
   public void constructors_matchSourceSignatures() throws Exception {
     Constructor<EditOperation> oneArg = EditOperation.class.getConstructor(Edit.class);
     Constructor<EditOperation> twoArg = EditOperation.class.getConstructor(Group.class, Edit.class);
     assertTrue(Modifier.isPublic(oneArg.getModifiers()));
     assertTrue(Modifier.isPublic(twoArg.getModifiers()));
+  }
+
+  @Test
+  public void constructor_count_isExactlyTwo() {
+    Constructor<?>[] ctors = EditOperation.class.getDeclaredConstructors();
+    assertEquals(2, ctors.length);
   }
 
   @Test
@@ -144,6 +155,18 @@ public class EditOperationCoverageTest {
     assertEquals("Apply Custom Edit", customOperation.getImp().getName());
     assertEquals("tooltip", customOperation.getImp().getSwingModel().getAction().getValue(Action.SHORT_DESCRIPTION));
     assertSame(icon, customOperation.getImp().getSwingModel().getAction().getValue(Action.SMALL_ICON));
+  }
+
+  @Test
+  public void declaredMethods_count() {
+    Method[] methods = EditOperation.class.getDeclaredMethods();
+    int nonSynthetic = 0;
+    for (Method m : methods) {
+      if (!m.isSynthetic() && !m.isBridge()) {
+        nonSynthetic++;
+      }
+    }
+    assertEquals("EditOperation should declare exactly 1 method (perform)", 1, nonSynthetic);
   }
 
   @Test

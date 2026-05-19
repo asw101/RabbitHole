@@ -5,6 +5,7 @@ import org.junit.Test;
 import org.lgna.croquet.history.UserActivity;
 
 import javax.swing.Action;
+import javax.swing.SwingUtilities;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -232,6 +233,34 @@ public class PopupPrepModelTest {
       }
     }
     assertTrue("Expected at least 9 declared methods, got " + count, count >= 9);
+  }
+
+  // ── Method signatures ──────────────────────────────────────────────
+
+  @Test
+  public void accessors_have_expected_signatures() throws Exception {
+    assertEquals("SwingModel", PopupPrepModel.class.getDeclaredMethod("getSwingModel").getReturnType().getSimpleName());
+    assertEquals(String.class, PopupPrepModel.class.getDeclaredMethod("getName").getReturnType());
+    assertEquals(void.class, PopupPrepModel.class.getDeclaredMethod("setName", String.class).getReturnType());
+    assertEquals(boolean.class, PopupPrepModel.class.getDeclaredMethod("isEnabled").getReturnType());
+    assertEquals(void.class, PopupPrepModel.class.getDeclaredMethod("setEnabled", boolean.class).getReturnType());
+    assertEquals(org.lgna.croquet.views.PopupButton.class,
+        PopupPrepModel.class.getDeclaredMethod("createPopupButton").getReturnType());
+  }
+
+  @Test
+  public void fire_method_has_expected_signature() throws Exception {
+    Method fire = PopupPrepModel.class.getDeclaredMethod("fire", UserActivity.class);
+    assertEquals(void.class, fire.getReturnType());
+    assertTrue(Modifier.isPublic(fire.getModifiers()));
+    assertFalse(Modifier.isStatic(fire.getModifiers()));
+  }
+
+  @Test
+  public void createPopupButton_returns_popupButton() throws Exception {
+    AtomicReference<org.lgna.croquet.views.PopupButton> ref = new AtomicReference<>();
+    SwingUtilities.invokeAndWait(() -> ref.set(model.createPopupButton()));
+    assertNotNull(ref.get());
   }
 
   // ── Concrete test subclass ─────────────────────────────────────────
