@@ -130,7 +130,6 @@ public class StandInAndTargetImpTest {
   @Test
   public void target_constructsWithoutError() {
     STarget target = new STarget();
-    assertNotNull(target);
     assertNotNull(target.getImplementation());
   }
 

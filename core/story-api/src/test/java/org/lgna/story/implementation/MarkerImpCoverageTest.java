@@ -24,7 +24,6 @@ public class MarkerImpCoverageTest {
   @Test
   public void marker_constructsWithoutError() {
     SThingMarker marker = new SThingMarker();
-    assertNotNull(marker);
     assertNotNull(marker.getImplementation());
   }
 

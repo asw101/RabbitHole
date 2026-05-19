@@ -24,7 +24,6 @@ public class BillboardImpCoverageTest {
   @Test
   public void billboard_constructsWithoutError() {
     SBillboard bb = new SBillboard();
-    assertNotNull(bb);
     assertNotNull(bb.getImplementation());
   }
 

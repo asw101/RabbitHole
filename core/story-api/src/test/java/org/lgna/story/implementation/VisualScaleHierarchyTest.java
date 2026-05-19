@@ -1,7 +1,6 @@
 package org.lgna.story.implementation;
 
 import edu.cmu.cs.dennisc.scenegraph.Visual;
-import edu.cmu.cs.dennisc.scenegraph.scale.Resizer;
 import org.alice.math.immutable.Dimension3;
 import org.junit.Test;
 import org.lgna.story.SBox;
@@ -9,7 +8,6 @@ import org.lgna.story.SBillboard;
 import org.lgna.story.SSphere;
 import org.lgna.story.STextModel;
 
-import java.lang.reflect.Method;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;

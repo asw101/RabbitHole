@@ -1,6 +1,5 @@
 package org.lgna.story.implementation;
 
-import edu.cmu.cs.dennisc.scenegraph.Visual;
 import edu.cmu.cs.dennisc.scenegraph.scale.Resizer;
 import org.alice.math.immutable.Dimension3;
 import org.junit.Test;
@@ -178,13 +177,8 @@ public class ShapeResizeAndScaleTest {
     STorus torus = new STorus();
     TorusImp imp = torus.getImplementation();
     double outerBefore = imp.outerRadius.getValue();
-    // Setting innerRadius directly doesn't affect outerRadius
-    // (unlike setValueForResizer which adjusts both)
-    assertNotNull(imp.innerRadius);
-    assertNotNull(imp.outerRadius);
-    // Both are accessible and have positive defaults
-    assertTrue(imp.innerRadius.getValue() > 0);
-    assertTrue(imp.outerRadius.getValue() > 0);
+    imp.innerRadius.setValue(0.3);
+    assertEquals(outerBefore, imp.outerRadius.getValue(), 1e-9);
   }
 
   @Test

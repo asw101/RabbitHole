@@ -25,7 +25,6 @@ public class AxesAndSunImpTest {
   @Test
   public void axes_constructsWithoutError() {
     SAxes axes = new SAxes();
-    assertNotNull(axes);
     assertNotNull(axes.getImplementation());
   }
 
@@ -128,7 +127,6 @@ public class AxesAndSunImpTest {
   @Test
   public void sun_constructsWithoutError() {
     SSun sun = new SSun();
-    assertNotNull(sun);
     assertNotNull(sun.getImplementation());
   }
 
@@ -186,9 +184,7 @@ public class AxesAndSunImpTest {
   @Test
   public void sun_getName_returnsNullByDefault() {
     SSun sun = new SSun();
-    // Name may be null or non-null depending on initialization
-    sun.getImplementation().getName();
-    // No assertion — just exercises getName without exception
+    assertNull(sun.getImplementation().getName());
   }
 
   @SuppressWarnings("deprecation")
