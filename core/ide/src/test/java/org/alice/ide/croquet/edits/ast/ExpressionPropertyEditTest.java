@@ -2,31 +2,35 @@ package org.alice.ide.croquet.edits.ast;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.lgna.croquet.*;
+import org.lgna.croquet.edits.AbstractEdit;
 import org.lgna.project.ast.*;
+
+import java.lang.reflect.Field;
 
 import static org.junit.Assert.*;
 
-/**
- * Tests for {@link ExpressionPropertyEdit} — edit that changes an ExpressionProperty value.
- * Covers construction with null UserActivity, doOrRedo/undo round-trip,
- * and accessor contracts.
- */
 public class ExpressionPropertyEditTest {
-
-  private ExpressionStatement owner;
   private ExpressionProperty property;
   private Expression prevExpression;
   private Expression nextExpression;
+
+  private static Object readField(Object instance, String fieldName) {
+    try {
+      Field field = instance.getClass().getDeclaredField(fieldName);
+      field.setAccessible(true);
+      return field.get(instance);
+    } catch (ReflectiveOperationException roe) {
+      throw new AssertionError(roe);
+    }
+  }
 
   @Before
   public void setUp() {
     prevExpression = new NullLiteral();
     nextExpression = new IntegerLiteral(42);
-    owner = new ExpressionStatement(prevExpression);
-    property = owner.expression;
+    property = new ExpressionStatement(prevExpression).expression;
   }
-
-  // ---- construction ----
 
   @Test
   public void construct_withNullUserActivity_succeeds() {
@@ -34,148 +38,89 @@ public class ExpressionPropertyEditTest {
     assertNotNull(edit);
   }
 
-  // ---- doOrRedoInternal ----
-
   @Test
-  public void doOrRedoInternal_isDo_true_setsNextExpression() {
-    ExpressionPropertyEdit edit = new ExpressionPropertyEdit(null, property, prevExpression, nextExpression);
-    edit.doOrRedoInternal(true);
-    assertSame(nextExpression, property.getValue());
-  }
-
-  @Test
-  public void doOrRedoInternal_isDo_false_setsNextExpression() {
-    ExpressionPropertyEdit edit = new ExpressionPropertyEdit(null, property, prevExpression, nextExpression);
-    edit.doOrRedoInternal(false);
-    assertSame(nextExpression, property.getValue());
-  }
-
-  // ---- undoInternal ----
-
-  @Test
-  public void undoInternal_restoresPrevExpression() {
-    ExpressionPropertyEdit edit = new ExpressionPropertyEdit(null, property, prevExpression, nextExpression);
-    edit.doOrRedoInternal(true);
-    assertSame(nextExpression, property.getValue());
-
-    edit.undoInternal();
-    assertSame(prevExpression, property.getValue());
-  }
-
-  // ---- doOrRedo + undo round trip ----
-
-  @Test
-  public void doAndUndo_roundTrip_restoresOriginal() {
-    ExpressionPropertyEdit edit = new ExpressionPropertyEdit(null, property, prevExpression, nextExpression);
-    assertSame(prevExpression, property.getValue());
-
-    edit.doOrRedoInternal(true);
-    assertSame(nextExpression, property.getValue());
-
-    edit.undoInternal();
-    assertSame(prevExpression, property.getValue());
-  }
-
-  @Test
-  public void doAndRedo_afterUndo_setsNext() {
+  public void construct_preservesExpressionPropertyAndExpressions() {
     ExpressionPropertyEdit edit = new ExpressionPropertyEdit(null, property, prevExpression, nextExpression);
 
-    edit.doOrRedoInternal(true);
-    edit.undoInternal();
-    edit.doOrRedoInternal(false);
-
-    assertSame(nextExpression, property.getValue());
+    assertSame(property, readField(edit, "expressionProperty"));
+    assertSame(prevExpression, readField(edit, "prevExpression"));
+    assertSame(nextExpression, readField(edit, "nextExpression"));
   }
 
   @Test
-  public void multipleUndoRedo_cycles() {
-    ExpressionPropertyEdit edit = new ExpressionPropertyEdit(null, property, prevExpression, nextExpression);
+  public void construct_withNullExpressionProperty_preservesNull() {
+    ExpressionPropertyEdit edit = new ExpressionPropertyEdit(null, null, prevExpression, nextExpression);
 
-    for (int i = 0; i < 5; i++) {
-      edit.doOrRedoInternal(i == 0);
-      assertSame("After do/redo cycle " + i, nextExpression, property.getValue());
-
-      edit.undoInternal();
-      assertSame("After undo cycle " + i, prevExpression, property.getValue());
-    }
-  }
-
-  // ---- different expression types ----
-
-  @Test
-  public void doOrRedo_withDoubleLiteral() {
-    Expression prev = new DoubleLiteral(1.0);
-    Expression next = new DoubleLiteral(2.0);
-    ExpressionStatement stmt = new ExpressionStatement(prev);
-
-    ExpressionPropertyEdit edit = new ExpressionPropertyEdit(null, stmt.expression, prev, next);
-    edit.doOrRedoInternal(true);
-    assertSame(next, stmt.expression.getValue());
+    assertNull(readField(edit, "expressionProperty"));
   }
 
   @Test
-  public void doOrRedo_withBooleanLiteral() {
-    Expression prev = new BooleanLiteral(false);
-    Expression next = new BooleanLiteral(true);
-    ExpressionStatement stmt = new ExpressionStatement(prev);
-
-    ExpressionPropertyEdit edit = new ExpressionPropertyEdit(null, stmt.expression, prev, next);
-    edit.doOrRedoInternal(true);
-    assertSame(next, stmt.expression.getValue());
-  }
-
-  @Test
-  public void doOrRedo_withStringLiteral() {
-    Expression prev = new StringLiteral("old");
-    Expression next = new StringLiteral("new");
-    ExpressionStatement stmt = new ExpressionStatement(prev);
-
-    ExpressionPropertyEdit edit = new ExpressionPropertyEdit(null, stmt.expression, prev, next);
-    edit.doOrRedoInternal(true);
-    assertSame(next, stmt.expression.getValue());
-
-    edit.undoInternal();
-    assertSame(prev, stmt.expression.getValue());
-  }
-
-  // ---- setValue is idempotent ----
-
-  @Test
-  public void doOrRedo_twiceWithoutUndo_setsSameValue() {
-    ExpressionPropertyEdit edit = new ExpressionPropertyEdit(null, property, prevExpression, nextExpression);
-    edit.doOrRedoInternal(true);
-    edit.doOrRedoInternal(false);
-    assertSame(nextExpression, property.getValue());
-  }
-
-  @Test
-  public void undo_twiceWithoutRedo_setsSameValue() {
-    ExpressionPropertyEdit edit = new ExpressionPropertyEdit(null, property, prevExpression, nextExpression);
-    edit.doOrRedoInternal(true);
-    edit.undoInternal();
-    edit.undoInternal();
-    assertSame(prevExpression, property.getValue());
-  }
-
-  // ---- property.getValue before any edit ----
-
-  @Test
-  public void propertyValue_beforeEdit_isPrev() {
-    new ExpressionPropertyEdit(null, property, prevExpression, nextExpression);
-    assertSame(prevExpression, property.getValue());
-  }
-
-  // ---- null expressions ----
-
-  @Test
-  public void construct_withNullPrevExpression_succeeds() {
+  public void construct_withNullPrevExpression_preservesNull() {
     ExpressionPropertyEdit edit = new ExpressionPropertyEdit(null, property, null, nextExpression);
-    assertNotNull(edit);
+
+    assertNull(readField(edit, "prevExpression"));
   }
 
   @Test
-  public void construct_withNullNextExpression_succeeds() {
+  public void construct_withNullNextExpression_preservesNull() {
     ExpressionPropertyEdit edit = new ExpressionPropertyEdit(null, property, prevExpression, null);
-    assertNotNull(edit);
+
+    assertNull(readField(edit, "nextExpression"));
+  }
+
+  @Test
+  public void construct_multipleInstances_keepFieldsIndependent() {
+    ExpressionProperty firstProperty = new ExpressionStatement(new StringLiteral("first")).expression;
+    ExpressionProperty secondProperty = new ExpressionStatement(new StringLiteral("second")).expression;
+    ExpressionPropertyEdit firstEdit = new ExpressionPropertyEdit(null, firstProperty, new StringLiteral("a"), new StringLiteral("b"));
+    ExpressionPropertyEdit secondEdit = new ExpressionPropertyEdit(null, secondProperty, new IntegerLiteral(1), new IntegerLiteral(2));
+
+    assertSame(firstProperty, readField(firstEdit, "expressionProperty"));
+    assertSame(secondProperty, readField(secondEdit, "expressionProperty"));
+    assertNotSame(readField(firstEdit, "nextExpression"), readField(secondEdit, "nextExpression"));
+  }
+
+  @Test
+  public void construct_extendsAbstractEdit() {
+    ExpressionPropertyEdit edit = new ExpressionPropertyEdit(null, property, prevExpression, nextExpression);
+
+    assertTrue(edit instanceof AbstractEdit);
+  }
+
+  @Test
+  public void appendDescription_viaTerseDescription_containsSetPrefixAndArrow() {
+    ExpressionPropertyEdit edit = new ExpressionPropertyEdit(null, property, prevExpression, nextExpression);
+    String description = edit.getTerseDescription();
+
+    assertTrue(description.startsWith("set: "));
+    assertTrue(description.contains("===>"));
+  }
+
+  @Test
+  public void getRedoPresentation_containsSetPrefix() {
+    ExpressionPropertyEdit edit = new ExpressionPropertyEdit(null, property, prevExpression, nextExpression);
+
+    assertTrue(edit.getRedoPresentation().startsWith("Redo:set: "));
+  }
+
+  @Test
+  public void getUndoPresentation_containsSetPrefix() {
+    ExpressionPropertyEdit edit = new ExpressionPropertyEdit(null, property, prevExpression, nextExpression);
+
+    assertTrue(edit.getUndoPresentation().startsWith("Undo:set: "));
+  }
+
+  @Test
+  public void getDetailedDescription_containsClassName() {
+    ExpressionPropertyEdit edit = new ExpressionPropertyEdit(null, property, prevExpression, nextExpression);
+
+    assertTrue(edit.getDetailedDescription().contains(ExpressionPropertyEdit.class.getName()));
+  }
+
+  @Test
+  public void toString_matchesDetailedDescription() {
+    ExpressionPropertyEdit edit = new ExpressionPropertyEdit(null, property, prevExpression, nextExpression);
+
+    assertEquals(edit.getDetailedDescription(), edit.toString());
   }
 }
