@@ -2,6 +2,7 @@ package org.lgna.croquet;
 
 import edu.cmu.cs.dennisc.codec.BinaryDecoder;
 import edu.cmu.cs.dennisc.codec.BinaryEncoder;
+import org.lgna.croquet.history.UserActivity;
 
 import javax.swing.DefaultButtonModel;
 import javax.swing.DefaultListSelectionModel;
@@ -12,6 +13,9 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.text.AbstractDocument;
 import javax.swing.text.Document;
 import java.awt.event.ItemListener;
+import java.awt.event.WindowEvent;
+import java.io.File;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -34,6 +38,48 @@ public final class CroquetTestUtils {
    */
   public static UUID nextTestUUID() {
     return new UUID(0L, UUID_COUNTER.incrementAndGet());
+  }
+
+  public static synchronized Application<?> ensureTestApplication() {
+    if (Application.getActiveInstance() == null) {
+      new HeadlessTestApplication();
+    }
+    return Application.getActiveInstance();
+  }
+
+  private static final class HeadlessTestApplication extends Application<DocumentFrame> {
+    @Override
+    public DocumentFrame getDocumentFrame() {
+      return null;
+    }
+
+    @Override
+    protected Operation getAboutOperation() {
+      return null;
+    }
+
+    @Override
+    protected Operation getPreferencesOperation() {
+      return null;
+    }
+
+    @Override
+    protected void handleOpenFiles(List<File> files) {
+    }
+
+    @Override
+    protected void handleWindowOpened(WindowEvent e) {
+    }
+
+    @Override
+    public void handleQuit(UserActivity activity) {
+      activity.finish();
+    }
+
+    @Override
+    public String getApplicationSubPath() {
+      return "test";
+    }
   }
 
   /**
