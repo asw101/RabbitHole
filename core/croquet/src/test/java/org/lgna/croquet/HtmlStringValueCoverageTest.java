@@ -8,6 +8,7 @@ import org.lgna.croquet.views.ImmutableEditorPane;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Arrays;
 import java.util.UUID;
 
 import static org.junit.Assert.*;
@@ -26,7 +27,11 @@ public class HtmlStringValueCoverageTest {
         "createImmutableEditorPane", float.class, TextAttribute[].class);
     varArgsEditorPaneMethod = HtmlStringValue.class.getDeclaredMethod(
         "createImmutableEditorPane", TextAttribute[].class);
-    declaredMethods = HtmlStringValue.class.getDeclaredMethods();
+    declaredMethods = Arrays.stream(HtmlStringValue.class.getDeclaredMethods())
+        .filter(method -> !method.isSynthetic())
+        .filter(method -> !method.isBridge())
+        .filter(method -> !"$jacocoInit".equals(method.getName()))
+        .toArray(Method[]::new);
   }
 
   // ── Hierarchy ──────────────────────────────────────────────────────
