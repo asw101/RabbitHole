@@ -2,7 +2,10 @@ package edu.cmu.cs.dennisc.image;
 
 import org.junit.Test;
 
+import java.awt.Image;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.net.URL;
 import java.util.Set;
 
 import static org.junit.Assert.*;
@@ -83,5 +86,86 @@ public class ImageUtilitiesTest {
     assertEquals(image.getWidth(), copy.getWidth());
     assertEquals(image.getHeight(), copy.getHeight());
     assertEquals(image.getRGB(1, 1), copy.getRGB(1, 1));
+  }
+
+  @Test
+  public void readThrowsForUnknownExtensionOnFileAndUrl() throws Exception {
+    try {
+      ImageUtilities.read("sample.unknown");
+      fail();
+    } catch (RuntimeException expected) {
+      assertTrue(expected.getMessage().contains("Could not find codec"));
+    }
+
+    try {
+      ImageUtilities.read(new URL("file:/sample.unknown"));
+      fail();
+    } catch (RuntimeException expected) {
+      assertTrue(expected.getMessage().contains("Could not find codec"));
+    }
+  }
+
+  @Test
+  public void writeToByteArraySupportsNonRenderedImagesAndRoundTripsThroughRead() throws Exception {
+    BufferedImage source = createImage(3, 3);
+    Image scaled = source.getScaledInstance(3, 3, Image.SCALE_REPLICATE);
+
+    byte[] png = ImageUtilities.writeToByteArray(ImageUtilities.PNG_CODEC_NAME, scaled);
+    BufferedImage decoded = ImageUtilities.read(ImageUtilities.PNG_CODEC_NAME, new ByteArrayInputStream(png));
+
+    assertEquals(3, ImageUtilities.getWidth(scaled));
+    assertEquals(3, ImageUtilities.getHeight(scaled));
+    assertEquals(source.getRGB(0, 0), decoded.getRGB(0, 0));
+  }
+
+  @Test
+  public void codecLookupHandlesNullAndFileAcceptabilityUsesFileName() {
+    assertNull(ImageUtilities.getCodecNameForExtension(null));
+    assertTrue(ImageUtilities.isAcceptable(new java.io.File("thing.png")));
+    assertFalse(ImageUtilities.isAcceptable(new java.io.File("thing.unknown")));
+    assertNotNull(ImageUtilities.accessImageObserver());
+  }
+
+  @Test
+  public void writePathCreatesFileAndUnknownExtensionWriteThrows() throws Exception {
+    java.io.File file = new java.io.File("target/test-artifacts/ImageUtilitiesTest/path-write.png");
+    file.getParentFile().mkdirs();
+    ImageUtilities.write(file.getAbsolutePath(), createImage(2, 2));
+    assertTrue(file.exists());
+
+    try {
+      ImageUtilities.write(new java.io.File("target/test-artifacts/ImageUtilitiesTest/image.unknown"), createImage(1, 1));
+      fail();
+    } catch (RuntimeException expected) {
+      assertTrue(expected.getMessage().contains("Could not find codec"));
+    }
+  }
+
+  @Test
+  public void readAcceptsAlreadyBufferedStreams() throws Exception {
+    byte[] png = ImageUtilities.writeToByteArray(ImageUtilities.PNG_CODEC_NAME, createImage(2, 2));
+    BufferedImage decoded = ImageUtilities.read(ImageUtilities.PNG_CODEC_NAME, new java.io.BufferedInputStream(new ByteArrayInputStream(png)));
+    assertEquals(2, decoded.getWidth());
+  }
+
+  @Test
+  public void jpegWriteConvertsArgbBufferedImage() throws Exception {
+    BufferedImage source = createImage(4, 3);
+    byte[] jpeg = ImageUtilities.writeToByteArray(ImageUtilities.JPEG_CODEC_NAME, source);
+    BufferedImage decoded = ImageUtilities.read(ImageUtilities.JPEG_CODEC_NAME, new ByteArrayInputStream(jpeg));
+
+    assertEquals(4, decoded.getWidth());
+    assertEquals(3, decoded.getHeight());
+  }
+
+  @Test
+  public void jpegWriteAcceptsAlreadyBgrBufferedImage() throws Exception {
+    BufferedImage source = new BufferedImage(3, 2, BufferedImage.TYPE_3BYTE_BGR);
+    source.setRGB(1, 1, 0xFF112233);
+    byte[] jpeg = ImageUtilities.writeToByteArray(ImageUtilities.JPEG_CODEC_NAME, source);
+    BufferedImage decoded = ImageUtilities.read(ImageUtilities.JPEG_CODEC_NAME, new ByteArrayInputStream(jpeg));
+
+    assertEquals(3, decoded.getWidth());
+    assertEquals(2, decoded.getHeight());
   }
 }

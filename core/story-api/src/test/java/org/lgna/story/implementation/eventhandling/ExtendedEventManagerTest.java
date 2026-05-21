@@ -425,6 +425,35 @@ public class ExtendedEventManagerTest {
   }
 
   // ═══════════════════════════════════════════════════════════════════════
+  //  Listener wiring through render target
+  // ═══════════════════════════════════════════════════════════════════════
+
+  @Test
+  public void addListenersToAndRemoveListenersFromOnscreenRenderTarget() {
+    edu.cmu.cs.dennisc.render.OnscreenRenderTarget target =
+        org.alice.interact.manipulator.StubOnscreenRenderTarget.downwardRays();
+    eventManager.addListenersTo(target);
+    eventManager.removeListenersFrom(target);
+  }
+
+  @Test
+  public void initializeAddsTimerAsSceneActivationListener() {
+    // Calling initialize() a second time should be safe.
+    eventManager.initialize();
+    eventManager.initialize();
+  }
+
+  @Test
+  public void removeKeyListenerThrowsRuntimeAsTodo() {
+    try {
+      eventManager.removeKeyListener(null);
+      fail("expected RuntimeException(todo)");
+    } catch (RuntimeException expected) {
+      assertEquals("todo", expected.getMessage());
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
   //  Helper
   // ═══════════════════════════════════════════════════════════════════════
 

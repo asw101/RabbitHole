@@ -135,4 +135,12 @@ public class StorytellingResourcesTest {
     assertNotNull(paths);
     assertTrue(paths.isEmpty());
   }
+
+  // ── makeDirectoryPreferenceString edge case ──
+
+  @Test
+  public void makeDirectoryPreferenceStringWithSinglePathEqualsPath() {
+    String r = StorytellingResources.makeDirectoryPreferenceString(new String[]{"x"});
+    assertEquals("x", r);
+  }
 }

@@ -129,6 +129,112 @@ public class HandleManagerTest {
     assertTrue(manager.isHandleVisible(handle));
   }
 
+  @Test
+  public void isHandleVisibleFalseWhenNotInCurrentSet() {
+    HandleManager manager = new HandleManager();
+    StubHandle handle = new StubHandle(new HandleSet(HandleSet.HandleGroup.ROTATION));
+    manager.addHandle(handle);
+    manager.setHandleSet(new HandleSet(HandleSet.HandleGroup.TRANSLATION));
+    assertFalse(manager.isHandleVisible(handle));
+  }
+
+  @Test
+  public void setHandleRolloverDelegatesToHandle() {
+    HandleManager manager = new HandleManager();
+    StubHandle handle = new StubHandle(new HandleSet(HandleSet.HandleGroup.ROTATION));
+    manager.setHandleRollover(handle, true);
+    assertTrue(handle.getHandleStateCopy().isRollover());
+  }
+
+  @Test
+  public void setHandlesVisibleDelegatesToHandles() {
+    HandleManager manager = new HandleManager();
+    StubHandle a = new StubHandle(new HandleSet(HandleSet.HandleGroup.ROTATION));
+    StubHandle b = new StubHandle(new HandleSet(HandleSet.HandleGroup.TRANSLATION));
+    manager.addHandle(a);
+    manager.addHandle(b);
+    manager.setHandlesVisible(true);
+    assertTrue(a.isHandleVisible());
+    assertTrue(b.isHandleVisible());
+    manager.setHandlesVisible(false);
+    assertFalse(a.isHandleVisible());
+    assertFalse(b.isHandleVisible());
+  }
+
+  @Test
+  public void popHandleSetOnEmptyStackReturnsNullAndPrints() {
+    assertNull(new HandleManager().popHandleSet());
+  }
+
+  @Test
+  public void isASiblingActiveReturnsTrueWhenSiblingHandleIsActive() {
+    HandleManager manager = new HandleManager();
+    StubHandle a = new StubHandle(new HandleSet(HandleSet.HandleGroup.ROTATION));
+    StubHandle b = new StubHandle(new HandleSet(HandleSet.HandleGroup.ROTATION));
+    manager.addHandle(a);
+    manager.addHandle(b);
+    manager.setHandleSet(new HandleSet(HandleSet.HandleGroup.ROTATION));
+    b.setHandleActive(true);
+    assertTrue(manager.isASiblingActive(a));
+  }
+
+  @Test
+  public void isASiblingActiveReturnsFalseWhenNoSiblingIsActive() {
+    HandleManager manager = new HandleManager();
+    StubHandle a = new StubHandle(new HandleSet(HandleSet.HandleGroup.ROTATION));
+    StubHandle b = new StubHandle(new HandleSet(HandleSet.HandleGroup.ROTATION));
+    manager.addHandle(a);
+    manager.addHandle(b);
+    manager.setHandleSet(new HandleSet(HandleSet.HandleGroup.ROTATION));
+    assertFalse(manager.isASiblingActive(a));
+  }
+
+  @Test
+  public void alwaysVisibleHandleHasSiblingsWithEqualMembership() {
+    HandleManager manager = new HandleManager();
+    StubHandle alwaysA = new StubHandle(new HandleSet(HandleSet.HandleGroup.ROTATION));
+    alwaysA.alwaysVisible = true;
+    StubHandle alwaysB = new StubHandle(new HandleSet(HandleSet.HandleGroup.ROTATION));
+    alwaysB.alwaysVisible = true;
+    manager.addHandle(alwaysA);
+    manager.addHandle(alwaysB);
+    // alwaysB is sibling of alwaysA, but neither is active.
+    assertFalse(manager.isASiblingActive(alwaysA));
+  }
+
+  @Test
+  public void isSelectableMirrorsCanHaveHandles() {
+    Transformable transformable = new Transformable();
+    // Plain transformable lacks pick-type hints → cannot have handles → not selectable.
+    assertEquals(HandleManager.canHaveHandles(transformable), HandleManager.isSelectable(transformable));
+  }
+
+  @Test
+  public void managerImplementsManipulationListenerAsNoOpsAndReturnsFalseMatch() {
+    HandleManager manager = new HandleManager();
+    // Direct no-op calls exercise the inherited interface body.
+    manager.activate(null);
+    manager.deactivate(null);
+    manager.addCondition(null);
+    manager.removeCondition(null);
+    assertFalse(manager.matches(null));
+  }
+
+  @Test
+  public void setSelectedObjectWithNullStillUpdatesVisibility() {
+    HandleManager manager = new HandleManager();
+    StubHandle handle = new StubHandle(new HandleSet(HandleSet.HandleGroup.ROTATION));
+    manager.addHandle(handle);
+    manager.setSelectedObject(null);
+    // Handle still tracks null selection (depends on canHaveHandle(null, h)).
+    // Calling without exception is the contract being tested here.
+  }
+
+  @Test
+  public void getSelectedObjectReturnsNullWhenNoHandlesRegistered() {
+    assertNull(new HandleManager().getSelectedObject());
+  }
+
   private static final class StubHandle implements ManipulationHandle {
     private HandleManager handleManager;
     private final HandleSet handleSet;

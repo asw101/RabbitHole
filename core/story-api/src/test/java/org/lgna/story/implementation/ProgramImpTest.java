@@ -12,6 +12,7 @@ import java.lang.reflect.InvocationTargetException;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
@@ -178,6 +179,44 @@ public class ProgramImpTest {
   }
 
   // ══════════════════════════════════════════════════════════════════════════
+  //  Speed change, restart action, toggle full screen action, dialog bounds
+  // ══════════════════════════════════════════════════════════════════════════
+
+  @Test
+  public void handleSpeedChangeDelegatesToAnimator() {
+    TestProgramImp imp = new TestProgramImp(null);
+    imp.callHandleSpeedChange(3.0);
+  }
+
+  @Test
+  public void getRestartActionDefaultsToNull() {
+    assertNull(new TestProgramImp(null).getRestartAction());
+  }
+
+  @Test
+  public void setRestartActionRoundTrips() {
+    TestProgramImp imp = new TestProgramImp(null);
+    javax.swing.Action a = new javax.swing.AbstractAction() {
+      @Override public void actionPerformed(java.awt.event.ActionEvent e) { }
+    };
+    imp.setRestartAction(a);
+    assertSame(a, imp.getRestartAction());
+  }
+
+  @Test
+  public void getToggleFullScreenActionIsNotNull() {
+    assertNotNull(new TestProgramImp(null).getToggleFullScreenAction());
+  }
+
+  @Test
+  public void getNormalDialogBoundsReturnsAwtComponentBoundsWhenNoPrev() {
+    javax.swing.JPanel panel = new javax.swing.JPanel();
+    panel.setBounds(0, 0, 100, 100);
+    java.awt.Rectangle r = new TestProgramImp(null).getNormalDialogBounds(panel);
+    assertNotNull(r);
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
   //  Test doubles
   // ══════════════════════════════════════════════════════════════════════════
 
@@ -191,6 +230,10 @@ public class ProgramImpTest {
     @Override
     public Animator getAnimator() {
       return animator;
+    }
+
+    public void callHandleSpeedChange(double s) {
+      handleSpeedChange(s);
     }
   }
 

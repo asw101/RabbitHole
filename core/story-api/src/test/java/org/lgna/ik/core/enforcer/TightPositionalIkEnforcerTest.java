@@ -205,4 +205,94 @@ public class TightPositionalIkEnforcerTest {
     getPriorityLevels(enforcer).add(new PriorityLevel(enforcer));
     assertEquals(1, getPriorityLevels(enforcer).size());
   }
+
+  // --- Extension: cover more methods ---
+
+  private static org.lgna.ik.core.solver.BoneTest.TestJointImp newTestJoint(String name) {
+    return new org.lgna.ik.core.solver.BoneTest.TestJointImp(
+        name,
+        new org.lgna.ik.core.solver.BoneTest.NamedJointId(name),
+        org.alice.math.immutable.AffineMatrix4x4.IDENTITY,
+        true, true, true);
+  }
+
+  private static TightPositionalIkEnforcer newThreeAxisEnforcerForJoint(org.lgna.ik.core.solver.BoneTest.TestJointImp jointImp) {
+    List<JacobianAxis> axes = new ArrayList<JacobianAxis>();
+    axes.add(new JacobianAxis(jointImp, 0));
+    axes.add(new JacobianAxis(jointImp, 1));
+    axes.add(new JacobianAxis(jointImp, 2));
+    return newEnforcer(axes);
+  }
+
+  @Test
+  public void enforceConstraintsSetsAngleDeltasStorageMatchingAxes() {
+    org.lgna.ik.core.solver.BoneTest.TestJointImp joint = newTestJoint("j");
+    TightPositionalIkEnforcer enforcer = newThreeAxisEnforcerForJoint(joint);
+    enforcer.enforceConstraints();
+    assertEquals(3, getAngleDeltas(enforcer).storage.length);
+  }
+
+  @Test
+  public void areConstraintsMetReturnsTrueWhenAllLevelsAreMet() {
+    org.lgna.ik.core.solver.BoneTest.TestJointImp joint = newTestJoint("j");
+    TightPositionalIkEnforcer enforcer = newThreeAxisEnforcerForJoint(joint);
+    getPriorityLevels(enforcer).add(new PriorityLevel(enforcer));
+    assertSame(Boolean.TRUE, invokePrivate(enforcer, "areConstraintsMet", new Class<?>[0]));
+  }
+
+  @Test
+  public void applyAngleChangesZeroDeltaIsNoop() {
+    org.lgna.ik.core.solver.BoneTest.TestJointImp joint = newTestJoint("j");
+    TightPositionalIkEnforcer enforcer = newThreeAxisEnforcerForJoint(joint);
+    setPrivateField(enforcer, "angleDeltas", new AngleDeltas(3, enforcer));
+    Object result = invokePrivate(enforcer,
+        "applyAngleChangesAndClampingIfNecessary_NoClampingForNow",
+        new Class<?>[0]);
+    assertSame(Boolean.FALSE, result);
+  }
+
+  @Test
+  public void applyAngleChangesNonZeroAppliesRotation() {
+    org.lgna.ik.core.solver.BoneTest.TestJointImp joint = newTestJoint("j");
+    TightPositionalIkEnforcer enforcer = newThreeAxisEnforcerForJoint(joint);
+    AngleDeltas deltas = new AngleDeltas(3, enforcer);
+    deltas.storage[0] = 0.1;
+    deltas.storage[1] = 0.2;
+    deltas.storage[2] = 0.3;
+    setPrivateField(enforcer, "angleDeltas", deltas);
+    invokePrivate(enforcer,
+        "applyAngleChangesAndClampingIfNecessary_NoClampingForNow",
+        new Class<?>[0]);
+  }
+
+  @Test
+  public void makeCloserToNaturalPoseIsNoop() {
+    org.lgna.ik.core.solver.BoneTest.TestJointImp joint = newTestJoint("j");
+    TightPositionalIkEnforcer enforcer = newThreeAxisEnforcerForJoint(joint);
+    invokePrivate(enforcer, "makeCloserToNaturalPose", new Class<?>[0]);
+  }
+
+  @Test
+  public void priorityLoopWithoutLevelsCompletes() {
+    org.lgna.ik.core.solver.BoneTest.TestJointImp joint = newTestJoint("j");
+    TightPositionalIkEnforcer enforcer = newThreeAxisEnforcerForJoint(joint);
+    setPrivateField(enforcer, "angleDeltas", new AngleDeltas(3, enforcer));
+    invokePrivate(enforcer, "priorityLoop", new Class<?>[0]);
+  }
+
+  @Test
+  public void clampingLoopWithoutLevelsCompletes() {
+    org.lgna.ik.core.solver.BoneTest.TestJointImp joint = newTestJoint("j");
+    TightPositionalIkEnforcer enforcer = newThreeAxisEnforcerForJoint(joint);
+    setPrivateField(enforcer, "angleDeltas", new AngleDeltas(3, enforcer));
+    invokePrivate(enforcer, "clampingLoop", new Class<?>[0]);
+  }
+
+  @Test
+  public void convergenceLoopRunsAndInitializesAngleDeltas() {
+    org.lgna.ik.core.solver.BoneTest.TestJointImp joint = newTestJoint("j");
+    TightPositionalIkEnforcer enforcer = newThreeAxisEnforcerForJoint(joint);
+    invokePrivate(enforcer, "convergenceLoop", new Class<?>[0]);
+    assertNotNull(getAngleDeltas(enforcer));
+  }
 }

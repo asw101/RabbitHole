@@ -226,4 +226,59 @@ public class SceneImpTest {
       // no-op for test
     }
   }
+
+  // --- Extension: SceneActivationListener add/remove and camera methods ---
+
+  @Test
+  public void addSceneActivationListenerThenRemoveIsSafe() {
+    org.lgna.story.event.SceneActivationListener listener = e -> { };
+    sceneImp.addSceneActivationListener(listener);
+    sceneImp.removeSceneActivationListener(listener);
+  }
+
+  @Test
+  public void minimalInitializationCanBeNested() {
+    sceneImp.ACCEPTABLE_HACK_FOR_SCENE_EDITOR_pushPerformMinimalInitialization();
+    sceneImp.ACCEPTABLE_HACK_FOR_SCENE_EDITOR_pushPerformMinimalInitialization();
+    sceneImp.ACCEPTABLE_HACK_FOR_SCENE_EDITOR_popPerformMinimalInitialization();
+    sceneImp.ACCEPTABLE_HACK_FOR_SCENE_EDITOR_popPerformMinimalInitialization();
+  }
+
+  @Test
+  public void sgCompositeReferenceIsStable() {
+    Scene first = sceneImp.getSgComposite();
+    Scene second = sceneImp.getSgComposite();
+    assertSame(first, second);
+  }
+
+  @Test
+  public void atmosphereColorSettingDoesNotAffectFromAboveLightColor() {
+    Color before = sceneImp.fromAboveLightColor.getValue();
+    sceneImp.atmosphereColor.setValue(Color.RED);
+    assertEquals(before, sceneImp.fromAboveLightColor.getValue());
+  }
+
+  @Test
+  public void fogDensityRoundtripsZeroAndOneSeveralTimes() {
+    for (int i = 0; i < 3; i++) {
+      sceneImp.fogDensity.setValue(0.0f);
+      assertEquals(0.0f, sceneImp.fogDensity.getValue(), 1e-6f);
+      sceneImp.fogDensity.setValue(1.0f);
+      assertEquals(1.0f, sceneImp.fogDensity.getValue(), 1e-6f);
+    }
+  }
+
+  @Test
+  public void preserveAndRestoreStateAndEventListenersIsSafe() {
+    sceneImp.preserveStateAndEventListeners();
+    sceneImp.restoreStateAndEventListeners();
+  }
+
+  @Test
+  public void preserveAndRestoreCanBeNestedSafely() {
+    sceneImp.preserveStateAndEventListeners();
+    sceneImp.preserveStateAndEventListeners();
+    sceneImp.restoreStateAndEventListeners();
+    sceneImp.restoreStateAndEventListeners();
+  }
 }

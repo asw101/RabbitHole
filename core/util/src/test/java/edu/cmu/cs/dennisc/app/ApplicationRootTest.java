@@ -5,6 +5,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.awt.HeadlessException;
 import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -137,5 +138,35 @@ public class ApplicationRootTest {
     File root = createRoot("leaf-root");
     System.setProperty(ROOT_PROPERTY, root.getAbsolutePath());
     assertTrue(ApplicationRoot.getArchitectureSpecificDirectory().getPath().contains(expectedArchitectureSegment()));
+  }
+
+  @Test
+  public void initializeIfNecessaryWithMissingPropertyThrowsHeadlessExceptionInHeadlessMode() throws Exception {
+    System.clearProperty(ROOT_PROPERTY);
+    resetRootDirectory();
+
+    try {
+      ApplicationRoot.initializeIfNecessary();
+      fail();
+    } catch (HeadlessException expected) {
+      Field field = ApplicationRoot.class.getDeclaredField("rootDirectory");
+      field.setAccessible(true);
+      assertNull(field.get(null));
+    }
+  }
+
+  @Test
+  public void initializeIfNecessaryWithInvalidPathThrowsHeadlessExceptionBeforeExit() throws Exception {
+    System.setProperty(ROOT_PROPERTY, new File("target/test-artifacts/ApplicationRootTest/does-not-exist").getAbsolutePath());
+    resetRootDirectory();
+
+    try {
+      ApplicationRoot.initializeIfNecessary();
+      fail();
+    } catch (HeadlessException expected) {
+      Field field = ApplicationRoot.class.getDeclaredField("rootDirectory");
+      field.setAccessible(true);
+      assertNotNull(field.get(null));
+    }
   }
 }
