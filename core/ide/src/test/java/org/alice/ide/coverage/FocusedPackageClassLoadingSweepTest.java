@@ -31,6 +31,11 @@ public class FocusedPackageClassLoadingSweepTest {
     assertPackageTreeSweep("org.alice.ide.common");
   }
 
+  @Test
+  public void sweepsOrgLgnaIkTree() {
+    assertPackageTreeSweep("org.lgna.ik");
+  }
+
   private void assertPackageTreeSweep(String packagePrefix) {
     ClassLoadingSweepSupport.SweepResult result = ClassLoadingSweepSupport.sweepPackageTree(packagePrefix);
     assertTrue(packagePrefix + " should resolve at least one class", result.discovered > 0);

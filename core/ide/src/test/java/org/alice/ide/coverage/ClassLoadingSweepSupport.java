@@ -1,8 +1,11 @@
 package org.alice.ide.coverage;
 
+import org.lgna.croquet.Composite;
+import org.lgna.croquet.Model;
 import org.lgna.croquet.views.AwtComponentView;
 
 import javax.swing.Icon;
+import java.lang.reflect.InvocationTargetException;
 import javax.swing.JComponent;
 import javax.swing.SwingUtilities;
 import java.awt.Component;
@@ -20,9 +23,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
 final class ClassLoadingSweepSupport {
@@ -76,24 +81,28 @@ final class ClassLoadingSweepSupport {
       classLoader = ClassLoadingSweepSupport.class.getClassLoader();
     }
 
-    for (String className : classNames) {
-      result.attempted++;
-      try {
-        Class<?> clazz = Class.forName(className, false, classLoader);
-        result.loaded++;
-        exerciseEnumConstants(clazz, result);
-        exerciseStaticFields(clazz, result);
-        if (exerciseExtras) {
-          exerciseStaticMethods(clazz, result);
-          exerciseNoArgConstructors(clazz, result);
+    try {
+      for (String className : classNames) {
+        result.attempted++;
+        try {
+          Class<?> clazz = Class.forName(className, false, classLoader);
+          result.loaded++;
+          exerciseEnumConstants(clazz, result);
+          exerciseStaticFields(clazz, result);
+          if (exerciseExtras) {
+            exerciseStaticMethods(clazz, result);
+            exerciseNoArgConstructors(clazz, result);
+          }
+        } catch (Throwable throwable) {
+          result.classLoadFailures.put(className, summarize(throwable));
         }
-      } catch (Throwable throwable) {
-        result.classLoadFailures.put(className, summarize(throwable));
       }
-    }
 
-    System.out.println(result.summary());
-    return result;
+      System.out.println(result.summary());
+      return result;
+    } finally {
+      resetGlobalState();
+    }
   }
 
   private static void exerciseEnumConstants(Class<?> clazz, SweepResult result) {
@@ -189,11 +198,15 @@ final class ClassLoadingSweepSupport {
   }
 
   private static boolean shouldInvokeStaticMethod(Class<?> clazz, Method method) {
-    if (method.getName().startsWith("getInstance") || method.getName().startsWith("createInstance")) {
-      return false;
-    }
     Class<?> returnType = method.getReturnType();
+    String methodName = method.getName();
+    if (methodName.startsWith("getInstance") || methodName.startsWith("createInstance")) {
+      return isExpandedExerciseType(returnType);
+    }
     if (Icon.class.isAssignableFrom(returnType)) {
+      return true;
+    }
+    if (isExpandedExerciseType(returnType)) {
       return true;
     }
     String simpleName = returnType.getSimpleName();
@@ -207,8 +220,23 @@ final class ClassLoadingSweepSupport {
     return constructor.newInstance();
   }
 
+  private static boolean isExpandedExerciseType(Class<?> clazz) {
+    if (clazz == null) {
+      return false;
+    }
+    String className = clazz.getName();
+    if (className.startsWith("org.alice.ide.croquet.models.projecturi.")) {
+      return false;
+    }
+    return className.equals("org.alice.ide.croquet.models")
+        || className.startsWith("org.alice.ide.croquet.models.")
+        || className.equals("org.lgna.ik")
+        || className.startsWith("org.lgna.ik.");
+  }
+
   private static boolean shouldUseEdt(Class<?> clazz) {
     return clazz != null && (AwtComponentView.class.isAssignableFrom(clazz)
+        || (isExpandedExerciseType(clazz) && Composite.class.isAssignableFrom(clazz))
         || Component.class.isAssignableFrom(clazz)
         || Icon.class.isAssignableFrom(clazz));
   }
@@ -216,6 +244,9 @@ final class ClassLoadingSweepSupport {
   private static boolean shouldExerciseMembers(Class<?> clazz) {
     if (clazz == null) {
       return false;
+    }
+    if (isExpandedExerciseType(clazz)) {
+      return true;
     }
     if (java.awt.Window.class.isAssignableFrom(clazz)) {
       return false;
@@ -268,20 +299,47 @@ final class ClassLoadingSweepSupport {
   }
 
   private static void exerciseObject(Object value, SweepResult result) {
-    if (value == null) {
+    if (value == null || !result.visitedObjects.add(value)) {
       return;
     }
     try {
-      if (value instanceof AwtComponentView<?>) {
+      if ((value instanceof Composite<?>) && isExpandedExerciseType(value.getClass())) {
+        exerciseComposite((Composite<?>) value, result);
+      } else if ((value instanceof Model) && isExpandedExerciseType(value.getClass())) {
+        exerciseModel((Model) value, result);
+      } else if (value instanceof AwtComponentView<?>) {
         exerciseCroquetView((AwtComponentView<?>) value, result);
       } else if (value instanceof Component) {
         exerciseComponent((Component) value, result);
       } else if (value instanceof Icon) {
         exerciseIcon((Icon) value, result);
       }
+      if (isExpandedExerciseType(value.getClass())) {
+        exerciseSafeInstanceMethods(value, result);
+      }
     } catch (Throwable throwable) {
       result.memberFailures++;
     }
+  }
+
+  private static void exerciseComposite(Composite<?> composite, SweepResult result) throws Throwable {
+    invokeOnEdt(() -> {
+      exerciseObject(composite.getView(), result);
+      exerciseObject(composite.getRootComponent(), result);
+      composite.releaseView();
+      return null;
+    }, result);
+  }
+
+  private static void exerciseModel(Model model, SweepResult result) throws Throwable {
+    boolean enabled = model.isEnabled();
+    model.setEnabled(enabled);
+    model.relocalize();
+    invokeNamedNoArgMethodIfPresent(model, "getSidekickLabel", result);
+    invokeNamedNoArgMethodIfPresent(model, "getMenuModel", result);
+    invokeNamedNoArgMethodIfPresent(model, "getMenuItemPrepModel", result);
+    invokeNamedNoArgMethodIfPresent(model, "createButton", result);
+    invokeNamedNoArgMethodIfPresent(model, "createHyperlink", result);
   }
 
   private static void exerciseCroquetView(AwtComponentView<?> view, SweepResult result) throws Throwable {
@@ -299,6 +357,71 @@ final class ClassLoadingSweepSupport {
       return null;
     }, result);
     result.componentsPainted++;
+  }
+
+  private static void invokeNamedNoArgMethodIfPresent(Object value, String methodName, SweepResult result) throws Throwable {
+    Method method;
+    try {
+      method = value.getClass().getMethod(methodName);
+    } catch (NoSuchMethodException nsme) {
+      return;
+    }
+    invokeInstanceMethod(value, method, result);
+  }
+
+  private static void exerciseSafeInstanceMethods(Object value, SweepResult result) {
+    for (Method method : value.getClass().getMethods()) {
+      if (method.getDeclaringClass() == Object.class || Modifier.isStatic(method.getModifiers()) || method.isSynthetic()) {
+        continue;
+      }
+      if (method.getParameterCount() != 0 || method.getReturnType() == Void.TYPE || !isSafeInstanceMethod(method)) {
+        continue;
+      }
+      try {
+        invokeInstanceMethod(value, method, result);
+      } catch (Throwable throwable) {
+        result.memberFailures++;
+      }
+    }
+  }
+
+  private static boolean isSafeInstanceMethod(Method method) {
+    String name = method.getName();
+    if ("getClass".equals(name) || "hashCode".equals(name) || "clone".equals(name)) {
+      return false;
+    }
+    if (!(name.startsWith("get") || name.startsWith("is") || name.startsWith("has") || name.startsWith("peek"))) {
+      return false;
+    }
+    String lowerName = name.toLowerCase();
+    return !lowerName.contains("dialog")
+        && !lowerName.contains("window")
+        && !lowerName.contains("frame")
+        && !lowerName.contains("popup")
+        && !lowerName.contains("rootdirectory")
+        && !lowerName.contains("graphicsconfiguration");
+  }
+
+  private static void invokeInstanceMethod(Object value, Method method, SweepResult result) throws Throwable {
+    try {
+      Object nested;
+      if (shouldUseEdt(method.getReturnType()) || shouldUseEdt(value.getClass())) {
+        nested = invokeOnEdt(() -> invokeMethod(method, value), result);
+      } else {
+        nested = invokeMethod(method, value);
+      }
+      exerciseObject(nested, result);
+    } catch (Throwable throwable) {
+      result.memberFailures++;
+    }
+  }
+
+  private static Object invokeMethod(Method method, Object value) throws Throwable {
+    try {
+      return method.invoke(value);
+    } catch (InvocationTargetException ite) {
+      throw ite.getCause() != null ? ite.getCause() : ite;
+    }
   }
 
   private static void exerciseIcon(Icon icon, SweepResult result) {
@@ -332,6 +455,28 @@ final class ClassLoadingSweepSupport {
       component.paint(graphics);
     } finally {
       graphics.dispose();
+    }
+  }
+
+  private static void resetGlobalState() {
+    try {
+      Class<?> managerClass = Class.forName("org.alice.ide.project.ProjectChangeOfInterestManager");
+      @SuppressWarnings("unchecked")
+      Enum<?> singleton = Enum.valueOf((Class<? extends Enum>) managerClass.asSubclass(Enum.class), "SINGLETON");
+      Field listenersField = managerClass.getDeclaredField("listeners");
+      listenersField.setAccessible(true);
+      Object listeners = listenersField.get(singleton);
+      if (listeners instanceof java.util.Collection<?>) {
+        ((java.util.Collection<?>) listeners).clear();
+      }
+    } catch (Throwable ignored) {
+    }
+    try {
+      Class<?> applicationClass = Class.forName("org.lgna.croquet.Application");
+      Field singletonField = applicationClass.getDeclaredField("singleton");
+      singletonField.setAccessible(true);
+      singletonField.set(null, null);
+    } catch (Throwable ignored) {
     }
   }
 
@@ -438,6 +583,7 @@ final class ClassLoadingSweepSupport {
     int edtTasks;
     int memberFailures;
     final Map<String, String> classLoadFailures = new LinkedHashMap<String, String>();
+    final Set<Object> visitedObjects = Collections.newSetFromMap(new IdentityHashMap<Object, Boolean>());
 
     private SweepResult(int discovered) {
       this.discovered = discovered;
