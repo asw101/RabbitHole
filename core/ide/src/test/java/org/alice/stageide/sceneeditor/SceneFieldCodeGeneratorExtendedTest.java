@@ -7,6 +7,8 @@ import org.lgna.story.SBiped;
 import org.lgna.story.SThing;
 
 import java.lang.reflect.Method;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import static org.junit.Assert.*;
 
@@ -79,6 +81,35 @@ public class SceneFieldCodeGeneratorExtendedTest {
     assertTrue(invocation.requiredArguments.get(0).expression.getValue() instanceof NullLiteral);
   }
 
+  @Test
+  public void getDoStatementsForRemoveFieldMovesRidersToSceneThenClearsFieldVehicle() {
+    SceneFieldCodeGenerator generator = new SceneFieldCodeGenerator(null);
+    UserField removed = createField("removed", SBiped.class);
+    UserField riderOne = createField("riderOne", SBiped.class);
+    UserField riderTwo = createField("riderTwo", SBiped.class);
+    Map<AbstractField, Statement> riders = new LinkedHashMap<>();
+    riders.put(riderOne, createSetVehicleStatement(riderOne, removed));
+    riders.put(riderTwo, createSetVehicleStatement(riderTwo, removed));
+
+    Statement[] statements = generator.getDoStatementsForRemoveField(removed, riders);
+
+    assertEquals(3, statements.length);
+    assertVehicleInvocation(statements[0], riderOne, ThisExpression.class);
+    assertVehicleInvocation(statements[1], riderTwo, ThisExpression.class);
+    assertVehicleInvocation(statements[2], removed, NullLiteral.class);
+  }
+
+  @Test
+  public void getDoStatementsForRemoveFieldWithoutRidersOnlyClearsRemovedField() {
+    SceneFieldCodeGenerator generator = new SceneFieldCodeGenerator(null);
+    UserField removed = createField("removed", SBiped.class);
+
+    Statement[] statements = generator.getDoStatementsForRemoveField(removed, new LinkedHashMap<>());
+
+    assertEquals(1, statements.length);
+    assertVehicleInvocation(statements[0], removed, NullLiteral.class);
+  }
+
   private static Statement invokeReplaceReferences(SceneFieldCodeGenerator generator, UserField fieldToReplace,
       UserField replacement, Statement statement) throws Exception {
     Method method = SceneFieldCodeGenerator.class.getDeclaredMethod(
@@ -90,6 +121,14 @@ public class SceneFieldCodeGeneratorExtendedTest {
   private static ExpressionStatement createSetVehicleStatement(UserField rider, AbstractField vehicle) {
     AbstractMethod setVehicle = AstMethodLookupHelpers.lookupMethod(MutableRider.class, "setVehicle", (Class<?>) SThing.class);
     return AstUtilities.createMethodInvocationStatement(new FieldAccess(rider), setVehicle, new FieldAccess(vehicle));
+  }
+
+  private static void assertVehicleInvocation(Statement statement, AbstractField expectedTargetField,
+      Class<? extends Expression> expectedArgumentType) {
+    MethodInvocation invocation = SceneFieldCodeGenerator.asSetVehicleCall(statement);
+    assertNotNull(invocation);
+    assertSame(expectedTargetField, ((FieldAccess) invocation.expression.getValue()).field.getValue());
+    assertTrue(expectedArgumentType.isInstance(invocation.requiredArguments.get(0).expression.getValue()));
   }
 
   private static UserField createField(String name, Class<?> type) {

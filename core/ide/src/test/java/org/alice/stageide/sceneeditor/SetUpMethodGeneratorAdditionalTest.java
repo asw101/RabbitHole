@@ -6,10 +6,14 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.lgna.project.ast.*;
+import org.lgna.story.Color;
 import org.lgna.story.Orientation;
 import org.lgna.story.Position;
 import org.lgna.story.SBiped;
+import org.lgna.story.SCamera;
 import org.lgna.story.SGround;
+import org.lgna.story.SMarker;
+import org.lgna.story.SModel;
 
 import java.lang.reflect.Field;
 
@@ -110,6 +114,56 @@ public class SetUpMethodGeneratorAdditionalTest {
     assertDurationKey(invocationOf(statements[2]), 0.0);
   }
 
+  @Test
+  public void createSetPaintStatement_modelFieldCreatesSetPaintInvocation() {
+    UserField model = createField("model", SModel.class);
+
+    ExpressionStatement statement = SetUpMethodGenerator.createSetPaintStatement(model, Color.RED);
+
+    assertNotNull(statement);
+    MethodInvocation invocation = invocationOf(statement);
+    assertEquals("setPaint", invocation.method.getValue().getName());
+    assertSame(Color.RED, stubExpressionCreator.lastValue);
+  }
+
+  @Test
+  public void createSetPaintStatement_nonModelFieldReturnsNull() {
+    assertNull(SetUpMethodGenerator.createSetPaintStatement(createField("camera", SCamera.class), Color.BLUE));
+  }
+
+  @Test
+  public void createSetPaintStatement_expressionCreationFailureReturnsNull() {
+    UserField model = createField("model", SModel.class);
+    stubExpressionCreator.failOnce();
+
+    assertNull(SetUpMethodGenerator.createSetPaintStatement(model, Color.GREEN));
+  }
+
+  @Test
+  public void createSetColorIdStatement_markerFieldCreatesInvocation() {
+    UserField marker = createField("marker", SMarker.class);
+
+    ExpressionStatement statement = SetUpMethodGenerator.createSetColorIdStatement(marker, Color.YELLOW);
+
+    assertNotNull(statement);
+    MethodInvocation invocation = invocationOf(statement);
+    assertEquals("setColorId", invocation.method.getValue().getName());
+    assertSame(Color.YELLOW, stubExpressionCreator.lastValue);
+  }
+
+  @Test
+  public void createSetColorIdStatement_nonMarkerFieldReturnsNull() {
+    assertNull(SetUpMethodGenerator.createSetColorIdStatement(createField("model", SModel.class), Color.PINK));
+  }
+
+  @Test
+  public void createSetColorIdStatement_expressionCreationFailureReturnsNull() {
+    UserField marker = createField("marker", SMarker.class);
+    stubExpressionCreator.failOnce();
+
+    assertNull(SetUpMethodGenerator.createSetColorIdStatement(marker, Color.WHITE));
+  }
+
   private static UserField createField(String name, Class<?> type) {
     UserField field = new UserField();
     field.name.setValue(name);
@@ -135,9 +189,18 @@ public class SetUpMethodGeneratorAdditionalTest {
   private static final class StubExpressionCreator extends org.alice.stageide.ast.ExpressionCreator {
     private Object lastValue;
     private int callCount;
+    private boolean failNext;
+
+    void failOnce() {
+      this.failNext = true;
+    }
 
     @Override
     protected Expression createCustomExpression(Object value) {
+      if (failNext) {
+        failNext = false;
+        throw new RuntimeException("forced failure");
+      }
       lastValue = value;
       callCount++;
       return new StringLiteral(value.getClass().getSimpleName());
