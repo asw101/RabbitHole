@@ -1,11 +1,18 @@
 package org.lgna.croquet;
 
 import org.junit.Test;
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
 import org.lgna.croquet.history.UserActivity;
 
 import static org.junit.Assert.*;
 
 public class ApplicationSingletonBehaviorTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
   @Test
   public void ensureTestApplication_setsActiveSingletonAndSubPath() {
     Application<?> application = CroquetTestUtils.ensureTestApplication();

@@ -1,6 +1,8 @@
 package edu.cmu.cs.dennisc.render.gl.imp;
 
 import com.jogamp.opengl.GLAutoDrawable;
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
 import com.jogamp.opengl.GLEventListener;
 import edu.cmu.cs.dennisc.render.RenderTarget;
 import edu.cmu.cs.dennisc.render.gl.imp.testing.HeadlessRecordingGL2;
@@ -23,6 +25,11 @@ import static com.jogamp.opengl.GL.GL_COLOR_BUFFER_BIT;
 import static org.junit.Assert.*;
 
 public class RenderTargetImpBehaviorTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
   @Test
   public void cameraLifecycleTracksListeningStateAndReturnsTopmostViewportMatch() {
     AtomicInteger addedListeners = new AtomicInteger();

@@ -1,11 +1,18 @@
 package edu.cmu.cs.dennisc.render.gl.structural;
 
 import edu.cmu.cs.dennisc.render.gl.ClassLoadingSweepSupport;
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
 import org.junit.Test;
 
 import static org.junit.Assert.assertTrue;
 
 public class GlrenderClassLoadingSweepTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
   @Test
   public void loadsEntireGlrenderSourceTreeAndExercisesClassLoadingPaths() throws Exception {
     ClassLoadingSweepSupport.SweepStats stats = ClassLoadingSweepSupport.sweepModuleSourceTree();

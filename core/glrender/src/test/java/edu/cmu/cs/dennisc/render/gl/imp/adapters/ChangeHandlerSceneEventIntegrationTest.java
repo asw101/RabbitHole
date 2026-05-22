@@ -1,6 +1,8 @@
 package edu.cmu.cs.dennisc.render.gl.imp.adapters;
 
 import edu.cmu.cs.dennisc.scenegraph.Box;
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
 import edu.cmu.cs.dennisc.scenegraph.Scene;
 import edu.cmu.cs.dennisc.scenegraph.Visual;
 import org.junit.After;
@@ -13,6 +15,11 @@ import java.util.List;
 import static org.junit.Assert.*;
 
 public class ChangeHandlerSceneEventIntegrationTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
   @Before
   public void setUp() throws Exception {
     AdapterRenderTestSupport.resetFactory();
