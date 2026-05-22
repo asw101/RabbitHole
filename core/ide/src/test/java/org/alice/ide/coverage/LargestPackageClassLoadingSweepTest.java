@@ -1,10 +1,18 @@
 package org.alice.ide.coverage;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
+
 import org.junit.Test;
 
 import static org.junit.Assert.assertTrue;
 
 public class LargestPackageClassLoadingSweepTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
 
   @Test
   public void sweep_org_alice_ide_croquet_models_cascade() {

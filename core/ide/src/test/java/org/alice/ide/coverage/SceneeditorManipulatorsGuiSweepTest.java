@@ -1,5 +1,8 @@
 package org.alice.ide.coverage;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
+
 public class SceneeditorManipulatorsGuiSweepTest extends AbstractExactGuiPackageSweepTest {
 
   @org.junit.Before

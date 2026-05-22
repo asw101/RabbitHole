@@ -162,21 +162,9 @@ jobs:
         if: github.event_name != 'pull_request' || steps.change-scope.outputs.maven-required == 'true'
         run: mvn -v
 
-      - name: Install Xvfb (Linux only)
-        if: (github.event_name != 'pull_request' || steps.change-scope.outputs.maven-required == 'true') && runner.os == 'Linux'
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq xvfb
-
       - name: Run no-Sims test baseline
         if: github.event_name != 'pull_request' || steps.change-scope.outputs.maven-required == 'true'
-        timeout-minutes: 20
-        shell: bash
-        run: |
-          SUREFIRE_TIMEOUT="-Dsurefire.timeout=120"
-          if [ "$RUNNER_OS" = "Linux" ]; then
-            xvfb-run -a mvn -DincludeSims=false -Dinstall4j.skip -Dcheckstyle.skip $SUREFIRE_TIMEOUT clean test
-          else
-            mvn -DincludeSims=false -Dinstall4j.skip -Dcheckstyle.skip $SUREFIRE_TIMEOUT clean test
-          fi
+        run: mvn -DincludeSims=false -Dinstall4j.skip -Dcheckstyle.skip -Djava.awt.headless=true clean test
 
       - name: Report Maven validation no-op
         if: github.event_name == 'pull_request' && steps.change-scope.outputs.maven-required == 'false'

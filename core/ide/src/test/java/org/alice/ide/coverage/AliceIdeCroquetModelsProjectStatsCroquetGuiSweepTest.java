@@ -1,5 +1,8 @@
 package org.alice.ide.coverage;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
+
 public class AliceIdeCroquetModelsProjectStatsCroquetGuiSweepTest extends AbstractExactGuiPackageSweepTest {
 
   @org.junit.Before
