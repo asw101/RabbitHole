@@ -44,7 +44,8 @@ final class ClassLoadingSweepSupport {
   private static final int MAX_DEFAULT_VALUE_DEPTH = 3;
   private static final int MAX_METHOD_PARAMETER_COUNT = 2;
   private static final int MAX_VISITED_OBJECTS = 160;
-  private static final int MAX_METHODS_PER_OBJECT = 10;
+  private static final int MAX_PRIORITY_METHODS_PER_OBJECT = 8;
+  private static final int MAX_METHODS_PER_OBJECT = 14;
   private static final int MAX_METHOD_INVOCATIONS_PER_SWEEP = 750;
   private static final Object UNRESOLVED = new Object();
   private static final List<String> ALL_CLASS_NAMES = discoverAllClassNames();
@@ -439,8 +440,14 @@ final class ClassLoadingSweepSupport {
     if (type.isAssignableFrom(javax.swing.JPanel.class)) {
       return new javax.swing.JPanel();
     }
+    if (type.isAssignableFrom(javax.swing.JComponent.class) || type.isAssignableFrom(java.awt.Component.class)) {
+      return new javax.swing.JPanel();
+    }
     if (type.isAssignableFrom(javax.swing.ImageIcon.class)) {
       return new javax.swing.ImageIcon(new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB));
+    }
+    if (type.isAssignableFrom(edu.cmu.cs.dennisc.scenegraph.SkeletonVisual.class)) {
+      return new edu.cmu.cs.dennisc.scenegraph.SkeletonVisual();
     }
     if (!resolvingTypes.add(type)) {
       return UNRESOLVED;
@@ -646,6 +653,8 @@ final class ClassLoadingSweepSupport {
         || lowerName.contains("thumbnail")
         || lowerName.contains("iconfactory")
         || "getresource".equals(lowerName)
+        || "getgrouptags".equals(lowerName)
+        || "getthemetags".equals(lowerName)
         || "createvalue".equals(lowerName)
         || lowerName.contains("filedialog")
         || lowerName.contains("chooser");
@@ -657,7 +666,6 @@ final class ClassLoadingSweepSupport {
     }
     String className = clazz.getName();
     return className.equals("org.alice.stageide.gallerybrowser.GalleryComposite")
-        || className.equals("org.alice.stageide.gallerybrowser.ImportGalleryResourceComposite")
         || className.equals("org.alice.stageide.modelresource.TreeUtilities")
         || className.equals("org.alice.stageide.modelresource.ClassResourceKey")
         || className.equals("org.alice.stageide.modelresource.ClassResourceNode")
@@ -828,7 +836,10 @@ final class ClassLoadingSweepSupport {
   }
 
   private static void exerciseObject(Object value, SweepResult result) {
-    if (value == null || result.visitedObjects.size() >= MAX_VISITED_OBJECTS || !result.visitedObjects.add(value)) {
+    if (value == null
+        || shouldSkipInteractiveResourceClass(value.getClass())
+        || result.visitedObjects.size() >= MAX_VISITED_OBJECTS
+        || !result.visitedObjects.add(value)) {
       return;
     }
     try {
@@ -905,8 +916,8 @@ final class ClassLoadingSweepSupport {
       return;
     }
     exerciseObjectContracts(value, result);
-    int invokedForObject = 0;
     Set<String> signatures = new java.util.LinkedHashSet<String>();
+    int invokedForObject = invokePriorityMethods(value, result, signatures);
     for (Class<?> type = value.getClass(); type != null && type != Object.class; type = type.getSuperclass()) {
       for (Method method : type.getDeclaredMethods()) {
         if (!hasMethodBudget(result) || invokedForObject >= MAX_METHODS_PER_OBJECT) {
@@ -930,6 +941,108 @@ final class ClassLoadingSweepSupport {
         }
       }
     }
+  }
+
+  private static int invokePriorityMethods(Object value, SweepResult result, Set<String> signatures) {
+    int invoked = 0;
+    for (Class<?> type = value.getClass(); type != null && type != Object.class; type = type.getSuperclass()) {
+      for (Method method : type.getDeclaredMethods()) {
+        if (!hasMethodBudget(result) || invoked >= MAX_PRIORITY_METHODS_PER_OBJECT || signatures.size() >= MAX_METHODS_PER_OBJECT) {
+          return invoked;
+        }
+        if (!isInvokableVisibility(method)
+            || Modifier.isStatic(method.getModifiers())
+            || Modifier.isAbstract(method.getModifiers())
+            || method.isSynthetic()) {
+          continue;
+        }
+        String signature = method.toGenericString();
+        if (!signatures.add(signature) || !isPriorityMethod(method, value.getClass())) {
+          continue;
+        }
+        invokePriorityMethod(value, method, result);
+        invoked++;
+      }
+    }
+    return invoked;
+  }
+
+  private static boolean isPriorityMethod(Method method, Class<?> ownerType) {
+    String name = method.getName();
+    if ("initialize".equals(name)) {
+      return !org.lgna.croquet.Application.class.isAssignableFrom(ownerType);
+    }
+    return "createView".equals(name)
+        || "getState".equals(name)
+        || "getValueState".equals(name)
+        || "initialize".equals(name)
+        || "handlePreActivation".equals(name)
+        || "handlePostDeactivation".equals(name)
+        || "paint".equals(name)
+        || "paintComponent".equals(name)
+        || "paintIcon".equals(name);
+  }
+
+  private static void invokePriorityMethod(Object value, Method method, SweepResult result) {
+    String name = method.getName();
+    if ("paintIcon".equals(name)) {
+      invokePaintIconMethod(value, method, result);
+      return;
+    }
+    if ("paint".equals(name) || "paintComponent".equals(name)) {
+      invokePaintMethod(value, method, result);
+      return;
+    }
+    try {
+      Object[] arguments = resolveInvocationArguments(method.getParameterTypes(), result, true);
+      if (arguments != null) {
+        invokeInstanceMethod(value, method, arguments, result);
+      }
+    } catch (Throwable throwable) {
+      result.memberFailures++;
+    }
+  }
+
+  private static void invokePaintMethod(Object value, Method method, SweepResult result) {
+    if (method.getParameterCount() != 1) {
+      return;
+    }
+    BufferedImage image = new BufferedImage(DEFAULT_COMPONENT_WIDTH, DEFAULT_COMPONENT_HEIGHT, BufferedImage.TYPE_INT_ARGB);
+    Graphics2D graphics = image.createGraphics();
+    try {
+      invokeInstanceMethod(value, method, new Object[] { graphics }, result);
+    } catch (Throwable throwable) {
+      result.memberFailures++;
+    } finally {
+      graphics.dispose();
+    }
+  }
+
+  private static void invokePaintIconMethod(Object value, Method method, SweepResult result) {
+    Class<?>[] parameterTypes = method.getParameterTypes();
+    if (parameterTypes.length != 4) {
+      return;
+    }
+    BufferedImage image = new BufferedImage(DEFAULT_COMPONENT_WIDTH, DEFAULT_COMPONENT_HEIGHT, BufferedImage.TYPE_INT_ARGB);
+    Graphics2D graphics = image.createGraphics();
+    try {
+      Object component = resolvePaintComponent(parameterTypes[0]);
+      invokeInstanceMethod(value, method, new Object[] { component, graphics, Integer.valueOf(0), Integer.valueOf(0) }, result);
+    } catch (Throwable throwable) {
+      result.memberFailures++;
+    } finally {
+      graphics.dispose();
+    }
+  }
+
+  private static Object resolvePaintComponent(Class<?> parameterType) {
+    if ((parameterType == null) || parameterType.isPrimitive()) {
+      return null;
+    }
+    if (parameterType.isAssignableFrom(javax.swing.JPanel.class)) {
+      return new javax.swing.JPanel();
+    }
+    return null;
   }
 
   private static void exerciseLegacyInstanceMethods(Object value, SweepResult result) {
@@ -1000,6 +1113,9 @@ final class ClassLoadingSweepSupport {
   private static boolean shouldInvokeInstanceMethod(Method method) {
     String name = method.getName();
     if ("getClass".equals(name) || "wait".equals(name) || "notify".equals(name) || "notifyAll".equals(name) || "clone".equals(name)) {
+      return false;
+    }
+    if (isPriorityMethod(method, method.getDeclaringClass())) {
       return false;
     }
     if (method.getParameterCount() > MAX_METHOD_PARAMETER_COUNT || hasBlockedUiMethodName(name)) {
