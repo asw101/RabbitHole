@@ -438,7 +438,6 @@ public class ProjectCodeGeneratorStandaloneProjectTest {
     ProjectCodeGenerator.generateLauncher(sourceDirectory.toFile());
     writeProgramMarkerAndExitSource(sourceDirectory);
 
-    List<Path> javaFxModulePath = javaFxRuntimeModulePath();
     Properties properties = loadProperties(projectDirectory.resolve("nbproject").resolve("project.properties"));
     Path classesDirectory = resolveBuildClassesDirectory(projectDirectory, properties);
     compileJavaSources(classesDirectory, pathList(javaFxModulePath), javaSourcesUnder(sourceDirectory));
