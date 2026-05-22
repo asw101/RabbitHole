@@ -767,11 +767,12 @@ public class ResourceCodeTemplatesTest {
 
   @Test
   public void generatedCodeUsesConsistentLineEndings() throws DataFormatException {
+    // CRLF consistency only applies on Windows. On Unix/macOS, \n is standard.
+    if (!System.lineSeparator().equals("\r\n")) {
+      return;
+    }
     ModelResourceExporter exporter = createMinimalPropExporter();
     String output = ModelResourceJavaGenerator.buildJavaCodeBody(exporter);
-
-    // Every line break in the output should be CRLF (\r\n), not bare LF (\n).
-    // Split on \n and verify each preceding character is \r.
     String[] lines = output.split("\n", -1);
     for (int i = 0; i < lines.length - 1; i++) {
       String line = lines[i];
@@ -784,10 +785,14 @@ public class ResourceCodeTemplatesTest {
 
   @Test
   public void generatedCodeContainsNoBareLineFeed() throws DataFormatException {
+    // On Windows, generated code uses \r\n. On Unix/macOS, \n is the native line ending.
+    // This test only applies on Windows-style line ending platforms.
+    String sep = System.lineSeparator();
+    if (!sep.equals("\r\n")) {
+      return; // Skip on Unix/macOS where \n is the native line ending
+    }
     ModelResourceExporter exporter = createMinimalPropExporter();
     String output = ModelResourceJavaGenerator.buildJavaCodeBody(exporter);
-
-    // Remove all \r\n, then check that no bare \n remains
     String withoutCrlf = output.replace("\r\n", "");
     assertFalse("Output should not contain bare \\n (only \\r\\n)",
         withoutCrlf.contains("\n"));

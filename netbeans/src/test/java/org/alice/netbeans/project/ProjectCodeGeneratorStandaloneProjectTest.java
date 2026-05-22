@@ -425,6 +425,11 @@ public class ProjectCodeGeneratorStandaloneProjectTest {
         "xvfb-run behaves differently on macOS even if found on PATH",
         System.getProperty("os.name").toLowerCase().contains("mac"));
 
+    List<Path> javaFxModulePath = javaFxRuntimeModulePath();
+    org.junit.Assume.assumeTrue(
+        "JavaFX runtime modules must be on classpath for this test",
+        !javaFxModulePath.isEmpty());
+
     Path projectDirectory = temporaryFolder.newFolder("template-real-javafx-xvfb-runtime").toPath();
     extractProjectTemplate(projectDirectory);
     Path sourceDirectory = projectDirectory.resolve("src");
