@@ -62,18 +62,13 @@ import org.lgna.project.ProgramTypeUtilities;
 import org.lgna.project.Project;
 import org.lgna.project.ProjectVersion;
 import org.lgna.project.VersionNotSupportedException;
-import org.lgna.project.ast.NamedUserType;
-import org.lgna.project.ast.UserField;
-import org.lgna.project.ast.UserMethod;
 
 import javax.swing.RootPaneContainer;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
-import java.util.ListIterator;
 import java.util.Objects;
-import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -90,7 +85,7 @@ public abstract class ProjectApplication extends PerspectiveApplication<ProjectD
 
   private BackupProjectOperation backupProjectOperation;
 
-  private UserActivity projectActivity;
+  private final ProjectState projectState = new ProjectState();
   private final ProjectUndoRedoManager undoRedoManager;
   private final ProjectLoader projectLoader;
   private final ProjectBackupManager backupManager;
@@ -203,7 +198,7 @@ public abstract class ProjectApplication extends PerspectiveApplication<ProjectD
   }
 
   boolean hasUriProjectLoaderThatShouldBeSaved() {
-    return uriProjectLoader != null && uriProjectLoader.shouldBeSaved();
+    return this.uriProjectLoader != null && this.uriProjectLoader.shouldBeSaved();
   }
 
   public boolean isProjectUpToDateWithFile() {
@@ -240,7 +235,7 @@ public abstract class ProjectApplication extends PerspectiveApplication<ProjectD
     }
     ProjectDocumentFrame documentFrame = Objects.requireNonNull(this.getDocumentFrame(),
         "ProjectApplication requires documentFrame before updating title");
-    documentFrame.getFrame().setTitle(this.frameTitleGenerator.generateTitle(uriProjectLoader, isProjectUpToDateWithFile()));
+    documentFrame.getFrame().setTitle(this.frameTitleGenerator.generateTitle(this.uriProjectLoader, isProjectUpToDateWithFile()));
   }
 
   private ProjectDocument getDocument() {
@@ -258,46 +253,9 @@ public abstract class ProjectApplication extends PerspectiveApplication<ProjectD
 
   public void setProject(Project project) {
     // TODO I18N
-    StringBuilder sb = new StringBuilder();
-    Set<NamedUserType> types = project.getNamedUserTypes();
-    for (NamedUserType type : types) {
-      boolean wasNullMethodRemoved = false;
-      ListIterator<UserMethod> methodIterator = type.getDeclaredMethods().listIterator();
-      while (methodIterator.hasNext()) {
-        UserMethod method = methodIterator.next();
-        if (method == null) {
-          methodIterator.remove();
-          wasNullMethodRemoved = true;
-        }
-      }
-      boolean wasNullFieldRemoved = false;
-      ListIterator<UserField> fieldIterator = type.getDeclaredFields().listIterator();
-      while (fieldIterator.hasNext()) {
-        UserField field = fieldIterator.next();
-        if (field == null) {
-          fieldIterator.remove();
-          wasNullFieldRemoved = true;
-        }
-      }
-      if (wasNullMethodRemoved) {
-        if (sb.length() > 0) {
-          sb.append("\n");
-        }
-        sb.append("null method was removed from ");
-        sb.append(type.getName());
-        sb.append(".");
-      }
-      if (wasNullFieldRemoved) {
-        if (sb.length() > 0) {
-          sb.append("\n");
-        }
-        sb.append("null field was removed from ");
-        sb.append(type.getName());
-        sb.append(".");
-      }
-    }
-    if (sb.length() > 0) {
-      Dialogs.showWarning("A Problem With Your Project Has Been Fixed", sb.toString());
+    String sanitationMessage = this.projectState.sanitizeProject(project);
+    if (sanitationMessage.length() > 0) {
+      Dialogs.showWarning("A Problem With Your Project Has Been Fixed", sanitationMessage);
     }
     String typeCheck = ProgramTypeUtilities.sanityCheckAllTypes(project);
     if (typeCheck.length() > 0) {
@@ -308,17 +266,7 @@ public abstract class ProjectApplication extends PerspectiveApplication<ProjectD
 
   UserActivity newProjectActivity() {
     // If present, this is the activity of opening or creating a project
-    UserActivity openChild = getOpenActivity();
-    if (openChild != null) {
-      openChild.finish();
-    }
-    // If there was a project the new one replaces it.
-    if (projectActivity != null) {
-      projectActivity.finish();
-    }
-    // Create a new project activity under the top level user activity
-    projectActivity = getOverallUserActivity().newChildActivity();
-    return projectActivity;
+    return this.projectState.beginNewProject(getOverallUserActivity(), getOpenActivity());
   }
 
   public UserActivity getProjectUserActivity() {
@@ -328,8 +276,7 @@ public abstract class ProjectApplication extends PerspectiveApplication<ProjectD
   //Look for an open child, if any. Otherwise, return null.
   @Override
   public UserActivity getOpenActivity() {
-    UserActivity latest = super.getOpenActivity();
-    return latest == projectActivity ? null : latest;
+    return this.projectState.getVisibleOpenActivity(super.getOpenActivity());
   }
 
   public final void loadProject(UserActivity activity, UriProjectLoader uriProjectLoader) {
@@ -338,6 +285,7 @@ public abstract class ProjectApplication extends PerspectiveApplication<ProjectD
 
   void setUriProjectLoader(UriProjectLoader loader) {
     this.uriProjectLoader = loader;
+    this.projectState.setUriProjectLoader(loader);
   }
 
   UriProjectLoader getUriProjectLoader() {
@@ -380,21 +328,21 @@ public abstract class ProjectApplication extends PerspectiveApplication<ProjectD
   protected abstract BufferedImage createThumbnail() throws Throwable;
 
   public final void saveProjectTo(File file) throws IOException {
-    ProjectSaveTargetPlan saveTargetPlan = ProjectSaveTargetPlan.choose(uriProjectLoader, file);
-    UriProjectLoader previousLoader = uriProjectLoader;
+    ProjectSaveTargetPlan saveTargetPlan = ProjectSaveTargetPlan.choose(this.uriProjectLoader, file);
+    UriProjectLoader previousLoader = this.uriProjectLoader;
 
     if (saveTargetPlan.shouldCopyDefaultBackupDirectory()) {
       projectFileUtilities.copyDefaultBackupDirectory(file);
     }
 
-    uriProjectLoader = saveTargetPlan.getNextLoader();
+    this.setUriProjectLoader(saveTargetPlan.getNextLoader());
 
     //    long startTime = System.currentTimeMillis();
 
     try {
       projectFileUtilities.saveProjectTo(file, saveTargetPlan.isBackupSave());
     } catch (IOException e) {
-      uriProjectLoader = previousLoader;
+      this.setUriProjectLoader(previousLoader);
       throw e;
     }
 

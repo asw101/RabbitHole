@@ -101,12 +101,8 @@ import org.lgna.project.ast.Node;
 import org.lgna.project.ast.UserField;
 import org.lgna.project.ast.UserMethod;
 import org.lgna.project.virtualmachine.VirtualMachine;
-import org.lgna.story.SCamera;
 import org.lgna.story.SScene;
 import org.lgna.story.STurnable;
-import org.lgna.story.SVRHand;
-import org.lgna.story.SVRHeadset;
-import org.lgna.story.SVRUser;
 import org.lgna.story.implementation.StoryApiDirectoryUtilities;
 import org.lgna.story.resources.JointedModelResource;
 import org.lgna.story.resources.ModelResource;
@@ -116,7 +112,6 @@ import javax.swing.Icon;
 import javax.swing.SwingUtilities;
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.Frame;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowStateListener;
 import java.awt.image.BufferedImage;
@@ -132,6 +127,7 @@ public class StageIDE extends IDE {
     return ClassUtilities.getInstance(IDE.getActiveInstance(), StageIDE.class);
   }
 
+  private final StageIdeConfiguration configuration = new StageIdeConfiguration();
   private ExpressionCascadeManager cascadeManager = NebulousIde.nonfree.newExpressionCascadeManager();
 
   public StageIDE(CrashDetector crashDetector) {
@@ -139,13 +135,11 @@ public class StageIDE extends IDE {
     this.getDocumentFrame().getFrame().addWindowStateListener(new WindowStateListener() {
       @Override
       public void windowStateChanged(WindowEvent e) {
-        int oldState = e.getOldState();
-        int newState = e.getNewState();
+        int delta = configuration.getAutomaticDisplayDelta(e.getOldState(), e.getNewState());
         //edu.cmu.cs.dennisc.print.PrintUtilities.println( "windowStateChanged", oldState, newState, java.awt.Frame.ICONIFIED );
-        if ((oldState & Frame.ICONIFIED) == Frame.ICONIFIED) {
+        if (delta > 0) {
           GlrRenderFactory.getInstance().incrementAutomaticDisplayCount();
-        }
-        if ((newState & Frame.ICONIFIED) == Frame.ICONIFIED) {
+        } else if (delta < 0) {
           GlrRenderFactory.getInstance().decrementAutomaticDisplayCount();
         }
       }
@@ -186,7 +180,7 @@ public class StageIDE extends IDE {
   private final Criterion<Declaration> declarationFilter = new Criterion<Declaration>() {
     @Override
     public boolean accept(Declaration declaration) {
-      return PERFORM_GENERATED_SET_UP_METHOD_NAME.equals(declaration.getName()) == false;
+      return configuration.isDeclarationIncluded(declaration);
     }
   };
 
@@ -433,7 +427,7 @@ public class StageIDE extends IDE {
   @Override
   public boolean isInstanceCreationAllowableFor(NamedUserType userType) {
     JavaType javaType = userType.getFirstEncounteredJavaType();
-    return !ClassUtilities.isAssignableToAtLeastOne(javaType.getClassReflectionProxy().getReification(), SScene.class, SCamera.class, SVRUser.class, SVRHand.class, SVRHeadset.class);
+    return configuration.isInstanceCreationAllowed(javaType.getClassReflectionProxy().getReification());
   }
 
   private ThumbnailGenerator thumbnailGenerator;
@@ -456,7 +450,7 @@ public class StageIDE extends IDE {
 
   private boolean isSceneScoped() {
     NamedUserType sceneType = StoryApiSpecificAstUtilities.getSceneTypeFromProgramType(getProgramType());
-    return (sceneType != null &&  sceneType == getDocumentFrame().getTypeMetaState().getValue());
+    return configuration.isSceneScoped(sceneType, getDocumentFrame().getTypeMetaState().getValue());
   }
 
   public InstanceFactory getInstanceFactoryForScene() {

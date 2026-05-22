@@ -77,6 +77,7 @@ public abstract class ExpressionCascadeManager {
   private final BooleanFillerInner booleanFillerInner = new BooleanFillerInner();
   private final StringFillerInner stringFillerInner = new StringFillerInner();
   private final List<ExpressionFillerInner> expressionFillerInners = Lists.newLinkedList();
+  private final CascadeBuilder cascadeBuilder = new CascadeBuilder();
 
   private final DStack<ExpressionCascadeContext> contextStack = Stacks.newStack();
 
@@ -278,16 +279,9 @@ public abstract class ExpressionCascadeManager {
   private void appendExpressionBonusFillInsForType(List<CascadeBlankChild> blankChildren, BlankNode<Expression> blankNode, AbstractType<?, ?, ?> type) {
     Expression prevExpression = this.safePeekContext().getPreviousExpression();
     BlockStatementIndexPair blockStatementIndexPair = this.safePeekContext().getBlockStatementIndexPair();
-    List<ArrayLengthFillIn> arrayLengthFillIns;
-    if (blankNode.isTop()) {
-      if ((type == JavaType.INTEGER_OBJECT_TYPE) || (type.isAssignableFrom(JavaType.INTEGER_OBJECT_TYPE) && (prevExpression != null))) {
-        arrayLengthFillIns = Lists.newLinkedList();
-      } else {
-        arrayLengthFillIns = null;
-      }
-    } else {
-      arrayLengthFillIns = null;
-    }
+    List<ArrayLengthFillIn> arrayLengthFillIns = this.cascadeBuilder.shouldCreateArrayLengthFillIns(blankNode.isTop(), type, prevExpression)
+        ? Lists.newLinkedList()
+        : null;
 
     AbstractType<?, ?, ?> selectedType = IDE.getActiveInstance().getDocumentFrame().getTypeMetaState().getValue();
     if (this.isApplicableForFillInAndPossiblyPartFillIns(type, selectedType)) {
@@ -366,11 +360,7 @@ public abstract class ExpressionCascadeManager {
   }
 
   protected AbstractType<?, ?, ?> getTypeFor(AbstractType<?, ?, ?> type) {
-    if (type == JavaType.getInstance(Number.class)) {
-      return JavaType.DOUBLE_OBJECT_TYPE;
-    } else {
-      return type;
-    }
+    return this.cascadeBuilder.normalizeType(type);
   }
 
   protected boolean areEnumConstantsDesired(AbstractType<?, ?, ?> enumType) {
@@ -389,25 +379,16 @@ public abstract class ExpressionCascadeManager {
 
       // "current value"
       Expression prevExpression = context.getPreviousExpression();
-      if (isRoot && (prevExpression != null)) {
-        if (type.isAssignableFrom(prevExpression.getType())) {
-          items.add(PreviousExpressionItselfFillIn.getInstance(type));
-          items.add(CascadeLineSeparator.getInstance());
-        } else {
-          Logger.severe(prevExpression);
-        }
+      if (this.cascadeBuilder.isPreviousExpressionApplicable(isRoot, type, prevExpression)) {
+        items.add(PreviousExpressionItselfFillIn.getInstance(type));
+        items.add(CascadeLineSeparator.getInstance());
+      } else if (isRoot && (prevExpression != null)) {
+        Logger.severe(prevExpression);
       }
       this.addCustomFillIns(items, blankNode, type);
-      type = this.getTypeFor(type);
-      boolean isOtherTypeMenuDesired = type == JavaType.OBJECT_TYPE;
-      if (isOtherTypeMenuDesired) {
-        if (isRoot && (prevExpression != null)) {
-          type = prevExpression.getType();
-        }
-      }
-      if (type == JavaType.OBJECT_TYPE) {
-        type = JavaType.STRING_TYPE;
-      }
+      CascadeBuilder.TypeResolution typeResolution = this.cascadeBuilder.getTypeResolution(type, isRoot, prevExpression);
+      type = typeResolution.getResolvedType();
+      boolean isOtherTypeMenuDesired = typeResolution.isOtherTypeMenuDesired();
 
       // we have a whole slew of types that we know how to filler in.
       // (doubles, booleans, colors, listeners, outfits, hair, toddlers. if it can be filled in, there is one of these)
@@ -478,14 +459,12 @@ public abstract class ExpressionCascadeManager {
   }
 
   private void appendConcatenationItemsIfAppropriate(List<CascadeBlankChild> items, ValueDetails<?> details, boolean isTop, Expression prevExpression) {
-    if (isTop) {
-      if (prevExpression != null) {
-        items.add(CascadeLineSeparator.getInstance());
-        if (!(prevExpression instanceof NullLiteral) && prevExpression.getType().isAssignableTo(String.class)) {
-          items.add(StringConcatinationRightOperandOnlyFillIn.getInstance());
-        }
-        items.add(StringConcatinationLeftAndRightOperandsFillIn.getInstance());
+    if (this.cascadeBuilder.shouldShowStringConcatenationOptions(isTop, prevExpression)) {
+      items.add(CascadeLineSeparator.getInstance());
+      if (this.cascadeBuilder.shouldShowStringConcatenationRightOperandOnly(isTop, prevExpression)) {
+        items.add(StringConcatinationRightOperandOnlyFillIn.getInstance());
       }
+      items.add(StringConcatinationLeftAndRightOperandsFillIn.getInstance());
     }
   }
 

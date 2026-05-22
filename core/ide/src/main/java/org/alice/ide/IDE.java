@@ -132,6 +132,7 @@ public abstract class IDE extends ProjectApplication {
   private File projectFileToLoadOnWindowOpened;
 
   private final CrashDetector crashDetector;
+  private final IdePreferences idePreferences = new IdePreferences();
 
   private final SceneSetupManager sceneSetupManager;
 
@@ -154,10 +155,7 @@ public abstract class IDE extends ProjectApplication {
       }
     };
     String forcedLocaleString = System.getProperty("org.alice.ide.locale");
-    Locale forcedLocale = null;
-    if (forcedLocaleString != null) {
-      forcedLocale = Locale.of(forcedLocaleString);
-    }
+    Locale forcedLocale = this.idePreferences.getForcedLocale(forcedLocaleString);
     if (forcedLocale != null) {
       Application.getActiveInstance().setLocale(forcedLocale);
       LocaleState.getInstance().addNewSchoolValueListener(localeListener);
@@ -304,7 +302,8 @@ public abstract class IDE extends ProjectApplication {
   public void setProject(Project project) {
     boolean isScenePerspectiveDesiredByDefault = SystemUtilities.getBooleanProperty("org.alice.ide.IDE.isScenePerspectiveDesiredByDefault", false);
     ProjectDocumentFrame documentFrame = this.getDocumentFrame();
-    ProjectPerspective defaultPerspective = isScenePerspectiveDesiredByDefault ? documentFrame.getSetupScenePerspective() : documentFrame.getCodePerspective();
+    ProjectPerspective defaultPerspective = this.idePreferences.getDefaultPerspective(
+        isScenePerspectiveDesiredByDefault, documentFrame.getSetupScenePerspective(), documentFrame.getCodePerspective());
     documentFrame.getPerspectiveState().setValueTransactionlessly(defaultPerspective);
     super.setProject(project);
     Perspective perspective = this.getPerspective();

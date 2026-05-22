@@ -75,6 +75,7 @@ class SceneEditorFieldManager {
 
   final StorytellingSceneEditor editor;
   final SceneFieldCodeGenerator codeGenerator;
+  final FieldRegistry fieldRegistry = new FieldRegistry();
 
   SceneEditorFieldManager(StorytellingSceneEditor editor) {
     this.editor = editor;
@@ -116,15 +117,23 @@ class SceneEditorFieldManager {
     if (expression instanceof FieldAccess fa) {
       AbstractField field = fa.field.getValue();
       if (field instanceof UserField uf) {
+        FieldRegistry.SelectionPlan selectionPlan = this.fieldRegistry.createSelectionPlan(expression, editor.getActiveSceneField());
+        assert selectionPlan.isFieldSelection();
         editor.setSelectedField(uf.getDeclaringType(), uf);
       }
     } else if (expression instanceof MethodInvocation) {
+      FieldRegistry.SelectionPlan selectionPlan = this.fieldRegistry.createSelectionPlan(expression, editor.getActiveSceneField());
+      assert selectionPlan.isExpressionSelection();
       editor.setSelectedExpression(expression);
     } else if (expression instanceof ArrayAccess) {
+      FieldRegistry.SelectionPlan selectionPlan = this.fieldRegistry.createSelectionPlan(expression, editor.getActiveSceneField());
+      assert selectionPlan.isExpressionSelection();
       editor.setSelectedExpression(expression);
     } else if (expression instanceof ThisExpression) {
       UserField uf = editor.getActiveSceneField();
       if (uf != null) {
+        FieldRegistry.SelectionPlan selectionPlan = this.fieldRegistry.createSelectionPlan(expression, editor.getActiveSceneField());
+        assert selectionPlan.isFieldSelection();
         editor.setSelectedField(uf.getDeclaringType(), uf);
       } else {
         return;
@@ -138,9 +147,12 @@ class SceneEditorFieldManager {
     if (imp != null) {
       UserField field = editor.getFieldForInstanceInJavaVM(imp.getAbstraction());
       if (field != null) {
+        FieldRegistry.MarkerKind markerKind = this.fieldRegistry.classifyField(field);
         if (field.getValueType().isAssignableFrom(SCameraMarker.class)) {
+          assert markerKind == FieldRegistry.MarkerKind.CAMERA;
           setSelectedCameraMarker(field);
         } else if (field.getValueType().isAssignableFrom(SThingMarker.class)) {
+          assert markerKind == FieldRegistry.MarkerKind.OBJECT;
           setSelectedObjectMarker(field);
         } else {
           editor.setSelectedField(field.getDeclaringType(), field);
