@@ -74,10 +74,11 @@ public class EatmeSaveProjectTest {
   }
 
   @Test
-  public void rejectsDifferentSceneSaveSelectorWithoutProofArtifacts() throws Exception {
+  public void acceptsDifferentSceneSaveSelectorWhenMethodExists() throws Exception {
     File projectFile = temporaryFolder.newFile("edited.a3p");
     IoUtilities.writeProject(projectFile, projectWithSceneMethod("otherStep"));
     Path evidenceDir = temporaryFolder.newFolder("evidence").toPath();
+    ByteArrayOutputStream stdout = new ByteArrayOutputStream();
     ByteArrayOutputStream stderr = new ByteArrayOutputStream();
 
     int status = EatmeSaveProject.run(
@@ -87,12 +88,14 @@ public class EatmeSaveProjectTest {
             "--evidence-dir", evidenceDir.toString(),
             "--json"
         },
-        new PrintStream(new ByteArrayOutputStream()),
+        new PrintStream(stdout),
         new PrintStream(stderr));
 
-    assertEquals(2, status);
-    assertTrue(stderr.toString(StandardCharsets.UTF_8).contains("unsupported save selector"));
-    assertTrue(Files.notExists(evidenceDir.resolve("saved-project.a3p")));
+    assertEquals(stderr.toString(StandardCharsets.UTF_8), 0, status);
+    assertTrue(stdout.toString(StandardCharsets.UTF_8).contains("\"save_selector\":\"scene.otherStep\""));
+    assertEquals("", stderr.toString(StandardCharsets.UTF_8));
+    assertTrue(Files.size(evidenceDir.resolve("saved-project.a3p")) > 0);
+    assertTrue(Files.size(evidenceDir.resolve("project-save.json")) > 0);
   }
 
   @Test

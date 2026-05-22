@@ -110,10 +110,11 @@ public class EatmeRunWorldTest {
   }
 
   @Test
-  public void rejectsDifferentSceneRunSelectorWithoutProofArtifacts() throws Exception {
+  public void acceptsDifferentSceneRunSelectorWhenMethodExists() throws Exception {
     File projectFile = temporaryFolder.newFile("edited.a3p");
     IoUtilities.writeProject(projectFile, projectWithSceneMethod("otherStep"));
     Path evidenceDir = temporaryFolder.newFolder("evidence").toPath();
+    ByteArrayOutputStream stdout = new ByteArrayOutputStream();
     ByteArrayOutputStream stderr = new ByteArrayOutputStream();
 
     int status = EatmeRunWorld.run(
@@ -123,12 +124,14 @@ public class EatmeRunWorldTest {
             "--evidence-dir", evidenceDir.toString(),
             "--json"
         },
-        new PrintStream(new ByteArrayOutputStream()),
+        new PrintStream(stdout),
         new PrintStream(stderr));
 
-    assertEquals(2, status);
-    assertTrue(stderr.toString(StandardCharsets.UTF_8).contains("unsupported run selector"));
-    assertTrue(Files.notExists(evidenceDir.resolve("world-run.json")));
+    assertEquals(stderr.toString(StandardCharsets.UTF_8), 0, status);
+    assertTrue(stdout.toString(StandardCharsets.UTF_8).contains("\"run_selector\":\"scene.otherStep\""));
+    assertEquals("", stderr.toString(StandardCharsets.UTF_8));
+    assertTrue(Files.size(evidenceDir.resolve("world-run.json")) > 0);
+    assertTrue(Files.size(evidenceDir.resolve("runtime.log")) > 0);
   }
 
   @Test(expected = IllegalArgumentException.class)

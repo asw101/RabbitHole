@@ -18,7 +18,6 @@ import java.nio.file.Path;
 
 public final class EatmeSaveProject {
   private static final String SUPPORTED_SELECTOR_PREFIX = "scene.";
-  private static final String DEFAULT_SAVE_SELECTOR = "scene.eatmeFirstLessonStep";
   private static final String SAVED_PROJECT = "saved-project.a3p";
   private static final String SAVE_ARTIFACT = "project-save.json";
 
@@ -56,9 +55,6 @@ public final class EatmeSaveProject {
   private static ProjectSave saveProject(Arguments arguments) throws IOException, VersionNotSupportedException {
     if (!Files.isRegularFile(arguments.project())) {
       throw new IllegalArgumentException("project file does not exist: " + arguments.project());
-    }
-    if (!DEFAULT_SAVE_SELECTOR.equals(arguments.saveSelector())) {
-      throw new IllegalArgumentException("unsupported save selector: " + arguments.saveSelector());
     }
     String methodName = methodName(arguments.saveSelector());
     Files.createDirectories(arguments.evidenceDir());

@@ -28,7 +28,6 @@ import java.util.List;
 
 public final class EatmeRunWorld {
   private static final String SUPPORTED_SELECTOR_PREFIX = "scene.";
-  private static final String DEFAULT_RUN_SELECTOR = "scene.eatmeFirstLessonStep";
   private static final String RUN_ARTIFACT = "world-run.json";
   private static final String RUNTIME_LOG = "runtime.log";
 
@@ -66,9 +65,6 @@ public final class EatmeRunWorld {
   private static WorldRun runWorld(Arguments arguments) throws IOException, VersionNotSupportedException {
     if (!Files.isRegularFile(arguments.project())) {
       throw new IllegalArgumentException("project file does not exist: " + arguments.project());
-    }
-    if (!DEFAULT_RUN_SELECTOR.equals(arguments.runSelector())) {
-      throw new IllegalArgumentException("unsupported run selector: " + arguments.runSelector());
     }
     String methodName = methodName(arguments.runSelector());
     Files.createDirectories(arguments.evidenceDir());
