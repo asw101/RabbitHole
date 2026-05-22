@@ -2,6 +2,9 @@ package org.alice.ide.ast.code.edits;
 
 import org.alice.ide.ast.code.MoveStatementOperation;
 import org.alice.ide.ast.draganddrop.BlockStatementIndexPair;
+import org.alice.ide.testing.TestIdeBootstrap;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.lgna.croquet.edits.AbstractEdit;
 import org.lgna.project.ast.BlockStatement;
@@ -22,6 +25,15 @@ import static org.junit.Assert.*;
  * that we test via reflection to bypass the UserActivity requirement.
  */
 public class MoveStatementEditBehavioralTest {
+  @Before
+  public void setUpIdeContext() {
+    TestIdeBootstrap.ensureInstalled();
+  }
+
+  @After
+  public void tearDownIdeContext() {
+    TestIdeBootstrap.reset();
+  }
 
   // ══════════════════════════════════════════════════════════════
   // Structural characterization

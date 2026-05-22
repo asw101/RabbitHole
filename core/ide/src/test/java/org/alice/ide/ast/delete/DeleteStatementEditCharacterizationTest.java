@@ -1,6 +1,9 @@
 package org.alice.ide.ast.delete;
 
 import org.alice.ide.ast.delete.edits.DeleteStatementEdit;
+import org.alice.ide.testing.TestIdeBootstrap;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.lgna.croquet.ActionOperation;
 import org.lgna.croquet.edits.AbstractEdit;
@@ -22,6 +25,15 @@ import static org.junit.Assert.*;
  * the edit's do/undo logic can be invoked headlessly via reflection.
  */
 public class DeleteStatementEditCharacterizationTest {
+  @Before
+  public void setUpIdeContext() {
+    TestIdeBootstrap.ensureInstalled();
+  }
+
+  @After
+  public void tearDownIdeContext() {
+    TestIdeBootstrap.reset();
+  }
 
   // ══════════════════════════════════════════════════════════════
   // DeleteStatementOperation — structural characterization

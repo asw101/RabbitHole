@@ -2,7 +2,9 @@ package org.alice.ide.croquet.edits.ast;
 
 import edu.cmu.cs.dennisc.pattern.Criterion;
 import org.alice.ide.IDE;
+import org.alice.ide.ProjectDocumentFrame;
 import org.alice.ide.cascade.ExpressionCascadeManager;
+import org.alice.ide.testing.TestIdeBootstrap;
 import org.alice.ide.frametitle.IdeFrameTitleGenerator;
 import org.alice.ide.sceneeditor.AbstractSceneEditor;
 import org.junit.After;
@@ -47,6 +49,11 @@ public class AddParameterEditTest {
     @Override
     public List<SimpleArgumentListProperty> getArgumentLists(UserCode code) {
       return this.argumentLists;
+    }
+
+    @Override
+    public ProjectDocumentFrame getDocumentFrame() {
+      return TestIdeBootstrap.getDocumentFrame();
     }
 
     @Override
@@ -126,18 +133,9 @@ public class AddParameterEditTest {
   private UserParameter addedParameter;
   private MethodInvocation invocation;
 
-  private static void setActiveApplication(Application<?> application) {
-    try {
-      Field field = Application.class.getDeclaredField("singleton");
-      field.setAccessible(true);
-      field.set(null, application);
-    } catch (ReflectiveOperationException roe) {
-      throw new AssertionError(roe);
-    }
-  }
-
   @Before
   public void setUp() {
+    TestIdeBootstrap.ensureInstalled();
     existingParameter = new UserParameter("existing", String.class);
     addedParameter = new UserParameter("added", Integer.class);
     method = new UserMethod("sample", Object.class, new UserParameter[]{existingParameter}, new BlockStatement());
@@ -145,12 +143,13 @@ public class AddParameterEditTest {
         new SimpleArgument(existingParameter, new StringLiteral("alpha")));
 
     previousApplication = Application.getActiveInstance();
-    setActiveApplication(TestIde.create(Collections.singletonList(invocation.requiredArguments)));
+    TestIdeBootstrap.setActiveApplication(TestIde.create(Collections.singletonList(invocation.requiredArguments)));
   }
 
   @After
   public void tearDown() {
-    setActiveApplication(previousApplication);
+    TestIdeBootstrap.setActiveApplication(previousApplication);
+    TestIdeBootstrap.reset();
   }
 
   @Test

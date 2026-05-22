@@ -1,6 +1,9 @@
 package org.alice.ide.croquet.edits.ast;
 
 import org.alice.ide.ast.draganddrop.BlockStatementIndexPair;
+import org.alice.ide.testing.TestIdeBootstrap;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.lgna.project.ast.*;
 
@@ -9,6 +12,15 @@ import javax.swing.undo.CannotUndoException;
 import static org.junit.Assert.*;
 
 public class InsertStatementEditTest {
+  @Before
+  public void setUpIdeContext() {
+    TestIdeBootstrap.ensureInstalled();
+  }
+
+  @After
+  public void tearDownIdeContext() {
+    TestIdeBootstrap.reset();
+  }
 
   @Test
   public void atEnd_isMaxShortValue() {

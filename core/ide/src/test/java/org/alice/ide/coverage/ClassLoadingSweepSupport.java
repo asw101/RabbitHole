@@ -1,5 +1,6 @@
 package org.alice.ide.coverage;
 
+import org.alice.ide.testing.TestIdeBootstrap;
 import org.lgna.croquet.Composite;
 import org.lgna.croquet.Model;
 import org.lgna.croquet.views.AwtComponentView;
@@ -53,6 +54,10 @@ final class ClassLoadingSweepSupport {
     return sweepClasses(classNamesInPackageTree(packagePrefix), true);
   }
 
+  static SweepResult sweepNamedClasses(String... classNames) {
+    return sweepClasses(java.util.Arrays.asList(classNames), true);
+  }
+
   private static List<String> classNamesInExactPackage(String packageName) {
     List<String> classNames = CLASS_NAMES_BY_PACKAGE.get(packageName);
     if (classNames == null) {
@@ -85,6 +90,7 @@ final class ClassLoadingSweepSupport {
       for (String className : classNames) {
         result.attempted++;
         try {
+          TestIdeBootstrap.ensureInstalled();
           Class<?> clazz = Class.forName(className, false, classLoader);
           result.loaded++;
           exerciseEnumConstants(clazz, result);
@@ -95,6 +101,8 @@ final class ClassLoadingSweepSupport {
           }
         } catch (Throwable throwable) {
           result.classLoadFailures.put(className, summarize(throwable));
+        } finally {
+          TestIdeBootstrap.reset();
         }
       }
 

@@ -1,11 +1,23 @@
 package org.alice.ide.croquet.edits.ast;
 
+import org.alice.ide.testing.TestIdeBootstrap;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.lgna.project.ast.*;
 
 import static org.junit.Assert.*;
 
 public class StatementEditUtilitiesTest {
+  @Before
+  public void setUpIdeContext() {
+    TestIdeBootstrap.ensureInstalled();
+  }
+
+  @After
+  public void tearDownIdeContext() {
+    TestIdeBootstrap.reset();
+  }
 
   @Test
   public void insertStatementEditAtEnd() {
