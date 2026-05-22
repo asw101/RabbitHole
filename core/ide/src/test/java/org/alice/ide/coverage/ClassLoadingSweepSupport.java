@@ -1,5 +1,15 @@
 package org.alice.ide.coverage;
 
+import org.lgna.croquet.views.AwtComponentView;
+
+import javax.swing.Icon;
+import javax.swing.JComponent;
+import javax.swing.SwingUtilities;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -18,12 +28,10 @@ import java.util.stream.Stream;
 final class ClassLoadingSweepSupport {
   private static final String MODULE_LOCAL_SOURCE_ROOT = "src/main/java";
   private static final String MODULE_REPO_SOURCE_ROOT = "core/ide/src/main/java";
+  private static final int DEFAULT_COMPONENT_WIDTH = 320;
+  private static final int DEFAULT_COMPONENT_HEIGHT = 180;
   private static final List<String> ALL_CLASS_NAMES = discoverAllClassNames();
   private static final Map<String, List<String>> CLASS_NAMES_BY_PACKAGE = indexByPackage(ALL_CLASS_NAMES);
-
-  static {
-    System.setProperty("java.awt.headless", "true");
-  }
 
   private ClassLoadingSweepSupport() {
   }
@@ -71,7 +79,7 @@ final class ClassLoadingSweepSupport {
     for (String className : classNames) {
       result.attempted++;
       try {
-        Class<?> clazz = Class.forName(className, true, classLoader);
+        Class<?> clazz = Class.forName(className, false, classLoader);
         result.loaded++;
         exerciseEnumConstants(clazz, result);
         exerciseStaticFields(clazz, result);
@@ -112,14 +120,18 @@ final class ClassLoadingSweepSupport {
   }
 
   private static void exerciseStaticFields(Class<?> clazz, SweepResult result) {
+    if (!shouldExerciseMembers(clazz)) {
+      return;
+    }
     for (Field field : clazz.getDeclaredFields()) {
       if (!Modifier.isStatic(field.getModifiers()) || field.isSynthetic()) {
         continue;
       }
       try {
         field.setAccessible(true);
-        field.get(null);
+        Object value = field.get(null);
         result.staticFieldsAccessed++;
+        exerciseObject(value, result);
       } catch (Throwable throwable) {
         result.memberFailures++;
       }
@@ -135,13 +147,14 @@ final class ClassLoadingSweepSupport {
       if (method.getParameterCount() != 0 || method.getReturnType() == Void.TYPE) {
         continue;
       }
-      if ("main".equals(method.getName())) {
+      if ("main".equals(method.getName()) || !shouldInvokeStaticMethod(clazz, method)) {
         continue;
       }
       try {
         method.setAccessible(true);
-        method.invoke(null);
+        Object value = invokeNoArgMethod(method, clazz, result);
         result.staticMethodsInvoked++;
+        exerciseObject(value, result);
       } catch (Throwable throwable) {
         result.memberFailures++;
       }
@@ -150,7 +163,7 @@ final class ClassLoadingSweepSupport {
 
   private static void exerciseNoArgConstructors(Class<?> clazz, SweepResult result) {
     int modifiers = clazz.getModifiers();
-    if (clazz.isInterface() || clazz.isAnnotation() || clazz.isEnum() || Modifier.isAbstract(modifiers)) {
+    if (clazz.isInterface() || clazz.isAnnotation() || clazz.isEnum() || Modifier.isAbstract(modifiers) || !shouldInstantiate(clazz)) {
       return;
     }
     for (Constructor<?> constructor : clazz.getDeclaredConstructors()) {
@@ -159,12 +172,178 @@ final class ClassLoadingSweepSupport {
       }
       try {
         constructor.setAccessible(true);
-        constructor.newInstance();
+        Object value = invokeConstructor(constructor, clazz, result);
         result.instancesCreated++;
+        exerciseObject(value, result);
       } catch (Throwable throwable) {
         result.memberFailures++;
       }
     }
+  }
+
+  private static Object invokeNoArgMethod(Method method, Class<?> clazz, SweepResult result) throws Throwable {
+    if (shouldUseEdt(clazz) || shouldUseEdt(method.getReturnType())) {
+      return invokeOnEdt(() -> method.invoke(null), result);
+    }
+    return method.invoke(null);
+  }
+
+  private static boolean shouldInvokeStaticMethod(Class<?> clazz, Method method) {
+    if (method.getName().startsWith("getInstance") || method.getName().startsWith("createInstance")) {
+      return false;
+    }
+    Class<?> returnType = method.getReturnType();
+    if (Icon.class.isAssignableFrom(returnType)) {
+      return true;
+    }
+    String simpleName = returnType.getSimpleName();
+    return simpleName.endsWith("Icon");
+  }
+
+  private static Object invokeConstructor(Constructor<?> constructor, Class<?> clazz, SweepResult result) throws Throwable {
+    if (shouldUseEdt(clazz)) {
+      return invokeOnEdt(() -> constructor.newInstance(), result);
+    }
+    return constructor.newInstance();
+  }
+
+  private static boolean shouldUseEdt(Class<?> clazz) {
+    return clazz != null && (AwtComponentView.class.isAssignableFrom(clazz)
+        || Component.class.isAssignableFrom(clazz)
+        || Icon.class.isAssignableFrom(clazz));
+  }
+
+  private static boolean shouldExerciseMembers(Class<?> clazz) {
+    if (clazz == null) {
+      return false;
+    }
+    if (java.awt.Window.class.isAssignableFrom(clazz)) {
+      return false;
+    }
+    String simpleName = clazz.getSimpleName();
+    if (simpleName.endsWith("Dialog") || simpleName.endsWith("Frame") || simpleName.endsWith("Window")) {
+      return false;
+    }
+    return shouldUseEdt(clazz)
+        || simpleName.endsWith("Panel")
+        || simpleName.endsWith("View")
+        || simpleName.endsWith("Editor")
+        || simpleName.endsWith("Component")
+        || simpleName.endsWith("Adapter")
+        || simpleName.endsWith("Icon");
+  }
+
+  private static boolean shouldInstantiate(Class<?> clazz) {
+    if (!shouldExerciseMembers(clazz)) {
+      return false;
+    }
+    String className = clazz.getName();
+    String simpleName = clazz.getSimpleName();
+    if (className.contains(".sceneeditor.") && simpleName.endsWith("SceneEditor")) {
+      return false;
+    }
+    return true;
+  }
+
+  private static <T> T invokeOnEdt(ThrowingSupplier<T> supplier, SweepResult result) throws Throwable {
+    if (SwingUtilities.isEventDispatchThread()) {
+      return supplier.get();
+    }
+    final Object[] valueHolder = new Object[1];
+    final Throwable[] failureHolder = new Throwable[1];
+    SwingUtilities.invokeAndWait(() -> {
+      try {
+        valueHolder[0] = supplier.get();
+      } catch (Throwable throwable) {
+        failureHolder[0] = throwable;
+      }
+    });
+    result.edtTasks++;
+    if (failureHolder[0] != null) {
+      throw failureHolder[0];
+    }
+    @SuppressWarnings("unchecked")
+    T value = (T) valueHolder[0];
+    return value;
+  }
+
+  private static void exerciseObject(Object value, SweepResult result) {
+    if (value == null) {
+      return;
+    }
+    try {
+      if (value instanceof AwtComponentView<?>) {
+        exerciseCroquetView((AwtComponentView<?>) value, result);
+      } else if (value instanceof Component) {
+        exerciseComponent((Component) value, result);
+      } else if (value instanceof Icon) {
+        exerciseIcon((Icon) value, result);
+      }
+    } catch (Throwable throwable) {
+      result.memberFailures++;
+    }
+  }
+
+  private static void exerciseCroquetView(AwtComponentView<?> view, SweepResult result) throws Throwable {
+    invokeOnEdt(() -> {
+      Component component = view.getAwtComponent();
+      layoutAndPaint(component);
+      return null;
+    }, result);
+    result.viewsExercised++;
+  }
+
+  private static void exerciseComponent(Component component, SweepResult result) throws Throwable {
+    invokeOnEdt(() -> {
+      layoutAndPaint(component);
+      return null;
+    }, result);
+    result.componentsPainted++;
+  }
+
+  private static void exerciseIcon(Icon icon, SweepResult result) {
+    int width = Math.max(1, icon.getIconWidth());
+    int height = Math.max(1, icon.getIconHeight());
+    BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+    Graphics2D graphics = image.createGraphics();
+    try {
+      icon.paintIcon(null, graphics, 0, 0);
+    } finally {
+      graphics.dispose();
+    }
+    result.iconsPainted++;
+  }
+
+  private static void layoutAndPaint(Component component) {
+    Dimension preferredSize = component.getPreferredSize();
+    int width = clamp(preferredSize != null ? preferredSize.width : DEFAULT_COMPONENT_WIDTH, DEFAULT_COMPONENT_WIDTH);
+    int height = clamp(preferredSize != null ? preferredSize.height : DEFAULT_COMPONENT_HEIGHT, DEFAULT_COMPONENT_HEIGHT);
+    component.setSize(width, height);
+    if (component instanceof JComponent) {
+      ((JComponent) component).setOpaque(true);
+    }
+    if (component instanceof Container) {
+      ((Container) component).doLayout();
+      ((Container) component).validate();
+    }
+    BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+    Graphics2D graphics = image.createGraphics();
+    try {
+      component.paint(graphics);
+    } finally {
+      graphics.dispose();
+    }
+  }
+
+  private static int clamp(int value, int fallback) {
+    if (value <= 0) {
+      return fallback;
+    }
+    return Math.min(value, 1024);
+  }
+
+  private interface ThrowingSupplier<T> {
+    T get() throws Throwable;
   }
 
   private static Map<String, List<String>> indexByPackage(List<String> classNames) {
@@ -253,6 +432,10 @@ final class ClassLoadingSweepSupport {
     int staticFieldsAccessed;
     int staticMethodsInvoked;
     int instancesCreated;
+    int viewsExercised;
+    int componentsPainted;
+    int iconsPainted;
+    int edtTasks;
     int memberFailures;
     final Map<String, String> classLoadFailures = new LinkedHashMap<String, String>();
 
@@ -268,6 +451,10 @@ final class ClassLoadingSweepSupport {
           + ", staticFields=" + staticFieldsAccessed
           + ", staticMethods=" + staticMethodsInvoked
           + ", instances=" + instancesCreated
+          + ", views=" + viewsExercised
+          + ", components=" + componentsPainted
+          + ", icons=" + iconsPainted
+          + ", edtTasks=" + edtTasks
           + ", loadFailures=" + classLoadFailures.size()
           + ", memberFailures=" + memberFailures
           + ']';

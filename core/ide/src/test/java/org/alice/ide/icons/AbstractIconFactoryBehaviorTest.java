@@ -9,6 +9,10 @@ public abstract class AbstractIconFactoryBehaviorTest extends AbstractRenderable
 
   @Override
   protected final Icon createIcon() {
-    return createIconFactory().getIconToFit(getSize());
+    Icon icon = createIconFactory().getIconToFit(getSize());
+    if (icon instanceof SceneIcon) {
+      SceneIconTestSupport.seedCachedImage((SceneIcon) icon);
+    }
+    return icon;
   }
 }
