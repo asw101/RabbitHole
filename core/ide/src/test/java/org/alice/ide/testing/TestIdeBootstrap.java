@@ -62,6 +62,20 @@ public final class TestIdeBootstrap {
     ensureInstalled();
   }
 
+  public static void loadProject(Project project) {
+    synchronized (LOCK) {
+      TestStageIDE ide = ensureInstalled();
+      onEdt(() -> {
+        setActiveApplication(ide);
+        finishOpenActivities(ide);
+        ProjectDocumentState.getInstance().setValueTransactionlessly(new ProjectDocument(project, new UserActivity()));
+        injectUriProjectLoader(ide, new FixedProjectLoader(project));
+        return null;
+      });
+      clearProjectChangeListeners();
+    }
+  }
+
   public static void reset() {
     synchronized (LOCK) {
       if (installedIde == null) {
@@ -259,6 +273,30 @@ public final class TestIdeBootstrap {
     @Override
     protected Project load() {
       return createMinimalProject();
+    }
+  }
+
+  private static final class FixedProjectLoader extends UriProjectLoader {
+    private final Project project;
+
+    private FixedProjectLoader(Project project) {
+      super(false);
+      this.project = project;
+    }
+
+    @Override
+    public URI getUri() {
+      return URI.create("memory://test-project");
+    }
+
+    @Override
+    public boolean isNewProject() {
+      return false;
+    }
+
+    @Override
+    protected Project load() {
+      return this.project;
     }
   }
 }
