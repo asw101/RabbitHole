@@ -14,21 +14,26 @@ import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Stream;
 
 final class ClassLoadingSweepSupport {
@@ -36,6 +41,8 @@ final class ClassLoadingSweepSupport {
   private static final String MODULE_REPO_SOURCE_ROOT = "core/ide/src/main/java";
   private static final int DEFAULT_COMPONENT_WIDTH = 320;
   private static final int DEFAULT_COMPONENT_HEIGHT = 180;
+  private static final int MAX_DEFAULT_VALUE_DEPTH = 3;
+  private static final Object UNRESOLVED = new Object();
   private static final List<String> ALL_CLASS_NAMES = discoverAllClassNames();
   private static final Map<String, List<String>> CLASS_NAMES_BY_PACKAGE = indexByPackage(ALL_CLASS_NAMES);
 
@@ -43,19 +50,23 @@ final class ClassLoadingSweepSupport {
   }
 
   static SweepResult sweepAllClasses() {
-    return sweepClasses(ALL_CLASS_NAMES, false);
+    return sweepClasses(ALL_CLASS_NAMES, false, false);
   }
 
   static SweepResult sweepExactPackage(String packageName) {
-    return sweepClasses(classNamesInExactPackage(packageName), true);
+    return sweepClasses(classNamesInExactPackage(packageName), true, false);
   }
 
   static SweepResult sweepPackageTree(String packagePrefix) {
-    return sweepClasses(classNamesInPackageTree(packagePrefix), true);
+    return sweepClasses(classNamesInPackageTree(packagePrefix), true, false);
   }
 
   static SweepResult sweepNamedClasses(String... classNames) {
-    return sweepClasses(java.util.Arrays.asList(classNames), true);
+    return sweepClasses(java.util.Arrays.asList(classNames), true, false);
+  }
+
+  static SweepResult sweepNamedClassesWithDefaultArgs(String... classNames) {
+    return sweepClasses(java.util.Arrays.asList(classNames), true, true);
   }
 
   private static List<String> classNamesInExactPackage(String packageName) {
@@ -79,7 +90,7 @@ final class ClassLoadingSweepSupport {
     return classNames;
   }
 
-  private static SweepResult sweepClasses(List<String> classNames, boolean exerciseExtras) {
+  private static SweepResult sweepClasses(List<String> classNames, boolean exerciseExtras, boolean allowDefaultArgs) {
     SweepResult result = new SweepResult(classNames.size());
     ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
     if (classLoader == null) {
@@ -97,7 +108,7 @@ final class ClassLoadingSweepSupport {
           exerciseStaticFields(clazz, result);
           if (exerciseExtras) {
             exerciseStaticMethods(clazz, result);
-            exerciseNoArgConstructors(clazz, result);
+            exerciseConstructors(clazz, result, allowDefaultArgs);
           }
         } catch (Throwable throwable) {
           result.classLoadFailures.put(className, summarize(throwable));
@@ -178,24 +189,283 @@ final class ClassLoadingSweepSupport {
     }
   }
 
-  private static void exerciseNoArgConstructors(Class<?> clazz, SweepResult result) {
+  private static void exerciseConstructors(Class<?> clazz, SweepResult result, boolean allowDefaultArgs) {
     int modifiers = clazz.getModifiers();
     if (clazz.isInterface() || clazz.isAnnotation() || clazz.isEnum() || Modifier.isAbstract(modifiers) || !shouldInstantiate(clazz)) {
       return;
     }
     for (Constructor<?> constructor : clazz.getDeclaredConstructors()) {
-      if (constructor.isSynthetic() || constructor.getParameterCount() != 0) {
+      if (constructor.isSynthetic()) {
+        continue;
+      }
+      Object[] args;
+      if (constructor.getParameterCount() == 0) {
+        args = new Object[0];
+      } else if (allowDefaultArgs) {
+        try {
+          args = resolveConstructorArguments(constructor, result, 0, new HashSet<Class<?>>());
+        } catch (Throwable throwable) {
+          result.memberFailures++;
+          continue;
+        }
+        if (args == null) {
+          continue;
+        }
+      } else {
         continue;
       }
       try {
         constructor.setAccessible(true);
-        Object value = invokeConstructor(constructor, clazz, result);
+        Object value = invokeConstructor(constructor, args, clazz, result);
         result.instancesCreated++;
         exerciseObject(value, result);
       } catch (Throwable throwable) {
         result.memberFailures++;
       }
     }
+  }
+
+  private static Object[] resolveConstructorArguments(Constructor<?> constructor, SweepResult result, int depth,
+      Set<Class<?>> resolvingTypes) throws Throwable {
+    Class<?>[] parameterTypes = constructor.getParameterTypes();
+    Object[] arguments = new Object[parameterTypes.length];
+    for (int i = 0; i < parameterTypes.length; i++) {
+      Object value = resolveDefaultValue(parameterTypes[i], depth + 1, resolvingTypes, result);
+      if (value == UNRESOLVED) {
+        return null;
+      }
+      arguments[i] = value;
+    }
+    return arguments;
+  }
+
+  private static Object resolveDefaultValue(Class<?> type, int depth, Set<Class<?>> resolvingTypes, SweepResult result)
+      throws Throwable {
+    if (type == null) {
+      return UNRESOLVED;
+    }
+    if (type.isPrimitive()) {
+      return primitiveDefaultValue(type);
+    }
+    if (depth > MAX_DEFAULT_VALUE_DEPTH) {
+      return UNRESOLVED;
+    }
+    if (type == Object.class) {
+      return new Object();
+    }
+    if (type == Boolean.class) {
+      return Boolean.FALSE;
+    }
+    if (type == Byte.class) {
+      return Byte.valueOf((byte) 0);
+    }
+    if (type == Short.class) {
+      return Short.valueOf((short) 0);
+    }
+    if (type == Integer.class) {
+      return Integer.valueOf(0);
+    }
+    if (type == Long.class) {
+      return Long.valueOf(0L);
+    }
+    if (type == Float.class) {
+      return Float.valueOf(0.0f);
+    }
+    if (type == Double.class) {
+      return Double.valueOf(0.0d);
+    }
+    if (type == Character.class) {
+      return Character.valueOf('\0');
+    }
+    if (type == String.class) {
+      return "coverage";
+    }
+    if (type == UUID.class) {
+      return new UUID(0L, 0L);
+    }
+    if (type == URI.class) {
+      return URI.create("blank://coverage");
+    }
+    if (type == File.class) {
+      return new File(".");
+    }
+    if (type == Path.class) {
+      return Paths.get(".");
+    }
+    if (type == Dimension.class) {
+      return new Dimension(DEFAULT_COMPONENT_WIDTH, DEFAULT_COMPONENT_HEIGHT);
+    }
+    if (type == Class.class) {
+      return Object.class;
+    }
+    if (type.isArray()) {
+      return Array.newInstance(type.getComponentType(), 0);
+    }
+    if (type.isEnum()) {
+      Object[] constants = type.getEnumConstants();
+      return (constants != null) && (constants.length > 0) ? constants[0] : UNRESOLVED;
+    }
+    if (type.isAssignableFrom(ArrayList.class)) {
+      return new ArrayList<Object>();
+    }
+    if (type.isAssignableFrom(java.util.LinkedHashSet.class)) {
+      return new java.util.LinkedHashSet<Object>();
+    }
+    if (type.isAssignableFrom(LinkedHashMap.class)) {
+      return new LinkedHashMap<Object, Object>();
+    }
+    if (type == org.lgna.croquet.Group.class) {
+      return org.lgna.croquet.Group.getInstance(new UUID(0L, 0L), "coverage");
+    }
+    if (type.isAssignableFrom(TestIdeBootstrap.TestStageIDE.class)
+        || type.isAssignableFrom(org.alice.stageide.StageIDE.class)
+        || type.isAssignableFrom(org.alice.ide.IDE.class)
+        || type.isAssignableFrom(org.lgna.croquet.Application.class)) {
+      return TestIdeBootstrap.getInstalledIde();
+    }
+    if (type.isAssignableFrom(org.alice.ide.ProjectDocumentFrame.class)) {
+      return TestIdeBootstrap.getDocumentFrame();
+    }
+    if (type.isAssignableFrom(org.lgna.project.Project.class)) {
+      return ensureProject();
+    }
+    if (type == org.lgna.project.ast.JavaType.class) {
+      return org.lgna.project.ast.JavaType.getInstance(Object.class);
+    }
+    if (type.isAssignableFrom(org.lgna.project.ast.NamedUserType.class)
+        || type.isAssignableFrom(org.lgna.project.ast.UserType.class)
+        || type.isAssignableFrom(org.lgna.project.ast.AbstractType.class)) {
+      return ensureProgramType();
+    }
+    if (type.isAssignableFrom(org.lgna.project.ast.NamedUserConstructor.class)
+        || type.isAssignableFrom(org.lgna.project.ast.AbstractConstructor.class)) {
+      return ensureConstructor();
+    }
+    if (type.isAssignableFrom(org.lgna.project.ast.UserMethod.class)
+        || type.isAssignableFrom(org.lgna.project.ast.AbstractMethod.class)) {
+      return ensureMethod();
+    }
+    if (type.isAssignableFrom(org.lgna.project.ast.UserParameter.class)
+        || type.isAssignableFrom(org.lgna.project.ast.AbstractParameter.class)) {
+      return new org.lgna.project.ast.UserParameter("value", Object.class);
+    }
+    if (type.isAssignableFrom(org.lgna.project.ast.UserField.class)
+        || type.isAssignableFrom(org.lgna.project.ast.AbstractField.class)
+        || type.isAssignableFrom(org.lgna.project.ast.AbstractDeclaration.class)) {
+      return ensureField();
+    }
+    if (type == org.lgna.project.ast.ExpressionProperty.class) {
+      return ensureField().initializer;
+    }
+    if (type == org.alice.ide.ast.draganddrop.BlockStatementIndexPair.class) {
+      return new org.alice.ide.ast.draganddrop.BlockStatementIndexPair(new org.lgna.project.ast.BlockStatement(), 0);
+    }
+    if (type.isAssignableFrom(org.lgna.project.ast.UserLocal.class)) {
+      return new org.lgna.project.ast.UserLocal("local", Object.class, false);
+    }
+    if (type.isAssignableFrom(org.lgna.project.ast.ConstructorBlockStatement.class)) {
+      return new org.lgna.project.ast.ConstructorBlockStatement();
+    }
+    if (type.isAssignableFrom(org.lgna.project.ast.BlockStatement.class)) {
+      return new org.lgna.project.ast.BlockStatement();
+    }
+    if (type.isAssignableFrom(org.lgna.project.ast.AbstractStatementWithBody.class)) {
+      return new org.lgna.project.ast.DoTogether();
+    }
+    if (type.isAssignableFrom(org.lgna.project.ast.Statement.class)) {
+      return new org.lgna.project.ast.Comment("coverage");
+    }
+    if (type.isAssignableFrom(org.lgna.project.ast.Expression.class)) {
+      return new org.lgna.project.ast.NullLiteral();
+    }
+    if (type.isAssignableFrom(org.lgna.croquet.history.UserActivity.class)) {
+      return new org.lgna.croquet.history.UserActivity();
+    }
+    if (type.isAssignableFrom(javax.swing.JPanel.class)) {
+      return new javax.swing.JPanel();
+    }
+    if (type.isAssignableFrom(javax.swing.ImageIcon.class)) {
+      return new javax.swing.ImageIcon(new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB));
+    }
+    if (!resolvingTypes.add(type)) {
+      return UNRESOLVED;
+    }
+    try {
+      Object singleton = invokeKnownFactory(type, result);
+      if (singleton != UNRESOLVED) {
+        return singleton;
+      }
+      for (Constructor<?> constructor : type.getDeclaredConstructors()) {
+        if (constructor.isSynthetic()) {
+          continue;
+        }
+        constructor.setAccessible(true);
+        Object[] nestedArguments = constructor.getParameterCount() == 0
+            ? new Object[0]
+            : resolveConstructorArguments(constructor, result, depth, resolvingTypes);
+        if (nestedArguments == null) {
+          continue;
+        }
+        return invokeConstructor(constructor, nestedArguments, type, result);
+      }
+    } catch (Throwable throwable) {
+      return UNRESOLVED;
+    } finally {
+      resolvingTypes.remove(type);
+    }
+    return UNRESOLVED;
+  }
+
+  private static Object invokeKnownFactory(Class<?> type, SweepResult result) throws Throwable {
+    for (Method method : type.getMethods()) {
+      if (!Modifier.isStatic(method.getModifiers()) || method.getParameterCount() != 0 || method.getReturnType() == Void.TYPE) {
+        continue;
+      }
+      String methodName = method.getName();
+      if (!("getInstance".equals(methodName)
+          || "getActiveInstance".equals(methodName)
+          || "createInstance".equals(methodName)
+          || "getSingleton".equals(methodName))) {
+        continue;
+      }
+      if (!type.isAssignableFrom(method.getReturnType())) {
+        continue;
+      }
+      try {
+        method.setAccessible(true);
+        return invokeNoArgMethod(method, type, result);
+      } catch (Throwable ignored) {
+      }
+    }
+    return UNRESOLVED;
+  }
+
+  private static Object primitiveDefaultValue(Class<?> type) {
+    if (type == Boolean.TYPE) {
+      return Boolean.FALSE;
+    }
+    if (type == Character.TYPE) {
+      return Character.valueOf('\0');
+    }
+    if (type == Byte.TYPE) {
+      return Byte.valueOf((byte) 0);
+    }
+    if (type == Short.TYPE) {
+      return Short.valueOf((short) 0);
+    }
+    if (type == Integer.TYPE) {
+      return Integer.valueOf(0);
+    }
+    if (type == Long.TYPE) {
+      return Long.valueOf(0L);
+    }
+    if (type == Float.TYPE) {
+      return Float.valueOf(0.0f);
+    }
+    if (type == Double.TYPE) {
+      return Double.valueOf(0.0d);
+    }
+    return null;
   }
 
   private static Object invokeNoArgMethod(Method method, Class<?> clazz, SweepResult result) throws Throwable {
@@ -221,11 +491,62 @@ final class ClassLoadingSweepSupport {
     return simpleName.endsWith("Icon");
   }
 
-  private static Object invokeConstructor(Constructor<?> constructor, Class<?> clazz, SweepResult result) throws Throwable {
+  private static Object invokeConstructor(Constructor<?> constructor, Object[] arguments, Class<?> clazz, SweepResult result)
+      throws Throwable {
     if (shouldUseEdt(clazz)) {
-      return invokeOnEdt(() -> constructor.newInstance(), result);
+      return invokeOnEdt(() -> constructor.newInstance(arguments), result);
     }
-    return constructor.newInstance();
+    return constructor.newInstance(arguments);
+  }
+
+  private static org.lgna.project.Project ensureProject() {
+    org.alice.ide.IDE activeIde = org.alice.ide.IDE.getActiveInstance();
+    if ((activeIde != null) && (activeIde.getProject() != null)) {
+      return activeIde.getProject();
+    }
+    return TestIdeBootstrap.createMinimalProject();
+  }
+
+  private static org.lgna.project.ast.NamedUserType ensureProgramType() {
+    return ensureProject().getProgramType();
+  }
+
+  private static org.lgna.project.ast.UserField ensureField() {
+    org.lgna.project.ast.NamedUserType programType = ensureProgramType();
+    if (!programType.fields.isEmpty()) {
+      return programType.fields.get(0);
+    }
+    org.lgna.project.ast.UserField field = new org.lgna.project.ast.UserField("coverageField", Object.class);
+    programType.fields.add(field);
+    return field;
+  }
+
+  private static org.lgna.project.ast.UserMethod ensureMethod() {
+    org.lgna.project.ast.NamedUserType programType = ensureProgramType();
+    if (!programType.methods.isEmpty()) {
+      return programType.methods.get(0);
+    }
+    org.lgna.project.ast.UserMethod method = new org.lgna.project.ast.UserMethod(
+        "coverageMethod",
+        Void.TYPE,
+        new org.lgna.project.ast.UserParameter[0],
+        new org.lgna.project.ast.BlockStatement()
+    );
+    programType.methods.add(method);
+    return method;
+  }
+
+  private static org.lgna.project.ast.NamedUserConstructor ensureConstructor() {
+    org.lgna.project.ast.NamedUserType programType = ensureProgramType();
+    if (!programType.constructors.isEmpty()) {
+      return programType.constructors.get(0);
+    }
+    org.lgna.project.ast.NamedUserConstructor constructor = new org.lgna.project.ast.NamedUserConstructor(
+        new org.lgna.project.ast.UserParameter[0],
+        new org.lgna.project.ast.ConstructorBlockStatement()
+    );
+    programType.constructors.add(constructor);
+    return constructor;
   }
 
   private static boolean isExpandedExerciseType(Class<?> clazz) {
@@ -238,6 +559,14 @@ final class ClassLoadingSweepSupport {
     }
     return className.equals("org.alice.ide.croquet.models")
         || className.startsWith("org.alice.ide.croquet.models.")
+        || className.equals("org.alice.ide.ast.declaration")
+        || className.startsWith("org.alice.ide.ast.declaration.")
+        || className.equals("org.alice.ide.declarationseditor")
+        || className.startsWith("org.alice.ide.declarationseditor.")
+        || className.equals("org.alice.ide.resource.manager")
+        || className.startsWith("org.alice.ide.resource.manager.")
+        || className.equals("org.alice.stageide.type.croquet")
+        || className.startsWith("org.alice.stageide.type.croquet.")
         || className.equals("org.lgna.ik")
         || className.startsWith("org.lgna.ik.");
   }
@@ -382,11 +711,12 @@ final class ClassLoadingSweepSupport {
       if (method.getDeclaringClass() == Object.class || Modifier.isStatic(method.getModifiers()) || method.isSynthetic()) {
         continue;
       }
-      if (method.getParameterCount() != 0 || method.getReturnType() == Void.TYPE || !isSafeInstanceMethod(method)) {
-        continue;
-      }
       try {
-        invokeInstanceMethod(value, method, result);
+        if ((method.getParameterCount() == 0) && (method.getReturnType() != Void.TYPE) && isSafeInstanceMethod(method)) {
+          invokeInstanceMethod(value, method, result);
+        } else if ((method.getParameterCount() == 1) && (method.getReturnType() == Void.TYPE) && isSafeMutatorMethod(method)) {
+          invokeInstanceMutator(value, method, result);
+        }
       } catch (Throwable throwable) {
         result.memberFailures++;
       }
@@ -410,6 +740,23 @@ final class ClassLoadingSweepSupport {
         && !lowerName.contains("graphicsconfiguration");
   }
 
+  private static boolean isSafeMutatorMethod(Method method) {
+    String lowerName = method.getName().toLowerCase();
+    return method.getName().startsWith("set")
+        && !lowerName.contains("dialog")
+        && !lowerName.contains("window")
+        && !lowerName.contains("frame")
+        && !lowerName.contains("popup")
+        && !lowerName.contains("project")
+        && !lowerName.contains("document")
+        && !lowerName.contains("loader")
+        && !lowerName.contains("uri")
+        && !lowerName.contains("file")
+        && !lowerName.contains("transaction")
+        && !lowerName.contains("activity")
+        && !lowerName.contains("rootdirectory");
+  }
+
   private static void invokeInstanceMethod(Object value, Method method, SweepResult result) throws Throwable {
     try {
       Object nested;
@@ -424,9 +771,21 @@ final class ClassLoadingSweepSupport {
     }
   }
 
-  private static Object invokeMethod(Method method, Object value) throws Throwable {
+  private static void invokeInstanceMutator(Object value, Method method, SweepResult result) throws Throwable {
+    Object argument = resolveDefaultValue(method.getParameterTypes()[0], 0, new HashSet<Class<?>>(), result);
+    if (argument == UNRESOLVED) {
+      return;
+    }
+    if (shouldUseEdt(value.getClass())) {
+      invokeOnEdt(() -> invokeMethod(method, value, argument), result);
+    } else {
+      invokeMethod(method, value, argument);
+    }
+  }
+
+  private static Object invokeMethod(Method method, Object value, Object... arguments) throws Throwable {
     try {
-      return method.invoke(value);
+      return method.invoke(value, arguments);
     } catch (InvocationTargetException ite) {
       throw ite.getCause() != null ? ite.getCause() : ite;
     }

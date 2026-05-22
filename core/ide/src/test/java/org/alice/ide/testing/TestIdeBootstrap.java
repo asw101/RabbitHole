@@ -54,6 +54,10 @@ public final class TestIdeBootstrap {
     }
   }
 
+  public static void boot() {
+    ensureInstalled();
+  }
+
   public static void reset() {
     synchronized (LOCK) {
       if (installedIde == null) {
@@ -75,6 +79,10 @@ public final class TestIdeBootstrap {
 
   public static ProjectDocumentFrame getDocumentFrame() {
     return ensureInstalled().getDocumentFrame();
+  }
+
+  public static void shutdown() {
+    reset();
   }
 
   public static TestStageIDE getInstalledIde() {
