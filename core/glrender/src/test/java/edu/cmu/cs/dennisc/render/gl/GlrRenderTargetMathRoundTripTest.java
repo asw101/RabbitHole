@@ -10,7 +10,14 @@ import java.awt.Dimension;
 
 import static org.junit.Assert.*;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
 public class GlrRenderTargetMathRoundTripTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
   @Before public void setUp() { AdapterFactory.forgetAllElements(); }
   @Test public void viewportToCameraAndBack_roundTripsCoordinates() {
     TestRenderTargetSupport.TestRenderTarget target = new TestRenderTargetSupport.TestRenderTarget(new Dimension(800, 600)); SymmetricPerspectiveCamera camera = TestRenderTargetSupport.perspectiveCamera(); target.addSgCamera(camera); Vector4 viewport = new Vector4(320, 240, 10, 1);

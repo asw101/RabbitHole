@@ -12,7 +12,14 @@ import static org.junit.Assert.*;
  * mode, texture and lighting enabled states, MAX_UNSIGNED_INTEGER constant,
  * and initialize behavior.
  */
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
 public class PickContextStateTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
 
   // ── MAX_UNSIGNED_INTEGER constant ─────────────────────────────────
 

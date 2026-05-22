@@ -9,7 +9,14 @@ import java.awt.Dimension;
 
 import static org.junit.Assert.*;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
 public class GlrRenderTargetDelegationBehaviorTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
   @Before public void setUp() { AdapterFactory.forgetAllElements(); }
   @Test public void cameraCollectionAndRenderingFlag_delegateThroughImp() {
     TestRenderTargetSupport.TestRenderTarget target = new TestRenderTargetSupport.TestRenderTarget(new Dimension(640, 480)); SymmetricPerspectiveCamera camera = TestRenderTargetSupport.perspectiveCamera();

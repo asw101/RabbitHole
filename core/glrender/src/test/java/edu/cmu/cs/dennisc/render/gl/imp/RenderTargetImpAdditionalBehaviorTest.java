@@ -23,7 +23,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
 public class RenderTargetImpAdditionalBehaviorTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
   @Test
   public void gettersAndListenerNotificationsWork() {
     AtomicInteger repaints = new AtomicInteger();
