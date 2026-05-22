@@ -16,6 +16,9 @@ import org.lgna.project.ast.NamedUserType;
 import org.lgna.project.ast.UserField;
 import org.lgna.story.SProgram;
 import org.lgna.story.SScene;
+import org.lgna.story.implementation.StoryApiDirectoryUtilities;
+
+import java.io.File;
 
 import javax.swing.SwingUtilities;
 import java.awt.GraphicsEnvironment;
@@ -38,6 +41,7 @@ public final class TestIdeBootstrap {
     synchronized (LOCK) {
       Assume.assumeFalse("TestStageIDE requires Xvfb or another headed environment", GraphicsEnvironment.isHeadless());
       configureRootDirectoryProperty();
+      configureGalleryDirectories();
       if (installedIde == null) {
         installedIde = onEdt(() -> {
           setActiveApplication(null);
@@ -130,19 +134,57 @@ public final class TestIdeBootstrap {
     if (System.getProperty("org.alice.ide.rootDirectory") != null) {
       return;
     }
-    Path[] candidates = new Path[] {
-        Path.of(System.getProperty("user.dir", ".")).toAbsolutePath().normalize(),
-        Path.of(System.getProperty("user.dir", ".")).toAbsolutePath().normalize().resolve("core/ide").normalize(),
-        Path.of(System.getProperty("user.dir", ".")).toAbsolutePath().normalize().getParent() != null
-            ? Path.of(System.getProperty("user.dir", ".")).toAbsolutePath().normalize().getParent()
-            : null
-    };
+    Path[] candidates = rootDirectoryCandidates();
     for (Path candidate : candidates) {
       if (candidate != null && Files.isDirectory(candidate)) {
         System.setProperty("org.alice.ide.rootDirectory", candidate.toString());
         return;
       }
     }
+  }
+
+  private static void configureGalleryDirectories() {
+    File galleryDirectory = locateGalleryPlaceholder();
+    if (galleryDirectory == null) {
+      return;
+    }
+    StoryApiDirectoryUtilities.setUserGalleryDirectory(galleryDirectory);
+    try {
+      Field field = StoryApiDirectoryUtilities.class.getDeclaredField("modelGalleryDirectory");
+      field.setAccessible(true);
+      if (field.get(null) == null) {
+        field.set(null, galleryDirectory);
+      }
+    } catch (ReflectiveOperationException roe) {
+      throw new AssertionError(roe);
+    }
+  }
+
+  private static File locateGalleryPlaceholder() {
+    for (Path candidate : rootDirectoryCandidates()) {
+      if (candidate == null) {
+        continue;
+      }
+      Path placeholder = candidate.resolve("core/ide/src/test/resources/gallery-placeholder").normalize();
+      if (Files.isDirectory(placeholder)) {
+        return placeholder.toFile();
+      }
+      placeholder = candidate.resolve("src/test/resources/gallery-placeholder").normalize();
+      if (Files.isDirectory(placeholder)) {
+        return placeholder.toFile();
+      }
+    }
+    return null;
+  }
+
+  private static Path[] rootDirectoryCandidates() {
+    Path cwd = Path.of(System.getProperty("user.dir", ".")).toAbsolutePath().normalize();
+    Path parent = cwd.getParent();
+    return new Path[] {
+        cwd,
+        cwd.resolve("core/ide").normalize(),
+        parent
+    };
   }
 
   private static void finishOpenActivities(Application<?> application) {

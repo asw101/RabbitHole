@@ -42,6 +42,10 @@ final class ClassLoadingSweepSupport {
   private static final int DEFAULT_COMPONENT_WIDTH = 320;
   private static final int DEFAULT_COMPONENT_HEIGHT = 180;
   private static final int MAX_DEFAULT_VALUE_DEPTH = 3;
+  private static final int MAX_METHOD_PARAMETER_COUNT = 2;
+  private static final int MAX_VISITED_OBJECTS = 160;
+  private static final int MAX_METHODS_PER_OBJECT = 10;
+  private static final int MAX_METHOD_INVOCATIONS_PER_SWEEP = 750;
   private static final Object UNRESOLVED = new Object();
   private static final List<String> ALL_CLASS_NAMES = discoverAllClassNames();
   private static final Map<String, List<String>> CLASS_NAMES_BY_PACKAGE = indexByPackage(ALL_CLASS_NAMES);
@@ -50,23 +54,31 @@ final class ClassLoadingSweepSupport {
   }
 
   static SweepResult sweepAllClasses() {
-    return sweepClasses(ALL_CLASS_NAMES, false, false);
+    return sweepClasses(ALL_CLASS_NAMES, false, false, false);
   }
 
   static SweepResult sweepExactPackage(String packageName) {
-    return sweepClasses(classNamesInExactPackage(packageName), true, false);
+    return sweepClasses(classNamesInExactPackage(packageName), true, false, false);
+  }
+
+  static SweepResult sweepExactPackageWithDefaultArgs(String packageName) {
+    return sweepClasses(classNamesInExactPackage(packageName), true, true, true);
   }
 
   static SweepResult sweepPackageTree(String packagePrefix) {
-    return sweepClasses(classNamesInPackageTree(packagePrefix), true, false);
+    return sweepClasses(classNamesInPackageTree(packagePrefix), true, false, false);
+  }
+
+  static SweepResult sweepPackageTreeWithDefaultArgs(String packagePrefix) {
+    return sweepClasses(classNamesInPackageTree(packagePrefix), true, true, true);
   }
 
   static SweepResult sweepNamedClasses(String... classNames) {
-    return sweepClasses(java.util.Arrays.asList(classNames), true, false);
+    return sweepClasses(java.util.Arrays.asList(classNames), true, false, false);
   }
 
   static SweepResult sweepNamedClassesWithDefaultArgs(String... classNames) {
-    return sweepClasses(java.util.Arrays.asList(classNames), true, true);
+    return sweepClasses(java.util.Arrays.asList(classNames), true, true, true);
   }
 
   private static List<String> classNamesInExactPackage(String packageName) {
@@ -90,8 +102,9 @@ final class ClassLoadingSweepSupport {
     return classNames;
   }
 
-  private static SweepResult sweepClasses(List<String> classNames, boolean exerciseExtras, boolean allowDefaultArgs) {
-    SweepResult result = new SweepResult(classNames.size());
+  private static SweepResult sweepClasses(List<String> classNames, boolean exerciseExtras, boolean allowDefaultArgs,
+      boolean invokeMethods) {
+    SweepResult result = new SweepResult(classNames.size(), invokeMethods);
     ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
     if (classLoader == null) {
       classLoader = ClassLoadingSweepSupport.class.getClassLoader();
@@ -148,7 +161,7 @@ final class ClassLoadingSweepSupport {
   }
 
   private static void exerciseStaticFields(Class<?> clazz, SweepResult result) {
-    if (!shouldExerciseMembers(clazz)) {
+    if (!shouldExerciseMembers(clazz) || shouldSkipInteractiveResourceClass(clazz)) {
       return;
     }
     for (Field field : clazz.getDeclaredFields()) {
@@ -167,20 +180,35 @@ final class ClassLoadingSweepSupport {
   }
 
   private static void exerciseStaticMethods(Class<?> clazz, SweepResult result) {
+    if (shouldSkipInteractiveResourceClass(clazz)) {
+      return;
+    }
     for (Method method : clazz.getDeclaredMethods()) {
+      if (result.invokeMethods && !hasMethodBudget(result)) {
+        return;
+      }
       int modifiers = method.getModifiers();
       if (!Modifier.isStatic(modifiers) || Modifier.isAbstract(modifiers) || method.isSynthetic()) {
         continue;
       }
-      if (method.getParameterCount() != 0 || method.getReturnType() == Void.TYPE) {
+      if (!isInvokableVisibility(method) || "main".equals(method.getName()) || !shouldInvokeStaticMethod(clazz, method, result.invokeMethods)) {
         continue;
       }
-      if ("main".equals(method.getName()) || !shouldInvokeStaticMethod(clazz, method)) {
+      Object[] arguments;
+      try {
+        arguments = result.invokeMethods
+            ? resolveInvocationArguments(method.getParameterTypes(), result, true)
+            : (method.getParameterCount() == 0 ? new Object[0] : null);
+      } catch (Throwable throwable) {
+        result.memberFailures++;
+        continue;
+      }
+      if (arguments == null) {
         continue;
       }
       try {
         method.setAccessible(true);
-        Object value = invokeNoArgMethod(method, clazz, result);
+        Object value = invokeStaticMethod(method, clazz, arguments, result);
         result.staticMethodsInvoked++;
         exerciseObject(value, result);
       } catch (Throwable throwable) {
@@ -191,7 +219,8 @@ final class ClassLoadingSweepSupport {
 
   private static void exerciseConstructors(Class<?> clazz, SweepResult result, boolean allowDefaultArgs) {
     int modifiers = clazz.getModifiers();
-    if (clazz.isInterface() || clazz.isAnnotation() || clazz.isEnum() || Modifier.isAbstract(modifiers) || !shouldInstantiate(clazz)) {
+    if (clazz.isInterface() || clazz.isAnnotation() || clazz.isEnum() || Modifier.isAbstract(modifiers) || !shouldInstantiate(clazz)
+        || shouldSkipInteractiveResourceClass(clazz)) {
       return;
     }
     for (Constructor<?> constructor : clazz.getDeclaredConstructors()) {
@@ -233,6 +262,26 @@ final class ClassLoadingSweepSupport {
       Object value = resolveDefaultValue(parameterTypes[i], depth + 1, resolvingTypes, result);
       if (value == UNRESOLVED) {
         return null;
+      }
+      arguments[i] = value;
+    }
+    return arguments;
+  }
+
+  private static Object[] resolveInvocationArguments(Class<?>[] parameterTypes, SweepResult result, boolean allowNullFallback)
+      throws Throwable {
+    if (parameterTypes.length > MAX_METHOD_PARAMETER_COUNT) {
+      return null;
+    }
+    Object[] arguments = new Object[parameterTypes.length];
+    for (int i = 0; i < parameterTypes.length; i++) {
+      Object value = resolveDefaultValue(parameterTypes[i], 1, new HashSet<Class<?>>(), result);
+      if (value == UNRESOLVED) {
+        if (allowNullFallback && !parameterTypes[i].isPrimitive()) {
+          value = null;
+        } else {
+          return null;
+        }
       }
       arguments[i] = value;
     }
@@ -294,6 +343,12 @@ final class ClassLoadingSweepSupport {
     }
     if (type == Dimension.class) {
       return new Dimension(DEFAULT_COMPONENT_WIDTH, DEFAULT_COMPONENT_HEIGHT);
+    }
+    if (type.isAssignableFrom(BufferedImage.class)) {
+      return new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
+    }
+    if (type.isAssignableFrom(java.awt.Graphics2D.class) || type.isAssignableFrom(java.awt.Graphics.class)) {
+      return new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB).createGraphics();
     }
     if (type == Class.class) {
       return Object.class;
@@ -469,26 +524,52 @@ final class ClassLoadingSweepSupport {
   }
 
   private static Object invokeNoArgMethod(Method method, Class<?> clazz, SweepResult result) throws Throwable {
-    if (shouldUseEdt(clazz) || shouldUseEdt(method.getReturnType())) {
-      return invokeOnEdt(() -> method.invoke(null), result);
-    }
-    return method.invoke(null);
+    return invokeStaticMethod(method, clazz, new Object[0], result);
   }
 
-  private static boolean shouldInvokeStaticMethod(Class<?> clazz, Method method) {
-    Class<?> returnType = method.getReturnType();
+  private static Object invokeStaticMethod(Method method, Class<?> clazz, Object[] arguments, SweepResult result) throws Throwable {
+    if (shouldUseEdt(clazz) || shouldUseEdt(method.getReturnType())) {
+      return invokeOnEdt(() -> method.invoke(null, arguments), result);
+    }
+    return method.invoke(null, arguments);
+  }
+
+  private static boolean shouldInvokeStaticMethod(Class<?> clazz, Method method, boolean invokeMethods) {
     String methodName = method.getName();
-    if (methodName.startsWith("getInstance") || methodName.startsWith("createInstance")) {
-      return isExpandedExerciseType(returnType);
+    Class<?> returnType = method.getReturnType();
+    if (!invokeMethods) {
+      if (method.getParameterCount() != 0 || returnType == Void.TYPE) {
+        return false;
+      }
+      if (methodName.startsWith("getInstance") || methodName.startsWith("createInstance")) {
+        return isExpandedExerciseType(returnType);
+      }
+      if (Icon.class.isAssignableFrom(returnType) || isExpandedExerciseType(returnType)) {
+        return true;
+      }
+      return returnType.getSimpleName().endsWith("Icon");
     }
-    if (Icon.class.isAssignableFrom(returnType)) {
-      return true;
+    if (method.getParameterCount() > MAX_METHOD_PARAMETER_COUNT || hasBlockedUiMethodName(methodName)) {
+      return false;
     }
-    if (isExpandedExerciseType(returnType)) {
-      return true;
+    if (method.getParameterCount() == 0 && returnType != Void.TYPE) {
+      if (methodName.startsWith("getInstance") || methodName.startsWith("createInstance")) {
+        return isExpandedExerciseType(returnType) || isHighValueCoverageType(returnType);
+      }
+      if (Icon.class.isAssignableFrom(returnType) || isExpandedExerciseType(returnType) || isHighValueCoverageType(returnType)) {
+        return true;
+      }
+      if (returnType.getSimpleName().endsWith("Icon")) {
+        return true;
+      }
     }
-    String simpleName = returnType.getSimpleName();
-    return simpleName.endsWith("Icon");
+    return isAccessorLikeMethodName(methodName)
+        || isSafeVoidNoArgMethodName(methodName)
+        || isSafeListenerMethodName(methodName)
+        || methodName.startsWith("set")
+        || methodName.startsWith("encode")
+        || methodName.startsWith("decode")
+        || methodName.startsWith("format");
   }
 
   private static Object invokeConstructor(Constructor<?> constructor, Object[] arguments, Class<?> clazz, SweepResult result)
@@ -549,6 +630,97 @@ final class ClassLoadingSweepSupport {
     return constructor;
   }
 
+  private static boolean isInvokableVisibility(Method method) {
+    int modifiers = method.getModifiers();
+    return Modifier.isPublic(modifiers) || Modifier.isProtected(modifiers);
+  }
+
+  private static boolean hasBlockedUiMethodName(String methodName) {
+    String lowerName = methodName.toLowerCase();
+    return lowerName.contains("dialog")
+        || lowerName.contains("window")
+        || lowerName.contains("frame")
+        || lowerName.contains("popup")
+        || lowerName.contains("rootdirectory")
+        || lowerName.contains("graphicsconfiguration")
+        || lowerName.contains("thumbnail")
+        || lowerName.contains("iconfactory")
+        || "getresource".equals(lowerName)
+        || "createvalue".equals(lowerName)
+        || lowerName.contains("filedialog")
+        || lowerName.contains("chooser");
+  }
+
+  private static boolean shouldSkipInteractiveResourceClass(Class<?> clazz) {
+    if (clazz == null) {
+      return false;
+    }
+    String className = clazz.getName();
+    return className.equals("org.alice.stageide.gallerybrowser.GalleryComposite")
+        || className.equals("org.alice.stageide.gallerybrowser.ImportGalleryResourceComposite")
+        || className.equals("org.alice.stageide.modelresource.TreeUtilities")
+        || className.equals("org.alice.stageide.modelresource.ClassResourceKey")
+        || className.equals("org.alice.stageide.modelresource.ClassResourceNode")
+        || className.equals("org.lgna.story.resourceutilities.ModelResourceTree");
+  }
+
+  private static boolean hasBlockedMutationTarget(String methodName) {
+    String lowerName = methodName.toLowerCase();
+    return hasBlockedUiMethodName(methodName)
+        || lowerName.contains("project")
+        || lowerName.contains("document")
+        || lowerName.contains("loader")
+        || lowerName.contains("uri")
+        || lowerName.contains("file")
+        || lowerName.contains("directory")
+        || lowerName.contains("transaction")
+        || lowerName.contains("activity")
+        || lowerName.contains("license")
+        || lowerName.contains("shutdown")
+        || lowerName.contains("dispose");
+  }
+
+  private static boolean isAccessorLikeMethodName(String methodName) {
+    return methodName.startsWith("get")
+        || methodName.startsWith("is")
+        || methodName.startsWith("has")
+        || methodName.startsWith("peek")
+        || methodName.startsWith("create")
+        || methodName.startsWith("find")
+        || methodName.startsWith("build")
+        || methodName.startsWith("encode")
+        || methodName.startsWith("decode")
+        || methodName.startsWith("format")
+        || "toString".equals(methodName)
+        || "hashCode".equals(methodName);
+  }
+
+  private static boolean isSafeVoidNoArgMethodName(String methodName) {
+    return methodName.startsWith("create")
+        || methodName.startsWith("refresh")
+        || methodName.startsWith("update")
+        || methodName.startsWith("relocalize")
+        || methodName.startsWith("repaint")
+        || methodName.startsWith("revalidate");
+  }
+
+  private static boolean isSafeListenerMethodName(String methodName) {
+    return "equals".equals(methodName)
+        || "actionPerformed".equals(methodName)
+        || "valueChanged".equals(methodName)
+        || "stateChanged".equals(methodName)
+        || "propertyChange".equals(methodName)
+        || "insertUpdate".equals(methodName)
+        || "removeUpdate".equals(methodName)
+        || "changedUpdate".equals(methodName)
+        || methodName.startsWith("mouse")
+        || methodName.startsWith("key")
+        || methodName.startsWith("focus")
+        || methodName.startsWith("ancestor")
+        || methodName.startsWith("component")
+        || methodName.startsWith("hierarchy");
+  }
+
   private static boolean isExpandedExerciseType(Class<?> clazz) {
     if (clazz == null) {
       return false;
@@ -571,9 +743,26 @@ final class ClassLoadingSweepSupport {
         || className.startsWith("org.lgna.ik.");
   }
 
+  private static boolean isHighValueCoverageType(Class<?> clazz) {
+    if (clazz == null) {
+      return false;
+    }
+    String className = clazz.getName();
+    return isExpandedExerciseType(clazz)
+        || className.equals("org.alice.ide")
+        || className.startsWith("org.alice.ide.")
+        || className.equals("org.alice.stageide")
+        || className.startsWith("org.alice.stageide.")
+        || className.equals("org.lgna.ik")
+        || className.startsWith("org.lgna.ik.")
+        || className.startsWith("edu.cmu.cs.dennisc.ui.lookingglass.")
+        || className.equals("test.ik")
+        || className.startsWith("test.ik.");
+  }
+
   private static boolean shouldUseEdt(Class<?> clazz) {
     return clazz != null && (AwtComponentView.class.isAssignableFrom(clazz)
-        || (isExpandedExerciseType(clazz) && Composite.class.isAssignableFrom(clazz))
+        || (isHighValueCoverageType(clazz) && (Composite.class.isAssignableFrom(clazz) || Model.class.isAssignableFrom(clazz)))
         || Component.class.isAssignableFrom(clazz)
         || Icon.class.isAssignableFrom(clazz));
   }
@@ -582,9 +771,6 @@ final class ClassLoadingSweepSupport {
     if (clazz == null) {
       return false;
     }
-    if (isExpandedExerciseType(clazz)) {
-      return true;
-    }
     if (java.awt.Window.class.isAssignableFrom(clazz)) {
       return false;
     }
@@ -592,13 +778,19 @@ final class ClassLoadingSweepSupport {
     if (simpleName.endsWith("Dialog") || simpleName.endsWith("Frame") || simpleName.endsWith("Window")) {
       return false;
     }
+    if (isHighValueCoverageType(clazz)) {
+      return true;
+    }
     return shouldUseEdt(clazz)
         || simpleName.endsWith("Panel")
         || simpleName.endsWith("View")
         || simpleName.endsWith("Editor")
         || simpleName.endsWith("Component")
         || simpleName.endsWith("Adapter")
-        || simpleName.endsWith("Icon");
+        || simpleName.endsWith("Icon")
+        || simpleName.endsWith("Controller")
+        || simpleName.endsWith("Manager")
+        || simpleName.endsWith("Generator");
   }
 
   private static boolean shouldInstantiate(Class<?> clazz) {
@@ -636,13 +828,14 @@ final class ClassLoadingSweepSupport {
   }
 
   private static void exerciseObject(Object value, SweepResult result) {
-    if (value == null || !result.visitedObjects.add(value)) {
+    if (value == null || result.visitedObjects.size() >= MAX_VISITED_OBJECTS || !result.visitedObjects.add(value)) {
       return;
     }
     try {
-      if ((value instanceof Composite<?>) && isExpandedExerciseType(value.getClass())) {
+      boolean shouldExpand = result.invokeMethods ? shouldExerciseMembers(value.getClass()) : isExpandedExerciseType(value.getClass());
+      if ((value instanceof Composite<?>) && shouldExpand) {
         exerciseComposite((Composite<?>) value, result);
-      } else if ((value instanceof Model) && isExpandedExerciseType(value.getClass())) {
+      } else if ((value instanceof Model) && shouldExpand) {
         exerciseModel((Model) value, result);
       } else if (value instanceof AwtComponentView<?>) {
         exerciseCroquetView((AwtComponentView<?>) value, result);
@@ -651,7 +844,7 @@ final class ClassLoadingSweepSupport {
       } else if (value instanceof Icon) {
         exerciseIcon((Icon) value, result);
       }
-      if (isExpandedExerciseType(value.getClass())) {
+      if (shouldExpand) {
         exerciseSafeInstanceMethods(value, result);
       }
     } catch (Throwable throwable) {
@@ -707,15 +900,48 @@ final class ClassLoadingSweepSupport {
   }
 
   private static void exerciseSafeInstanceMethods(Object value, SweepResult result) {
+    if (!result.invokeMethods) {
+      exerciseLegacyInstanceMethods(value, result);
+      return;
+    }
+    exerciseObjectContracts(value, result);
+    int invokedForObject = 0;
+    Set<String> signatures = new java.util.LinkedHashSet<String>();
+    for (Class<?> type = value.getClass(); type != null && type != Object.class; type = type.getSuperclass()) {
+      for (Method method : type.getDeclaredMethods()) {
+        if (!hasMethodBudget(result) || invokedForObject >= MAX_METHODS_PER_OBJECT) {
+          return;
+        }
+        if (!isInvokableVisibility(method)
+            || Modifier.isStatic(method.getModifiers())
+            || Modifier.isAbstract(method.getModifiers())
+            || method.isSynthetic()) {
+          continue;
+        }
+        String signature = method.toGenericString();
+        if (!signatures.add(signature) || !shouldInvokeInstanceMethod(method)) {
+          continue;
+        }
+        try {
+          invokeInstanceMethod(value, method, result);
+          invokedForObject++;
+        } catch (Throwable throwable) {
+          result.memberFailures++;
+        }
+      }
+    }
+  }
+
+  private static void exerciseLegacyInstanceMethods(Object value, SweepResult result) {
     for (Method method : value.getClass().getMethods()) {
       if (method.getDeclaringClass() == Object.class || Modifier.isStatic(method.getModifiers()) || method.isSynthetic()) {
         continue;
       }
       try {
-        if ((method.getParameterCount() == 0) && (method.getReturnType() != Void.TYPE) && isSafeInstanceMethod(method)) {
+        if ((method.getParameterCount() == 0) && (method.getReturnType() != Void.TYPE) && isLegacySafeInstanceMethod(method)) {
           invokeInstanceMethod(value, method, result);
-        } else if ((method.getParameterCount() == 1) && (method.getReturnType() == Void.TYPE) && isSafeMutatorMethod(method)) {
-          invokeInstanceMutator(value, method, result);
+        } else if ((method.getParameterCount() == 1) && (method.getReturnType() == Void.TYPE) && isLegacySafeMutatorMethod(method)) {
+          invokeLegacyInstanceMutator(value, method, result);
         }
       } catch (Throwable throwable) {
         result.memberFailures++;
@@ -723,7 +949,7 @@ final class ClassLoadingSweepSupport {
     }
   }
 
-  private static boolean isSafeInstanceMethod(Method method) {
+  private static boolean isLegacySafeInstanceMethod(Method method) {
     String name = method.getName();
     if ("getClass".equals(name) || "hashCode".equals(name) || "clone".equals(name)) {
       return false;
@@ -731,47 +957,14 @@ final class ClassLoadingSweepSupport {
     if (!(name.startsWith("get") || name.startsWith("is") || name.startsWith("has") || name.startsWith("peek"))) {
       return false;
     }
-    String lowerName = name.toLowerCase();
-    return !lowerName.contains("dialog")
-        && !lowerName.contains("window")
-        && !lowerName.contains("frame")
-        && !lowerName.contains("popup")
-        && !lowerName.contains("rootdirectory")
-        && !lowerName.contains("graphicsconfiguration");
+    return !hasBlockedUiMethodName(name);
   }
 
-  private static boolean isSafeMutatorMethod(Method method) {
-    String lowerName = method.getName().toLowerCase();
-    return method.getName().startsWith("set")
-        && !lowerName.contains("dialog")
-        && !lowerName.contains("window")
-        && !lowerName.contains("frame")
-        && !lowerName.contains("popup")
-        && !lowerName.contains("project")
-        && !lowerName.contains("document")
-        && !lowerName.contains("loader")
-        && !lowerName.contains("uri")
-        && !lowerName.contains("file")
-        && !lowerName.contains("transaction")
-        && !lowerName.contains("activity")
-        && !lowerName.contains("rootdirectory");
+  private static boolean isLegacySafeMutatorMethod(Method method) {
+    return method.getName().startsWith("set") && !hasBlockedMutationTarget(method.getName());
   }
 
-  private static void invokeInstanceMethod(Object value, Method method, SweepResult result) throws Throwable {
-    try {
-      Object nested;
-      if (shouldUseEdt(method.getReturnType()) || shouldUseEdt(value.getClass())) {
-        nested = invokeOnEdt(() -> invokeMethod(method, value), result);
-      } else {
-        nested = invokeMethod(method, value);
-      }
-      exerciseObject(nested, result);
-    } catch (Throwable throwable) {
-      result.memberFailures++;
-    }
-  }
-
-  private static void invokeInstanceMutator(Object value, Method method, SweepResult result) throws Throwable {
+  private static void invokeLegacyInstanceMutator(Object value, Method method, SweepResult result) throws Throwable {
     Object argument = resolveDefaultValue(method.getParameterTypes()[0], 0, new HashSet<Class<?>>(), result);
     if (argument == UNRESOLVED) {
       return;
@@ -781,6 +974,77 @@ final class ClassLoadingSweepSupport {
     } else {
       invokeMethod(method, value, argument);
     }
+  }
+
+  private static void exerciseObjectContracts(Object value, SweepResult result) {
+    invokeObjectContract(value, result, "toString");
+    invokeObjectContract(value, result, "hashCode");
+    invokeObjectContract(value, result, "equals", value);
+    invokeObjectContract(value, result, "equals", null);
+  }
+
+  private static void invokeObjectContract(Object value, SweepResult result, String name, Object... arguments) {
+    if (!hasMethodBudget(result)) {
+      return;
+    }
+    try {
+      Method method = arguments.length == 0
+          ? Object.class.getMethod(name)
+          : Object.class.getMethod(name, Object.class);
+      invokeInstanceMethod(value, method, arguments, result);
+    } catch (Throwable throwable) {
+      result.memberFailures++;
+    }
+  }
+
+  private static boolean shouldInvokeInstanceMethod(Method method) {
+    String name = method.getName();
+    if ("getClass".equals(name) || "wait".equals(name) || "notify".equals(name) || "notifyAll".equals(name) || "clone".equals(name)) {
+      return false;
+    }
+    if (method.getParameterCount() > MAX_METHOD_PARAMETER_COUNT || hasBlockedUiMethodName(name)) {
+      return false;
+    }
+    if (method.getParameterCount() == 0) {
+      return (method.getReturnType() != Void.TYPE && isAccessorLikeMethodName(name)) || isSafeVoidNoArgMethodName(name);
+    }
+    if (method.getParameterCount() == 1) {
+      return "equals".equals(name)
+          || isSafeListenerMethodName(name)
+          || (name.startsWith("set") && !hasBlockedMutationTarget(name))
+          || (method.getReturnType() != Void.TYPE && isAccessorLikeMethodName(name));
+    }
+    return isSafeListenerMethodName(name) || (name.startsWith("set") && !hasBlockedMutationTarget(name));
+  }
+
+  private static void invokeInstanceMethod(Object value, Method method, SweepResult result) throws Throwable {
+    Object[] arguments = resolveInvocationArguments(method.getParameterTypes(), result, true);
+    if (arguments == null) {
+      return;
+    }
+    invokeInstanceMethod(value, method, arguments, result);
+  }
+
+  private static void invokeInstanceMethod(Object value, Method method, Object[] arguments, SweepResult result) throws Throwable {
+    try {
+      method.setAccessible(true);
+      Object nested;
+      if (shouldUseEdt(method.getReturnType()) || shouldUseEdt(value.getClass())) {
+        nested = invokeOnEdt(() -> invokeMethod(method, value, arguments), result);
+      } else {
+        nested = invokeMethod(method, value, arguments);
+      }
+      result.instanceMethodsInvoked++;
+      if (method.getReturnType() != Void.TYPE) {
+        exerciseObject(nested, result);
+      }
+    } catch (Throwable throwable) {
+      result.memberFailures++;
+    }
+  }
+
+  private static boolean hasMethodBudget(SweepResult result) {
+    return result.totalMethodsInvoked() < MAX_METHOD_INVOCATIONS_PER_SWEEP;
   }
 
   private static Object invokeMethod(Method method, Object value, Object... arguments) throws Throwable {
@@ -938,11 +1202,13 @@ final class ClassLoadingSweepSupport {
 
   static final class SweepResult {
     final int discovered;
+    final boolean invokeMethods;
     int attempted;
     int loaded;
     int enumConstantsAccessed;
     int staticFieldsAccessed;
     int staticMethodsInvoked;
+    int instanceMethodsInvoked;
     int instancesCreated;
     int viewsExercised;
     int componentsPainted;
@@ -952,8 +1218,13 @@ final class ClassLoadingSweepSupport {
     final Map<String, String> classLoadFailures = new LinkedHashMap<String, String>();
     final Set<Object> visitedObjects = Collections.newSetFromMap(new IdentityHashMap<Object, Boolean>());
 
-    private SweepResult(int discovered) {
+    private SweepResult(int discovered, boolean invokeMethods) {
       this.discovered = discovered;
+      this.invokeMethods = invokeMethods;
+    }
+
+    int totalMethodsInvoked() {
+      return staticMethodsInvoked + instanceMethodsInvoked;
     }
 
     String summary() {
@@ -963,6 +1234,7 @@ final class ClassLoadingSweepSupport {
           + ", enumConstants=" + enumConstantsAccessed
           + ", staticFields=" + staticFieldsAccessed
           + ", staticMethods=" + staticMethodsInvoked
+          + ", instanceMethods=" + instanceMethodsInvoked
           + ", instances=" + instancesCreated
           + ", views=" + viewsExercised
           + ", components=" + componentsPainted
