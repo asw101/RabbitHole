@@ -1,17 +1,36 @@
 package org.lgna.croquet.views;
 
 import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 import org.junit.Test;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 import org.lgna.croquet.*;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 
 import javax.swing.JLabel;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 import javax.swing.SwingConstants;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 import java.util.Hashtable;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 import java.util.UUID;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 
 import static org.junit.Assert.*;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 
 public class SliderXvfbTest {
+
+  @Rule
+  public Timeout globalTimeout = Timeout.seconds(30);
   @BeforeClass
   public static void installApplication() {
     XvfbCroquetTestSupport.installApplication();

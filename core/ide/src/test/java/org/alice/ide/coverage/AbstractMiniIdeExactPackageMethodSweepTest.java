@@ -1,13 +1,26 @@
 package org.alice.ide.coverage;
 
 import org.alice.ide.testing.TestIdeBootstrap;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 import org.junit.AfterClass;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 import org.junit.Test;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 
 import static org.junit.Assert.assertTrue;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 
 public abstract class AbstractMiniIdeExactPackageMethodSweepTest {
+
+  @Rule
+  public Timeout globalTimeout = Timeout.seconds(60);
   @BeforeClass
   public static void boot() {
     TestIdeBootstrap.boot();

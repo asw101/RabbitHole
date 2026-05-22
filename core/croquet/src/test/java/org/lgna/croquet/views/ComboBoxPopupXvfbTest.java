@@ -1,20 +1,45 @@
 package org.lgna.croquet.views;
 
 import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 import org.junit.Test;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 import org.lgna.croquet.Application;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 import org.lgna.croquet.CroquetTestUtils;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 import org.lgna.croquet.MutableDataSingleSelectListState;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 import org.lgna.croquet.XvfbCroquetTestSupport;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 import org.lgna.croquet.data.MutableListData;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 
 import javax.swing.JFrame;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 import java.awt.Insets;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 import java.awt.Shape;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 
 import static org.junit.Assert.*;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 
 public class ComboBoxPopupXvfbTest {
+
+  @Rule
+  public Timeout globalTimeout = Timeout.seconds(30);
   @BeforeClass
   public static void installApplication() {
     XvfbCroquetTestSupport.installApplication();

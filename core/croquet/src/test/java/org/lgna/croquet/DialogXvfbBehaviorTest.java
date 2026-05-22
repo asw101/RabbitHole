@@ -1,19 +1,42 @@
 package org.lgna.croquet;
 
 import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 import org.junit.Test;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 import org.lgna.croquet.views.Dialog;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 import org.lgna.croquet.views.Frame;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 
 import java.awt.Insets;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 import java.awt.Rectangle;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 import java.awt.event.WindowEvent;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 import java.awt.event.WindowListener;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 
 import static org.junit.Assert.*;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 
 public class DialogXvfbBehaviorTest {
+
+  @Rule
+  public Timeout globalTimeout = Timeout.seconds(30);
   @BeforeClass
   public static void installApplication() {
     XvfbCroquetTestSupport.installApplication();

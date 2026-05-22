@@ -168,12 +168,14 @@ jobs:
 
       - name: Run no-Sims test baseline
         if: github.event_name != 'pull_request' || steps.change-scope.outputs.maven-required == 'true'
+        timeout-minutes: 20
         shell: bash
         run: |
+          SUREFIRE_TIMEOUT="-Dsurefire.timeout=120"
           if [ "$RUNNER_OS" = "Linux" ]; then
-            xvfb-run -a mvn -DincludeSims=false -Dinstall4j.skip -Dcheckstyle.skip clean test
+            xvfb-run -a mvn -DincludeSims=false -Dinstall4j.skip -Dcheckstyle.skip $SUREFIRE_TIMEOUT clean test
           else
-            mvn -DincludeSims=false -Dinstall4j.skip -Dcheckstyle.skip clean test
+            mvn -DincludeSims=false -Dinstall4j.skip -Dcheckstyle.skip $SUREFIRE_TIMEOUT clean test
           fi
 
       - name: Report Maven validation no-op

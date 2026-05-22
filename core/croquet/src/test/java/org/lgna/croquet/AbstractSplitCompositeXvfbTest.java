@@ -1,9 +1,16 @@
 package org.lgna.croquet;
 
 import org.junit.Test;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 import static org.junit.Assert.*;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 
 public class AbstractSplitCompositeXvfbTest {
+
+  @Rule
+  public Timeout globalTimeout = Timeout.seconds(30);
   @Test
   public void containsAndLifecycleCascadeToBothSides() {
     TestSplitComposite composite = new TestSplitComposite();

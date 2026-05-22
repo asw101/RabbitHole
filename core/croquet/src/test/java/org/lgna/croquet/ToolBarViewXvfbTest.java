@@ -1,18 +1,39 @@
 package org.lgna.croquet;
 
 import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 import org.junit.Test;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 import org.lgna.croquet.data.MutableListData;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 import org.lgna.croquet.views.ComboBox;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 import org.lgna.croquet.views.Label;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 import org.lgna.croquet.views.ToolBarView;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 
 import javax.swing.JComponent;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 import java.util.Arrays;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 
 import static org.junit.Assert.*;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 
 public class ToolBarViewXvfbTest {
+
+  @Rule
+  public Timeout globalTimeout = Timeout.seconds(30);
   @BeforeClass
   public static void installApplication() {
     XvfbCroquetTestSupport.installApplication();

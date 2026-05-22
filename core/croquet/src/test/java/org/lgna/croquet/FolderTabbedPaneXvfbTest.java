@@ -1,17 +1,36 @@
 package org.lgna.croquet;
 
 import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 import org.junit.Test;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 import org.lgna.croquet.data.MutableListData;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 import org.lgna.croquet.views.FolderTabbedPane;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 import org.lgna.croquet.views.Label;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 
 import javax.swing.JPanel;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 import java.awt.Color;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 
 import static org.junit.Assert.*;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 
 public class FolderTabbedPaneXvfbTest {
+
+  @Rule
+  public Timeout globalTimeout = Timeout.seconds(30);
   @BeforeClass
   public static void installApplication() {
     XvfbCroquetTestSupport.installApplication();

@@ -1,13 +1,26 @@
 package org.lgna.croquet;
 
 import org.junit.Test;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 import org.lgna.croquet.edits.Edit;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 import org.lgna.croquet.history.UserActivity;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 import org.lgna.croquet.views.Panel;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 
 import static org.junit.Assert.*;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 
 public class OperationWizardDialogCoreCompositeXvfbTest {
+
+  @Rule
+  public Timeout globalTimeout = Timeout.seconds(30);
   @Test
   public void performAutoCommitCreatesAndCommitsEditWithoutShowingDialog() {
     XvfbCroquetTestSupport.tryOnEdt(() -> {
