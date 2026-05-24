@@ -1,9 +1,16 @@
 package org.alice.ide.integration;
 
+import edu.cmu.cs.dennisc.color.Color4f;
+import edu.cmu.cs.dennisc.javax.swing.components.AbstractHyperlink;
+import edu.cmu.cs.dennisc.scenegraph.Box;
+import edu.cmu.cs.dennisc.scenegraph.Geometry;
+import edu.cmu.cs.dennisc.scenegraph.OrthographicCamera;
+import edu.cmu.cs.dennisc.scenegraph.Scene;
+import edu.cmu.cs.dennisc.scenegraph.TexturedAppearance;
+import edu.cmu.cs.dennisc.scenegraph.Transformable;
+import edu.cmu.cs.dennisc.scenegraph.Visual;
 import org.alice.ide.IdeApp;
 import org.alice.ide.ProjectStack;
-import org.alice.ide.project.ProjectDocumentState;
-import edu.cmu.cs.dennisc.javax.swing.components.AbstractHyperlink;
 import org.alice.ide.ast.code.edits.MoveStatementEdit;
 import org.alice.ide.ast.delete.DeleteStatementOperation;
 import org.alice.ide.ast.draganddrop.BlockStatementIndexPair;
@@ -14,9 +21,14 @@ import org.alice.ide.cascade.BlockStatementIndexPairContext;
 import org.alice.ide.codeeditor.CodeEditor;
 import org.alice.ide.codedrop.CodePanelWithDropReceptor;
 import org.alice.ide.common.DefaultStatementPane;
+import org.alice.ide.common.TypeIcon;
 import org.alice.ide.croquet.edits.ast.DeclareMethodEdit;
 import org.alice.ide.croquet.edits.ast.InsertStatementEdit;
 import org.alice.ide.croquet.models.StandardExpressionState;
+import org.alice.ide.croquet.models.ast.DeleteFieldOperation;
+import org.alice.ide.croquet.models.ast.DeleteMethodOperation;
+import org.alice.ide.croquet.models.ast.StatementContextMenu;
+import org.alice.ide.croquet.models.cascade.SimpleExpressionFillIn;
 import org.alice.ide.croquet.models.help.ReportIssueComposite;
 import org.alice.ide.croquet.models.html.HtmlProjectWriter;
 import org.alice.ide.croquet.models.menubar.FileMenuModel;
@@ -27,15 +39,21 @@ import org.alice.ide.croquet.models.ui.preferences.IsFullTypeHierarchyDesiredSta
 import org.alice.ide.declarationseditor.CodeComposite;
 import org.alice.ide.declarationseditor.DeclarationTabState;
 import org.alice.ide.declarationseditor.TypeComposite;
+import org.alice.ide.declarationseditor.type.components.TypeDeclarationView;
 import org.alice.ide.icons.ClosedTrashIcon;
 import org.alice.ide.icons.IconFactoryManager;
 import org.alice.ide.icons.Icons;
 import org.alice.ide.icons.OpenTrashIcon;
+import org.alice.ide.instancefactory.ThisInstanceFactory;
 import org.alice.ide.issue.swing.views.CaughtExceptionPane;
+import org.alice.ide.member.AddMethodMenuModel;
+import org.alice.ide.member.FunctionTabComposite;
+import org.alice.ide.member.ProcedureTabComposite;
 import org.alice.ide.members.MembersComposite;
 import org.alice.ide.preferences.recursion.IsAccessToRecursionPreferenceAllowedState;
 import org.alice.ide.preferences.recursion.IsRecursionAllowedPreferenceDialogComposite;
 import org.alice.ide.preferences.recursion.IsRecursionAllowedState;
+import org.alice.ide.project.ProjectDocumentState;
 import org.alice.ide.projecturi.ProjectSnapshot;
 import org.alice.ide.projecturi.RecentProjectCountState;
 import org.alice.ide.recentprojects.RecentProjectsListData;
@@ -45,19 +63,35 @@ import org.alice.ide.testing.ProjectContextFixture;
 import org.alice.ide.testing.TestIdeBootstrap;
 import org.alice.ide.uricontent.FileProjectLoader;
 import org.alice.ide.uricontent.UriProjectLoader;
+import org.alice.ide.x.PreviewAstI18nFactory;
 import org.alice.ide.x.components.StatementListPropertyView;
 import org.alice.stageide.StageIDE;
+import org.alice.stageide.custom.AudioSourceCustomExpressionCreatorComposite;
+import org.alice.stageide.custom.ColorCustomExpressionCreatorComposite;
+import org.alice.stageide.custom.KeyCustomExpressionCreatorComposite;
+import org.alice.stageide.gallerybrowser.GalleryComposite;
 import org.alice.stageide.gallerybrowser.ShapesTab;
+import org.alice.stageide.gallerybrowser.search.core.SearchGalleryWorker;
+import org.alice.stageide.gallerybrowser.search.croquet.SearchTab;
+import org.alice.stageide.gallerybrowser.search.croquet.views.SearchTabView;
+import org.alice.stageide.modelresource.ResourceNode;
 import org.alice.stageide.sceneeditor.StorytellingSceneEditor;
+import org.alice.stageide.sceneeditor.interact.CameraNavigatorWidget;
+import org.alice.stageide.sceneeditor.interact.GlobalDragAdapter;
+import org.alice.stageide.sceneeditor.interact.handles.ManipulationHandle2DCameraZoom;
+import org.alice.stageide.sceneeditor.interact.manipulators.CameraZoomMouseWheelManipulator;
+import org.alice.stageide.sceneeditor.interact.manipulators.OrthographicCameraDragZoomManipulator;
 import org.alice.stageide.sceneeditor.side.SideComposite;
 import org.alice.stageide.sceneeditor.views.SceneObjectPropertyManagerPanel;
 import org.alice.stageide.type.croquet.OtherTypeDialog;
+import org.lgna.common.resources.AudioResource;
 import org.lgna.croquet.Application;
 import org.lgna.croquet.MenuBarComposite;
 import org.lgna.croquet.StandardMenuItemPrepModel;
 import org.lgna.croquet.edits.Edit;
 import org.lgna.croquet.history.UserActivity;
 import org.lgna.croquet.imp.cascade.RtRoot;
+import org.lgna.croquet.views.PopupMenu;
 import org.lgna.ik.core.IKCore.Limb;
 import org.lgna.ik.poser.controllers.PoserControlComposite;
 import org.lgna.ik.poser.croquet.PoserComposite;
@@ -71,12 +105,18 @@ import org.lgna.project.ast.BooleanExpressionBodyPair;
 import org.lgna.project.ast.BooleanLiteral;
 import org.lgna.project.ast.Comment;
 import org.lgna.project.ast.CountLoop;
+import org.lgna.project.ast.DoInOrder;
 import org.lgna.project.ast.Expression;
+import org.lgna.project.ast.ExpressionStatement;
 import org.lgna.project.ast.FieldAccess;
+import org.lgna.project.ast.InstanceCreation;
 import org.lgna.project.ast.IntegerLiteral;
 import org.lgna.project.ast.JavaType;
+import org.lgna.project.ast.MethodInvocation;
 import org.lgna.project.ast.NamedUserType;
 import org.lgna.project.ast.NullLiteral;
+import org.lgna.project.ast.ResourceExpression;
+import org.lgna.project.ast.SimpleArgumentListProperty;
 import org.lgna.project.ast.Statement;
 import org.lgna.project.ast.UserField;
 import org.lgna.project.ast.UserMethod;
@@ -87,7 +127,6 @@ import org.lgna.story.Pose;
 import org.lgna.story.SJoint;
 import org.lgna.story.SModel;
 import org.lgna.story.resources.BipedResource;
-import org.alice.ide.common.TypeIcon;
 import org.junit.After;
 import org.junit.Assume;
 import org.junit.Before;
@@ -99,6 +138,7 @@ import javax.swing.AbstractButton;
 import javax.swing.Action;
 import javax.swing.Icon;
 import javax.swing.JCheckBox;
+import javax.swing.JColorChooser;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -146,6 +186,7 @@ import java.util.function.Predicate;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -1076,6 +1117,460 @@ public class AliceIdeIntegrationTest {
       });
       restoreRecentProjects(previousProjects);
       waitForIdle();
+    }
+  }
+
+  @Test
+  public void searchesGalleryBrowserTabsAndUpdatesSearchResults() {
+    skipIfHeadless();
+    SearchTab searchTab = new SearchTab();
+    SearchTabView searchView = onEdt(() -> (SearchTabView) searchTab.getView());
+    ShapesTab shapesTab = new ShapesTab();
+    JFrame galleryFrame = onEdt(() -> showStandaloneFrame("Gallery Browser Harness", searchView.getAwtComponent()));
+    try {
+      assertTrue(onEdt(galleryFrame::isShowing));
+      onEdt(() -> {
+        searchTab.handlePreActivation();
+        searchView.setComponentsToGalleryDragComponents(new String[0], List.of());
+        return null;
+      });
+      waitForIdle();
+
+      Object filteredResourcesView = getHiddenField(searchView, "filteredResourcesView");
+      Container filteredContainer = (Container) invokeHiddenMethod(filteredResourcesView, "getAwtComponent", new Class<?>[0]);
+      assertTrue(onEdt(() -> filteredContainer.getComponentCount() > 0));
+      clickCenter(filteredContainer);
+
+      onEdt(() -> {
+        searchView.removeAllGalleryDragComponents();
+        searchView.setComponentsToGalleryDragComponents(new String[0], List.of());
+        return null;
+      });
+      waitForIdle();
+
+      assertTrue(onEdt(() -> filteredContainer.getComponentCount() > 0));
+      assertFalse(shapesTab.getDragModels().isEmpty());
+      assertNotNull(shapesTab.getDragModelForCls(org.lgna.story.SBox.class));
+    } finally {
+      onEdt(() -> {
+        searchTab.handlePostDeactivation();
+        galleryFrame.dispose();
+        return null;
+      });
+    }
+  }
+
+  @Test
+  public void rendersTypeDeclarationDeletesMembersAndBuildsStatementContextMenus() {
+    skipIfHeadless();
+    ProjectContextFixture fixture = ProjectContextFixture.create();
+    UserField extraField = new UserField("spareActor", fixture.actorType, new NullLiteral());
+    UserMethod extraMethod = new UserMethod(
+        "integrationUtility",
+        JavaType.VOID_TYPE,
+        new UserParameter[0],
+        new BlockStatement(new Comment("utility")));
+    fixture.sceneType.fields.add(extraField);
+    fixture.sceneType.methods.add(extraMethod);
+    DoInOrder doInOrder = new DoInOrder();
+    doInOrder.body.setValue(new BlockStatement(new Comment("ordered")));
+    fixture.sceneProcedure.body.getValue().statements.add(doInOrder);
+    TestIdeBootstrap.loadProject(fixture.project);
+    waitForIdle();
+
+    TypeComposite typeComposite = TypeComposite.getInstance(fixture.sceneType);
+    TypeDeclarationView typeView = onEdt(typeComposite::getView);
+    JFrame typeFrame = onEdt(() -> showStandaloneFrame("Type Declaration Harness", typeView.getAwtComponent()));
+    try {
+      assertTrue(onEdt(typeFrame::isShowing));
+      BufferedImage typeImage = new BufferedImage(900, 600, BufferedImage.TYPE_INT_ARGB);
+      Graphics2D g2 = typeImage.createGraphics();
+      try {
+        onEdt(() -> {
+          synchronized (typeView.getAwtComponent().getTreeLock()) {
+            invokeHiddenMethod(
+                typeView,
+                "setJavaCodeOnTheSide",
+                new Class<?>[] {boolean.class, boolean.class},
+                false,
+                true);
+            typeView.getAwtComponent().setSize(900, 600);
+            typeView.getAwtComponent().doLayout();
+            typeView.getAwtComponent().paint(g2);
+            invokeHiddenMethod(
+                typeView,
+                "setJavaCodeOnTheSide",
+                new Class<?>[] {boolean.class, boolean.class},
+                true,
+                false);
+          }
+          return null;
+        });
+      } finally {
+        g2.dispose();
+      }
+      assertTrue(hasPaintedPixels(typeImage));
+      clickCenter(typeFrame);
+    } finally {
+      onEdt(() -> {
+        typeFrame.dispose();
+        return null;
+      });
+    }
+
+    PopupMenu popupMenu = new PopupMenu(null, null);
+    onEdt(() -> {
+      StatementContextMenu.getInstance(doInOrder).handlePopupMenuPrologue(popupMenu);
+      return null;
+    });
+    assertTrue(onEdt(() -> popupMenu.getMenuComponentCount() > 0));
+
+    DeleteFieldOperation fieldOperation = DeleteFieldOperation.getInstance(extraField, fixture.sceneType);
+    onEdt(() -> {
+      fieldOperation.doOrRedoInternal(true);
+      return null;
+    });
+    assertNull(fixture.sceneType.getDeclaredField(extraField.getName()));
+    onEdt(() -> {
+      fieldOperation.undoInternal();
+      return null;
+    });
+    assertNotNull(fixture.sceneType.getDeclaredField(extraField.getName()));
+
+    DeleteMethodOperation methodOperation = DeleteMethodOperation.getInstance(extraMethod, fixture.sceneType);
+    onEdt(() -> {
+      methodOperation.doOrRedoInternal(true);
+      return null;
+    });
+    assertNull(fixture.sceneType.getDeclaredMethod(extraMethod.getName()));
+    onEdt(() -> {
+      methodOperation.undoInternal();
+      return null;
+    });
+    assertNotNull(fixture.sceneType.getDeclaredMethod(extraMethod.getName()));
+  }
+
+  @Test
+  public void rendersAstViewsAndCascadeFillInsForExpressionsArgumentsAndStatementLists() {
+    skipIfHeadless();
+    ProjectContextFixture fixture = ProjectContextFixture.create();
+    UserParameter amountParameter = new UserParameter("amount", Double.class);
+    UserMethod measureMethod = new UserMethod(
+        "measure",
+        JavaType.DOUBLE_PRIMITIVE_TYPE,
+        new UserParameter[] {amountParameter},
+        new BlockStatement(new Comment("measure")));
+    fixture.sceneType.methods.add(measureMethod);
+    MethodInvocation invocation = AstUtilities.createMethodInvocation(
+        new org.lgna.project.ast.ThisExpression(),
+        measureMethod,
+        new org.lgna.project.ast.DoubleLiteral(1.5));
+    ExpressionStatement invocationStatement = new ExpressionStatement(invocation);
+    fixture.sceneProcedure.body.getValue().statements.add(invocationStatement);
+    TestIdeBootstrap.loadProject(fixture.project);
+    waitForIdle();
+
+    PreviewAstI18nFactory factory = PreviewAstI18nFactory.getInstance();
+    FieldAccess fieldAccess = new FieldAccess(fixture.actorField);
+    SimpleExpressionFillIn<FieldAccess> fillIn = new SimpleExpressionFillIn<>(fieldAccess, true);
+    assertSame(fieldAccess, fillIn.createValue(null));
+    assertSame(fieldAccess, fillIn.getTransientValue(null));
+    Icon leadingIcon = (Icon) invokeHiddenMethod(
+        fillIn,
+        "getLeadingIcon",
+        new Class<?>[] {org.lgna.croquet.imp.cascade.ItemNode.class},
+        new Object[] {null});
+    assertNotNull(leadingIcon);
+
+    StatementListPropertyView statementListView = onEdt(
+        () -> new StatementListPropertyView(factory, fixture.sceneProcedure.body.getValue().statements));
+    org.lgna.croquet.views.SwingComponentView<?> fieldAccessView = onEdt(() -> factory.createExpressionPane(fieldAccess));
+    org.lgna.croquet.views.SwingComponentView<?> argumentListView = onEdt(() ->
+        (org.lgna.croquet.views.SwingComponentView<?>) invokeHiddenMethod(
+            factory,
+            "createSimpleArgumentListPropertyPane",
+            new Class<?>[] {SimpleArgumentListProperty.class},
+            invocation.requiredArguments));
+    org.alice.ide.common.AbstractStatementPane statementPane = onEdt(() -> factory.createStatementPane(invocationStatement));
+
+    JFrame astFrame = onEdt(() -> {
+      javax.swing.JPanel panel = new javax.swing.JPanel(new java.awt.GridLayout(4, 1));
+      panel.add((Component) fieldAccessView.getAwtComponent());
+      panel.add((Component) argumentListView.getAwtComponent());
+      panel.add(statementPane.getAwtComponent());
+      panel.add(statementListView.getAwtComponent());
+      return showStandaloneFrame("AST View Harness", panel);
+    });
+    try {
+      assertTrue(onEdt(astFrame::isShowing));
+      BufferedImage astImage = new BufferedImage(900, 700, BufferedImage.TYPE_INT_ARGB);
+      Graphics2D g2 = astImage.createGraphics();
+      try {
+        onEdt(() -> {
+          statementListView.getAwtComponent().setSize(900, 220);
+          statementListView.getAwtComponent().doLayout();
+          statementListView.setCurrentPotentialDropIndexAndDragStep(1, null);
+          statementListView.setIsCurrentUnder(true);
+          statementListView.getAwtComponent().paint(g2);
+          return null;
+        });
+      } finally {
+        g2.dispose();
+      }
+      assertTrue(hasPaintedPixels(astImage));
+      assertEquals(1, (int) onEdt(statementListView::getCurrentPotentialDropIndex));
+      assertTrue(onEdt(() -> statementListView.calculateIndex(new Point(8, 8))) >= 0);
+      onEdt(() -> {
+        statementListView.setIsCurrentUnder(false);
+        return null;
+      });
+      assertEquals(-1, (int) onEdt(statementListView::getCurrentPotentialDropIndex));
+      clickCenter(astFrame);
+    } finally {
+      onEdt(() -> {
+        astFrame.dispose();
+        return null;
+      });
+    }
+  }
+
+  @Test
+  public void switchesMemberTabsAndBuildsAddMethodMenusForCurrentType() {
+    skipIfHeadless();
+    ProjectContextFixture fixture = ProjectContextFixture.create();
+    TestIdeBootstrap.loadProject(fixture.project);
+    waitForIdle();
+
+    onEdt(() -> {
+      this.ide.getDocumentFrame().getSetToCodePerspectiveOperation().fire(new UserActivity());
+      this.ide.getDocumentFrame().getInstanceFactoryState().setValueTransactionlessly(ThisInstanceFactory.getInstance());
+      return null;
+    });
+    waitForIdle();
+
+    ProcedureTabComposite procedureTab = new ProcedureTabComposite();
+    FunctionTabComposite functionTab = new FunctionTabComposite();
+    JFrame memberFrame = onEdt(() -> {
+      javax.swing.JPanel panel = new javax.swing.JPanel(new java.awt.GridLayout(2, 1));
+      panel.add(procedureTab.getView().getAwtComponent());
+      panel.add(functionTab.getView().getAwtComponent());
+      return showStandaloneFrame("Member Tab Harness", panel);
+    });
+    try {
+      assertTrue(onEdt(memberFrame::isShowing));
+      String alphabetical = (String) invokeHiddenMethod(
+          procedureTab,
+          "findLocalizedText",
+          new Class<?>[] {String.class},
+          "sortAlphabetically");
+      onEdt(() -> {
+        procedureTab.getSortState().setValueTransactionlessly(alphabetical);
+        return null;
+      });
+      waitForIdle();
+      assertEquals(alphabetical, onEdt(() -> procedureTab.getSortState().getValue()));
+
+      String groupByReturnType = (String) invokeHiddenMethod(
+          functionTab,
+          "findLocalizedText",
+          new Class<?>[] {String.class},
+          "groupByReturnType");
+      onEdt(() -> {
+        functionTab.getSortState().setValueTransactionlessly(groupByReturnType);
+        return null;
+      });
+      waitForIdle();
+      assertEquals(groupByReturnType, onEdt(() -> functionTab.getSortState().getValue()));
+
+      clickCenter(memberFrame);
+    } finally {
+      onEdt(() -> {
+        memberFrame.dispose();
+        return null;
+      });
+    }
+  }
+
+  @Test
+  public void createsCustomExpressionCompositesForColorKeyAndAudioSource() {
+    skipIfHeadless();
+    ProjectContextFixture fixture = ProjectContextFixture.create();
+    TestIdeBootstrap.loadProject(fixture.project);
+    waitForIdle();
+
+    ColorCustomExpressionCreatorComposite colorComposite = ColorCustomExpressionCreatorComposite.getInstance();
+    JDialog colorDialog = onEdt(() -> showStandaloneDialog("Color Expression Harness", colorComposite.getView().getAwtComponent()));
+    try {
+      JColorChooser chooser = (JColorChooser) getHiddenField(colorComposite, "jColorChooser");
+      onEdt(() -> {
+        chooser.setColor(Color.BLUE);
+        return null;
+      });
+      Expression colorExpression = onEdt(() -> (Expression) invokeHiddenMethod(colorComposite, "createValue", new Class<?>[0]));
+      assertNotNull(colorExpression);
+      onEdt(() -> {
+        invokeHiddenMethod(colorComposite, "initializeToPreviousExpression", new Class<?>[] {Expression.class}, colorExpression);
+        return null;
+      });
+      assertEquals(Color.BLUE.getBlue(), (int) onEdt(() -> chooser.getColor().getBlue()));
+    } finally {
+      onEdt(() -> {
+        colorDialog.dispose();
+        return null;
+      });
+    }
+
+    KeyCustomExpressionCreatorComposite keyComposite = KeyCustomExpressionCreatorComposite.getInstance();
+    JDialog keyDialog = onEdt(() -> showStandaloneDialog("Key Expression Harness", keyComposite.getView().getAwtComponent()));
+    try {
+      onEdt(() -> {
+        keyComposite.getValueState().setValueTransactionlessly(org.lgna.story.Key.SPACE);
+        return null;
+      });
+      Expression keyExpression = onEdt(() -> (Expression) invokeHiddenMethod(keyComposite, "createValue", new Class<?>[0]));
+      assertTrue(keyExpression instanceof FieldAccess);
+      onEdt(() -> {
+        keyComposite.getValueState().setValueTransactionlessly(null);
+        invokeHiddenMethod(keyComposite, "initializeToPreviousExpression", new Class<?>[] {Expression.class}, keyExpression);
+        return null;
+      });
+      assertEquals(org.lgna.story.Key.SPACE, onEdt(() -> keyComposite.getValueState().getValue()));
+    } finally {
+      onEdt(() -> {
+        keyDialog.dispose();
+        return null;
+      });
+    }
+
+    AudioSourceCustomExpressionCreatorComposite audioComposite = AudioSourceCustomExpressionCreatorComposite.getInstance();
+    JDialog audioDialog = onEdt(() -> showStandaloneDialog("Audio Expression Harness", audioComposite.getView().getAwtComponent()));
+    try {
+      ResourceExpression resourceExpression = new ResourceExpression(AudioResource.class, fixture.audioResource);
+      onEdt(() -> {
+        audioComposite.getAudioResourceExpressionState().setValueTransactionlessly(resourceExpression);
+        audioComposite.getVolumeState().setValueTransactionlessly(750);
+        audioComposite.getStartMarkerState().setValueTransactionlessly(200);
+        audioComposite.getStopMarkerState().setValueTransactionlessly(600);
+        return null;
+      });
+      Expression audioExpression = onEdt(() -> (Expression) invokeHiddenMethod(audioComposite, "createValue", new Class<?>[0]));
+      assertTrue(audioExpression instanceof InstanceCreation);
+      onEdt(() -> {
+        audioComposite.getAudioResourceExpressionState().setValueTransactionlessly(null);
+        invokeHiddenMethod(audioComposite, "initializeToPreviousExpression", new Class<?>[] {Expression.class}, audioExpression);
+        return null;
+      });
+      assertNotNull(onEdt(() -> audioComposite.getAudioResourceExpressionState().getValue()));
+    } finally {
+      onEdt(() -> {
+        audioDialog.dispose();
+        return null;
+      });
+    }
+  }
+
+  @Test
+  public void capturesSceneGraphsAndExercisesCameraWidgetsAndZoomManipulators() {
+    skipIfHeadless();
+
+    Scene scene = new Scene();
+    scene.setName("IntegrationScene");
+    Transformable transformable = new Transformable();
+    transformable.setName("TransformRoot");
+    Visual visual = new Visual();
+    visual.setName("VisibleBox");
+    TexturedAppearance appearance = new TexturedAppearance();
+    appearance.diffuseColor.setValue(new Color4f(1.0f, 200 / 255.0f, 0.0f, 1.0f));
+    appearance.opacity.setValue(0.65f);
+    visual.frontFacingAppearance.setValue(appearance);
+    visual.geometries.setValue(new Geometry[] {new Box()});
+    transformable.addComponent(visual);
+    scene.addComponent(transformable);
+
+    org.alice.ide.swing.BasicTreeNodeViewerPanel viewerPanel = new org.alice.ide.swing.BasicTreeNodeViewerPanel();
+    JFrame treeFrame = onEdt(() -> {
+      viewerPanel.setRoot(scene);
+      return showStandaloneFrame("Scene Graph Harness", viewerPanel);
+    });
+    try {
+      assertTrue(onEdt(treeFrame::isShowing));
+      Object rightTree = getHiddenField(viewerPanel, "rightTree");
+      assertNotNull(rightTree);
+      Object rootNode = invokeHiddenMethod(rightTree, "getRootNode", new Class<?>[0]);
+      int rootHash = (Integer) getHiddenField(rootNode, "hashCode");
+      onEdt(() -> {
+        invokeHiddenMethod(rightTree, "setSelectedNode", new Class<?>[] {int.class, boolean.class}, rootHash, true);
+        return null;
+      });
+      JLabel nameLabel = (JLabel) getHiddenField(rightTree, "nameLabel");
+      assertTrue(onEdt(() -> !nameLabel.getText().isEmpty()));
+
+      appearance.opacity.setValue(0.25f);
+      scene.addComponent(new Transformable());
+      clickButton((AbstractButton) getHiddenField(viewerPanel, "captureButton"));
+      Object updatedRightTree = getHiddenField(viewerPanel, "rightTree");
+      Object updatedRoot = invokeHiddenMethod(updatedRightTree, "getRootNode", new Class<?>[0]);
+      boolean hasDifferentChild = (Boolean) invokeHiddenMethod(updatedRoot, "hasDifferentChild", new Class<?>[0]);
+      assertTrue(hasDifferentChild);
+    } finally {
+      onEdt(() -> {
+        treeFrame.dispose();
+        return null;
+      });
+    }
+
+    org.alice.interact.DragAdapter dragAdapter = new org.alice.interact.DragAdapter() {
+    };
+    CameraNavigatorWidget widget = onEdt(() -> new CameraNavigatorWidget(dragAdapter, org.alice.interact.DragAdapter.CameraView.MAIN));
+    JFrame widgetFrame = onEdt(() -> showStandaloneFrame("Camera Widget Harness", widget.getAwtComponent()));
+    try {
+      onEdt(() -> {
+        widget.setExpanded(true);
+        widget.setToOrthographicMode();
+        return null;
+      });
+      waitForIdle();
+      assertEquals(2, (int) onEdt(() -> widget.getAwtComponent().getComponentCount()));
+
+      onEdt(() -> {
+        widget.setToPerspectiveMode();
+        return null;
+      });
+      waitForIdle();
+      assertEquals(3, (int) onEdt(() -> widget.getAwtComponent().getComponentCount()));
+      clickCenter(widgetFrame);
+
+      OrthographicCamera orthographicCamera = new OrthographicCamera();
+      onEdt(() -> {
+        orthographicCamera.picturePlane.setValue(orthographicCamera.picturePlane.getValue().withHeight(5.0));
+        return null;
+      });
+
+      OrthographicCameraDragZoomManipulator dragZoom = new OrthographicCameraDragZoomManipulator(new ManipulationHandle2DCameraZoom());
+      dragZoom.setDragAdapter(dragAdapter);
+      dragZoom.setCamera(orthographicCamera);
+      double beforeZoom = onEdt(dragZoom::getCameraZoom);
+      onEdt(() -> {
+        dragZoom.setCameraZoom(0.5d);
+        return null;
+      });
+      assertTrue(onEdt(dragZoom::getCameraZoom) > beforeZoom);
+
+      CameraZoomMouseWheelManipulator wheelZoom = new CameraZoomMouseWheelManipulator();
+      wheelZoom.setDragAdapter(dragAdapter);
+      wheelZoom.setCamera(orthographicCamera);
+      double wheelBefore = onEdt(() -> orthographicCamera.picturePlane.getValue().getHeight());
+      onEdt(() -> {
+        invokeHiddenMethod(wheelZoom, "applyZoom", new Class<?>[] {double.class}, 0.5d);
+        return null;
+      });
+      double wheelAfter = onEdt(() -> orthographicCamera.picturePlane.getValue().getHeight());
+      assertTrue(wheelAfter > wheelBefore);
+    } finally {
+      onEdt(() -> {
+        widgetFrame.dispose();
+        return null;
+      });
     }
   }
 
