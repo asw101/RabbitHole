@@ -45,7 +45,6 @@ package org.alice.ide.x;
 
 import edu.cmu.cs.dennisc.java.awt.font.TextWeight;
 import edu.cmu.cs.dennisc.java.lang.reflect.ReflectionUtilities;
-import edu.cmu.cs.dennisc.java.util.Sets;
 import edu.cmu.cs.dennisc.property.InstanceProperty;
 import edu.cmu.cs.dennisc.property.InstancePropertyOwner;
 import edu.cmu.cs.dennisc.property.ListProperty;
@@ -303,11 +302,7 @@ public abstract class AstI18nFactory extends I18nFactory {
             if (expression == methodInvocation.expression.getValue()) {
               AbstractType<?, ?, ?> type = StoryApiConfigurationManager.getInstance().getBuildMethodPoseBuilderType(methodInvocation);
               if (type != null) {
-                StringBuilder sb = new StringBuilder();
-                sb.append("new ");
-                sb.append(type.getName());
-                sb.append("(...).");
-                component = new Label(sb.toString());
+                component = new Label(AstI18nFactoryLogic.createPoseBuilderPrefixText(type));
               }
             }
           }
@@ -331,23 +326,24 @@ public abstract class AstI18nFactory extends I18nFactory {
     }
   }
 
-  private static final Set<String> LOCAL_PROPERTY_NAMES = Sets.newHashSet("local", "item", "variable", "constant");
+  private static final Set<String> LOCAL_PROPERTY_NAMES = Set.of("local", "item", "variable", "constant");
 
   @Override
   protected SwingComponentView<?> createPropertyComponent(InstanceProperty<?> property, int underscoreCount) {
     //todo:
     String propertyName = property.getName();
+    AstI18nFactoryLogic.LocalPropertyKind localPropertyKind = AstI18nFactoryLogic.getLocalPropertyKind(propertyName, underscoreCount);
     //
 
     if (underscoreCount == 2) {
-      if (LOCAL_PROPERTY_NAMES.contains(propertyName)) {
+      if (localPropertyKind == AstI18nFactoryLogic.LocalPropertyKind.LOCAL_DECLARATION) {
         return createLocalDeclarationPane((UserLocal) property.getValue());
       } else {
         return new Label("TODO: handle underscore count 2: " + propertyName);
       }
     }
     if (underscoreCount == 1) {
-      if (LOCAL_PROPERTY_NAMES.contains(propertyName)) {
+      if (localPropertyKind == AstI18nFactoryLogic.LocalPropertyKind.LOCAL) {
         return createLocalPane((UserLocal) property.getValue());
       } else {
         return new Label("TODO: handle underscore count 1: " + propertyName);

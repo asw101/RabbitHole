@@ -31,4 +31,17 @@ public class AstI18nFactoryLogicTest {
     assertEquals("42", AstI18nFactoryLogic.getLabelText(42));
     assertNull(AstI18nFactoryLogic.getLabelText(null));
   }
+
+  @Test
+  public void getLocalPropertyKindRecognizesTrackedLocals() {
+    assertEquals(AstI18nFactoryLogic.LocalPropertyKind.LOCAL_DECLARATION, AstI18nFactoryLogic.getLocalPropertyKind("local", 2));
+    assertEquals(AstI18nFactoryLogic.LocalPropertyKind.LOCAL, AstI18nFactoryLogic.getLocalPropertyKind("item", 1));
+    assertEquals(AstI18nFactoryLogic.LocalPropertyKind.NONE, AstI18nFactoryLogic.getLocalPropertyKind("field", 1));
+    assertEquals(AstI18nFactoryLogic.LocalPropertyKind.NONE, AstI18nFactoryLogic.getLocalPropertyKind("local", 0));
+  }
+
+  @Test
+  public void createPoseBuilderPrefixTextUsesTypeName() {
+    assertEquals("new String(...).", AstI18nFactoryLogic.createPoseBuilderPrefixText(JavaType.getInstance(String.class)));
+  }
 }

@@ -82,12 +82,10 @@ public class CodeEditor extends CodePanelWithDropReceptor {
     this.rootStatementListPropertyPane = new StatementListPropertyView(factory, body.statements, 32);
 
     SwingComponentView<?> statementListComponent = null;
-    if (body instanceof ConstructorBlockStatement constructorBlockStatement) {
-      ConstructorInvocationStatement constructorInvocationStatement = constructorBlockStatement.constructorInvocationStatement.getValue();
-      if (constructorInvocationStatement != null) {
-        SwingComponentView<?> superComponent = ProjectEditorAstI18nFactory.getInstance().createStatementPane(constructorInvocationStatement);
-        statementListComponent = new PageAxisPanel(new LineAxisPanel(BoxUtilities.createHorizontalSliver(8), superComponent), this.rootStatementListPropertyPane);
-      }
+    ConstructorInvocationStatement constructorInvocationStatement = CodeEditorLogic.getLeadingConstructorInvocation(body);
+    if (constructorInvocationStatement != null) {
+      SwingComponentView<?> superComponent = ProjectEditorAstI18nFactory.getInstance().createStatementPane(constructorInvocationStatement);
+      statementListComponent = new PageAxisPanel(new LineAxisPanel(BoxUtilities.createHorizontalSliver(8), superComponent), this.rootStatementListPropertyPane);
     }
 
     if (statementListComponent == null) {
@@ -146,36 +144,6 @@ public class CodeEditor extends CodePanelWithDropReceptor {
   private static int convertY(AwtComponentView<?> from, int y, AwtComponentView<?> to) {
     Point pt = from.convertPoint(new Point(0, y), to);
     return pt.y;
-  }
-
-  private static int capMinimum(int yPotentialMinimumBound, int y, StatementListPropertyPaneInfo[] statementListPropertyPaneInfos, int index) {
-    int rv = yPotentialMinimumBound;
-    final int N = statementListPropertyPaneInfos.length;
-    for (int i = 0; i < N; i++) {
-      if (i != index) {
-        Rectangle boundsI = statementListPropertyPaneInfos[i].getBounds();
-        int yI = boundsI.y + boundsI.height;
-        if (yI < y) {
-          rv = Math.max(rv, yI);
-        }
-      }
-    }
-    return rv;
-  }
-
-  private static int capMaximum(int yMaximum, int yPlusHeight, StatementListPropertyPaneInfo[] statementListPropertyPaneInfos, int index) {
-    int rv = yMaximum;
-    final int N = statementListPropertyPaneInfos.length;
-    for (int i = 0; i < N; i++) {
-      if (i != index) {
-        Rectangle boundsI = statementListPropertyPaneInfos[i].getBounds();
-        int yI = boundsI.y;
-        if (yI > yPlusHeight) {
-          rv = Math.min(rv, yI);
-        }
-      }
-    }
-    return rv;
   }
 
   private static boolean isWarningAlreadyPrinted = false;
@@ -276,7 +244,7 @@ public class CodeEditor extends CodePanelWithDropReceptor {
           if ((yBounds.yMinimum != null) && (yBounds.y != null)) {
             yMinimum = convertY(statementListPropertyPane, yBounds.yMinimum, CodeEditor.this.getAsSeenBy());
             int y = convertY(statementListPropertyPane, yBounds.y, CodeEditor.this.getAsSeenBy());
-            yMinimum = capMinimum(yMinimum, y, statementListPropertyPaneInfos, index);
+            yMinimum = CodeEditorLogic.capMinimum(yMinimum, y, statementListPropertyPaneInfos, index);
           } else {
             yMinimum = bounds.y;
           }
@@ -284,7 +252,7 @@ public class CodeEditor extends CodePanelWithDropReceptor {
           if ((yBounds.yMaximum != null) && (yBounds.yPlusHeight != null)) {
             yMaximum = convertY(statementListPropertyPane, yBounds.yMaximum, CodeEditor.this.getAsSeenBy());
             int yPlusHeight = convertY(statementListPropertyPane, yBounds.yPlusHeight, CodeEditor.this.getAsSeenBy());
-            yMaximum = capMaximum(yMaximum, yPlusHeight, statementListPropertyPaneInfos, index);
+            yMaximum = CodeEditorLogic.capMaximum(yMaximum, yPlusHeight, statementListPropertyPaneInfos, index);
           } else {
             yMaximum = (bounds.y + bounds.height) - 1;
           }

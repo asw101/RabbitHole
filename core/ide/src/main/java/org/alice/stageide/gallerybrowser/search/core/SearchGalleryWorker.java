@@ -63,7 +63,7 @@ public class SearchGalleryWorker extends WorkerWithProgress<List<ResourceNode>, 
   public SearchGalleryWorker(String filter, SearchTabView searchTabView) {
     // Split into lowercase terms by spaces and any non word characters.
     // Search for each term then AND the results together.
-    terms = filter.toLowerCase().replaceAll("\\W|_", " ").split("\\s+");
+    terms = SearchGalleryWorkerLogic.createTerms(filter);
     this.searchTabView = searchTabView;
   }
 
@@ -103,30 +103,7 @@ public class SearchGalleryWorker extends WorkerWithProgress<List<ResourceNode>, 
   }
 
   private boolean allTermsMatch(ResourceNode node) {
-    for (String term : terms) {
-      boolean termFound = false;
-      String[] tags = node.getResourceKey().getTags();
-      if (tags != null) {
-        for (String tag : tags) {
-          if (tag.toLowerCase().contains(term)) {
-            termFound = true;
-            break;
-          }
-        }
-      }
-      if (termFound) {
-        // A tag matched. Go to the next term.
-        continue;
-      }
-      // No tag matched. Check in search text.
-      String searchText = node.getResourceKey().getSearchText();
-      if (searchText == null || searchText.isEmpty() || !searchText.toLowerCase().contains(term)) {
-        // This term was not found, so this node does not match.
-        return false;
-      }
-    }
-    // All terms found on this node.
-    return true;
+    return SearchGalleryWorkerLogic.allTermsMatch(terms, node.getResourceKey().getTags(), node.getResourceKey().getSearchText());
   }
 
   private final String[] terms;

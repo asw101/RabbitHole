@@ -232,11 +232,7 @@ public class BasicTreeViewer extends JPanel implements TreeSelectionListener {
   }
 
   protected void setData(BasicTreeNode node) {
-    if (node.name == null) {
-      this.nameLabel.setText("<NO NAME>");
-    } else {
-      this.nameLabel.setText("'" + node.name + "'");
-    }
+    this.nameLabel.setText(BasicTreeViewerLogic.getNodeNameText(node));
     this.classLabel.setText(node.className);
     this.extrasPanel.removeAll();
     this.removeAll();
@@ -253,16 +249,14 @@ public class BasicTreeViewer extends JPanel implements TreeSelectionListener {
                                                                   0, // ipadX
                                                                   0) // ipadY
       );
-      String colorString = "NO COLOR";
-      if (node.color != null) {
-        colorString = "%.2f, %.2f, %.2f, %.2f".formatted(node.color.red, node.color.green, node.color.blue, node.color.alpha);
-        Color backgroundColor = new Color((int) (node.color.red * 255), (int) (node.color.green * 255), (int) (node.color.blue * 255));
+      this.colorLabel.setText(BasicTreeViewerLogic.getColorText(node.color));
+      Color backgroundColor = BasicTreeViewerLogic.getBackgroundColor(node.color);
+      if (backgroundColor != null) {
         this.colorLabel.setBackground(backgroundColor);
         this.colorLabel.setOpaque(true);
       } else {
         this.colorLabel.setOpaque(false);
       }
-      this.colorLabel.setText(colorString);
       this.colorLabel.revalidate();
     } else if (this.extrasPanel.getParent() != null) {
       this.infoPanel.remove(this.extrasPanel);
@@ -282,17 +276,9 @@ public class BasicTreeViewer extends JPanel implements TreeSelectionListener {
     );
     this.virtualParentHashCode = -1;
     if (node instanceof SceneGraphTreeNode sgNode) {
-      String positionString = "NO POSITION";
-      if (sgNode.absoluteTransform != null) {
-        positionString = "[%.3f, %.3f, %.3f]".formatted(sgNode.absoluteTransform.translation().x(), sgNode.absoluteTransform.translation().y(), sgNode.absoluteTransform.translation().z());
-      }
-      this.transformLabel.setText(positionString);
+      this.transformLabel.setText(BasicTreeViewerLogic.getPositionText(sgNode.absoluteTransform));
       if (sgNode.stackTrace != null) {
-        StringBuilder sb = new StringBuilder();
-        for (StackTraceElement stack : sgNode.stackTrace) {
-          sb.append(stack.toString() + "\n");
-        }
-        this.stackTracePanel.setText(sb.toString());
+        this.stackTracePanel.setText(BasicTreeViewerLogic.buildStackTraceText(sgNode.stackTrace));
         JScrollBar verticalScrollBar = this.stackTraceScrollPane.getVerticalScrollBar();
         if (verticalScrollBar != null) {
           verticalScrollBar.setValue(verticalScrollBar.getMinimum());
@@ -434,20 +420,20 @@ public class BasicTreeViewer extends JPanel implements TreeSelectionListener {
 
   public void setSelectedNode(int hashCode, boolean listenToSelection) {
     BasicTreeNode rootNode = (BasicTreeNode) this.treeModel.getRoot();
-    BasicTreeNode foundNode = rootNode.getMatchingNode(hashCode);
-    if (foundNode != null) {
+    TreePath selectionPath = BasicTreeViewerLogic.createSelectionPath(rootNode, hashCode);
+    if (selectionPath != null) {
       this.listenToSelection = listenToSelection;
-      this.tree.setSelectionPath(new TreePath(foundNode.getPath()));
+      this.tree.setSelectionPath(selectionPath);
       this.listenToSelection = true;
     }
   }
 
   public void setSelectedNode(BasicTreeNode node, boolean listenToSelection) {
     BasicTreeNode rootNode = (BasicTreeNode) this.treeModel.getRoot();
-    BasicTreeNode foundNode = rootNode.getMatchingNode(node);
-    if (foundNode != null) {
+    TreePath selectionPath = BasicTreeViewerLogic.createSelectionPath(rootNode, node);
+    if (selectionPath != null) {
       this.listenToSelection = listenToSelection;
-      this.tree.setSelectionPath(new TreePath(foundNode.getPath()));
+      this.tree.setSelectionPath(selectionPath);
       this.listenToSelection = true;
     }
   }

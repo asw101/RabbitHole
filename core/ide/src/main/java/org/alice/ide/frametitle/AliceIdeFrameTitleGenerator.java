@@ -53,24 +53,12 @@ import java.io.File;
 public class AliceIdeFrameTitleGenerator implements IdeFrameTitleGenerator {
   @Override
   public String generateTitle(UriProjectLoader projectLoader, boolean isDocumentUpToDateWithUri) {
-    StringBuilder sb = new StringBuilder();
-    sb.append(IDE.getApplicationName());
-    sb.append(" ");
-    sb.append(IDE.getVersionAdornment());
-    sb.append(" ");
-
     boolean isBackup = false;
+    File file = null;
     if (projectLoader != null) {
       isBackup = projectLoader.isBackup();
-      File file = projectLoader.getMainProjectFile();
-      if (file != null) {
-        sb.append(file);
-      }
+      file = projectLoader.getMainProjectFile();
     }
-    if (isBackup || !isDocumentUpToDateWithUri) {
-      sb.append("*");
-    }
-
-    return sb.toString();
+    return AliceIdeFrameTitleGeneratorLogic.generateTitle(IDE.getApplicationName(), IDE.getVersionAdornment(), file, isBackup, isDocumentUpToDateWithUri);
   }
 }

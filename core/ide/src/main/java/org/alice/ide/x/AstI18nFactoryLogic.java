@@ -8,6 +8,8 @@ import org.lgna.project.ast.SimpleArgument;
 import org.lgna.project.ast.UserCode;
 import org.lgna.project.ast.UserMethod;
 
+import java.util.Set;
+
 final class AstI18nFactoryLogic {
   enum ComponentKind {
     DECLARATION_NAME,
@@ -16,6 +18,14 @@ final class AstI18nFactoryLogic {
     PARAMETERS,
     LABEL
   }
+
+  enum LocalPropertyKind {
+    NONE,
+    LOCAL,
+    LOCAL_DECLARATION
+  }
+
+  private static final Set<String> LOCAL_PROPERTY_NAMES = Set.of("local", "item", "variable", "constant");
 
   private AstI18nFactoryLogic() {
     throw new AssertionError();
@@ -45,5 +55,20 @@ final class AstI18nFactoryLogic {
       return type.getName();
     }
     return value.toString();
+  }
+
+  static LocalPropertyKind getLocalPropertyKind(String propertyName, int underscoreCount) {
+    if (!LOCAL_PROPERTY_NAMES.contains(propertyName)) {
+      return LocalPropertyKind.NONE;
+    }
+    return switch (underscoreCount) {
+    case 1 -> LocalPropertyKind.LOCAL;
+    case 2 -> LocalPropertyKind.LOCAL_DECLARATION;
+    default -> LocalPropertyKind.NONE;
+    };
+  }
+
+  static String createPoseBuilderPrefixText(AbstractType<?, ?, ?> type) {
+    return "new " + type.getName() + "(...).";
   }
 }

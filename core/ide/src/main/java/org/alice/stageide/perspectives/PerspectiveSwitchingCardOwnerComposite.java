@@ -42,7 +42,6 @@
  *******************************************************************************/
 package org.alice.stageide.perspectives;
 
-import edu.cmu.cs.dennisc.java.util.Maps;
 import org.alice.ide.IDE;
 import org.alice.ide.perspectives.ProjectPerspective;
 import org.lgna.croquet.CardOwnerComposite;
@@ -77,10 +76,9 @@ public abstract class PerspectiveSwitchingCardOwnerComposite extends CardOwnerCo
     }
 
     public Map<ProjectPerspective, Composite<?>> build() {
-      Map<ProjectPerspective, Composite<?>> rv = Maps.newHashMap();
-      rv.put(IDE.getActiveInstance().getDocumentFrame().getCodePerspective(), this.codePerspecitiveCard);
-      rv.put(IDE.getActiveInstance().getDocumentFrame().getSetupScenePerspective(), this.setupScenePerspecitiveCard);
-      return rv;
+      return PerspectiveSelectionLogic.buildMap(
+          IDE.getActiveInstance().getDocumentFrame().getCodePerspective(), this.codePerspecitiveCard,
+          IDE.getActiveInstance().getDocumentFrame().getSetupScenePerspective(), this.setupScenePerspecitiveCard);
     }
   }
 
@@ -96,7 +94,7 @@ public abstract class PerspectiveSwitchingCardOwnerComposite extends CardOwnerCo
   }
 
   private void handlePerspectiveChanged(ProjectPerspective nextValue) {
-    Composite<?> nextCard = this.map.get(nextValue);
+    Composite<?> nextCard = PerspectiveSelectionLogic.getCard(this.map, nextValue);
     this.showCard(nextCard);
   }
 
