@@ -113,8 +113,9 @@ public abstract class AstI18nFactory extends I18nFactory {
   @Override
   protected SwingComponentView<?> createComponent(MethodInvocationChunk methodInvocationChunk, InstancePropertyOwner owner) {
     String methodName = methodInvocationChunk.getMethodName();
-    SwingComponentView<?> rv;
-    if ((owner instanceof AbstractDeclaration declaration) && methodName.equals("getName")) {
+    return switch (AstI18nFactoryLogic.getComponentKind(owner, methodName)) {
+    case DECLARATION_NAME -> {
+      AbstractDeclaration declaration = (AbstractDeclaration) owner;
       DeclarationNameLabel label = new DeclarationNameLabel(declaration);
       if (declaration instanceof AbstractMethod method) {
         label.setBorder(Theme.BLOCK_BORDER);
@@ -122,31 +123,29 @@ public abstract class AstI18nFactory extends I18nFactory {
         label.changeFont(TextWeight.BOLD);
         label.setForegroundColor(UIManager.getColor("Alice.Block.foreground"));
       }
-      rv = label;
-    } else if ((owner instanceof SimpleArgument argument) && methodName.equals("getParameterNameText")) {
-      rv = new DeclarationNameLabel(argument.parameter.getValue());
-    } else if ((owner instanceof AbstractConstructor constructor) && methodName.equals("getDeclaringType")) {
-      rv = this.createTypeComponent(constructor.getDeclaringType());
-    } else if ((owner instanceof UserMethod method) && methodName.equals("getReturnType")) {
-      rv = this.createTypeComponent(method.getReturnType());
-    } else if ((owner instanceof UserCode code) && methodName.equals("getParameters")) {
-      rv = new ParametersPane(this, code);
-    } else {
-      Method mthd = ReflectionUtilities.getMethod(owner.getClass(), methodName);
-      Object o = ReflectionUtilities.invoke(owner, mthd);
-      String s;
-      if (o != null) {
-        if (o instanceof AbstractType<?, ?, ?> type) {
-          s = type.getName();
-        } else {
-          s = o.toString();
-        }
-      } else {
-        s = null;
-      }
-      rv = new Label(s);
+      yield label;
     }
-    return rv;
+    case PARAMETER_NAME -> {
+      SimpleArgument argument = (SimpleArgument) owner;
+      yield new DeclarationNameLabel(argument.parameter.getValue());
+    }
+    case TYPE -> {
+      if (owner instanceof AbstractConstructor constructor) {
+        yield this.createTypeComponent(constructor.getDeclaringType());
+      }
+      UserMethod method = (UserMethod) owner;
+      yield this.createTypeComponent(method.getReturnType());
+    }
+    case PARAMETERS -> {
+      UserCode code = (UserCode) owner;
+      yield new ParametersPane(this, code);
+    }
+    case LABEL -> {
+      Method mthd = ReflectionUtilities.getMethod(owner.getClass(), methodName);
+      Object value = ReflectionUtilities.invoke(owner, mthd);
+      yield new Label(AstI18nFactoryLogic.getLabelText(value));
+    }
+    };
   }
 
   protected ExpressionPropertyCascade getArgumentCascade(SimpleArgument simpleArgument) {

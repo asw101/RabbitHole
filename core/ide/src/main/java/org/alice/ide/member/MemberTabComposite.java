@@ -51,8 +51,6 @@ import org.lgna.croquet.ImmutableDataSingleSelectListState;
 import org.lgna.croquet.event.ValueEvent;
 import org.lgna.croquet.event.ValueListener;
 import org.lgna.croquet.views.ScrollPane;
-import org.lgna.project.annotations.Visibility;
-import org.lgna.project.ast.AbstractField;
 import org.lgna.project.ast.AbstractMember;
 import org.lgna.project.ast.AbstractMethod;
 import org.lgna.project.ast.AbstractType;
@@ -74,11 +72,7 @@ public abstract class MemberTabComposite<V extends MemberTabView> extends Member
   public static boolean ARE_TOOL_PALETTES_INERT = true;
 
   static boolean getExpandedAccountingForInert(boolean isExpanded) {
-    if (ARE_TOOL_PALETTES_INERT) {
-      return true;
-    } else {
-      return isExpanded;
-    }
+    return MemberTabCompositeLogic.getExpandedAccountingForInert(ARE_TOOL_PALETTES_INERT, isExpanded);
   }
 
   static final String GROUP_BY_CATEGORY_KEY = "groupByCategory";
@@ -87,21 +81,7 @@ public abstract class MemberTabComposite<V extends MemberTabView> extends Member
   public static MethodsSubComposite SEPARATOR = null;
 
   protected static boolean isInclusionDesired(AbstractMember member) {
-    if (member instanceof AbstractMethod method) {
-      if (method.isStatic()) {
-        return false;
-      }
-    } else if (member instanceof AbstractField field) {
-      if (field.isStatic()) {
-        return false;
-      }
-    }
-    if (member.isPublicAccess() || member.isUserAuthored()) {
-      Visibility visibility = member.getVisibility();
-      return (visibility == null) || visibility.equals(Visibility.PRIME_TIME);
-    } else {
-      return false;
-    }
+    return MemberTabCompositeLogic.isInclusionDesired(member);
   }
 
   private class InstanceFactoryListener implements ValueListener<InstanceFactory> {
@@ -298,14 +278,9 @@ public abstract class MemberTabComposite<V extends MemberTabView> extends Member
   }
 
   private static <T extends AbstractMethod> void removeOverrides(List<T> javaMethods) {
-    ListIterator<T> iterator = javaMethods.listIterator();
-    while (iterator.hasNext()) {
-      AbstractMethod method = iterator.next();
-      AbstractMethod overridden = method.getOverriddenMethod();
-      if (overridden != null && javaMethods.contains(overridden)) {
-        iterator.remove();
-      }
-    }
+    List<T> filteredMethods = MemberTabCompositeLogic.withoutOverrides(javaMethods);
+    javaMethods.clear();
+    javaMethods.addAll(filteredMethods);
   }
 
   @Override

@@ -45,12 +45,7 @@ package org.alice.stageide.custom;
 import org.alice.ide.custom.CustomExpressionCreatorComposite;
 import org.alice.stageide.custom.components.KeyCustomExpressionCreatorView;
 import org.lgna.croquet.PlainStringValue;
-import org.lgna.project.ast.AbstractField;
-import org.lgna.project.ast.AbstractType;
 import org.lgna.project.ast.Expression;
-import org.lgna.project.ast.FieldAccess;
-import org.lgna.project.ast.JavaType;
-import org.lgna.project.ast.TypeExpression;
 
 import java.util.UUID;
 
@@ -88,20 +83,12 @@ public class KeyCustomExpressionCreatorComposite extends CustomExpressionCreator
 
   @Override
   protected Expression createValue() {
-    org.lgna.story.Key key = this.getValueState().getValue();
-    if (key != null) {
-      AbstractType<?, ?, ?> type = JavaType.getInstance(org.lgna.story.Key.class);
-      AbstractField field = type.getDeclaredField(type, key.name());
-      assert field.isPublicAccess() && field.isStatic() && field.isFinal();
-      return new FieldAccess(new TypeExpression(type), field);
-    } else {
-      return null;
-    }
+    return KeyCustomExpressionCreatorCompositeLogic.createValue(this.getValueState().getValue());
   }
 
   @Override
   protected Status getStatusPreRejectorCheck() {
-    if (this.getValueState().getValue() != null) {
+    if (KeyCustomExpressionCreatorCompositeLogic.hasSelectedKey(this.getValueState().getValue())) {
       return IS_GOOD_TO_GO_STATUS;
     } else {
       return this.keyRequiredError;
@@ -115,16 +102,6 @@ public class KeyCustomExpressionCreatorComposite extends CustomExpressionCreator
 
   @Override
   protected void initializeToPreviousExpression(Expression expression) {
-    org.lgna.story.Key key = null;
-    if (expression instanceof FieldAccess fieldAccess) {
-      AbstractType<?, ?, ?> type = fieldAccess.getType();
-      if (type == JavaType.getInstance(org.lgna.story.Key.class)) {
-        AbstractField field = fieldAccess.field.getValue();
-        if (field != null) {
-          key = Enum.valueOf(org.lgna.story.Key.class, field.getName());
-        }
-      }
-    }
-    this.getValueState().setValueTransactionlessly(key);
+    this.getValueState().setValueTransactionlessly(KeyCustomExpressionCreatorCompositeLogic.decodeSelectedKey(expression));
   }
 }

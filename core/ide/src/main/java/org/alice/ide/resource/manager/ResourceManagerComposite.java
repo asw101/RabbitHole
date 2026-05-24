@@ -104,15 +104,12 @@ public final class ResourceManagerComposite extends LazyOperationUnadornedDialog
   private void reloadTableModel(Project project) {
     this.resourcesState.reloadTableModel(project);
     Collection<Resource> currentResources = this.resourcesState.getItems();
-    for (Resource resource : this.previousResources) {
-      if (!currentResources.contains(resource)) {
-        resource.removeNameListener(this.nameListener);
-      }
+    ResourceManagerCompositeLogic.ListenerDelta<Resource> listenerDelta = ResourceManagerCompositeLogic.computeListenerDelta(this.previousResources, currentResources);
+    for (Resource resource : listenerDelta.getRemovedItems()) {
+      resource.removeNameListener(this.nameListener);
     }
-    for (Resource resource : currentResources) {
-      if (!this.previousResources.contains(resource)) {
-        resource.addNameListener(this.nameListener);
-      }
+    for (Resource resource : listenerDelta.getAddedItems()) {
+      resource.addNameListener(this.nameListener);
     }
     this.previousResources = currentResources;
   }
@@ -159,34 +156,24 @@ public final class ResourceManagerComposite extends LazyOperationUnadornedDialog
 
   private void handleSelection(Resource nextValue) {
     boolean isSelected = nextValue != null;
-    String renameAndReplaceToolTipText;
-
-    String removeToolTipText;
-    boolean isReferenced;
+    boolean isReferenced = false;
     if (isSelected) {
-
       TableModel resourceTableModel = this.resourcesState.getSwingModel().getTableModel();
       ListSelectionModel listSelectionModel = this.resourcesState.getSwingModel().getListSelectionModel();
-
       isReferenced = (Boolean) resourceTableModel.getValueAt(listSelectionModel.getLeadSelectionIndex(), ResourceSingleSelectTableRowState.IS_REFERENCED_COLUMN_INDEX);
-      renameAndReplaceToolTipText = null;
-      if (isReferenced) {
-        removeToolTipText = this.findLocalizedText("referencedToolTip");
-      } else {
-        removeToolTipText = null;
-      }
-    } else {
-      isReferenced = false;
-      renameAndReplaceToolTipText = this.findLocalizedText("toolTip");
-      removeToolTipText = renameAndReplaceToolTipText;
     }
-    this.renameResourceComposite.getLaunchOperation().setEnabled(isSelected);
-    this.renameResourceComposite.getLaunchOperation().setToolTipText(renameAndReplaceToolTipText);
-    this.reloadContentOperation.setEnabled(isSelected);
-    this.reloadContentOperation.setToolTipText(renameAndReplaceToolTipText);
 
-    this.removeResourceOperation.setEnabled(isSelected && !isReferenced);
-    this.removeResourceOperation.setToolTipText(removeToolTipText);
+    ResourceManagerCompositeLogic.SelectionState selectionState = ResourceManagerCompositeLogic.createSelectionState(
+        isSelected,
+        isReferenced,
+        this.findLocalizedText("toolTip"),
+        this.findLocalizedText("referencedToolTip"));
+    this.renameResourceComposite.getLaunchOperation().setEnabled(selectionState.isRenameEnabled());
+    this.renameResourceComposite.getLaunchOperation().setToolTipText(selectionState.getRenameToolTipText());
+    this.reloadContentOperation.setEnabled(selectionState.isReloadEnabled());
+    this.reloadContentOperation.setToolTipText(selectionState.getReloadToolTipText());
+    this.removeResourceOperation.setEnabled(selectionState.isRemoveEnabled());
+    this.removeResourceOperation.setToolTipText(selectionState.getRemoveToolTipText());
   }
 
   private final ResourceListener resourceListener = new ResourceListener() {

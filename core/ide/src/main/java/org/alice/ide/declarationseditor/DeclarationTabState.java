@@ -43,9 +43,7 @@
 
 package org.alice.ide.declarationseditor;
 
-import edu.cmu.cs.dennisc.java.util.InitializingIfAbsentMap;
 import edu.cmu.cs.dennisc.java.util.Lists;
-import edu.cmu.cs.dennisc.java.util.Maps;
 import org.alice.ide.IDE;
 import org.alice.ide.croquet.codecs.typeeditor.DeclarationCompositeCodec;
 import org.alice.ide.icons.TabIcon;
@@ -94,69 +92,12 @@ public class DeclarationTabState extends MutableDataTabState<DeclarationComposit
     if (declarationComposite != null) {
       ListData<DeclarationComposite<?, ?>> data = this.getData();
       if (!data.contains(declarationComposite)) {
-        class TypeListPair {
-          private final NamedUserType type;
-          private final List<DeclarationComposite<?, ?>> list = Lists.newLinkedList();
-
-          public TypeListPair(NamedUserType type) {
-            this.type = type;
-          }
-
-          public void addDeclarationComposite(DeclarationComposite<?, ?> declarationComposite) {
-            if (declarationComposite instanceof TypeComposite) {
-              this.list.addFirst(declarationComposite);
-            } else {
-              this.list.add(declarationComposite);
-            }
-          }
-
-          public void update(List<DeclarationComposite<?, ?>> updatee, boolean isTypeRequired) {
-            if (isTypeRequired) {
-              TypeComposite typeComposite = TypeComposite.getInstance(this.type);
-              if (!this.list.contains(typeComposite)) {
-                updatee.add(typeComposite);
-              }
-            }
-            updatee.addAll(this.list);
-          }
-        }
-
-        InitializingIfAbsentMap<NamedUserType, TypeListPair> map = Maps.newInitializingIfAbsentHashMap();
-        List<TypeListPair> typeListPairs = Lists.newLinkedList();
-
-        List<DeclarationComposite<?, ?>> prevItems = Lists.newArrayList(data.toArray());
-        prevItems.add(declarationComposite);
-
-        List<DeclarationComposite<?, ?>> orphans = Lists.newLinkedList();
-        for (DeclarationComposite<?, ?> item : prevItems) {
-          if (item != null) {
-            NamedUserType namedUserType = (NamedUserType) item.getType();
-            if (namedUserType != null) {
-              TypeListPair typeListPair = map.get(namedUserType, TypeListPair::new);
-              typeListPair.addDeclarationComposite(item);
-              if (!typeListPairs.contains(typeListPair)) {
-                typeListPairs.add(typeListPair);
-              }
-            } else {
-              orphans.add(item);
-            }
-          }
-        }
-        List<DeclarationComposite<?, ?>> nextItems = Lists.newLinkedList();
-        boolean isTypeRequired = true; //typeListPairs.size() > 1;
-        boolean isSeparatorDesired = false;
-        for (TypeListPair typeListPair : typeListPairs) {
-          if (isSeparatorDesired) {
-            nextItems.add(null);
-          }
-          typeListPair.update(nextItems, isTypeRequired);
-          isSeparatorDesired = true;
-        }
-
-        if (!orphans.isEmpty()) {
-          nextItems.add(null);
-          nextItems.addAll(orphans);
-        }
+        List<DeclarationComposite<?, ?>> nextItems = DeclarationTabStateLogic.buildOrderedItems(
+            Lists.newArrayList(data.toArray()),
+            declarationComposite,
+            item -> (NamedUserType) item.getType(),
+            TypeComposite.class::isInstance,
+            TypeComposite::getInstance);
         data.internalSetAllItems(nextItems);
       }
     }
