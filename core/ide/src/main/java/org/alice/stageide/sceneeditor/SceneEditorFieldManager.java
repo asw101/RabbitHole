@@ -114,30 +114,25 @@ class SceneEditorFieldManager {
 
   void setSelectedInstance(InstanceFactory instanceFactory) {
     Expression expression = instanceFactory != null ? instanceFactory.createExpression() : null;
-    if (expression instanceof FieldAccess fa) {
+    SceneEditorFieldManagerLogic.SelectionRequest request = SceneEditorFieldManagerLogic.getSelectionRequest(expression, editor.getActiveSceneField() != null);
+    if ((request == SceneEditorFieldManagerLogic.SelectionRequest.FIELD) && (expression instanceof FieldAccess fa)) {
       AbstractField field = fa.field.getValue();
       if (field instanceof UserField uf) {
         FieldRegistry.SelectionPlan selectionPlan = this.fieldRegistry.createSelectionPlan(expression, editor.getActiveSceneField());
         assert selectionPlan.isFieldSelection();
         editor.setSelectedField(uf.getDeclaringType(), uf);
       }
-    } else if (expression instanceof MethodInvocation) {
+    } else if (request == SceneEditorFieldManagerLogic.SelectionRequest.EXPRESSION) {
       FieldRegistry.SelectionPlan selectionPlan = this.fieldRegistry.createSelectionPlan(expression, editor.getActiveSceneField());
       assert selectionPlan.isExpressionSelection();
       editor.setSelectedExpression(expression);
-    } else if (expression instanceof ArrayAccess) {
-      FieldRegistry.SelectionPlan selectionPlan = this.fieldRegistry.createSelectionPlan(expression, editor.getActiveSceneField());
-      assert selectionPlan.isExpressionSelection();
-      editor.setSelectedExpression(expression);
-    } else if (expression instanceof ThisExpression) {
+    } else if (request == SceneEditorFieldManagerLogic.SelectionRequest.ACTIVE_SCENE) {
       UserField uf = editor.getActiveSceneField();
-      if (uf != null) {
-        FieldRegistry.SelectionPlan selectionPlan = this.fieldRegistry.createSelectionPlan(expression, editor.getActiveSceneField());
-        assert selectionPlan.isFieldSelection();
-        editor.setSelectedField(uf.getDeclaringType(), uf);
-      } else {
-        return;
-      }
+      FieldRegistry.SelectionPlan selectionPlan = this.fieldRegistry.createSelectionPlan(expression, editor.getActiveSceneField());
+      assert selectionPlan.isFieldSelection();
+      editor.setSelectedField(uf.getDeclaringType(), uf);
+    } else if (request == SceneEditorFieldManagerLogic.SelectionRequest.NONE) {
+      return;
     }
     editor.getPropertyPanel().setSelectedInstance(instanceFactory);
   }
@@ -281,13 +276,13 @@ class SceneEditorFieldManager {
   // ── Rendering control ──────────────────────────────────────────────
 
   void enableRendering(ReasonToDisableSomeAmountOfRendering reasonToDisableSomeAmountOfRendering) {
-    if ((reasonToDisableSomeAmountOfRendering == ReasonToDisableSomeAmountOfRendering.MODAL_DIALOG_WITH_RENDER_WINDOW_OF_ITS_OWN) || (reasonToDisableSomeAmountOfRendering == ReasonToDisableSomeAmountOfRendering.CLICK_AND_CLACK)) {
+    if (SceneEditorFieldManagerLogic.shouldToggleRendering(reasonToDisableSomeAmountOfRendering)) {
       editor.onscreenRenderTarget.setRenderingEnabled(true);
     }
   }
 
   void disableRendering(ReasonToDisableSomeAmountOfRendering reasonToDisableSomeAmountOfRendering) {
-    if ((reasonToDisableSomeAmountOfRendering == ReasonToDisableSomeAmountOfRendering.MODAL_DIALOG_WITH_RENDER_WINDOW_OF_ITS_OWN) || (reasonToDisableSomeAmountOfRendering == ReasonToDisableSomeAmountOfRendering.CLICK_AND_CLACK)) {
+    if (SceneEditorFieldManagerLogic.shouldToggleRendering(reasonToDisableSomeAmountOfRendering)) {
       editor.onscreenRenderTarget.setRenderingEnabled(false);
     }
   }
@@ -312,10 +307,7 @@ class SceneEditorFieldManager {
 
   AffineMatrix4x4 getTransformForNewObjectMarker() {
     EntityImp selectedImp = editor.getImplementation(editor.getSelectedField());
-    if (selectedImp != null) {
-      return selectedImp.getAbsoluteTransformation();
-    }
-    return AffineMatrix4x4.IDENTITY;
+    return SceneEditorFieldManagerLogic.getTransformForNewObjectMarker(selectedImp != null ? selectedImp.getAbsoluteTransformation() : null);
   }
 
   Color getColorForNewObjectMarker() {

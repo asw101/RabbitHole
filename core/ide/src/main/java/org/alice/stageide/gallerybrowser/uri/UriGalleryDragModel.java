@@ -182,69 +182,13 @@ public final class UriGalleryDragModel extends ResourceGalleryDragModel {
   }
 
   private void appendStartIfNecessary(StringBuilder sb) {
-    if (sb.isEmpty()) {
-      sb.append("<html>");
-      File file = new File(this.uri);
-      if (file.exists()) {
-        sb.append("add from file: <strong>");
-        sb.append(file.getName());
-        sb.append("</strong><p><p>");
-      } else {
-        //todo
-      }
-    }
+    File file = new File(this.uri);
+    UriGalleryDragModelLogic.appendStartIfNecessary(sb, file.exists() ? file.getName() : null);
   }
 
   public String getTypeSummaryToolTipText() {
-    TypeSummary typeSummary = getTypeSummary();
-    if (typeSummary != null) {
-      StringBuilder sb = new StringBuilder();
-      List<String> procedureNames = typeSummary.getProcedureNames();
-      if (!procedureNames.isEmpty()) {
-        this.appendStartIfNecessary(sb);
-        sb.append("<em>procedures:</em><ul>");
-        for (String procedureName : procedureNames) {
-          sb.append("<li><strong>");
-          sb.append(procedureName);
-          sb.append("</strong>");
-        }
-        sb.append("</ul>");
-      }
-
-      List<FunctionInfo> functionInfos = typeSummary.getFunctionInfos();
-      if (!functionInfos.isEmpty()) {
-        this.appendStartIfNecessary(sb);
-        sb.append("<em>functions:</em><ul>");
-        for (FunctionInfo functionInfo : functionInfos) {
-          sb.append("<li>");
-          sb.append(functionInfo.getReturnClassName());
-          sb.append(" <strong>");
-          sb.append(functionInfo.getName());
-          sb.append("</strong>");
-        }
-        sb.append("</ul>");
-      }
-      List<FieldInfo> fieldInfos = typeSummary.getFieldInfos();
-      if (!fieldInfos.isEmpty()) {
-        this.appendStartIfNecessary(sb);
-        sb.append("<em>properties:</em><ul>");
-        for (FieldInfo fieldInfo : fieldInfos) {
-          sb.append("<li>");
-          sb.append(fieldInfo.getValueClassName());
-          sb.append(" <strong>");
-          sb.append(fieldInfo.getName());
-          sb.append("</strong>");
-        }
-        sb.append("</ul>");
-      }
-      if (sb.isEmpty()) {
-        sb.append("<html>nothing of note");
-      }
-      sb.append("</html>");
-      return sb.toString();
-    } else {
-      return "unknown";
-    }
+    File file = new File(this.uri);
+    return UriGalleryDragModelLogic.buildTypeSummaryToolTipText(getTypeSummary(), file.exists() ? file.getName() : null);
   }
 
   @Override
@@ -253,31 +197,23 @@ public final class UriGalleryDragModel extends ResourceGalleryDragModel {
     String typeName = typeSummary != null ? typeSummary.getTypeName() : "???";
 
     InstanceCreatorKey resourceKey = this.getResourceKey();
-    if (resourceKey != null) {
-      Class<?> modelResourceCls = resourceKey.getModelResourceCls();
-      if ((modelResourceCls != null) && modelResourceCls.isInterface()) {
-        this.text = typeName;
-      } else {
-        this.text = resourceKey.getLocalizedCreationText();
-      }
-    } else {
-      Formatter formatter = FormatterState.getInstance().getValue();
-      this.text = formatter.getNewFormat().formatted(typeName, "");
+    Formatter formatter = FormatterState.getInstance().getValue();
+    String fallbackText = formatter.getNewFormat().formatted(typeName, "");
+    File file = new File(this.uri);
+    String fileName = file.exists() ? file.getName() : null;
+    String baseName = file.exists() ? FileUtilities.getBaseName(file) : null;
+    String fromFormat = ResourceBundleUtilities.getStringForKey("MembersToolPalette.fromImportHeader", MembersToolPalette.class);
+    fromFormat = fromFormat.replaceFirst(":", "");
+    if (fileName != null) {
+      fromFormat = fromFormat.replaceFirst("</filename/>", fileName);
     }
-
-    if (typeName != null) {
-      File file = new File(this.uri);
-      if (file.exists()) {
-        String baseName = FileUtilities.getBaseName(file);
-        if (!typeName.contentEquals(baseName)) {
-          // Use existing l18n string and remove trailing :
-          String fromFormat = ResourceBundleUtilities.getStringForKey("MembersToolPalette.fromImportHeader", MembersToolPalette.class);
-          fromFormat = fromFormat.replaceFirst(":", "");
-          fromFormat = fromFormat.replaceFirst("</filename/>", file.getName());
-          this.text = "<html>" + this.text + " <em>" + fromFormat + "</em></html>";
-        }
-      }
-    }
+    this.text = UriGalleryDragModelLogic.createLocalizedText(typeName,
+        resourceKey != null ? resourceKey.getLocalizedCreationText() : null,
+        (resourceKey != null) && (resourceKey.getModelResourceCls() != null) && resourceKey.getModelResourceCls().isInterface(),
+        fallbackText,
+        fileName,
+        baseName,
+        fromFormat);
   }
 
   @Override

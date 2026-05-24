@@ -93,7 +93,6 @@ import org.lgna.story.STurnable;
 import org.lgna.story.SVRHand;
 import org.lgna.story.SVRHeadset;
 import org.lgna.story.SVRUser;
-import org.lgna.story.Scale;
 import org.lgna.story.SetOrientationRelativeToVehicle;
 import org.lgna.story.SetPaint;
 import org.lgna.story.SetPositionRelativeToVehicle;
@@ -126,7 +125,7 @@ public class SetUpMethodGenerator {
   }
 
   private static Expression createInstanceExpression(boolean isThis, AbstractField field) {
-    return isThis ? new ThisExpression() : new FieldAccess(field);
+    return SetUpMethodGeneratorLogic.createInstanceExpression(isThis, field);
   }
 
   private static ExpressionStatement createStatement(Class<?> declarationCls, String methodName, Class<?>[] parameterClses, Expression instanceExpression, Expression... argumentExpressions) {
@@ -405,20 +404,12 @@ public class SetUpMethodGenerator {
           }
         }
         if (instance instanceof Resizable resizable) {
-          if (instance instanceof SBox) {
+          boolean shouldCreateSizeStatement = SetUpMethodGeneratorLogic.shouldCreateSizeStatement(instance instanceof SBox, resizable.getScale());
+          if (shouldCreateSizeStatement) {
             try {
               statements.add(createStatement(Resizable.class, "setSize", new Class<?>[] {Size.class, SetSize.Detail[].class}, createInstanceExpression(isThis, field), getExpressionCreator().createExpression(resizable.getSize())));
             } catch (ExpressionCreator.CannotCreateExpressionException ccee) {
               throw new RuntimeException(ccee);
-            }
-          } else {
-            Scale scale = resizable.getScale();
-            if (!Scale.IDENTITY.equals(scale)) {
-              try {
-                statements.add(createStatement(Resizable.class, "setSize", new Class<?>[] {Size.class, SetSize.Detail[].class}, createInstanceExpression(isThis, field), getExpressionCreator().createExpression(resizable.getSize())));
-              } catch (ExpressionCreator.CannotCreateExpressionException ccee) {
-                throw new RuntimeException(ccee);
-              }
             }
           }
         }

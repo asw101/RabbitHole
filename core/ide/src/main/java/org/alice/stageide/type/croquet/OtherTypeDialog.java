@@ -43,7 +43,6 @@
 package org.alice.stageide.type.croquet;
 
 import edu.cmu.cs.dennisc.java.util.InitializingIfAbsentMap;
-import edu.cmu.cs.dennisc.java.util.Lists;
 import edu.cmu.cs.dennisc.java.util.Maps;
 import org.alice.ide.ProjectStack;
 import org.alice.stageide.type.croquet.data.SceneFieldListData;
@@ -58,7 +57,6 @@ import org.lgna.croquet.simple.SimpleApplication;
 import org.lgna.croquet.triggers.NullTrigger;
 import org.lgna.croquet.views.Panel;
 import org.lgna.project.Project;
-import org.lgna.project.annotations.Visibility;
 import org.lgna.project.ast.*;
 import org.lgna.project.io.IoUtilities;
 import org.lgna.story.SModel;
@@ -123,12 +121,7 @@ public class OtherTypeDialog extends ValueCreatorInputDialogCoreComposite<Panel,
 
     @Override
     public String getText() {
-      StringBuilder sb = new StringBuilder();
-      sb.append("Select class assignable to ");
-      if (rootFilterType != null) {
-        sb.append(rootFilterType.getName());
-      }
-      return sb.toString();
+      return OtherTypeDialogLogic.getNotAssignableErrorText(rootFilterType);
     }
   };
 
@@ -144,15 +137,7 @@ public class OtherTypeDialog extends ValueCreatorInputDialogCoreComposite<Panel,
     @Override
     public void valueChanged(ValueEvent<List<UserField>> e) {
       List<UserField> fields = e.getNextValue();
-      TypeNode sharedNode = null;
-      for (UserField field : fields) {
-        TypeNode typeNode = typeNodeMap.get(field.getValueType());
-        if (sharedNode != null) {
-          sharedNode = (TypeNode) sharedNode.getSharedAncestor(typeNode);
-        } else {
-          sharedNode = typeNode;
-        }
-      }
+      TypeNode sharedNode = OtherTypeDialogLogic.getSharedTypeNode(fields, typeNodeMap);
       isInTheMidstOfLowestCommonAncestorSetting = true;
       try {
         typeTreeState.setValueTransactionlessly(sharedNode);
@@ -212,17 +197,10 @@ public class OtherTypeDialog extends ValueCreatorInputDialogCoreComposite<Panel,
   @Override
   protected Status getStatusPreRejectorCheck() {
     TypeNode typeNode = this.typeTreeState.getValue();
-    if (typeNode != null) {
-      AbstractType<?, ?, ?> type = typeNode.getType();
-      //todo assert this.rootFilterType != null;
-      if ((this.rootFilterType == null) || this.rootFilterType.isAssignableFrom(type)) {
-        return IS_GOOD_TO_GO_STATUS;
-      } else {
-        return this.notAssignableError;
-      }
-    } else {
+    if (typeNode == null) {
       return this.noSelectionError;
     }
+    return OtherTypeDialogLogic.isSelectionAssignable(this.rootFilterType, typeNode) ? IS_GOOD_TO_GO_STATUS : this.notAssignableError;
   }
 
   private TypeNode build(AbstractType<?, ?, ?> type) {
@@ -288,128 +266,21 @@ public class OtherTypeDialog extends ValueCreatorInputDialogCoreComposite<Panel,
   }
 
   private static boolean isInclusionDesired(AbstractMember member) {
-    if (member instanceof AbstractMethod method) {
-      if (method.isStatic()) {
-        return false;
-      }
-    } else if (member instanceof AbstractField field) {
-      if (field.isStatic()) {
-        return false;
-      }
-    }
-    if (member.isPublicAccess() || member.isUserAuthored()) {
-      Visibility visibility = member.getVisibility();
-      return (visibility == null) || visibility.equals(Visibility.PRIME_TIME);
-    } else {
-      return false;
-    }
+    return OtherTypeDialogLogic.isInclusionDesired(member);
   }
 
   private static void appendMembers(StringBuilder sb, AbstractType<?, ?, ?> type, boolean isSelected) {
-    if (isSelected) {
-      sb.append("<h2>");
-    } else {
-      sb.append("<h2>");
-    }
-    sb.append("class ");
-    sb.append(type.getName());
-    if (isSelected) {
-      sb.append("</h2>");
-    } else {
-      sb.append(" <em>(inherit)</em></h2>");
-    }
-
-    List<? extends AbstractMethod> methods = type.getDeclaredMethods();
-
-    boolean isFirst = true;
-    for (AbstractMethod method : methods) {
-      if (isInclusionDesired(method)) {
-        if (method.isProcedure()) {
-          if (isFirst) {
-            sb.append("<em>procedures</em>");
-            sb.append("<ul>");
-            isFirst = false;
-          }
-          sb.append("<li>");
-          sb.append(method.getName());
-          sb.append("</li>");
-        }
-      }
-    }
-    if (!isFirst) {
-      sb.append("</ul>");
-    }
-    isFirst = true;
-    for (AbstractMethod method : methods) {
-      if (isInclusionDesired(method)) {
-        if (method.isFunction()) {
-          if (isFirst) {
-            sb.append("<em>functions</em>");
-            sb.append("<ul>");
-            isFirst = false;
-          }
-          sb.append("<li>");
-          sb.append(method.getName());
-          sb.append("</li>");
-        }
-      }
-    }
-    if (!isFirst) {
-      sb.append("</ul>");
-    }
-
-    isFirst = true;
-    for (AbstractField field : type.getDeclaredFields()) {
-      if (isInclusionDesired(field)) {
-        if (isFirst) {
-          sb.append("<em>properties</em>");
-          sb.append("<ul>");
-          isFirst = false;
-        }
-        sb.append("<li>");
-        sb.append(field.getName());
-        sb.append("</li>");
-      }
-    }
-    if (!isFirst) {
-      sb.append("</ul>");
-    }
-
-    if (type.isFollowToSuperClassDesired()) {
-      appendMembers(sb, type.getSuperType(), false);
-    }
+    OtherTypeDialogLogic.appendMembers(sb, type, isSelected);
   }
 
   private void handleTypeChange(AbstractType<?, ?, ?> type) {
-    StringBuilder sb = new StringBuilder();
-    sb.append("<html>");
-    sb.append("<body bgcolor=\"#FFFFFF\">");
-    if (type != null) {
-      appendMembers(sb, type, true);
-    } else {
-      sb.append("<em>no class selected</em>");
-    }
-    sb.append("</body>");
-    sb.append("</html>");
-    descriptionText.setText(sb.toString());
+    descriptionText.setText(OtherTypeDialogLogic.createDescriptionHtml(type));
 
     ListData<UserField> data = sceneFieldsState.getData();
 
     this.getView().repaint();
     if (!this.isInTheMidstOfLowestCommonAncestorSetting) {
-      List<UserField> fields = Lists.newLinkedList();
-      if (type != null) {
-        synchronized (data) {
-          final int N = data.getItemCount();
-          for (int i = 0; i < N; i++) {
-            UserField item = data.getItemAt(i);
-            if (type.isAssignableFrom(item.getValueType())) {
-              fields.add(item);
-            }
-          }
-        }
-      }
-      this.sceneFieldsState.setValue(fields);
+      this.sceneFieldsState.setValue(OtherTypeDialogLogic.filterAssignableFields(type, data));
     }
   }
 

@@ -44,7 +44,6 @@
 package org.alice.stageide.properties.uicontroller;
 
 import edu.cmu.cs.dennisc.java.util.logging.Logger;
-import edu.cmu.cs.dennisc.scenegraph.scale.Resizer;
 import org.alice.ide.properties.adapter.AbstractPropertyAdapter;
 import org.alice.ide.properties.adapter.croquet.ModelSizePropertyValueOperation;
 import org.alice.ide.properties.uicontroller.AbstractAdapterController;
@@ -204,45 +203,14 @@ public class ModelSizePropertyController extends AbstractAdapterController<Dimen
     hasLinkXY = false;
     hasLinkXZ = false;
     hasLinkYZ = false;
-    boolean hasX = false;
-    boolean hasY = false;
-    boolean hasZ = false;
-    boolean hasIndependentX = false;
-    boolean hasIndependentY = false;
-    boolean hasIndependentZ = false;
-
-    if ((this.propertyAdapter != null) && (this.propertyAdapter.getInstance() != null)) {
-      ModelImp baseModel = (ModelImp) this.propertyAdapter.getInstance();
-      for (Resizer r : baseModel.getResizers()) {
-        if (r == Resizer.UNIFORM) {
-          hasLinkAll = true;
-          hasX = true;
-          hasY = true;
-          hasZ = true;
-        } else if (r == Resizer.XY_PLANE) {
-          hasLinkXY = true;
-          hasX = true;
-          hasY = true;
-        } else if (r == Resizer.XZ_PLANE) {
-          hasLinkXZ = true;
-          hasX = true;
-          hasZ = true;
-        } else if (r == Resizer.YZ_PLANE) {
-          hasLinkYZ = true;
-          hasY = true;
-          hasZ = true;
-        } else if (r == Resizer.X_AXIS) {
-          hasX = true;
-          hasIndependentX = true;
-        } else if (r == Resizer.Y_AXIS) {
-          hasY = true;
-          hasIndependentY = true;
-        } else if (r == Resizer.Z_AXIS) {
-          hasZ = true;
-          hasIndependentZ = true;
-        }
-      }
-    }
+    ModelSizePropertyControllerLogic.ResizerConfiguration configuration = ModelSizePropertyControllerLogic.analyzeResizers(
+        (this.propertyAdapter != null) && (this.propertyAdapter.getInstance() != null)
+            ? java.util.Arrays.asList(((ModelImp) this.propertyAdapter.getInstance()).getResizers())
+            : java.util.Collections.emptyList());
+    hasLinkAll = configuration.hasLinkAll;
+    hasLinkXY = configuration.hasLinkXY;
+    hasLinkXZ = configuration.hasLinkXZ;
+    hasLinkYZ = configuration.hasLinkYZ;
 
     if (hasLinkAll) {
       this.addComponent(this.linkAllButton, gbc(SCALE_ALL_X_POS, 0, 3, GridBagConstraints.WEST, INSETS_2));
@@ -258,28 +226,24 @@ public class ModelSizePropertyController extends AbstractAdapterController<Dimen
     }
     isUpdatingState = true;
 
-    widthField.setEnabled(hasX);
-    widthField.setEditable(hasX);
-    heightField.setEnabled(hasY);
-    heightField.setEditable(hasY);
-    depthField.setEnabled(hasZ);
-    depthField.setEditable(hasZ);
+    widthField.setEnabled(configuration.hasX);
+    widthField.setEditable(configuration.hasX);
+    heightField.setEnabled(configuration.hasY);
+    heightField.setEditable(configuration.hasY);
+    depthField.setEnabled(configuration.hasZ);
+    depthField.setEditable(configuration.hasZ);
 
     IsAllScaleLinkedState.getInstance().setValueTransactionlessly(hasLinkAll);
-    boolean enableLinkAll = (hasIndependentX && hasLinkYZ) || (hasIndependentY && hasLinkXZ) || (hasIndependentZ && hasLinkXY) || (hasIndependentX && hasIndependentY && hasIndependentZ);
-    IsAllScaleLinkedState.getInstance().setEnabled(enableLinkAll);
+    IsAllScaleLinkedState.getInstance().setEnabled(configuration.enableLinkAll);
 
-    boolean enableXYLink = hasIndependentX && hasIndependentY;
-    IsXYScaleLinkedState.getInstance().setEnabled(enableXYLink);
-    IsXYScaleLinkedState.getInstance().setValueTransactionlessly(hasLinkXY && (!hasLinkAll || !enableXYLink));
+    IsXYScaleLinkedState.getInstance().setEnabled(configuration.enableLinkXY);
+    IsXYScaleLinkedState.getInstance().setValueTransactionlessly(configuration.initialXyValue());
 
-    boolean enableXZLink = hasIndependentX && hasIndependentZ;
-    IsXZScaleLinkedState.getInstance().setEnabled(enableXZLink);
-    IsXZScaleLinkedState.getInstance().setValueTransactionlessly(hasLinkXZ && (!hasLinkAll || !enableXZLink));
+    IsXZScaleLinkedState.getInstance().setEnabled(configuration.enableLinkXZ);
+    IsXZScaleLinkedState.getInstance().setValueTransactionlessly(configuration.initialXzValue());
 
-    boolean enableYZLink = hasIndependentY && hasIndependentZ;
-    IsYZScaleLinkedState.getInstance().setEnabled(enableYZLink);
-    IsYZScaleLinkedState.getInstance().setValueTransactionlessly(hasLinkYZ && (!hasLinkAll || !enableYZLink));
+    IsYZScaleLinkedState.getInstance().setEnabled(configuration.enableLinkYZ);
+    IsYZScaleLinkedState.getInstance().setValueTransactionlessly(configuration.initialYzValue());
 
     isUpdatingState = false;
     setResetButton();
@@ -338,44 +302,23 @@ public class ModelSizePropertyController extends AbstractAdapterController<Dimen
     if (Double.isNaN(desiredWidth) || Double.isNaN(desiredHeight) || Double.isNaN(desiredDepth)) {
       return null;
     }
-    double width = desiredWidth;
-    double height = desiredHeight;
-    double depth = desiredDepth;
-    if (source != null) {
-      Dimension3 size = this.getModelSize();
-      if (source == widthField) {
-        double relativeXScale = width / size.x();
-        if (IsAllScaleLinkedState.getInstance().getValue()) {
-          height = relativeXScale * size.y();
-          depth = relativeXScale * size.z();
-        } else if (IsXYScaleLinkedState.getInstance().getValue()) {
-          height = relativeXScale * size.y();
-        } else if (IsXZScaleLinkedState.getInstance().getValue()) {
-          depth = relativeXScale * size.z();
-        }
-      } else if (source == heightField) {
-        double relativeYScale = height / size.y();
-        if (IsAllScaleLinkedState.getInstance().getValue()) {
-          width = relativeYScale * size.x();
-          depth = relativeYScale * size.z();
-        } else if (IsXYScaleLinkedState.getInstance().getValue()) {
-          width = relativeYScale * size.x();
-        } else if (IsYZScaleLinkedState.getInstance().getValue()) {
-          depth = relativeYScale * size.z();
-        }
-      } else if (source == depthField) {
-        double relativeZScale = depth / size.z();
-        if (IsAllScaleLinkedState.getInstance().getValue()) {
-          width = relativeZScale * size.x();
-          height = relativeZScale * size.y();
-        } else if (IsXZScaleLinkedState.getInstance().getValue()) {
-          width = relativeZScale * size.x();
-        } else if (IsYZScaleLinkedState.getInstance().getValue()) {
-          height = relativeZScale * size.y();
-        }
-      }
+    ModelSizePropertyControllerLogic.SourceAxis sourceAxis = ModelSizePropertyControllerLogic.SourceAxis.NONE;
+    if (source == widthField) {
+      sourceAxis = ModelSizePropertyControllerLogic.SourceAxis.WIDTH;
+    } else if (source == heightField) {
+      sourceAxis = ModelSizePropertyControllerLogic.SourceAxis.HEIGHT;
+    } else if (source == depthField) {
+      sourceAxis = ModelSizePropertyControllerLogic.SourceAxis.DEPTH;
     }
-    return new Dimension3(width, height, depth);
+    Dimension3 desiredSize = new Dimension3(desiredWidth, desiredHeight, desiredDepth);
+    if (sourceAxis == ModelSizePropertyControllerLogic.SourceAxis.NONE) {
+      return desiredSize;
+    }
+    return ModelSizePropertyControllerLogic.computeSizeFromUi(desiredSize, this.getModelSize(), sourceAxis,
+        IsAllScaleLinkedState.getInstance().getValue(),
+        IsXYScaleLinkedState.getInstance().getValue(),
+        IsXZScaleLinkedState.getInstance().getValue(),
+        IsYZScaleLinkedState.getInstance().getValue());
   }
 
   private void updateUIFromLinkState(State<Boolean> state, Boolean prevValue, Boolean nextValue) {
@@ -424,9 +367,7 @@ public class ModelSizePropertyController extends AbstractAdapterController<Dimen
     if (newScale.hasNegativeComponents()) {
       String modelName = this.propertyAdapter.getInstance().getClass().getSimpleName();
       Logger.outln("Restricting size for " + modelName + " to a near-zero non-negative value");
-      Dimension3 oldScale = propertyAdapter.getValue();
-      double maxDim = Math.max(oldScale.x(), Math.max(oldScale.y(), oldScale.z()));
-      newScale = oldScale.times(0.01 / maxDim);
+      newScale = ModelSizePropertyControllerLogic.clampNegativeScale(propertyAdapter.getValue(), newScale);
     }
     Operation operation = new ModelSizePropertyValueOperation(this.propertyAdapter, newScale);
     operation.fire(ActionEventTrigger.createUserActivity(e));

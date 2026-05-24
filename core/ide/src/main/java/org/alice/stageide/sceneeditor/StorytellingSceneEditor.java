@@ -237,10 +237,7 @@ public class StorytellingSceneEditor extends AbstractSceneEditor {
   }
 
   private boolean isSelectableType(AbstractType<?, ?, ?> valueType) {
-    return !valueType.isAssignableFrom(SThingMarker.class)
-            && !valueType.isAssignableFrom(SCameraMarker.class)
-            && !valueType.isAssignableFrom(SVRHand.class)
-            && !valueType.isAssignableFrom(SVRHeadset.class);
+    return StorytellingSceneEditorLogic.isSelectableType(valueType);
   }
 
   public boolean isVrActive() {
@@ -278,13 +275,12 @@ public class StorytellingSceneEditor extends AbstractSceneEditor {
       if (this.runButton != null) {
         this.lookingGlassPanel.setNorthEastComponent(this.runButton);
       }
-      if (isExpanded) {
+      StorytellingSceneEditorLogic.ExpandContractPlan plan = StorytellingSceneEditorLogic.createExpandContractPlan(isExpanded);
+      if (plan.showSelectionPanel) {
         this.lookingGlassPanel.setNorthWestComponent(this.instanceFactorySelectionPanel);
         this.lookingGlassPanel.setSouthEastComponent(this.contractButton);
-
         this.lookingGlassPanel.setSouthComponent(this.mainCameraNavigatorWidget);
-
-        if (this.savedSceneEditorViewSelection != null) {
+        if (plan.restoreSavedSelection && (this.savedSceneEditorViewSelection != null)) {
           this.mainCameraMarkerList.setValueTransactionlessly(this.savedSceneEditorViewSelection);
         }
       } else {
@@ -293,7 +289,7 @@ public class StorytellingSceneEditor extends AbstractSceneEditor {
         this.lookingGlassPanel.setSouthComponent(null);
 
         this.savedSceneEditorViewSelection = this.mainCameraMarkerList.getValue();
-        this.mainCameraMarkerList.setValueTransactionlessly(CameraOption.STARTING_CAMERA_VIEW);
+        this.mainCameraMarkerList.setValueTransactionlessly(plan.forcedSelection);
       }
       this.mainCameraViewSelector.setVisible(isExpanded);
     }
@@ -376,7 +372,7 @@ public class StorytellingSceneEditor extends AbstractSceneEditor {
     EntityImp fieldImp = getImplementation(field);
     AffineMatrix4x4 originalTransform = fieldImp.getAbsoluteTransformation();
     super.setFieldToState(field, statements);
-    if ((fieldImp == movableSceneCameraImp) && (mainCameraMarkerList.getValue() != CameraOption.STARTING_CAMERA_VIEW)) {
+    if (StorytellingSceneEditorLogic.shouldRestoreSceneCameraTransform(fieldImp == movableSceneCameraImp, mainCameraMarkerList.getValue())) {
       movableSceneCameraImp.setTransformation(movableSceneCameraImp.getScene(), originalTransform);
     }
   }
