@@ -57,8 +57,8 @@ import java.awt.geom.Rectangle2D;
  * @author Dennis Cosgrove
  */
 public class TypeIcon implements Icon {
-  private static final int INDENT_PER_DEPTH = 12;
-  private static final int BONUS_GAP = 4;
+  private static final int INDENT_PER_DEPTH = TypeIconLayout.INDENT_PER_DEPTH;
+  private static final int BONUS_GAP = TypeIconLayout.BONUS_GAP;
   private final AbstractType<?, ?, ?> type;
   private final TypeBorder border;
   private final boolean isIndentForDepthAndMemberCountTextDesired;
@@ -103,16 +103,7 @@ public class TypeIcon implements Icon {
   }
 
   private String getBonusText() {
-    if (!isIndentForDepthAndMemberCountTextDesired || !(this.type instanceof NamedUserType userType)) {
-      return null;
-    }
-    int count = userType.fields.size();
-    for (UserMethod method : userType.methods) {
-      if (method.getManagementLevel() == ManagementLevel.NONE) {
-        count += 1;
-      }
-    }
-    return count > 0 ? "(%d)".formatted(count) : null;
+    return TypeIconLayout.getBonusText(this.type, isIndentForDepthAndMemberCountTextDesired);
   }
 
   private static Rectangle2D getTextBounds(String text, Font font) {
@@ -156,15 +147,9 @@ public class TypeIcon implements Icon {
   }
 
   private int getExtraWidth() {
-    if (!isIndentForDepthAndMemberCountTextDesired) {
-      return 0;
-    }
-    int extra = BONUS_GAP + (int) getBonusTextBounds().getWidth();
+    int bonusTextWidth = (int) getBonusTextBounds().getWidth();
     int depth = StaticAnalysisUtilities.getUserTypeDepth(type);
-    if (depth > 0) {
-      extra += (depth * INDENT_PER_DEPTH);
-    }
-    return extra;
+    return TypeIconLayout.calculateExtraWidth(isIndentForDepthAndMemberCountTextDesired, bonusTextWidth, depth);
   }
 
   @Override

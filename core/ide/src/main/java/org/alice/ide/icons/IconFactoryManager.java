@@ -104,9 +104,8 @@ public class IconFactoryManager {
     public final IconFactory createIconFactory() {
       Class<? extends ModelResource> cls = this.getModelResourceClass();
       String modelResourceName = this.getModelResourceName();
-      if (modelResourceName == null && setOfClassesWithIcons.contains(cls)) {
-        String sb = "images/resources/" + cls.getSimpleName() + ".svg";
-        return new SVGIconFactory(Icons.class.getResource(sb));
+      if (IconFactoryManagerLogic.shouldUseBundledSvgIcon(cls, modelResourceName, setOfClassesWithIcons)) {
+        return new SVGIconFactory(Icons.class.getResource(IconFactoryManagerLogic.getBundledSvgPath(cls)));
       }
       return createIconFactoryFromUrl(cls != null ? getThumbnailUrl() : null);
     }

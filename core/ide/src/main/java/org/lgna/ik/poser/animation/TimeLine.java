@@ -135,12 +135,7 @@ public class TimeLine {
   }
 
   public void setCurrentTime(double currentTime) {
-    if (currentTime > endTime) {
-      currentTime = endTime;
-    }
-    if (currentTime < 0) {
-      currentTime = 0;
-    }
+    currentTime = TimeLineMath.clampCurrentTime(currentTime, endTime);
     this.currentTime = currentTime;
     fireCurrentTimeChanged(currentTime);
     fireSelectedKeyFrameChanged(getFrameForCurrentTime());
@@ -261,17 +256,9 @@ public class TimeLine {
   }
 
   private Pose<?> calculatePoseForTime(double desiredTime) {
-    KeyFrameData before = null;
-    KeyFrameData after = null;
-
-    for (KeyFrameData data : datas) {
-      if (desiredTime >= data.getEventTime()) {
-        before = data;
-      } else {
-        after = data;
-        break;
-      }
-    }
+    TimeLineMath.KeyFrameWindow window = TimeLineMath.findKeyFrameWindow(datas, desiredTime);
+    KeyFrameData before = window.getBefore();
+    KeyFrameData after = window.getAfter();
 
     if ((before == null) && (after == null)) {
       return null;
@@ -316,7 +303,7 @@ public class TimeLine {
       }
     }
     double prevTime = key1 != null ? key1.getEventTime() : 0;
-    double k = (targetTime - prevTime) / (key2.getEventTime() - prevTime);
+    double k = TimeLineMath.calculateInterpolationPortion(prevTime, key2.getEventTime(), targetTime);
     List<JointIdTransformationPair> builderList = Lists.newArrayList();
     for (JointId joint : map.keySet()) {
       UnitQuaternion interpolatedQuaternion = map.get(joint).getStartQuaternion().interpolate(map.get(joint).getEndQuaternion(), k);

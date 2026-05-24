@@ -219,10 +219,7 @@ public class JointedModelIkEnforcer extends IkEnforcer {
         Vector3 errorVector = desiredPosition.minus(eePosition);
 
         //calculate the desired velocity
-        if (errorVector.magnitudeSquared() > (maxLinearSpeedForEe * maxLinearSpeedForEe)) {
-          errorVector = errorVector.normalized().times(maxLinearSpeedForEe);
-        }
-        eeLinearVelocityToUse = errorVector;
+        eeLinearVelocityToUse = IkEnforcerMath.clampToMagnitude(errorVector, maxLinearSpeedForEe);
       }
 
       //set the desired ee velocity
@@ -256,13 +253,7 @@ public class JointedModelIkEnforcer extends IkEnforcer {
         Vector3 errorAngularDistance = diffAxisRotation.axis().times(diffAxisRotation.angle().getAsRadians());
 
         //not going to use it directly because is likely to be too fast (linear is bad approximation for large steps)
-
-        if (errorAngularDistance.magnitude() > maxAngularSpeedForEe) {
-          errorAngularDistance = errorAngularDistance.normalized();
-          eeAngularVelocityToUse = errorAngularDistance.times(maxAngularSpeedForEe);
-        } else {
-          eeAngularVelocityToUse = errorAngularDistance;
-        }
+        eeAngularVelocityToUse = IkEnforcerMath.clampToMagnitude(errorAngularDistance, maxAngularSpeedForEe);
       }
 
       //set the desired ee velocity
@@ -292,15 +283,11 @@ public class JointedModelIkEnforcer extends IkEnforcer {
       JacobianAndInverse jacobianAndInverse = solver.prepareAndCalculateJacobianAndInverse();
 
       //should calculate the error of the jacobian for the time left
-      double error = solver.calculatePseudoInverseErrorForTime(jacobianAndInverse, deltaTimeAttemptingToAdvance);
-      //while the error is too much, half the time and recalculate
-      //      System.out.println("initerror: " + error);
-      while ((Math.abs(error) > maxPseudoInverseErrorBeforeHalvingDeltaTime) && ((deltaTimeAttemptingToAdvance * .5) > minDeltaTime)) {
-        //        System.out.println("error: " + error + " abserror: "+ Math.abs(error) + " maxerror: " + maxPseudoInverseErrorBeforeHalvingDeltaTime);
-        //        System.out.println("scaled down " + (Math.abs(error) > maxPseudoInverseErrorBeforeHalvingDeltaTime) + " " + (Math.abs(error) - maxPseudoInverseErrorBeforeHalvingDeltaTime));
-        deltaTimeAttemptingToAdvance *= .5;
-        error = solver.calculatePseudoInverseErrorForTime(jacobianAndInverse, deltaTimeAttemptingToAdvance);
-      }
+      deltaTimeAttemptingToAdvance = IkEnforcerMath.reduceDeltaTimeForError(
+          deltaTimeAttemptingToAdvance,
+          minDeltaTime,
+          maxPseudoInverseErrorBeforeHalvingDeltaTime,
+          dt -> solver.calculatePseudoInverseErrorForTime(jacobianAndInverse, dt));
 
       //move the joints for that time
       Map<Bone, Map<Axis, Double>> jointSpeedsToUse = solver.calculateAngleSpeeds(jacobianAndInverse);
@@ -387,7 +374,7 @@ public class JointedModelIkEnforcer extends IkEnforcer {
           //          System.out.println( "ea: " + ea );
           //          System.out.println( "ea.key: " + ea.getKey() );
           //          System.out.println( "speed: " + speed );
-          Vector3 contribution = axis.getLocalAxis().times(deltaTime * speed * weight);
+          Vector3 contribution = IkEnforcerMath.computeWeightedAxisContribution(axis.getLocalAxis(), deltaTime, speed, weight);
           //          System.out.println( "cumulativeAxisAngle: " + cumulativeAxisAngle );
           //          System.out.println( "contribution: " + contribution );
           cumulativeAxisAngle = cumulativeAxisAngle.plus(contribution);

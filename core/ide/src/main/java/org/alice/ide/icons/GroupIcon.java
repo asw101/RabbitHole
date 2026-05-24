@@ -86,39 +86,13 @@ public class GroupIcon extends ShapeIcon {
 
   public GroupIcon(Dimension size, List<? extends AbstractSingleSourceImageIconFactory> iconFactories) {
     super(size);
-    if (size.width > 64) {
-      int subWidth = (2 * size.width) / 3;
-      int subHeight = (2 * size.height) / 3;
-      Dimension subSize = new Dimension(subWidth, subHeight);
+    if (GroupIconLayout.shouldRenderComposite(size.width)) {
+      GroupIconLayout.Layout layout = GroupIconLayout.createLayout(iconFactories.size());
       for (int i = 0; i < iconFactories.size(); i++) {
-        this.icons[i] = iconFactories.get(i).getSourceImageIcon();
+        int slot = layout.getSlotForSourceIndex(i);
+        this.icons[slot] = iconFactories.get(i).getSourceImageIcon();
       }
-      switch (iconFactories.size()) {
-        case 0:
-          this.drawOrder = new int[] {};
-          break;
-        case 1:
-          this.drawOrder = new int[] {2};
-          this.icons[2] = this.icons[0];
-          break;
-        case 2:
-          this.drawOrder = new int[] {1, 3};
-          this.icons[3] = this.icons[1];
-          this.icons[1] = this.icons[0];
-          break;
-        case 3:
-          this.drawOrder = new int[] {0, 4, 2};
-          this.icons[4] = this.icons[2];
-          this.icons[2] = this.icons[1];
-          break;
-        case 4:
-          this.drawOrder = new int[] {0, 4, 1, 3};
-          this.icons[4] = this.icons[3];
-          this.icons[3] = this.icons[2];
-          break;
-        default:
-          this.drawOrder = new int[] {0, 4, 1, 3, 2};
-      }
+      this.drawOrder = layout.getDrawOrder();
     } else {
       this.drawOrder = new int[] {};
     }

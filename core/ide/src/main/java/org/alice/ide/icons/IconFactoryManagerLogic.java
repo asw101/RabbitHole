@@ -4,6 +4,10 @@ import org.lgna.project.ast.AbstractType;
 import org.lgna.project.ast.Expression;
 import org.lgna.project.ast.InstanceCreation;
 import org.lgna.story.Visual;
+import org.lgna.story.resources.JointedModelResource;
+import org.lgna.story.resources.ModelResource;
+
+import java.util.Set;
 
 final class IconFactoryManagerLogic {
   private IconFactoryManagerLogic() {
@@ -19,5 +23,13 @@ final class IconFactoryManagerLogic {
 
   static boolean shouldUseDynamicFieldIcon(AbstractType<?, ?, ?> type) {
     return type.isAssignableTo(Visual.class);
+  }
+
+  static boolean shouldUseBundledSvgIcon(Class<? extends ModelResource> resourceClass, String modelResourceName, Set<Class<? extends JointedModelResource>> classesWithIcons) {
+    return (resourceClass != null) && (modelResourceName == null) && classesWithIcons.contains(resourceClass);
+  }
+
+  static String getBundledSvgPath(Class<? extends ModelResource> resourceClass) {
+    return "images/resources/" + resourceClass.getSimpleName() + ".svg";
   }
 }
