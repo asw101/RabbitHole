@@ -162,31 +162,9 @@ public class PoserPicturePlaneInteraction extends PicturePlaneInteraction {
       //    center.x = -1 * center.x;
       //    center.y = -1 * center.y;
       //    center.z = -1 * center.z;
-      double radius = sSphere.getRadius(); //1;
-      double dx = ray.direction().x() - ray.origin().x();
-      double dy = ray.direction().y() - ray.origin().y();
-      double dz = ray.direction().z() - ray.origin().z();
-      double a = (dx * dx) + (dy * dy) + (dz * dz);
-      double b = (2 * dx * (ray.origin().x() - center.x())) + (2 * dy * (ray.origin().y() - center.y())) + (2 * dz * (ray.origin().z() - center.z()));
-      double c = ((center.x() * center.x()) + (center.y() * center.y()) + (center.z() * center.z()) + (ray.origin().x() * ray.origin().x()) + (ray.origin().y() * ray.origin().y()) + (ray.origin().z() * ray.origin().z()) + (-2 * ((center.x() * ray.origin().x()) + (center.y() * ray.origin().y()) + (center.z() * ray.origin().z())))) - (radius * radius);
-      double t = (-b - Math.sqrt((b * b) - (4 * a * c))) / (2 * a);
-
-      double intersectionX = ray.origin().x() + (t * dx);
-      double intersectionY = ray.origin().y() + (t * dy);
-      double intersectionZ = ray.origin().z() + (t * dz);
-
-      if (Double.isNaN(t)) {
-        //      System.out.println( "Fail(NaN): " + sSphere );
-        return -1;
-      } else if (t < 0) {
-        //      System.out.println( "Fail(Neg): " + sSphere );
-        return -1;
-      }
-      double length = Math.sqrt((intersectionX * intersectionX) + (intersectionY * intersectionY) + (intersectionZ * intersectionZ));
+      double length = PoserPicturePlaneInteractionLogic.getSphereRayIntersectionLength(ray, center, sSphere.getRadius());
       System.out.println("======");
-      System.out.println("t: " + t);
       System.out.println(sSphere);
-      //    System.out.println( "( " + intersectionX + ", " + intersectionY + ", " + intersectionZ + " )" );
       System.out.println("len:" + length);
       System.out.println("======");
       return length;
@@ -196,52 +174,7 @@ public class PoserPicturePlaneInteraction extends PicturePlaneInteraction {
   private JointSelectionSphere pickJoint(JointSelectionSphere one, JointSelectionSphere two, double distOne, double distTwo) {
     double oneCameraDistance = one.getDistanceTo((SMovableTurnable) camera.getAbstraction());
     double twoCameraDistance = two.getDistanceTo((SMovableTurnable) camera.getAbstraction());
-    double cameraDelta = oneCameraDistance - twoCameraDistance;
-    if (Math.abs(cameraDelta) > .1) {
-      System.out.println("short");
-      return oneCameraDistance < twoCameraDistance ? one : two;
-    } else {
-      System.out.println(cameraDelta);
-    }
-    System.out.println("=============");
-    System.out.println(one.getJoint());
-    System.out.println("oneC:  " + oneCameraDistance);
-    System.out.println("dist1: " + distOne);
-    System.out.println("twoC:  " + twoCameraDistance);
-    System.out.println("dist2: " + distTwo);
-    System.out.println(two.getJoint());
-    System.out.println("=============");
-    if ((oneCameraDistance < twoCameraDistance)) {
-      if (distOne < distTwo) {
-        System.out.println("a1");
-        return one;
-      } else if ((distTwo * 2) < distOne) {
-        System.out.println("a2");
-        return two;
-      } else {
-        System.out.println("a3");
-        return one;
-      }
-    } else if (twoCameraDistance < oneCameraDistance) {
-      if (distTwo < distOne) {
-        System.out.println("b1");
-        return two;
-      } else if ((distOne * 2) < distTwo) {
-        System.out.println("b2");
-        return one;
-      } else {
-        System.out.println("b3");
-        return two;
-      }
-    } else {
-      if (distOne < distTwo) {
-        System.out.println("c1");
-        return one;
-      } else {
-        System.out.println("c2");
-        return two;
-      }
-    }
+    return PoserPicturePlaneInteractionLogic.pickPreferred(oneCameraDistance, twoCameraDistance, distOne, distTwo, .1) == PoserPicturePlaneInteractionLogic.Selection.FIRST ? one : two;
   }
 
   private ManipulationHandle3D checkIfHandleSelected(MouseEvent e) {

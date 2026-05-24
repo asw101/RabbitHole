@@ -51,7 +51,6 @@ import org.alice.stageide.sceneeditor.viewmanager.MarkerUtilities;
 import org.lgna.croquet.icon.*;
 import org.lgna.project.ast.*;
 import org.lgna.story.Color;
-import org.lgna.story.Visual;
 import org.lgna.story.implementation.alice.AliceResourceUtilities;
 import org.lgna.story.resources.*;
 
@@ -289,11 +288,7 @@ public class IconFactoryManager {
   }
 
   private static int getRequiredArgumentsInInitializer(UserField userField) {
-    Expression initializer = userField.initializer.getValue();
-    if (initializer instanceof InstanceCreation instanceCreation) {
-      return instanceCreation.requiredArguments.size();
-    }
-    return -1;
+    return IconFactoryManagerLogic.getRequiredArgumentsInInitializer(userField.initializer.getValue());
   }
 
   private static ResourceDeclaration createResourceDeclarationFromField(UserField userField) {
@@ -416,7 +411,7 @@ public class IconFactoryManager {
 
   public static IconFactory getDynamicIconFactoryForField(UserField field, IconFactory fallbackIconFactory) {
     AbstractType<?, ?, ?> type = field.getValueType();
-    if (type.isAssignableTo(Visual.class)) { //type.isAssignableTo( org.lgna.story.SShape.class ) || type.isAssignableFrom( org.lgna.story.SRoom.class ) || type.isAssignableFrom( org.lgna.story.SGround.class ) ) {
+    if (IconFactoryManagerLogic.shouldUseDynamicFieldIcon(type)) { //type.isAssignableTo( org.lgna.story.SShape.class ) || type.isAssignableFrom( org.lgna.story.SRoom.class ) || type.isAssignableFrom( org.lgna.story.SGround.class ) ) {
       synchronized (mapFieldToIconFactory) {
         FieldIconFactory iconFactory = mapFieldToIconFactory.get(field);
         if (iconFactory == null) {

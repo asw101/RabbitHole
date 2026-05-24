@@ -115,39 +115,20 @@ public class OmniDirectionalBoundingBoxManipulator extends OmniDirectionalDragMa
     OrthographicCamera orthoCamera = (OrthographicCamera) this.camera;
     AffineMatrix4x4 cameraTransform = orthoCamera.getAbsoluteTransformation();
     double dotProd = cameraTransform.orientation().up().dotProduct(Vector3.POSITIVE_Y_AXIS);
-    if ((dotProd == 1) || (dotProd == -1)) {
-      Point3 cameraPosition = orthoCamera.getAbsoluteTransformation().translation();
-      ClippedZPlane dummyPlane = orthoCamera.picturePlane.getValue().completeFrom(this.onscreenRenderTarget.getActualViewport(orthoCamera));
-      double yRatio = this.onscreenRenderTarget.getSurfaceHeight() / dummyPlane.getHeight();
-      double horizonInCameraSpace = 0.0d - cameraPosition.y();
-      double distanceFromMaxY = dummyPlane.getYMaximum() - horizonInCameraSpace;
-      int horizonLinePixelVal = (int) (yRatio * distanceFromMaxY);
-      return horizonLinePixelVal;
-    }
-    return -1;
+    Point3 cameraPosition = orthoCamera.getAbsoluteTransformation().translation();
+    ClippedZPlane dummyPlane = orthoCamera.picturePlane.getValue().completeFrom(this.onscreenRenderTarget.getActualViewport(orthoCamera));
+    return OmniDirectionalBoundingBoxManipulatorLogic.getHorizonPixelLocation(dotProd, cameraPosition.y(), this.onscreenRenderTarget.getSurfaceHeight(), dummyPlane.getHeight(), dummyPlane.getYMaximum());
   }
 
   private boolean isHorizonInView() {
     assert this.camera instanceof OrthographicCamera;
-    int horizonLinePixelVal = this.getHorizonPixelLocation();
-    double lookingGlassHeight = this.onscreenRenderTarget.getSurfaceHeight();
-    if ((horizonLinePixelVal >= 0) && (horizonLinePixelVal <= lookingGlassHeight)) {
-      return true;
-    }
-    return false;
+    return OmniDirectionalBoundingBoxManipulatorLogic.isHorizonInView(this.getHorizonPixelLocation(), this.onscreenRenderTarget.getSurfaceHeight());
   }
 
   @Override
   protected Vector3 getOrthographicMovementVector(InputState currentInput, InputState previousInput) {
     Ray pickRay = this.onscreenRenderTarget.getRayAtAwtPoint(currentInput.getMouseLocation(), this.getCamera());
-    Point3 pickPoint = this.orthographicPickPlane.getIntersection(pickRay);
-    if (pickPoint != null) {
-      if (isHorizonInView()) {
-        pickPoint = pickPoint.withY(0);
-      }
-    } else {
-      pickPoint = Point3.ORIGIN;
-    }
+    Point3 pickPoint = OmniDirectionalBoundingBoxManipulatorLogic.resolveOrthographicPickPoint(this.orthographicPickPlane.getIntersection(pickRay), isHorizonInView());
     Point3 newPosition = pickPoint.plus(this.orthographicOffsetToOrigin);
     return newPosition.minus(this.getManipulatedTransformable().getAbsoluteTransformation().translation());
   }

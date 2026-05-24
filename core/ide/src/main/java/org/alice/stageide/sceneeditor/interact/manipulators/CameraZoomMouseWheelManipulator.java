@@ -107,17 +107,7 @@ public class CameraZoomMouseWheelManipulator extends CameraManipulator implement
   }
 
   private Vector3 getIdealBackwardForX(double x) {
-    double y = 0;
-    if (x > 0) {
-      y = COEFFICIENT * 2 * x * FLATTENING_FACTOR;
-    } else if (this.useUpCurve && (x > (-this.lateralDistanceForUp))) {
-      //Get the derivative for the cosine function we use for the up-curve
-      x += this.lateralDistanceForUp; //bump the x value so we're evaluating the sine curve correctly
-      y = ((this.distanceUpScale * x * Math.PI) / this.lateralDistanceForUp) * (-Math.sin((x * Math.PI) / this.lateralDistanceForUp));
-    }
-    if (y < TARGET_LOW_DOWN_AMOUNT) {
-      y = TARGET_LOW_DOWN_AMOUNT;
-    }
+    double y = CameraZoomMouseWheelManipulatorLogic.computeIdealBackwardY(x, this.useUpCurve, this.lateralDistanceForUp, this.distanceUpScale, COEFFICIENT, FLATTENING_FACTOR, TARGET_LOW_DOWN_AMOUNT);
     return new Vector3(-movementDirection.x(), y, -movementDirection.z()).normalized();
   }
 
@@ -169,31 +159,11 @@ public class CameraZoomMouseWheelManipulator extends CameraManipulator implement
   }
 
   private double getHeightForX(double x) {
-    if (x < 0) {
-      if (this.useUpCurve) {
-        if (x < -this.lateralDistanceForUp) {
-          return TARGET_LOW_HEIGHT;
-        } else {
-
-          double newx = x + this.lateralDistanceForUp; //bump the x value so we're evaluating the cosine curve correctly
-          double cosineValue = (this.distanceUpScale) * Math.cos((newx * Math.PI) / this.lateralDistanceForUp);
-          double height = cosineValue + this.distanceUpScale + this.originalTransformation.translation().y();
-          //          PrintUtilities.println("New height for "+x+" -> f("+newx+") = "+cosineValue+" + "+this.distanceUpScale+" + "+this.originalTransformation.translation(.y()+" = "+height);
-          return height;
-        }
-      } else {
-        return TARGET_LOW_HEIGHT;
-      }
-    } else {
-      return COEFFICIENT * x + this.inflectionPoint.y();
-    }
+    return CameraZoomMouseWheelManipulatorLogic.computeHeightForX(x, this.useUpCurve, this.lateralDistanceForUp, this.distanceUpScale, this.originalTransformation.translation().y(), TARGET_LOW_HEIGHT, COEFFICIENT, this.inflectionPoint.y());
   }
 
   private static Vector3 interpolateNormalizedVector(Vector3 a, Vector3 b, double percent) {
-    double x = a.x() + ((b.x() - a.x()) * percent);
-    double y = a.y() + ((b.y() - a.y()) * percent);
-    double z = a.z() + ((b.z() - a.z()) * percent);
-    return new Vector3(x, y, z).normalized();
+    return CameraZoomMouseWheelManipulatorLogic.interpolateNormalizedVector(a, b, percent);
   }
 
   private OrthogonalMatrix3x3 getOrientationTargetForX(double x) {

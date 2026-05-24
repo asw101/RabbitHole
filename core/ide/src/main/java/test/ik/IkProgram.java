@@ -152,25 +152,18 @@ class IkProgram extends SProgram {
   //SOLVER this prints to the yellow area right under the chain display
   private void updateInfo() {
     Bone bone = BonesState.getInstance().getValue();
-
-    StringBuilder sb = new StringBuilder(256);
+    String jointIdText = null;
+    String jointTransformText = null;
     if (bone != null) {
-      JointImp a = bone.getA();
-      //      org.lgna.story.implementation.JointImp b = bone.getB();
-      sb.append(a.getJointId());
-      sb.append(":\n");
-      PrintUtilities.appendLines(sb, a.getLocalTransformation());
-      //      sb.append( "\n" );
-      //      sb.append( b.getJointId() );
-      //      sb.append( ":\n" );
-      //      edu.cmu.cs.dennisc.print.PrintUtilities.appendLines( sb, b.getLocalTransformation() );
+      JointImp joint = bone.getA();
+      jointIdText = joint.getJointId().toString();
+      StringBuilder jointTransform = new StringBuilder();
+      PrintUtilities.appendLines(jointTransform, joint.getLocalTransformation());
+      jointTransformText = jointTransform.toString();
     }
-    sb.append("\n");
-    sb.append("target:\n");
-    PrintUtilities.appendLines(sb, this.getTargetImp().getLocalTransformation());
-    sb.append("\n");
-
-    InfoState.getInstance().setValueTransactionlessly(sb.toString());
+    StringBuilder targetTransform = new StringBuilder();
+    PrintUtilities.appendLines(targetTransform, this.getTargetImp().getLocalTransformation());
+    InfoState.getInstance().setValueTransactionlessly(IkProgramLogic.buildInfoText(jointIdText, jointTransformText, targetTransform.toString()));
   }
 
   protected void handleChainChanging() {

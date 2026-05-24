@@ -153,7 +153,7 @@ public class HtmlEncoder implements AstProcessor {
   @Override
   public void processClass(CodeOrganizer codeOrganizer, NamedUserType userType) {
     Map<String, List<ProcessableNode>> sections = codeOrganizer.getOrderedSections();
-    if (isClassEmpty(sections)) {
+    if (HtmlEncoderLogic.isClassEmpty(sections, sectionsToSkip)) {
       return;
     }
     pushDiv("alice-class", () -> {
@@ -171,20 +171,11 @@ public class HtmlEncoder implements AstProcessor {
   }
 
   private boolean isClassEmpty(Map<String, List<ProcessableNode>> sections) {
-    for (Map.Entry<String, List<ProcessableNode>> entry : sections.entrySet()) {
-      if (isSectionToInclude(entry.getKey()) && !entry.getValue().isEmpty()) {
-        for (ProcessableNode item : entry.getValue()) {
-          if (!(item instanceof UserMethod) || !((UserMethod) item).getManagementLevel().isGenerated()) {
-            return false;
-          }
-        }
-      }
-    }
-    return true;
+    return HtmlEncoderLogic.isClassEmpty(sections, sectionsToSkip);
   }
 
   private boolean isSectionToInclude(String key) {
-    return !sectionsToSkip.contains(key);
+    return HtmlEncoderLogic.isSectionToInclude(key, sectionsToSkip);
   }
 
   private void appendSection(List<ProcessableNode> items) {
@@ -227,11 +218,9 @@ public class HtmlEncoder implements AstProcessor {
   private void splitUpListeners(UserMethod initializeEventListeners) {
     ArrayList<Statement> listeners = initializeEventListeners.body.getValue().statements.getValue();
     for (Statement listener : listeners) {
-      if (listener instanceof ExpressionStatement statement) {
-        Expression exp = statement.expression.getValue();
-        if (exp instanceof MethodInvocation invocation) {
-          addListener(invocation, !listener.isEnabled.getValue());
-        }
+      MethodInvocation invocation = HtmlEncoderLogic.getListenerInvocation(listener);
+      if (invocation != null) {
+        addListener(invocation, !listener.isEnabled.getValue());
       }
     }
   }

@@ -68,6 +68,7 @@ import org.lgna.project.code.ProcessableNode;
 
 import java.io.File;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -357,14 +358,17 @@ public class AddMembersPage extends WizardPageComposite<Panel, ImportTypeWizard>
     this.getView().repaint();
     //
 
-    StringBuilder sb = new StringBuilder();
+    java.util.List<String> statusFragments = new ArrayList<>();
     for (MembersToolPalette<?, ?> addMembersComposite : new MembersToolPalette[] {this.addProceduresComposite, this.addFunctionsComposite, this.addFieldsComposite}) {
+      StringBuilder sb = new StringBuilder();
       addMembersComposite.appendStatusPreRejectorCheck(sb);
+      statusFragments.add(sb.toString());
     }
-    if (sb.isEmpty()) {
+    String statusText = AddMembersPageLogic.buildPageStatusText(statusFragments);
+    if (statusText.isEmpty()) {
       return IS_GOOD_TO_GO_STATUS;
     }
-    this.actionItemsRemainingError.setText(sb.toString());
+    this.actionItemsRemainingError.setText(statusText);
     return this.actionItemsRemainingError;
   }
 

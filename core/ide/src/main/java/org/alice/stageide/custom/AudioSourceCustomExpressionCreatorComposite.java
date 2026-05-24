@@ -48,7 +48,6 @@ import edu.cmu.cs.dennisc.media.javafx.MediaFactory;
 import edu.cmu.cs.dennisc.media.javafx.Player;
 import org.alice.ide.custom.CustomExpressionCreatorComposite;
 import org.alice.stageide.custom.components.AudioSourceCustomExpressionCreatorView;
-import org.lgna.common.Resource;
 import org.lgna.common.resources.AudioResource;
 import org.lgna.croquet.BoundedIntegerState;
 import org.lgna.croquet.CancelException;
@@ -61,11 +60,9 @@ import org.lgna.croquet.history.UserActivity;
 import org.lgna.project.ast.AstUtilities;
 import org.lgna.project.ast.DoubleLiteral;
 import org.lgna.project.ast.Expression;
-import org.lgna.project.ast.InstanceCreation;
 import org.lgna.project.ast.JavaConstructor;
 import org.lgna.project.ast.NullLiteral;
 import org.lgna.project.ast.ResourceExpression;
-import org.lgna.project.ast.SimpleArgument;
 import org.lgna.story.AudioSource;
 
 import java.util.UUID;
@@ -227,28 +224,16 @@ public final class AudioSourceCustomExpressionCreatorComposite extends CustomExp
       double startTime = this.getStartMarkerTime();
       double stopTime = this.getStopMarkerTime();
 
-      // apologies for the negative logic
-      boolean isNotDefaultVolume = AudioSource.isWithinReasonableEpsilonOfDefaultVolume(volume) == false;
-      boolean isNotDefaultStartTime = AudioSource.isWithinReasonableEpsilonOfDefaultStartTime(startTime) == false;
-      boolean isNotDefaultStopTime = AudioSource.isDefaultStopTime_aka_NaN(stopTime) == false;
-
-      if (isNotDefaultVolume || isNotDefaultStartTime || isNotDefaultStopTime) {
-        DoubleLiteral volumeLiteral = new DoubleLiteral(volume);
-        if (isNotDefaultStartTime || isNotDefaultStopTime) {
-          DoubleLiteral startTimeLiteral = new DoubleLiteral(startTime);
-          if (isNotDefaultStopTime) {
-            DoubleLiteral stopTimeLiteral = new DoubleLiteral(stopTime);
-
-            JavaConstructor constructor = JavaConstructor.getInstance(AudioSource.class, AudioResource.class, Number.class, Number.class, Number.class);
-            return AstUtilities.createInstanceCreation(constructor, arg0Expression, volumeLiteral, startTimeLiteral, stopTimeLiteral);
-          } else {
-            JavaConstructor constructor = JavaConstructor.getInstance(AudioSource.class, AudioResource.class, Number.class, Number.class);
-            return AstUtilities.createInstanceCreation(constructor, arg0Expression, volumeLiteral, startTimeLiteral);
-          }
-        } else {
-          JavaConstructor constructor = JavaConstructor.getInstance(AudioSource.class, AudioResource.class, Number.class);
-          return AstUtilities.createInstanceCreation(constructor, arg0Expression, volumeLiteral);
-        }
+      int optionalArgumentCount = AudioSourceCustomExpressionCreatorCompositeLogic.getOptionalArgumentCount(volume, startTime, stopTime);
+      if (optionalArgumentCount == 3) {
+        JavaConstructor constructor = JavaConstructor.getInstance(AudioSource.class, AudioResource.class, Number.class, Number.class, Number.class);
+        return AstUtilities.createInstanceCreation(constructor, arg0Expression, new DoubleLiteral(volume), new DoubleLiteral(startTime), new DoubleLiteral(stopTime));
+      } else if (optionalArgumentCount == 2) {
+        JavaConstructor constructor = JavaConstructor.getInstance(AudioSource.class, AudioResource.class, Number.class, Number.class);
+        return AstUtilities.createInstanceCreation(constructor, arg0Expression, new DoubleLiteral(volume), new DoubleLiteral(startTime));
+      } else if (optionalArgumentCount == 1) {
+        JavaConstructor constructor = JavaConstructor.getInstance(AudioSource.class, AudioResource.class, Number.class);
+        return AstUtilities.createInstanceCreation(constructor, arg0Expression, new DoubleLiteral(volume));
       } else {
         JavaConstructor constructor = JavaConstructor.getInstance(AudioSource.class, AudioResource.class);
         return AstUtilities.createInstanceCreation(constructor, arg0Expression);
@@ -274,54 +259,11 @@ public final class AudioSourceCustomExpressionCreatorComposite extends CustomExp
     return null;
   }
 
-  private static Expression getArgumentExpressionAt(InstanceCreation instanceCreation, int index) {
-    assert instanceCreation.requiredArguments.size() >= index;
-    SimpleArgument arg = instanceCreation.requiredArguments.get(index);
-    assert arg != null;
-    return arg.expression.getValue();
-  }
-
   @Override
   protected void initializeToPreviousExpression(Expression expression) {
-    ResourceExpression resourceExpression = null;
-    AudioResource audioResource = null;
-    double volumeLevel = 1.0;
-    double startTime = 0.0;
-    double stopTime = Double.NaN;
-
-    if (expression instanceof InstanceCreation instanceCreation) {
-      int n = instanceCreation.requiredArguments.size();
-      if (n > 0) {
-        Expression expression0 = getArgumentExpressionAt(instanceCreation, 0);
-        if (expression0 instanceof ResourceExpression resExp) {
-          resourceExpression = resExp;
-          Resource resource = resourceExpression.resource.getValue();
-          if (resource instanceof AudioResource audioRes) {
-            audioResource = audioRes;
-          }
-          if (n > 1) {
-            if (n > 2) {
-              if (n > 3) {
-                Expression expression3 = getArgumentExpressionAt(instanceCreation, 3);
-                if (expression3 instanceof DoubleLiteral stopTimeLiteral) {
-                  stopTime = stopTimeLiteral.value.getValue();
-                }
-              }
-              Expression expression2 = getArgumentExpressionAt(instanceCreation, 2);
-              if (expression2 instanceof DoubleLiteral startTimeLiteral) {
-                startTime = startTimeLiteral.value.getValue();
-              }
-            }
-            Expression expression1 = getArgumentExpressionAt(instanceCreation, 1);
-            if (expression1 instanceof DoubleLiteral volumeLevelLiteral) {
-              volumeLevel = volumeLevelLiteral.value.getValue();
-            }
-          }
-        }
-      }
-    }
-    this.getVolumeState().setValueTransactionlessly(VolumeLevelUtilities.toInt(volumeLevel));
-    this.getAudioResourceExpressionState().setValueTransactionlessly(resourceExpression);
+    AudioSourceCustomExpressionCreatorCompositeLogic.Selection selection = AudioSourceCustomExpressionCreatorCompositeLogic.decodeSelection(expression);
+    this.getVolumeState().setValueTransactionlessly(VolumeLevelUtilities.toInt(selection.getVolumeLevel()));
+    this.getAudioResourceExpressionState().setValueTransactionlessly(selection.getResourceExpression());
   }
 
   @Override

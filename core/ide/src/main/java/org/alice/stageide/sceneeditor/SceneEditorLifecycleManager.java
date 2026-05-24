@@ -56,7 +56,6 @@ import org.lgna.project.virtualmachine.UserInstance;
 import org.lgna.story.*;
 import org.lgna.story.implementation.*;
 
-import java.util.ArrayList;
 
 /**
  * Manages scene lifecycle events: project open, scene activation, and field addition.
@@ -186,10 +185,7 @@ class SceneEditorLifecycleManager {
       if (setVehicleCall == null) {
         continue;
       }
-      ArrayList<SimpleArgument> args = setVehicleCall.requiredArguments.getValue();
-      if (args.size() == 1 && args.getFirst().expression.getValue() instanceof NullLiteral) {
-        args.getFirst().expression.setValue(new ThisExpression());
-      }
+      SceneEditorLifecycleManagerLogic.useSceneAsVehicle(setVehicleCall);
     }
   }
 

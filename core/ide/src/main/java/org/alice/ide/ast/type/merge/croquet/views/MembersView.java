@@ -102,44 +102,15 @@ public abstract class MembersView<M extends Member> extends MigPanel {
   }
 
   private static String createDifferentSignatureToolText(String titleText, Member member) {
-    StringBuilder sb = new StringBuilder();
-    sb.append("<html>\"");
-    sb.append(member.getName());
-    sb.append("\" ");
-    sb.append(titleText);
-    if (member instanceof UserMethod) {
-      sb.append(" have different signatures.");
-    } else {
-      sb.append(" have different value classes.");
-    }
-    sb.append("<p><strong>You must change at least one of their names.</strong></html>");
-    return sb.toString();
+    return MembersViewLogic.createDifferentSignatureToolText(titleText, member.getName(), member instanceof UserMethod);
   }
 
   private static String createDifferentImplementationToolText(String titleText, Member member) {
-    StringBuilder sb = new StringBuilder();
-    sb.append("<html>\"");
-    sb.append(member.getName());
-    sb.append("\" ");
-    sb.append(titleText);
-    if (member instanceof UserMethod) {
-      sb.append(" have different implementations.");
-    } else {
-      sb.append(" have different initializers.");
-    }
-    sb.append("<p><strong>You must change at least one of their names.</strong></html>");
-    return sb.toString();
+    return MembersViewLogic.createDifferentImplementationToolText(titleText, member.getName(), member instanceof UserMethod);
   }
 
   private static String createIdenticalToolText(String titleText, Member member) {
-    StringBuilder sb = new StringBuilder();
-    sb.append("<html>\"");
-    sb.append(member.getName());
-    sb.append("\" ");
-    sb.append(titleText);
-    sb.append(" ");
-    sb.append(" are identical.<p>No action is required.</html>");
-    return sb.toString();
+    return MembersViewLogic.createIdenticalToolText(titleText, member.getName());
   }
 
   public MembersView(MembersToolPalette<?, M> composite, Color backgroundColor) {
@@ -279,20 +250,7 @@ public abstract class MembersView<M extends Member> extends MigPanel {
   }
 
   private static Rectangle getRowBounds(List<Component> row) {
-    if (!row.isEmpty()) {
-      Rectangle rv = null;
-      for (Component awtComponent : row) {
-        Rectangle bounds = awtComponent.getBounds();
-        if (rv != null) {
-          rv = rv.union(bounds);
-        } else {
-          rv = bounds;
-        }
-      }
-      return rv;
-    } else {
-      return new Rectangle(0, 0, 0, 0);
-    }
+    return MembersViewLogic.getRowBounds(row);
   }
 
   @Override

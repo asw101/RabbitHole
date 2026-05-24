@@ -159,24 +159,7 @@ public abstract class ExpressionCascadeManager {
   }
 
   private LinkedList<UserLocal> updateAccessibleLocalsForBlockStatementAndIndex(LinkedList<UserLocal> rv, BlockStatement blockStatement, int index) {
-    while (index >= 1) {
-      index--;
-      //todo: investigate
-      if (index >= blockStatement.statements.size()) {
-        try {
-          throw new IndexOutOfBoundsException(index + " " + blockStatement.statements.size());
-        } catch (IndexOutOfBoundsException ioobe) {
-          Logger.throwable(ioobe);
-        }
-        index = blockStatement.statements.size();
-      } else {
-        Statement statementI = blockStatement.statements.get(index);
-        if (statementI instanceof LocalDeclarationStatement localDeclarationStatement) {
-          rv.add(localDeclarationStatement.local.getValue());
-        }
-      }
-    }
-    return rv;
+    return ExpressionCascadeManagerLogic.collectAccessibleLocalsForBlockAndIndex(rv, blockStatement, index);
   }
 
   private LinkedList<UserLocal> updateAccessibleLocals(LinkedList<UserLocal> rv, Statement statement) {
@@ -226,21 +209,23 @@ public abstract class ExpressionCascadeManager {
     CascadeBlankChild blankChild;
     CascadeFillIn<? extends Expression, ?> expressionFillIn;
     if (this.isApplicableForFillIn(desiredType, expressionType)) {
-      if (expression instanceof ThisExpression thisExpression) {
+      ExpressionCascadeManagerLogic.FillInDescriptor descriptor = ExpressionCascadeManagerLogic.resolveFillInDescriptor(expression);
+      switch (descriptor.getKind()) {
+      case THIS:
         expressionFillIn = ThisExpressionFillIn.getInstance();
-      } else if (expression instanceof FieldAccess fieldAccess) {
-        Expression instanceExpression = fieldAccess.expression.getValue();
-        if (instanceExpression instanceof ThisExpression) {
-          expressionFillIn = ThisFieldAccessFillIn.getInstance(fieldAccess.field.getValue());
-        } else {
-          expressionFillIn = null;
-        }
-      } else if (expression instanceof ParameterAccess parameterAccess) {
-        expressionFillIn = ParameterAccessFillIn.getInstance(parameterAccess.parameter.getValue());
-      } else if (expression instanceof LocalAccess localAccess) {
-        expressionFillIn = LocalAccessFillIn.getInstance(localAccess.local.getValue());
-      } else {
+        break;
+      case THIS_FIELD:
+        expressionFillIn = ThisFieldAccessFillIn.getInstance(descriptor.getFieldAccess().field.getValue());
+        break;
+      case PARAMETER:
+        expressionFillIn = ParameterAccessFillIn.getInstance(descriptor.getParameterAccess().parameter.getValue());
+        break;
+      case LOCAL:
+        expressionFillIn = LocalAccessFillIn.getInstance(descriptor.getLocalAccess().local.getValue());
+        break;
+      default:
         expressionFillIn = null;
+        break;
       }
       if (expressionFillIn == null) {
         boolean isLeadingIconDesired = true;

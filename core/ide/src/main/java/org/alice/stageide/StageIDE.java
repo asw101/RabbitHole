@@ -284,41 +284,34 @@ public class StageIDE extends IDE {
 
   @Override
   public boolean isDropDownDesiredFor(Expression expression) {
-    if (super.isDropDownDesiredFor(expression)) {
-      if (expression != null) {
-        if (expression instanceof LambdaExpression) {
-          return false;
-        } else {
-          Node parent = expression.getParent();
-          if (parent instanceof FieldAccess fieldAccess) {
-            AbstractField field = fieldAccess.field.getValue();
-            assert field != null;
-            AbstractType<?, ?, ?> declaringType = field.getDeclaringType();
-            if ((declaringType != null) && declaringType.isAssignableTo(SScene.class)) {
-              if (field.getValueType().isAssignableTo(STurnable.class)) {
-                return false;
-              }
-            }
-          } else if (parent instanceof AbstractArgument argument) {
-            Node grandparent = argument.getParent();
-            if (grandparent instanceof InstanceCreation instanceCreation) {
-              AbstractConstructor constructor = instanceCreation.constructor.getValue();
-              if (constructor != null) {
-                AbstractType<?, ?, ?> type = constructor.getDeclaringType();
-                return (COLOR_TYPE.isAssignableFrom(type) || NebulousIde.nonfree.isPersonResourceTypeAssingleFrom(type)) == false;
-              }
-            }
-          } else if (parent instanceof MethodInvocation methodInvocation) {
-            if (StoryApiConfigurationManager.getInstance().isBuildMethod(methodInvocation)) {
-              return false;
-            }
+    boolean superDesired = super.isDropDownDesiredFor(expression);
+    boolean lambdaExpression = expression instanceof LambdaExpression;
+    boolean sceneTurnableField = false;
+    boolean colorConstructor = false;
+    boolean personResourceConstructor = false;
+    boolean buildMethod = false;
+    if (superDesired && expression != null && !lambdaExpression) {
+      Node parent = expression.getParent();
+      if (parent instanceof FieldAccess fieldAccess) {
+        AbstractField field = fieldAccess.field.getValue();
+        assert field != null;
+        AbstractType<?, ?, ?> declaringType = field.getDeclaringType();
+        sceneTurnableField = (declaringType != null) && declaringType.isAssignableTo(SScene.class) && field.getValueType().isAssignableTo(STurnable.class);
+      } else if (parent instanceof AbstractArgument argument) {
+        Node grandparent = argument.getParent();
+        if (grandparent instanceof InstanceCreation instanceCreation) {
+          AbstractConstructor constructor = instanceCreation.constructor.getValue();
+          if (constructor != null) {
+            AbstractType<?, ?, ?> type = constructor.getDeclaringType();
+            colorConstructor = COLOR_TYPE.isAssignableFrom(type);
+            personResourceConstructor = NebulousIde.nonfree.isPersonResourceTypeAssingleFrom(type);
           }
         }
+      } else if (parent instanceof MethodInvocation methodInvocation) {
+        buildMethod = StoryApiConfigurationManager.getInstance().isBuildMethod(methodInvocation);
       }
-      return true;
-    } else {
-      return false;
     }
+    return StageIDELogic.isDropDownDesired(superDesired, lambdaExpression, sceneTurnableField, colorConstructor, personResourceConstructor, buildMethod);
   }
 
   //  @Override

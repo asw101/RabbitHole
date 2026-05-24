@@ -325,7 +325,7 @@ public class GlobalDragAdapter extends CroquetSupportingDragAdapter {
         undoOperation.fire();
       } else {
         UserField manipulatedField = sceneEditor.getFieldForInstanceInJavaVM(aliceThing);
-        Group group = manipulatedField == null ? Application.DOCUMENT_UI_GROUP : Application.PROJECT_GROUP;
+        Group group = GlobalDragAdapterLogic.resolveUndoGroup(manipulatedField);
         undoOperation = new PredeterminedSetLocalTransformationActionOperation(group, false, this.getAnimator(), manipulatedField, originalTransformation, newTransformation, manipulator.getUndoRedoDescription());
         undoOperation.fire();
       }

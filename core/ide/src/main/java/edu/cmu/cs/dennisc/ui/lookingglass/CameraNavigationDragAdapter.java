@@ -254,7 +254,7 @@ public class CameraNavigationDragAdapter extends OnscreenLookingGlassDragAdapter
     int[] xPoints = {0, 8, 8, 20, 20, 8, 8};
     int[] yPoints = {0, 10, 5, 5, -5, -5, -10};
 
-    double theta = Math.atan2(yPixelDelta, xPixelDelta);
+    double theta = CameraNavigationDragAdapterLogic.calculateArrowTheta(xPixelDelta, yPixelDelta);
     g.translate(m_xPixelPrev, m_yPixelPrev);
     g.rotate(theta);
 
@@ -325,21 +325,7 @@ public class CameraNavigationDragAdapter extends OnscreenLookingGlassDragAdapter
 
   @Override
   protected void handleMousePress(Point current, DragStyle dragStyle, boolean isOriginalAsOpposedToStyleChange) {
-    CameraNavigationMode cameraNavigationMode;
-    if (dragStyle.isControlDown()) {
-      if (dragStyle.isShiftDown()) {
-        //todo?
-        cameraNavigationMode = null;
-      } else {
-        cameraNavigationMode = CameraNavigationMode.ORBIT;
-      }
-    } else {
-      if (dragStyle.isShiftDown()) {
-        cameraNavigationMode = CameraNavigationMode.TRANSLATE_Y;
-      } else {
-        cameraNavigationMode = CameraNavigationMode.TRANSLATE_XZ;
-      }
-    }
+    CameraNavigationMode cameraNavigationMode = CameraNavigationDragAdapterLogic.resolveNavigationMode(dragStyle.isControlDown(), dragStyle.isShiftDown());
 
     startCameraNavigationMode(cameraNavigationMode, current.x, current.y);
     if (isOriginalAsOpposedToStyleChange) {

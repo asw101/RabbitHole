@@ -301,7 +301,6 @@ public abstract class AbstractPoserScene<T extends SJointedModel> extends SScene
   }
 
   private Number backupAmount() {
-    double greaterDimension = model.getWidth() > model.getHeight() ? model.getWidth() : model.getHeight();
-    return greaterDimension * 2.5;
+    return AbstractPoserSceneLogic.computeBackupAmount(model.getWidth(), model.getHeight());
   }
 }

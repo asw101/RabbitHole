@@ -102,14 +102,7 @@ public class GalleryDragComponent extends KnurlDragComponent<GalleryDragModel> {
           return new Point(0, -offset);
         }
       };
-      StringBuilder sb = new StringBuilder();
-      sb.append("superclass: ");
-      String simpleName = modelResourceInterface.getSimpleName();
-      if (simpleName.endsWith("Resource")) {
-        simpleName = simpleName.substring(0, simpleName.length() - "Resource".length());
-      }
-      sb.append(simpleName);
-      rv.setToolTipText(sb.toString());
+      rv.setToolTipText(GalleryDragComponentLogic.buildSuperclassToolTipText(modelResourceInterface.getSimpleName()));
       return rv;
     }
   }
@@ -227,12 +220,7 @@ public class GalleryDragComponent extends KnurlDragComponent<GalleryDragModel> {
 
     @Override
     public Dimension preferredLayoutSize(Container parent) {
-      //note: ridiculous
-      Dimension rv = this.baseComponent.getPreferredSize();
-      Insets insets = parent.getInsets();
-      rv.width += insets.left + insets.right;
-      rv.height += insets.top + insets.bottom;
-      return rv;
+      return GalleryDragComponentLogic.computePreferredLayoutSize(this.baseComponent.getPreferredSize(), parent.getInsets());
     }
 
     @Override

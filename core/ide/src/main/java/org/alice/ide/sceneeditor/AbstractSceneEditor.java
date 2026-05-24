@@ -60,7 +60,6 @@ import org.lgna.croquet.views.AwtComponentView;
 import org.lgna.croquet.views.BorderPanel;
 import org.lgna.project.Project;
 import org.lgna.project.ast.AbstractField;
-import org.lgna.project.ast.AbstractType;
 import org.lgna.project.ast.Expression;
 import org.lgna.project.ast.NamedUserType;
 import org.lgna.project.ast.Statement;
@@ -288,11 +287,9 @@ public abstract class AbstractSceneEditor extends BorderPanel {
 
   public void removeField(UserType<?> declaringType, UserField field, Statement... statements) {
     assert declaringType == this.getActiveSceneType() : declaringType + " " + field;
-    for (int i = 0; i < this.getActiveSceneType().fields.size(); i++) {
-      if (this.getActiveSceneType().fields.get(i) == field) {
-        this.getActiveSceneType().fields.remove(i);
-        break;
-      }
+    int fieldIndex = AbstractSceneEditorLogic.indexOfField(this.getActiveSceneType().fields.getValue(), field);
+    if (fieldIndex != -1) {
+      this.getActiveSceneType().fields.remove(fieldIndex);
     }
     this.executeStatements(statements);
     if (this.selectedField == field) {
@@ -302,14 +299,7 @@ public abstract class AbstractSceneEditor extends BorderPanel {
   }
 
   public NamedUserType getActiveSceneType() {
-    UserField field = this.getActiveSceneField();
-    if (field != null) {
-      AbstractType<?, ?, ?> type = field.getValueType();
-      if (type instanceof NamedUserType userType) {
-        return userType;
-      }
-    }
-    return null;
+    return AbstractSceneEditorLogic.getActiveSceneType(this.getActiveSceneField());
   }
 
   public UserInstance getActiveSceneInstance() {

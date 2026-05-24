@@ -131,46 +131,7 @@ class SceneFieldCodeGenerator {
     Statement stateCodeStatement = this.getCurrentStateCodeForField(fieldToCopy);
     stateCodeStatement = replaceReferencesInExpression(fieldToCopy, newField, stateCodeStatement);
 
-    List<BlockStatement> blockStatements = new LinkedList<BlockStatement>();
-    if (stateCodeStatement instanceof BlockStatement statement) {
-      blockStatements.add(statement);
-    } else if (stateCodeStatement instanceof AbstractStatementWithBody body) {
-      blockStatements.add(body.body.getValue());
-    }
-    while (!blockStatements.isEmpty()) {
-      BlockStatement bs = blockStatements.removeFirst();
-      Statement setVehicleStatement = null;
-      Statement setPositionStatement = null;
-      Statement setOrientationStatement = null;
-      for (Statement s : bs.statements.getValue()) {
-        if (s instanceof BlockStatement block) {
-          blockStatements.add(block);
-        } else if (s instanceof AbstractStatementWithBody body) {
-          blockStatements.add(body.body.getValue());
-        } else if (s instanceof ExpressionStatement expressionStatement) {
-          Expression expression = expressionStatement.expression.getValue();
-          if (expression instanceof MethodInvocation mi) {
-            Method method = mi.method.getValue();
-            if (method.getName().equalsIgnoreCase("setVehicle") && (mi.expression.getValue() instanceof FieldAccess)) {
-              setVehicleStatement = s;
-            } else if (method.getName().equalsIgnoreCase("setOrientationRelativeToVehicle") && (mi.expression.getValue() instanceof FieldAccess)) {
-              setOrientationStatement = s;
-            } else if (method.getName().equalsIgnoreCase("setPositionRelativeToVehicle") && (mi.expression.getValue() instanceof FieldAccess)) {
-              setPositionStatement = s;
-            }
-          }
-        }
-      }
-      if (setVehicleStatement != null) {
-        bs.statements.getValue().remove(setVehicleStatement);
-      }
-      if (setPositionStatement != null) {
-        bs.statements.getValue().remove(setPositionStatement);
-      }
-      if (setOrientationStatement != null) {
-        bs.statements.getValue().remove(setOrientationStatement);
-      }
-    }
+    SceneFieldCodeGeneratorLogic.stripCopyStateStatements(stateCodeStatement);
 
     Object toCopyInstance = editor.getInstanceInJavaVMForField(fieldToCopy);
     AbstractField toCopyVehicleField = null;
@@ -234,26 +195,7 @@ class SceneFieldCodeGenerator {
   }
 
   private boolean doesSetVehicleImplyVehicle(MethodInvocation setVehicleCall, UserField vehicle) {
-    ArrayList<SimpleArgument> args = setVehicleCall.requiredArguments.getValue();
-    if (args.size() == 1 && setVehicleCall.expression.getValue() instanceof FieldAccess) {
-      Expression vehicleExpr = args.getFirst().expression.getValue();
-      return isDirectRider(vehicle, vehicleExpr) || isJointRider(vehicle, vehicleExpr);
-    }
-    return false;
-  }
-
-  private boolean isDirectRider(UserField vehicle, Expression vehicleExpr) {
-    return vehicleExpr instanceof FieldAccess fa && fa.field.getValue() == vehicle;
-  }
-
-  private boolean isJointRider(UserField vehicle, Expression vehicleExpr) {
-    if (vehicleExpr instanceof MethodInvocation vehicleMethod) {
-      if (vehicleMethod.expression.getValue() instanceof FieldAccess) {
-        FieldAccess target = (FieldAccess) vehicleMethod.expression.getValue();
-        return target.field.getValue() == vehicle;
-      }
-    }
-    return false;
+    return SceneFieldCodeGeneratorLogic.doesSetVehicleImplyVehicle(setVehicleCall, vehicle);
   }
 
   Statement[] getDoStatementsForRemoveField(UserField field, Map<AbstractField, Statement> riders) {
@@ -286,16 +228,7 @@ class SceneFieldCodeGenerator {
   }
 
   static MethodInvocation asSetVehicleCall(Statement statement) {
-    if (statement instanceof ExpressionStatement expressionStatement) {
-      Expression expression = expressionStatement.expression.getValue();
-      if (expression instanceof MethodInvocation mi) {
-        Method method = mi.method.getValue();
-        if (method.getName().equalsIgnoreCase("setVehicle")) {
-          return mi;
-        }
-      }
-    }
-    return null;
+    return SceneFieldCodeGeneratorLogic.asSetVehicleCall(statement);
   }
 
   static boolean isSetVehicleInvocation(Statement statement) {

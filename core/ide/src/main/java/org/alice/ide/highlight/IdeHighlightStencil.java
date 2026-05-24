@@ -71,7 +71,6 @@ import javax.swing.KeyStroke;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.Area;
-import java.awt.image.BufferedImage;
 import java.util.List;
 
 /**
@@ -191,16 +190,7 @@ public class IdeHighlightStencil extends LayerStencil {
   protected Paint createStencilPaint() {
     int width = 8;
     int height = 8;
-    BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-    Graphics2D g2 = (Graphics2D) image.getGraphics();
-    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
-    g2.setColor(STENCIL_BASE_COLOR);
-    g2.fillRect(0, 0, width, height);
-    g2.setColor(STENCIL_LINE_COLOR);
-    g2.drawLine(0, height, width, 0);
-    g2.fillRect(0, 0, 1, 1);
-    g2.dispose();
-    return new TexturePaint(image, new Rectangle(0, 0, width, height));
+    return IdeHighlightStencilLogic.createStencilPaint(width, height, STENCIL_BASE_COLOR, STENCIL_LINE_COLOR);
   }
 
   private Shape getVisibleShape(AwtComponentView<?> asSeenBy, Insets insets) {
@@ -213,20 +203,14 @@ public class IdeHighlightStencil extends LayerStencil {
 
   private Area getAreaForContains(Area area, AwtComponentView<?> asSeenBy) {
     if (trackableShapeResolver != null) {
-      Shape featureAreaToSubtract = this.getVisibleShape(asSeenBy, null);
-      if (featureAreaToSubtract != null) {
-        area.subtract(new Area(featureAreaToSubtract));
-      }
+      return IdeHighlightStencilLogic.subtractFeatureArea(area, this.getVisibleShape(asSeenBy, null));
     }
     return area;
   }
 
   private Area getAreaForPaint(Area area, AwtComponentView<?> asSeenBy) {
     if (trackableShapeResolver != null) {
-      Shape featureAreaToSubtract = this.getVisibleShape(asSeenBy, PAINT_INSETS);
-      if (featureAreaToSubtract != null) {
-        area.subtract(new Area(featureAreaToSubtract));
-      }
+      return IdeHighlightStencilLogic.subtractFeatureArea(area, this.getVisibleShape(asSeenBy, PAINT_INSETS));
     }
     return area;
   }

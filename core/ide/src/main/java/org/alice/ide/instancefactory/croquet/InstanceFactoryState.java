@@ -231,29 +231,15 @@ public class InstanceFactoryState extends CustomItemStateWithInternalBlank<Insta
         if (!parameters.isEmpty() || !locals.isEmpty()) {
           blankChildren.add(CascadeLineSeparator.getInstance());
           blankChildren.add(this.parametersVariablesConstantsSeparator);
-          StringBuilder sb = new StringBuilder();
-          NodeUtilities.safeAppendRepr(sb, code);
-          sb.append(" ");
-          String prefix = "";
+          StringBuilder codeText = new StringBuilder();
+          NodeUtilities.safeAppendRepr(codeText, code);
           if (!parameters.isEmpty()) {
-            sb.append("parameters");
             blankChildren.addAll(parameters);
-            prefix = ", ";
           }
           if (!locals.isEmpty()) {
-            if (containsVariable) {
-              sb.append(prefix);
-              sb.append("variables");
-              prefix = ", ";
-            }
-            if (containsConstant) {
-              sb.append(prefix);
-              sb.append("constants");
-              prefix = ", ";
-            }
             blankChildren.addAll(locals);
           }
-          this.parametersVariablesConstantsSeparator.setMenuItemText(sb.toString());
+          this.parametersVariablesConstantsSeparator.setMenuItemText(InstanceFactoryStateLogic.buildParametersVariablesConstantsText(codeText.toString(), !parameters.isEmpty(), containsVariable, containsConstant));
         }
 
         if (userCode instanceof UserMethod userMethod) {
