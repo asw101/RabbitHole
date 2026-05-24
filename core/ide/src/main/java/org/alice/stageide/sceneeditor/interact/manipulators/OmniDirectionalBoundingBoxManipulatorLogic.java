@@ -27,4 +27,10 @@ final class OmniDirectionalBoundingBoxManipulatorLogic {
     }
     return horizonInView ? pickPoint.withY(0) : pickPoint;
   }
+
+  static org.alice.math.immutable.Vector3 computeOrthographicMovementVector(Point3 pickPoint, boolean horizonInView, org.alice.math.immutable.Vector3 orthographicOffsetToOrigin, Point3 currentTranslation) {
+    Point3 resolvedPickPoint = resolveOrthographicPickPoint(pickPoint, horizonInView);
+    Point3 newPosition = resolvedPickPoint.plus(orthographicOffsetToOrigin);
+    return newPosition.minus(currentTranslation);
+  }
 }

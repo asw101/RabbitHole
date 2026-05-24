@@ -102,38 +102,14 @@ public class Camera2DDragDriveManipulator extends Camera2DDragManipulator {
 
   @Override
   protected Vector3 getRelativeMovementAmount(Vector2 mousePos, double time) {
-    Vector2 relativeMousePos = mousePos.minus(this.initialMousePosition);
-    double movement = relativeMousePos.y();
-    if ((this.initialHandleColor != null) && (this.initialHandleColor.equals(LEFT) || this.initialHandleColor.equals(RIGHT))) {
-      if (Math.abs(movement) < MIN_PIXEL_MOVE_AMOUNT) {
-        movement = 0;
-      } else {
-        if (movement < 0.0d) {
-          movement = movement + MIN_PIXEL_MOVE_AMOUNT;
-        }
-      }
-    }
-
-    double amountToMoveZ = movement * WORLD_DISTANCE_PER_PIXEL_SECONDS * time;
-    return new Vector3(0.0d, 0.0d, amountToMoveZ);
+    boolean rotationHandle = (this.initialHandleColor != null) && (this.initialHandleColor.equals(LEFT) || this.initialHandleColor.equals(RIGHT));
+    return Camera2DDragDriveManipulatorLogic.computeRelativeMovementAmount(mousePos, this.initialMousePosition, rotationHandle, MIN_PIXEL_MOVE_AMOUNT, WORLD_DISTANCE_PER_PIXEL_SECONDS, time);
   }
 
   @Override
   protected Vector3 getRelativeRotationAmount(Vector2 mousePos, double time) {
-    Vector2 relativeMousePos = mousePos.minus(this.initialMousePosition);
-    double rotation = relativeMousePos.x();
-    if (this.initialHandleColor != null) {
-      if (this.initialHandleColor.equals(UP) || this.initialHandleColor.equals(DOWN)) {
-        if (Math.abs(rotation) < MIN_PIXEL_MOVE_AMOUNT) {
-          rotation = 0;
-        } else {
-          rotation = rotation + (rotation < 0.0d ? MIN_PIXEL_MOVE_AMOUNT : -MIN_PIXEL_MOVE_AMOUNT);
-        }
-      }
-    }
-
-    double amountToRotateY = -rotation * RADIANS_PER_PIXEL_SECONDS * time;
-    return new Vector3(0.0d, amountToRotateY, 0.0d);
+    boolean translationHandle = (this.initialHandleColor != null) && (this.initialHandleColor.equals(UP) || this.initialHandleColor.equals(DOWN));
+    return Camera2DDragDriveManipulatorLogic.computeRelativeRotationAmount(mousePos, this.initialMousePosition, translationHandle, MIN_PIXEL_MOVE_AMOUNT, RADIANS_PER_PIXEL_SECONDS, time);
   }
 
   @Override

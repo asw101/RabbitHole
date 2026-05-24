@@ -87,13 +87,7 @@ public class OrthographicCameraDragZoomManipulator extends Camera2DDragManipulat
   public void setCameraZoom(double amount) {
     OrthographicCamera orthoCam = (OrthographicCamera) this.camera;
     ClippedZPlane picturePlane = orthoCam.picturePlane.getValue();
-    double currentZoom = picturePlane.getHeight();
-    double newZoom = currentZoom + amount;
-    if (newZoom > MAX_ZOOM) {
-      newZoom = amount > 0 ? currentZoom : newZoom;
-    } else if (newZoom < MIN_ZOOM) {
-      newZoom = amount < 0 ? currentZoom : newZoom;
-    }
+    double newZoom = OrthographicCameraDragZoomManipulatorLogic.computeNextZoom(picturePlane.getHeight(), amount, MIN_ZOOM, MAX_ZOOM);
     orthoCam.picturePlane.setValue(picturePlane.withHeight(newZoom));
   }
 
@@ -113,13 +107,7 @@ public class OrthographicCameraDragZoomManipulator extends Camera2DDragManipulat
   }
 
   protected double getZoomValueForColor(Color color) {
-    if (IN.equals(color)) {
-      return  -INITIAL_ZOOM_FACTOR;
-    }
-    if (OUT.equals(color)) {
-      return INITIAL_ZOOM_FACTOR;
-    }
-    return 0;
+    return OrthographicCameraDragZoomManipulatorLogic.getZoomValueForColor(color, IN, OUT, INITIAL_ZOOM_FACTOR);
   }
 
   @Override
@@ -154,16 +142,11 @@ public class OrthographicCameraDragZoomManipulator extends Camera2DDragManipulat
   }
 
   protected double getRelativeZoomAmount(Vector2 mousePos, double time) {
-    Vector2 relativeMousePos = mousePos.minus(this.initialMousePosition);
-    double amountToZoom = relativeMousePos.y() * ZOOMS_PER_SECOND * time;
-    return amountToZoom;
+    return OrthographicCameraDragZoomManipulatorLogic.computeRelativeZoomAmount(mousePos, this.initialMousePosition, ZOOMS_PER_SECOND, time);
   }
 
   protected double getTotalZoomAmount(Vector2 mousePos, double time) {
-    double relativeZoomAmount = this.getRelativeZoomAmount(mousePos, time);
-    double amountToZoomInitial = this.initialZoomValue * ZOOMS_PER_SECOND * time;
-    double amountToZoom = relativeZoomAmount + amountToZoomInitial;
-    return amountToZoom;
+    return OrthographicCameraDragZoomManipulatorLogic.computeTotalZoomAmount(mousePos, this.initialMousePosition, this.initialZoomValue, ZOOMS_PER_SECOND, time);
   }
 
   @Override
@@ -198,11 +181,7 @@ public class OrthographicCameraDragZoomManipulator extends Camera2DDragManipulat
 
   @Override
   public void doTimeUpdateManipulator(double time, InputState currentInput) {
-    if (time < MIN_TIME) {
-      time = MIN_TIME;
-    } else if (time > MAX_TIME) {
-      time = MAX_TIME;
-    }
+    time = Camera2DDragManipulatorLogic.clampTime(time, MIN_TIME, MAX_TIME);
 
     Vector2 mousePos = new Vector2(currentInput.getMouseLocation().x, currentInput.getMouseLocation().y);
     double zoomAmount = this.getTotalZoomAmount(mousePos, time);

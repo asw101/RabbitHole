@@ -74,10 +74,7 @@ public class ResizeDragManipulator extends AbstractManipulator {
   @Override
   public void doDataUpdateManipulator(InputState currentInput, InputState previousInput) {
     if (!currentInput.getMouseLocation().equals(previousInput.getMouseLocation())) {
-      int xDif = currentInput.getMouseLocation().x - this.initialPoint.x;
-      int yDif = -(currentInput.getMouseLocation().y - this.initialPoint.y);
-
-      double scaleAmount = ((xDif + yDif) * RESIZE_SCALE);
+      double scaleAmount = ResizeDragManipulatorLogic.computeScaleAmount(currentInput.getMouseLocation(), this.initialPoint, RESIZE_SCALE);
       applyScale(scaleAmount);
     }
   }
@@ -124,10 +121,7 @@ public class ResizeDragManipulator extends AbstractManipulator {
   protected void applyScale(double scaleAmount) {
     Scalable scalable = this.manipulatedTransformable.getBonusDataFor(Scalable.KEY);
     if (scalable != null) {
-      if ((this.initialScale + scaleAmount) < MIN_SCALE) {
-        scaleAmount = MIN_SCALE - this.initialScale;
-      }
-      this.accumulatedScale = this.initialScale + scaleAmount;
+      this.accumulatedScale = ResizeDragManipulatorLogic.computeAccumulatedScale(this.initialScale, scaleAmount, MIN_SCALE);
       scalable.setValueForResizer(this.activeResizer, this.accumulatedScale);
     }
   }

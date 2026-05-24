@@ -33,6 +33,14 @@ final class CameraZoomMouseWheelManipulatorLogic {
     return coefficient * x + inflectionY;
   }
 
+  static double computeOrthographicZoomAmount(int direction, double zoomPerWheelClick) {
+    return zoomPerWheelClick * direction;
+  }
+
+  static double computeClampedOrthographicZoom(double currentZoom, double zoomAmount, double minZoom, double maxZoom) {
+    return Math.max(minZoom, Math.min(maxZoom, currentZoom + zoomAmount));
+  }
+
   static Vector3 interpolateNormalizedVector(Vector3 a, Vector3 b, double percent) {
     double x = a.x() + ((b.x() - a.x()) * percent);
     double y = a.y() + ((b.y() - a.y()) * percent);

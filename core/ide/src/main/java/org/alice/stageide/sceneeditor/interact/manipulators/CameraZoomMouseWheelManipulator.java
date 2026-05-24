@@ -208,12 +208,9 @@ public class CameraZoomMouseWheelManipulator extends CameraManipulator implement
   private void setCameraZoom(double amount) {
     OrthographicCamera orthoCam = (OrthographicCamera) this.camera;
     ClippedZPlane picturePlane = orthoCam.picturePlane.getValue();
-    double newZoom = picturePlane.getHeight() + amount;
-    if (newZoom > OrthographicCameraDragZoomManipulator.MAX_ZOOM) {
-      newZoom = OrthographicCameraDragZoomManipulator.MAX_ZOOM;
-    } else if (newZoom < OrthographicCameraDragZoomManipulator.MIN_ZOOM) {
-      newZoom = OrthographicCameraDragZoomManipulator.MIN_ZOOM;
-    }
+    double newZoom = CameraZoomMouseWheelManipulatorLogic.computeClampedOrthographicZoom(
+        picturePlane.getHeight(), amount, OrthographicCameraDragZoomManipulator.MIN_ZOOM,
+        OrthographicCameraDragZoomManipulator.MAX_ZOOM);
     orthoCam.picturePlane.setValue(picturePlane.withHeight(newZoom));
   }
 
@@ -230,7 +227,7 @@ public class CameraZoomMouseWheelManipulator extends CameraManipulator implement
         Logger.severe("Mouse Wheel Camera Zoom: null cameraAnimation.");
       }
     } else {
-      double amountToZoom = ORTHOGRAPHIC_ZOOM_PER_WHEEL_CLICK * direction;
+      double amountToZoom = CameraZoomMouseWheelManipulatorLogic.computeOrthographicZoomAmount(direction, ORTHOGRAPHIC_ZOOM_PER_WHEEL_CLICK);
       this.applyZoom(amountToZoom);
     }
   }

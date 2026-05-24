@@ -28,6 +28,17 @@ public class CameraZoomMouseWheelManipulatorLogicTest {
   }
 
   @Test
+  public void computeOrthographicZoomAmountScalesWheelDirection() {
+    assertEquals(-0.4, CameraZoomMouseWheelManipulatorLogic.computeOrthographicZoomAmount(-2, 0.2), 0.00001);
+  }
+
+  @Test
+  public void computeClampedOrthographicZoomRestrictsToConfiguredRange() {
+    assertEquals(75.0, CameraZoomMouseWheelManipulatorLogic.computeClampedOrthographicZoom(74.9, 1.0, 0.01, 75.0), 0.00001);
+    assertEquals(0.01, CameraZoomMouseWheelManipulatorLogic.computeClampedOrthographicZoom(0.2, -1.0, 0.01, 75.0), 0.00001);
+  }
+
+  @Test
   public void interpolateNormalizedVectorReturnsUnitVector() {
     Vector3 result = CameraZoomMouseWheelManipulatorLogic.interpolateNormalizedVector(new Vector3(1, 0, 0), new Vector3(0, 1, 0), 0.5);
 

@@ -96,10 +96,7 @@ public class Camera2DDragUpDownRotateManipulator extends Camera2DDragManipulator
 
   @Override
   protected Vector3 getRelativeRotationAmount(Vector2 mousePos, double time) {
-    Vector2 relativeMousePos = mousePos.minus(this.initialMousePosition);
-    double amountToRotateX = relativeMousePos.y() * RADIANS_PER_PIXEL_SECONDS * time;
-    Vector3 amountToRotateMouse = new Vector3(amountToRotateX, 0.0d, 0.0d);
-    return amountToRotateMouse;
+    return Camera2DDragUpDownRotateManipulatorLogic.computeRelativeRotationAmount(mousePos, this.initialMousePosition, RADIANS_PER_PIXEL_SECONDS, time);
   }
 
   @Override

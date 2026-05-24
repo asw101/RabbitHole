@@ -150,26 +150,20 @@ public abstract class Camera2DDragManipulator extends CameraManipulator2D {
   protected abstract ReferenceFrame getMovementReferenceFrame();
 
   protected Vector3 getTotalMovementAmount(Vector2 mousePos, double time) {
-    Vector3 relativeMovementAmount = this.getRelativeMovementAmount(mousePos, time);
-    Vector3 amountToMoveInitial = this.initialMoveFactor.times(WORLD_DISTANCE_PER_PIXEL_SECONDS * time);
-    Vector3 amountToMove = relativeMovementAmount.plus(amountToMoveInitial);
-    return amountToMove;
+    return Camera2DDragManipulatorLogic.computeTotalMovementAmount(
+        this.getRelativeMovementAmount(mousePos, time), this.initialMoveFactor,
+        WORLD_DISTANCE_PER_PIXEL_SECONDS, time);
   }
 
   protected Vector3 getTotalRotationAmount(Vector2 mousePos, double time) {
-    Vector3 relativeRotationAmount = this.getRelativeRotationAmount(mousePos, time);
-    Vector3 amountToRotateInitial = this.initialRotateFactor.times(RADIANS_PER_PIXEL_SECONDS * time);
-    Vector3 amountToRotate = relativeRotationAmount.plus(amountToRotateInitial);
-    return amountToRotate;
+    return Camera2DDragManipulatorLogic.computeTotalRotationAmount(
+        this.getRelativeRotationAmount(mousePos, time), this.initialRotateFactor,
+        RADIANS_PER_PIXEL_SECONDS, time);
   }
 
   @Override
   public void doTimeUpdateManipulator(double time, InputState currentInput) {
-    if (time < MIN_TIME) {
-      time = MIN_TIME;
-    } else if (time > MAX_TIME) {
-      time = MAX_TIME;
-    }
+    time = Camera2DDragManipulatorLogic.clampTime(time, MIN_TIME, MAX_TIME);
 
     Vector2 mousePos = new Vector2(currentInput.getMouseLocation().x, currentInput.getMouseLocation().y);
     Vector3 moveVector = this.getTotalMovementAmount(mousePos, time);
