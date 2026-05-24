@@ -42,7 +42,6 @@
  *******************************************************************************/
 package org.alice.ide.croquet.models.ast.cascade.statement;
 
-import edu.cmu.cs.dennisc.java.util.Lists;
 import org.alice.ide.IDE;
 import org.alice.ide.ast.draganddrop.BlockStatementIndexPair;
 import org.alice.ide.croquet.edits.ast.InsertStatementEdit;
@@ -54,7 +53,6 @@ import org.lgna.croquet.CascadeWithInternalBlank;
 import org.lgna.croquet.edits.Edit;
 import org.lgna.croquet.history.UserActivity;
 import org.lgna.croquet.imp.cascade.BlankNode;
-import org.lgna.project.ast.AbstractField;
 import org.lgna.project.ast.AbstractType;
 import org.lgna.project.ast.Expression;
 import org.lgna.project.ast.ExpressionStatement;
@@ -87,33 +85,18 @@ public class TemplateAssignmentInsertCascade extends CascadeWithInternalBlank<Ex
   @Override
   protected List<CascadeBlankChild> updateBlankChildren(List<CascadeBlankChild> rv, BlankNode<Expression> blankNode) {
     AbstractType<?, ?, ?> selectedType = IDE.getActiveInstance().getDocumentFrame().getTypeMetaState().getValue();
-    if (selectedType != null) {
-      List<UserField> nonFinalUserFields = Lists.newLinkedList();
-      for (AbstractField field : selectedType.getDeclaredFields()) {
-        if (field instanceof UserField userField) {
-          if (!userField.isFinal()) {
-            nonFinalUserFields.add(userField);
-          }
-        }
-      }
-      if (!nonFinalUserFields.isEmpty()) {
-        rv.add(FieldsSeparatorModel.getInstance());
-        for (UserField field : nonFinalUserFields) {
-          rv.add(FieldAssignmentFillIn.getInstance(field));
-          if (field.getValueType().isArray()) {
-            rv.add(FieldArrayAtIndexAssignmentFillIn.getInstance(field));
-          }
+    List<UserField> nonFinalUserFields = TemplateAssignmentInsertCascadeLogic.getAssignableFields(selectedType);
+    if (!nonFinalUserFields.isEmpty()) {
+      rv.add(FieldsSeparatorModel.getInstance());
+      for (UserField field : nonFinalUserFields) {
+        rv.add(FieldAssignmentFillIn.getInstance(field));
+        if (field.getValueType().isArray()) {
+          rv.add(FieldArrayAtIndexAssignmentFillIn.getInstance(field));
         }
       }
     }
 
-    List<UserLocal> nonFinalLocals = Lists.newLinkedList();
-    for (UserLocal local : IDE.getActiveInstance().getExpressionCascadeManager().getAccessibleLocals(this.blockStatementIndexPair)) {
-      if (!local.isFinal.getValue()) {
-        nonFinalLocals.add(local);
-      }
-    }
-
+    List<UserLocal> nonFinalLocals = TemplateAssignmentInsertCascadeLogic.getAssignableLocals(IDE.getActiveInstance().getExpressionCascadeManager().getAccessibleLocals(this.blockStatementIndexPair));
     if (!nonFinalLocals.isEmpty()) {
       rv.add(VariablesSeparatorModel.getInstance());
       for (UserLocal local : nonFinalLocals) {
@@ -125,8 +108,7 @@ public class TemplateAssignmentInsertCascade extends CascadeWithInternalBlank<Ex
       }
     }
 
-    //todo: check nonFinalUserFields and nonFinalLocals instead?
-    if (rv.isEmpty()) {
+    if (!TemplateAssignmentInsertCascadeLogic.hasAssignableTargets(nonFinalUserFields, nonFinalLocals)) {
       rv.add(NoVariablesOrFieldsAccessibleCancelFillIn.getInstance());
     }
 

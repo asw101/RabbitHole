@@ -3,12 +3,10 @@ package org.alice.ide.croquet.models.projecturi;
 import edu.cmu.cs.dennisc.javax.swing.option.Dialogs;
 import edu.cmu.cs.dennisc.javax.swing.option.YesNoCancelResult;
 
-import java.time.LocalDateTime;
-import java.time.format.*;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.util.Locale;
 import java.util.UUID;
-
-import static org.alice.ide.ProjectFileUtilities.ORDER_FORMAT;
 
 /**
  * @author Dmitry Portnoy
@@ -126,17 +124,6 @@ public class BackupProjectOperation extends PotentialClearanceUriCreatorIteratin
     }
 
     private String getDateStringFromBackupName(String name) {
-        if (name.length() < 8) {
-            return null;
-        }
-
-        try {
-            String datetime = name.substring(4, name.length() - 4);
-            LocalDateTime date = LocalDateTime.parse(datetime, ORDER_FORMAT);
-
-            return date.format(READABLE_DATETIME_FORMAT);
-        } catch (DateTimeParseException pe) {
-            return null;
-        }
+        return BackupProjectOperationLogic.getDateStringFromBackupName(name, READABLE_DATETIME_FORMAT);
     }
 }

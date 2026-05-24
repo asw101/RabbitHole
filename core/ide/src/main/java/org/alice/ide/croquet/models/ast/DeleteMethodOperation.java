@@ -91,36 +91,8 @@ public class DeleteMethodOperation extends DeleteMemberOperation<UserMethod> {
   @Override
   protected boolean isClearToDelete(UserMethod method, UserActivity activity) {
     List<MethodInvocation> references = IDE.getActiveInstance().getMethodInvocations(method);
-    final int N = references.size();
-    if (N > 0) {
-      // TODO I18n
-      StringBuilder sb = new StringBuilder();
-      sb.append("Unable to delete ");
-      if (method.isProcedure()) {
-        sb.append("procedure");
-      } else {
-        sb.append("function");
-      }
-      sb.append(" named \"");
-      sb.append(method.name.getValue());
-      sb.append("\" because it has ");
-      if (N == 1) {
-        sb.append("an invocation reference");
-      } else {
-        sb.append(N);
-        sb.append(" invocation references");
-      }
-      sb.append(" to it.\nYou must remove ");
-      if (N == 1) {
-        sb.append("this reference");
-      } else {
-        sb.append("these references");
-      }
-      sb.append(" if you want to delete \"");
-      sb.append(method.name.getValue());
-      sb.append("\" .");
-
-      Dialogs.showInfo(sb.toString());
+    if (DeleteMemberOperationLogic.hasReferences(references.size())) {
+      Dialogs.showInfo(DeleteMemberOperationLogic.createDeleteMethodBlockedMessage(method.name.getValue(), method.isProcedure(), references.size()));
       return false;
     } else {
       return true;

@@ -96,8 +96,7 @@ public class DeleteFieldOperation extends DeleteMemberOperation<UserField> {
   @Override
   protected boolean isClearToDelete(UserField field, UserActivity activity) {
     List<FieldAccess> references = IDE.getActiveInstance().getFieldAccesses(field);
-    final int N = references.size();
-    if (N > 0) {
+    if (DeleteMemberOperationLogic.hasReferences(references.size())) {
       ReferencesToFieldPreventingDeletionDialog referencesToFieldPreventingDeletionDialog = new ReferencesToFieldPreventingDeletionDialog(field, references);
       UserActivity referenceCheckActivity = activity.newChildActivity();
       referencesToFieldPreventingDeletionDialog.getLaunchOperation().fire(referenceCheckActivity);
@@ -114,7 +113,7 @@ public class DeleteFieldOperation extends DeleteMemberOperation<UserField> {
   @Override
   public void doOrRedoInternal(boolean isDo) {
     UserField field = this.getMember();
-    if (field.managementLevel.getValue() == ManagementLevel.MANAGED) {
+    if (DeleteMemberOperationLogic.shouldUseManagedFieldPath(field.managementLevel.getValue())) {
       //Save the index position of the field so we can insert it correctly on undo
       this.index = this.getDeclaringType().fields.indexOf(field);
       //Save the state of field by precomputing the undo and redo statements
@@ -131,7 +130,7 @@ public class DeleteFieldOperation extends DeleteMemberOperation<UserField> {
   @Override
   public void undoInternal() {
     UserField field = this.getMember();
-    if (field.managementLevel.getValue() == ManagementLevel.MANAGED) {
+    if (DeleteMemberOperationLogic.shouldUseManagedFieldPath(field.managementLevel.getValue())) {
       IDE.getActiveInstance().getSceneEditor().addField(this.getDeclaringType(), field, this.index, this.undoStatements);
     } else {
       super.undoInternal();

@@ -50,13 +50,9 @@ import org.alice.ide.croquet.models.project.find.croquet.tree.nodes.SearchTreeNo
 import org.lgna.croquet.CustomSingleSelectTreeState;
 import org.lgna.croquet.ItemCodec;
 import org.lgna.croquet.codecs.DefaultItemCodec;
-import org.lgna.project.ast.AbstractDeclaration;
 import org.lgna.project.ast.Expression;
-import org.lgna.project.ast.UserLambda;
-import org.lgna.project.ast.UserMethod;
 
 import javax.swing.Icon;
-import java.util.List;
 import java.util.UUID;
 
 /**
@@ -114,24 +110,11 @@ public class FindReferencesTreeState extends CustomSingleSelectTreeState<SearchT
   public void refreshWith(SearchResult searchObject) {
     this.setValueTransactionlessly(null);
     root.removeAllChildren();
-    if (searchObject != null) {
-      List<Expression> references = searchObject.getReferences();
-      for (Expression reference : references) {
-        AbstractDeclaration parentObject = reference.getFirstAncestorAssignableTo(UserLambda.class);
-        if (parentObject == null) {
-          parentObject = reference.getFirstAncestorAssignableTo(UserMethod.class);
-        }
-        if (parentObject == null) {
-          continue;
-        }
-        SearchTreeNode parentNode = root.getChildForReference(parentObject);
-        if (parentNode == null) {
-          SearchTreeNode newChildNode = new DeclarationSeachTreeNode(root, parentObject);
-          root.addChild(newChildNode);
-          newChildNode.addChild(new ExpressionSearchTreeNode(newChildNode, reference));
-        } else {
-          parentNode.addChild(new ExpressionSearchTreeNode(parentNode, reference));
-        }
+    for (FindReferencesTreeStateLogic.ReferenceGroup group : FindReferencesTreeStateLogic.groupReferences(searchObject)) {
+      SearchTreeNode declarationNode = new DeclarationSeachTreeNode(root, group.getDeclaration());
+      root.addChild(declarationNode);
+      for (Expression reference : group.getReferences()) {
+        declarationNode.addChild(new ExpressionSearchTreeNode(declarationNode, reference));
       }
     }
     refreshAll();
@@ -150,62 +133,28 @@ public class FindReferencesTreeState extends CustomSingleSelectTreeState<SearchT
   //  }
 
   public void moveSelectedUpOne() {
-    SearchTreeNode selected = this.getValue();
-    if (selected.getParent() == root) {
-      if (selected.getLocationAmongstSiblings() > 0) {
-        SearchTreeNode olderSibling = selected.getOlderSibling();
-        setValueTransactionlessly(olderSibling.getChildren().get(olderSibling.getChildren().size() - 1));
-      }
-    } else {
-      if (selected.getLocationAmongstSiblings() > 0) {
-        this.setValueTransactionlessly(selected.getOlderSibling());
-      } else {
-        this.setValueTransactionlessly(selected.getParent());
-      }
-    }
+    this.setValueTransactionlessly(FindReferencesTreeStateLogic.moveSelectedUpOne(root, this.getValue()));
   }
 
   public void moveSelectedDownOne() {
-    SearchTreeNode selected = this.getValue();
-    if (selected.getParent() == root) {
-      this.setValueTransactionlessly(selected.getChildren().getFirst());
-    } else {
-      if (selected.getLocationAmongstSiblings() < (selected.getParent().getChildren().size() - 1)) {
-        this.setValueTransactionlessly(selected.getYoungerSibling());
-      } else if (selected.getParent().getLocationAmongstSiblings() < (selected.getParent().getParent().getChildren().size() - 1)) {
-        this.setValueTransactionlessly(selected.getParent().getYoungerSibling());
-      }
-    }
+    this.setValueTransactionlessly(FindReferencesTreeStateLogic.moveSelectedDownOne(root, this.getValue()));
   }
 
   public SearchTreeNode selectAtCoordinates(int a, int b) {
-    if (b == -1) {
-      return root.getChildren().get(a);
-    } else {
-      return root.getChildren().get(a).getChildren().get(b);
-    }
+    return FindReferencesTreeStateLogic.selectAtCoordinates(root, a, b);
   }
 
   public boolean isEmpty() {
-    return !root.getChildren().isEmpty();
+    return FindReferencesTreeStateLogic.hasRows(root);
   }
 
   public SearchTreeNode getTopValue() {
-    return root.getChildren().getFirst();
+    return FindReferencesTreeStateLogic.getTopValue(root);
   }
 
   public TwoDimensionalTreeCoordinate getSelectedCoordinates() {
-    int a;
-    int b;
-    SearchTreeNode value = this.getValue();
-    if (value.getParent() == root) {
-      b = -1;
-      a = value.getLocationAmongstSiblings();
-    } else {
-      b = value.getLocationAmongstSiblings();
-      a = value.getParent().getLocationAmongstSiblings();
-    }
-    return new TwoDimensionalTreeCoordinate(a, b);
+    FindReferencesTreeStateLogic.TreeCoordinate coordinate = FindReferencesTreeStateLogic.getSelectedCoordinates(root, this.getValue());
+    return new TwoDimensionalTreeCoordinate(coordinate.getA(), coordinate.getB());
   }
 
   public class TwoDimensionalTreeCoordinate {
