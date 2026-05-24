@@ -190,11 +190,7 @@ public class SetUpMethodGenerator {
 
   public static Statement createOrientationStatement(boolean isThis, AbstractField field, Orientation orientation, double duration) throws ExpressionCreator.CannotCreateExpressionException {
     ExpressionStatement orientationStatement = createStatement(STurnable.class, "setOrientationRelativeToVehicle", new Class<?>[] {Orientation.class, SetOrientationRelativeToVehicle.Detail[].class}, SetUpMethodGenerator.createInstanceExpression(isThis, field), getExpressionCreator().createExpression(orientation));
-    if (duration != -1) {
-      MethodInvocation methodInvocation = (MethodInvocation) orientationStatement.expression.getValue();
-      JavaMethod durationKeyMethod = JavaMethod.getInstance(DurationAnimationStyleArgumentFactory.class, "duration", Number.class);
-      methodInvocation.keyedArguments.add(new JavaKeyedArgument(methodInvocation.method.getValue().getKeyedParameter(), durationKeyMethod, new DoubleLiteral(duration)));
-    }
+    SetUpMethodGeneratorLogic.addDurationIfRequested(orientationStatement, duration);
     return orientationStatement;
   }
 
@@ -204,11 +200,7 @@ public class SetUpMethodGenerator {
 
   public static Statement createPositionStatement(boolean isThis, AbstractField field, Position position, double duration) throws ExpressionCreator.CannotCreateExpressionException {
     ExpressionStatement positionStatement = createStatement(SMovableTurnable.class, "setPositionRelativeToVehicle", new Class<?>[] {Position.class, SetPositionRelativeToVehicle.Detail[].class}, SetUpMethodGenerator.createInstanceExpression(isThis, field), getExpressionCreator().createExpression(position));
-    if (duration != -1) {
-      MethodInvocation methodInvocation = (MethodInvocation) positionStatement.expression.getValue();
-      JavaMethod durationKeyMethod = JavaMethod.getInstance(DurationAnimationStyleArgumentFactory.class, "duration", Number.class);
-      methodInvocation.keyedArguments.add(new JavaKeyedArgument(methodInvocation.method.getValue().getKeyedParameter(), durationKeyMethod, new DoubleLiteral(duration)));
-    }
+    SetUpMethodGeneratorLogic.addDurationIfRequested(positionStatement, duration);
     return positionStatement;
   }
 

@@ -4,6 +4,8 @@ import org.junit.Test;
 import org.lgna.project.ast.AstMethodLookupHelpers;
 import org.lgna.project.ast.AstUtilities;
 import org.lgna.project.ast.BlockStatement;
+import org.lgna.project.ast.DoInOrder;
+import org.lgna.project.ast.DoTogether;
 import org.lgna.project.ast.ExpressionStatement;
 import org.lgna.project.ast.FieldAccess;
 import org.lgna.project.ast.JavaMethod;
@@ -18,6 +20,39 @@ import org.lgna.story.SetOrientationRelativeToVehicle;
 import static org.junit.Assert.*;
 
 public class SceneFieldCodeGeneratorLogicTest {
+  @Test
+  public void createCurrentStateStatementMovesVehicleAssignmentAheadOfDoTogether() {
+    UserField rider = new UserField("rider", SThing.class);
+    Statement setVehicle = AstUtilities.createMethodInvocationStatement(new FieldAccess(rider), AstMethodLookupHelpers.lookupMethod(MutableRider.class, "setVehicle", (Class<?>) SThing.class), new org.lgna.project.ast.NullLiteral());
+    Statement keep = new ExpressionStatement(new MethodInvocation(new FieldAccess(rider), JavaMethod.getInstance(Object.class, "toString")));
+    BlockStatement block = new BlockStatement();
+    block.statements.add(setVehicle);
+    block.statements.add(keep);
+
+    Statement currentState = SceneFieldCodeGeneratorLogic.createCurrentStateStatement(block);
+
+    assertTrue(currentState instanceof DoInOrder);
+    BlockStatement outerBody = ((DoInOrder) currentState).body.getValue();
+    assertSame(setVehicle, outerBody.statements.get(0));
+    assertTrue(outerBody.statements.get(1) instanceof DoTogether);
+    BlockStatement innerBody = ((DoTogether) outerBody.statements.get(1)).body.getValue();
+    assertEquals(1, innerBody.statements.size());
+    assertSame(keep, innerBody.statements.get(0));
+  }
+
+  @Test
+  public void createCurrentStateStatementUsesDoTogetherWhenNoVehicleAssignmentExists() {
+    UserField rider = new UserField("rider", Object.class);
+    Statement keep = new ExpressionStatement(new MethodInvocation(new FieldAccess(rider), JavaMethod.getInstance(Object.class, "toString")));
+    BlockStatement block = new BlockStatement();
+    block.statements.add(keep);
+
+    Statement currentState = SceneFieldCodeGeneratorLogic.createCurrentStateStatement(block);
+
+    assertTrue(currentState instanceof DoTogether);
+    assertSame(keep, ((DoTogether) currentState).body.getValue().statements.get(0));
+  }
+
   @Test
   public void stripCopyStateStatementsRemovesVehicleAndTransformStatements() {
     UserField rider = new UserField("rider", SThing.class);

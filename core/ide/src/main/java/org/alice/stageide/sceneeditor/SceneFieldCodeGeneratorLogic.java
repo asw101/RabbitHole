@@ -1,6 +1,9 @@
 package org.alice.stageide.sceneeditor;
 
 import org.lgna.project.ast.AbstractStatementWithBody;
+import org.lgna.project.ast.BlockStatement;
+import org.lgna.project.ast.DoInOrder;
+import org.lgna.project.ast.DoTogether;
 import org.lgna.project.ast.Expression;
 import org.lgna.project.ast.ExpressionStatement;
 import org.lgna.project.ast.FieldAccess;
@@ -18,20 +21,35 @@ final class SceneFieldCodeGeneratorLogic {
     throw new AssertionError();
   }
 
+  static Statement createCurrentStateStatement(BlockStatement blockStatement) {
+    Statement setVehicleStatement = null;
+    for (Statement statement : blockStatement.statements.getValue()) {
+      if (asSetVehicleCall(statement) != null) {
+        setVehicleStatement = statement;
+        break;
+      }
+    }
+    if (setVehicleStatement != null) {
+      blockStatement.statements.getValue().remove(setVehicleStatement);
+      return new DoInOrder(new BlockStatement(setVehicleStatement, new DoTogether(blockStatement)));
+    }
+    return new DoTogether(blockStatement);
+  }
+
   static void stripCopyStateStatements(Statement stateCodeStatement) {
-    List<org.lgna.project.ast.BlockStatement> blockStatements = new LinkedList<>();
-    if (stateCodeStatement instanceof org.lgna.project.ast.BlockStatement statement) {
+    List<BlockStatement> blockStatements = new LinkedList<>();
+    if (stateCodeStatement instanceof BlockStatement statement) {
       blockStatements.add(statement);
     } else if (stateCodeStatement instanceof AbstractStatementWithBody body) {
       blockStatements.add(body.body.getValue());
     }
     while (!blockStatements.isEmpty()) {
-      org.lgna.project.ast.BlockStatement bs = blockStatements.removeFirst();
+      BlockStatement bs = blockStatements.removeFirst();
       Statement setVehicleStatement = null;
       Statement setPositionStatement = null;
       Statement setOrientationStatement = null;
       for (Statement s : bs.statements.getValue()) {
-        if (s instanceof org.lgna.project.ast.BlockStatement block) {
+        if (s instanceof BlockStatement block) {
           blockStatements.add(block);
         } else if (s instanceof AbstractStatementWithBody body) {
           blockStatements.add(body.body.getValue());

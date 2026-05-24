@@ -77,29 +77,9 @@ class SceneFieldCodeGenerator {
   }
 
   Statement getCurrentStateCodeForField(UserField field) {
-    Statement rv = null;
     BlockStatement bs = new BlockStatement();
     fillInAutomaticSetUpMethod(bs.statements, false, field, true);
-
-    Statement setVehicleStatement = null;
-    for (Statement statement : bs.statements.getValue()) {
-      if (isSetVehicleInvocation(statement)) {
-        setVehicleStatement = statement;
-        break;
-      }
-    }
-    if (setVehicleStatement != null) {
-      bs.statements.getValue().remove(setVehicleStatement);
-    }
-    DoTogether dt = new DoTogether(bs);
-    if (setVehicleStatement != null) {
-      DoInOrder dio = new DoInOrder(new BlockStatement(setVehicleStatement, dt));
-      rv = dio;
-    } else {
-      rv = dt;
-    }
-
-    return rv;
+    return SceneFieldCodeGeneratorLogic.createCurrentStateStatement(bs);
   }
 
   void generateCodeForSetUp(StatementListProperty bodyStatementsProperty) {
