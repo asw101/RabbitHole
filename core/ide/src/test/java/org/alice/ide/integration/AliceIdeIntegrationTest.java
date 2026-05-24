@@ -3,23 +3,35 @@ package org.alice.ide.integration;
 import org.alice.ide.IdeApp;
 import org.alice.ide.ProjectStack;
 import org.alice.ide.project.ProjectDocumentState;
+import edu.cmu.cs.dennisc.javax.swing.components.AbstractHyperlink;
 import org.alice.ide.ast.code.edits.MoveStatementEdit;
 import org.alice.ide.ast.delete.DeleteStatementOperation;
 import org.alice.ide.ast.draganddrop.BlockStatementIndexPair;
 import org.alice.ide.ast.export.type.TypeSummary;
 import org.alice.ide.ast.export.type.TypeSummaryDataSource;
 import org.alice.ide.ast.type.croquet.ImportTypeWizard;
+import org.alice.ide.cascade.BlockStatementIndexPairContext;
 import org.alice.ide.codeeditor.CodeEditor;
 import org.alice.ide.codedrop.CodePanelWithDropReceptor;
+import org.alice.ide.common.DefaultStatementPane;
 import org.alice.ide.croquet.edits.ast.DeclareMethodEdit;
 import org.alice.ide.croquet.edits.ast.InsertStatementEdit;
+import org.alice.ide.croquet.models.StandardExpressionState;
+import org.alice.ide.croquet.models.help.ReportIssueComposite;
 import org.alice.ide.croquet.models.html.HtmlProjectWriter;
 import org.alice.ide.croquet.models.menubar.FileMenuModel;
+import org.alice.ide.croquet.models.project.stats.croquet.StatisticsFrameComposite;
 import org.alice.ide.croquet.models.projecturi.OpenRecentProjectOperation;
 import org.alice.ide.croquet.models.projecturi.SaveAsProjectOperation;
 import org.alice.ide.croquet.models.ui.preferences.IsFullTypeHierarchyDesiredState;
 import org.alice.ide.declarationseditor.CodeComposite;
+import org.alice.ide.declarationseditor.DeclarationTabState;
 import org.alice.ide.declarationseditor.TypeComposite;
+import org.alice.ide.icons.ClosedTrashIcon;
+import org.alice.ide.icons.IconFactoryManager;
+import org.alice.ide.icons.Icons;
+import org.alice.ide.icons.OpenTrashIcon;
+import org.alice.ide.issue.swing.views.CaughtExceptionPane;
 import org.alice.ide.members.MembersComposite;
 import org.alice.ide.preferences.recursion.IsAccessToRecursionPreferenceAllowedState;
 import org.alice.ide.preferences.recursion.IsRecursionAllowedPreferenceDialogComposite;
@@ -27,32 +39,40 @@ import org.alice.ide.preferences.recursion.IsRecursionAllowedState;
 import org.alice.ide.projecturi.ProjectSnapshot;
 import org.alice.ide.projecturi.RecentProjectCountState;
 import org.alice.ide.recentprojects.RecentProjectsListData;
+import org.alice.ide.resource.manager.ResourceManagerComposite;
+import org.alice.ide.resource.manager.ResourceSingleSelectTableRowState;
 import org.alice.ide.testing.ProjectContextFixture;
 import org.alice.ide.testing.TestIdeBootstrap;
 import org.alice.ide.uricontent.FileProjectLoader;
+import org.alice.ide.uricontent.UriProjectLoader;
+import org.alice.ide.x.components.StatementListPropertyView;
 import org.alice.stageide.StageIDE;
 import org.alice.stageide.gallerybrowser.ShapesTab;
 import org.alice.stageide.sceneeditor.StorytellingSceneEditor;
 import org.alice.stageide.sceneeditor.side.SideComposite;
 import org.alice.stageide.sceneeditor.views.SceneObjectPropertyManagerPanel;
 import org.alice.stageide.type.croquet.OtherTypeDialog;
-import org.junit.After;
-import org.junit.Assume;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.Timeout;
+import org.lgna.croquet.Application;
 import org.lgna.croquet.MenuBarComposite;
 import org.lgna.croquet.StandardMenuItemPrepModel;
 import org.lgna.croquet.edits.Edit;
 import org.lgna.croquet.history.UserActivity;
+import org.lgna.croquet.imp.cascade.RtRoot;
+import org.lgna.ik.core.IKCore.Limb;
+import org.lgna.ik.poser.controllers.PoserControlComposite;
+import org.lgna.ik.poser.croquet.PoserComposite;
+import org.lgna.ik.poser.jselection.JointSelectionSphere;
 import org.lgna.project.Project;
+import org.lgna.project.annotations.ValueDetails;
+import org.lgna.project.ast.AbstractType;
 import org.lgna.project.ast.AstUtilities;
 import org.lgna.project.ast.BlockStatement;
 import org.lgna.project.ast.BooleanExpressionBodyPair;
 import org.lgna.project.ast.BooleanLiteral;
 import org.lgna.project.ast.Comment;
 import org.lgna.project.ast.CountLoop;
+import org.lgna.project.ast.Expression;
+import org.lgna.project.ast.FieldAccess;
 import org.lgna.project.ast.IntegerLiteral;
 import org.lgna.project.ast.JavaType;
 import org.lgna.project.ast.NamedUserType;
@@ -63,24 +83,42 @@ import org.lgna.project.ast.UserMethod;
 import org.lgna.project.ast.UserParameter;
 import org.lgna.project.io.IoUtilities;
 import org.lgna.project.io.TypeResourcesPair;
+import org.lgna.story.Pose;
+import org.lgna.story.SJoint;
 import org.lgna.story.SModel;
+import org.lgna.story.resources.BipedResource;
+import org.alice.ide.common.TypeIcon;
+import org.junit.After;
+import org.junit.Assume;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.Timeout;
 
 import javax.swing.AbstractButton;
 import javax.swing.Action;
+import javax.swing.Icon;
 import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.JTextArea;
 import javax.swing.JTree;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.Graphics2D;
 import java.awt.GraphicsEnvironment;
 import java.awt.Point;
 import java.awt.Rectangle;
@@ -88,9 +126,12 @@ import java.awt.Robot;
 import java.awt.Window;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
+import java.awt.image.BufferedImage;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Method;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -555,6 +596,380 @@ public class AliceIdeIntegrationTest {
   }
 
   @Test
+  public void opensExpressionCascadeFromCodeEditorAndInsertsJointExpression() throws Exception {
+    skipIfHeadless();
+    ProjectContextFixture fixture = ProjectContextFixture.create();
+    UserField selectedJointField = new UserField("selectedJoint", JavaType.getInstance(SJoint.class), new NullLiteral());
+    fixture.sceneType.fields.add(selectedJointField);
+    TestIdeBootstrap.loadProject(fixture.project);
+    waitForIdle();
+
+    onEdt(() -> {
+      this.ide.getDocumentFrame().getSetToCodePerspectiveOperation().fire(new UserActivity());
+      this.ide.getDocumentFrame().getDeclarationsEditorComposite().getTabState()
+          .getItemSelectionOperationForCode(fixture.sceneProcedure)
+          .fire(new UserActivity());
+      return null;
+    });
+    waitForIdle();
+
+    BlockStatementIndexPairContext context = new BlockStatementIndexPairContext(
+        new BlockStatementIndexPair(fixture.sceneProcedure.body.getValue(), fixture.sceneProcedure.body.getValue().statements.size()));
+    StandardExpressionState state = new StandardExpressionState(Application.PROJECT_GROUP, UUID.randomUUID(), null) {
+      @Override
+      protected AbstractType<?, ?, ?> getType() {
+        return JavaType.getInstance(SJoint.class);
+      }
+
+      @Override
+      protected ValueDetails<?> getValueDetails() {
+        return null;
+      }
+    };
+
+    Expression selected = onEdt(() -> {
+      this.ide.getExpressionCascadeManager().pushContext(context);
+      try {
+        RtRoot<Expression, ?> rtRoot = new RtRoot<>(state.getCascadeRoot());
+        Object[] topItems = getRtItems(getFirstRtBlank(rtRoot));
+        Object jointMenu = findMenuFollowingFieldFillIn(topItems, fixture.actorField);
+        assertNotNull("joint cascade menu not found", jointMenu);
+        invokeHiddenMethod(jointMenu, "select", new Class<?>[0]);
+
+        Object[] jointItems = getRtItems(getFirstRtBlank(jointMenu));
+        Object jointFillIn = findFirstFillIn(jointItems);
+        assertNotNull("joint fill-in not found", jointFillIn);
+        invokeHiddenMethod(jointFillIn, "select", new Class<?>[0]);
+
+        return rtRoot.createValues(Expression.class)[0];
+      } finally {
+        this.ide.getExpressionCascadeManager().popAndCheckContext(context);
+      }
+    });
+
+    assertNotNull(selected);
+    assertTrue(selected.getType().isAssignableTo(SJoint.class));
+    onEdt(() -> {
+      selectedJointField.initializer.setValue(selected);
+      return null;
+    });
+    assertSame(selected, selectedJointField.initializer.getValue());
+  }
+
+  @Test
+  public void rendersIconsWithRealGraphicsContexts() {
+    skipIfHeadless();
+    ProjectContextFixture fixture = ProjectContextFixture.create();
+    TestIdeBootstrap.loadProject(fixture.project);
+    waitForIdle();
+
+    BufferedImage image = new BufferedImage(640, 96, BufferedImage.TYPE_INT_ARGB);
+    Graphics2D g2 = image.createGraphics();
+    try {
+      JLabel label = new JLabel();
+      Icon[] icons = new Icon[] {
+          DeclarationTabState.getFieldIcon(),
+          DeclarationTabState.getProcedureIcon(),
+          DeclarationTabState.getFunctionIcon(),
+          DeclarationTabState.getConstructorIcon(),
+          Icons.FOLDER_ICON_SMALL,
+          new ClosedTrashIcon(24, 24, Color.LIGHT_GRAY),
+          new OpenTrashIcon(24, 24, Color.WHITE),
+          new TypeIcon(fixture.sceneType, true, UIManager.getFont("defaultFont"), UIManager.getFont("defaultFont")),
+          IconFactoryManager.getDynamicIconFactoryForField(fixture.actorField).getIconToFit(new Dimension(24, 24)),
+          IconFactoryManager.getIconFactoryForResourceCls(BipedResource.class).getIconToFit(new Dimension(24, 24)),
+          IconFactoryManager.getIconFactoryForObjectMarker(org.lgna.story.Color.RED).getIconToFit(new Dimension(24, 24))
+      };
+      int x = 8;
+      for (Icon icon : icons) {
+        assertNotNull(icon);
+        icon.paintIcon(label, g2, x, 16);
+        x += icon.getIconWidth() + 12;
+      }
+      IconFactoryManager.markDynamicIconFactoryForFieldDirty(fixture.actorField);
+      IconFactoryManager.getDynamicIconFactoryForField(fixture.actorField)
+          .getIconToFit(new Dimension(24, 24))
+          .paintIcon(label, g2, x, 16);
+    } finally {
+      g2.dispose();
+    }
+
+    assertTrue(hasPaintedPixels(image));
+  }
+
+  @Test
+  public void opensIkPoserAndManipulatesJointChains() throws Exception {
+    skipIfHeadless();
+    UserField poseableField = findFirstPoseableField(onEdt(this.ide::getSceneType));
+    Assume.assumeTrue("IK poser unavailable in starter project", poseableField != null);
+    PoserComposite<?> poser = PoserComposite.getDialogForUserType((NamedUserType) poseableField.getValueType());
+    Assume.assumeTrue("IK poser unavailable for starter project field", poser != null);
+
+    JFrame poserFrame = onEdt(() -> {
+      JFrame frame = showStandaloneFrame("IK Poser Harness", poser.getView().getAwtComponent());
+      poser.handlePreActivation();
+      return frame;
+    });
+    try {
+      waitForIdle();
+      assertTrue(onEdt(poserFrame::isShowing));
+      clickCenter(poserFrame);
+
+      PoserControlComposite control = poser.getControlComposite();
+      assertNotNull(control);
+      assertTrue(onEdt(() -> poser.getJointSelectionSheres().size() >= 8));
+
+      onEdt(() -> {
+        JointSelectionSphere rightArmSphere = (JointSelectionSphere) poser.getScene().getJointsForLimb(Limb.RIGHT_ARM).get(1);
+        JointSelectionSphere leftArmSphere = (JointSelectionSphere) poser.getScene().getJointsForLimb(Limb.LEFT_ARM).get(1);
+        JointSelectionSphere rightLegSphere = (JointSelectionSphere) poser.getScene().getJointsForLimb(Limb.RIGHT_LEG).get(1);
+        JointSelectionSphere leftLegSphere = (JointSelectionSphere) poser.getScene().getJointsForLimb(Limb.LEFT_LEG).get(1);
+        control.getJointRotationHandleVisibilityState().setValueTransactionlessly(true);
+        control.updateSphere(Limb.RIGHT_ARM, rightArmSphere);
+        control.updateSphere(Limb.LEFT_ARM, leftArmSphere);
+        control.updateSphere(Limb.RIGHT_LEG, rightLegSphere);
+        control.updateSphere(Limb.LEFT_LEG, leftLegSphere);
+        poser.getUsedJoints().clear();
+        poser.getUsedJoints().add(rightArmSphere.getJoint().getJointId());
+        poser.getUsedJoints().add(leftLegSphere.getJoint().getJointId());
+        poser.getScene().jointSelected(rightArmSphere, createMouseClick(poserFrame, MouseEvent.BUTTON3));
+        poser.getScene().jointSelected(leftArmSphere, createMouseClick(poserFrame, MouseEvent.BUTTON3));
+        return null;
+      });
+      waitForIdle();
+
+      Pose<?> pose = onEdt(poser::getPose);
+      assertNotNull(pose);
+      onEdt(() -> {
+        control.getStraightenJointsOperation().fire(new UserActivity());
+        poser.strikePose(pose);
+        return null;
+      });
+      waitForIdle();
+      assertNotNull(onEdt(control::createPoseExpression));
+    } finally {
+      onEdt(() -> {
+        poser.handlePostDeactivation();
+        poserFrame.dispose();
+        return null;
+      });
+    }
+  }
+
+  @Test
+  public void opensProjectStatisticsDialogAndExercisesFrequencyViews() {
+    skipIfHeadless();
+    ProjectContextFixture fixture = ProjectContextFixture.create();
+    fixture.sceneProcedure.body.getValue().statements.add(
+        AstUtilities.createMethodInvocationStatement(new org.lgna.project.ast.ThisExpression(), fixture.sceneProcedure));
+    CountLoop loop = new CountLoop();
+    loop.count.setValue(new IntegerLiteral(2));
+    loop.body.setValue(new BlockStatement(new Comment("statistics loop")));
+    fixture.sceneProcedure.body.getValue().statements.add(loop);
+    TestIdeBootstrap.loadProject(fixture.project);
+    waitForIdle();
+
+    StatisticsFrameComposite composite = new StatisticsFrameComposite(this.ide.getDocumentFrame());
+    JFrame statisticsFrame = onEdt(() -> {
+      composite.handlePreActivation();
+      return showStandaloneFrame("Statistics Harness", composite.getView().getAwtComponent());
+    });
+    try {
+      waitForIdle();
+      assertTrue(onEdt(statisticsFrame::isShowing));
+      JList<?> list = onEdt(() -> findDescendant(statisticsFrame, JList.class));
+      assertNotNull(list);
+      assertTrue(onEdt(() -> list.getModel().getSize() > 0));
+      onEdt(() -> {
+        int index = Math.min(1, list.getModel().getSize() - 1);
+        list.setSelectedIndex(index);
+        return null;
+      });
+      waitForIdle();
+
+      for (JCheckBox checkBox : onEdt(() -> findDescendants(statisticsFrame, JCheckBox.class))) {
+        if (onEdt(checkBox::isEnabled)) {
+          clickButton(checkBox);
+        }
+      }
+
+      Object flowTab = getHiddenField(composite, "flowControlFrequencyTab");
+      Object methodTab = getHiddenField(composite, "methodTab");
+      onEdt(() -> {
+        composite.getTabState().setValueTransactionlessly((org.lgna.croquet.SimpleTabComposite<?>) flowTab);
+        return null;
+      });
+      waitForIdle();
+      assertTrue(onEdt(() -> findDescendants(statisticsFrame, JLabel.class).size() > 0));
+
+      onEdt(() -> {
+        composite.getTabState().setValueTransactionlessly((org.lgna.croquet.SimpleTabComposite<?>) methodTab);
+        return null;
+      });
+      waitForIdle();
+      assertTrue(onEdt(() -> findDescendants(statisticsFrame, JScrollPane.class).size() > 0));
+    } finally {
+      onEdt(() -> {
+        statisticsFrame.dispose();
+        composite.handlePostDeactivation();
+        return null;
+      });
+    }
+  }
+
+  @Test
+  public void mapsCodePanelDropReceptorsForStatementDrags() {
+    skipIfHeadless();
+    ProjectContextFixture fixture = ProjectContextFixture.create();
+    fixture.sceneProcedure.body.getValue().statements.add(
+        AstUtilities.createMethodInvocationStatement(new org.lgna.project.ast.ThisExpression(), fixture.sceneProcedure));
+    fixture.sceneProcedure.body.getValue().statements.add(new Comment("drag second"));
+    fixture.sceneProcedure.body.getValue().statements.add(new Comment("drag third"));
+    TestIdeBootstrap.loadProject(fixture.project);
+    waitForIdle();
+
+    onEdt(() -> {
+      this.ide.getDocumentFrame().getSetToCodePerspectiveOperation().fire(new UserActivity());
+      this.ide.getDocumentFrame().getDeclarationsEditorComposite().getTabState()
+          .getItemSelectionOperationForCode(fixture.sceneProcedure)
+          .fire(new UserActivity());
+      return null;
+    });
+    waitForIdle();
+
+    CodeEditor editor = onEdt(() -> (CodeEditor) this.ide.getDocumentFrame().getCodePerspective().getCodeDropReceptorInFocus());
+    assertNotNull(editor);
+    Object paneInfos = invokeHiddenMethod(
+        editor.getDropReceptor(),
+        "createStatementListPropertyPaneInfos",
+        new Class<?>[] {org.lgna.croquet.DragModel.class, org.lgna.croquet.views.AwtContainerView.class},
+        new StubCodeDragModel(),
+        null);
+    assertNotNull(paneInfos);
+    clickCenter(frame());
+  }
+
+  @Test
+  public void opensIssueReporterAndFormatsStackTraces() {
+    skipIfHeadless();
+    ReportIssueComposite reportIssueComposite = new ReportIssueComposite();
+    JDialog reportDialog = onEdt(() -> {
+      reportIssueComposite.handlePreActivation();
+      return showStandaloneDialog("Report Issue Harness", reportIssueComposite.getView().getAwtComponent());
+    });
+
+    CaughtExceptionPane exceptionPane = new CaughtExceptionPane();
+    IllegalStateException exception = new IllegalStateException("integration boom");
+    exceptionPane.setThreadAndThrowable(Thread.currentThread(), exception);
+    JDialog exceptionDialog = onEdt(() -> showStandaloneDialog("Caught Exception Harness", exceptionPane));
+    try {
+      waitForIdle();
+      onEdt(() -> {
+        reportIssueComposite.getSummaryState().setValueTransactionlessly("integration summary");
+        reportIssueComposite.getDescriptionState().setValueTransactionlessly("integration description");
+        return null;
+      });
+      clickCenter(reportDialog);
+
+      Container exceptionDetails = (Container) getHiddenField(exceptionPane, "paneException");
+      AbstractHyperlink hyperlink = onEdt(() -> findDescendant(exceptionDetails, AbstractHyperlink.class));
+      assertNotNull(hyperlink);
+      assertTrue(edu.cmu.cs.dennisc.java.lang.ThrowableUtilities.getStackTraceAsString(exception).contains("integration boom"));
+      assertTrue(((String) invokeHiddenMethod(exceptionPane, "getSummaryText", new Class<?>[0])).contains("IllegalStateException"));
+      assertNotNull(exceptionPane.generateIssue());
+    } finally {
+      onEdt(() -> {
+        exceptionDialog.dispose();
+        reportDialog.dispose();
+        reportIssueComposite.handlePostDeactivation();
+        return null;
+      });
+    }
+  }
+
+  @Test
+  public void computesFrameTitlesForProjectDirtyAndBackupStatesAcrossPerspectives() {
+    skipIfHeadless();
+    onEdt(() -> {
+      injectUriProjectLoader(this.ide, new FileProjectLoader(this.starterProjectFile.toFile()));
+      updateFrameTitle();
+      return null;
+    });
+    waitForIdle();
+
+    assertNotNull(onEdt(() -> frame().getTitle()));
+    assertNotNull(onEdt(() -> this.ide.getDocumentFrame().getCodePerspective().getClass().getSimpleName()));
+    assertNotNull(onEdt(() -> this.ide.getDocumentFrame().getSetupScenePerspective().getClass().getSimpleName()));
+
+    String cleanTitle = new org.alice.ide.frametitle.AliceIdeFrameTitleGenerator()
+        .generateTitle(createUriProjectLoader(this.starterProjectFile, false), true);
+    assertTrue(cleanTitle.contains(this.starterProjectFile.toString()));
+    assertFalse(cleanTitle.endsWith("*"));
+
+    String dirtyTitle = new org.alice.ide.frametitle.AliceIdeFrameTitleGenerator()
+        .generateTitle(createUriProjectLoader(this.starterProjectFile, false), false);
+    assertTrue(dirtyTitle.endsWith("*"));
+
+    String backupTitle = new org.alice.ide.frametitle.AliceIdeFrameTitleGenerator()
+        .generateTitle(createUriProjectLoader(this.starterProjectFile, true), true);
+    assertTrue(backupTitle.endsWith("*"));
+  }
+
+  @Test
+  public void opensResourceManagerAndBrowsesResourcesByType() {
+    skipIfHeadless();
+    ProjectContextFixture fixture = ProjectContextFixture.create();
+    TestIdeBootstrap.loadProject(fixture.project);
+    waitForIdle();
+
+    ResourceManagerComposite composite = new ResourceManagerComposite(this.ide.getDocumentFrame());
+    JFrame resourceFrame = onEdt(() -> {
+      composite.handlePreActivation();
+      return showStandaloneFrame("Resource Manager Harness", composite.getView().getAwtComponent());
+    });
+    try {
+      waitForIdle();
+      JTable table = onEdt(() -> findDescendant(resourceFrame, JTable.class));
+      assertNotNull(table);
+      assertEquals(2, (int) onEdt(table::getRowCount));
+      assertSame(fixture.audioResource.getClass(), onEdt(() -> table.getValueAt(0, ResourceSingleSelectTableRowState.TYPE_COLUMN_INDEX)));
+      assertSame(fixture.imageResource.getClass(), onEdt(() -> table.getValueAt(1, ResourceSingleSelectTableRowState.TYPE_COLUMN_INDEX)));
+
+      onEdt(() -> {
+        table.setRowSelectionInterval(0, 0);
+        return null;
+      });
+      waitForIdle();
+      awaitCondition("resource rename operation not enabled", () -> onEdt(() -> composite.getRenameResourceComposite().getLaunchOperation().isEnabled()));
+      assertTrue(onEdt(() -> composite.getReloadContentOperation().isEnabled()));
+
+      BufferedImage renderImage = new BufferedImage(320, 120, BufferedImage.TYPE_INT_ARGB);
+      Graphics2D g2 = renderImage.createGraphics();
+      try {
+        onEdt(() -> {
+          for (int row = 0; row < table.getRowCount(); row++) {
+            for (int col = 0; col < table.getColumnCount(); col++) {
+              Component renderer = table.prepareRenderer(table.getCellRenderer(row, col), row, col);
+              renderer.setBounds(0, 0, 100, 24);
+              renderer.paint(g2);
+            }
+          }
+          return null;
+        });
+      } finally {
+        g2.dispose();
+      }
+      assertTrue(hasPaintedPixels(renderImage));
+    } finally {
+      onEdt(() -> {
+        resourceFrame.dispose();
+        composite.handlePostDeactivation();
+        return null;
+      });
+    }
+  }
+
+  @Test
   public void navigatesMemberTabsExpandsTypeHierarchyAndSwitchesRecentProjects() throws Exception {
     skipIfHeadless();
     ProjectContextFixture fixture = ProjectContextFixture.create();
@@ -664,6 +1079,195 @@ public class AliceIdeIntegrationTest {
     }
   }
 
+  private void dragComponentToScreenPoint(Component component, Point targetPointOnScreen) {
+    Rectangle startBounds = onEdt(() -> boundsOnScreen(component));
+    assertNotNull("component is not showing on screen", startBounds);
+    int startX = startBounds.x + (startBounds.width / 2);
+    int startY = startBounds.y + (startBounds.height / 2);
+    this.robot.mouseMove(startX, startY);
+    this.robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+    this.robot.delay(120);
+    this.robot.mouseMove((startX + targetPointOnScreen.x) / 2, (startY + targetPointOnScreen.y) / 2);
+    this.robot.delay(120);
+    this.robot.mouseMove(targetPointOnScreen.x, targetPointOnScreen.y);
+    this.robot.delay(200);
+    this.robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+    waitForIdle();
+  }
+
+  private MouseEvent createMouseClick(Component source, int button) {
+    return new MouseEvent(source, MouseEvent.MOUSE_CLICKED, System.currentTimeMillis(), 0, 16, 16, 1, false, button);
+  }
+
+  private boolean hasPaintedPixels(BufferedImage image) {
+    for (int y = 0; y < image.getHeight(); y++) {
+      for (int x = 0; x < image.getWidth(); x++) {
+        if ((image.getRGB(x, y) >>> 24) != 0) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  private UriProjectLoader createUriProjectLoader(Path projectPath, boolean backup) {
+    return new UriProjectLoader(false) {
+      @Override
+      public boolean isNewProject() {
+        return false;
+      }
+
+      @Override
+      public URI getUri() {
+        return projectPath.toUri();
+      }
+
+      @Override
+      protected Project load() {
+        return AliceIdeIntegrationTest.this.ide.getProject();
+      }
+
+      @Override
+      public boolean isBackup() {
+        return backup;
+      }
+
+      @Override
+      public java.io.File getMainProjectFile() {
+        return projectPath.toFile();
+      }
+    };
+  }
+
+  private void updateFrameTitle() {
+    try {
+      Method method = org.alice.ide.ProjectApplication.class.getDeclaredMethod("updateTitle");
+      method.setAccessible(true);
+      method.invoke(this.ide);
+    } catch (ReflectiveOperationException roe) {
+      throw new AssertionError(roe);
+    }
+  }
+
+  private Object getFirstRtBlank(Object rtBlankOwner) {
+    Object[] blankChildren = (Object[]) invokeHiddenMethod(rtBlankOwner, "getBlankChildren", new Class<?>[0]);
+    assertTrue(blankChildren.length > 0);
+    return blankChildren[0];
+  }
+
+  private Object[] getRtItems(Object rtBlank) {
+    Object pair = invokeHiddenMethod(rtBlank, "getItemChildrenAndComboOffsets", new Class<?>[0]);
+    return (Object[]) invokeHiddenMethod(pair, "getItemChildren", new Class<?>[0]);
+  }
+
+  private Object findMenuFollowingFieldFillIn(Object[] topItems, UserField field) {
+    for (int i = 0; i < topItems.length - 1; i++) {
+      Object item = topItems[i];
+      if (!item.getClass().getSimpleName().contains("RtFillIn")) {
+        continue;
+      }
+      Object value = invokeHiddenMethod(item, "createValue", new Class<?>[0]);
+      if (value instanceof FieldAccess fieldAccess && fieldAccess.field.getValue() == field) {
+        Object nextItem = topItems[i + 1];
+        if (nextItem.getClass().getSimpleName().contains("RtMenu")) {
+          return nextItem;
+        }
+      }
+    }
+    for (Object item : topItems) {
+      if (item.getClass().getSimpleName().contains("RtMenu")) {
+        return item;
+      }
+    }
+    return null;
+  }
+
+  private Object findFirstFillIn(Object[] items) {
+    for (Object item : items) {
+      if (item.getClass().getSimpleName().contains("RtFillIn")) {
+        return item;
+      }
+    }
+    return null;
+  }
+
+  private Object getHiddenField(Object target, String name) {
+    try {
+      Class<?> type = target.getClass();
+      while (type != null) {
+        try {
+          java.lang.reflect.Field field = type.getDeclaredField(name);
+          field.setAccessible(true);
+          return field.get(target);
+        } catch (NoSuchFieldException nsfe) {
+          type = type.getSuperclass();
+        }
+      }
+      throw new NoSuchFieldException(name);
+    } catch (ReflectiveOperationException roe) {
+      throw new AssertionError(roe);
+    }
+  }
+
+  private Object invokeHiddenMethod(Object target, String name, Class<?>[] parameterTypes, Object... args) {
+    try {
+      Class<?> type = target.getClass();
+      while (type != null) {
+        try {
+          Method method = type.getDeclaredMethod(name, parameterTypes);
+          method.setAccessible(true);
+          return method.invoke(target, args);
+        } catch (NoSuchMethodException nsme) {
+          type = type.getSuperclass();
+        }
+      }
+      throw new NoSuchMethodException(name);
+    } catch (ReflectiveOperationException roe) {
+      throw new AssertionError(roe);
+    }
+  }
+
+  private static final class StubCodeDragModel extends org.lgna.croquet.AbstractModel implements org.lgna.croquet.DragModel {
+    private StubCodeDragModel() {
+      super(UUID.randomUUID());
+    }
+
+    @Override
+    public List<? extends org.lgna.croquet.DropReceptor> createListOfPotentialDropReceptors() {
+      return List.of();
+    }
+
+    @Override
+    public void handleDragStarted(org.lgna.croquet.history.DragStep step) {
+    }
+
+    @Override
+    public void handleDragEnteredDropReceptor(org.lgna.croquet.history.DragStep step) {
+    }
+
+    @Override
+    public void handleDragExitedDropReceptor(org.lgna.croquet.history.DragStep step) {
+    }
+
+    @Override
+    public void handleDragStopped(org.lgna.croquet.history.DragStep step) {
+    }
+
+    @Override
+    public org.lgna.croquet.Triggerable getDropOperation(org.lgna.croquet.history.DragStep step, org.lgna.croquet.DropSite dropSite) {
+      return null;
+    }
+
+    @Override
+    protected Class<? extends org.lgna.croquet.Element> getClassUsedForLocalization() {
+      return StubCodeDragModel.class;
+    }
+
+    @Override
+    protected void localize() {
+    }
+  }
+
   private JFrame frame() {
     return onEdt(() -> this.ide.getDocumentFrame().getFrame().getAwtComponent());
   }
@@ -731,7 +1335,7 @@ public class AliceIdeIntegrationTest {
     return null;
   }
 
-  private void injectUriProjectLoader(StageIDE stageIDE, FileProjectLoader loader) {
+  private void injectUriProjectLoader(StageIDE stageIDE, UriProjectLoader loader) {
     try {
       Class<?> type = stageIDE.getClass();
       while (type != null) {
@@ -779,6 +1383,18 @@ public class AliceIdeIntegrationTest {
     }
     for (UserField field : sceneType.getDeclaredFields()) {
       if (field != null) {
+        return field;
+      }
+    }
+    return null;
+  }
+
+  private UserField findFirstPoseableField(NamedUserType sceneType) {
+    if (sceneType == null) {
+      return null;
+    }
+    for (UserField field : sceneType.getDeclaredFields()) {
+      if (field != null && field.getValueType() instanceof NamedUserType namedUserType && PoserComposite.isPoseable(namedUserType)) {
         return field;
       }
     }
