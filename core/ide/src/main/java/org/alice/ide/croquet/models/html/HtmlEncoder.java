@@ -201,7 +201,7 @@ public class HtmlEncoder implements AstProcessor {
   @Override
   public void processMethod(UserMethod method) {
     // Skip code that is generated or managed, but this does not include Program.main, so there is an extra check to skip it
-    if (method.getManagementLevel().isGenerated() || (method.isStatic() && "main".equals(method.getName()))) {
+    if (HtmlEncoderLogic.shouldSkipMethod(method)) {
       return;
     }
     pushDiv("alice-method", () -> {
@@ -236,18 +236,16 @@ public class HtmlEncoder implements AstProcessor {
         addSpan("alice-method-name alice-code-header", listenerMethod.getName());
         appendLambdaArguments(addListenerCall);
       });
-      ArrayList<SimpleArgument> args = addListenerCall.requiredArguments.getValue();
-      if (!args.isEmpty() && "listener".equals(args.getFirst().parameter.getValue().getName()) && args.getFirst().expression.getValue() instanceof LambdaExpression) {
-        Lambda lambda = ((LambdaExpression) args.getFirst().expression.getValue()).value.getValue();
-        if (lambda instanceof UserLambda userLambda) {
-          List<? extends AbstractMethod> listenerTypeMethods = args.getFirst().parameter.getValue().getValueType().getDeclaredMethods();
-          AbstractMethod first = listenerTypeMethods.getFirst();
+      SimpleArgument listenerArgument = HtmlEncoderLogic.getRequiredListenerArgument(addListenerCall);
+      UserLambda userLambda = HtmlEncoderLogic.getUserLambda(listenerArgument);
+      if (listenerArgument != null && userLambda != null) {
+        List<? extends AbstractMethod> listenerTypeMethods = listenerArgument.parameter.getValue().getValueType().getDeclaredMethods();
+        AbstractMethod first = listenerTypeMethods.getFirst();
 
-          pushDiv("alice-listener-declaration", () -> {
-            appendLambdaMethodHeader(first.getName());
-            pushSvg(() -> statementsAsSvg(userLambda.body.getValue().statements));
-          });
-        }
+        pushDiv("alice-listener-declaration", () -> {
+          appendLambdaMethodHeader(first.getName());
+          pushSvg(() -> statementsAsSvg(userLambda.body.getValue().statements));
+        });
       }
     });
   }
@@ -287,7 +285,7 @@ public class HtmlEncoder implements AstProcessor {
   private void appendLambdaArguments(MethodInvocation code) {
     pushSpan("alice-parameters alice-code-header", () -> {
       for (SimpleArgument arg : code.requiredArguments.getValue()) {
-        if (!"listener".equals(arg.parameter.getValue().getName())) {
+        if (!HtmlEncoderLogic.isListenerArgument(arg)) {
           appendLambdaArgument(arg);
         }
       }
