@@ -42,4 +42,48 @@ public class ProjectChangeOfInterestManagerTest {
     ProjectChangeOfInterestManager.SINGLETON.fireProjectChangeOfInterestListeners();
     assertEquals(1, callCount.get());
   }
+
+  @Test
+  public void duplicateListenerRegistrationRequiresMatchingNumberOfRemovals() {
+    AtomicInteger callCount = new AtomicInteger();
+    ProjectChangeOfInterestListener listener = callCount::incrementAndGet;
+
+    ProjectChangeOfInterestManager.SINGLETON.addProjectChangeOfInterestListener(listener);
+    ProjectChangeOfInterestManager.SINGLETON.addProjectChangeOfInterestListener(listener);
+    try {
+      ProjectChangeOfInterestManager.SINGLETON.fireProjectChangeOfInterestListeners();
+      assertEquals(2, callCount.get());
+
+      ProjectChangeOfInterestManager.SINGLETON.removeProjectChangeOfInterestListener(listener);
+      ProjectChangeOfInterestManager.SINGLETON.fireProjectChangeOfInterestListeners();
+      assertEquals(3, callCount.get());
+    } finally {
+      ProjectChangeOfInterestManager.SINGLETON.removeProjectChangeOfInterestListener(listener);
+    }
+  }
+
+  @Test
+  public void copyOnWriteIterationStillNotifiesSnapshotWhenListenerRemovesAnotherListener() {
+    StringBuilder order = new StringBuilder();
+    ProjectChangeOfInterestListener[] secondHolder = new ProjectChangeOfInterestListener[1];
+    ProjectChangeOfInterestListener first = () -> {
+      order.append('A');
+      ProjectChangeOfInterestManager.SINGLETON.removeProjectChangeOfInterestListener(secondHolder[0]);
+    };
+    ProjectChangeOfInterestListener second = () -> order.append('B');
+    secondHolder[0] = second;
+
+    ProjectChangeOfInterestManager.SINGLETON.addProjectChangeOfInterestListener(first);
+    ProjectChangeOfInterestManager.SINGLETON.addProjectChangeOfInterestListener(second);
+    try {
+      ProjectChangeOfInterestManager.SINGLETON.fireProjectChangeOfInterestListeners();
+      assertEquals("AB", order.toString());
+
+      ProjectChangeOfInterestManager.SINGLETON.fireProjectChangeOfInterestListeners();
+      assertEquals("ABA", order.toString());
+    } finally {
+      ProjectChangeOfInterestManager.SINGLETON.removeProjectChangeOfInterestListener(first);
+      ProjectChangeOfInterestManager.SINGLETON.removeProjectChangeOfInterestListener(second);
+    }
+  }
 }
