@@ -5,6 +5,7 @@ import org.lgna.project.ast.BlockStatement;
 import org.lgna.project.ast.ConstructorBlockStatement;
 import org.lgna.project.ast.ConstructorInvocationStatement;
 import org.lgna.project.ast.SuperConstructorInvocationStatement;
+import org.lgna.project.ast.ThisConstructorInvocationStatement;
 
 import java.awt.Rectangle;
 
@@ -18,6 +19,14 @@ public class CodeEditorLogicTest {
   @Test
   public void getLeadingConstructorInvocationReturnsConstructorStatementForConstructorBodies() {
     ConstructorInvocationStatement invocation = new SuperConstructorInvocationStatement();
+    ConstructorBlockStatement body = new ConstructorBlockStatement(invocation);
+
+    assertSame(invocation, CodeEditorLogic.getLeadingConstructorInvocation(body));
+  }
+
+  @Test
+  public void getLeadingConstructorInvocationSupportsThisConstructorStatements() {
+    ConstructorInvocationStatement invocation = new ThisConstructorInvocationStatement();
     ConstructorBlockStatement body = new ConstructorBlockStatement(invocation);
 
     assertSame(invocation, CodeEditorLogic.getLeadingConstructorInvocation(body));
@@ -40,6 +49,16 @@ public class CodeEditorLogicTest {
   }
 
   @Test
+  public void capMinimumIgnoresTheDraggedIndexAndKeepsPotentialBoundWhenNoSiblingQualifies() {
+    StatementListPropertyPaneInfo[] infos = {
+        pane(0, 10, 100, 20),
+        pane(0, 70, 100, 10)
+    };
+
+    assertEquals(12, CodeEditorLogic.capMinimum(12, 25, infos, 0));
+  }
+
+  @Test
   public void capMaximumUsesSmallestSiblingTopAboveCurrentBottom() {
     StatementListPropertyPaneInfo[] infos = {
         pane(0, 0, 100, 10),
@@ -48,5 +67,15 @@ public class CodeEditorLogicTest {
     };
 
     assertEquals(40, CodeEditorLogic.capMaximum(80, 25, infos, 0));
+  }
+
+  @Test
+  public void capMaximumIgnoresTheDraggedIndexAndKeepsPotentialBoundWhenNoSiblingQualifies() {
+    StatementListPropertyPaneInfo[] infos = {
+        pane(0, 80, 100, 10),
+        pane(0, 10, 100, 20)
+    };
+
+    assertEquals(90, CodeEditorLogic.capMaximum(90, 85, infos, 0));
   }
 }
