@@ -38,6 +38,11 @@ public class CodeEditorLogicTest {
   }
 
   @Test
+  public void getLeadingConstructorInvocationUsesDefaultSuperInvocationForDefaultConstructorBlocks() {
+    assertTrue(CodeEditorLogic.getLeadingConstructorInvocation(new ConstructorBlockStatement()) instanceof SuperConstructorInvocationStatement);
+  }
+
+  @Test
   public void capMinimumUsesLargestSiblingBottomBelowCurrentY() {
     StatementListPropertyPaneInfo[] infos = {
         pane(0, 0, 100, 10),
@@ -59,6 +64,16 @@ public class CodeEditorLogicTest {
   }
 
   @Test
+  public void capMinimumTreatsSiblingTouchingCurrentYAsNotBelow() {
+    StatementListPropertyPaneInfo[] infos = {
+        pane(0, 20, 100, 10),
+        pane(0, 80, 100, 10)
+    };
+
+    assertEquals(12, CodeEditorLogic.capMinimum(12, 30, infos, 1));
+  }
+
+  @Test
   public void capMaximumUsesSmallestSiblingTopAboveCurrentBottom() {
     StatementListPropertyPaneInfo[] infos = {
         pane(0, 0, 100, 10),
@@ -77,5 +92,15 @@ public class CodeEditorLogicTest {
     };
 
     assertEquals(90, CodeEditorLogic.capMaximum(90, 85, infos, 0));
+  }
+
+  @Test
+  public void capMaximumTreatsSiblingTouchingCurrentBottomAsNotAbove() {
+    StatementListPropertyPaneInfo[] infos = {
+        pane(0, 25, 100, 10),
+        pane(0, 80, 100, 10)
+    };
+
+    assertEquals(90, CodeEditorLogic.capMaximum(90, 25, infos, 1));
   }
 }
