@@ -1,5 +1,8 @@
 package org.alice.ide;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
+
 import org.alice.ide.frametitle.IdeFrameTitleGenerator;
 import org.alice.ide.projecturi.RecentProjectCountState;
 import org.alice.ide.uricontent.UriProjectLoader;
@@ -58,6 +61,11 @@ import static org.junit.Assert.assertTrue;
  * {@code public} (not package-private) for this cross-package test to compile.
  */
 public class SilverThreadEditSaveReadbackTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
 
   private static final String METHOD_NAME = "eatmeFirstLesson";
   private static final String COMMENT_MARKER = "silver-thread-edit-save-readback-proof";

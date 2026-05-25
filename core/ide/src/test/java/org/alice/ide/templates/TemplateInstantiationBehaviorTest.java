@@ -1,5 +1,8 @@
 package org.alice.ide.templates;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
+
 import org.alice.ide.ThemeUtilities;
 import org.alice.ide.ast.draganddrop.BlockStatementIndexPair;
 import org.alice.ide.ast.draganddrop.expression.AbstractExpressionDragModel;
@@ -22,6 +25,11 @@ import java.util.concurrent.atomic.AtomicReference;
 import static org.junit.Assert.*;
 
 public class TemplateInstantiationBehaviorTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
   @Test
   public void statementTemplateRetainsStatementClassAndUsesStatementTheme() throws Exception {
     TestStatementTemplate template = runOnEdt(TestStatementTemplate::new);
