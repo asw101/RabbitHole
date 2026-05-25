@@ -39,4 +39,13 @@ public class SceneObjectPropertyManagerPanelLogicTest {
     assertEquals(SceneObjectPropertyManagerPanelLogic.AdapterKind.NONE,
         SceneObjectPropertyManagerPanelLogic.chooseAdapter("setVehicle", SceneObjectPropertyManagerPanelLogic.EntityKind.MODEL, false, false).kind);
   }
+
+  @Test
+  public void jointControlsAndResolutionRulesMatchInstanceKinds() {
+    assertTrue(SceneObjectPropertyManagerPanelLogic.shouldShowJointControls(true, true));
+    assertFalse(SceneObjectPropertyManagerPanelLogic.shouldShowJointControls(true, false));
+    assertTrue(SceneObjectPropertyManagerPanelLogic.shouldResolveSelectedInstance(false, false));
+    assertFalse(SceneObjectPropertyManagerPanelLogic.shouldResolveSelectedInstance(true, false));
+    assertFalse(SceneObjectPropertyManagerPanelLogic.shouldResolveSelectedInstance(false, true));
+  }
 }

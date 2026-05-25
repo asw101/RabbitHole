@@ -47,6 +47,25 @@ public class ModelSizePropertyControllerLogicTest {
   }
 
   @Test
+  public void resolveSourceAxisRecognizesEditedField() {
+    assertEquals(ModelSizePropertyControllerLogic.SourceAxis.WIDTH,
+        ModelSizePropertyControllerLogic.resolveSourceAxis(true, false, false));
+    assertEquals(ModelSizePropertyControllerLogic.SourceAxis.HEIGHT,
+        ModelSizePropertyControllerLogic.resolveSourceAxis(false, true, false));
+    assertEquals(ModelSizePropertyControllerLogic.SourceAxis.DEPTH,
+        ModelSizePropertyControllerLogic.resolveSourceAxis(false, false, true));
+    assertEquals(ModelSizePropertyControllerLogic.SourceAxis.NONE,
+        ModelSizePropertyControllerLogic.resolveSourceAxis(false, false, false));
+  }
+
+  @Test
+  public void shouldOfferResetButtonOnlyForJointedOrBillboardModels() {
+    assertTrue(ModelSizePropertyControllerLogic.shouldOfferResetButton(true, false));
+    assertTrue(ModelSizePropertyControllerLogic.shouldOfferResetButton(false, true));
+    assertFalse(ModelSizePropertyControllerLogic.shouldOfferResetButton(false, false));
+  }
+
+  @Test
   public void clampNegativeScaleUsesNearZeroFractionOfOldScale() {
     Dimension3 clamped = ModelSizePropertyControllerLogic.clampNegativeScale(
         new Dimension3(4.0, 2.0, 1.0),

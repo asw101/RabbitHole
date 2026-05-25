@@ -307,13 +307,8 @@ public class BasicTreeViewer extends JPanel implements TreeSelectionListener {
       }
 
       if (sgNode.hasExtras) {
-        if (sgNode.isShowing) {
-          this.isShowingLabel.setText("SHOWING");
-        } else {
-          this.isShowingLabel.setText("NOT SHOWING");
-        }
-        String opacityString = "%.2f".formatted(sgNode.opacity);
-        this.opacityLabel.setText(opacityString);
+        this.isShowingLabel.setText(BasicTreeViewerLogic.getShowingText(sgNode.isShowing));
+        this.opacityLabel.setText(BasicTreeViewerLogic.getOpacityText(sgNode.opacity));
       }
 
       this.splitPane.setTopComponent(this.mainPanel);

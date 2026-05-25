@@ -91,6 +91,14 @@ final class SceneObjectPropertyManagerPanelLogic {
     return EntityKind.UNKNOWN;
   }
 
+  static boolean shouldShowJointControls(boolean jointedModel, boolean thisFieldAccessFactory) {
+    return jointedModel && thisFieldAccessFactory;
+  }
+
+  static boolean shouldResolveSelectedInstance(boolean localAccessExpression, boolean parameterAccessExpression) {
+    return !localAccessExpression && !parameterAccessExpression;
+  }
+
   static AdapterChoice chooseAdapter(String setterName, EntityKind entityKind, boolean hasNonfreeAdapter, boolean isMutableRider) {
     return switch (setterName) {
       case "setOpacity" -> switch (entityKind) {

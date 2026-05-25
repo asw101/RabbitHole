@@ -66,4 +66,11 @@ public class SetUpMethodGeneratorLogicTest {
     assertFalse(SetUpMethodGeneratorLogic.shouldCreateSizeStatement(false, Scale.IDENTITY));
     assertTrue(SetUpMethodGeneratorLogic.shouldCreateSizeStatement(false, new Scale(2.0, 1.0, 1.0)));
   }
+
+  @Test
+  public void shouldLogMissingSetterSuppressesThisVehicleGetterNoise() {
+    assertFalse(SetUpMethodGeneratorLogic.shouldLogMissingSetter("getVehicle", true));
+    assertTrue(SetUpMethodGeneratorLogic.shouldLogMissingSetter("getVehicle", false));
+    assertTrue(SetUpMethodGeneratorLogic.shouldLogMissingSetter("getPaint", true));
+  }
 }

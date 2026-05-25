@@ -143,10 +143,13 @@ class SceneEditorFieldManager {
       UserField field = editor.getFieldForInstanceInJavaVM(imp.getAbstraction());
       if (field != null) {
         FieldRegistry.MarkerKind markerKind = this.fieldRegistry.classifyField(field);
-        if (field.getValueType().isAssignableFrom(SCameraMarker.class)) {
+        SceneEditorFieldManagerLogic.MarkerSelection markerSelection = SceneEditorFieldManagerLogic.classifyMarkerSelection(
+            field.getValueType().isAssignableFrom(SCameraMarker.class),
+            field.getValueType().isAssignableFrom(SThingMarker.class));
+        if (markerSelection == SceneEditorFieldManagerLogic.MarkerSelection.CAMERA) {
           assert markerKind == FieldRegistry.MarkerKind.CAMERA;
           setSelectedCameraMarker(field);
-        } else if (field.getValueType().isAssignableFrom(SThingMarker.class)) {
+        } else if (markerSelection == SceneEditorFieldManagerLogic.MarkerSelection.OBJECT) {
           assert markerKind == FieldRegistry.MarkerKind.OBJECT;
           setSelectedObjectMarker(field);
         } else {

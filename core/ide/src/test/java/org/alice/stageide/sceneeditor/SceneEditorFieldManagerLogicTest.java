@@ -27,6 +27,16 @@ public class SceneEditorFieldManagerLogicTest {
   }
 
   @Test
+  public void classifyMarkerSelectionSeparatesCameraObjectAndStandardFields() {
+    assertEquals(SceneEditorFieldManagerLogic.MarkerSelection.CAMERA,
+        SceneEditorFieldManagerLogic.classifyMarkerSelection(true, false));
+    assertEquals(SceneEditorFieldManagerLogic.MarkerSelection.OBJECT,
+        SceneEditorFieldManagerLogic.classifyMarkerSelection(false, true));
+    assertEquals(SceneEditorFieldManagerLogic.MarkerSelection.STANDARD,
+        SceneEditorFieldManagerLogic.classifyMarkerSelection(false, false));
+  }
+
+  @Test
   public void shouldToggleRenderingOnlyForSceneEditorSpecificReasons() {
     assertTrue(SceneEditorFieldManagerLogic.shouldToggleRendering(ReasonToDisableSomeAmountOfRendering.MODAL_DIALOG_WITH_RENDER_WINDOW_OF_ITS_OWN));
     assertTrue(SceneEditorFieldManagerLogic.shouldToggleRendering(ReasonToDisableSomeAmountOfRendering.CLICK_AND_CLACK));

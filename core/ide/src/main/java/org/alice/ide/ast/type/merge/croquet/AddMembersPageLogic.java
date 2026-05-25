@@ -16,4 +16,8 @@ final class AddMembersPageLogic {
     }
     return sb.toString();
   }
+
+  static boolean shouldIncludePreviewHub(boolean includingAll, boolean desired) {
+    return includingAll || desired;
+  }
 }

@@ -32,4 +32,8 @@ final class SetUpMethodGeneratorLogic {
   static boolean shouldCreateSizeStatement(boolean isBox, Scale scale) {
     return isBox || !Scale.IDENTITY.equals(scale);
   }
+
+  static boolean shouldLogMissingSetter(String getterName, boolean isThis) {
+    return !"getVehicle".equals(getterName) || !isThis;
+  }
 }

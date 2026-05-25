@@ -36,6 +36,14 @@ final class BasicTreeViewerLogic {
     return "[%.3f, %.3f, %.3f]".formatted(absoluteTransform.translation().x(), absoluteTransform.translation().y(), absoluteTransform.translation().z());
   }
 
+  static String getShowingText(boolean isShowing) {
+    return isShowing ? "SHOWING" : "NOT SHOWING";
+  }
+
+  static String getOpacityText(double opacity) {
+    return "%.2f".formatted(opacity);
+  }
+
   static String buildStackTraceText(StackTraceElement[] stackTrace) {
     if (stackTrace == null) {
       return "";

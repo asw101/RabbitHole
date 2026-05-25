@@ -46,6 +46,10 @@ final class CodePanelDropLogic {
     return sameOwner && ((prevIndex == nextIndex) || (prevIndex == (nextIndex - 1)));
   }
 
+  static int calculateDropProxyX(boolean leftToRight, int leftInset, int paneWidth, int rightInset, int proxyWidth) {
+    return leftToRight ? leftInset : paneWidth - rightInset - proxyWidth;
+  }
+
   static boolean recursionWouldBeDisallowed(boolean recursionAllowed, boolean recursiveTemplate) {
     return !recursionAllowed && recursiveTemplate;
   }

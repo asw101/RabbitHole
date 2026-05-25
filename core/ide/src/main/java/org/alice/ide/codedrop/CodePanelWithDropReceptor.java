@@ -258,12 +258,12 @@ public abstract class CodePanelWithDropReceptor extends BorderPanel {
                 }
               }
             }
-            if (componentOrientation.isLeftToRight()) {
-              p.x = insets.left;
-            } else {
-              p.x = this.currentUnder.getWidth() - insets.right - step.getDragSource().getDropProxy().getWidth();
-
-            }
+            p.x = CodePanelDropLogic.calculateDropProxyX(
+                componentOrientation.isLeftToRight(),
+                insets.left,
+                this.currentUnder.getWidth(),
+                insets.right,
+                step.getDragSource().getDropProxy().getWidth());
             source.setDropProxyLocationAndShowIfNecessary(p, this.currentUnder, height, availableHeight);
           }
         }

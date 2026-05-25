@@ -168,19 +168,19 @@ public class CameraNavigationDragAdapter extends OnscreenLookingGlassDragAdapter
   }
 
   public void handleMouseDragged(int xPixel, int yPixel) {
-    final double TRANSLATION_XZ_FACTOR = 0.05;
-    final double TRANSLATION_Y_FACTOR = 0.05;
-    final double ORBIT_YAW_FACTOR = 0.02;
-    final double ORBIT_PITCH_FACTOR = 0.002;
     if (m_cameraNavigationMode != null) {
-      if (m_cameraNavigationMode == CameraNavigationMode.ORBIT) {
-        int xPixelDelta = xPixel - m_xPixelPrev;
-        int yPixelDelta = yPixel - m_yPixelPrev;
-        m_function.requestOrbit(xPixelDelta * ORBIT_YAW_FACTOR, -yPixelDelta * ORBIT_PITCH_FACTOR);
-      } else if (m_cameraNavigationMode == CameraNavigationMode.TRANSLATE_XZ) {
-        m_function.requestVelocity((xPixel - m_xPixel0) * TRANSLATION_XZ_FACTOR, 0, (yPixel - m_yPixel0) * TRANSLATION_XZ_FACTOR);
-      } else if (m_cameraNavigationMode == CameraNavigationMode.TRANSLATE_Y) {
-        m_function.requestVelocity(0, -((yPixel - m_yPixel0) * TRANSLATION_Y_FACTOR), 0);
+      CameraNavigationDragAdapterLogic.MouseDragPlan plan = CameraNavigationDragAdapterLogic.createMouseDragPlan(
+          m_cameraNavigationMode,
+          m_xPixel0,
+          m_yPixel0,
+          m_xPixelPrev,
+          m_yPixelPrev,
+          xPixel,
+          yPixel);
+      if (plan.orbit) {
+        m_function.requestOrbit(plan.orbitYaw, plan.orbitPitch);
+      } else {
+        m_function.requestVelocity(plan.velocityX, plan.velocityY, plan.velocityZ);
       }
       m_xPixelPrev = xPixel;
       m_yPixelPrev = yPixel;

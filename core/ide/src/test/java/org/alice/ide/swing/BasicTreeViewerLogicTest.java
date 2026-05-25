@@ -42,6 +42,9 @@ public class BasicTreeViewerLogicTest {
     assertEquals("<NO NAME>", BasicTreeViewerLogic.getNodeNameText(unnamed));
     assertEquals("NO COLOR", BasicTreeViewerLogic.getColorText(null));
     assertEquals(new Color(127, 63, 255), BasicTreeViewerLogic.getBackgroundColor(new Color4f(0.5f, 0.25f, 1.0f, 0.75f)));
+    assertEquals("SHOWING", BasicTreeViewerLogic.getShowingText(true));
+    assertEquals("NOT SHOWING", BasicTreeViewerLogic.getShowingText(false));
+    assertEquals("0.33", BasicTreeViewerLogic.getOpacityText(0.333));
     assertEquals("[1.000, 2.500, -3.000]", BasicTreeViewerLogic.getPositionText(AffineMatrix4x4.createTranslation(1.0, 2.5, -3.0)));
     assertEquals("pkg.Type.wave(Type.java:42)\n", BasicTreeViewerLogic.buildStackTraceText(new StackTraceElement[] {new StackTraceElement("pkg.Type", "wave", "Type.java", 42)}));
   }

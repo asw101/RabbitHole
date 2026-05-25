@@ -94,7 +94,6 @@ import org.lgna.project.ast.InstanceCreation;
 import org.lgna.project.ast.JavaField;
 import org.lgna.project.ast.JavaType;
 import org.lgna.project.ast.LambdaExpression;
-import org.lgna.project.ast.ManagementLevel;
 import org.lgna.project.ast.MethodInvocation;
 import org.lgna.project.ast.NamedUserType;
 import org.lgna.project.ast.Node;
@@ -361,17 +360,11 @@ public class StageIDE extends IDE {
       SwingUtilities.invokeLater(new Runnable() {
         @Override
         public void run() {
-          final int N = type.fields.size();
-          int i = N;
-          while (i > 0) {
-            i--;
-            UserField field = type.fields.get(i);
-            if (field.managementLevel.getValue() == ManagementLevel.MANAGED) {
-              if (getApiConfigurationManager().isInstanceFactoryDesiredForType(field.getValueType())) {
-                getDocumentFrame().getInstanceFactoryState().setValueTransactionlessly(ThisFieldAccessFactory.getInstance(field));
-                break;
-              }
-            }
+          UserField field = StageIDELogic.findManagedSceneField(
+              type.fields,
+              candidate -> getApiConfigurationManager().isInstanceFactoryDesiredForType(candidate.getValueType()));
+          if (field != null) {
+            getDocumentFrame().getInstanceFactoryState().setValueTransactionlessly(ThisFieldAccessFactory.getInstance(field));
           }
         }
       });

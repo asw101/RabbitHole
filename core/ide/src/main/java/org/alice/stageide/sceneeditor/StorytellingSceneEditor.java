@@ -218,7 +218,9 @@ public class StorytellingSceneEditor extends AbstractSceneEditor {
         if (!this.selectionIsFromInstanceSelector) {
           StageIDE ide = StageIDE.getActiveInstance();
           InstanceFactoryState instanceFactoryState = ide.getDocumentFrame().getInstanceFactoryState();
-          if (field == this.getActiveSceneField()) {
+          StorytellingSceneEditorLogic.InstanceFactorySelection selection =
+              StorytellingSceneEditorLogic.determineInstanceFactorySelection(field == this.getActiveSceneField());
+          if (selection == StorytellingSceneEditorLogic.InstanceFactorySelection.SCENE) {
             instanceFactoryState.setValueTransactionlessly(ide.getInstanceFactoryForScene());
           } else {
             instanceFactoryState.setValueTransactionlessly(ide.getInstanceFactoryForSceneField(field));

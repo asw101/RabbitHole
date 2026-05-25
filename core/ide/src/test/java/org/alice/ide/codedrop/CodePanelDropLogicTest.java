@@ -36,6 +36,12 @@ public class CodePanelDropLogicTest {
   }
 
   @Test
+  public void calculateDropProxyXHonorsComponentOrientation() {
+    assertEquals(4, CodePanelDropLogic.calculateDropProxyX(true, 4, 100, 6, 20));
+    assertEquals(74, CodePanelDropLogic.calculateDropProxyX(false, 4, 100, 6, 20));
+  }
+
+  @Test
   public void recursionMessageMentionsRecursiveCall() {
     assertTrue(CodePanelDropLogic.getRecursionDisabledMessage().contains("recursive"));
     assertTrue(CodePanelDropLogic.recursionWouldBeDisallowed(false, true));

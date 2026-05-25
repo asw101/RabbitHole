@@ -11,4 +11,11 @@ public class AddMembersPageLogicTest {
   public void buildPageStatusTextConcatenatesNonEmptyFragments() {
     assertEquals("firstsecond", AddMembersPageLogic.buildPageStatusText(Arrays.asList("first", "", null, "second")));
   }
+
+  @Test
+  public void shouldIncludePreviewHubTracksIncludingAllAndDesiredStates() {
+    assertTrue(AddMembersPageLogic.shouldIncludePreviewHub(true, false));
+    assertTrue(AddMembersPageLogic.shouldIncludePreviewHub(false, true));
+    assertFalse(AddMembersPageLogic.shouldIncludePreviewHub(false, false));
+  }
 }

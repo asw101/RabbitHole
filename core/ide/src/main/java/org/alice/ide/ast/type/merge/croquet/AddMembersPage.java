@@ -305,23 +305,23 @@ public class AddMembersPage extends WizardPageComposite<Panel, ImportTypeWizard>
       boolean isIncludingAll = getOwner().getPreviewPage().getIsIncludingAllState().getValue();
       List<MemberHub<M>> hubs = Lists.newLinkedList();
       for (ImportOnly<M> importOnly : addMembersComposite.getImportOnlys()) {
-        if (isIncludingAll || importOnly.getImportHub().getIsDesiredState().getValue()) {
+        if (AddMembersPageLogic.shouldIncludePreviewHub(isIncludingAll, importOnly.getImportHub().getIsDesiredState().getValue())) {
           hubs.add(importOnly.getImportHub());
         }
       }
 
       for (DifferentSignature<M> differentSignature : addMembersComposite.getDifferentSignatures()) {
-        if (isIncludingAll || differentSignature.getImportHub().getIsDesiredState().getValue()) {
+        if (AddMembersPageLogic.shouldIncludePreviewHub(isIncludingAll, differentSignature.getImportHub().getIsDesiredState().getValue())) {
           hubs.add(differentSignature.getImportHub());
         }
         hubs.add(differentSignature.getProjectHub());
       }
 
       for (DifferentImplementation<M> differentImplementation : addMembersComposite.getDifferentImplementations()) {
-        if (isIncludingAll || differentImplementation.getImportHub().getIsDesiredState().getValue()) {
+        if (AddMembersPageLogic.shouldIncludePreviewHub(isIncludingAll, differentImplementation.getImportHub().getIsDesiredState().getValue())) {
           hubs.add(differentImplementation.getImportHub());
         }
-        if (isIncludingAll || differentImplementation.getProjectHub().getIsDesiredState().getValue()) {
+        if (AddMembersPageLogic.shouldIncludePreviewHub(isIncludingAll, differentImplementation.getProjectHub().getIsDesiredState().getValue())) {
           hubs.add(differentImplementation.getProjectHub());
         }
       }

@@ -107,6 +107,23 @@ final class ModelSizePropertyControllerLogic {
     return new ResizerConfiguration(hasLinkAll, hasLinkXY, hasLinkXZ, hasLinkYZ, hasX, hasY, hasZ, hasIndependentX, hasIndependentY, hasIndependentZ);
   }
 
+  static SourceAxis resolveSourceAxis(boolean widthSource, boolean heightSource, boolean depthSource) {
+    if (widthSource) {
+      return SourceAxis.WIDTH;
+    }
+    if (heightSource) {
+      return SourceAxis.HEIGHT;
+    }
+    if (depthSource) {
+      return SourceAxis.DEPTH;
+    }
+    return SourceAxis.NONE;
+  }
+
+  static boolean shouldOfferResetButton(boolean jointedModel, boolean billboard) {
+    return jointedModel || billboard;
+  }
+
   static Dimension3 computeSizeFromUi(Dimension3 desiredSize, Dimension3 currentSize, SourceAxis sourceAxis,
                                       boolean linkAll, boolean linkXY, boolean linkXZ, boolean linkYZ) {
     double width = desiredSize.x();

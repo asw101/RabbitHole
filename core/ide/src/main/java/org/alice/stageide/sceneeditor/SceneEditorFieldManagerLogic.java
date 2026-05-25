@@ -16,8 +16,24 @@ final class SceneEditorFieldManagerLogic {
     NONE
   }
 
+  enum MarkerSelection {
+    CAMERA,
+    OBJECT,
+    STANDARD
+  }
+
   private SceneEditorFieldManagerLogic() {
     throw new AssertionError();
+  }
+
+  static MarkerSelection classifyMarkerSelection(boolean cameraMarkerAssignable, boolean thingMarkerAssignable) {
+    if (cameraMarkerAssignable) {
+      return MarkerSelection.CAMERA;
+    }
+    if (thingMarkerAssignable) {
+      return MarkerSelection.OBJECT;
+    }
+    return MarkerSelection.STANDARD;
   }
 
   static SelectionRequest getSelectionRequest(Expression expression, boolean hasActiveSceneField) {

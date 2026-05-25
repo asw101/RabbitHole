@@ -7,6 +7,11 @@ import org.lgna.story.SVRHand;
 import org.lgna.story.SVRHeadset;
 
 final class StorytellingSceneEditorLogic {
+  enum InstanceFactorySelection {
+    SCENE,
+    FIELD
+  }
+
   static final class ExpandContractPlan {
     final boolean showSelectionPanel;
     final boolean showContractButton;
@@ -39,6 +44,10 @@ final class StorytellingSceneEditorLogic {
     return isExpanded
         ? new ExpandContractPlan(true, true, true, true, null)
         : new ExpandContractPlan(false, false, false, false, CameraOption.STARTING_CAMERA_VIEW);
+  }
+
+  static InstanceFactorySelection determineInstanceFactorySelection(boolean selectedFieldIsActiveScene) {
+    return selectedFieldIsActiveScene ? InstanceFactorySelection.SCENE : InstanceFactorySelection.FIELD;
   }
 
   static boolean shouldRestoreSceneCameraTransform(boolean isMovableSceneCamera, CameraOption selectedView) {

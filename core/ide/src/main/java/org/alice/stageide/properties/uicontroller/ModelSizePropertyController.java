@@ -258,7 +258,7 @@ public class ModelSizePropertyController extends AbstractAdapterController<Dimen
       return;
     }
     ModelImp baseModel = (ModelImp) this.propertyAdapter.getInstance();
-    if (!(baseModel instanceof JointedModelImp) && !(baseModel instanceof BillboardImp)) {
+    if (!ModelSizePropertyControllerLogic.shouldOfferResetButton(baseModel instanceof JointedModelImp, baseModel instanceof BillboardImp)) {
       return;
     }
     Operation operation = new ModelSizePropertyValueOperation(this.propertyAdapter, getOriginalSize());
@@ -302,14 +302,10 @@ public class ModelSizePropertyController extends AbstractAdapterController<Dimen
     if (Double.isNaN(desiredWidth) || Double.isNaN(desiredHeight) || Double.isNaN(desiredDepth)) {
       return null;
     }
-    ModelSizePropertyControllerLogic.SourceAxis sourceAxis = ModelSizePropertyControllerLogic.SourceAxis.NONE;
-    if (source == widthField) {
-      sourceAxis = ModelSizePropertyControllerLogic.SourceAxis.WIDTH;
-    } else if (source == heightField) {
-      sourceAxis = ModelSizePropertyControllerLogic.SourceAxis.HEIGHT;
-    } else if (source == depthField) {
-      sourceAxis = ModelSizePropertyControllerLogic.SourceAxis.DEPTH;
-    }
+    ModelSizePropertyControllerLogic.SourceAxis sourceAxis = ModelSizePropertyControllerLogic.resolveSourceAxis(
+        source == widthField,
+        source == heightField,
+        source == depthField);
     Dimension3 desiredSize = new Dimension3(desiredWidth, desiredHeight, desiredDepth);
     if (sourceAxis == ModelSizePropertyControllerLogic.SourceAxis.NONE) {
       return desiredSize;

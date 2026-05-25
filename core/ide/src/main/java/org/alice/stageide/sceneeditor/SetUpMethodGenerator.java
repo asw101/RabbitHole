@@ -346,10 +346,8 @@ public class SetUpMethodGenerator {
             } catch (ExpressionCreator.CannotCreateExpressionException ccee) {
               Logger.severe("cannot create expression for: " + value);
             }
-          } else {
-            if (!"getVehicle".equals(getter.getName()) || !isThis) {
-              Logger.warning("setter is null for: " + getter);
-            }
+          } else if (SetUpMethodGeneratorLogic.shouldLogMissingSetter(getter.getName(), isThis)) {
+            Logger.warning("setter is null for: " + getter);
           }
         }
         if (instance instanceof STurnable turnable) {

@@ -385,7 +385,9 @@ public class SceneObjectPropertyManagerPanel extends GridBagPanel {
             );
           }
 
-          if ((this.selectedImp instanceof JointedModelImp) && (this.selectedInstance instanceof ThisFieldAccessFactory fieldAccessFactory)) {
+          if (SceneObjectPropertyManagerPanelLogic.shouldShowJointControls(
+              this.selectedImp instanceof JointedModelImp,
+              this.selectedInstance instanceof ThisFieldAccessFactory) && (this.selectedInstance instanceof ThisFieldAccessFactory fieldAccessFactory)) {
             this.addComponent(BoxUtilities.createVerticalSliver(8), new GridBagConstraints(0, //gridX
                                                                                            mainPropertyCount++, //gridY
                                                                                            2, //gridWidth
@@ -429,7 +431,9 @@ public class SceneObjectPropertyManagerPanel extends GridBagPanel {
 
     if (instance != null) {
       Expression expression = this.selectedInstance.createExpression();
-      if (!(expression instanceof LocalAccess) && !(expression instanceof ParameterAccess)) {
+      if (SceneObjectPropertyManagerPanelLogic.shouldResolveSelectedInstance(
+          expression instanceof LocalAccess,
+          expression instanceof ParameterAccess)) {
         Object instanceInJava = IDE.getActiveInstance().getSceneEditor().getInstanceInJavaVMForExpression(this.selectedInstance.createExpression());
         if (instanceInJava instanceof SThing thing) {
           this.selectedEntity = thing;
