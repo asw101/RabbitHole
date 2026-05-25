@@ -1,8 +1,5 @@
 package edu.cmu.cs.dennisc.render.gl.imp.adapters;
 
-import org.junit.Assume;
-import java.awt.GraphicsEnvironment;
-
 import edu.cmu.cs.dennisc.render.gl.imp.RenderContext;
 import edu.cmu.cs.dennisc.render.gl.imp.testing.HeadlessRecordingGL2;
 import edu.cmu.cs.dennisc.scenegraph.Joint;
@@ -20,10 +17,6 @@ import static org.junit.Assert.*;
 
 public class SkeletonWeightProcessorBehaviorTest {
 
-  @org.junit.Before
-  public void skipIfHeadless() {
-    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
-  }
 @Test
   public void processWeightedMeshesTraversesHierarchyAndInvokesControllerHooks() {
     Joint root = new Joint();

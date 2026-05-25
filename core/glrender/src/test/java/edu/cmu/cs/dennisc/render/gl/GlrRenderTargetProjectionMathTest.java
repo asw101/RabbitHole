@@ -13,14 +13,8 @@ import java.awt.Point;
 
 import static org.junit.Assert.*;
 
-import org.junit.Assume;
-import java.awt.GraphicsEnvironment;
 public class GlrRenderTargetProjectionMathTest {
 
-  @org.junit.Before
-  public void skipIfHeadless() {
-    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
-  }
   @Before public void setUp() { AdapterFactory.forgetAllElements(); }
   @Test public void projectionMatrixRayAndAwtConversion_useCameraAdapter() {
     TestRenderTargetSupport.TestRenderTarget target = new TestRenderTargetSupport.TestRenderTarget(new Dimension(800, 600)); SymmetricPerspectiveCamera camera = TestRenderTargetSupport.perspectiveCamera(); target.addSgCamera(camera);

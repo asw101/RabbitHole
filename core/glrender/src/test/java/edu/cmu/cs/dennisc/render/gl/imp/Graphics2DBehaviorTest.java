@@ -1,8 +1,5 @@
 package edu.cmu.cs.dennisc.render.gl.imp;
 
-import org.junit.Assume;
-import java.awt.GraphicsEnvironment;
-
 import com.jogamp.opengl.GL;
 import edu.cmu.cs.dennisc.render.gl.imp.testing.HeadlessRecordingGL2;
 import org.junit.Test;
@@ -21,10 +18,6 @@ import static org.junit.Assert.*;
 
 public class Graphics2DBehaviorTest {
 
-  @org.junit.Before
-  public void skipIfHeadless() {
-    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
-  }
 @Test
   public void initializeAndDisposeManageLifecycleAndGlState() {
     HeadlessRecordingGL2 gl = new HeadlessRecordingGL2();

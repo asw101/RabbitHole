@@ -19,14 +19,8 @@ import static org.junit.Assert.*;
  * and structural contracts of the factory singleton — all without
  * requiring a live GL context.
  */
-import org.junit.Assume;
-import java.awt.GraphicsEnvironment;
 public class GlrRenderFactoryExternalServiceTest {
 
-  @org.junit.Before
-  public void skipIfHeadless() {
-    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
-  }
 
   // ── Singleton pattern ─────────────────────────────────────────────
 

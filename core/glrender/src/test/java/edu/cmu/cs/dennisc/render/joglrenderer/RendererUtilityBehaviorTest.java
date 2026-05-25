@@ -1,8 +1,5 @@
 package edu.cmu.cs.dennisc.render.joglrenderer;
 
-import org.junit.Assume;
-import java.awt.GraphicsEnvironment;
-
 import org.junit.Test;
 
 import java.awt.Color;
@@ -16,10 +13,6 @@ import static org.junit.Assert.*;
 
 public class RendererUtilityBehaviorTest {
 
-  @org.junit.Before
-  public void skipIfHeadless() {
-    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
-  }
 @Test
   public void characterCacheFallsBackToBoxingForNonAsciiCharacters() {
     assertSame(CharacterCache.cache['A'], CharacterCache.valueOf('A'));

@@ -1,8 +1,5 @@
 package edu.cmu.cs.dennisc.render.gl.imp;
 
-import org.junit.Assume;
-import java.awt.GraphicsEnvironment;
-
 import com.jogamp.opengl.GL;
 import com.jogamp.opengl.GLAutoDrawable;
 import com.jogamp.opengl.GLContext;
@@ -38,10 +35,6 @@ import static org.junit.Assert.*;
 
 public class CoverageBoostBehaviorTest {
 
-  @org.junit.Before
-  public void skipIfHeadless() {
-    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
-  }
   @Test
   public void graphics2DDelegatesFontAndImageLifecycleMethods() throws Exception {
     HeadlessRecordingGL2 gl = new HeadlessRecordingGL2();

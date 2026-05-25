@@ -1,8 +1,5 @@
 package edu.cmu.cs.dennisc.render.joglrenderer;
 
-import org.junit.Assume;
-import java.awt.GraphicsEnvironment;
-
 import edu.cmu.cs.dennisc.render.gl.imp.testing.HeadlessRecordingGL2;
 import org.junit.Test;
 
@@ -12,10 +9,6 @@ import static org.junit.Assert.*;
 
 public class TextRendererQuadRendererBehaviorTest {
 
-  @org.junit.Before
-  public void skipIfHeadless() {
-    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
-  }
   private static final Font FONT = new Font(Font.DIALOG, Font.PLAIN, 16);
 
   @Test

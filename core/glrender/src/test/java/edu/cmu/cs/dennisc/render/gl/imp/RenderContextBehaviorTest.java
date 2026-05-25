@@ -10,20 +10,14 @@ import edu.cmu.cs.dennisc.scenegraph.Vertex;
 import org.alice.math.immutable.Point3;
 import org.alice.math.immutable.Vector3f;
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.Test;
 
-import java.awt.GraphicsEnvironment;
 import java.awt.Rectangle;
 import java.util.List;
 
 public class RenderContextBehaviorTest {
   private static final double EPSILON = 0.000001;
 
-  @org.junit.Before
-  public void skipIfHeadless() {
-    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
-  }
 
   @Test
   public void scalingAndOpacityStateAffectRecordedOpenGlValues() {

@@ -1,8 +1,5 @@
 package edu.cmu.cs.dennisc.render.gl.imp.adapters;
 
-import org.junit.Assume;
-import java.awt.GraphicsEnvironment;
-
 import edu.cmu.cs.dennisc.render.gl.imp.RenderContext;
 import edu.cmu.cs.dennisc.render.gl.imp.testing.HeadlessRecordingGL2;
 import edu.cmu.cs.dennisc.scenegraph.Cylinder;
@@ -14,10 +11,6 @@ import static org.junit.Assert.*;
 
 public class GlrCylinderAdapterRenderIntegrationTest {
 
-  @org.junit.Before
-  public void skipIfHeadless() {
-    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
-  }
 @Before public void setUp() { AdapterRenderTestSupport.resetFactory(); }
   @Test public void renderOpaque_appliesAxisRotationTranslationAndCaps() {
     Cylinder cylinder = AdapterRenderTestSupport.configuredCylinder(); Visual visual = AdapterRenderTestSupport.visualWith(cylinder, AdapterRenderTestSupport.appearance(1.0f));

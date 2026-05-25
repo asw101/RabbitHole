@@ -1,8 +1,5 @@
 package edu.cmu.cs.dennisc.render.gl.imp;
 
-import org.junit.Assume;
-import java.awt.GraphicsEnvironment;
-
 import com.jogamp.opengl.GLAutoDrawable;
 import edu.cmu.cs.dennisc.render.RenderTarget;
 import edu.cmu.cs.dennisc.render.event.RenderTargetDisplayChangeEvent;
@@ -28,10 +25,6 @@ import static org.junit.Assert.*;
 
 public class RenderTargetImpAdditionalBehaviorTest {
 
-  @org.junit.Before
-  public void skipIfHeadless() {
-    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
-  }
 @Test
   public void gettersAndListenerNotificationsWork() {
     AtomicInteger repaints = new AtomicInteger();
