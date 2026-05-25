@@ -42,4 +42,14 @@ public class GroupIconLayoutTest {
     assertEquals(3, layout.getSlotForSourceIndex(2));
     assertEquals(4, layout.getSlotForSourceIndex(3));
   }
+
+  @Test
+  public void getDrawOrder_returnsDefensiveCopy() {
+    GroupIconLayout.Layout layout = GroupIconLayout.createLayout(5);
+
+    int[] drawOrder = layout.getDrawOrder();
+    drawOrder[0] = 99;
+
+    assertArrayEquals(new int[] {0, 4, 1, 3, 2}, layout.getDrawOrder());
+  }
 }
