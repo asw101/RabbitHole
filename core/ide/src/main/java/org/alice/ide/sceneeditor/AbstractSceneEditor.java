@@ -387,7 +387,7 @@ public abstract class AbstractSceneEditor extends BorderPanel {
   }
 
   protected void handleProjectOpened(Project nextProject) {
-    AbstractSceneEditor.this.setProgramType(nextProject.getProgramType());
+    AbstractSceneEditor.this.setProgramType(nextProject != null ? nextProject.getProgramType() : null);
     AbstractSceneEditor.this.revalidateAndRepaint();
   }
 
