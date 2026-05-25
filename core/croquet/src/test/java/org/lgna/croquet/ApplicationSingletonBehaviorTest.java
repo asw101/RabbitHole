@@ -1,19 +1,14 @@
 package org.lgna.croquet;
 
 import org.junit.Test;
-import org.junit.Assume;
-import java.awt.GraphicsEnvironment;
 import org.lgna.croquet.history.UserActivity;
+
+import javax.swing.JComponent;
 
 import static org.junit.Assert.*;
 
 public class ApplicationSingletonBehaviorTest {
-
-  @org.junit.Before
-  public void skipIfHeadless() {
-    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
-  }
-  @Test
+@Test
   public void ensureTestApplication_setsActiveSingletonAndSubPath() {
     Application<?> application = CroquetTestUtils.ensureTestApplication();
 
@@ -35,5 +30,16 @@ public class ApplicationSingletonBehaviorTest {
     }
 
     assertNull(application.getOpenActivity());
+  }
+
+  @Test
+  public void initialize_and_locale_accessors_are_safe_in_headless_tests() {
+    Application<?> application = CroquetTestUtils.ensureTestApplication();
+
+    application.initialize(new String[0]);
+    application.setLocale(null);
+
+    assertNotNull(Application.getLocale());
+    assertSame(JComponent.getDefaultLocale(), Application.getLocale());
   }
 }

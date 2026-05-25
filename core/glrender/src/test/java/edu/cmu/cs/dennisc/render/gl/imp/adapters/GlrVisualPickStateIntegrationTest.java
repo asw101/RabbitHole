@@ -1,8 +1,6 @@
 package edu.cmu.cs.dennisc.render.gl.imp.adapters;
 
 import edu.cmu.cs.dennisc.render.gl.imp.PickContext;
-import org.junit.Assume;
-import java.awt.GraphicsEnvironment;
 import edu.cmu.cs.dennisc.render.gl.imp.testing.HeadlessRecordingGL2;
 import edu.cmu.cs.dennisc.scenegraph.Box;
 import edu.cmu.cs.dennisc.scenegraph.Visual;
@@ -12,12 +10,7 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class GlrVisualPickStateIntegrationTest {
-
-  @org.junit.Before
-  public void skipIfHeadless() {
-    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
-  }
-  @Before public void setUp() { AdapterRenderTestSupport.resetFactory(); }
+@Before public void setUp() { AdapterRenderTestSupport.resetFactory(); }
   @Test public void nonPickableOrEthereal_visualDoesNotEmitPickNames() {
     Visual nonPickable = AdapterRenderTestSupport.visualWith(new Box(), AdapterRenderTestSupport.appearance(1.0f)); nonPickable.isPickable.setValue(false);
     GlrVisual<Visual> nonPickableAdapter = AdapterRenderTestSupport.visualAdapter(nonPickable); HeadlessRecordingGL2 nonPickableGl = AdapterRenderTestSupport.gl(); PickContext nonPickableContext = AdapterRenderTestSupport.pickContext(nonPickableGl); nonPickableAdapter.pick(nonPickableContext, AdapterRenderTestSupport.requiredPickParameters()); assertEquals(0, nonPickableGl.calls("glPushName").size());

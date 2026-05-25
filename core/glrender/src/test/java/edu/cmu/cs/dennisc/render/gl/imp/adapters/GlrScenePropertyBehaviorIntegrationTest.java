@@ -1,8 +1,6 @@
 package edu.cmu.cs.dennisc.render.gl.imp.adapters;
 
 import edu.cmu.cs.dennisc.render.gl.imp.RenderContext;
-import org.junit.Assume;
-import java.awt.GraphicsEnvironment;
 import edu.cmu.cs.dennisc.render.gl.imp.testing.HeadlessRecordingGL2;
 import edu.cmu.cs.dennisc.scenegraph.Background;
 import edu.cmu.cs.dennisc.scenegraph.Scene;
@@ -14,12 +12,7 @@ import java.lang.reflect.Field;
 import static org.junit.Assert.*;
 
 public class GlrScenePropertyBehaviorIntegrationTest {
-
-  @org.junit.Before
-  public void skipIfHeadless() {
-    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
-  }
-  @Before public void setUp() { AdapterRenderTestSupport.resetFactory(); }
+@Before public void setUp() { AdapterRenderTestSupport.resetFactory(); }
   @Test public void propertyChanges_syncBackgroundAndGlobalBrightness() throws Exception {
     Scene scene = new Scene(); scene.background.setValue(new Background()); scene.globalBrightness.setValue(0.35f); GlrScene sceneAdapter = AdapterRenderTestSupport.sceneAdapter(scene); HeadlessRecordingGL2 gl = AdapterRenderTestSupport.gl(); RenderContext rc = AdapterRenderTestSupport.renderContext(gl);
     sceneAdapter.setupAffectors(rc);

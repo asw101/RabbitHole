@@ -1,8 +1,6 @@
 package edu.cmu.cs.dennisc.render.gl.imp;
 
 import edu.cmu.cs.dennisc.texture.BufferedImageTexture;
-import org.junit.Assume;
-import java.awt.GraphicsEnvironment;
 import edu.cmu.cs.dennisc.texture.event.TextureListener;
 import org.junit.Test;
 
@@ -15,12 +13,7 @@ import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 
 public class PixelsBehaviorTest {
-
-  @org.junit.Before
-  public void skipIfHeadless() {
-    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
-  }
-  @Test
+@Test
   public void getRgbaCachesBufferForCurrentTextureSize() {
     BufferedImageTexture texture = new BufferedImageTexture();
     texture.setBufferedImage(new BufferedImage(2, 3, BufferedImage.TYPE_INT_ARGB));

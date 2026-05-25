@@ -1,8 +1,6 @@
 package edu.cmu.cs.dennisc.render.gl.imp.adapters;
 
 import edu.cmu.cs.dennisc.render.gl.imp.RenderContext;
-import org.junit.Assume;
-import java.awt.GraphicsEnvironment;
 import edu.cmu.cs.dennisc.render.gl.imp.testing.HeadlessRecordingGL2;
 import edu.cmu.cs.dennisc.scenegraph.Sphere;
 import edu.cmu.cs.dennisc.scenegraph.Visual;
@@ -12,12 +10,7 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class GlrSphereAdapterRenderIntegrationTest {
-
-  @org.junit.Before
-  public void skipIfHeadless() {
-    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
-  }
-  @Before public void setUp() { AdapterRenderTestSupport.resetFactory(); }
+@Before public void setUp() { AdapterRenderTestSupport.resetFactory(); }
   @Test public void renderOpaque_emitsSphereVerticesAndNormals() {
     Sphere sphere = new Sphere(); sphere.radius.setValue(2.0); Visual visual = AdapterRenderTestSupport.visualWith(sphere, AdapterRenderTestSupport.appearance(1.0f));
     GlrVisual<Visual> adapter = AdapterRenderTestSupport.visualAdapter(visual); HeadlessRecordingGL2 gl = AdapterRenderTestSupport.gl(); RenderContext rc = AdapterRenderTestSupport.renderContext(gl);

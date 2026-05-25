@@ -1,6 +1,13 @@
 package org.lgna.croquet.views;
 
 import org.junit.Test;
+import org.lgna.croquet.CroquetTestUtils;
+import org.lgna.croquet.Element;
+import org.lgna.croquet.GapToolBarSeparator;
+import org.lgna.croquet.MenuBarComposite;
+import org.lgna.croquet.PushToolBarSeparator;
+import org.lgna.croquet.ToolBarComposite;
+import org.lgna.croquet.XvfbCroquetTestSupport;
 
 import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
@@ -13,6 +20,7 @@ import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.Window;
 import java.lang.reflect.Field;
+import java.util.Arrays;
 
 import static org.junit.Assert.*;
 
@@ -72,6 +80,58 @@ public class HeadlessWindowBehaviorTest {
     assertEquals(new Rectangle(0, 0, 25, 35), window.getVisibleShape(window, new Insets(0, 0, 0, 0)).getBounds());
   }
 
+  @Test
+  public void invisibleWindows_returnNullGeometry_forRelativeQueries() throws Exception {
+    FakeAbstractWindow seenBy = new FakeAbstractWindow(newHeadlessWindow());
+    FakeAbstractWindow target = new FakeAbstractWindow(newHeadlessWindow());
+    seenBy.setVisible(false);
+    target.setVisible(true);
+    target.setSize(40, 20);
+
+    TrackableShape closeButton = target.getCloseButtonTrackableShape();
+    assertNull(target.getLocation(seenBy));
+    assertNull(target.getBounds(seenBy));
+    assertNull(closeButton.getShape(seenBy, new Insets(0, 0, 0, 0)));
+    assertNull(closeButton.getVisibleShape(seenBy, new Insets(0, 0, 0, 0)));
+    assertNull(closeButton.getScrollPaneAncestor());
+    assertTrue(closeButton.isInView());
+  }
+
+  @Test
+  public void defaultButtons_and_window_composites_round_trip_through_headless_window() throws Exception {
+    CroquetTestUtils.ensureTestApplication();
+    FakeAbstractWindow window = new FakeAbstractWindow(newHeadlessWindow());
+    window.setVisible(true);
+
+    Button defaultButton = new XvfbCroquetTestSupport.NamedOperation("default").createButton();
+    Button pushedButton = new XvfbCroquetTestSupport.NamedOperation("pushed").createButton();
+    window.setDefaultButton(defaultButton);
+    assertSame(defaultButton, window.getDefaultButton());
+    window.pushDefaultButton(pushedButton);
+    assertSame(pushedButton, window.getDefaultButton());
+    assertSame(defaultButton, window.popDefaultButton());
+    assertNull(window.popDefaultButton());
+
+    CountingToolBarComposite toolBarComposite = new CountingToolBarComposite();
+    XvfbCroquetTestSupport.TestSimpleComposite mainComposite = new XvfbCroquetTestSupport.TestSimpleComposite("main");
+    MenuBarComposite menuBarComposite = new MenuBarComposite(CroquetTestUtils.nextTestUUID());
+
+    window.setToolBarComposite(toolBarComposite);
+    window.setMainComposite(mainComposite);
+    window.setMenuBarComposite(menuBarComposite);
+    window.rebuildMenuBar();
+
+    assertEquals(1, toolBarComposite.preActivationCount);
+    assertEquals(0, toolBarComposite.postDeactivationCount);
+    assertSame(mainComposite, window.getMainComposite());
+    assertSame(menuBarComposite, window.getMenuBarComposite());
+    assertSame(menuBarComposite.getView().getAwtComponent(), window.awt.menuBar);
+
+    window.setToolBarComposite(null);
+    window.setMainComposite(null);
+    assertEquals(1, toolBarComposite.postDeactivationCount);
+  }
+
   static HeadlessWindow newHeadlessWindow() throws InstantiationException {
     HeadlessWindow window = (HeadlessWindow) UNSAFE.allocateInstance(HeadlessWindow.class);
     window.location = new Point();
@@ -113,6 +173,38 @@ public class HeadlessWindowBehaviorTest {
     @Override
     public Point getLocationOnScreen() {
       return new Point(screenLocation);
+    }
+  }
+
+  private static final class CountingToolBarComposite extends ToolBarComposite {
+    private int preActivationCount;
+    private int postDeactivationCount;
+
+    private CountingToolBarComposite() {
+      super(CroquetTestUtils.nextTestUUID());
+    }
+
+    @Override
+    public Iterable<? extends Element> getSubElements() {
+      return java.util.Arrays.asList(GapToolBarSeparator.getInstance(), PushToolBarSeparator.getInstance());
+    }
+
+    @Override
+    protected ToolBarView createView() {
+      return new ToolBarView(this) {
+      };
+    }
+
+    @Override
+    public void handlePreActivation() {
+      this.preActivationCount++;
+      super.handlePreActivation();
+    }
+
+    @Override
+    public void handlePostDeactivation() {
+      this.postDeactivationCount++;
+      super.handlePostDeactivation();
     }
   }
 

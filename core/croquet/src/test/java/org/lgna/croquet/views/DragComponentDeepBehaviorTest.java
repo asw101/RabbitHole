@@ -18,6 +18,8 @@ import javax.swing.SwingUtilities;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Collections;
@@ -101,6 +103,53 @@ public class DragComponentDeepBehaviorTest {
     assertFalse(component.getDragProxy().isVisible());
     assertEquals(component.getDropProxy().getSize(), component.getDropProxySize());
     assertSame(component, component.getSubject());
+  }
+
+  @Test
+  public void displayableLifecycle_registersListeners_and_componentResize_updatesProxySizes() {
+    component.handleDisplayable();
+
+    assertEquals(1, component.getAwtComponent().getMouseListeners().length);
+    assertEquals(1, component.getAwtComponent().getMouseMotionListeners().length);
+    assertEquals(1, component.getAwtComponent().getComponentListeners().length);
+
+    component.getAwtComponent().setSize(80, 50);
+    component.getAwtComponent().getComponentListeners()[0].componentResized(new java.awt.event.ComponentEvent(component.getAwtComponent(), java.awt.event.ComponentEvent.COMPONENT_RESIZED));
+
+    assertEquals(component.getDragProxy().getProxySize(), component.getDragProxy().getSize());
+    assertEquals(component.getDropProxy().getProxySize(), component.getDropProxy().getSize());
+
+    component.handleUndisplayable();
+    assertEquals(0, component.getAwtComponent().getMouseListeners().length);
+    assertEquals(0, component.getAwtComponent().getMouseMotionListeners().length);
+    assertEquals(0, component.getAwtComponent().getComponentListeners().length);
+  }
+
+  @Test
+  public void installedListeners_drive_hover_click_drag_and_cancel_paths() {
+    component.handleDisplayable();
+    MouseEvent enter = mouse(MouseEvent.MOUSE_ENTERED, 3, 3, MouseEvent.NOBUTTON);
+    MouseEvent press = mouse(MouseEvent.MOUSE_PRESSED, 5, 5, MouseEvent.BUTTON1);
+    MouseEvent drag = mouse(MouseEvent.MOUSE_DRAGGED, 25, 18, MouseEvent.BUTTON1);
+    MouseEvent exit = mouse(MouseEvent.MOUSE_EXITED, 25, 18, MouseEvent.NOBUTTON);
+
+    for (MouseListener listener : component.getAwtComponent().getMouseListeners()) {
+      listener.mouseEntered(enter);
+      listener.mousePressed(press);
+    }
+    for (MouseMotionListener listener : component.getAwtComponent().getMouseMotionListeners()) {
+      listener.mouseDragged(drag);
+    }
+    for (MouseListener listener : component.getAwtComponent().getMouseListeners()) {
+      listener.mouseExited(exit);
+    }
+
+    assertNotNull(getField("mousePressedEvent"));
+
+    component.handleCancel(drag);
+
+    assertNull(component.getDragProxy().getParent());
+    component.handleUndisplayable();
   }
 
   private MouseEvent mouse(int id, int x, int y, int button) {

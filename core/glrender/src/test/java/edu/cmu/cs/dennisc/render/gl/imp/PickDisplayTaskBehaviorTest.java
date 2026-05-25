@@ -23,15 +23,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
 
-import org.junit.Assume;
-import java.awt.GraphicsEnvironment;
 public class PickDisplayTaskBehaviorTest {
-
-  @org.junit.Before
-  public void skipIfHeadless() {
-    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
-  }
-  @Before
+@Before
   public void setUp() {
     edu.cmu.cs.dennisc.render.gl.imp.adapters.AdapterFactory.forgetAllElements();
     GlImpTestSupport.resetConformanceTestResults();
