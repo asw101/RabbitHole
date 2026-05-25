@@ -1,7 +1,5 @@
 package edu.cmu.cs.dennisc.render.gl.imp.adapters;
 
-import org.junit.Assume;
-import java.awt.GraphicsEnvironment;
 
 import com.jogamp.opengl.GL;
 import edu.cmu.cs.dennisc.render.gl.imp.PickContext;
@@ -22,10 +20,6 @@ import static org.junit.Assert.*;
 
 public class GlrIndexedTriangleArrayBehaviorIntegrationTest {
 
-  @org.junit.Before
-  public void skipIfHeadless() {
-    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
-  }
 
 @Before
   public void setUp() {

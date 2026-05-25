@@ -1,7 +1,5 @@
 package edu.cmu.cs.dennisc.render.gl.imp;
 
-import org.junit.Assume;
-import java.awt.GraphicsEnvironment;
 
 import org.alice.math.immutable.AffineMatrix4x4;
 import org.alice.math.immutable.FullMatrix4x4;
@@ -27,10 +25,6 @@ import static org.junit.Assert.*;
  */
 public class SelectionBufferInfoTest {
 
-  @org.junit.Before
-  public void skipIfHeadless() {
-    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
-  }
 
   // ── Helper: create a PickContext (works headlessly — no GL needed for constructor) ──
 

@@ -2,6 +2,7 @@ package edu.cmu.cs.dennisc.render.joglrenderer;
 
 import org.junit.Assume;
 import org.junit.BeforeClass;
+import org.junit.Assume;
 import org.junit.Test;
 
 import java.awt.Font;

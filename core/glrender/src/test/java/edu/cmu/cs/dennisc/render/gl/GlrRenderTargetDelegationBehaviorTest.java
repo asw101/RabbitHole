@@ -1,7 +1,5 @@
 package edu.cmu.cs.dennisc.render.gl;
 
-import org.junit.Assume;
-import java.awt.GraphicsEnvironment;
 
 import edu.cmu.cs.dennisc.render.gl.imp.adapters.AdapterFactory;
 import edu.cmu.cs.dennisc.scenegraph.SymmetricPerspectiveCamera;
@@ -14,10 +12,6 @@ import static org.junit.Assert.*;
 
 public class GlrRenderTargetDelegationBehaviorTest {
 
-  @org.junit.Before
-  public void skipIfHeadless() {
-    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
-  }
 
   @Before public void setUp() { AdapterFactory.forgetAllElements(); }
   @Test public void cameraCollectionAndRenderingFlag_delegateThroughImp() {

@@ -1,7 +1,5 @@
 package edu.cmu.cs.dennisc.render.gl.imp;
 
-import org.junit.Assume;
-import java.awt.GraphicsEnvironment;
 
 import com.jogamp.opengl.GLAutoDrawable;
 import edu.cmu.cs.dennisc.render.PickSubElementPolicy;
@@ -28,10 +26,6 @@ import static org.junit.Assert.*;
 
 public class PickDisplayTaskBehaviorTest {
 
-  @org.junit.Before
-  public void skipIfHeadless() {
-    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
-  }
 
 @Before
   public void setUp() {

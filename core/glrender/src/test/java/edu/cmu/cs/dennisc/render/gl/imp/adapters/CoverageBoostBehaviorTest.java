@@ -1,7 +1,5 @@
 package edu.cmu.cs.dennisc.render.gl.imp.adapters;
 
-import org.junit.Assume;
-import java.awt.GraphicsEnvironment;
 
 import edu.cmu.cs.dennisc.codec.BinaryEncoder;
 import edu.cmu.cs.dennisc.render.gl.imp.RenderContext;
@@ -23,10 +21,6 @@ import static org.junit.Assert.*;
 
 public class CoverageBoostBehaviorTest {
 
-  @org.junit.Before
-  public void skipIfHeadless() {
-    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
-  }
 
   @Test
   public void glrLayerTracksAddedRemovedAndRenderForgetTransitions() throws Exception {

@@ -3,6 +3,7 @@ package edu.cmu.cs.dennisc.render.gl.imp;
 import org.junit.Assume;
 import java.awt.GraphicsEnvironment;
 
+
 import com.jogamp.opengl.GL;
 import edu.cmu.cs.dennisc.render.gl.imp.testing.HeadlessRecordingGL2;
 import org.junit.Test;
@@ -26,6 +27,7 @@ public class MoreCoverageBehaviorTest {
   public void skipIfHeadless() {
     Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
   }
+
 
   @Test
   public void renderContextCaptureBuffersHandlesDepthAndErrorPaths() throws Exception {

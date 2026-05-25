@@ -1,7 +1,5 @@
 package edu.cmu.cs.dennisc.render.gl;
 
-import org.junit.Assume;
-import java.awt.GraphicsEnvironment;
 
 import edu.cmu.cs.dennisc.render.gl.imp.RenderContext;
 import org.junit.Test;
@@ -12,10 +10,6 @@ import static org.junit.Assert.*;
 
 public class ForgettableBindingContractTest {
 
-  @org.junit.Before
-  public void skipIfHeadless() {
-    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
-  }
   @Test
   public void implementors_receiveTheRenderContextPassedToForget() {
     RecordingBinding binding = new RecordingBinding();

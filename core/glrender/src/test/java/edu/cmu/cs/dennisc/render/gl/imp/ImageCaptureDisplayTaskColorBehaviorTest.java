@@ -1,7 +1,5 @@
 package edu.cmu.cs.dennisc.render.gl.imp;
 
-import org.junit.Assume;
-import java.awt.GraphicsEnvironment;
 
 import edu.cmu.cs.dennisc.color.Color4f;
 import edu.cmu.cs.dennisc.render.ImageOrientationRequirement;
@@ -17,10 +15,6 @@ import static org.junit.Assert.*;
 
 public class ImageCaptureDisplayTaskColorBehaviorTest {
 
-  @org.junit.Before
-  public void skipIfHeadless() {
-    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
-  }
 
 @Test public void handleDisplay_usesFullSurfaceWhenViewportIsNull() {
     HeadlessRecordingGL2 gl = new HeadlessRecordingGL2(); AtomicInteger observerCalls = new AtomicInteger(); GlrImageBuffer imageBuffer = new GlrImageBuffer(Color4f.BLACK); ImageCaptureDisplayTask task = new ImageCaptureDisplayTask(null, null, imageBuffer, ImageOrientationRequirement.UPSIDE_DOWN_ACCEPTABLE, GlImpTestSupport.countingObserver(observerCalls)); RenderTargetImp imp = new RenderTargetImp(GlImpTestSupport.renderTargetProxy(new Dimension(6, 5), Collections.emptyMap(), new boolean[]{true}, new AtomicInteger()));

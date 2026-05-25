@@ -1,7 +1,5 @@
 package edu.cmu.cs.dennisc.render.gl.imp;
 
-import org.junit.Assume;
-import java.awt.GraphicsEnvironment;
 
 import edu.cmu.cs.dennisc.color.Color4f;
 import org.junit.Test;
@@ -16,10 +14,6 @@ import static org.junit.Assert.assertSame;
 
 public class GlrImageBufferBehaviorTest {
 
-  @org.junit.Before
-  public void skipIfHeadless() {
-    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
-  }
 
 @Test
   public void acquireImageReusesImageForMatchingDimensions() {

@@ -1,7 +1,5 @@
 package edu.cmu.cs.dennisc.render.gl.imp;
 
-import org.junit.Assume;
-import java.awt.GraphicsEnvironment;
 
 import edu.cmu.cs.dennisc.texture.BufferedImageTexture;
 import edu.cmu.cs.dennisc.texture.Texture;
@@ -22,10 +20,6 @@ import static org.junit.Assert.*;
  */
 public class PixelsLifecycleTest {
 
-  @org.junit.Before
-  public void skipIfHeadless() {
-    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
-  }
 
   private static BufferedImageTexture createTexture(int w, int h) {
     BufferedImageTexture texture = new BufferedImageTexture();
