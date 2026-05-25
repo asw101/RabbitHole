@@ -540,14 +540,20 @@ public class AstI18nFactoryHierarchyTest {
 
   @Test
   public void clipboardAstI18nFactory_hasNoDeclaredMethods() {
-    Method[] methods = ClipboardAstI18nFactory.class.getDeclaredMethods();
-    assertEquals(0, methods.length);
+    long nonSyntheticMethods = java.util.Arrays.stream(ClipboardAstI18nFactory.class.getDeclaredMethods())
+        .filter(method -> !method.isSynthetic())
+        .filter(method -> !"$jacocoInit".equals(method.getName()))
+        .count();
+    assertEquals(0, nonSyntheticMethods);
   }
 
   @Test
   public void clipboardAstI18nFactory_hasNoDeclaredFields() {
-    Field[] fields = ClipboardAstI18nFactory.class.getDeclaredFields();
-    assertEquals(0, fields.length);
+    long nonSyntheticFields = java.util.Arrays.stream(ClipboardAstI18nFactory.class.getDeclaredFields())
+        .filter(field -> !field.isSynthetic())
+        .filter(field -> !"$jacocoData".equals(field.getName()))
+        .count();
+    assertEquals(0, nonSyntheticFields);
   }
 
   @Test

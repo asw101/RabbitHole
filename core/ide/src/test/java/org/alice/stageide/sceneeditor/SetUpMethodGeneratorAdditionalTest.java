@@ -94,6 +94,21 @@ public class SetUpMethodGeneratorAdditionalTest {
   }
 
   @Test
+  public void getSetupStatementsForGroundWithoutTransformStillCreatesVehicleStatement() {
+    Statement[] statements = SetUpMethodGenerator.getSetupStatementsForField(
+        false,
+        createField("ground", SGround.class),
+        null,
+        null,
+        null);
+
+    assertEquals(1, statements.length);
+    MethodInvocation invocation = invocationOf(statements[0]);
+    assertEquals("setVehicle", invocation.method.getValue().getName());
+    assertTrue(invocation.requiredArguments.get(0).expression.getValue() instanceof ThisExpression);
+  }
+
+  @Test
   public void getSetupStatementsForFieldWithTransformCreatesVehicleOrientationAndPosition() {
     UserField rider = createField("rider", SBiped.class);
     UserField vehicle = createField("ground", SGround.class);
@@ -115,6 +130,24 @@ public class SetUpMethodGeneratorAdditionalTest {
   }
 
   @Test
+  public void getSetupStatementsForModelWithTransformCreatesVehicleOrientationAndPosition() {
+    Statement[] statements = SetUpMethodGenerator.getSetupStatementsForField(
+        false,
+        createField("model", SModel.class),
+        null,
+        null,
+        AffineMatrix4x4.createTranslation(4, 5, 6));
+
+    assertEquals(3, statements.length);
+    assertEquals("setVehicle", invocationOf(statements[0]).method.getValue().getName());
+    assertEquals("setOrientationRelativeToVehicle", invocationOf(statements[1]).method.getValue().getName());
+    assertEquals("setPositionRelativeToVehicle", invocationOf(statements[2]).method.getValue().getName());
+    assertTrue(invocationOf(statements[0]).requiredArguments.get(0).expression.getValue() instanceof ThisExpression);
+    assertDurationKey(invocationOf(statements[1]), 0.0);
+    assertDurationKey(invocationOf(statements[2]), 0.0);
+  }
+
+  @Test
   public void createSetPaintStatement_modelFieldCreatesSetPaintInvocation() {
     UserField model = createField("model", SModel.class);
 
@@ -129,6 +162,11 @@ public class SetUpMethodGeneratorAdditionalTest {
   @Test
   public void createSetPaintStatement_nonModelFieldReturnsNull() {
     assertNull(SetUpMethodGenerator.createSetPaintStatement(createField("camera", SCamera.class), Color.BLUE));
+  }
+
+  @Test
+  public void createSetPaintStatement_nullPaintReturnsNull() {
+    assertNull(SetUpMethodGenerator.createSetPaintStatement(createField("model", SModel.class), null));
   }
 
   @Test
@@ -154,6 +192,11 @@ public class SetUpMethodGeneratorAdditionalTest {
   @Test
   public void createSetColorIdStatement_nonMarkerFieldReturnsNull() {
     assertNull(SetUpMethodGenerator.createSetColorIdStatement(createField("model", SModel.class), Color.PINK));
+  }
+
+  @Test
+  public void createSetColorIdStatement_nullColorReturnsNull() {
+    assertNull(SetUpMethodGenerator.createSetColorIdStatement(createField("marker", SMarker.class), null));
   }
 
   @Test
