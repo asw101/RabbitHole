@@ -49,8 +49,6 @@ import javax.swing.*;
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.LinkedList;
-import java.util.List;
 
 public class BasicTreeNodeViewerPanel extends JPanel implements ActionListener {
 
@@ -83,43 +81,6 @@ public class BasicTreeNodeViewerPanel extends JPanel implements ActionListener {
     captureTree();
   }
 
-  private void getFlattenedTree(BasicTreeNode node, List<BasicTreeNode> flattenedTree) {
-    flattenedTree.add(node);
-    for (int i = 0; i < node.getChildCount(); i++) {
-      getFlattenedTree((BasicTreeNode) node.getChildAt(i), flattenedTree);
-    }
-  }
-
-  private void diffTrees(BasicTreeNode treeA, BasicTreeNode treeB) {
-    LinkedList<BasicTreeNode> flatTreeA = new LinkedList<BasicTreeNode>();
-    LinkedList<BasicTreeNode> flatTreeB = new LinkedList<BasicTreeNode>();
-    getFlattenedTree(treeA, flatTreeA);
-    getFlattenedTree(treeB, flatTreeB);
-    for (BasicTreeNode nodeA : flatTreeA) {
-
-      nodeA.markDifferent(BasicTreeNode.Difference.NONE);
-    }
-    for (BasicTreeNode nodeB : flatTreeB) {
-      nodeB.markDifferent(BasicTreeNode.Difference.NONE);
-    }
-    for (BasicTreeNode nodeA : flatTreeA) {
-      int matchingIndex = flatTreeB.indexOf(nodeA);
-      if (matchingIndex != -1) {
-        BasicTreeNode nodeB = flatTreeB.get(matchingIndex);
-        boolean isDifferent = nodeA.isDifferent(nodeB);
-        if (isDifferent) {
-          nodeB.markDifferent(BasicTreeNode.Difference.ATTRIBUTES);
-        }
-        flatTreeB.remove(matchingIndex);
-      } else {
-        nodeA.markDifferent(BasicTreeNode.Difference.NEW_NODE);
-      }
-    }
-    for (BasicTreeNode nodeB : flatTreeB) {
-      nodeB.markDifferent(BasicTreeNode.Difference.NEW_NODE);
-    }
-  }
-
   private void captureTree() {
     if (this.root != null) {
       BasicTreeNode newRoot = null;
@@ -133,7 +94,7 @@ public class BasicTreeNodeViewerPanel extends JPanel implements ActionListener {
       BasicTreeViewer oldTree = (BasicTreeViewer) this.splitPane.getBottomComponent();
       if (oldTree != null) {
         BasicTreeNode oldRoot = oldTree.getRootNode();
-        diffTrees(oldRoot, newRoot);
+        BasicTreeNodeViewerPanelLogic.diffTrees(oldRoot, newRoot);
         oldTree.setRootNode(oldRoot);
 
         this.splitPane.remove(oldTree);

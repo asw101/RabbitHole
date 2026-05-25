@@ -176,53 +176,37 @@ public class InstanceFactorySelectionPanel extends PanelViewController<InstanceF
         SizeRequirements.calculateTiledPositions(availableSpace.height, yTotal, yChildren, yOffsets, ySpans);
       }
 
+      Rectangle[] bounds = new Rectangle[nChildren];
+      boolean[] selectedStates = new boolean[nChildren];
       for (int i = 0; i < nChildren; i++) {
         Component c = parent.getComponent(i);
-        int x = insets.left + xOffsets[i];
+        int x = insets.left + InstanceFactorySelectionPanelLayoutLogic.getIndentedX(xOffsets[i], i, INDENT);
         int y = insets.top + yOffsets[i];
-        if (i > 0) {
-          x += INDENT;
-        }
         c.setBounds(x, y, xSpans[i], ySpans[i]);
-      }
-
-      Rectangle boundsI = new Rectangle();
-      int indexOfFirstComponentThatFails = -1;
-      int indexOfSelectedComponent = -1;
-      for (int i = 0; i < (nChildren - 1); i++) {
-        Component c = parent.getComponent(i);
-        if (indexOfFirstComponentThatFails == -1) {
-          c.getBounds(boundsI);
-          if ((boundsI.y + boundsI.height) >= (size.height - insets.bottom)) {
-            indexOfFirstComponentThatFails = i;
-          }
-        }
+        bounds[i] = c.getBounds();
         if (c instanceof AbstractButton button) {
-          if (button.isSelected()) {
-            indexOfSelectedComponent = i;
-          }
+          selectedStates[i] = button.isSelected();
         }
       }
 
+      InstanceFactorySelectionPanelLayoutLogic.OverflowLayout overflowLayout =
+          InstanceFactorySelectionPanelLayoutLogic.analyzeOverflow(bounds, selectedStates, size.height, insets.bottom);
       Component lastComponent = parent.getComponent(nChildren - 1);
-      if (indexOfFirstComponentThatFails != -1) {
-        if (indexOfFirstComponentThatFails > 0) {
-          for (int i = indexOfFirstComponentThatFails - 1; i < (nChildren - 1); i++) {
-            if (i != indexOfSelectedComponent) {
-              parent.getComponent(i).setSize(0, 0);
-            }
-          }
-          int i = indexOfFirstComponentThatFails - 1;
-          Point p = parent.getComponent(i).getLocation();
-          if (indexOfSelectedComponent >= i) {
-            Component c = parent.getComponent(indexOfSelectedComponent);
-            c.setLocation(p);
-            p.x += c.getWidth();
-          }
-          lastComponent.setLocation(p);
-        }
-      } else {
+      if (overflowLayout.shouldHideOverflowControl()) {
         lastComponent.setSize(0, 0);
+      } else {
+        for (int i = 0; i < (nChildren - 1); i++) {
+          if (overflowLayout.shouldCollapse(i)) {
+            parent.getComponent(i).setSize(0, 0);
+          }
+        }
+        if (overflowLayout.getSelectedIndex() >= 0 && overflowLayout.getSelectedLocation() != null) {
+          parent.getComponent(overflowLayout.getSelectedIndex()).setLocation(overflowLayout.getSelectedLocation());
+        }
+        Point overflowControlLocation = overflowLayout.getOverflowControlLocation();
+        if (overflowControlLocation != null) {
+          lastComponent.setLocation(overflowControlLocation);
+        }
       }
     }
 
