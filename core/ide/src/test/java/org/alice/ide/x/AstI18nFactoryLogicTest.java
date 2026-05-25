@@ -9,6 +9,8 @@ import org.lgna.project.ast.SimpleArgument;
 import org.lgna.project.ast.UserMethod;
 import org.lgna.project.ast.UserParameter;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import static org.junit.Assert.*;
 
 public class AstI18nFactoryLogicTest {
@@ -33,11 +35,34 @@ public class AstI18nFactoryLogicTest {
   }
 
   @Test
+  public void getLabelTextFallsBackToToStringForArbitraryObjects() {
+    AtomicInteger value = new AtomicInteger(7);
+
+    assertEquals("7", AstI18nFactoryLogic.getLabelText(value));
+  }
+
+  @Test
+  public void getComponentKindOnlyTreatsSpecialMethodNamesAsSpecialCases() {
+    UserMethod method = new UserMethod("wave", void.class, new UserParameter[0], new BlockStatement());
+    SimpleArgument argument = new SimpleArgument(new UserParameter("amount", Number.class), new DoubleLiteral(1.0));
+
+    assertEquals(AstI18nFactoryLogic.ComponentKind.LABEL, AstI18nFactoryLogic.getComponentKind(method, "hashCode"));
+    assertEquals(AstI18nFactoryLogic.ComponentKind.LABEL, AstI18nFactoryLogic.getComponentKind(argument, "getName"));
+  }
+
+  @Test
   public void getLocalPropertyKindRecognizesTrackedLocals() {
     assertEquals(AstI18nFactoryLogic.LocalPropertyKind.LOCAL_DECLARATION, AstI18nFactoryLogic.getLocalPropertyKind("local", 2));
     assertEquals(AstI18nFactoryLogic.LocalPropertyKind.LOCAL, AstI18nFactoryLogic.getLocalPropertyKind("item", 1));
     assertEquals(AstI18nFactoryLogic.LocalPropertyKind.NONE, AstI18nFactoryLogic.getLocalPropertyKind("field", 1));
     assertEquals(AstI18nFactoryLogic.LocalPropertyKind.NONE, AstI18nFactoryLogic.getLocalPropertyKind("local", 0));
+  }
+
+  @Test
+  public void getLocalPropertyKindRecognizesAllSupportedLocalAliases() {
+    assertEquals(AstI18nFactoryLogic.LocalPropertyKind.LOCAL, AstI18nFactoryLogic.getLocalPropertyKind("variable", 1));
+    assertEquals(AstI18nFactoryLogic.LocalPropertyKind.LOCAL_DECLARATION, AstI18nFactoryLogic.getLocalPropertyKind("constant", 2));
+    assertEquals(AstI18nFactoryLogic.LocalPropertyKind.NONE, AstI18nFactoryLogic.getLocalPropertyKind("constant", 3));
   }
 
   @Test
