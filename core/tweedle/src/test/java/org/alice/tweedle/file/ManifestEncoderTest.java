@@ -3,6 +3,7 @@ package org.alice.tweedle.file;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.time.YearMonth;
 
 import static org.junit.Assert.*;
 
@@ -423,6 +424,58 @@ public class ManifestEncoderTest {
     } catch (IOException e) {
       assertTrue(e.getMessage().contains("Unable to read manifest"));
     }
+  }
+
+  @Test
+  public void libraryManifestRoundTripPreservesMetadataAndTemporalValues() throws IOException {
+    LibraryManifest original = getSimpleLibraryManifest();
+    original.provenance.aliceVersion = "3.10.0.0";
+    original.provenance.creator = "Regression Tester";
+    original.provenance.created = YearMonth.of(2024, 5);
+
+    Manifest.ProjectIdentifier prerequisite = new Manifest.ProjectIdentifier();
+    prerequisite.name = "shared-library";
+    prerequisite.type = Manifest.ProjectType.Library;
+    prerequisite.version = "2.0";
+    original.prerequisites.add(prerequisite);
+
+    String json = ManifestEncoderDecoder.toJson(original);
+    LibraryManifest decoded = ManifestEncoderDecoder.fromJsonOrThrow(json, LibraryManifest.class);
+
+    assertEquals("testProject", decoded.metadata.identifier.name);
+    assertEquals("0.1", decoded.metadata.identifier.version);
+    assertEquals(Manifest.ProjectType.Library, decoded.metadata.identifier.type);
+    assertEquals("A test project", decoded.description.name);
+    assertEquals("Regression Tester", decoded.provenance.creator);
+    assertEquals("3.10.0.0", decoded.provenance.aliceVersion);
+    assertTrue(decoded.provenance.created instanceof YearMonth);
+    assertEquals(YearMonth.of(2024, 5), decoded.provenance.created);
+    assertEquals(1, decoded.prerequisites.size());
+    assertEquals("shared-library", decoded.prerequisites.get(0).name);
+    assertEquals("2.0", decoded.prerequisites.get(0).version);
+  }
+
+  @Test
+  public void modelManifestRoundTripPreservesTypedResourcesAndStructure() throws IOException {
+    ModelManifest original = ManifestEncoderDecoder.fromJsonOrThrow(SAMPLE_MODEL_WITH_3_RESOURCES, ModelManifest.class);
+
+    String json = ManifestEncoderDecoder.toJson(original);
+    ModelManifest decoded = ManifestEncoderDecoder.fromJsonOrThrow(json, ModelManifest.class);
+
+    assertEquals("Alien", decoded.description.name);
+    assertEquals(11, decoded.additionalJoints.size());
+    assertEquals("LOWER_LIP", decoded.additionalJoints.get(0).name);
+    assertEquals(Boolean.FALSE, decoded.placeOnGround);
+    assertEquals(1, decoded.textureSets.size());
+    assertEquals("Alien_DEFAULT", decoded.textureSets.get(0).name);
+    assertEquals("Alien_DEFAULT_texture_1_diffuseMap", decoded.textureSets.get(0).idToResourceMap.get(1));
+    assertEquals(1, decoded.models.size());
+    assertEquals("DEFAULT", decoded.models.get(0).name);
+    assertEquals(3, decoded.resources.size());
+    assertTrue(decoded.resources.get(0) instanceof ImageReference);
+    assertTrue(decoded.resources.get(1) instanceof ImageReference);
+    assertTrue(decoded.resources.get(2) instanceof ImageReference);
+    assertEquals("Alien_DEFAULT_texture_1_diffuseMap", decoded.resources.get(0).name);
   }
 
   private LibraryManifest getSimpleLibraryManifest() {

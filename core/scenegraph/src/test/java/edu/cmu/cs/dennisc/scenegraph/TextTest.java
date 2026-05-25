@@ -6,10 +6,13 @@ import org.alice.math.immutable.Vector3;
 import org.junit.Test;
 
 import java.awt.Font;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 public class TextTest {
@@ -223,5 +226,29 @@ public class TextTest {
     text.frontToBackAlignment.setValue(FrontToBackAlignment.ALIGN_CENTER_OF_FRONT_AND_BACK);
 
     assertEquals("No property events should fire for same-value set", 0, events.get());
+  }
+
+  @Test
+  public void changingAlignmentPropertiesEmitsDetailedPropertyEvents() {
+    Text text = new Text();
+    List<String> propertyNames = new ArrayList<>();
+    List<Object> values = new ArrayList<>();
+    PropertyListener listener = e -> {
+      propertyNames.add(e.getTypedSource().getName());
+      values.add(e.getValue());
+      assertSame(text, e.getOwner());
+    };
+    text.leftToRightAlignment.addPropertyListener(listener);
+    text.topToBottomAlignment.addPropertyListener(listener);
+    text.frontToBackAlignment.addPropertyListener(listener);
+
+    text.leftToRightAlignment.setValue(LeftToRightAlignment.ALIGN_LEFT);
+    text.topToBottomAlignment.setValue(TopToBottomAlignment.ALIGN_TOP);
+    text.frontToBackAlignment.setValue(FrontToBackAlignment.ALIGN_FRONT);
+
+    assertEquals(List.of("leftToRightAlignment", "topToBottomAlignment", "frontToBackAlignment"), propertyNames);
+    assertEquals(LeftToRightAlignment.ALIGN_LEFT, values.get(0));
+    assertEquals(TopToBottomAlignment.ALIGN_TOP, values.get(1));
+    assertEquals(FrontToBackAlignment.ALIGN_FRONT, values.get(2));
   }
 }

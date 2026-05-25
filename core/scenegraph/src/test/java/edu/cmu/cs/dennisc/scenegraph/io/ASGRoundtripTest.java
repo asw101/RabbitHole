@@ -1,10 +1,13 @@
 package edu.cmu.cs.dennisc.scenegraph.io;
 
+import edu.cmu.cs.dennisc.color.Color4f;
 import edu.cmu.cs.dennisc.scenegraph.AmbientLight;
+import edu.cmu.cs.dennisc.scenegraph.Background;
 import edu.cmu.cs.dennisc.scenegraph.Component;
 import edu.cmu.cs.dennisc.scenegraph.Composite;
 import edu.cmu.cs.dennisc.scenegraph.DirectionalLight;
 import edu.cmu.cs.dennisc.scenegraph.PointLight;
+import edu.cmu.cs.dennisc.scenegraph.Scene;
 import edu.cmu.cs.dennisc.scenegraph.Transformable;
 import org.alice.math.immutable.AffineMatrix4x4;
 import org.alice.math.immutable.AngleInRadians;
@@ -300,6 +303,33 @@ public class ASGRoundtripTest {
     Component decodedLight = decodedRoot.getComponentAt(0);
     assertTrue("Should be PointLight", decodedLight instanceof PointLight);
     assertEquals("pl1", decodedLight.getName());
+  }
+
+  @Test
+  public void sceneRoundtripPreservesBackgroundReferenceAndProperties() {
+    Scene original = new Scene();
+    original.setName("sceneRoot");
+    Background background = new Background();
+    background.color.setValue(new Color4f(0.2f, 0.3f, 0.4f, 1.0f));
+    original.background.setValue(background);
+    original.globalBrightness.setValue(0.35f);
+
+    Transformable child = new Transformable();
+    child.setName("child");
+    original.addComponent(child);
+
+    Component decoded = roundtrip(original);
+    assertTrue(decoded instanceof Scene);
+    Scene decodedScene = (Scene) decoded;
+    assertEquals("sceneRoot", decodedScene.getName());
+    assertEquals(1, decodedScene.getComponentCount());
+    assertEquals(0.35f, decodedScene.globalBrightness.getValue(), 0.0001f);
+    assertNotNull(decodedScene.background.getValue());
+    Color4f decodedColor = decodedScene.background.getValue().color.getValue();
+    assertEquals(0.2f, decodedColor.red, 0.0001f);
+    assertEquals(0.3f, decodedColor.green, 0.0001f);
+    assertEquals(0.4f, decodedColor.blue, 0.0001f);
+    assertEquals(1.0f, decodedColor.alpha, 0.0001f);
   }
 
   @Test
