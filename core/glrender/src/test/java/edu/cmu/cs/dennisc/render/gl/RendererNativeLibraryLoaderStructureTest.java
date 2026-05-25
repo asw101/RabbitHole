@@ -1,5 +1,8 @@
 package edu.cmu.cs.dennisc.render.gl;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
+
 import org.junit.Test;
 
 import java.lang.reflect.Constructor;
@@ -15,6 +18,11 @@ import static org.junit.Assert.*;
  * the isInitializationAttempted guard flag.
  */
 public class RendererNativeLibraryLoaderStructureTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
 
   @Test
   public void class_isPublic() {

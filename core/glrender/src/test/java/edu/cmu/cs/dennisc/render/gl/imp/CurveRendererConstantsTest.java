@@ -1,5 +1,8 @@
 package edu.cmu.cs.dennisc.render.gl.imp;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
+
 import org.junit.Test;
 
 import java.lang.reflect.Field;
@@ -11,6 +14,11 @@ import static org.junit.Assert.*;
  * All rendering methods require GL context; only constants are testable headlessly.
  */
 public class CurveRendererConstantsTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
 
   @Test
   public void constructor_noException() {

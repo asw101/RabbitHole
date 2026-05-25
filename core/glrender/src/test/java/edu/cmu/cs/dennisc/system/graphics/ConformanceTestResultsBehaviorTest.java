@@ -1,5 +1,8 @@
 package edu.cmu.cs.dennisc.system.graphics;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
+
 import com.jogamp.opengl.GL;
 import org.junit.After;
 import org.junit.Before;
@@ -15,6 +18,11 @@ import java.util.Map;
 import static org.junit.Assert.*;
 
 public class ConformanceTestResultsBehaviorTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
 
   @Before
   @After

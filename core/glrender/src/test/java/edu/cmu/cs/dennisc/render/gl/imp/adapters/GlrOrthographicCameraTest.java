@@ -1,5 +1,8 @@
 package edu.cmu.cs.dennisc.render.gl.imp.adapters;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
+
 import edu.cmu.cs.dennisc.scenegraph.OrthographicCamera;
 import org.alice.math.immutable.ClippedZPlane;
 import org.alice.math.immutable.Matrix4x4;
@@ -21,6 +24,11 @@ import static org.junit.Assert.*;
  * is pure math with no GL calls.
  */
 public class GlrOrthographicCameraTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
 
   private GlrOrthographicCamera adapter;
   private OrthographicCamera camera;

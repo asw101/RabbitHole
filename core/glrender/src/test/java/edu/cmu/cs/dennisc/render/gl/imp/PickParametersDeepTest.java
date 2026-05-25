@@ -1,5 +1,8 @@
 package edu.cmu.cs.dennisc.render.gl.imp;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
+
 import org.junit.Test;
 
 import java.awt.Point;
@@ -10,6 +13,11 @@ import java.lang.reflect.Method;
 import static org.junit.Assert.*;
 
 public class PickParametersDeepTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
 
   @Test
   public void constructor_exists() throws Exception {

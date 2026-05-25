@@ -1,5 +1,8 @@
 package edu.cmu.cs.dennisc.render.gl.imp;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
+
 import edu.cmu.cs.dennisc.render.gl.imp.adapters.ChangeHandler;
 import org.junit.After;
 import org.junit.Before;
@@ -20,6 +23,11 @@ import static org.junit.Assert.*;
  * integration boundary between event dispatch and GL rendering.
  */
 public class ChangeHandlerExternalServiceTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
 
   @Before
   public void resetState() throws Exception {

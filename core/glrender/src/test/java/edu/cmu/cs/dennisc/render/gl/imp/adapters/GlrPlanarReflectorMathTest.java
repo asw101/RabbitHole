@@ -1,5 +1,8 @@
 package edu.cmu.cs.dennisc.render.gl.imp.adapters;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
+
 import edu.cmu.cs.dennisc.scenegraph.PlanarReflector;
 import org.alice.math.immutable.AffineMatrix4x4;
 import org.alice.math.immutable.Matrix4x4;
@@ -16,6 +19,11 @@ import static org.junit.Assert.*;
  * equation buffer, field initialization, and structural checks.
  */
 public class GlrPlanarReflectorMathTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
 
   private GlrPlanarReflector adapter;
   private PlanarReflector sg;

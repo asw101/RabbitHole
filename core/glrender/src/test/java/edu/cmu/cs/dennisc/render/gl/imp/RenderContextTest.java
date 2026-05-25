@@ -1,5 +1,8 @@
 package edu.cmu.cs.dennisc.render.gl.imp;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
+
 import org.junit.Test;
 
 import java.lang.reflect.Field;
@@ -13,6 +16,11 @@ import static org.junit.Assert.*;
  * Uses reflection for private fields since no GL context is available.
  */
 public class RenderContextTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
 
   // ═══════════════════════════════════════════════════════════════════
   // Construction & structure

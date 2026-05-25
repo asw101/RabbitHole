@@ -1,5 +1,8 @@
 package edu.cmu.cs.dennisc.system.graphics;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
+
 import org.junit.Test;
 
 import java.lang.reflect.Field;
@@ -14,6 +17,11 @@ import static org.junit.Assert.*;
  * contracts without requiring a live GL context.
  */
 public class ConformanceTestResultsExternalServiceTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
 
   // ── Singleton enum pattern ────────────────────────────────────────
 

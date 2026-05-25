@@ -1,5 +1,8 @@
 package edu.cmu.cs.dennisc.render.gl;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
+
 import com.jogamp.opengl.DefaultGLCapabilitiesChooser;
 import com.jogamp.opengl.GLCapabilitiesChooser;
 import com.jogamp.opengl.GLCapabilitiesImmutable;
@@ -18,6 +21,11 @@ import static org.junit.Assert.*;
  * for JOGL drawable utilities without requiring a live GL context.
  */
 public class GlDrawableUtilsExternalServiceTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
 
   // ── Structural: utility class pattern ─────────────────────────────
 

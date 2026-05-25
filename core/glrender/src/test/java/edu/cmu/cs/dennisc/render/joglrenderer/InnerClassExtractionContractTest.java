@@ -1,5 +1,8 @@
 package edu.cmu.cs.dennisc.render.joglrenderer;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -46,6 +49,11 @@ import static org.junit.Assert.*;
  *  21. Fields widened for properties delegate access (#543)
  */
 public class InnerClassExtractionContractTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
 
   private static final String PKG = "edu.cmu.cs.dennisc.render.joglrenderer";
 

@@ -1,5 +1,8 @@
 package edu.cmu.cs.dennisc.render.gl.imp.adapters;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
+
 import edu.cmu.cs.dennisc.scenegraph.SymmetricPerspectiveCamera;
 import org.alice.math.immutable.Angle;
 import org.alice.math.immutable.Matrix4x4;
@@ -18,6 +21,11 @@ import static org.junit.Assert.*;
  * ray generation, letterboxing, and aspect ratio calculations. Pure math — no GL.
  */
 public class GlrPerspectiveCameraProjectionTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
 
   private GlrSymmetricPerspectiveCamera adapter;
   private SymmetricPerspectiveCamera cam;

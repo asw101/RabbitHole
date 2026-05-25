@@ -1,5 +1,8 @@
 package edu.cmu.cs.dennisc.render.gl.imp.adapters;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
+
 import org.junit.Test;
 
 import java.lang.reflect.Field;
@@ -14,6 +17,11 @@ import static org.junit.Assert.*;
  * using a concrete subclass that stubs out the abstract method.
  */
 public class GlrTextureMapCoordinateTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
 
   // ── mapU / mapV identity mapping ───────────────────────────────────
 

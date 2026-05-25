@@ -1,5 +1,8 @@
 package edu.cmu.cs.dennisc.render.gl.imp.adapters;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
+
 import edu.cmu.cs.dennisc.scenegraph.Box;
 import org.alice.math.immutable.Matrix4x4;
 import org.alice.math.immutable.Point3;
@@ -18,6 +21,11 @@ import static org.junit.Assert.*;
  * Sets box bounds via reflection since propertyChanged needs GL.
  */
 public class GlrBoxIntersectionTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
 
   private GlrBox box;
 

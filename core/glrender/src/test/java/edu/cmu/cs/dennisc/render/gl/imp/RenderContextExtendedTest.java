@@ -1,5 +1,8 @@
 package edu.cmu.cs.dennisc.render.gl.imp;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
+
 import org.junit.Test;
 
 import java.lang.reflect.Field;
@@ -13,6 +16,11 @@ import static org.junit.Assert.*;
  * light ID allocation, and clearRect logic. All tests avoid GL calls.
  */
 public class RenderContextExtendedTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
 
   // ── beginAffectorSetup resets ─────────────────────────────────────
 

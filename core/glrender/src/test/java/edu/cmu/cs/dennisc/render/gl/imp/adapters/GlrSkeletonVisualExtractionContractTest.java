@@ -1,5 +1,8 @@
 package edu.cmu.cs.dennisc.render.gl.imp.adapters;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
+
 import org.junit.Test;
 
 import java.lang.reflect.Method;
@@ -16,10 +19,17 @@ import static org.junit.Assert.*;
  */
 public class GlrSkeletonVisualExtractionContractTest {
 
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
+
   private static final String PKG = "edu.cmu.cs.dennisc.render.gl.imp.adapters";
   private static final String SRC = "src/main/java/edu/cmu/cs/dennisc/render/gl/imp/adapters/";
 
   // --- WeightedMeshControl is now a top-level public class ---
+
+  @org.junit.Before
 
   @Test
   public void weightedMeshControl_isTopLevelPublicClass() throws Exception {

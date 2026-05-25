@@ -1,5 +1,8 @@
 package edu.cmu.cs.dennisc.render.gl;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
+
 import edu.cmu.cs.dennisc.render.gl.imp.adapters.AdapterFactory;
 import edu.cmu.cs.dennisc.scenegraph.SymmetricPerspectiveCamera;
 import org.alice.math.immutable.Vector4;
@@ -11,6 +14,11 @@ import java.awt.Dimension;
 import static org.junit.Assert.*;
 
 public class GlrRenderTargetMathRoundTripTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
 
   @Before public void setUp() { AdapterFactory.forgetAllElements(); }
   @Test public void viewportToCameraAndBack_roundTripsCoordinates() {

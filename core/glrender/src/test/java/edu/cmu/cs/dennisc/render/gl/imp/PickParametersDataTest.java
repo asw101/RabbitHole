@@ -1,5 +1,8 @@
 package edu.cmu.cs.dennisc.render.gl.imp;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
+
 import org.alice.math.immutable.Point3;
 import edu.cmu.cs.dennisc.render.PickResult;
 import edu.cmu.cs.dennisc.scenegraph.Visual;
@@ -17,6 +20,11 @@ import static org.junit.Assert.*;
  * All pick result management, coordinate access, and configuration queries.
  */
 public class PickParametersDataTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
 
   private PickParameters params;
   private static final Point MOUSE_POS = new Point(100, 200);

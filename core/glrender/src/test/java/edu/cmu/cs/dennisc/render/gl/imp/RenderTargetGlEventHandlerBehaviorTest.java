@@ -1,5 +1,8 @@
 package edu.cmu.cs.dennisc.render.gl.imp;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
+
 import edu.cmu.cs.dennisc.render.event.RenderTargetInitializeEvent;
 import edu.cmu.cs.dennisc.render.event.RenderTargetListener;
 import edu.cmu.cs.dennisc.render.event.RenderTargetRenderEvent;
@@ -15,6 +18,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.Assert.*;
 
 public class RenderTargetGlEventHandlerBehaviorTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
 
 @Test public void initDisplayAndReshape_updateImpDimensionsAndFireEvents() {
     GlImpTestSupport.resetConformanceTestResults();

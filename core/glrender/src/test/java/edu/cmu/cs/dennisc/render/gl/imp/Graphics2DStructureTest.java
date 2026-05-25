@@ -1,5 +1,8 @@
 package edu.cmu.cs.dennisc.render.gl.imp;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
+
 import org.junit.Test;
 
 import java.lang.reflect.Constructor;
@@ -17,6 +20,11 @@ import static org.junit.Assert.*;
  * the conversion math without calling GL methods.
  */
 public class Graphics2DStructureTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
 
   private static final String CLASS_NAME = "edu.cmu.cs.dennisc.render.gl.imp.Graphics2D";
 

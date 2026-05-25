@@ -1,5 +1,8 @@
 package edu.cmu.cs.dennisc.render.gl.imp;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
+
 import com.jogamp.opengl.math.FloatUtil;
 import org.junit.Test;
 
@@ -14,6 +17,11 @@ import static org.junit.Assert.*;
  * and construction are tested here.
  */
 public class CurveRendererTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
 
   // ── Constructor ──
 

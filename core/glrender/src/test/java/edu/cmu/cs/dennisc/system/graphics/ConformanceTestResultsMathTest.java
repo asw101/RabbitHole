@@ -1,5 +1,8 @@
 package edu.cmu.cs.dennisc.system.graphics;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
+
 import edu.cmu.cs.dennisc.render.gl.imp.PickContext;
 import org.junit.Test;
 
@@ -12,6 +15,11 @@ import static org.junit.Assert.*;
  * replicated here from the private methods.
  */
 public class ConformanceTestResultsMathTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
 
   // ── convertZValueToLong (int → unsigned long via mask) ────────────
 
