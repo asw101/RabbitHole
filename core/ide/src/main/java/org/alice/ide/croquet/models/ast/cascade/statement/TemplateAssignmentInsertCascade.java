@@ -86,32 +86,8 @@ public class TemplateAssignmentInsertCascade extends CascadeWithInternalBlank<Ex
   protected List<CascadeBlankChild> updateBlankChildren(List<CascadeBlankChild> rv, BlankNode<Expression> blankNode) {
     AbstractType<?, ?, ?> selectedType = IDE.getActiveInstance().getDocumentFrame().getTypeMetaState().getValue();
     List<UserField> nonFinalUserFields = TemplateAssignmentInsertCascadeLogic.getAssignableFields(selectedType);
-    if (!nonFinalUserFields.isEmpty()) {
-      rv.add(FieldsSeparatorModel.getInstance());
-      for (UserField field : nonFinalUserFields) {
-        rv.add(FieldAssignmentFillIn.getInstance(field));
-        if (field.getValueType().isArray()) {
-          rv.add(FieldArrayAtIndexAssignmentFillIn.getInstance(field));
-        }
-      }
-    }
-
     List<UserLocal> nonFinalLocals = TemplateAssignmentInsertCascadeLogic.getAssignableLocals(IDE.getActiveInstance().getExpressionCascadeManager().getAccessibleLocals(this.blockStatementIndexPair));
-    if (!nonFinalLocals.isEmpty()) {
-      rv.add(VariablesSeparatorModel.getInstance());
-      for (UserLocal local : nonFinalLocals) {
-        rv.add(LocalAssignmentFillIn.getInstance(local));
-        AbstractType<?, ?, ?> type = local.getValueType();
-        if (type.isArray()) {
-          rv.add(LocalArrayAtIndexAssignmentFillIn.getInstance(local));
-        }
-      }
-    }
-
-    if (!TemplateAssignmentInsertCascadeLogic.hasAssignableTargets(nonFinalUserFields, nonFinalLocals)) {
-      rv.add(NoVariablesOrFieldsAccessibleCancelFillIn.getInstance());
-    }
-
+    rv.addAll(TemplateAssignmentInsertCascadeLogic.buildTargetChildren(nonFinalUserFields, nonFinalLocals));
     return rv;
   }
 }
