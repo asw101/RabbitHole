@@ -1,5 +1,8 @@
 package edu.cmu.cs.dennisc.render.gl.imp.adapters;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
+
 import edu.cmu.cs.dennisc.render.gl.imp.RenderContext;
 import edu.cmu.cs.dennisc.render.gl.imp.testing.HeadlessRecordingGL2;
 import edu.cmu.cs.dennisc.scenegraph.Box;
@@ -11,6 +14,11 @@ import static com.jogamp.opengl.GL2ES3.GL_QUADS;
 import static org.junit.Assert.*;
 
 public class GlrBoxAdapterRenderIntegrationTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
 @Before public void setUp() { AdapterRenderTestSupport.resetFactory(); }
   @Test public void renderOpaque_drawsAllBoxFacesAndAppearanceState() {
     Box box = new Box();

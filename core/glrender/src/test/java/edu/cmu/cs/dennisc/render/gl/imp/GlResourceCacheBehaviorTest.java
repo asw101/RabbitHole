@@ -1,5 +1,8 @@
 package edu.cmu.cs.dennisc.render.gl.imp;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
+
 import edu.cmu.cs.dennisc.render.gl.imp.adapters.GlrGeometry;
 import edu.cmu.cs.dennisc.render.gl.imp.testing.HeadlessRecordingGL2;
 import edu.cmu.cs.dennisc.scenegraph.Geometry;
@@ -13,6 +16,11 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class GlResourceCacheBehaviorTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
 @Test
   public void displayListLifecycle_isTrackedAndForgotten() {
     HeadlessRecordingGL2 gl = new HeadlessRecordingGL2();

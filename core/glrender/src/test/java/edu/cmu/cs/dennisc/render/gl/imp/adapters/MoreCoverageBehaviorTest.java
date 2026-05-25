@@ -1,5 +1,8 @@
 package edu.cmu.cs.dennisc.render.gl.imp.adapters;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
+
 import edu.cmu.cs.dennisc.render.gl.imp.RenderContext;
 import edu.cmu.cs.dennisc.scenegraph.Layer;
 import edu.cmu.cs.dennisc.scenegraph.TexturedAppearance;
@@ -17,6 +20,11 @@ import java.lang.reflect.Field;
 import static org.junit.Assert.*;
 
 public class MoreCoverageBehaviorTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
   @Test
   public void texturedAppearancePipelineAndReleaseUseTrackedTextureAdapters() throws Exception {
     TexturedAppearance sg = new TexturedAppearance();

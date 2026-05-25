@@ -1,5 +1,8 @@
 package edu.cmu.cs.dennisc.render.gl.imp.adapters;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
+
 import edu.cmu.cs.dennisc.render.gl.imp.PickContext;
 import edu.cmu.cs.dennisc.render.gl.imp.testing.HeadlessRecordingGL2;
 import edu.cmu.cs.dennisc.scenegraph.Box;
@@ -11,6 +14,11 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class GlrVisualStateAndPickIntegrationTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
 @Before
   public void setUp() {
     AdapterRenderTestSupport.resetFactory();
