@@ -7,6 +7,8 @@ import org.alice.ide.project.codecs.ProjectDocumentCodec;
 import org.alice.ide.project.codecs.ProjectSnapshotCodec;
 import org.alice.ide.project.events.ProjectChangeOfInterestListener;
 import org.alice.ide.projecturi.ProjectSnapshot;
+import org.alice.ide.testing.TestIdeBootstrap;
+import org.junit.Assume;
 import org.junit.Test;
 import org.lgna.croquet.history.UserActivity;
 import org.lgna.project.Project;
@@ -17,6 +19,7 @@ import org.lgna.project.ast.UserField;
 import org.lgna.story.SProgram;
 import org.lgna.story.SScene;
 
+import java.awt.GraphicsEnvironment;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.net.URI;
@@ -42,6 +45,9 @@ public class ProjectSmallGapBehaviorTest {
 
   @Test
   public void projectDocumentStateStoresAndReleasesDocumentTransactionlessly() {
+    Assume.assumeFalse("requires installed IDE context", GraphicsEnvironment.isHeadless());
+    TestIdeBootstrap.ensureInstalled();
+
     ProjectDocumentState state = ProjectDocumentState.getInstance();
     ProjectDocument previous = state.getValue();
     ProjectDocument document = createDocument();
@@ -53,6 +59,7 @@ public class ProjectSmallGapBehaviorTest {
       assertNull(state.getValue());
     } finally {
       state.setValueTransactionlessly(previous);
+      TestIdeBootstrap.reset();
     }
   }
 

@@ -134,6 +134,7 @@ final class HeadlessClassExerciseSupport {
       if (!isHeadlessFriendly(clazz)) {
         return;
       }
+      invokeStaticMethods(clazz);
       Object instance = instantiate(clazz, 0);
       if (instance != null) {
         stats.instantiated.add(className);
@@ -171,12 +172,11 @@ final class HeadlessClassExerciseSupport {
     return isHeadlessFriendlyName(clazz.getName());
   }
 
-  private static void invokeStaticFactoryMethods(Class<?> clazz) {
-    for (Method method : clazz.getDeclaredMethods()) {
-      if (!Modifier.isStatic(method.getModifiers()) || method.isSynthetic()) {
-        continue;
-      }
-      if (!isFactoryLike(method)) {
+  private static void invokeStaticMethods(Class<?> clazz) {
+    List<Method> methods = new ArrayList<>(Arrays.asList(clazz.getDeclaredMethods()));
+    methods.sort(Comparator.comparingInt(Method::getParameterCount));
+    for (Method method : methods) {
+      if (!Modifier.isStatic(method.getModifiers()) || !isExercisable(method)) {
         continue;
       }
       Object[] args = buildArguments(clazz, method.getParameterTypes(), 0);
@@ -192,14 +192,11 @@ final class HeadlessClassExerciseSupport {
     }
   }
 
-  private static boolean isFactoryLike(Method method) {
-    String name = method.getName();
-    return name.equals("getInstance")
-        || name.equals("createInstance")
-        || name.equals("valueOf")
-        || name.equals("values")
-        || name.startsWith("create")
-        || name.startsWith("new");
+  private static boolean isExercisable(Method method) {
+    return !method.isSynthetic()
+        && !Modifier.isNative(method.getModifiers())
+        && !method.getName().equals("$jacocoInit")
+        && !method.getName().equals("main");
   }
 
   private static Object instantiate(Class<?> clazz, int depth) {
@@ -394,32 +391,22 @@ final class HeadlessClassExerciseSupport {
     touch(instance.toString());
     touch(instance.hashCode());
     touch(instance.equals(instance));
-    for (Method method : clazz.getDeclaredMethods()) {
-      if (method.isSynthetic()) {
+    List<Method> methods = new ArrayList<>(Arrays.asList(clazz.getDeclaredMethods()));
+    methods.sort(Comparator.comparingInt(Method::getParameterCount));
+    for (Method method : methods) {
+      if (Modifier.isStatic(method.getModifiers()) || !isExercisable(method)) {
         continue;
       }
-      if (Modifier.isStatic(method.getModifiers())) {
-        continue;
-      }
-      if (method.getParameterCount() != 0) {
-        continue;
-      }
-      if (!isZeroArgGetter(method.getName())) {
+      Object[] args = buildArguments(clazz, method.getParameterTypes(), 0);
+      if (args == null) {
         continue;
       }
       try {
         method.setAccessible(true);
-        touch(method.invoke(instance));
+        touch(method.invoke(instance, args));
       } catch (Throwable ignored) {
       }
     }
-  }
-
-  private static boolean isZeroArgGetter(String name) {
-    return name.startsWith("get")
-        || name.startsWith("is")
-        || name.startsWith("should")
-        || name.startsWith("to");
   }
 
   private static void touch(Object value) {
@@ -459,6 +446,10 @@ final class HeadlessClassExerciseSupport {
 
     int getDiscoveredTargetCount() {
       return discoveredTargetCount;
+    }
+
+    int getFailureCount() {
+      return failures.size();
     }
 
     void setDiscoveredTargetCount(int discoveredTargetCount) {
