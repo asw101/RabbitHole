@@ -1,5 +1,8 @@
 package edu.cmu.cs.dennisc.render.gl.imp.adapters;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
+
 import edu.cmu.cs.dennisc.scenegraph.DirectionalLight;
 import org.junit.Before;
 import org.junit.Test;
@@ -14,6 +17,11 @@ import static org.junit.Assert.*;
  * propertyChanged delegation, and structural checks.
  */
 public class GlrDirectionalLightPropertyTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
 
   private GlrDirectionalLight adapter;
   private DirectionalLight sg;

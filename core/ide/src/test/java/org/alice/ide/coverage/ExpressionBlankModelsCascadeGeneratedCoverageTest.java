@@ -1,0 +1,8 @@
+package org.alice.ide.coverage;
+
+public class ExpressionBlankModelsCascadeGeneratedCoverageTest extends SingleClassDefaultArgsSweepTestSupport {
+  @Override
+  protected String getClassName() {
+    return "org.alice.ide.croquet.models.cascade.ExpressionBlank";
+  }
+}

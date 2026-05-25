@@ -1,5 +1,8 @@
 package org.alice.tools;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -31,6 +34,11 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 public class FirstLessonCodeEditorActionProofTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
   private static final String FIRST_LESSON_TARGET = "scene.eatmeFirstLesson";
   private static final String FIRST_LESSON_METHOD = "eatmeFirstLesson";
   private static final String WRONG_METHOD = "otherProcedure";

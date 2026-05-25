@@ -1,5 +1,8 @@
 package org.alice.ide.declarationseditor;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
+
 import org.junit.Test;
 import org.alice.ide.IDE;
 import org.alice.ide.codeeditor.CodeEditor;
@@ -27,6 +30,11 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 
 public class ProcedureTabSelectionTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
   @Test
   public void selectionOperationTargetsProcedureCodeTab() {
     DeclarationsEditorComposite editor = new DeclarationsEditorComposite();

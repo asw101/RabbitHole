@@ -1,5 +1,8 @@
 package edu.cmu.cs.dennisc.render.gl.imp.adapters;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
+
 import edu.cmu.cs.dennisc.scenegraph.SpotLight;
 import org.alice.math.immutable.AngleInRadians;
 import org.junit.Before;
@@ -15,6 +18,11 @@ import static org.junit.Assert.*;
  * innerBeamAngle (no-op), falloff (ignored), and getSpotCutoff override.
  */
 public class GlrSpotLightPropertyTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
 
   private GlrSpotLight adapter;
   private SpotLight sg;

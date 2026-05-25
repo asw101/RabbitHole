@@ -1,5 +1,8 @@
 package edu.cmu.cs.dennisc.render.gl.imp.adapters;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
+
 import edu.cmu.cs.dennisc.scenegraph.OrthographicCamera;
 import edu.cmu.cs.dennisc.scenegraph.SymmetricPerspectiveCamera;
 import org.junit.Test;
@@ -15,6 +18,11 @@ import static org.junit.Assert.*;
  * background/layer property sync. Exercises the abstract camera via concrete subclasses.
  */
 public class GlrAbstractCameraViewportTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
 
   // ── Viewport calculation ──────────────────────────────────────────
 

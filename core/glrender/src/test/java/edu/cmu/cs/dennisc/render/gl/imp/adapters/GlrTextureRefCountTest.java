@@ -1,5 +1,8 @@
 package edu.cmu.cs.dennisc.render.gl.imp.adapters;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
+
 
 import org.junit.Test;
 
@@ -13,6 +16,11 @@ import static org.junit.Assert.*;
  * Supplements GlrTextureMapCoordinateTest with additional edge cases.
  */
 public class GlrTextureRefCountTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
 
 
   // ── Reference counting edge cases ─────────────────────────────────

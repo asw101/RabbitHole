@@ -1,5 +1,8 @@
 package edu.cmu.cs.dennisc.render.gl.imp.adapters;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
+
 import edu.cmu.cs.dennisc.scenegraph.Background;
 import org.junit.Test;
 
@@ -12,6 +15,11 @@ import static org.junit.Assert.*;
  * initial state, and structural checks.
  */
 public class GlrBackgroundPropertyTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
 
   // ── Creation ──────────────────────────────────────────────────────
 

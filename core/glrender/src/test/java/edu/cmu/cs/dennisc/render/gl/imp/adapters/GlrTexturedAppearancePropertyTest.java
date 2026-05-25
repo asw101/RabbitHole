@@ -1,5 +1,8 @@
 package edu.cmu.cs.dennisc.render.gl.imp.adapters;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
+
 import edu.cmu.cs.dennisc.color.Color4f;
 import edu.cmu.cs.dennisc.scenegraph.TexturedAppearance;
 import org.junit.Before;
@@ -14,6 +17,11 @@ import static org.junit.Assert.*;
  * properties, alpha blend logic, and delegation to GlrSimpleAppearance.
  */
 public class GlrTexturedAppearancePropertyTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
 
   private GlrTexturedAppearance adapter;
   private TexturedAppearance sg;

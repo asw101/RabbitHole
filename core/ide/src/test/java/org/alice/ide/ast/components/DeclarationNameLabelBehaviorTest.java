@@ -1,5 +1,8 @@
 package org.alice.ide.ast.components;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
+
 import org.junit.Test;
 import org.lgna.project.ast.AbstractDeclaration;
 import org.lgna.project.ast.LocalDeclarationStatement;
@@ -14,6 +17,11 @@ import java.util.concurrent.atomic.AtomicReference;
 import static org.junit.Assert.*;
 
 public class DeclarationNameLabelBehaviorTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
   @Test
   public void declarationNameLabelUsesDeclarationNameImmediately() throws Exception {
     TestDeclarationNameLabel label = runOnEdt(() -> new TestDeclarationNameLabel(new UserField("bunny", String.class)));

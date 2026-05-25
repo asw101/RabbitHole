@@ -213,7 +213,7 @@ public class AstI18nFactoryComponentsTest {
   public void expressionView_noDeclaredMethods() throws ClassNotFoundException {
     Class<?> cls = loadComponent("ExpressionView");
     Method[] methods = cls.getDeclaredMethods();
-    assertEquals(0, methods.length);
+    assertEquals(0, java.util.Arrays.stream(methods).filter(method -> !method.isSynthetic()).count());
   }
 
   @Test
@@ -703,7 +703,9 @@ public class AstI18nFactoryComponentsTest {
 
   @Test
   public void infixExpressionView_noDeclaredMethods() throws ClassNotFoundException {
-    assertEquals(0, loadComponent("InfixExpressionView").getDeclaredMethods().length);
+    assertEquals(0, java.util.Arrays.stream(loadComponent("InfixExpressionView").getDeclaredMethods())
+        .filter(method -> !method.isSynthetic())
+        .count());
   }
 
   // ========================================================================
@@ -736,7 +738,9 @@ public class AstI18nFactoryComponentsTest {
 
   @Test
   public void instanceCreationView_noDeclaredMethods() throws ClassNotFoundException {
-    assertEquals(0, loadComponent("InstanceCreationView").getDeclaredMethods().length);
+    assertEquals(0, java.util.Arrays.stream(loadComponent("InstanceCreationView").getDeclaredMethods())
+        .filter(method -> !method.isSynthetic())
+        .count());
   }
 
   @Test
@@ -1197,7 +1201,9 @@ public class AstI18nFactoryComponentsTest {
 
   @Test
   public void thisExpressionLikeView_noDeclaredMethods() throws ClassNotFoundException {
-    assertEquals(0, loadComponent("ThisExpressionLikeView").getDeclaredMethods().length);
+    assertEquals(0, java.util.Arrays.stream(loadComponent("ThisExpressionLikeView").getDeclaredMethods())
+        .filter(method -> !method.isSynthetic())
+        .count());
   }
 
   @Test

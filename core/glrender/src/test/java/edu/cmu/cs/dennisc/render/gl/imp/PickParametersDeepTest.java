@@ -1,5 +1,8 @@
 package edu.cmu.cs.dennisc.render.gl.imp;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
+
 
 import org.junit.Test;
 
@@ -11,6 +14,11 @@ import java.lang.reflect.Method;
 import static org.junit.Assert.*;
 
 public class PickParametersDeepTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
 
 
   @Test

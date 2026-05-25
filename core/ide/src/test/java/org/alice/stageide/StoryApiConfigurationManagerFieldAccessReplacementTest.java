@@ -1,5 +1,8 @@
 package org.alice.stageide;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
+
 import org.junit.Test;
 import org.lgna.project.ast.FieldAccess;
 import org.lgna.project.ast.JavaType;
@@ -13,6 +16,11 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 public class StoryApiConfigurationManagerFieldAccessReplacementTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
   @Test
   public void createReplacementForFieldAccessIfAppropriate_onlyWrapsSceneThingFields() {
     StoryApiConfigurationManager manager = StoryApiConfigurationManager.getInstance();

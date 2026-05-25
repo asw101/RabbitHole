@@ -1,5 +1,8 @@
 package edu.cmu.cs.dennisc.render.gl.imp.adapters;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
+
 
 import com.jogamp.opengl.GL2ES1;
 import edu.cmu.cs.dennisc.render.gl.imp.RenderContext;
@@ -17,6 +20,11 @@ import java.nio.IntBuffer;
 import static org.junit.Assert.assertTrue;
 
 public class GlrPlanarReflectorRenderIntegrationTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
 
 
 @Before

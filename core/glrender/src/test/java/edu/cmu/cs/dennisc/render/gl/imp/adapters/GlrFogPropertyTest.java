@@ -1,5 +1,8 @@
 package edu.cmu.cs.dennisc.render.gl.imp.adapters;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
+
 import edu.cmu.cs.dennisc.scenegraph.ExponentialFog;
 import edu.cmu.cs.dennisc.scenegraph.ExponentialSquaredFog;
 import edu.cmu.cs.dennisc.scenegraph.LinearFog;
@@ -15,6 +18,11 @@ import static org.junit.Assert.*;
  * and base {@link GlrFog} color property.
  */
 public class GlrFogPropertyTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
 
   // ═══════════════════════════════════════════════════════════════════
   // GlrLinearFog

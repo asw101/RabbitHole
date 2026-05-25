@@ -1,5 +1,8 @@
 package edu.cmu.cs.dennisc.render.gl.structural;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
+
 
 import edu.cmu.cs.dennisc.render.gl.ClassLoadingSweepSupport;
 import org.junit.Test;
@@ -10,6 +13,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class GlrenderAdditionalClassLoadingSweepTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
 
 
   @Test

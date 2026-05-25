@@ -1,5 +1,8 @@
 package org.alice.tools;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -35,6 +38,11 @@ import static org.junit.Assert.assertTrue;
  * validation, and the --json requirement.
  */
 public class EatmeEditProcedureContractTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
   private static final String FIRST_LESSON_TARGET = "scene.eatmeFirstLesson";
   private static final String MARKER = "wave4-code-editor-action-proof";
   private static final String ACTION_PROOF_ARTIFACT = "first-lesson-code-editor-action-proof.json";

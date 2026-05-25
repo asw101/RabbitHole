@@ -1,5 +1,8 @@
 package edu.cmu.cs.dennisc.render.gl.imp.adapters;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
+
 import edu.cmu.cs.dennisc.scenegraph.OrthographicCamera;
 import org.alice.math.immutable.Matrix4x4;
 import org.alice.math.immutable.Ray;
@@ -17,6 +20,11 @@ import static org.junit.Assert.*;
  * ray generation, letterboxing (identity), and propertyChanged coverage.
  */
 public class GlrOrthographicCameraProjectionTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
 
   private GlrOrthographicCamera adapter;
   private OrthographicCamera cam;

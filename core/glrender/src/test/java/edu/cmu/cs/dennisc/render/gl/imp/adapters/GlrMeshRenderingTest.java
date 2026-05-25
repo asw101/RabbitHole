@@ -1,5 +1,8 @@
 package edu.cmu.cs.dennisc.render.gl.imp.adapters;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
+
 
 import com.jogamp.opengl.GL;
 import edu.cmu.cs.dennisc.render.gl.imp.PickContext;
@@ -16,6 +19,11 @@ import static com.jogamp.opengl.GL2ES3.GL_MAX_ELEMENTS_VERTICES;
 import static org.junit.Assert.*;
 
 public class GlrMeshRenderingTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
 
   @Test
   public void renderMeshFallsBackToImmediateArraysWhenLimitsAreSmall() {

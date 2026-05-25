@@ -1,5 +1,8 @@
 package edu.cmu.cs.dennisc.render.gl.imp.adapters;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
+
 import edu.cmu.cs.dennisc.scenegraph.AmbientLight;
 import edu.cmu.cs.dennisc.scenegraph.DirectionalLight;
 import edu.cmu.cs.dennisc.scenegraph.PointLight;
@@ -18,6 +21,11 @@ import static org.junit.Assert.*;
  * attenuation, spot parameters. Exercises via concrete subclasses.
  */
 public class GlrLightDefaultsTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
 
   // ── Base light default methods ────────────────────────────────────
 

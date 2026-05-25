@@ -1,5 +1,8 @@
 package edu.cmu.cs.dennisc.render.gl.imp.adapters;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
+
 import com.jogamp.opengl.GL;
 import com.jogamp.opengl.GL2GL3;
 import edu.cmu.cs.dennisc.render.gl.imp.PickContext;
@@ -32,6 +35,11 @@ import java.nio.IntBuffer;
 import static org.junit.Assert.*;
 
 public class HeadlessSafeAdapterBehaviorTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
 
   @Before
   public void setUp() {

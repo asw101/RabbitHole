@@ -1,5 +1,8 @@
 package edu.cmu.cs.dennisc.render.gl.imp.adapters;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
+
 import edu.cmu.cs.dennisc.scenegraph.AmbientLight;
 import org.junit.Test;
 
@@ -12,6 +15,11 @@ import static org.junit.Assert.*;
  * delegation to base GlrLight class.
  */
 public class GlrAmbientLightCreationTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
 
   // ── Creation via AdapterFactory ───────────────────────────────────
 

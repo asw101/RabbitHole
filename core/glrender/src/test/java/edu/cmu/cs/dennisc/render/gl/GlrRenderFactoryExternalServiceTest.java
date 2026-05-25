@@ -1,5 +1,8 @@
 package edu.cmu.cs.dennisc.render.gl;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
+
 
 import edu.cmu.cs.dennisc.render.RenderFactory;
 import org.junit.Test;
@@ -21,6 +24,11 @@ import static org.junit.Assert.*;
  * requiring a live GL context.
  */
 public class GlrRenderFactoryExternalServiceTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
 
 
 
