@@ -12,6 +12,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 public class DeclarationCompositeCodecProjectContextTest extends ProjectContextTestCase {
   @Test
@@ -38,5 +39,15 @@ public class DeclarationCompositeCodecProjectContextTest extends ProjectContextT
     DeclarationComposite<?, ?> decoded = DeclarationCompositeCodec.SINGLETON.decodeValue(
         new InputStreamBinaryDecoder(new ByteArrayInputStream(baos.toByteArray())));
     assertSame(composite, decoded);
+  }
+
+  @Test
+  public void appendRepresentationUsesDeclarationNameForLoadedProjectMethod() {
+    DeclarationComposite<?, ?> composite = CodeComposite.getInstance(fixture.sceneProcedure);
+    StringBuilder sb = new StringBuilder("method:");
+
+    DeclarationCompositeCodec.SINGLETON.appendRepresentation(sb, composite);
+
+    assertTrue(sb.toString().contains(fixture.sceneProcedure.getName()));
   }
 }
