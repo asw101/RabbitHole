@@ -175,23 +175,12 @@ public class CameraNavigatorWidget extends LineAxisPanel {
 
   public void setExpanded(boolean isExpanded) {
     this.isExpanded = isExpanded;
-    switch (this.cameraMode) {
-      case PERSPECTIVE -> {
-        this.cameraControlUpDown.setVisible(isExpanded);
-        this.cameraControlStrafe.setVisible(isExpanded);
-        this.cameraDriver.setVisible(true);
-        this.orthographicCameraControlStrafe.setVisible(false);
-        this.orthographicCameraControlZoom.setVisible(false);
-      }
-      case ORTHOGRAPHIC -> {
-        this.cameraControlUpDown.setVisible(false);
-        this.cameraControlStrafe.setVisible(false);
-        this.cameraDriver.setVisible(false);
-        this.orthographicCameraControlStrafe.setVisible(true);
-        this.orthographicCameraControlZoom.setVisible(true);
-      }
-    }
-
+    CameraNavigatorWidgetHelper.VisibilityState state = CameraNavigatorWidgetHelper.createVisibilityState(this.cameraMode, isExpanded);
+    this.cameraControlUpDown.setVisible(state.isCameraControlUpDownVisible());
+    this.cameraControlStrafe.setVisible(state.isCameraControlStrafeVisible());
+    this.cameraDriver.setVisible(state.isCameraDriverVisible());
+    this.orthographicCameraControlStrafe.setVisible(state.isOrthographicStrafeVisible());
+    this.orthographicCameraControlZoom.setVisible(state.isOrthographicZoomVisible());
   }
 
   protected void setControlsBasedOnMode(CameraMode mode) {
@@ -199,15 +188,13 @@ public class CameraNavigatorWidget extends LineAxisPanel {
       this.removeAllComponents();
       this.setExpanded(this.isExpanded);
       JPanel jPanel = this.getAwtComponent();
-      switch (mode) {
-        case PERSPECTIVE -> {
-          jPanel.add(this.cameraControlStrafe);
-          jPanel.add(this.cameraDriver);
-          jPanel.add(this.cameraControlUpDown);
-        }
-        case ORTHOGRAPHIC -> {
-          jPanel.add(this.orthographicCameraControlStrafe);
-          jPanel.add(this.orthographicCameraControlZoom);
+      for (CameraNavigatorWidgetHelper.ControlSlot slot : CameraNavigatorWidgetHelper.getControlSlots(mode)) {
+        switch (slot) {
+          case CAMERA_STRAFE -> jPanel.add(this.cameraControlStrafe);
+          case CAMERA_DRIVER -> jPanel.add(this.cameraDriver);
+          case CAMERA_UP_DOWN -> jPanel.add(this.cameraControlUpDown);
+          case ORTHOGRAPHIC_STRAFE -> jPanel.add(this.orthographicCameraControlStrafe);
+          case ORTHOGRAPHIC_ZOOM -> jPanel.add(this.orthographicCameraControlZoom);
         }
       }
     }

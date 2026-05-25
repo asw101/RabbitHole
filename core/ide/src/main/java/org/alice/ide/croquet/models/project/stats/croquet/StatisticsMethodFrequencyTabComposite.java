@@ -117,7 +117,7 @@ public class StatisticsMethodFrequencyTabComposite extends SimpleTabComposite<St
     for (UserMethod method : getMapMethodToInvocationCounts().keySet()) {
       a.add(method);
     }
-    sort(a);
+    StatisticsMethodFrequencyTabCompositeHelper.sortMethodsByName(a);
     for (UserMethod method : a) {
       getUserMethodList().addItem(method);
     }
@@ -168,24 +168,14 @@ public class StatisticsMethodFrequencyTabComposite extends SimpleTabComposite<St
       count = getMapMethodToInvocationCounts().get(method).get(methodTwo).getCount();
     } else {
       if (getMapMethodToInvocationCounts().get(method) != null) {
-        for (MethodCountPair pair : getMapMethodToInvocationCounts().get(method).methodCountPairs) {
-          if (pair.getMethod() != root) {
-            count += pair.getCount();
-          }
-        }
+        count = StatisticsMethodFrequencyTabCompositeHelper.countInvocations(getMapMethodToInvocationCounts().get(method), root);
       }
     }
     return count;
   }
 
   private void sort(List<? extends AbstractMethod> a) {
-    Collections.sort(a, new Comparator<AbstractMethod>() {
-
-      @Override
-      public int compare(AbstractMethod o1, AbstractMethod o2) {
-        return o1.getName().compareTo(o2.getName());
-      }
-    });
+    StatisticsMethodFrequencyTabCompositeHelper.sortMethodsByName(a);
   }
 
   @Override
@@ -245,10 +235,8 @@ public class StatisticsMethodFrequencyTabComposite extends SimpleTabComposite<St
     LinkedList<String> rv = new LinkedList<String>();
     InvocationCounts invocationsCount = getMapMethodToInvocationCounts().get(selected);
     for (MethodCountPair pair : invocationsCount.getMethodCountPairs()) {
-      if (!pair.getMethod().isFunction() || getShowFunctionsState().getValue()) {
-        if (!pair.getMethod().isProcedure() || getShowProceduresState().getValue()) {
-          rv.add(formatter.getNameForDeclaration(pair.getMethod()));
-        }
+      if (StatisticsMethodFrequencyTabCompositeHelper.isMethodVisible(pair.getMethod(), getShowFunctionsState().getValue(), getShowProceduresState().getValue())) {
+        rv.add(formatter.getNameForDeclaration(pair.getMethod()));
       }
     }
     return rv;
@@ -258,10 +246,8 @@ public class StatisticsMethodFrequencyTabComposite extends SimpleTabComposite<St
     LinkedList<Integer> rv = new LinkedList<Integer>();
     InvocationCounts invocationCount = getMapMethodToInvocationCounts().get(selected);
     for (MethodCountPair pair : invocationCount.getMethodCountPairs()) {
-      if (!pair.getMethod().isFunction() || getShowFunctionsState().getValue()) {
-        if (!pair.getMethod().isProcedure() || getShowProceduresState().getValue()) {
-          rv.add(getCount(selected, pair.getMethod()));
-        }
+      if (StatisticsMethodFrequencyTabCompositeHelper.isMethodVisible(pair.getMethod(), getShowFunctionsState().getValue(), getShowProceduresState().getValue())) {
+        rv.add(getCount(selected, pair.getMethod()));
       }
     }
     return rv;
@@ -270,15 +256,7 @@ public class StatisticsMethodFrequencyTabComposite extends SimpleTabComposite<St
   public int getSize(UserMethod selected) {
     if (selected != null) {
       InvocationCounts invocationCounts = mapMethodToInvocationCounts.get(selected);
-      int count = 1;
-      for (MethodCountPair pair : invocationCounts.getMethodCountPairs()) {
-        if (!pair.getMethod().isFunction() || getShowFunctionsState().getValue()) {
-          if (!pair.getMethod().isProcedure() || getShowProceduresState().getValue()) {
-            ++count;
-          }
-        }
-      }
-      return count;
+      return 1 + StatisticsMethodFrequencyTabCompositeHelper.countVisiblePairs(invocationCounts, getShowFunctionsState().getValue(), getShowProceduresState().getValue());
     }
     return 0;
   }

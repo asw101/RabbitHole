@@ -135,9 +135,9 @@ public abstract class PicturePlaneInteraction {
   }
 
   private Mode getMode() {
-    if (Double.isNaN(this.planeZ0) == false) {
+    if (PicturePlaneInteractionHelper.hasPlaneDrag(this.planeZ0)) {
       return Mode.PLANE;
-    } else if (this.ray != null) {
+    } else if (PicturePlaneInteractionHelper.hasRayDrag(this.ray)) {
       return Mode.RAY;
     } else {
       return null;
@@ -186,8 +186,7 @@ public abstract class PicturePlaneInteraction {
   }
 
   private void rayDrag(MouseEvent e) {
-    double deltaY = e.getY() - this.rayPixelY0;
-    double rayT = this.rayT0 + (deltaY * Y_PIXELS_TO_RAY_T_FACTOR);
+    double rayT = PicturePlaneInteractionHelper.calculateRayT(this.rayT0, this.rayPixelY0, e.getY(), Y_PIXELS_TO_RAY_T_FACTOR);
     Point3 p = this.ray.getPointAlong(rayT);
     this.sgTransformable.setTranslationOnly(p, this.sgCamera);
   }
@@ -242,16 +241,12 @@ public abstract class PicturePlaneInteraction {
         Logger.outln("skip warped cursor", e);
       } else {
         Mode mode = this.getMode();
-        if (e.isShiftDown()) {
-          if (mode == Mode.PLANE) {
-            this.stopPlaneDrag(e);
-            this.startRayDrag(e);
-          }
-        } else {
-          if (mode == Mode.RAY) {
-            this.stopRayDrag(e);
-            this.startPlaneDrag(e);
-          }
+        if (PicturePlaneInteractionHelper.shouldSwitchToRay(e.isShiftDown(), mode == Mode.PLANE)) {
+          this.stopPlaneDrag(e);
+          this.startRayDrag(e);
+        } else if (PicturePlaneInteractionHelper.shouldSwitchToPlane(e.isShiftDown(), mode == Mode.RAY)) {
+          this.stopRayDrag(e);
+          this.startPlaneDrag(e);
         }
         mode = this.getMode();
         if (mode == Mode.PLANE) {

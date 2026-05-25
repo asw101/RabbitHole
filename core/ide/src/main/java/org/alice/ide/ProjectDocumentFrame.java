@@ -118,7 +118,7 @@ public class ProjectDocumentFrame extends PerspectiveDocumentFrame {
     ImageCaptureComposite imageCaptureComposite = ImageCaptureComposite.getInstance();
     window.getContentPane().registerKeyboardAction(imageCaptureComposite.getCaptureEntireContentPaneOperation().getImp().getSwingModel().getAction(), CAPTURE_ENTIRE_CONTENT_PANE_KEY_STROKE, SwingComponentView.Condition.WHEN_IN_FOCUSED_WINDOW);
     window.getContentPane().registerKeyboardAction(imageCaptureComposite.getCaptureEntireWindowOperation().getImp().getSwingModel().getAction(), CAPTURE_ENTIRE_WINDOW_KEY_STROKE, SwingComponentView.Condition.WHEN_IN_FOCUSED_WINDOW);
-    if (window != this.getFrame()) {
+    if (ProjectDocumentFrameHelper.shouldRegisterRectangleCapture(window == this.getFrame())) {
       window.getContentPane().registerKeyboardAction(imageCaptureComposite.getCaptureRectangleOperation().getImp().getSwingModel().getAction(), CAPTURE_RECTANGLE_KEY_STROKE, SwingComponentView.Condition.WHEN_IN_FOCUSED_WINDOW);
     }
   }
@@ -154,7 +154,7 @@ public class ProjectDocumentFrame extends PerspectiveDocumentFrame {
   }
 
   public void enableRendering() {
-    if (this.stack.isEmpty()) {
+    if (!ProjectDocumentFrameHelper.canEnableRendering(this.stack.size())) {
       Logger.severe(this);
     } else {
       ReasonToDisableSomeAmountOfRendering reasonToDisableSomeAmountOfRendering = this.stack.pop();
@@ -263,12 +263,7 @@ public class ProjectDocumentFrame extends PerspectiveDocumentFrame {
   }
 
   public AbstractCode getFocusedCode() {
-    AbstractDeclaration declaration = this.getMetaDeclarationFauxState().getValue();
-    if (declaration instanceof AbstractCode code) {
-      return code;
-    } else {
-      return null;
-    }
+    return ProjectDocumentFrameHelper.getFocusedCode(this.getMetaDeclarationFauxState().getValue());
   }
 
   public void setFocusedCode(AbstractCode nextFocusedCode) {

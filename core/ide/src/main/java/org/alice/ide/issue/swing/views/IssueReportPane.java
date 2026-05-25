@@ -75,31 +75,11 @@ public abstract class IssueReportPane extends JPanel {
   }
 
   public static String getEnvironmentLongDescription() {
-    StringBuilder sb = new StringBuilder();
-    String intersticial = "";
-    for (String propertyName : systemPropertiesForEnvironmentField) {
-      sb.append(intersticial);
-      sb.append(propertyName);
-      sb.append(": ");
-      sb.append(System.getProperty(propertyName));
-      intersticial = "\n";
-    }
-    return sb.toString();
+    return IssueReportPaneHelper.buildEnvironmentLongDescription(systemPropertiesForEnvironmentField, System::getProperty);
   }
 
   public static String getEnvironmentShortDescription() {
-    StringBuilder sb = new StringBuilder();
-    String intersticial = "";
-    for (String propertyName : systemPropertiesForEnvironmentField) {
-      sb.append(intersticial);
-      sb.append(System.getProperty(propertyName));
-      intersticial = ";";
-    }
-    if (SystemUtilities.isMac()) {
-      sb.append(";");
-      sb.append(System.getProperty("os.version"));
-    }
-    return sb.toString();
+    return IssueReportPaneHelper.buildEnvironmentShortDescription(systemPropertiesForEnvironmentField, System::getProperty, SystemUtilities.isMac(), System.getProperty("os.version"));
   }
 
   private class SubmitAction extends SubmitReportAction {

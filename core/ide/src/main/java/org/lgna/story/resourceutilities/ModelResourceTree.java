@@ -101,16 +101,7 @@ public class ModelResourceTree {
   }
 
   private static UserPackage getAlicePackage(Class<?> resourceClass, Class<?> rootClass) {
-    String resourcePackage = resourceClass.getPackage().getName();
-    String rootPackage = rootClass.getPackage().getName();
-    int rootIndex = resourcePackage.indexOf(rootPackage);
-    if (rootIndex != -1) {
-      resourcePackage = resourcePackage.substring(rootIndex + rootPackage.length());
-      if (resourcePackage.startsWith(".")) {
-        resourcePackage = resourcePackage.substring(1);
-      }
-    }
-    resourcePackage = AliceResourceClassUtilities.DEFAULT_PACKAGE + resourcePackage;
+    String resourcePackage = ModelResourceTreeHelper.createAlicePackageName(resourceClass.getPackage().getName(), rootClass.getPackage().getName(), AliceResourceClassUtilities.DEFAULT_PACKAGE);
     return new UserPackage(resourcePackage);
   }
 
@@ -186,7 +177,7 @@ public class ModelResourceTree {
 
   private void registerDynamicClassIfFound(Class<? extends ModelResource> resourceClass, TypeDefinedGalleryTreeNode classNode) {
     try {
-      Class dynamicResourceClass = Class.forName("org.lgna.story.resources.Dynamic" + resourceClass.getSimpleName());
+      Class dynamicResourceClass = Class.forName(ModelResourceTreeHelper.getDynamicResourceClassName(resourceClass));
       if (resourceClass.isAssignableFrom(dynamicResourceClass)) {
         dynamicResources.put(classNode.getUserType().getName(), classNode);
         classNode.setDynamicResource(dynamicResourceClass);
@@ -212,12 +203,7 @@ public class ModelResourceTree {
         interfaces = currentClass.getInterfaces();
         currentClass = null;
         if ((interfaces != null) && (interfaces.length > 0)) {
-          for (Class<?> intrfc : interfaces) {
-            if (ModelResource.class.isAssignableFrom(intrfc)) {
-              currentClass = (Class<? extends ModelResource>) intrfc;
-              break;
-            }
-          }
+          currentClass = ModelResourceTreeHelper.findFirstMatchingInterface(interfaces, ModelResource.class);
         }
       }
       addNodes(topNode, classStack);

@@ -88,15 +88,7 @@ public class StatementListPropertyView extends AbstractListPropertyPane<Statemen
     boolean isDoInOrder = owningNode instanceof DoInOrder;
     boolean isDoTogether = owningNode instanceof DoTogether;
 
-    Insets insets;
-    if (bottom != 0) {
-      insets = new Insets(INTRASTICIAL_PAD, this.getLeftInset(), bottom, 0);
-    } else {
-      if (isElse || isDoInOrder || isDoTogether) {
-        bottom = 8;
-      }
-      insets = new Insets(INTRASTICIAL_PAD, this.getLeftInset(), bottom, this.getRightInset());
-    }
+    Insets insets = StatementListPropertyViewHelper.createInsets(bottom, this.getLeftInset(), this.getRightInset(), isElse, isDoInOrder, isDoTogether);
 
     StatementListProperty alternateListProperty;
     if (owningNode instanceof BooleanExpressionBodyPair) {
@@ -134,18 +126,15 @@ public class StatementListPropertyView extends AbstractListPropertyPane<Statemen
 
   @Override
   protected int getBoxLayoutPad() {
+    int fontHeight = -1;
     if (FormatterState.isJava()) {
-      Node owningNode = this.getOwningBlockStatementOwningNode();
-      if (owningNode instanceof DoTogether) {
-        Graphics g = GraphicsUtilities.getGraphics();
-        //todo:
-        //java.awt.Font font = this.getFont();
-        Font font = g.getFont();
-        FontMetrics fm = g.getFontMetrics(font);
-        return fm.getHeight() + 8;
-      }
+      Graphics g = GraphicsUtilities.getGraphics();
+      Font font = g.getFont();
+      FontMetrics fm = g.getFontMetrics(font);
+      fontHeight = fm.getHeight();
     }
-    return INTRASTICIAL_PAD;
+    Node owningNode = this.getOwningBlockStatementOwningNode();
+    return StatementListPropertyViewHelper.getBoxLayoutPad(FormatterState.isJava(), owningNode instanceof DoTogether, fontHeight);
   }
 
   @Override

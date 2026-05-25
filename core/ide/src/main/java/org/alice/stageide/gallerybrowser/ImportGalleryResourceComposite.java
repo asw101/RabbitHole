@@ -37,7 +37,6 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 public class ImportGalleryResourceComposite extends SingleValueCreatorInputDialogCoreComposite<Panel, Boolean> {
   private final StageIDE ide = StageIDE.getActiveInstance();
@@ -98,7 +97,7 @@ public class ImportGalleryResourceComposite extends SingleValueCreatorInputDialo
     }
     List<ModelManifest.Joint> baseJoints = getBaseJoints(parentJavaClass);
 
-    if (skeletonVisual.skeleton.getValue() == null && !baseJoints.isEmpty()) {
+    if (ImportGalleryResourceCompositeHelper.isSkeletonMissing(skeletonVisual.skeleton.getValue(), baseJoints)) {
       return findLocalizedText("errorMissingSkeleton").replace("</skeleton/>", skeletonVisual.getName());
     }
 
@@ -108,7 +107,7 @@ public class ImportGalleryResourceComposite extends SingleValueCreatorInputDialo
       detailsComposite.jointStatus.setText("");
     } else {
       final String aliceClassName = AliceResourceClassUtilities.getAliceClassName(parentJavaClass);
-      String missingJointsMessage = findLocalizedText("errorMissingJointsMessage").replace("</class/>", aliceClassName).replace("</joints/>", missingJoints.stream().map(ModelManifest.Joint::toString).collect(Collectors.joining(", ")));
+      String missingJointsMessage = ImportGalleryResourceCompositeHelper.buildMissingJointsMessage(findLocalizedText("errorMissingJointsMessage"), aliceClassName, missingJoints);
       detailsComposite.jointStatus.setText(missingJointsMessage);
       return findLocalizedText("errorMissingJoints").replace("</class/>", aliceClassName);
     }
@@ -127,7 +126,7 @@ public class ImportGalleryResourceComposite extends SingleValueCreatorInputDialo
 
   private void scaleModel(Double newScale) {
     if (newScale != null) {
-      double change = newScale / appliedScale;
+      double change = ImportGalleryResourceCompositeHelper.calculateScaleChange(newScale, appliedScale);
       skeletonVisual.scale(change);
       appliedScale = newScale;
       previewComposite.updateView();

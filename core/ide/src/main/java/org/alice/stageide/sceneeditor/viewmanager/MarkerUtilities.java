@@ -125,12 +125,7 @@ public class MarkerUtilities {
   }
 
   private static int getColorIndexForColor(Color color) {
-    for (int i = 0; i < getColorCount(); i++) {
-      if (getColorForIndex(i).equals(color)) {
-        return i;
-      }
-    }
-    return -1;
+    return MarkerUtilitiesHelper.getColorIndex(COLORS, color);
   }
 
   private static int getColorCount() {
@@ -142,24 +137,13 @@ public class MarkerUtilities {
   }
 
   private static String getColorFileName(Color color) {
-    int index = getColorIndexForColor(color);
-    if (index != -1) {
-      String colorName = COLOR_NAME_KEYS[index];
-      return colorName.substring(0, 1).toUpperCase() + colorName.substring(1);
-    }
-    return "White";
+    return MarkerUtilitiesHelper.getColorFileName(COLOR_NAME_KEYS, COLORS, color);
   }
 
   public static String getNameForView(CameraOption cameraOption) {
     ResourceBundle resourceBundle = ResourceBundle.getBundle(StorytellingSceneEditor.class.getPackage().getName() + ".cameraViews");
     if (cameraOption != null) {
-      return switch (cameraOption) {
-        case STARTING_CAMERA_VIEW -> resourceBundle.getString("sceneCameraView");
-        case LAYOUT_SCENE_VIEW -> resourceBundle.getString("layoutPerspectiveView");
-        case TOP -> resourceBundle.getString("topOrthographicView");
-        case SIDE -> resourceBundle.getString("sideOrthographicView");
-        case FRONT -> resourceBundle.getString("frontOrthographicView");
-      };
+      return resourceBundle.getString(MarkerUtilitiesHelper.getCameraViewKey(cameraOption));
     }
     return "";
   }

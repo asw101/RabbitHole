@@ -72,7 +72,6 @@ import org.lgna.project.ast.Expression;
 import org.lgna.project.ast.JavaType;
 import org.lgna.project.ast.NamedUserType;
 import org.lgna.project.ast.Node;
-import org.lgna.project.ast.NullLiteral;
 import org.lgna.project.ast.StaticAnalysisUtilities;
 import org.lgna.project.ast.UserType;
 import org.lgna.story.SThing;
@@ -322,15 +321,15 @@ public abstract class DeclarationLikeSubstanceComposite<N extends Node> extends 
   }
 
   public boolean isValueComponentTypeDisplayed() {
-    return details.valueComponentTypeStatus.isDisplayed();
+    return DeclarationLikeSubstanceCompositeHelper.isDisplayed(details.valueComponentTypeStatus);
   }
 
   public boolean isValueIsArrayTypeStateDisplayed() {
-    return details.valueIsArrayTypeStatus.isDisplayed();
+    return DeclarationLikeSubstanceCompositeHelper.isDisplayed(details.valueIsArrayTypeStatus);
   }
 
   public boolean isInitializerDisplayed() {
-    return details.initializerStatus.isDisplayed();
+    return DeclarationLikeSubstanceCompositeHelper.isDisplayed(details.initializerStatus);
   }
 
   public abstract UserType<?> getDeclaringType();
@@ -345,16 +344,7 @@ public abstract class DeclarationLikeSubstanceComposite<N extends Node> extends 
 
   @Override
   public AbstractType<?, ?, ?> getValueType() {
-    AbstractType<?, ?, ?> componentType = this.getValueComponentType();
-    if (componentType != null) {
-      if ((this.valueIsArrayTypeState != null) && this.valueIsArrayTypeState.getValue()) {
-        return componentType.getArrayType();
-      } else {
-        return componentType;
-      }
-    } else {
-      return null;
-    }
+    return DeclarationLikeSubstanceCompositeHelper.resolveValueType(this.getValueComponentType(), (this.valueIsArrayTypeState != null) && this.valueIsArrayTypeState.getValue());
   }
 
   public String getDeclarationLikeSubstanceName() {
@@ -367,11 +357,7 @@ public abstract class DeclarationLikeSubstanceComposite<N extends Node> extends 
 
   public Expression getInitializer() {
     if (this.initializerState != null) {
-      Expression rv = this.initializerState.getValue();
-      if (rv == null) {
-        rv = new NullLiteral();
-      }
-      return rv;
+      return DeclarationLikeSubstanceCompositeHelper.normalizeInitializer(this.initializerState.getValue());
     } else {
       return null;
     }
