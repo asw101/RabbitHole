@@ -45,8 +45,6 @@ package org.alice.ide.croquet.models.ast.cascade.statement;
 import org.alice.ide.IDE;
 import org.alice.ide.ast.draganddrop.BlockStatementIndexPair;
 import org.alice.ide.croquet.edits.ast.InsertStatementEdit;
-import org.alice.ide.statementfactory.LocalArrayAtIndexAssignmentFillIn;
-import org.alice.ide.statementfactory.LocalAssignmentFillIn;
 import org.lgna.croquet.Application;
 import org.lgna.croquet.CascadeBlankChild;
 import org.lgna.croquet.CascadeWithInternalBlank;
