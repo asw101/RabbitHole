@@ -17,6 +17,7 @@ import org.lgna.project.ast.UserParameter;
 import java.util.HashSet;
 import java.util.Set;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class MemberInfoBehaviorTest {
@@ -46,6 +47,20 @@ public class MemberInfoBehaviorTest {
     fieldInfo.updateDependencies();
 
     assertTrue(fieldInfo.getCheckBox().getToolTipText().contains("Helper"));
+  }
+
+  @Test
+  public void fieldInfoTooltipUsesCommaSeparatedExportFormatting() {
+    NamedUserType helperType = createType("Helper");
+    NamedUserType programType = createType("Program");
+    UserField helperField = new UserField("helper", helperType, new NullLiteral());
+    programType.fields.add(helperField);
+
+    ProjectInfo projectInfo = createProjectInfo(programType);
+    FieldInfo fieldInfo = projectInfo.getInfoForType(programType).getInfoForField(helperField);
+    fieldInfo.updateDependencies();
+
+    assertEquals("Helper, ", fieldInfo.getCheckBox().getToolTipText());
   }
 
   @Test
@@ -91,5 +106,18 @@ public class MemberInfoBehaviorTest {
     constructorInfo.updateDependencies();
 
     assertTrue(constructorInfo.getCheckBox().getToolTipText().contains("helper"));
+  }
+
+  @Test
+  public void membersWithoutDependenciesUseEmptyTooltipText() {
+    NamedUserType programType = createType("Program");
+    UserMethod method = new UserMethod("doNothing", JavaType.VOID_TYPE, new UserParameter[0], new BlockStatement());
+    programType.methods.add(method);
+
+    ProjectInfo projectInfo = createProjectInfo(programType);
+    MethodInfo methodInfo = projectInfo.getInfoForType(programType).getInfoForMethod(method);
+    methodInfo.updateDependencies();
+
+    assertEquals("", methodInfo.getCheckBox().getToolTipText());
   }
 }

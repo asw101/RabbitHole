@@ -29,6 +29,30 @@ public class InstanceFactoryUtilitiesBehaviorTest {
   }
 
   @Test
+  public void fieldMethodInvocationOnThisKeepsFieldAndMethod() {
+    var field = InstanceFactoryTestSupport.createStringField("field");
+    JavaMethod method = JavaMethod.getInstance(String.class, "trim");
+
+    InstanceFactory factory = InstanceFactoryUtilities.getInstanceFactoryForExpression(
+        new MethodInvocation(new FieldAccess(field), method));
+
+    assertTrue(factory instanceof ThisFieldAccessMethodInvocationFactory);
+    assertSame(field, ((ThisFieldAccessMethodInvocationFactory) factory).getField());
+    assertSame(method, ((ThisFieldAccessMethodInvocationFactory) factory).getMethod());
+  }
+
+  @Test
+  public void nestedFieldMethodInvocationOutsideThisIsUnavailable() {
+    var field = InstanceFactoryTestSupport.createStringField("field");
+    var local = InstanceFactoryTestSupport.createLocal("local", org.lgna.project.ast.JavaType.STRING_TYPE);
+    JavaMethod method = JavaMethod.getInstance(String.class, "trim");
+
+    MethodInvocation invocation = new MethodInvocation(new FieldAccess(new LocalAccess(local), field), method);
+
+    assertNull(InstanceFactoryUtilities.getInstanceFactoryForExpression(invocation));
+  }
+
+  @Test
   public void unsupportedExpressionReturnsNull() {
     assertNull(InstanceFactoryUtilities.getInstanceFactoryForExpression(new NullLiteral()));
   }
