@@ -1,5 +1,8 @@
 package org.alice.ide;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
+
 import org.alice.ide.uricontent.UriProjectLoader;
 import org.alice.ide.frametitle.IdeFrameTitleGenerator;
 import org.alice.ide.projecturi.RecentProjectCountState;
@@ -54,6 +57,11 @@ import static org.junit.Assert.assertTrue;
  * <p>Headless: no JavaFX, no 3D rendering, no gallery assets.
  */
 public class SilverThreadSaveTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
 
   private static final String PROGRAM_NAME = "SilverThreadSaveProgram";
   private static final String METHOD_NAME = "silverThreadSaveStep";

@@ -1,5 +1,8 @@
 package org.alice.ide;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
+
 import org.alice.ide.frametitle.IdeFrameTitleGenerator;
 import org.alice.ide.project.ProjectDocumentState;
 import org.alice.ide.uricontent.UriProjectLoader;
@@ -28,6 +31,11 @@ import java.util.function.Consumer;
 import static org.junit.Assert.*;
 
 public class ProjectLoaderDeepTest {
+
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
   @Before
   public void resetSingletonsBefore() throws Exception {
     resetApplicationSingleton();
