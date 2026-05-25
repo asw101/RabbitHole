@@ -164,61 +164,42 @@ public class TypeMenu extends MenuModel {
       }
     }
 
-    if (!procedureModels.isEmpty()) {
-      procedureModels.addFirst(ProceduresSeparator.getInstance());
-    }
-    if (!functionModels.isEmpty()) {
-      functionModels.addFirst(FunctionsSeparator.getInstance());
-    }
-
-    procedureModels.add(AddProcedureComposite.getInstance(this.type).getLaunchOperation().getMenuItemPrepModel());
-    functionModels.add(AddFunctionComposite.getInstance(this.type).getLaunchOperation().getMenuItemPrepModel());
-
-    List<StandardMenuItemPrepModel> models = Lists.newLinkedList();
-
     Operation operation = declarationTabState.getItemSelectionOperationForType(type);
     operation.setName(type.getName());
 
     if (data.contains(DeclarationComposite.getInstance(type))) {
       set.add(operation.getMenuItemPrepModel());
     }
-    models.add(operation.getMenuItemPrepModel());
 
-    if (IsIncludingConstructors.getInstance().getValue()) {
-      models.add(SEPARATOR);
-      for (NamedUserConstructor constructor : type.getDeclaredConstructors()) {
-        StandardMenuItemPrepModel model = declarationTabState.getItemSelectionOperationForConstructor(constructor).getMenuItemPrepModel();
-        if (data.contains(DeclarationComposite.getInstance(constructor))) {
-          set.add(model);
-        }
-        models.add(model);
+    List<StandardMenuItemPrepModel> constructorModels = Lists.newLinkedList();
+    for (NamedUserConstructor constructor : type.getDeclaredConstructors()) {
+      StandardMenuItemPrepModel model = declarationTabState.getItemSelectionOperationForConstructor(constructor).getMenuItemPrepModel();
+      if (data.contains(DeclarationComposite.getInstance(constructor))) {
+        set.add(model);
       }
+      constructorModels.add(model);
     }
 
-    models.add(SEPARATOR);
-    models.addAll(procedureModels);
-    models.add(SEPARATOR);
-    models.addAll(functionModels);
-
-    if (IDE.getActiveInstance().getApiConfigurationManager().isDeclaringTypeForManagedFields(type)) {
-      models.add(SEPARATOR);
-      if (!managedFieldModels.isEmpty()) {
-        models.add(ManagedFieldsSeparator.getInstance());
-        models.addAll(managedFieldModels);
-      }
-      // quite possibly our least used way to add an object into the scene!
-      models.add(AddResourceKeyManagedFieldComposite.getInstance().getLaunchOperation().getMenuItemPrepModel());
-    }
-
-    models.add(SEPARATOR);
-    if (!managedFieldModels.isEmpty()) {
-      models.add(UnmanagedFieldsSeparator.getInstance());
-      models.addAll(unmanagedFieldModels);
-    } else if (!unmanagedFieldModels.isEmpty()) {
-      models.add(FieldsSeparator.getInstance());
-      models.addAll(unmanagedFieldModels);
-    }
-    models.add(AddUnmanagedFieldComposite.getInstance(type).getLaunchOperation().getMenuItemPrepModel());
+    boolean declaringTypeForManagedFields = IDE.getActiveInstance().getApiConfigurationManager().isDeclaringTypeForManagedFields(type);
+    List<StandardMenuItemPrepModel> models = TypeMenuLogic.buildMenuModels(
+        operation.getMenuItemPrepModel(),
+        IsIncludingConstructors.getInstance().getValue(),
+        constructorModels,
+        procedureModels,
+        ProceduresSeparator.getInstance(),
+        AddProcedureComposite.getInstance(this.type).getLaunchOperation().getMenuItemPrepModel(),
+        functionModels,
+        FunctionsSeparator.getInstance(),
+        AddFunctionComposite.getInstance(this.type).getLaunchOperation().getMenuItemPrepModel(),
+        declaringTypeForManagedFields,
+        managedFieldModels,
+        ManagedFieldsSeparator.getInstance(),
+        AddResourceKeyManagedFieldComposite.getInstance().getLaunchOperation().getMenuItemPrepModel(),
+        unmanagedFieldModels,
+        UnmanagedFieldsSeparator.getInstance(),
+        FieldsSeparator.getInstance(),
+        AddUnmanagedFieldComposite.getInstance(type).getLaunchOperation().getMenuItemPrepModel(),
+        SEPARATOR);
     //    models.add( new PoserInputDialogComposite( type ).getOperation().getMenuItemPrepModel() );
 
     MenuItemContainerUtilities.MenuElementObserver observer = new MenuItemContainerUtilities.MenuElementObserver() {

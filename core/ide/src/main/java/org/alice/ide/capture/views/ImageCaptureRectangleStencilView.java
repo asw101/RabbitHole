@@ -43,7 +43,6 @@
 package org.alice.ide.capture.views;
 
 import edu.cmu.cs.dennisc.capture.ImageCaptureUtilities;
-import edu.cmu.cs.dennisc.java.awt.RectangleUtilities;
 import org.alice.ide.capture.ImageCaptureComposite;
 import org.alice.imageeditor.croquet.ImageEditorFrame;
 import org.lgna.croquet.views.AbstractWindow;
@@ -54,7 +53,6 @@ import javax.swing.JPanel;
 import javax.swing.KeyStroke;
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.geom.Area;
 import java.awt.image.BufferedImage;
 
 /**
@@ -93,7 +91,7 @@ public class ImageCaptureRectangleStencilView extends LayerStencil {
       synchronized (hole) {
         this.xPressed = e.getX();
         this.yPressed = e.getY();
-        hole.setBounds(this.xPressed, this.yPressed, 0, 0);
+        hole.setBounds(ImageCaptureRectangleStencilLogic.createHoleOnPress(this.xPressed, this.yPressed));
         repaint();
       }
     }
@@ -101,7 +99,7 @@ public class ImageCaptureRectangleStencilView extends LayerStencil {
     @Override
     public void mouseReleased(MouseEvent e) {
       synchronized (hole) {
-        if (isHoleValid()) {
+        if (ImageCaptureRectangleStencilLogic.shouldCapture(hole)) {
           setStencilShowing(false);
           captureImageAndShowFrame();
         }
@@ -137,7 +135,7 @@ public class ImageCaptureRectangleStencilView extends LayerStencil {
     public void mouseDragged(MouseEvent e) {
       synchronized (hole) {
         if (isHoleValid()) {
-          RectangleUtilities.setBounds(hole, this.xPressed, this.yPressed, e.getX(), e.getY());
+          hole.setBounds(ImageCaptureRectangleStencilLogic.createHoleOnDrag(this.xPressed, this.yPressed, e.getX(), e.getY()));
           this.handleMouseMovedOrDragged(e);
         }
         repaint();
@@ -172,12 +170,10 @@ public class ImageCaptureRectangleStencilView extends LayerStencil {
 
   private void captureImageAndShowFrame() {
     synchronized (this.hole) {
-      if (this.isHoleValid()) {
-        if ((this.hole.width > 0) && (this.hole.height > 0)) {
-          Image image = ImageCaptureUtilities.captureRectangle(this.getWindow().getRootPane().getAwtComponent(), this.hole, imageCaptureComposite.getDpi());
-          image = imageCaptureComposite.convertToRgbaIfNecessary(image);
-          imageComposite.setImageClearShapesAndShowFrame(image);
-        }
+      if (ImageCaptureRectangleStencilLogic.shouldCapture(this.hole)) {
+        Image image = ImageCaptureUtilities.captureRectangle(this.getWindow().getRootPane().getAwtComponent(), this.hole, imageCaptureComposite.getDpi());
+        image = imageCaptureComposite.convertToRgbaIfNecessary(image);
+        imageComposite.setImageClearShapesAndShowFrame(image);
       }
     }
   }
@@ -187,17 +183,17 @@ public class ImageCaptureRectangleStencilView extends LayerStencil {
   }
 
   private void updateWindowLocation(int xScreen, int yScreen) {
-    final int OFFSET = 32;
-    window.setLocation(xScreen + OFFSET, yScreen + OFFSET);
+    Point location = ImageCaptureRectangleStencilLogic.getWindowLocation(xScreen, yScreen);
+    window.setLocation(location.x, location.y);
   }
 
   private void invalidateHole() {
-    this.hole.setBounds(-1, -1, -1, -1);
+    this.hole.setBounds(ImageCaptureRectangleStencilLogic.createInvalidHole());
     //this.window.setVisible( false );
   }
 
   private boolean isHoleValid() {
-    return this.hole.width > -1;
+    return ImageCaptureRectangleStencilLogic.isHoleValid(this.hole);
   }
 
   @Override
@@ -252,22 +248,17 @@ public class ImageCaptureRectangleStencilView extends LayerStencil {
     Paint prevPaint = g2.getPaint();
     Stroke prevStroke = g2.getStroke();
 
-    Shape shape = prevClip;
-
+    Shape shape;
+    Rectangle outline;
     synchronized (this.hole) {
-      if (this.hole.width > 0) {
-        Area area = new Area(shape);
-        area.subtract(new Area(this.hole));
-        shape = area;
-      }
+      shape = ImageCaptureRectangleStencilLogic.createStencilShape(prevClip, this.hole);
+      outline = ImageCaptureRectangleStencilLogic.createHoleOutline(this.hole);
     }
     g2.setPaint(STENCIL_PAINT);
     g2.fill(shape);
 
-    synchronized (this.hole) {
-      g2.setPaint(Color.WHITE);
-      g2.drawRect(this.hole.x - 1, this.hole.y - 1, this.hole.width + 1, this.hole.height + 1);
-    }
+    g2.setPaint(Color.WHITE);
+    g2.drawRect(outline.x, outline.y, outline.width, outline.height);
 
     MouseEvent e = this.jZoomView.getMouseEvent();
     if (e != null) {
