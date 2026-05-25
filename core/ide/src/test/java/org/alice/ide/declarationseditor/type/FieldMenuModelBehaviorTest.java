@@ -1,5 +1,8 @@
 package org.alice.ide.declarationseditor.type;
 
+import org.alice.ide.ast.rename.RenameFieldComposite;
+import org.alice.ide.croquet.models.ast.DeleteFieldOperation;
+import org.alice.stageide.sceneeditor.side.MarkerColorIdCascade;
 import org.junit.Test;
 import org.lgna.croquet.PredeterminedMenuModel;
 import org.lgna.croquet.StandardMenuItemPrepModel;
@@ -36,6 +39,19 @@ public class FieldMenuModelBehaviorTest {
   @Test
   public void markerField_addsMarkerColorCascade() throws Exception {
     UserField field = new UserField("marker", SMarker.class);
-    assertEquals(3, getModels(FieldMenuModel.getInstance(field)).length);
+    StandardMenuItemPrepModel[] models = getModels(FieldMenuModel.getInstance(field));
+
+    assertEquals(3, models.length);
+    assertSame(RenameFieldComposite.getInstance(field).getLaunchOperation().getMenuItemPrepModel(), models[0]);
+    assertSame(DeleteFieldOperation.getInstance(field).getMenuItemPrepModel(), models[1]);
+    assertSame(MarkerColorIdCascade.getInstance(field).getMenuModel(), models[2]);
+  }
+
+  @Test
+  public void distinctFields_receiveDistinctMenuModelInstances() {
+    UserField first = new UserField("score", Object.class);
+    UserField second = new UserField("score", Object.class);
+
+    assertNotSame(FieldMenuModel.getInstance(first), FieldMenuModel.getInstance(second));
   }
 }
