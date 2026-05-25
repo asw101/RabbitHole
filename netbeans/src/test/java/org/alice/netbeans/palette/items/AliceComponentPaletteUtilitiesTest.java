@@ -10,10 +10,33 @@ import javax.swing.text.JTextComponent;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class AliceComponentPaletteUtilitiesTest {
+
+  @Test
+  public void insertFormattedReplacesSelectedText() throws Exception {
+    JTextPane target = new JTextPane();
+    DefaultStyledDocument document = new DefaultStyledDocument();
+    target.setDocument(document);
+    document.insertString(0, "before after", null);
+    target.setSelectionStart(7);
+    target.setSelectionEnd(12);
+
+    Method method = AliceComponentPaletteUtilities.class.getDeclaredMethod(
+        "insertFormated",
+        String.class,
+        JTextComponent.class,
+        Document.class);
+    method.setAccessible(true);
+
+    int start = (Integer) method.invoke(null, "inserted", target, document);
+
+    assertEquals(7, start);
+    assertEquals("before inserted", document.getText(0, document.getLength()));
+  }
 
   @Test
   public void insertFormattedPropagatesBadLocationException() throws Exception {
