@@ -88,6 +88,25 @@ public class ExpressionPropertyEditTest {
   }
 
   @Test
+  public void doOrRedoInternal_setsPropertyToNextExpression() {
+    ExpressionPropertyEdit edit = new ExpressionPropertyEdit(null, property, prevExpression, nextExpression);
+
+    edit.doOrRedoInternal(true);
+
+    assertSame(nextExpression, property.getValue());
+  }
+
+  @Test
+  public void undoInternal_restoresPreviousExpression() {
+    ExpressionPropertyEdit edit = new ExpressionPropertyEdit(null, property, prevExpression, nextExpression);
+    property.setValue(nextExpression);
+
+    edit.undoInternal();
+
+    assertSame(prevExpression, property.getValue());
+  }
+
+  @Test
   public void appendDescription_viaTerseDescription_containsSetPrefixAndArrow() {
     ExpressionPropertyEdit edit = new ExpressionPropertyEdit(null, property, prevExpression, nextExpression);
     String description = edit.getTerseDescription();

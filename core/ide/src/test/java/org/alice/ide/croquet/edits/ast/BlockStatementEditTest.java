@@ -1,10 +1,17 @@
 package org.alice.ide.croquet.edits.ast;
 
+import edu.cmu.cs.dennisc.codec.BinaryDecoder;
+import edu.cmu.cs.dennisc.codec.InputStreamBinaryDecoder;
+import edu.cmu.cs.dennisc.codec.OutputStreamBinaryEncoder;
+import org.alice.ide.croquet.codecs.NodeCodec;
 import org.junit.Test;
 import org.lgna.croquet.CompletionModel;
 import org.lgna.croquet.edits.AbstractEdit;
 import org.lgna.croquet.history.UserActivity;
 import org.lgna.project.ast.*;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 
 import static org.junit.Assert.*;
 
@@ -20,6 +27,10 @@ public class BlockStatementEditTest {
   private static class TestBlockStatementEdit extends BlockStatementEdit<CompletionModel> {
     TestBlockStatementEdit(UserActivity userActivity, BlockStatement blockStatement) {
       super(userActivity, blockStatement);
+    }
+
+    TestBlockStatementEdit(BinaryDecoder binaryDecoder) {
+      super(binaryDecoder, null);
     }
 
     @Override
@@ -85,6 +96,25 @@ public class BlockStatementEditTest {
   public void construct_withNullBlock_succeeds() {
     TestBlockStatementEdit edit = new TestBlockStatementEdit(null, null);
     assertNull(edit.getBlockStatement());
+  }
+
+  @Test
+  public void encodeDecode_roundTripsBlockStatementReference() throws Exception {
+    BlockStatement block = new BlockStatement(new Comment("round trip"));
+    TestBlockStatementEdit edit = new TestBlockStatementEdit(null, block);
+    NodeCodec.addNodeToGlobalMap(block);
+    try {
+      ByteArrayOutputStream baos = new ByteArrayOutputStream();
+      OutputStreamBinaryEncoder encoder = new OutputStreamBinaryEncoder(baos);
+      edit.encode(encoder);
+      encoder.flush();
+
+      TestBlockStatementEdit decoded = new TestBlockStatementEdit(
+          new InputStreamBinaryDecoder(new ByteArrayInputStream(baos.toByteArray())));
+      assertSame(block, decoded.getBlockStatement());
+    } finally {
+      NodeCodec.removeNodeFromGlobalMap(block);
+    }
   }
 
   // ---- inheritance ----
