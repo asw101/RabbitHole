@@ -1,7 +1,5 @@
 package edu.cmu.cs.dennisc.system.graphics;
 
-import org.junit.Assume;
-import java.awt.GraphicsEnvironment;
 
 
 import org.junit.Test;
@@ -19,10 +17,6 @@ import static org.junit.Assert.*;
  */
 public class ConformanceTestResultsExternalServiceTest {
 
-  @org.junit.Before
-  public void skipIfHeadless() {
-    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
-  }
 
 
   // ── Singleton enum pattern ────────────────────────────────────────

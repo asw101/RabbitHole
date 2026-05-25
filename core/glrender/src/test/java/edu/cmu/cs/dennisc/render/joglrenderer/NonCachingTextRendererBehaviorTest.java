@@ -1,7 +1,5 @@
 package edu.cmu.cs.dennisc.render.joglrenderer;
 
-import org.junit.Assume;
-import java.awt.GraphicsEnvironment;
 
 
 import com.jogamp.opengl.GLExtensions;
@@ -21,10 +19,6 @@ import static org.junit.Assert.*;
 
 public class NonCachingTextRendererBehaviorTest {
 
-  @org.junit.Before
-  public void skipIfHeadless() {
-    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
-  }
 
 
   private static final Font FONT = new Font(Font.DIALOG, Font.PLAIN, 24);

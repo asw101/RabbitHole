@@ -1,8 +1,5 @@
 package edu.cmu.cs.dennisc.render.gl.imp;
 
-import org.junit.Assume;
-import java.awt.GraphicsEnvironment;
-
 
 import com.jogamp.opengl.GL;
 import com.jogamp.opengl.GL2;
@@ -14,11 +11,6 @@ import java.lang.reflect.Method;
 import static org.junit.Assert.*;
 
 public class CurveRendererMathTest {
-
-  @org.junit.Before
-  public void skipIfHeadless() {
-    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
-  }
 
   @Test
   public void drawSphereWithoutTextureUsesFansAndNoTextureCoordinates() {

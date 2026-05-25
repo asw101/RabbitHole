@@ -5,7 +5,6 @@ import com.jogamp.opengl.GLCapabilities;
 import com.jogamp.opengl.GLCapabilitiesChooser;
 import com.jogamp.opengl.GLCapabilitiesImmutable;
 import org.junit.Assume;
-import java.awt.GraphicsEnvironment;
 import org.junit.Test;
 
 import java.lang.reflect.Method;
@@ -19,10 +18,6 @@ import static org.junit.Assert.*;
  */
 public class GlDrawableUtilsComparisonTest {
 
-  @org.junit.Before
-  public void skipIfHeadless() {
-    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
-  }
 
 
   // ── getPerhapsMultisampledGlCapabilitiesChooser ─────────────────────

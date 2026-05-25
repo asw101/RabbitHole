@@ -39,13 +39,13 @@ import static org.junit.Assert.assertTrue;
  */
 public class EatmeEditProcedureContractTest {
 
-  @org.junit.Before
-  public void skipIfHeadless() {
-    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
-  }
   private static final String FIRST_LESSON_TARGET = "scene.eatmeFirstLesson";
   private static final String MARKER = "wave4-code-editor-action-proof";
   private static final String ACTION_PROOF_ARTIFACT = "first-lesson-code-editor-action-proof.json";
+
+  private static void assumeNotHeadless() {
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
 
   @Rule
   public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -160,6 +160,7 @@ public class EatmeEditProcedureContractTest {
 
   @Test
   public void acceptsMyFirstMethodSelectorForAfricaProject() throws Exception {
+    assumeNotHeadless();
     File projectFile = temporaryFolder.newFile("africa-selector.a3p");
     Project project = projectWithSceneMethods("myFirstMethod");
     IoUtilities.writeProject(projectFile, project);

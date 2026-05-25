@@ -1,8 +1,5 @@
 package edu.cmu.cs.dennisc.render.gl.imp.adapters;
 
-import org.junit.Assume;
-import java.awt.GraphicsEnvironment;
-
 
 import com.jogamp.opengl.GL;
 import edu.cmu.cs.dennisc.render.gl.imp.PickContext;
@@ -13,11 +10,6 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class GlrOldMeshRenderingTest {
-
-  @org.junit.Before
-  public void skipIfHeadless() {
-    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
-  }
 
   @Test
   public void renderGeometryDrawsTrianglesAndQuadsInImmediateMode() {

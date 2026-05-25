@@ -34,17 +34,18 @@ import static org.junit.Assert.assertTrue;
 
 public class EatmeEditProcedureTest {
 
-  @org.junit.Before
-  public void skipIfHeadless() {
+  private static final String ACTION_PROOF_ARTIFACT = "first-lesson-code-editor-action-proof.json";
+
+  private static void assumeNotHeadless() {
     Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
   }
-  private static final String ACTION_PROOF_ARTIFACT = "first-lesson-code-editor-action-proof.json";
 
   @Rule
   public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
   @Test
   public void editsSceneProcedureAndWritesEatmeProofArtifacts() throws Exception {
+    assumeNotHeadless();
     File projectFile = temporaryFolder.newFile("placed.a3p");
     IoUtilities.writeProject(projectFile, projectWithSceneMethod("eatmeFirstLesson"));
     Path evidenceDir = temporaryFolder.newFolder("evidence").toPath();
@@ -109,6 +110,7 @@ public class EatmeEditProcedureTest {
 
   @Test
   public void chainsObjectPlacementIntoProcedureEditAndRecordsPlacedProjectHandoff() throws Exception {
+    assumeNotHeadless();
     File starterProject = temporaryFolder.newFile("starter.a3p");
     IoUtilities.writeProject(starterProject, projectWithSceneMethod("eatmeFirstLesson"));
     Path evidenceDir = temporaryFolder.newFolder("evidence").toPath();
@@ -178,6 +180,7 @@ public class EatmeEditProcedureTest {
 
   @Test
   public void procedureEditArtifactsKeepClaimsScopedToProcedureEditSeam() throws Exception {
+    assumeNotHeadless();
     File projectFile = temporaryFolder.newFile("placed.a3p");
     IoUtilities.writeProject(projectFile, projectWithSceneMethod("eatmeFirstLesson"));
     Path evidenceDir = temporaryFolder.newFolder("evidence").toPath();
@@ -226,6 +229,7 @@ public class EatmeEditProcedureTest {
 
   @Test
   public void editsAfricaStyleMyFirstMethodProcedure() throws Exception {
+    assumeNotHeadless();
     File projectFile = temporaryFolder.newFile("africa.a3p");
     IoUtilities.writeProject(projectFile, projectWithSceneMethod("myFirstMethod"));
     Path evidenceDir = temporaryFolder.newFolder("africa-evidence").toPath();
@@ -268,6 +272,7 @@ public class EatmeEditProcedureTest {
 
   @Test
   public void editsUnderscorePrefixedProcedure() throws Exception {
+    assumeNotHeadless();
     File projectFile = temporaryFolder.newFile("custom.a3p");
     IoUtilities.writeProject(projectFile, projectWithSceneMethod("_setup"));
     Path evidenceDir = temporaryFolder.newFolder("underscore-evidence").toPath();
@@ -296,6 +301,7 @@ public class EatmeEditProcedureTest {
 
   @Test
   public void appendsToExistingSceneProcedure() throws Exception {
+    assumeNotHeadless();
     File projectFile = temporaryFolder.newFile("placed.a3p");
     IoUtilities.writeProject(projectFile, projectWithSceneMethod("eatmeFirstLesson"));
     Path evidenceDir = temporaryFolder.newFolder("evidence").toPath();

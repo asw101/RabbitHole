@@ -1,7 +1,5 @@
 package edu.cmu.cs.dennisc.render.joglrenderer;
 
-import org.junit.Assume;
-import java.awt.GraphicsEnvironment;
 
 
 import org.junit.BeforeClass;
@@ -51,10 +49,6 @@ import static org.junit.Assert.*;
  */
 public class InnerClassExtractionContractTest {
 
-  @org.junit.Before
-  public void skipIfHeadless() {
-    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
-  }
 
 
   private static final String PKG = "edu.cmu.cs.dennisc.render.joglrenderer";

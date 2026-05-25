@@ -1,8 +1,5 @@
 package edu.cmu.cs.dennisc.render.gl.imp;
 
-import org.junit.Assume;
-import java.awt.GraphicsEnvironment;
-
 
 import com.jogamp.opengl.GL;
 import com.jogamp.opengl.GL2;
@@ -20,11 +17,6 @@ import java.awt.Rectangle;
 import java.util.List;
 
 public class RenderContextBehaviorTest {
-
-  @org.junit.Before
-  public void skipIfHeadless() {
-    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
-  }
 
   private static final double EPSILON = 0.000001;
 
