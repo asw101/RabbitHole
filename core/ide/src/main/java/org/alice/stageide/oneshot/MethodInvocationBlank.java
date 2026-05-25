@@ -55,14 +55,10 @@ import org.lgna.croquet.imp.cascade.BlankNode;
 import org.lgna.project.ast.AbstractMethod;
 import org.lgna.project.ast.AbstractType;
 import org.lgna.project.ast.AstMethodLookupHelpers;
-import org.lgna.project.ast.Expression;
-import org.lgna.project.ast.ExpressionStatement;
 import org.lgna.project.ast.JavaMethod;
 import org.lgna.project.ast.JavaType;
-import org.lgna.project.ast.ManagementLevel;
 import org.lgna.project.ast.MethodInvocation;
 import org.lgna.project.ast.SimpleArgument;
-import org.lgna.project.ast.Statement;
 import org.lgna.project.ast.UserMethod;
 import org.lgna.story.*;
 
@@ -135,22 +131,10 @@ public class MethodInvocationBlank extends CascadeBlank<MethodInvocationEditFact
       List<AbstractMethod> declaredMethods = AstMethodLookupHelpers.getAllMethods(instanceFactoryValueType);
       for (AbstractMethod method : declaredMethods) {
         if (method instanceof UserMethod userMethod) {
-          //Pose animations are GENERATED and have no return value
-          if ((userMethod.managementLevel.getValue() == ManagementLevel.GENERATED) && (userMethod.getReturnType() == JavaType.VOID_TYPE)) {
-            //UserMethod pose animations contain a single JavaMethod in their body called "strikePose"
-            //Grab the first statement in the body and check to see if it's actually a pose call
-            Statement poseStatement = userMethod.body.getValue().statements.get(0);
-            if (poseStatement instanceof ExpressionStatement expressionStatement) {
-              Expression expression = expressionStatement.expression.getValue();
-              if (expression instanceof MethodInvocation poseInvocation) {
-                if ("strikePose".equals(poseInvocation.method.getValue().getName())) {
-                  if (poseInvocation.method.getValue() instanceof JavaMethod) {
-                    List<SimpleArgument> arguments = poseInvocation.requiredArguments.getValue();
-                    poseMethods.put(poseInvocation, arguments);
-                  }
-                }
-              }
-            }
+          MethodInvocation poseInvocation = MethodInvocationBlankLogic.getPoseInvocation(userMethod);
+          if (poseInvocation != null) {
+            List<SimpleArgument> arguments = poseInvocation.requiredArguments.getValue();
+            poseMethods.put(poseInvocation, arguments);
           }
         }
       }
@@ -175,18 +159,27 @@ public class MethodInvocationBlank extends CascadeBlank<MethodInvocationEditFact
       if (method != null) {
         CascadeBlankChild<?> roomFillin = NebulousIde.nonfree.getRoomFillIns(method, this.instanceFactory);
         //todo
-        if (method == OneShotSorter.STRAIGHTEN_OUT_JOINTS_METHOD) {
+        MethodInvocationBlankLogic.FillInKind fillInKind = MethodInvocationBlankLogic.resolveFillInKind(method, roomFillin != null);
+        switch (fillInKind) {
+        case STRAIGHTEN_OUT_JOINTS:
           children.add(AllJointLocalTransformationsMethodInvocationFillIn.getInstance(this.instanceFactory, method));
-        } else if ("setPaint".equals(method.getName())) {
+          break;
+        case SET_PAINT:
           children.add(SetPaintMethodInvocationFillIn.getInstance(this.instanceFactory, method));
-        } else if (roomFillin != null) {
+          break;
+        case ROOM:
           children.add(roomFillin);
-        } else if ("setOpacity".equals(method.getName())) {
+          break;
+        case SET_OPACITY:
           children.add(SetOpacityMethodInvocationFillIn.getInstance(this.instanceFactory, method));
-        } else if ("foldWings".equals(method.getName()) || "spreadWings".equals(method.getName())) {
+          break;
+        case JAVA_DEFINED_STRIKE_POSE:
           children.add(JavaDefinedStrikePoseMethodInvocationFillIn.getInstance(this.instanceFactory, method));
-        } else {
+          break;
+        case LOCAL_TRANSFORMATION:
+        default:
           children.add(LocalTransformationMethodInvocationFillIn.getInstance(this.instanceFactory, method));
+          break;
         }
       } else {
         children.add(CascadeLineSeparator.getInstance());

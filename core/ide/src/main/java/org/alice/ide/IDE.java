@@ -275,10 +275,10 @@ public abstract class IDE extends ProjectApplication {
   }
 
   public boolean isDropDownDesiredFor(Expression expression) {
-    if (AstUtilities.isKeywordExpression(expression)) {
-      return false;
-    }
-    return ((expression instanceof TypeExpression) || (expression instanceof ResourceExpression)) == false;
+    return IDELogic.isDropDownDesired(
+        AstUtilities.isKeywordExpression(expression),
+        expression instanceof TypeExpression,
+        expression instanceof ResourceExpression);
   }
 
   public abstract ExpressionCascadeManager getExpressionCascadeManager();
@@ -408,15 +408,7 @@ public abstract class IDE extends ProjectApplication {
   }
 
   protected static <E extends Node> E getAncestor(Node node, Class<E> cls) {
-    Node ancestor = node.getParent();
-    while (ancestor != null) {
-      if (cls.isInstance(ancestor)) {
-        break;
-      } else {
-        ancestor = ancestor.getParent();
-      }
-    }
-    return (E) ancestor;
+    return IDELogic.getAncestor(node, cls);
   }
 
   public AwtComponentView<?> getPrefixPaneForFieldAccessIfAppropriate(FieldAccess fieldAccess) {

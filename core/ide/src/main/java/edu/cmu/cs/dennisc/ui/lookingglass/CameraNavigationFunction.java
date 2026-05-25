@@ -120,7 +120,7 @@ public class CameraNavigationFunction extends TranslationFunction<CameraNavigati
   }
 
   public void requestDistance(double distance) {
-    m_distanceRequested = Math.max(Math.min(distance, DISTANCE_MAXIMUM), DISTANCE_MINIMUM);
+    m_distanceRequested = CameraNavigationFunctionLogic.clampDistance(distance, DISTANCE_MINIMUM, DISTANCE_MAXIMUM);
   }
 
   public void requestYaw(Angle yaw) {
@@ -161,12 +161,11 @@ public class CameraNavigationFunction extends TranslationFunction<CameraNavigati
   }
 
   private static double getHeight(double distance) {
-    double d = distance * 0.1;
-    return d * d;
+    return CameraNavigationFunctionLogic.getHeight(distance);
   }
 
   private static double getPitchMinimum(double height, double distance) {
-    return Math.atan2(height, distance);
+    return CameraNavigationFunctionLogic.getPitchMinimum(height, distance);
   }
 
   @Override
@@ -183,11 +182,7 @@ public class CameraNavigationFunction extends TranslationFunction<CameraNavigati
   }
 
   private static double requestDirection(double requested, double current) {
-    if (requested > 0) {
-      return requested > current ? +FORCE_FOR_ACCELERATION : +FORCE_FOR_DECELERATION;
-    } else {
-      return requested > current ? -FORCE_FOR_DECELERATION : -FORCE_FOR_ACCELERATION;
-    }
+    return CameraNavigationFunctionLogic.requestDirection(requested, current, +FORCE_FOR_ACCELERATION, +FORCE_FOR_DECELERATION);
   }
 
   @Override
@@ -206,23 +201,14 @@ public class CameraNavigationFunction extends TranslationFunction<CameraNavigati
 
     double delta = 2.0 * dt;
 
-    Point3 translation = getTranslation();
-    double y = Math.max(translation.y(), 0);
-    double z = translation.z();
-    if (m_isForwardKeyPressed) {
-      z -= delta;
-    }
-    if (m_isBackwardKeyPressed) {
-      z += delta;
-    }
-    double x = translation.x();
-    if (m_isLeftKeyPressed) {
-      x -= delta;
-    }
-    if (m_isRightKeyPressed) {
-      x += delta;
-    }
-    setTranslation(new Point3(x, y, z));
+    Point3 translation = CameraNavigationFunctionLogic.updateTranslation(
+        getTranslation(),
+        m_isForwardKeyPressed,
+        m_isBackwardKeyPressed,
+        m_isLeftKeyPressed,
+        m_isRightKeyPressed,
+        delta);
+    setTranslation(translation);
     //edu.cmu.cs.dennisc.print.PrintUtilities.println( "update:", a );
   }
 

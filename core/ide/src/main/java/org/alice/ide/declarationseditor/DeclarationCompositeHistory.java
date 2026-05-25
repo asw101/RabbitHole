@@ -49,7 +49,6 @@ import org.alice.ide.project.ProjectDocumentState;
 import org.lgna.croquet.event.ValueEvent;
 import org.lgna.croquet.event.ValueListener;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
 
@@ -97,33 +96,21 @@ public class DeclarationCompositeHistory {
   }
 
   private void appendIfAppropriate(DeclarationComposite<?, ?> declarationComposite) {
-    if (this.ignoreCount == 0) {
-      if (declarationComposite != null) {
-        if (this.index > 0) {
-          this.history = this.history.subList(this.index, this.history.size());
-        }
-        ListIterator<DeclarationComposite<?, ?>> listIterator = this.history.listIterator();
-        while (listIterator.hasNext()) {
-          DeclarationComposite current = listIterator.next();
-          if (current == declarationComposite) {
-            listIterator.remove();
-          }
-        }
-        this.index = 0;
-        this.history.addFirst(declarationComposite);
-        this.update();
-      }
+    if ((this.ignoreCount == 0) && (declarationComposite != null)) {
+      this.history = DeclarationCompositeHistoryLogic.createAppendedHistory(this.history, this.index, declarationComposite);
+      this.index = 0;
+      this.update();
     }
   }
 
   private void updateBackEnabled() {
-    boolean isEnabled = (this.index + 1) < this.history.size();
+    boolean isEnabled = DeclarationCompositeHistoryLogic.isBackEnabled(this.index, this.history.size());
     BackwardOperation.getInstance().setEnabled(isEnabled);
     BackwardCascade.getInstance().getRoot().getPopupPrepModel().setEnabled(isEnabled);
   }
 
   private void updateFrontEnabled() {
-    boolean isEnabled = 0 < this.index;
+    boolean isEnabled = DeclarationCompositeHistoryLogic.isForwardEnabled(this.index);
     ForwardOperation.getInstance().setEnabled(isEnabled);
     ForwardCascade.getInstance().getRoot().getPopupPrepModel().setEnabled(isEnabled);
   }
@@ -185,25 +172,11 @@ public class DeclarationCompositeHistory {
 
   public List<DeclarationComposite<?, ?>> getBackwardList() {
     this.update();
-    int minInclusive = this.index + 1;
-    int maxExclusive = this.history.size();
-    if (minInclusive < maxExclusive) {
-      return this.history.subList(minInclusive, maxExclusive);
-    } else {
-      return Collections.emptyList();
-    }
+    return DeclarationCompositeHistoryLogic.getBackwardList(this.history, this.index);
   }
 
   public List<DeclarationComposite<?, ?>> getForwardList() {
     this.update();
-    int minInclusive = 0;
-    int maxExclusive = this.index;
-    if (minInclusive < maxExclusive) {
-      List<DeclarationComposite<?, ?>> rv = this.history.subList(minInclusive, maxExclusive);
-      Collections.reverse(rv);
-      return rv;
-    } else {
-      return Collections.emptyList();
-    }
+    return DeclarationCompositeHistoryLogic.getForwardList(this.history, this.index);
   }
 }
