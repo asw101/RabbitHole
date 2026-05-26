@@ -1,5 +1,6 @@
 package org.alice.ide;
 
+import org.alice.ide.testing.TestIdeBootstrap;
 import org.junit.Test;
 import org.lgna.project.Project;
 import org.lgna.project.ast.NamedUserType;
@@ -75,5 +76,17 @@ public class ProjectStackTest {
     } finally {
       ProjectStack.popProject();
     }
+  }
+
+  @Test
+  public void peekProject_withoutStackOrActiveIde_returnsNull() {
+    TestIdeBootstrap.setActiveApplication(null);
+    assertNull(ProjectStack.peekProject());
+  }
+
+  @Test
+  public void peekUpToDateProject_withoutStackOrActiveIde_returnsNull() {
+    TestIdeBootstrap.setActiveApplication(null);
+    assertNull(ProjectStack.peekUpToDateProject());
   }
 }

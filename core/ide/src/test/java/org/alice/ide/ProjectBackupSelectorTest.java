@@ -300,6 +300,41 @@ public class ProjectBackupSelectorTest {
     assertEquals(safeBackup, backup);
   }
 
+  @Test
+  public void returnsNullWhenBackupDirectoryIsNull() throws IOException {
+    File newest = backup("auto20240102_130000.a3p");
+    ProjectBackupSelector selector = new ProjectBackupSelector(file -> {
+      throw new AssertionError("missing backup directory should short-circuit before probing timestamps");
+    });
+
+    File backup = selector.getNextBackup(
+        PROJECT_MODIFIED_TIME,
+        null,
+        new File[] {newest},
+        true,
+        Set.of());
+
+    assertNull(backup);
+  }
+
+  @Test
+  public void returnsNullWhenBackupDirectoryIsARegularFile() throws IOException {
+    File notADirectory = temporaryFolder.newFile("world.bak");
+    File newest = backup("auto20240102_130000.a3p");
+    ProjectBackupSelector selector = new ProjectBackupSelector(file -> {
+      throw new AssertionError("non-directory backup path should short-circuit before probing timestamps");
+    });
+
+    File backup = selector.getNextBackup(
+        PROJECT_MODIFIED_TIME,
+        notADirectory,
+        new File[] {newest},
+        true,
+        Set.of());
+
+    assertNull(backup);
+  }
+
   private File getNextBackup(ProjectBackupSelector selector, LocalDateTime modifiedTime, File[] backups,
                               boolean isMainProjectCorrupted, Set<String> unloadableFiles) {
     return selector.getNextBackup(

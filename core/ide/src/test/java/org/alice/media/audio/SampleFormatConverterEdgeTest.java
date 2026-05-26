@@ -46,4 +46,44 @@ public class SampleFormatConverterEdgeTest {
 
     assertArrayEquals(new byte[] {0x7F, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF}, output);
   }
+
+  @Test
+  public void convertByteToFloat24BitBigEndianHonorsFrameStride() {
+    byte[] input = {
+        0, 0, 1, 99,
+        0, 0, 2, 88
+    };
+    float[] output = new float[2];
+
+    SampleFormatConverter.convertByteToFloat(input, 0, 2, output, 4, SampleFormatConverter.CT_24SB);
+
+    assertEquals(1.0f / 8388608.0f, output[0], 1.0e-9f);
+    assertEquals(2.0f / 8388608.0f, output[1], 1.0e-9f);
+  }
+
+  @Test
+  public void convertFloatToByte8BitUnsignedBiasesSilenceToMidpoint() {
+    byte[] output = new byte[1];
+
+    converter.convertFloatToByte(new float[] {0.0f}, 1, output, 0, 1, SampleFormatConverter.CT_8U);
+
+    assertArrayEquals(new byte[] {(byte) 0x80}, output);
+  }
+
+  @Test
+  public void convertFloatToByte32BitLittleEndianHonorsOffsetAndStride() {
+    byte[] output = {99, 99, 99, 99, 99, 99, 99, 99, 99, 99};
+
+    converter.convertFloatToByte(
+        new float[] {0.5f, -0.5f},
+        2,
+        output,
+        1,
+        5,
+        SampleFormatConverter.CT_32SL);
+
+    assertArrayEquals(
+        new byte[] {99, 0, 0, 0, 0x40, 99, 0, 0, 0, (byte) 0xC0},
+        output);
+  }
 }
