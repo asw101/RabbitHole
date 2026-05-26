@@ -11,7 +11,12 @@ import org.lgna.project.ast.SimpleArgument;
 import org.lgna.project.ast.UserLambda;
 import org.lgna.project.ast.UserMethod;
 import org.lgna.project.ast.UserParameter;
+import org.lgna.project.code.ProcessableNode;
 import org.lgna.story.event.SceneActivationListener;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static org.junit.Assert.*;
 
@@ -45,6 +50,18 @@ public class HtmlEncoderListenerLogicTest {
   }
 
   @Test
+  public void shouldSkipMethodReturnsFalseForInstanceMainMethod() {
+    assertFalse(HtmlEncoderLogic.shouldSkipMethod(method("main", ManagementLevel.NONE, false)));
+  }
+
+  @Test
+  public void isClassEmptyTreatsNonMethodItemsAsContent() {
+    Map<String, List<ProcessableNode>> sections = Map.of("procedures", List.of(new NullLiteral()));
+
+    assertFalse(HtmlEncoderLogic.isClassEmpty(sections, Set.of()));
+  }
+
+  @Test
   public void getRequiredListenerArgumentReturnsFirstListenerArgument() {
     MethodInvocation invocation = new MethodInvocation();
     SimpleArgument listenerArgument = new SimpleArgument(
@@ -71,6 +88,7 @@ public class HtmlEncoderListenerLogicTest {
 
     assertNull(HtmlEncoderLogic.getRequiredListenerArgument(invocation));
     assertFalse(HtmlEncoderLogic.isListenerArgument(new SimpleArgument(null, new NullLiteral())));
+    assertFalse(HtmlEncoderLogic.isListenerArgument(new SimpleArgument(new UserParameter("callback", SceneActivationListener.class), new NullLiteral())));
   }
 
   @Test

@@ -95,6 +95,32 @@ public class RecentProjectsListDataBehaviorTest {
   }
 
   @Test
+  public void handleOpenWithNullFileLeavesRecentProjectsUnchanged() throws IOException {
+    restoreSnapshots(new ProjectSnapshot[0]);
+    File first = this.temporaryFolder.newFile("keep.a3p");
+    this.listData.handleOpen(first);
+
+    ProjectSnapshot[] before = this.listData.toArray(ProjectSnapshot.class);
+    this.listData.handleOpen(null);
+
+    assertArrayEquals(before, this.listData.toArray(ProjectSnapshot.class));
+    assertEquals(first.toURI(), this.listData.getItemAt(0).getUri());
+  }
+
+  @Test
+  public void toArrayReturnsIndependentTypedCopy() throws IOException {
+    restoreSnapshots(new ProjectSnapshot[0]);
+    File file = this.temporaryFolder.newFile("copy.a3p");
+    this.listData.handleSave(file);
+
+    ProjectSnapshot[] snapshots = this.listData.toArray(ProjectSnapshot.class);
+    snapshots[0] = null;
+
+    assertNotNull(this.listData.getItemAt(0));
+    assertEquals(file.toURI(), this.listData.getItemAt(0).getUri());
+  }
+
+  @Test
   public void internalMutationHooksRemainUnsupported() throws IOException {
     ProjectSnapshot snapshot = new ProjectSnapshot(this.temporaryFolder.newFile("unsupported.a3p").toURI());
 

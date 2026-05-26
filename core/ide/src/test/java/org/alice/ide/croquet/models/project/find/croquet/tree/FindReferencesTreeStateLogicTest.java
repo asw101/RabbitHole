@@ -15,6 +15,7 @@ import org.lgna.project.ast.UserParameter;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
@@ -49,6 +50,11 @@ public class FindReferencesTreeStateLogicTest {
   }
 
   @Test
+  public void groupReferencesReturnsEmptyListForNullSearchObject() {
+    assertTrue(FindReferencesTreeStateLogic.groupReferences(null).isEmpty());
+  }
+
+  @Test
   public void treeNavigation_movesBetweenDeclarationAndReferenceRows() {
     SearchTreeNode root = new SearchTreeNode(null);
     SearchTreeNode firstDeclaration = new SearchTreeNode(root);
@@ -62,9 +68,36 @@ public class FindReferencesTreeStateLogicTest {
 
     assertSame(firstReference, FindReferencesTreeStateLogic.moveSelectedUpOne(root, secondDeclaration));
     assertSame(secondDeclaration, FindReferencesTreeStateLogic.moveSelectedDownOne(root, firstReference));
+    assertSame(secondDeclaration, FindReferencesTreeStateLogic.selectAtCoordinates(root, 1, -1));
     assertSame(secondReference, FindReferencesTreeStateLogic.selectAtCoordinates(root, 1, 0));
     assertTrue(FindReferencesTreeStateLogic.hasRows(root));
     assertSame(firstDeclaration, FindReferencesTreeStateLogic.getTopValue(root));
+  }
+
+  @Test
+  public void treeNavigation_handlesBoundarySelections() {
+    SearchTreeNode root = new SearchTreeNode(null);
+    SearchTreeNode firstDeclaration = new SearchTreeNode(root);
+    SearchTreeNode firstReference = new SearchTreeNode(firstDeclaration);
+    firstDeclaration.addChild(firstReference);
+    root.addChild(firstDeclaration);
+    SearchTreeNode secondDeclaration = new SearchTreeNode(root);
+    SearchTreeNode secondReference = new SearchTreeNode(secondDeclaration);
+    SearchTreeNode thirdReference = new SearchTreeNode(secondDeclaration);
+    secondDeclaration.addChild(secondReference);
+    secondDeclaration.addChild(thirdReference);
+    root.addChild(secondDeclaration);
+
+    assertSame(firstDeclaration, FindReferencesTreeStateLogic.moveSelectedUpOne(root, firstDeclaration));
+    assertSame(secondDeclaration, FindReferencesTreeStateLogic.moveSelectedUpOne(root, secondReference));
+    assertSame(firstReference, FindReferencesTreeStateLogic.moveSelectedDownOne(root, firstDeclaration));
+    assertSame(thirdReference, FindReferencesTreeStateLogic.moveSelectedDownOne(root, secondReference));
+    assertSame(thirdReference, FindReferencesTreeStateLogic.moveSelectedDownOne(root, thirdReference));
+  }
+
+  @Test
+  public void emptyTreeReportsNoRows() {
+    assertFalse(FindReferencesTreeStateLogic.hasRows(new SearchTreeNode(null)));
   }
 
   @Test
