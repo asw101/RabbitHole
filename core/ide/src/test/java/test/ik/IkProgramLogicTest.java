@@ -14,6 +14,19 @@ public class IkProgramLogicTest {
   }
 
   @Test
+  public void constructorThrowsAssertionError() throws Exception {
+    java.lang.reflect.Constructor<IkProgramLogic> constructor = IkProgramLogic.class.getDeclaredConstructor();
+    constructor.setAccessible(true);
+
+    try {
+      constructor.newInstance();
+      fail("Expected AssertionError");
+    } catch (java.lang.reflect.InvocationTargetException exception) {
+      assertTrue(exception.getCause() instanceof AssertionError);
+    }
+  }
+
+  @Test
   public void buildInfoTextStillIncludesTargetWithoutJoint() {
     String text = IkProgramLogic.buildInfoText(null, null, "targetTransform");
 
