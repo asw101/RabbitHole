@@ -1,5 +1,7 @@
 package edu.cmu.cs.dennisc.render.gl.imp;
 
+import org.junit.Assume;
+
 
 
 import edu.cmu.cs.dennisc.render.ImageOrientationRequirement;
@@ -15,6 +17,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.Assert.*;
 
 public class ImageCaptureDisplayTaskDepthBehaviorTest {
+
+  @org.junit.Before
+  public void skipIfNoJogl() {
+    try { Class.forName("com.jogamp.opengl.GLProfile").getMethod("getDefault").invoke(null); }
+    catch (Throwable t) { Assume.assumeTrue("JOGL native init failed: " + t.getMessage(), false); }
+  }
 
 
 

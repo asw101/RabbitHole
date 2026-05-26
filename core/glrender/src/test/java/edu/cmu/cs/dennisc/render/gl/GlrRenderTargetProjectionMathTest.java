@@ -1,5 +1,7 @@
 package edu.cmu.cs.dennisc.render.gl;
 
+import org.junit.Assume;
+
 
 
 import edu.cmu.cs.dennisc.render.gl.imp.adapters.AdapterFactory;
@@ -16,6 +18,12 @@ import java.awt.Point;
 import static org.junit.Assert.*;
 
 public class GlrRenderTargetProjectionMathTest {
+
+  @org.junit.Before
+  public void skipIfNoJogl() {
+    try { Class.forName("com.jogamp.opengl.GLProfile").getMethod("getDefault").invoke(null); }
+    catch (Throwable t) { Assume.assumeTrue("JOGL native init failed: " + t.getMessage(), false); }
+  }
 
 
 
