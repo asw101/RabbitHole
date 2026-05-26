@@ -5,6 +5,8 @@ import org.lgna.project.ast.AstUtilities;
 import org.lgna.project.ast.NamedUserConstructor;
 import org.lgna.project.ast.UserMethod;
 
+import java.lang.reflect.Method;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -13,6 +15,12 @@ import static org.junit.Assert.assertTrue;
 
 public class AliceFormatterBehaviorTest {
   private final AliceFormatter formatter = AliceFormatter.getInstance();
+
+  private static String invokeLocalizeName(AliceFormatter formatter, String key, String name) throws ReflectiveOperationException {
+    Method method = AliceFormatter.class.getDeclaredMethod("localizeName", String.class, String.class);
+    method.setAccessible(true);
+    return (String) method.invoke(formatter, key, name);
+  }
 
   @Test
   public void getHeaderTextForCodeDistinguishesProceduresFunctionsAndConstructors() {
@@ -38,5 +46,11 @@ public class AliceFormatterBehaviorTest {
     assertTrue(formatted.contains("Car"));
     assertTrue(formatted.contains("driver"));
     assertTrue(formatted.contains("("));
+  }
+
+  @Test
+  public void localizeNameFallsBackToTheOriginalNameWhenNoBundleEntryExists() throws ReflectiveOperationException {
+    assertEquals("spinAround", invokeLocalizeName(formatter, "missing.bundle.key", "spinAround"));
+    assertEquals("spinAround", invokeLocalizeName(formatter, null, "spinAround"));
   }
 }

@@ -13,10 +13,18 @@ import org.lgna.project.ast.RelationalInfixExpression;
 import org.lgna.project.ast.UserMethod;
 import org.lgna.project.ast.WhileLoop;
 
+import java.lang.reflect.Method;
+
 import static org.junit.Assert.assertEquals;
 
 public class JavaFormatterBehaviorTest {
   private final JavaFormatter formatter = JavaFormatter.getInstance();
+
+  private static String invokeLocalizeName(JavaFormatter formatter, String key, String name) throws ReflectiveOperationException {
+    Method method = JavaFormatter.class.getDeclaredMethod("localizeName", String.class, String.class);
+    method.setAccessible(true);
+    return (String) method.invoke(formatter, key, name);
+  }
 
   @Test
   public void getHeaderTextForCodeUsesDifferentTemplatesForMethodsAndConstructors() {
@@ -51,5 +59,11 @@ public class JavaFormatterBehaviorTest {
     assertEquals("null", formatter.getTextForNull());
     assertEquals("this", formatter.getTextForThis());
     assertEquals("new %s( %s )", formatter.getNewFormat());
+  }
+
+  @Test
+  public void javaFormatterLeavesNamesAndUnknownTypesUnlocalized() throws ReflectiveOperationException {
+    assertEquals("renameMe", invokeLocalizeName(formatter, "ignored", "renameMe"));
+    assertEquals("StringBuilder", formatter.getTextForType(JavaType.getInstance(StringBuilder.class)));
   }
 }

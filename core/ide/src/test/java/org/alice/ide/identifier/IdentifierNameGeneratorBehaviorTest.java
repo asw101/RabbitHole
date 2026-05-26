@@ -9,9 +9,12 @@ import org.lgna.croquet.Triggerable;
 import org.lgna.croquet.history.DragStep;
 import org.lgna.croquet.icon.IconFactory;
 import org.lgna.project.ast.AbstractConstructor;
+import org.lgna.project.ast.ConstructorBlockStatement;
 import org.lgna.project.ast.InstanceCreation;
 import org.lgna.project.ast.JavaType;
+import org.lgna.project.ast.NamedUserConstructor;
 import org.lgna.project.ast.NamedUserType;
+import org.lgna.project.ast.SuperConstructorInvocationStatement;
 
 import java.util.Set;
 
@@ -50,6 +53,23 @@ public class IdentifierNameGeneratorBehaviorTest {
     ResourceKey key = new StubResourceKey(null, null);
 
     assertEquals("", generator.createIdentifierNameFromResourceKey(key));
+  }
+
+  @Test
+  public void createIdentifierNameFromResourceKey_usesLocalizedNameWhenCreationIsBackedByNamedUserType() {
+    NamedUserType userType = new NamedUserType();
+    userType.name.setValue("SCustomThing");
+    userType.superType.setValue(JavaType.getInstance(Object.class));
+
+    NamedUserConstructor constructor = new NamedUserConstructor();
+    ConstructorBlockStatement body = new ConstructorBlockStatement();
+    body.constructorInvocationStatement.setValue(new SuperConstructorInvocationStatement());
+    constructor.body.setValue(body);
+    userType.constructors.add(constructor);
+
+    ResourceKey key = new StubResourceKey("Friendly Custom Thing", new InstanceCreation(constructor));
+
+    assertEquals("friendly Custom Thing", generator.createIdentifierNameFromResourceKey(key));
   }
 
   private static final class StubResourceKey extends ResourceKey {
