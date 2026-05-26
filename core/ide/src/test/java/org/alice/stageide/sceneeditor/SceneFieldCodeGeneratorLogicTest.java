@@ -10,6 +10,7 @@ import org.lgna.project.ast.ExpressionStatement;
 import org.lgna.project.ast.FieldAccess;
 import org.lgna.project.ast.JavaMethod;
 import org.lgna.project.ast.MethodInvocation;
+import org.lgna.project.ast.NullLiteral;
 import org.lgna.project.ast.Statement;
 import org.lgna.project.ast.UserField;
 import org.lgna.story.MutableRider;
@@ -71,6 +72,24 @@ public class SceneFieldCodeGeneratorLogicTest {
   }
 
   @Test
+  public void stripCopyStateStatementsRemovesCopyStateCallsFromNestedBodies() {
+    UserField rider = new UserField("rider", Object.class);
+    Statement nestedSetVehicle = AstUtilities.createMethodInvocationStatement(
+        new FieldAccess(rider), JavaMethod.getInstance(CopyStateStub.class, "setVehicle", Object.class), new NullLiteral());
+    Statement nestedSetPosition = AstUtilities.createMethodInvocationStatement(
+        new FieldAccess(rider), JavaMethod.getInstance(CopyStateStub.class, "setPositionRelativeToVehicle", Object.class), new NullLiteral());
+    Statement keep = new ExpressionStatement(new MethodInvocation(new FieldAccess(rider), JavaMethod.getInstance(Object.class, "toString")));
+    DoTogether nested = new DoTogether(new BlockStatement(nestedSetVehicle, nestedSetPosition, keep));
+    BlockStatement block = new BlockStatement(nested);
+
+    SceneFieldCodeGeneratorLogic.stripCopyStateStatements(block);
+
+    BlockStatement nestedBody = nested.body.getValue();
+    assertEquals(1, nestedBody.statements.size());
+    assertSame(keep, nestedBody.statements.get(0));
+  }
+
+  @Test
   public void doesSetVehicleImplyVehicleRecognizesDirectAndJointRiders() {
     UserField vehicle = new UserField("vehicle", Object.class);
     UserField rider = new UserField("rider", Object.class);
@@ -82,10 +101,30 @@ public class SceneFieldCodeGeneratorLogicTest {
   }
 
   @Test
+  public void doesSetVehicleImplyVehicleRejectsInvocationsWithoutMatchingVehicleReference() {
+    UserField vehicle = new UserField("vehicle", Object.class);
+    UserField otherVehicle = new UserField("otherVehicle", Object.class);
+    UserField rider = new UserField("rider", Object.class);
+    MethodInvocation otherVehicleCall = AstUtilities.createMethodInvocation(new FieldAccess(rider), AstMethodLookupHelpers.lookupMethod(MutableRider.class, "setVehicle", (Class<?>) SThing.class), new FieldAccess(otherVehicle));
+    MethodInvocation missingArgumentCall = new MethodInvocation(new FieldAccess(rider), JavaMethod.getInstance(CopyStateStub.class, "setVehicle", Object.class));
+
+    assertFalse(SceneFieldCodeGeneratorLogic.doesSetVehicleImplyVehicle(otherVehicleCall, vehicle));
+    assertFalse(SceneFieldCodeGeneratorLogic.doesSetVehicleImplyVehicle(missingArgumentCall, vehicle));
+  }
+
+  @Test
   public void asSetVehicleCallRejectsOtherInvocations() {
     UserField rider = new UserField("rider", Object.class);
     Statement statement = new ExpressionStatement(new MethodInvocation(new FieldAccess(rider), JavaMethod.getInstance(Object.class, "toString")));
 
     assertNull(SceneFieldCodeGeneratorLogic.asSetVehicleCall(statement));
+  }
+
+  private static final class CopyStateStub {
+    public void setVehicle(Object vehicle) {
+    }
+
+    public void setPositionRelativeToVehicle(Object position) {
+    }
   }
 }

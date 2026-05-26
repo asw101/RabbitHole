@@ -40,6 +40,16 @@ public class SceneEditorFieldManagerLogicBehaviorTest {
   }
 
   @Test
+  public void classifyMarkerSelectionPrefersCameraMarkersOverGenericThingMarkers() {
+    assertEquals(SceneEditorFieldManagerLogic.MarkerSelection.CAMERA,
+        SceneEditorFieldManagerLogic.classifyMarkerSelection(true, true));
+    assertEquals(SceneEditorFieldManagerLogic.MarkerSelection.OBJECT,
+        SceneEditorFieldManagerLogic.classifyMarkerSelection(false, true));
+    assertEquals(SceneEditorFieldManagerLogic.MarkerSelection.STANDARD,
+        SceneEditorFieldManagerLogic.classifyMarkerSelection(false, false));
+  }
+
+  @Test
   public void shouldToggleRenderingOnlyForSceneEditorSpecificReasons() {
     assertTrue(SceneEditorFieldManagerLogic.shouldToggleRendering(
         ReasonToDisableSomeAmountOfRendering.MODAL_DIALOG_WITH_RENDER_WINDOW_OF_ITS_OWN));
