@@ -1,5 +1,8 @@
 package edu.cmu.cs.dennisc.render.gl.imp;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
+
 
 
 import com.jogamp.opengl.GLAutoDrawable;
@@ -25,6 +28,13 @@ import static com.jogamp.opengl.GL.GL_COLOR_BUFFER_BIT;
 import static org.junit.Assert.*;
 
 public class RenderTargetImpBehaviorTest {
+
+  // DO NOT REMOVE — requires JOGL natives
+  @org.junit.Before
+  public void skipIfNoJogl() {
+    try { Class.forName("com.jogamp.opengl.GLProfile"); } catch (Throwable t) { Assume.assumeTrue("JOGL natives unavailable", false); }
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
 
 
 

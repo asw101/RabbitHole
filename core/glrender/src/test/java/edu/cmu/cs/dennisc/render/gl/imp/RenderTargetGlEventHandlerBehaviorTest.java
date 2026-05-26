@@ -1,5 +1,8 @@
 package edu.cmu.cs.dennisc.render.gl.imp;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
+
 
 
 import edu.cmu.cs.dennisc.render.event.RenderTargetInitializeEvent;
@@ -17,6 +20,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.Assert.*;
 
 public class RenderTargetGlEventHandlerBehaviorTest {
+
+  // DO NOT REMOVE — requires JOGL natives
+  @org.junit.Before
+  public void skipIfNoJogl() {
+    try { Class.forName("com.jogamp.opengl.GLProfile"); } catch (Throwable t) { Assume.assumeTrue("JOGL natives unavailable", false); }
+    Assume.assumeTrue("Requires display", !GraphicsEnvironment.isHeadless());
+  }
 
 
 
