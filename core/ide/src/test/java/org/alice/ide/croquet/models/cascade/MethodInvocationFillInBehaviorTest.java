@@ -1,6 +1,7 @@
 package org.alice.ide.croquet.models.cascade;
 
 import org.alice.ide.ast.EmptyExpression;
+import org.alice.ide.declarationseditor.events.AddEventListenerMethodInvocationFillIn;
 import org.junit.Test;
 import org.lgna.croquet.CascadeBlank;
 import org.lgna.project.ast.AbstractMethod;
@@ -72,6 +73,42 @@ public class MethodInvocationFillInBehaviorTest {
   }
 
   @Test
+  public void instanceMethodInvocationFillInSupportsZeroArgumentMethods() {
+    JavaMethod method = JavaMethod.getInstance(Object.class, "toString");
+    MethodInvocationFillInWithInstance fillIn = MethodInvocationFillInWithInstance.getInstance(method);
+
+    assertEquals(1, fillIn.getBlanks().size());
+    assertTrue(fillIn.getBlanks().get(0) instanceof ExpressionBlank);
+
+    ThisExpression receiver = new ThisExpression();
+    MethodInvocation created = invokeCreateValue(fillIn, receiver);
+
+    assertSame(receiver, created.expression.getValue());
+    assertSame(method, created.method.getValue());
+    assertTrue(created.requiredArguments.isEmpty());
+  }
+
+  @Test
+  public void addEventListenerMethodInvocationFillInCachesAndAlwaysUsesThisReceiver() {
+    JavaMethod method = JavaMethod.getInstance(Object.class, "toString");
+    AddEventListenerMethodInvocationFillIn fillIn = AddEventListenerMethodInvocationFillIn.getInstance(method);
+
+    assertSame(fillIn, AddEventListenerMethodInvocationFillIn.getInstance(method));
+    assertTrue(fillIn.getBlanks().isEmpty());
+
+    MethodInvocation transientInvocation = fillIn.getTransientValue(null);
+    assertTrue(transientInvocation.expression.getValue() instanceof ThisExpression);
+    assertSame(method, transientInvocation.method.getValue());
+
+    MethodInvocation created = invokeCreateValue(fillIn);
+
+    assertTrue(created.expression.getValue() instanceof ThisExpression);
+    assertNotSame(transientInvocation.expression.getValue(), created.expression.getValue());
+    assertSame(method, created.method.getValue());
+    assertTrue(created.requiredArguments.isEmpty());
+  }
+
+  @Test
   public void methodInvocationFillInTracksUnlockedSignaturesButCachesLockedOnes() {
     UserMethod unlockedMethod = new UserMethod();
     UserParameter unlockedFirst = new UserParameter("count", Integer.class);
@@ -117,7 +154,18 @@ public class MethodInvocationFillInBehaviorTest {
 
   private static MethodInvocation invokeCreateValue(Object fillIn, Expression... expressions) {
     try {
-      java.lang.reflect.Method method = fillIn.getClass().getDeclaredMethod("createValue", Expression[].class);
+      Class<?> type = fillIn.getClass();
+      java.lang.reflect.Method method = null;
+      while ((type != null) && (method == null)) {
+        try {
+          method = type.getDeclaredMethod("createValue", Expression[].class);
+        } catch (NoSuchMethodException noSuchMethodException) {
+          type = type.getSuperclass();
+        }
+      }
+      if (method == null) {
+        throw new NoSuchMethodException("createValue");
+      }
       method.setAccessible(true);
       return (MethodInvocation) method.invoke(fillIn, new Object[]{expressions});
     } catch (ReflectiveOperationException e) {
