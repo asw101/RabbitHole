@@ -1,5 +1,8 @@
 package org.alice.stageide.perspectives;
 
+import static org.alice.ide.testing.JacocoReflectionSupport.declaredMethods;
+import static org.alice.ide.testing.JacocoReflectionSupport.declaredFields;
+
 import org.alice.ide.ProjectDocumentFrame;
 import org.junit.Test;
 import org.lgna.croquet.Element;
@@ -106,12 +109,12 @@ public class ToolBarUtilitiesTest {
 
   @Test
   public void declaredFields_utilityClass_hasNoFields() {
-    assertEquals(0, ToolBarUtilities.class.getDeclaredFields().length);
+    assertEquals(0, declaredFields(ToolBarUtilities.class).length);
   }
 
   @Test
   public void declaredMethods_utilityClass_hasThreeHelpers() {
-    assertEquals(3, ToolBarUtilities.class.getDeclaredMethods().length);
+    assertEquals(3, declaredMethods(ToolBarUtilities.class).length);
   }
 
   @Test

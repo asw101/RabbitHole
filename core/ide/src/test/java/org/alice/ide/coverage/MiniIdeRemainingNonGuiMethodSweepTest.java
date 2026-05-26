@@ -1112,4 +1112,30 @@ public class MiniIdeRemainingNonGuiMethodSweepTest {
         "org.alice.ide.ThemeUtilities"
     );
   }
+
+  @Test
+  public void sweepsRemainingNonGuiBatch25() {
+    assertSweep(
+        "org.alice.ide.x.I18nFactory",
+        "org.alice.tools.EatmeDesktopRunExecutionEvidence",
+        "org.alice.ide.declarationseditor.events.components.StickyLayout",
+        "org.alice.ide.clipboard.components.ClipboardDragComponent",
+        "org.alice.tools.EatmeScreenshotCapture",
+        "org.alice.ide.codeeditor.CommentLine",
+        "org.alice.ide.common.TypeIcon",
+        "org.alice.ide.croquet.components.SuperclassPopupButton",
+        "org.alice.stageide.sceneeditor.viewmanager.MoveToImageIcon",
+        "org.lgna.debug.tree.core.ZTreeNode",
+        "org.alice.ide.issue.SubmitReportUtilities",
+        "org.alice.ide.common.ExpressionLikeSubstance",
+        "org.alice.ide.declarationseditor.components.DeclarationMenuIcon",
+        "org.alice.ide.croquet.components.KnurlDragComponent",
+        "org.alice.ide.croquet.models.menubar.InternalTestingMenuModel",
+        "org.alice.stageide.gallerybrowser.search.croquet.SearchTab",
+        "org.lgna.story.resourceutilities.GalleryResourceTreeNode",
+        "org.alice.ide.controlflow.components.MiniControlFlowStatementTemplate",
+        "org.alice.ide.croquet.models.project.find.croquet.tree.FindReferencesTreeState",
+        "org.alice.ide.properties.uicontroller.DoubleTextField"
+    );
+  }
 }

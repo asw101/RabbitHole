@@ -1,5 +1,8 @@
 package org.alice.stageide.sceneeditor.interact;
 
+import static org.alice.ide.testing.JacocoReflectionSupport.declaredMethods;
+import static org.alice.ide.testing.JacocoReflectionSupport.declaredFields;
+
 import org.alice.interact.DragAdapter;
 import org.junit.Test;
 
@@ -24,12 +27,12 @@ public class HandleSetupDelegateContractExtendedTest {
 
   @Test
   public void classDeclaresOnlySetupHandlesMethodAndNoFields() {
-    Method[] methods = HandleSetupDelegate.class.getDeclaredMethods();
+    Method[] methods = declaredMethods(HandleSetupDelegate.class);
 
     assertEquals(1, methods.length);
     assertEquals("setupHandles", methods[0].getName());
     assertEquals(DragAdapter.class, methods[0].getParameterTypes()[0]);
-    assertEquals(0, HandleSetupDelegate.class.getDeclaredFields().length);
+    assertEquals(0, declaredFields(HandleSetupDelegate.class).length);
   }
 
   @Test

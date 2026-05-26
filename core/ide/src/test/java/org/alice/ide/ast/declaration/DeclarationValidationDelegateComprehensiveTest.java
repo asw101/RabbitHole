@@ -1,5 +1,8 @@
 package org.alice.ide.ast.declaration;
 
+import static org.alice.ide.testing.JacocoReflectionSupport.declaredMethods;
+import static org.alice.ide.testing.JacocoReflectionSupport.declaredFields;
+
 import org.junit.Test;
 import org.lgna.croquet.AbstractSeverityStatusComposite;
 import org.lgna.project.ast.AbstractType;
@@ -177,18 +180,18 @@ public class DeclarationValidationDelegateComprehensiveTest {
 
   @Test
   public void declaredFieldCountIsOne() {
-    assertEquals(1, DeclarationValidationDelegate.class.getDeclaredFields().length);
+    assertEquals(1, declaredFields(DeclarationValidationDelegate.class).length);
   }
 
   @Test
   public void declaredMethodCountMatchesDelegateSurface() {
-    assertEquals(5, DeclarationValidationDelegate.class.getDeclaredMethods().length);
+    assertEquals(5, declaredMethods(DeclarationValidationDelegate.class).length);
   }
 
 
   @Test
   public void onlyDeclaredFieldIsNamedComposite() {
-    assertEquals("composite", DeclarationValidationDelegate.class.getDeclaredFields()[0].getName());
+    assertEquals("composite", declaredFields(DeclarationValidationDelegate.class)[0].getName());
   }
 
   @Test
@@ -201,7 +204,7 @@ public class DeclarationValidationDelegateComprehensiveTest {
   @Test
   public void declaredMethodNamesContainComputeStatus() {
     boolean found = false;
-    for (Method method : DeclarationValidationDelegate.class.getDeclaredMethods()) {
+    for (Method method : declaredMethods(DeclarationValidationDelegate.class)) {
       if ("computeStatus".equals(method.getName())) {
         found = true;
       }

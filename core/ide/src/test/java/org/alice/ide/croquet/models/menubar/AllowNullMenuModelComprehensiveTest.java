@@ -1,5 +1,8 @@
 package org.alice.ide.croquet.models.menubar;
 
+import static org.alice.ide.testing.JacocoReflectionSupport.declaredMethods;
+import static org.alice.ide.testing.JacocoReflectionSupport.declaredFields;
+
 import org.junit.Test;
 import org.lgna.croquet.PredeterminedMenuModel;
 
@@ -84,13 +87,13 @@ public class AllowNullMenuModelComprehensiveTest {
 
   @Test
   public void allowNullMenuModel_declaresNoAdditionalFields() {
-    assertEquals(0, AllowNullMenuModel.class.getDeclaredFields().length);
+    assertEquals(0, declaredFields(AllowNullMenuModel.class).length);
   }
 
   @Test
   public void allowNullMenuModel_declaresOnlyGetInstanceMethod() {
-    assertEquals(1, AllowNullMenuModel.class.getDeclaredMethods().length);
-    assertEquals("getInstance", AllowNullMenuModel.class.getDeclaredMethods()[0].getName());
+    assertEquals(1, declaredMethods(AllowNullMenuModel.class).length);
+    assertEquals("getInstance", declaredMethods(AllowNullMenuModel.class)[0].getName());
   }
 
   @Test
@@ -165,7 +168,7 @@ public class AllowNullMenuModelComprehensiveTest {
 
   @Test
   public void allowNullMenuModel_hasNoDeclaredPublicFields() {
-    long count = java.util.Arrays.stream(AllowNullMenuModel.class.getDeclaredFields())
+    long count = java.util.Arrays.stream(declaredFields(AllowNullMenuModel.class))
         .filter(field -> Modifier.isPublic(field.getModifiers()))
         .count();
     assertEquals(0L, count);
@@ -173,7 +176,7 @@ public class AllowNullMenuModelComprehensiveTest {
 
   @Test
   public void getInstance_canBeFoundByName() {
-    boolean found = java.util.Arrays.stream(AllowNullMenuModel.class.getDeclaredMethods())
+    boolean found = java.util.Arrays.stream(declaredMethods(AllowNullMenuModel.class))
         .anyMatch(method -> method.getName().equals("getInstance"));
     assertTrue(found);
   }

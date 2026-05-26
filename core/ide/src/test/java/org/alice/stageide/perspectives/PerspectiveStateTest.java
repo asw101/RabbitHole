@@ -1,5 +1,8 @@
 package org.alice.stageide.perspectives;
 
+import static org.alice.ide.testing.JacocoReflectionSupport.declaredMethods;
+import static org.alice.ide.testing.JacocoReflectionSupport.declaredFields;
+
 import org.alice.ide.perspectives.ProjectPerspective;
 import org.junit.Test;
 import org.lgna.croquet.ImmutableDataSingleSelectListState;
@@ -100,12 +103,12 @@ public class PerspectiveStateTest {
 
   @Test
   public void declaredFields_classDefinesNoStateOfItsOwn() {
-    assertEquals(0, PerspectiveState.class.getDeclaredFields().length);
+    assertEquals(0, declaredFields(PerspectiveState.class).length);
   }
 
   @Test
   public void declaredMethods_classDefinesNoAdditionalMethods() {
-    assertEquals(0, PerspectiveState.class.getDeclaredMethods().length);
+    assertEquals(0, declaredMethods(PerspectiveState.class).length);
   }
 
   @Test

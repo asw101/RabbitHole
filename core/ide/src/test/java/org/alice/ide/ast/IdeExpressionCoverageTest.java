@@ -1,5 +1,8 @@
 package org.alice.ide.ast;
 
+import static org.alice.ide.testing.JacocoReflectionSupport.declaredMethods;
+import static org.alice.ide.testing.JacocoReflectionSupport.declaredFields;
+
 import org.junit.Test;
 import org.lgna.project.ast.AbstractType;
 import org.lgna.project.ast.FauxExpression;
@@ -84,11 +87,11 @@ public class IdeExpressionCoverageTest {
 
   @Test
   public void declaresNoMethods() {
-    assertEquals(0, IdeExpression.class.getDeclaredMethods().length);
+    assertEquals(0, declaredMethods(IdeExpression.class).length);
   }
 
   @Test
   public void declaresNoFields() {
-    assertEquals(0, IdeExpression.class.getDeclaredFields().length);
+    assertEquals(0, declaredFields(IdeExpression.class).length);
   }
 }

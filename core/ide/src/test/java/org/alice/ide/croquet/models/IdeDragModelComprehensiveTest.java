@@ -1,5 +1,8 @@
 package org.alice.ide.croquet.models;
 
+import static org.alice.ide.testing.JacocoReflectionSupport.declaredMethods;
+import static org.alice.ide.testing.JacocoReflectionSupport.declaredFields;
+
 import org.junit.Test;
 import org.lgna.croquet.AbstractModel;
 import org.lgna.croquet.DragModel;
@@ -116,7 +119,7 @@ public class IdeDragModelComprehensiveTest {
 
   @Test
   public void ideDragModel_declaresNoFieldsOfItsOwn() {
-    assertEquals(0, IdeDragModel.class.getDeclaredFields().length);
+    assertEquals(0, declaredFields(IdeDragModel.class).length);
   }
 
   @Test
@@ -188,7 +191,7 @@ public class IdeDragModelComprehensiveTest {
 
   @Test
   public void ideDragModel_declaredMethodCountRemainsStable() {
-    assertEquals(7, IdeDragModel.class.getDeclaredMethods().length);
+    assertEquals(7, declaredMethods(IdeDragModel.class).length);
   }
 
 

@@ -1,5 +1,8 @@
 package org.alice.ide.ast.rename;
 
+import static org.alice.ide.testing.JacocoReflectionSupport.declaredMethods;
+import static org.alice.ide.testing.JacocoReflectionSupport.declaredFields;
+
 import org.junit.Test;
 import org.lgna.project.ast.JavaType;
 import org.lgna.project.ast.UserLocal;
@@ -179,12 +182,12 @@ public class RenameLocalCompositeTest {
 
   @Test
   public void declaredFieldsIncludeMapField() {
-    assertTrue(RenameLocalComposite.class.getDeclaredFields().length >= 1);
+    assertTrue(declaredFields(RenameLocalComposite.class).length >= 1);
   }
 
   @Test
   public void declaredMethodCountIsOne() {
-    assertEquals(1, RenameLocalComposite.class.getDeclaredMethods().length);
+    assertEquals(1, declaredMethods(RenameLocalComposite.class).length);
   }
 
   @Test

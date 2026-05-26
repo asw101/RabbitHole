@@ -1,5 +1,8 @@
 package org.alice.ide.ast.delete;
 
+import static org.alice.ide.testing.JacocoReflectionSupport.declaredMethods;
+import static org.alice.ide.testing.JacocoReflectionSupport.declaredFields;
+
 import org.junit.Test;
 import org.lgna.croquet.ActionOperation;
 import org.lgna.project.ast.Comment;
@@ -146,12 +149,12 @@ public class DeleteStatementOperationTest {
 
   @Test
   public void classHasOneDeclaredField() {
-    assertEquals(1, DeleteStatementOperation.class.getDeclaredFields().length);
+    assertEquals(1, declaredFields(DeleteStatementOperation.class).length);
   }
 
   @Test
   public void classHasOneDeclaredMethod() {
-    assertEquals(1, DeleteStatementOperation.class.getDeclaredMethods().length);
+    assertEquals(1, declaredMethods(DeleteStatementOperation.class).length);
   }
 
   @Test

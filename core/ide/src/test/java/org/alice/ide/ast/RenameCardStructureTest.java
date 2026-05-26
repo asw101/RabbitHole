@@ -1,5 +1,8 @@
 package org.alice.ide.ast;
 
+import static org.alice.ide.testing.JacocoReflectionSupport.declaredMethods;
+import static org.alice.ide.testing.JacocoReflectionSupport.declaredFields;
+
 import edu.cmu.cs.dennisc.javax.swing.ColorCustomizer;
 import org.alice.ide.ast.type.merge.croquet.ActionMustBeTakenCard;
 import org.alice.ide.ast.type.merge.croquet.DifferentImplementation;
@@ -36,7 +39,7 @@ public class RenameCardStructureTest {
 
   @Test
   public void renameCard_fields_checked_expectedTypesAndNames() throws Exception {
-    Set<String> names = Arrays.stream(RenameCard.class.getDeclaredFields())
+    Set<String> names = Arrays.stream(declaredFields(RenameCard.class))
         .map(Field::getName)
         .collect(Collectors.toSet());
     assertEquals(2, names.size());
@@ -70,7 +73,7 @@ public class RenameCardStructureTest {
 
   @Test
   public void renameCard_declaredMethodNames_checked_onlyCreateViewPresent() {
-    Set<String> names = Arrays.stream(RenameCard.class.getDeclaredMethods())
+    Set<String> names = Arrays.stream(declaredMethods(RenameCard.class))
         .map(Method::getName)
         .collect(Collectors.toSet());
     assertEquals(1, names.size());
@@ -115,7 +118,7 @@ public class RenameCardStructureTest {
     assertTrue(cardClass.getName(), Modifier.isPublic(cardClass.getModifiers()));
     assertTrue(cardClass.getName(), Modifier.isFinal(cardClass.getModifiers()));
     assertEquals(SimpleComposite.class, cardClass.getSuperclass());
-    assertEquals(1, cardClass.getDeclaredFields().length);
+    assertEquals(1, declaredFields(cardClass).length);
 
     Field field = cardClass.getDeclaredField(fieldName);
     assertEquals(fieldType, field.getType());
@@ -131,7 +134,7 @@ public class RenameCardStructureTest {
   }
 
   private static void assertRelatedCardMethods(Class<?> cardClass) {
-    Set<String> names = Arrays.stream(cardClass.getDeclaredMethods())
+    Set<String> names = Arrays.stream(declaredMethods(cardClass))
         .map(Method::getName)
         .collect(Collectors.toSet());
     assertEquals(cardClass.getName(), 1, names.size());

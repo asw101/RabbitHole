@@ -1,5 +1,8 @@
 package org.alice.ide.ast;
 
+import static org.alice.ide.testing.JacocoReflectionSupport.declaredMethods;
+import static org.alice.ide.testing.JacocoReflectionSupport.declaredFields;
+
 import org.alice.ide.ast.type.merge.croquet.IsMemberDesiredState;
 import org.junit.Test;
 import org.lgna.croquet.BooleanState;
@@ -51,7 +54,7 @@ public class IsMemberDesiredStateStructureTest {
 
   @Test
   public void declaredFieldNames_checked_onlyMemberPresent() {
-    Set<String> names = Arrays.stream(IsMemberDesiredState.class.getDeclaredFields())
+    Set<String> names = Arrays.stream(declaredFields(IsMemberDesiredState.class))
         .map(Field::getName)
         .collect(Collectors.toSet());
 
@@ -81,7 +84,7 @@ public class IsMemberDesiredStateStructureTest {
 
   @Test
   public void declaredMethodNames_checked_onlyGetMemberPresent() {
-    Set<String> names = Arrays.stream(IsMemberDesiredState.class.getDeclaredMethods())
+    Set<String> names = Arrays.stream(declaredMethods(IsMemberDesiredState.class))
         .map(Method::getName)
         .collect(Collectors.toSet());
 
@@ -91,7 +94,7 @@ public class IsMemberDesiredStateStructureTest {
 
   @Test
   public void publicMethodNames_checked_onlyGetMemberDeclared() {
-    Set<String> names = Arrays.stream(IsMemberDesiredState.class.getDeclaredMethods())
+    Set<String> names = Arrays.stream(declaredMethods(IsMemberDesiredState.class))
         .filter(method -> Modifier.isPublic(method.getModifiers()))
         .map(Method::getName)
         .collect(Collectors.toSet());

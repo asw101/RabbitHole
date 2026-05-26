@@ -1,5 +1,8 @@
 package org.alice.ide.ast.export;
 
+import static org.alice.ide.testing.JacocoReflectionSupport.declaredMethods;
+import static org.alice.ide.testing.JacocoReflectionSupport.declaredFields;
+
 import org.alice.ide.ast.ReflectionTestHelper;
 import org.junit.Test;
 import org.lgna.project.ast.UserField;
@@ -58,12 +61,12 @@ public class FieldInfoCoverageTest {
 
   @Test
   public void declaresNoAdditionalMethods() {
-    assertEquals(0, FieldInfo.class.getDeclaredMethods().length);
+    assertEquals(0, declaredMethods(FieldInfo.class).length);
   }
 
   @Test
   public void declaresNoAdditionalFields() {
-    assertEquals(0, FieldInfo.class.getDeclaredFields().length);
+    assertEquals(0, declaredFields(FieldInfo.class).length);
   }
 
   @Test

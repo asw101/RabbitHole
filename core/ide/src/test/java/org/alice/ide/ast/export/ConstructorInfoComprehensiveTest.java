@@ -1,5 +1,7 @@
 package org.alice.ide.ast.export;
 
+import static org.alice.ide.testing.JacocoReflectionSupport.declaredMethods;
+
 import org.junit.Test;
 import org.lgna.project.Project;
 import org.lgna.project.ast.BlockStatement;
@@ -186,7 +188,7 @@ public class ConstructorInfoComprehensiveTest {
 
   @Test
   public void classHasNoDeclaredMethods() {
-    assertEquals(0, ConstructorInfo.class.getDeclaredMethods().length);
+    assertEquals(0, declaredMethods(ConstructorInfo.class).length);
   }
 
   @Test

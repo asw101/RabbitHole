@@ -6,6 +6,8 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 
+import static org.alice.ide.testing.JacocoReflectionSupport.declaredFields;
+import static org.alice.ide.testing.JacocoReflectionSupport.declaredMethods;
 import static org.junit.Assert.*;
 
 /**
@@ -51,7 +53,7 @@ public final class ReflectionTestHelper {
   // ── Method assertions ───────────────────────────────────────────
 
   public static void assertAllPublicMethodsStatic(Class<?> clazz) {
-    for (Method m : clazz.getDeclaredMethods()) {
+    for (Method m : declaredMethods(clazz)) {
       if (Modifier.isPublic(m.getModifiers())) {
         assertTrue("Public method " + m.getName() + " in " + clazz.getSimpleName() + " must be static",
             Modifier.isStatic(m.getModifiers()));
@@ -60,7 +62,7 @@ public final class ReflectionTestHelper {
   }
 
   public static void assertAllMethodsPackagePrivate(Class<?> clazz) {
-    for (Method m : clazz.getDeclaredMethods()) {
+    for (Method m : declaredMethods(clazz)) {
       int mods = m.getModifiers();
       assertFalse("Method " + m.getName() + " must not be public", Modifier.isPublic(mods));
       assertFalse("Method " + m.getName() + " must not be private", Modifier.isPrivate(mods));
@@ -69,7 +71,7 @@ public final class ReflectionTestHelper {
   }
 
   public static Method findMethod(Class<?> clazz, String name) {
-    return Arrays.stream(clazz.getDeclaredMethods())
+    return Arrays.stream(declaredMethods(clazz))
         .filter(m -> m.getName().equals(name))
         .findFirst().orElse(null);
   }
@@ -118,7 +120,7 @@ public final class ReflectionTestHelper {
   // ── Field assertions ────────────────────────────────────────────
 
   public static Field findField(Class<?> clazz, String name) {
-    return Arrays.stream(clazz.getDeclaredFields())
+    return Arrays.stream(declaredFields(clazz))
         .filter(f -> f.getName().equals(name))
         .findFirst().orElse(null);
   }
@@ -136,11 +138,11 @@ public final class ReflectionTestHelper {
   }
 
   public static void assertNoStaticMembers(Class<?> clazz) {
-    for (Field f : clazz.getDeclaredFields()) {
+    for (Field f : declaredFields(clazz)) {
       assertFalse("Field " + f.getName() + " should not be static",
           Modifier.isStatic(f.getModifiers()));
     }
-    for (Method m : clazz.getDeclaredMethods()) {
+    for (Method m : declaredMethods(clazz)) {
       assertFalse("Method " + m.getName() + " should not be static",
           Modifier.isStatic(m.getModifiers()));
     }

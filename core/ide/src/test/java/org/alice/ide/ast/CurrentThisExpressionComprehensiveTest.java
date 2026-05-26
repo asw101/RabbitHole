@@ -1,5 +1,8 @@
 package org.alice.ide.ast;
 
+import static org.alice.ide.testing.JacocoReflectionSupport.declaredMethods;
+import static org.alice.ide.testing.JacocoReflectionSupport.declaredFields;
+
 import org.junit.Test;
 import org.lgna.project.ast.AbstractType;
 import org.lgna.project.ast.Expression;
@@ -50,7 +53,7 @@ public class CurrentThisExpressionComprehensiveTest {
 
   @Test
   public void classDeclaresNoFields() {
-    assertEquals(0, CurrentThisExpression.class.getDeclaredFields().length);
+    assertEquals(0, declaredFields(CurrentThisExpression.class).length);
   }
 
   @Test
@@ -105,7 +108,7 @@ public class CurrentThisExpressionComprehensiveTest {
   @Test
   public void declaredMethodSetIncludesGetType() {
     boolean found = false;
-    for (Method method : CurrentThisExpression.class.getDeclaredMethods()) {
+    for (Method method : declaredMethods(CurrentThisExpression.class)) {
       if ("getType".equals(method.getName())) {
         found = true;
       }
@@ -135,7 +138,7 @@ public class CurrentThisExpressionComprehensiveTest {
 
   @Test
   public void classDeclaresOnlyOneMethod() {
-    assertEquals(1, CurrentThisExpression.class.getDeclaredMethods().length);
+    assertEquals(1, declaredMethods(CurrentThisExpression.class).length);
   }
   @Test
   public void enclosingClassIsNull() {

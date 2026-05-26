@@ -1,5 +1,8 @@
 package org.alice.ide.ast;
 
+import static org.alice.ide.testing.JacocoReflectionSupport.declaredMethods;
+import static org.alice.ide.testing.JacocoReflectionSupport.declaredFields;
+
 import org.junit.Test;
 import org.lgna.project.ast.Expression;
 import org.lgna.project.ast.FauxExpression;
@@ -23,7 +26,7 @@ public class IdeExpressionComprehensiveTest {
 
   @Test
   public void ideExpressionDeclaresNoFields() {
-    assertEquals(0, IdeExpression.class.getDeclaredFields().length);
+    assertEquals(0, declaredFields(IdeExpression.class).length);
   }
 
   @Test
@@ -112,7 +115,7 @@ public class IdeExpressionComprehensiveTest {
 
   @Test
   public void ideExpressionDeclaresNoMethodsDirectly() {
-    assertEquals(0, IdeExpression.class.getDeclaredMethods().length);
+    assertEquals(0, declaredMethods(IdeExpression.class).length);
   }
 
   @Test

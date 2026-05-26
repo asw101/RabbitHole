@@ -1,5 +1,7 @@
 package org.alice.ide.ast.export.type;
 
+import static org.alice.ide.testing.JacocoReflectionSupport.declaredMethods;
+
 import edu.cmu.cs.dennisc.xml.XMLUtilities;
 import org.junit.Test;
 import org.lgna.project.VersionNotSupportedException;
@@ -203,6 +205,6 @@ public class TypeXmlUtitlitiesComprehensiveTest {
 
   @Test
   public void declaredMethodCountIsThree() {
-    assertEquals(3, TypeXmlUtitlities.class.getDeclaredMethods().length);
+    assertEquals(3, declaredMethods(TypeXmlUtitlities.class).length);
   }
 }

@@ -1,5 +1,8 @@
 package org.alice.ide.croquet.models.declaration;
 
+import static org.alice.ide.testing.JacocoReflectionSupport.declaredMethods;
+import static org.alice.ide.testing.JacocoReflectionSupport.declaredFields;
+
 import org.alice.ide.ast.ReflectionTestHelper;
 import org.junit.Test;
 import org.lgna.croquet.CascadeBlankChild;
@@ -48,12 +51,12 @@ public class GalleryResourceUtilitiesComprehensiveTest {
 
   @Test
   public void galleryResourceUtilities_declaresNoFields() {
-    assertEquals(0, GalleryResourceUtilities.class.getDeclaredFields().length);
+    assertEquals(0, declaredFields(GalleryResourceUtilities.class).length);
   }
 
   @Test
   public void galleryResourceUtilities_declaresSinglePublicMethod() {
-    assertEquals(1, GalleryResourceUtilities.class.getDeclaredMethods().length);
+    assertEquals(1, declaredMethods(GalleryResourceUtilities.class).length);
   }
 
   @Test
@@ -98,7 +101,7 @@ public class GalleryResourceUtilitiesComprehensiveTest {
 
   @Test
   public void updateChildren_isOnlyDeclaredBehavioralMethod() {
-    assertEquals("updateChildren", GalleryResourceUtilities.class.getDeclaredMethods()[0].getName());
+    assertEquals("updateChildren", declaredMethods(GalleryResourceUtilities.class)[0].getName());
   }
 
   @Test
@@ -137,7 +140,7 @@ public class GalleryResourceUtilitiesComprehensiveTest {
 
   @Test
   public void updateChildren_declaredMethodCountRemainsStable() {
-    long count = java.util.Arrays.stream(GalleryResourceUtilities.class.getDeclaredMethods()).count();
+    long count = java.util.Arrays.stream(declaredMethods(GalleryResourceUtilities.class)).count();
     assertEquals(1L, count);
   }
 

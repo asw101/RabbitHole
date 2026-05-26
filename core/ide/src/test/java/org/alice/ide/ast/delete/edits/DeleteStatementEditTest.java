@@ -1,5 +1,8 @@
 package org.alice.ide.ast.delete.edits;
 
+import static org.alice.ide.testing.JacocoReflectionSupport.declaredMethods;
+import static org.alice.ide.testing.JacocoReflectionSupport.declaredFields;
+
 import org.junit.Test;
 import org.lgna.project.ast.BlockStatement;
 import org.lgna.project.ast.Comment;
@@ -199,7 +202,7 @@ public class DeleteStatementEditTest {
   @Test
   public void appendDescriptionMethodExists() {
     boolean found = false;
-    for (Method method : DeleteStatementEdit.class.getDeclaredMethods()) {
+    for (Method method : declaredMethods(DeleteStatementEdit.class)) {
       if ("appendDescription".equals(method.getName()) && method.getParameterCount() == 2) {
         found = true;
       }
@@ -209,11 +212,11 @@ public class DeleteStatementEditTest {
 
   @Test
   public void declaredFieldCountIncludesEditState() {
-    assertTrue(DeleteStatementEdit.class.getDeclaredFields().length >= 2);
+    assertTrue(declaredFields(DeleteStatementEdit.class).length >= 2);
   }
 
   @Test
   public void declaredMethodCountIsFour() {
-    assertEquals(4, DeleteStatementEdit.class.getDeclaredMethods().length);
+    assertEquals(4, declaredMethods(DeleteStatementEdit.class).length);
   }
 }

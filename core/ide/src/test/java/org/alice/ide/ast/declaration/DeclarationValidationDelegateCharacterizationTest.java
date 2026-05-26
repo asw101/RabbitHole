@@ -1,5 +1,8 @@
 package org.alice.ide.ast.declaration;
 
+import static org.alice.ide.testing.JacocoReflectionSupport.declaredMethods;
+import static org.alice.ide.testing.JacocoReflectionSupport.declaredFields;
+
 import org.alice.ide.ast.ReflectionTestHelper;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -76,14 +79,14 @@ public class DeclarationValidationDelegateCharacterizationTest {
 
   @Test
   public void hasCompositeField() {
-    boolean found = Arrays.stream(delegateClass.getDeclaredFields())
+    boolean found = Arrays.stream(declaredFields(delegateClass))
         .anyMatch(f -> compositeClass.isAssignableFrom(f.getType()));
     assertTrue("Must have a field of type DeclarationLikeSubstanceComposite", found);
   }
 
   @Test
   public void compositeFieldIsPrivateFinal() {
-    Field compositeField = Arrays.stream(delegateClass.getDeclaredFields())
+    Field compositeField = Arrays.stream(declaredFields(delegateClass))
         .filter(f -> compositeClass.isAssignableFrom(f.getType()))
         .findFirst().orElse(null);
     assertNotNull("Composite field must exist", compositeField);
@@ -110,7 +113,7 @@ public class DeclarationValidationDelegateCharacterizationTest {
 
   @Test
   public void hasExactlyFiveMethods() {
-    Method[] methods = delegateClass.getDeclaredMethods();
+    Method[] methods = declaredMethods(delegateClass);
     assertEquals("Should have 5 methods: getValueTypeExplanation, getNameExplanation, " +
             "getInitializerExplanation, isNullAllowedForInitializerUnderAnyCircumstances, computeStatus",
         5, methods.length);
@@ -201,7 +204,7 @@ public class DeclarationValidationDelegateCharacterizationTest {
 
   @Test
   public void hasNoListenerFields() {
-    for (Field f : delegateClass.getDeclaredFields()) {
+    for (Field f : declaredFields(delegateClass)) {
       String typeName = f.getType().getSimpleName();
       assertFalse("Should not have listener field: " + f.getName(),
           typeName.contains("Listener") || typeName.contains("ValueListener"));
@@ -210,7 +213,7 @@ public class DeclarationValidationDelegateCharacterizationTest {
 
   @Test
   public void hasNoMapFields() {
-    for (Field f : delegateClass.getDeclaredFields()) {
+    for (Field f : declaredFields(delegateClass)) {
       String typeName = f.getType().getSimpleName();
       assertFalse("Should not have Map field: " + f.getName(),
           typeName.contains("Map"));

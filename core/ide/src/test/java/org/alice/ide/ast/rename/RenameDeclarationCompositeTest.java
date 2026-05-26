@@ -1,5 +1,7 @@
 package org.alice.ide.ast.rename;
 
+import static org.alice.ide.testing.JacocoReflectionSupport.declaredMethods;
+
 import org.alice.ide.croquet.edits.ast.rename.RenameDeclarationEdit;
 import org.alice.ide.name.NameValidator;
 import org.junit.Test;
@@ -189,7 +191,7 @@ public class RenameDeclarationCompositeTest {
 
   @Test
   public void declaredMethodCountMatchesSource() {
-    assertEquals(5, RenameDeclarationComposite.class.getDeclaredMethods().length);
+    assertEquals(5, declaredMethods(RenameDeclarationComposite.class).length);
   }
 
 

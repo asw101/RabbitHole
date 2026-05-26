@@ -1,5 +1,8 @@
 package org.alice.ide.ast.declaration;
 
+import static org.alice.ide.testing.JacocoReflectionSupport.declaredMethods;
+import static org.alice.ide.testing.JacocoReflectionSupport.declaredFields;
+
 import edu.cmu.cs.dennisc.java.util.InitializingIfAbsentMap;
 import org.junit.Test;
 import org.lgna.croquet.StringState;
@@ -183,12 +186,12 @@ public class DeclarationNameStateTest {
 
   @Test
   public void declaredMethodCountIsOne() {
-    assertEquals(1, DeclarationNameState.class.getDeclaredMethods().length);
+    assertEquals(1, declaredMethods(DeclarationNameState.class).length);
   }
 
   @Test
   public void declaredFieldCountIsOne() {
-    assertEquals(1, DeclarationNameState.class.getDeclaredFields().length);
+    assertEquals(1, declaredFields(DeclarationNameState.class).length);
   }
 
 

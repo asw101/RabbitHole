@@ -1,5 +1,7 @@
 package org.alice.ide.ast.export.type;
 
+import static org.alice.ide.testing.JacocoReflectionSupport.declaredMethods;
+
 import org.junit.Test;
 import org.lgna.project.ast.BlockStatement;
 import org.lgna.project.ast.JavaType;
@@ -195,6 +197,6 @@ public class TypeSummaryComprehensiveTest {
 
   @Test
   public void declaredMethodCountMatchesGetterSurface() {
-    assertEquals(8, TypeSummary.class.getDeclaredMethods().length);
+    assertEquals(8, declaredMethods(TypeSummary.class).length);
   }
 }

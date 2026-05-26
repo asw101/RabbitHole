@@ -1,5 +1,8 @@
 package org.alice.ide.croquet.models.declaration;
 
+import static org.alice.ide.testing.JacocoReflectionSupport.declaredMethods;
+import static org.alice.ide.testing.JacocoReflectionSupport.declaredFields;
+
 import org.alice.ide.croquet.models.ExpressionState;
 import org.alice.ide.croquet.models.StandardExpressionState;
 import org.junit.Test;
@@ -56,7 +59,7 @@ public class InitializerStateComprehensiveTest {
 
   @Test
   public void initializerState_declaresOnlyExpectedField() {
-    assertEquals(1, InitializerState.class.getDeclaredFields().length);
+    assertEquals(1, declaredFields(InitializerState.class).length);
   }
 
   @Test
@@ -138,7 +141,7 @@ public class InitializerStateComprehensiveTest {
 
   @Test
   public void noAdditionalPublicMethodsAreDeclared() {
-    assertEquals(2, InitializerState.class.getDeclaredMethods().length);
+    assertEquals(2, declaredMethods(InitializerState.class).length);
   }
 
   @Test
@@ -193,7 +196,7 @@ public class InitializerStateComprehensiveTest {
 
   @Test
   public void initializerStateOwner_declaresSingleMethod() {
-    assertEquals(1, InitializerStateOwner.class.getDeclaredMethods().length);
+    assertEquals(1, declaredMethods(InitializerStateOwner.class).length);
   }
 
   @Test
@@ -206,7 +209,7 @@ public class InitializerStateComprehensiveTest {
 
   @Test
   public void ownerFieldName_matchesSource() throws Exception {
-    assertEquals("owner", InitializerState.class.getDeclaredFields()[0].getName());
+    assertEquals("owner", declaredFields(InitializerState.class)[0].getName());
   }
 
 }

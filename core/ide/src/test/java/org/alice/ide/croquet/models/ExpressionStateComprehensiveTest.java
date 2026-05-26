@@ -1,5 +1,8 @@
 package org.alice.ide.croquet.models;
 
+import static org.alice.ide.testing.JacocoReflectionSupport.declaredMethods;
+import static org.alice.ide.testing.JacocoReflectionSupport.declaredFields;
+
 import org.alice.ide.croquet.components.ExpressionDropDown;
 import org.junit.Test;
 import org.lgna.croquet.Application;
@@ -47,12 +50,12 @@ public class ExpressionStateComprehensiveTest {
 
   @Test
   public void expressionState_declaresNoFields() {
-    assertEquals(0, ExpressionState.class.getDeclaredFields().length);
+    assertEquals(0, declaredFields(ExpressionState.class).length);
   }
 
   @Test
   public void expressionState_declaresExactlyTwoMethods() {
-    assertEquals(2, ExpressionState.class.getDeclaredMethods().length);
+    assertEquals(2, declaredMethods(ExpressionState.class).length);
   }
 
   @Test
