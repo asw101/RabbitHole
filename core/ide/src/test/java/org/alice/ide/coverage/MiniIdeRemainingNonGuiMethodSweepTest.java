@@ -1138,4 +1138,30 @@ public class MiniIdeRemainingNonGuiMethodSweepTest {
         "org.alice.ide.properties.uicontroller.DoubleTextField"
     );
   }
+
+  @Test
+  public void sweepsRemainingNonGuiBatch26() {
+    assertSweep(
+        "org.alice.ide.x.AstI18nFactory",
+        "org.alice.ide.ProjectLoader",
+        "org.alice.ide.croquet.models.project.stats.croquet.StatisticsMethodFrequencyTabComposite",
+        "org.alice.ide.member.MemberTabComposite",
+        "org.alice.ide.ProjectApplication",
+        "org.alice.ide.icons.IconFactoryManager",
+        "org.alice.ide.codeeditor.CodeEditor",
+        "org.alice.ide.declarationseditor.TypeMenu",
+        "org.alice.ide.ast.type.merge.croquet.AddMembersPage",
+        "org.alice.ide.resource.manager.ResourceManagerComposite",
+        "org.alice.ide.issue.DefaultExceptionHandler",
+        "org.alice.ide.croquet.models.projecturi.BackupProjectOperation",
+        "org.alice.ide.croquet.edits.ast.InsertStatementEdit",
+        "org.alice.ide.operations.ast.DeleteParameterOperation",
+        "org.alice.ide.croquet.models.project.stats.croquet.StatisticsFlowControlFrequencyComposite",
+        "org.alice.ide.declarationseditor.DeclarationTabState",
+        "org.alice.ide.instancefactory.croquet.InstanceFactoryFillIn",
+        "org.alice.ide.croquet.models.ast.StatementContextMenu",
+        "org.alice.ide.ProjectFileUtilities",
+        "org.alice.ide.issue.IdeUncaughtExceptionHandler"
+    );
+  }
 }
