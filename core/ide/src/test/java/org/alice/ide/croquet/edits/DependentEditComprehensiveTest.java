@@ -94,6 +94,37 @@ public class DependentEditComprehensiveTest {
   }
 
   @Test
+  public void commitAndInvokeDo_marksActivityFinishedAndStoresEdit() {
+    TrackingCompletionModel model = new TrackingCompletionModel();
+    UserActivity activity = new UserActivity();
+    activity.setCompletionModel(model);
+    DependentEdit<TrackingCompletionModel> edit = new DependentEdit<>(activity);
+
+    activity.commitAndInvokeDo(edit);
+
+    assertSame(edit, activity.getEdit());
+    assertTrue(activity.isSuccessfullyCompleted());
+    assertEquals(1, model.doCount);
+    assertTrue(model.lastDoFlag);
+  }
+
+  @Test
+  public void committedEditCanUndoAndRedoThroughResponsibleModel() {
+    TrackingCompletionModel model = new TrackingCompletionModel();
+    UserActivity activity = new UserActivity();
+    activity.setCompletionModel(model);
+    DependentEdit<TrackingCompletionModel> edit = new DependentEdit<>(activity);
+
+    activity.commitAndInvokeDo(edit);
+    edit.undo();
+    edit.doOrRedo(false);
+
+    assertEquals(1, model.doCount);
+    assertEquals(1, model.undoCount);
+    assertEquals(1, model.redoCount);
+  }
+
+  @Test
   public void terseDescriptionUsesResponsibleModelAppendDescriptionWithFalseFlag() {
     TrackingCompletionModel model = new TrackingCompletionModel();
     DependentEdit<TrackingCompletionModel> edit = createEdit(model);

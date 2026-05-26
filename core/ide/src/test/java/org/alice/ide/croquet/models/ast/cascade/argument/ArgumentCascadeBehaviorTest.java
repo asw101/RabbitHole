@@ -57,6 +57,23 @@ public class ArgumentCascadeBehaviorTest {
     assertSame(argument, cascade.getArgument());
   }
 
+  @Test
+  public void parameterBlankMatchingUsesParameterIdentityRatherThanSharedNames() throws Exception {
+    UserParameter firstParameter = new UserParameter("amount", Number.class);
+    UserParameter secondParameter = new UserParameter("amount", Number.class);
+    ArgumentCascade firstCascade = ArgumentCascade.getInstance(new SimpleArgument(firstParameter, new DoubleLiteral(1.0)));
+    ArgumentCascade secondCascade = ArgumentCascade.getInstance(new SimpleArgument(secondParameter, new DoubleLiteral(2.0)));
+
+    List<? extends CascadeBlank<Expression>> firstBlanks = getBlanks(firstCascade);
+    List<? extends CascadeBlank<Expression>> secondBlanks = getBlanks(secondCascade);
+
+    assertEquals(1, firstBlanks.size());
+    assertEquals(1, secondBlanks.size());
+    assertSame(ParameterBlank.getInstance(firstParameter), firstBlanks.get(0));
+    assertSame(ParameterBlank.getInstance(secondParameter), secondBlanks.get(0));
+    assertNotSame(firstBlanks.get(0), secondBlanks.get(0));
+  }
+
   @SuppressWarnings("unchecked")
   private static List<? extends CascadeBlank<Expression>> getBlanks(ArgumentCascade cascade) throws Exception {
     Method method = ImmutableCascade.class.getDeclaredMethod("getBlanks");
