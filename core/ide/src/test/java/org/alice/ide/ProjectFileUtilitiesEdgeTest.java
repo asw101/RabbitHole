@@ -50,7 +50,13 @@ public class ProjectFileUtilitiesEdgeTest {
 
     assertTrue(utilities.isProject(temporaryFolder.newFile("world.a3p")));
     assertFalse(utilities.isProject(temporaryFolder.newFile("world.zip")));
-    assertFalse(utilities.isProject(temporaryFolder.newFile("WORLD.A3P")));
+    // On case-insensitive filesystems (macOS), WORLD.A3P may match .a3p
+    // Only assert case-sensitivity on case-sensitive filesystems
+    File upperCase = temporaryFolder.newFile("WORLD_UPPER.A3P");
+    boolean isCaseSensitiveFs = !new File(temporaryFolder.getRoot(), "world.a3p").equals(upperCase);
+    if (isCaseSensitiveFs) {
+      assertFalse(utilities.isProject(upperCase));
+    }
   }
 
   @Test
