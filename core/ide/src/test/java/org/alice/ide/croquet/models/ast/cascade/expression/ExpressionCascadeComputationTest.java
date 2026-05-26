@@ -41,6 +41,18 @@ public class ExpressionCascadeComputationTest {
   }
 
   @Test
+  public void thisOperationCreatesFreshThisExpressionsOnEachInvocation() throws Exception {
+    ThisOperation operation = ThisOperation.getInstance(expressionProperty());
+
+    Expression first = invokeCreateExpression(operation);
+    Expression second = invokeCreateExpression(operation);
+
+    assertTrue(first instanceof ThisExpression);
+    assertTrue(second instanceof ThisExpression);
+    assertNotSame(first, second);
+  }
+
+  @Test
   public void parameterAccessOperationCreatesAnAccessForTheRequestedParameter() throws Exception {
     UserParameter parameter = new UserParameter("count", Integer.class);
 
