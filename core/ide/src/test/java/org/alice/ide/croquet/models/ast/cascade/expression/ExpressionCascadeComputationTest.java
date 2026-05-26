@@ -70,6 +70,21 @@ public class ExpressionCascadeComputationTest {
   }
 
   @Test
+  public void fieldArrayAccessAndLocalArrayLengthCacheBySubjectAndExpressionProperty() {
+    org.lgna.project.ast.UserField field = new org.lgna.project.ast.UserField("items", String[].class, null);
+    org.lgna.project.ast.UserLocal local = new org.lgna.project.ast.UserLocal("counts", Integer[].class, false);
+    ExpressionProperty property = expressionProperty();
+
+    FieldArrayAccessCascade fieldCascade = FieldArrayAccessCascade.getInstance(field, property);
+    assertSame(fieldCascade, FieldArrayAccessCascade.getInstance(field, property));
+    assertNotSame(fieldCascade, FieldArrayAccessCascade.getInstance(field, expressionProperty()));
+
+    LocalArrayLengthOperation localOperation = LocalArrayLengthOperation.getInstance(local, property);
+    assertSame(localOperation, LocalArrayLengthOperation.getInstance(local, property));
+    assertNotSame(localOperation, LocalArrayLengthOperation.getInstance(local, expressionProperty()));
+  }
+
+  @Test
   public void arrayAccessCascadeBuildsArrayAccessFromAccessExpressionAndIndex() {
     UserParameter parameter = new UserParameter("items", String[].class);
     ParameterAccess accessExpression = new ParameterAccess(parameter);

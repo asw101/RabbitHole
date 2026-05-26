@@ -52,9 +52,12 @@ public class ExpressionFillInReturnTypeProjectContextTest extends ProjectContext
   }
 
   @Test
-  public void parameterAndLocalArrayAccessCascadesProduceComponentTypedExpressions() throws Exception {
+  public void parameterLocalAndFieldArrayAccessCascadesProduceComponentTypedExpressions() throws Exception {
     UserParameter names = new UserParameter("names", String[].class);
     UserLocal counts = new UserLocal("counts", Integer[].class, false);
+    UserField inventory = new UserField("inventory", String[].class, new NullLiteral());
+    fixture.actorType.fields.add(inventory);
+    configureContext(fixture.sceneProcedure, ThisFieldAccessFactory.getInstance(fixture.actorField));
 
     ArrayAccess parameterAccess = invokeArrayAccess(
         ParameterArrayAccessCascade.getInstance(names, expressionProperty()),
@@ -62,6 +65,9 @@ public class ExpressionFillInReturnTypeProjectContextTest extends ProjectContext
     ArrayAccess localAccess = invokeArrayAccess(
         LocalArrayAccessCascade.getInstance(counts, expressionProperty()),
         new IntegerLiteral(2));
+    ArrayAccess fieldAccess = invokeArrayAccess(
+        FieldArrayAccessCascade.getInstance(inventory, expressionProperty()),
+        new IntegerLiteral(3));
 
     assertTrue(parameterAccess.array.getValue() instanceof ParameterAccess);
     assertSame(names, ((ParameterAccess) parameterAccess.array.getValue()).parameter.getValue());
@@ -70,17 +76,26 @@ public class ExpressionFillInReturnTypeProjectContextTest extends ProjectContext
     assertTrue(localAccess.array.getValue() instanceof LocalAccess);
     assertSame(counts, ((LocalAccess) localAccess.array.getValue()).local.getValue());
     assertEquals(JavaType.getInstance(Integer.class), localAccess.getType());
+
+    assertTrue(fieldAccess.array.getValue() instanceof FieldAccess);
+    assertSame(inventory, ((FieldAccess) fieldAccess.array.getValue()).field.getValue());
+    assertEquals(JavaType.getInstance(String.class), fieldAccess.getType());
+    assertTrue(((FieldAccess) fieldAccess.array.getValue()).expression.getValue() instanceof FieldAccess);
+    FieldAccess receiver = (FieldAccess) fieldAccess.array.getValue();
+    assertSame(fixture.actorField, ((FieldAccess) receiver.expression.getValue()).field.getValue());
   }
 
   @Test
-  public void fieldAndParameterArrayLengthOperationsReturnIntegerExpressions() throws Exception {
+  public void fieldParameterAndLocalArrayLengthOperationsReturnIntegerExpressions() throws Exception {
     UserField inventory = new UserField("inventory", String[].class, new NullLiteral());
     fixture.sceneType.fields.add(inventory);
     UserParameter numbers = new UserParameter("numbers", Integer[].class);
+    UserLocal counts = new UserLocal("counts", Integer[].class, false);
     configureContext(fixture.sceneProcedure, ThisInstanceFactory.getInstance());
 
     Expression fieldLengthExpression = invokeCreateExpression(FieldArrayLengthOperation.getInstance(inventory, expressionProperty()));
     Expression parameterLengthExpression = invokeCreateExpression(ParameterArrayLengthOperation.getInstance(numbers, expressionProperty()));
+    Expression localLengthExpression = invokeCreateExpression(LocalArrayLengthOperation.getInstance(counts, expressionProperty()));
 
     assertTrue(fieldLengthExpression instanceof ArrayLength);
     assertTrue(((ArrayLength) fieldLengthExpression).array.getValue() instanceof FieldAccess);
@@ -91,6 +106,11 @@ public class ExpressionFillInReturnTypeProjectContextTest extends ProjectContext
     assertTrue(((ArrayLength) parameterLengthExpression).array.getValue() instanceof ParameterAccess);
     assertSame(numbers, ((ParameterAccess) ((ArrayLength) parameterLengthExpression).array.getValue()).parameter.getValue());
     assertSame(JavaType.INTEGER_OBJECT_TYPE, parameterLengthExpression.getType());
+
+    assertTrue(localLengthExpression instanceof ArrayLength);
+    assertTrue(((ArrayLength) localLengthExpression).array.getValue() instanceof LocalAccess);
+    assertSame(counts, ((LocalAccess) ((ArrayLength) localLengthExpression).array.getValue()).local.getValue());
+    assertSame(JavaType.INTEGER_OBJECT_TYPE, localLengthExpression.getType());
   }
 
   @Test
