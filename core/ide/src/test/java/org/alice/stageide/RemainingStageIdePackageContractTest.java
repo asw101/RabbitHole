@@ -13,51 +13,12 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class RemainingStageIdePackageContractTest {
-  private static final Set<String> CONTRACT_COVERED_PACKAGES = Set.of(
-      "org.alice.stageide.about",
-      "org.alice.stageide.about.views",
-      "org.alice.stageide.ast.declaration.views",
-      "org.alice.stageide.croquet.models.cascade.keymenus",
-      "org.alice.stageide.croquet.models.cascade.source",
-      "org.alice.stageide.croquet.models.gallerybrowser",
-      "org.alice.stageide.croquet.models.gallerybrowser.preferences",
-      "org.alice.stageide.custom.components",
-      "org.alice.stageide.gallerybrowser.enumconstant",
-      "org.alice.stageide.gallerybrowser.enumconstant.codecs",
-      "org.alice.stageide.gallerybrowser.enumconstant.data",
-      "org.alice.stageide.gallerybrowser.enumconstant.views",
-      "org.alice.stageide.gallerybrowser.enumconstant.views.renderers",
-      "org.alice.stageide.gallerybrowser.search.croquet",
-      "org.alice.stageide.gallerybrowser.search.croquet.views",
-      "org.alice.stageide.instancefactory.croquet.joint.all",
-      "org.alice.stageide.joint",
-      "org.alice.stageide.member",
-      "org.alice.stageide.modelviewer",
-      "org.alice.stageide.oneshot.edits",
-      "org.alice.stageide.openprojectpane.components",
-      "org.alice.stageide.perspectives.scenesetup.views",
-      "org.alice.stageide.project",
-      "org.alice.stageide.raytrace",
-      "org.alice.stageide.run.views",
-      "org.alice.stageide.run.views.icons",
-      "org.alice.stageide.sceneeditor.draganddrop",
-      "org.alice.stageide.sceneeditor.interact.croquet",
-      "org.alice.stageide.sceneeditor.interact.croquet.edits",
-      "org.alice.stageide.sceneeditor.interact.handles",
-      "org.alice.stageide.sceneeditor.side.edits",
-      "org.alice.stageide.sceneeditor.side.views",
-      "org.alice.stageide.sceneeditor.snap",
-      "org.alice.stageide.sceneeditor.viewmanager.edits",
-      "org.alice.stageide.type.croquet.data",
-      "org.alice.stageide.type.croquet.views",
-      "org.alice.stageide.type.croquet.views.renderers",
-      "org.alice.stageide.typecontext",
-      "org.alice.stageide.typecontext.components");
+  private static final Set<String> CONTRACT_COVERED_PACKAGES = Set.of();
 
   private static final Path MAIN_ROOT = resolveDirectory(
       "core/ide/src/main/java/org/alice/stageide",
@@ -141,7 +102,7 @@ public class RemainingStageIdePackageContractTest {
 
   @Test
   public void trackedRemainingPackages_areRootedInRealSourceDirectories() {
-    assertFalse(CONTRACT_COVERED_PACKAGES.isEmpty());
+    assertTrue(CONTRACT_COVERED_PACKAGES.isEmpty());
     assertNotNull(MAIN_ROOT);
     assertNotNull(TEST_ROOT);
   }

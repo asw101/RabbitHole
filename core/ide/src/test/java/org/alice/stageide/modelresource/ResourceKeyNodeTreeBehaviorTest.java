@@ -1,5 +1,8 @@
 package org.alice.stageide.modelresource;
 
+import org.alice.ide.testing.TestIdeBootstrap;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.lgna.croquet.DropSite;
 import org.lgna.croquet.SingleSelectTreeState;
@@ -17,6 +20,16 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 
 public class ResourceKeyNodeTreeBehaviorTest {
+  @Before
+  public void setUpIde() {
+    TestIdeBootstrap.ensureInstalled();
+  }
+
+  @After
+  public void tearDownIde() {
+    TestIdeBootstrap.reset();
+  }
+
   private static final class RecordingTriggerable implements Triggerable {
     private int fireCount;
 
