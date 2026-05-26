@@ -1,5 +1,8 @@
 package edu.cmu.cs.dennisc.render.gl;
 
+import org.junit.Assume;
+import java.awt.GraphicsEnvironment;
+
 
 
 import edu.cmu.cs.dennisc.render.gl.imp.adapters.AdapterFactory;
@@ -13,6 +16,12 @@ import java.awt.Dimension;
 import static org.junit.Assert.*;
 
 public class GlrRenderTargetMathRoundTripTest {
+
+  // DO NOT REMOVE — these tests load JOGL native libraries that are absent on CI
+  @org.junit.Before
+  public void skipIfHeadless() {
+    Assume.assumeTrue("Requires display + JOGL natives", !GraphicsEnvironment.isHeadless());
+  }
 
 
 
