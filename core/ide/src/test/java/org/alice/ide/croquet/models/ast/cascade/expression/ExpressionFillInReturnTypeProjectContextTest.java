@@ -1,9 +1,14 @@
 package org.alice.ide.croquet.models.ast.cascade.expression;
 
+import org.alice.ide.instancefactory.InstanceFactory;
+import org.alice.ide.instancefactory.ThisFieldAccessFactory;
+import org.alice.ide.instancefactory.ThisInstanceFactory;
 import org.alice.ide.testing.ProjectContextTestCase;
+import org.alice.ide.testing.TestIdeBootstrap;
 import org.junit.Test;
 import org.lgna.project.ast.ArrayAccess;
 import org.lgna.project.ast.ArrayLength;
+import org.lgna.project.ast.BlockStatement;
 import org.lgna.project.ast.Expression;
 import org.lgna.project.ast.ExpressionProperty;
 import org.lgna.project.ast.ExpressionStatement;
@@ -11,10 +16,15 @@ import org.lgna.project.ast.FieldAccess;
 import org.lgna.project.ast.IntegerLiteral;
 import org.lgna.project.ast.JavaType;
 import org.lgna.project.ast.LocalAccess;
+import org.lgna.project.ast.MethodInvocation;
 import org.lgna.project.ast.NullLiteral;
 import org.lgna.project.ast.ParameterAccess;
+import org.lgna.project.ast.ReturnStatement;
+import org.lgna.project.ast.StringLiteral;
+import org.lgna.project.ast.ThisExpression;
 import org.lgna.project.ast.UserField;
 import org.lgna.project.ast.UserLocal;
+import org.lgna.project.ast.UserMethod;
 import org.lgna.project.ast.UserParameter;
 
 import java.lang.reflect.Method;
@@ -27,6 +37,7 @@ public class ExpressionFillInReturnTypeProjectContextTest extends ProjectContext
   @Test
   public void fieldAndLocalAccessOperationsPreserveDeclaredValueTypes() throws Exception {
     UserLocal scoreLabel = new UserLocal("scoreLabel", String.class, false);
+    configureContext(fixture.sceneProcedure, ThisInstanceFactory.getInstance());
 
     Expression fieldExpression = invokeCreateExpression(FieldAccessOperation.getInstance(fixture.actorField, expressionProperty()));
     Expression localExpression = invokeCreateExpression(LocalAccessOperation.getInstance(scoreLabel, expressionProperty()));
@@ -66,6 +77,7 @@ public class ExpressionFillInReturnTypeProjectContextTest extends ProjectContext
     UserField inventory = new UserField("inventory", String[].class, new NullLiteral());
     fixture.sceneType.fields.add(inventory);
     UserParameter numbers = new UserParameter("numbers", Integer[].class);
+    configureContext(fixture.sceneProcedure, ThisInstanceFactory.getInstance());
 
     Expression fieldLengthExpression = invokeCreateExpression(FieldArrayLengthOperation.getInstance(inventory, expressionProperty()));
     Expression parameterLengthExpression = invokeCreateExpression(ParameterArrayLengthOperation.getInstance(numbers, expressionProperty()));
@@ -79,6 +91,47 @@ public class ExpressionFillInReturnTypeProjectContextTest extends ProjectContext
     assertTrue(((ArrayLength) parameterLengthExpression).array.getValue() instanceof ParameterAccess);
     assertSame(numbers, ((ParameterAccess) ((ArrayLength) parameterLengthExpression).array.getValue()).parameter.getValue());
     assertSame(JavaType.INTEGER_OBJECT_TYPE, parameterLengthExpression.getType());
+  }
+
+  @Test
+  public void fieldAccessOperationUsesCurrentInstanceFactoryExpression() throws Exception {
+    UserField nickname = new UserField("nickname", String.class, new NullLiteral());
+    fixture.actorType.fields.add(nickname);
+    configureContext(fixture.sceneProcedure, ThisFieldAccessFactory.getInstance(fixture.actorField));
+
+    FieldAccess expression = (FieldAccess) invokeCreateExpression(FieldAccessOperation.getInstance(nickname, expressionProperty()));
+
+    assertSame(nickname, expression.field.getValue());
+    assertSame(JavaType.getInstance(String.class), expression.getType());
+    assertTrue(expression.expression.getValue() instanceof FieldAccess);
+    FieldAccess receiver = (FieldAccess) expression.expression.getValue();
+    assertSame(fixture.actorField, receiver.field.getValue());
+    assertTrue(receiver.expression.getValue() instanceof ThisExpression);
+  }
+
+  @Test
+  public void functionInvocationCascadeUsesCurrentInstanceFactoryExpression() throws Exception {
+    UserParameter suffix = new UserParameter("suffix", String.class);
+    UserMethod describe = new UserMethod(
+        "describe",
+        JavaType.STRING_TYPE,
+        new UserParameter[] {suffix},
+        new BlockStatement(new ReturnStatement(JavaType.STRING_TYPE, new StringLiteral("hero"))));
+    fixture.actorType.methods.add(describe);
+    configureContext(fixture.sceneProcedure, ThisFieldAccessFactory.getInstance(fixture.actorField));
+
+    StringLiteral argument = new StringLiteral("!");
+    MethodInvocation invocation = invokeMethodInvocation(
+        FunctionInvocationCascade.getInstance(describe, expressionProperty()),
+        argument);
+
+    assertSame(describe, invocation.method.getValue());
+    assertSame(JavaType.STRING_TYPE, invocation.getType());
+    assertTrue(invocation.expression.getValue() instanceof FieldAccess);
+    FieldAccess receiver = (FieldAccess) invocation.expression.getValue();
+    assertSame(fixture.actorField, receiver.field.getValue());
+    assertTrue(receiver.expression.getValue() instanceof ThisExpression);
+    assertSame(argument, invocation.requiredArguments.get(0).expression.getValue());
   }
 
   private static ExpressionProperty expressionProperty() {
@@ -103,5 +156,18 @@ public class ExpressionFillInReturnTypeProjectContextTest extends ProjectContext
     Method method = ArrayAccessCascade.class.getDeclaredMethod("createExpression", Expression[].class);
     method.setAccessible(true);
     return (ArrayAccess) method.invoke(cascade, new Object[] {new Expression[] {indexExpression}});
+  }
+
+  private static MethodInvocation invokeMethodInvocation(FunctionInvocationCascade cascade, Expression... arguments) throws Exception {
+    Method method = FunctionInvocationCascade.class.getDeclaredMethod("createExpression", Expression[].class);
+    method.setAccessible(true);
+    return (MethodInvocation) method.invoke(cascade, new Object[] {arguments});
+  }
+
+  private static void configureContext(UserMethod focusedCode, InstanceFactory instanceFactory) {
+    TestIdeBootstrap.runOnEdt(() -> {
+      TestIdeBootstrap.getDocumentFrame().setFocusedCode(focusedCode);
+      TestIdeBootstrap.getDocumentFrame().getInstanceFactoryState().setValueTransactionlessly(instanceFactory);
+    });
   }
 }
