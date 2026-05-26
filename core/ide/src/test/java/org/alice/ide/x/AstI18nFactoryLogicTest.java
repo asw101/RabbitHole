@@ -15,6 +15,19 @@ import static org.junit.Assert.*;
 
 public class AstI18nFactoryLogicTest {
   @Test
+  public void constructorThrowsAssertionError() throws Exception {
+    java.lang.reflect.Constructor<AstI18nFactoryLogic> constructor = AstI18nFactoryLogic.class.getDeclaredConstructor();
+    constructor.setAccessible(true);
+
+    try {
+      constructor.newInstance();
+      fail("Expected AssertionError");
+    } catch (java.lang.reflect.InvocationTargetException exception) {
+      assertTrue(exception.getCause() instanceof AssertionError);
+    }
+  }
+
+  @Test
   public void getComponentKindRecognizesSpecialCases() {
     UserMethod method = new UserMethod("wave", void.class, new UserParameter[0], new BlockStatement());
     SimpleArgument argument = new SimpleArgument(new UserParameter("amount", Number.class), new DoubleLiteral(1.0));

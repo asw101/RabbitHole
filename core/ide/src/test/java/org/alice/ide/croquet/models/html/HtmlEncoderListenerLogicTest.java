@@ -17,6 +17,19 @@ import static org.junit.Assert.*;
 
 public class HtmlEncoderListenerLogicTest {
   @Test
+  public void constructorThrowsAssertionError() throws Exception {
+    java.lang.reflect.Constructor<HtmlEncoderLogic> constructor = HtmlEncoderLogic.class.getDeclaredConstructor();
+    constructor.setAccessible(true);
+
+    try {
+      constructor.newInstance();
+      fail("Expected AssertionError");
+    } catch (java.lang.reflect.InvocationTargetException exception) {
+      assertTrue(exception.getCause() instanceof AssertionError);
+    }
+  }
+
+  @Test
   public void shouldSkipMethodReturnsTrueForGeneratedMethod() {
     assertTrue(HtmlEncoderLogic.shouldSkipMethod(method("generatedHelper", ManagementLevel.GENERATED, false)));
   }
@@ -45,6 +58,8 @@ public class HtmlEncoderListenerLogicTest {
 
   @Test
   public void getRequiredListenerArgumentIgnoresMissingOrMisnamedFirstArgument() {
+    assertNull(HtmlEncoderLogic.getRequiredListenerArgument(null));
+
     MethodInvocation emptyInvocation = new MethodInvocation();
     assertNull(HtmlEncoderLogic.getRequiredListenerArgument(emptyInvocation));
 

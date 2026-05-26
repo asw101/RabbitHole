@@ -10,6 +10,19 @@ import static org.junit.Assert.*;
 
 public class ProjectDocumentFrameHelperTest {
   @Test
+  public void constructorThrowsAssertionError() throws Exception {
+    java.lang.reflect.Constructor<ProjectDocumentFrameHelper> constructor = ProjectDocumentFrameHelper.class.getDeclaredConstructor();
+    constructor.setAccessible(true);
+
+    try {
+      constructor.newInstance();
+      fail("Expected AssertionError");
+    } catch (java.lang.reflect.InvocationTargetException exception) {
+      assertTrue(exception.getCause() instanceof AssertionError);
+    }
+  }
+
+  @Test
   public void shouldRegisterRectangleCaptureOnlyForSecondaryWindows() {
     assertFalse(ProjectDocumentFrameHelper.shouldRegisterRectangleCapture(true));
     assertTrue(ProjectDocumentFrameHelper.shouldRegisterRectangleCapture(false));
@@ -24,7 +37,8 @@ public class ProjectDocumentFrameHelperTest {
   }
 
   @Test
-  public void canEnableRenderingRequiresDisableReason() {
+  public void canEnableRenderingRequiresPositiveDisableReasonCount() {
+    assertFalse(ProjectDocumentFrameHelper.canEnableRendering(-1));
     assertFalse(ProjectDocumentFrameHelper.canEnableRendering(0));
     assertTrue(ProjectDocumentFrameHelper.canEnableRendering(1));
   }
