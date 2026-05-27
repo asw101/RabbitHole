@@ -1,12 +1,55 @@
-# drinkme — Investigation & Refactoring Artifacts
+# drinkme — Alice 3 Modernization Status & Artifacts
 
-This directory contains design documents and investigation notes produced
-during the Alice 3 modernization effort. Each file records a specific
+## Current Status (May 2026)
+
+### Java Desktop — [rysweet/RabbitHole](https://github.com/rysweet/RabbitHole)
+
+| Metric | Value |
+|--------|-------|
+| Branch | `develop` |
+| Test coverage | **74%** (JaCoCo aggregate: 54,796 / 74,012 lines) |
+| Test files added | 150+ new behavioral test files |
+| CI | Green on Ubuntu + macOS, headless |
+| Key areas tested | AST, story-api (entities, events, animation, interaction), scenegraph (transforms, geometry, IO), model-loading (Collada/glTF parsers, exporters), Tweedle (parser, VM), IDE (project IO, scene editor, code editor), Croquet (UI framework), math (Jama linear algebra) |
+
+### TypeScript Web Port — [rysweet/alice-web-prototype](https://github.com/rysweet/alice-web-prototype)
+
+| Metric | Value |
+|--------|-------|
+| Branch | `main` |
+| Source files | 175 |
+| Source lines | 68,500+ |
+| Tests | 2,500+ (Vitest) |
+| Build | `npm run build` clean |
+| Key subsystems | Tweedle (parser, VM, compiler, type system, stdlib, debugger), AST (80+ node types, serialization, manipulation, editor), Story API (entities, properties, animations, behaviors, events, methods, lifecycle, movement, joints, vehicles), Scenegraph (transforms, hierarchy, scene management, setup), Renderer (pipeline, materials, shaders, textures, effects, text, mesh, animation, picking), IDE (code editor, procedure editor, declaration editor, type browser, gallery, debugging, dialogs, code completion, keyboard shortcuts, layout, drag-drop, perspectives, state management), Croquet (state machine, operations), Infrastructure (A3P parse/write, project system, collaboration, persistence, plugin system, export, accessibility, web runtime, state sync, network layer, performance monitoring) |
+
+### End-to-End Test Suite — [rysweet/eatme](https://github.com/rysweet/eatme)
+
+| Metric | Value |
+|--------|-------|
+| Branch | `main` |
+| Total tests | 1,393 |
+| Curriculum scenarios | 52 (YAML definitions covering full Alice.org curriculum) |
+| Web platform scenarios | 26 (run same curriculum against TS web port REST API) |
+| Coverage | Scene building, procedures, functions, parameters, variables, loops, conditionals, events, collision, proximity, doInOrder/doTogether, arrays, comments, inheritance/OOP, camera, audio, vehicles, joints/IK, drag-drop, debugging, project IO, accessibility, performance, instructor tools, student workflows |
+
+### What's left
+
+- **Java**: Coverage at 74%, well above 70% target. Remaining uncovered code is mostly Swing GUI rendering (paint, mouse handlers, OpenGL adapters) that can't run headless.
+- **TypeScript**: Feature parity achieved across all major Java subsystems. TS is inherently more concise (~3-5x fewer lines for equivalent functionality). Story-api entity depth can always be deepened further.
+- **Eatme**: Full curriculum coverage with dual-platform support. Desktop tests gated behind `EATME_REAL_ALICE=1`, web tests behind `EATME_WEB_PLATFORM=1`.
+
+---
+
+## Investigation & Refactoring Artifacts
+
+This directory also contains design documents and investigation notes
+produced during the modernization effort. Each file records a specific
 refactoring that was analyzed, planned, or completed.
 
-**This is a reference directory, not source code.** Nothing here is compiled
-or executed. It exists so that future contributors can understand *why*
-specific refactorings were done and what trade-offs were considered.
+**These are reference documents, not source code.** They exist so that future
+contributors can understand *why* specific refactorings were done and what
+trade-offs were considered.
 
 ## Contents
 
