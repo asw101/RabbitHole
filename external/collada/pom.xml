@@ -7,6 +7,15 @@
   <description>Library for 3DViewr collada modeling</description>
   <version>1.0</version>
   <packaging>jar</packaging>
+
+  <dependencies>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
   <licenses>
     <license>
       <name>GNU Lesser General Public License (LGPL), Version 2.1</name>

@@ -12,6 +12,14 @@
   <version>1.0</version>
   <packaging>jar</packaging>
 
+  <dependencies>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
   <name>Wrapped Flow Layout</name>
   <url>http://tips4java.wordpress.com/2008/11/06/wrap-layout/</url>
 
