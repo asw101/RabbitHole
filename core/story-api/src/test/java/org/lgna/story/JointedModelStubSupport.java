@@ -7,15 +7,20 @@ import edu.cmu.cs.dennisc.scenegraph.SkeletonVisual;
 import edu.cmu.cs.dennisc.scenegraph.Visual;
 import org.alice.math.immutable.AffineMatrix4x4;
 import org.alice.math.immutable.UnitQuaternion;
+import org.lgna.story.JointedModelPose;
 import org.lgna.story.implementation.BipedImp;
+import org.lgna.story.implementation.FlyerImp;
 import org.lgna.story.implementation.JointImp;
 import org.lgna.story.implementation.JointedModelImp;
 import org.lgna.story.implementation.QuadrupedImp;
+import org.lgna.story.implementation.SwimmerImp;
 import org.lgna.story.resources.BipedResource;
+import org.lgna.story.resources.FlyerResource;
 import org.lgna.story.resources.JointArrayId;
 import org.lgna.story.resources.JointId;
 import org.lgna.story.resources.JointedModelResource;
 import org.lgna.story.resources.QuadrupedResource;
+import org.lgna.story.resources.SwimmerResource;
 
 final class JointedModelStubSupport {
   private JointedModelStubSupport() {
@@ -42,6 +47,50 @@ final class JointedModelStubSupport {
     @Override
     public QuadrupedImp createImplementation(SQuadruped abstraction) {
       return new QuadrupedImp(abstraction, new StubFactory<>(this));
+    }
+
+    @Override
+    public JointedModelImp.JointImplementationAndVisualDataFactory<JointedModelResource> getImplementationAndVisualFactory() {
+      return null;
+    }
+  }
+
+  static final class StubFlyerResource implements FlyerResource {
+    @Override
+    public JointId[] getTailArray() {
+      return DEFAULT_TAIL;
+    }
+
+    @Override
+    public JointId[] getNeckArray() {
+      return DEFAULT_NECK;
+    }
+
+    @Override
+    public JointedModelPose getSpreadWingsPose() {
+      return null;
+    }
+
+    @Override
+    public JointedModelPose getFoldWingsPose() {
+      return null;
+    }
+
+    @Override
+    public FlyerImp createImplementation(SFlyer abstraction) {
+      return new FlyerImp(abstraction, new StubFactory<>(this));
+    }
+
+    @Override
+    public JointedModelImp.JointImplementationAndVisualDataFactory<JointedModelResource> getImplementationAndVisualFactory() {
+      return null;
+    }
+  }
+
+  static final class StubSwimmerResource implements SwimmerResource {
+    @Override
+    public SwimmerImp createImplementation(SSwimmer abstraction) {
+      return new SwimmerImp(abstraction, new StubFactory<>(this));
     }
 
     @Override
