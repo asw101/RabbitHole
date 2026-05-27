@@ -2,8 +2,10 @@ package org.lgna.story.implementation;
 
 import edu.cmu.cs.dennisc.scenegraph.Layer;
 import edu.cmu.cs.dennisc.scenegraph.SymmetricPerspectiveCamera;
+import org.alice.math.immutable.AngleInRevolutions;
 import org.junit.Before;
 import org.junit.Test;
+import org.lgna.story.SBox;
 import org.lgna.story.SCamera;
 
 import static org.junit.Assert.*;
@@ -100,9 +102,20 @@ public class CameraImpTest {
   // ── Horizontal viewing angle ──────────────────────────
 
   @Test
-  public void horizontalViewingAngle_setDoesNotThrow() {
+  public void horizontalViewingAngle_setClearsVerticalAndStoresValue() {
+    imp.getSgCamera().verticalViewingAngle.setValue(new AngleInRevolutions(0.125));
+
     camera.setHorizontalViewingAngle(0.25);
-    // getEffectiveHorizontalViewingAngle needs a render target, just verify set doesn't throw
+
+    assertTrue(Double.isNaN(imp.getSgCamera().verticalViewingAngle.getValue().getAsRevolutions()));
+    assertEquals(0.25, imp.getSgCamera().horizontalViewingAngle.getValue().getAsRevolutions(), 0.001);
+  }
+
+  @Test
+  public void horizontalViewingAngleGetterUsesEffectiveCameraValue() {
+    imp.getSgCamera().setEffectiveHorizontalViewingAngle(new AngleInRevolutions(0.25));
+
+    assertEquals(0.25, camera.getHorizontalViewingAngle(), 0.001);
   }
 
   @Test
@@ -114,9 +127,20 @@ public class CameraImpTest {
   // ── Vertical viewing angle ────────────────────────────
 
   @Test
-  public void verticalViewingAngle_setDoesNotThrow() {
+  public void verticalViewingAngle_setClearsHorizontalAndStoresValue() {
+    imp.getSgCamera().horizontalViewingAngle.setValue(new AngleInRevolutions(0.25));
+
     camera.setVerticalViewingAngle(0.125);
-    // getEffectiveVerticalViewingAngle needs a render target, just verify set doesn't throw
+
+    assertTrue(Double.isNaN(imp.getSgCamera().horizontalViewingAngle.getValue().getAsRevolutions()));
+    assertEquals(0.125, imp.getSgCamera().verticalViewingAngle.getValue().getAsRevolutions(), 0.001);
+  }
+
+  @Test
+  public void verticalViewingAngleGetterUsesEffectiveCameraValue() {
+    imp.getSgCamera().setEffectiveVerticalViewingAngle(new AngleInRevolutions(0.125));
+
+    assertEquals(0.125, camera.getVerticalViewingAngle(), 0.001);
   }
 
   @Test
@@ -178,7 +202,16 @@ public class CameraImpTest {
   @Test
   public void setVehicle_nullDoesNotThrow() {
     camera.setVehicle(null);
-    // Should complete without exception
+    assertNull(imp.getVehicle());
+  }
+
+  @Test
+  public void setVehicle_assignsImplementationVehicle() {
+    SBox vehicle = new SBox();
+
+    camera.setVehicle(vehicle);
+
+    assertSame(vehicle.getImplementation(), imp.getVehicle());
   }
 
   // ── Abstraction ───────────────────────────────────────

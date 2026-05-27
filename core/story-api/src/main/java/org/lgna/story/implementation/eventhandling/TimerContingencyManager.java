@@ -80,15 +80,15 @@ public class TimerContingencyManager {
   public void register(WhileOcclusionListener listener, List<SModel> groupOne, List<SModel> groupTwo, Double frequency, MultipleEventPolicy policy) {
     timer.addListener(listener, frequency, policy);
     timer.deactivate(listener);
-    scene.addOcclusionStartListener(newEnterOcclusionAdapter(listener), (SModel[]) toArray(groupOne), (SModel[]) toArray(groupTwo));
-    scene.addOcclusionEndListener(newExitOcclusionAdapter(listener), (SModel[]) toArray(groupOne), (SModel[]) toArray(groupTwo));
+    scene.addOcclusionStartListener(newEnterOcclusionAdapter(listener), toModelArray(groupOne), toModelArray(groupTwo));
+    scene.addOcclusionEndListener(newExitOcclusionAdapter(listener), toModelArray(groupOne), toModelArray(groupTwo));
   }
 
   public void register(WhileInViewListener listener, List<SModel> group, Double frequency, MultipleEventPolicy policy) {
     timer.addListener(listener, frequency, policy);
     timer.deactivate(listener);
-    scene.addViewEnterListener(newEnterViewAdapter(listener), (SModel[]) toArray(group));
-    scene.addViewExitListener(newExitViewAdapter(listener), (SModel[]) toArray(group));
+    scene.addViewEnterListener(newEnterViewAdapter(listener), toModelArray(group));
+    scene.addViewExitListener(newExitViewAdapter(listener), toModelArray(group));
   }
 
   private ViewExitListener newExitViewAdapter(final WhileInViewListener listener) {
@@ -125,6 +125,14 @@ public class TimerContingencyManager {
 
   private SThing[] toArray(List<? extends SThing> arr) {
     SThing[] rv = new SThing[arr.size()];
+    for (int i = 0; i != arr.size(); ++i) {
+      rv[i] = arr.get(i);
+    }
+    return rv;
+  }
+
+  private SModel[] toModelArray(List<? extends SModel> arr) {
+    SModel[] rv = new SModel[arr.size()];
     for (int i = 0; i != arr.size(); ++i) {
       rv[i] = arr.get(i);
     }
