@@ -2,6 +2,8 @@ package org.alice.ide.refactoring;
 
 import org.junit.Test;
 
+import org.junit.Assume;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -52,20 +54,18 @@ public class SingletonDocumentationContractTest {
   @Test
   public void singletonDocumentation_isNotEmpty() throws IOException {
     Path docPath = findRepoRoot().resolve("docs/architecture/singletons.md");
-    if (Files.exists(docPath)) {
-      long size = Files.size(docPath);
-      assertTrue("Singleton docs must have substantial content (>1KB)", size > 1024);
-    }
+    assertTrue("docs/architecture/singletons.md must exist", Files.exists(docPath));
+    long size = Files.size(docPath);
+    assertTrue("Singleton docs must have substantial content (>1KB)", size > 1024);
   }
 
   @Test
   public void singletonDocumentation_containsSingletonInventory() throws IOException {
     Path docPath = findRepoRoot().resolve("docs/architecture/singletons.md");
-    if (Files.exists(docPath)) {
-      String content = new String(Files.readAllBytes(docPath));
-      assertTrue("Must contain singleton inventory section",
-          content.contains("Singleton") || content.contains("singleton"));
-    }
+    assertTrue("docs/architecture/singletons.md must exist", Files.exists(docPath));
+    String content = new String(Files.readAllBytes(docPath));
+    assertTrue("Must contain singleton inventory section",
+        content.contains("Singleton") || content.contains("singleton"));
   }
 
   // ── Architecture docs directory ───────────────────────────────────
@@ -81,11 +81,10 @@ public class SingletonDocumentationContractTest {
   @Test
   public void mkdocsYml_referencesArchitectureDocs() throws IOException {
     Path mkdocs = findRepoRoot().resolve("mkdocs.yml");
-    if (Files.exists(mkdocs)) {
-      String content = new String(Files.readAllBytes(mkdocs));
-      assertTrue("mkdocs.yml must reference architecture docs",
-          content.contains("architecture/") || content.contains("Architecture"));
-    }
+    Assume.assumeTrue("mkdocs.yml not present — skipping", Files.exists(mkdocs));
+    String content = new String(Files.readAllBytes(mkdocs));
+    assertTrue("mkdocs.yml must reference architecture docs",
+        content.contains("architecture/") || content.contains("Architecture"));
   }
 
   // ── Reference docs for all refactoring PRs ────────────────────────
