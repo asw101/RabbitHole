@@ -16,8 +16,12 @@ flowchart LR
   interact --> transform["AbstractTransformable.setTransformation"]
   transform --> scenegraph
 
-  saveReq["SaveProjectOperation / ProjectApplication.saveProjectTo"] --> snapshot["ProjectFileUtilities.saveCopyOfProjectTo"]
-  ast --> snapshot
-  snapshot --> writeXml["XmlProjectIo.writeType / writeResources"]
-  writeXml --> zip["ZipOutputStream + manifest + resources"]
-  zip --> outA3p[".a3p archive"]
+  saveReq["ProjectApplication.saveProjectTo"] --> saveCopy["ProjectFileUtilities.saveCopyOfProjectTo"]
+  ast --> saveCopy
+  saveCopy --> saveIo["IoUtilities.writeProject<br/>XmlProjectIo.writer"]
+  saveIo --> outA3p[".a3p archive"]
+
+  exportReq["ProjectApplication.exportProjectTo"] --> exportCopy["ProjectFileUtilities.exportCopyOfProjectTo"]
+  ast --> exportCopy
+  exportCopy --> exportIo["IoUtilities.exportProject<br/>JsonProjectIo.writer"]
+  exportIo --> outA3w[".a3w archive"]

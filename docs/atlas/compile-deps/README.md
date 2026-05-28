@@ -8,6 +8,7 @@ The graph follows declared dependencies first, with one extra structural note fo
 - `util` is the base library for JavaFX-enabled desktop support.
 - `story-api` is the main convergence point: it depends on `ast`, `tweedle`, `scenegraph`, `glrender`, and `util`, while also carrying the bundled `Jama` math package.
 - `glrender` is the JOGL/GlueGen bridge; `alice-ide` and `netbeans` reach JavaFX through launcher/plugin wiring rather than only through direct Java code imports.
+- `story-api-migration` is shown as its own direct edge because both `ide` and `netbeans` declare it explicitly for project I/O, while the remaining support modules stay grouped as `i18n`, `image-editor`, `issue-reporting`, `resources`, and `models`.
 
 ## Mermaid
 
@@ -20,7 +21,8 @@ flowchart TD
   glrender["glrender<br/>JOGL 2.5.0 + GlueGen 2.5.0"]
   storyapi["story-api<br/>jsvg + FlatLaf<br/>vendored Jama.*"]
   croquet["croquet<br/>wrapped-flow-layout + FlatLaf"]
-  support["support modules<br/>i18n + image-editor + issue-reporting<br/>resources + models + story-api-migration"]
+  support["support modules<br/>i18n + image-editor + issue-reporting<br/>resources + models"]
+  migration["story-api-migration<br/>project I/O bridge"]
   ide["ide"]
   modelloading["model-loading<br/>Collada + glTF + JAXB"]
   aliceide["alice-ide<br/>EntryPoint launcher"]
@@ -38,6 +40,7 @@ flowchart TD
   storyapi --> ast
   croquet --> util
   ide --> support
+  ide --> migration
   ide --> util
   ide --> ast
   ide --> croquet
@@ -51,6 +54,7 @@ flowchart TD
   modelloading --> storyapi
   aliceide --> ide
   netbeans --> support
+  netbeans --> migration
   netbeans --> util
   netbeans --> ast
   netbeans --> scenegraph
@@ -93,7 +97,9 @@ vendored Jama.*", fillcolor="#D5F5E3"];
 wrapped-flow-layout + FlatLaf"];
   support [label="support modules
 i18n + image-editor + issue-reporting
-resources + models + story-api-migration", fillcolor="#EBF5FB"];
+resources + models", fillcolor="#EBF5FB"];
+  migration [label="story-api-migration
+project I/O bridge", fillcolor="#EBF5FB"];
   ide [label="ide", fillcolor="#FADBD8"];
   modelloading [label="model-loading
 Collada + glTF + JAXB", fillcolor="#FADBD8"];
@@ -120,6 +126,7 @@ core/story-api/src/main/java/Jama", fillcolor="#FEF5E7"];
   storyapi -> ast;
   croquet -> util;
   ide -> support;
+  ide -> migration;
   ide -> util;
   ide -> ast;
   ide -> croquet;
@@ -133,6 +140,7 @@ core/story-api/src/main/java/Jama", fillcolor="#FEF5E7"];
   modelloading -> storyapi;
   aliceide -> ide;
   netbeans -> support;
+  netbeans -> migration;
   netbeans -> util;
   netbeans -> ast;
   netbeans -> scenegraph;

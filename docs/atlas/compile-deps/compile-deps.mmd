@@ -6,7 +6,8 @@ flowchart TD
   glrender["glrender<br/>JOGL 2.5.0 + GlueGen 2.5.0"]
   storyapi["story-api<br/>jsvg + FlatLaf<br/>vendored Jama.*"]
   croquet["croquet<br/>wrapped-flow-layout + FlatLaf"]
-  support["support modules<br/>i18n + image-editor + issue-reporting<br/>resources + models + story-api-migration"]
+  support["support modules<br/>i18n + image-editor + issue-reporting<br/>resources + models"]
+  migration["story-api-migration<br/>project I/O bridge"]
   ide["ide"]
   modelloading["model-loading<br/>Collada + glTF + JAXB"]
   aliceide["alice-ide<br/>EntryPoint launcher"]
@@ -24,6 +25,7 @@ flowchart TD
   storyapi --> ast
   croquet --> util
   ide --> support
+  ide --> migration
   ide --> util
   ide --> ast
   ide --> croquet
@@ -37,6 +39,7 @@ flowchart TD
   modelloading --> storyapi
   aliceide --> ide
   netbeans --> support
+  netbeans --> migration
   netbeans --> util
   netbeans --> ast
   netbeans --> scenegraph

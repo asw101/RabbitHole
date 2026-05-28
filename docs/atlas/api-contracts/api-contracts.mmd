@@ -31,11 +31,13 @@ flowchart TD
   subgraph vm["Virtual machine contracts"]
     runctx["ProgramContext / RunProgramContext"]
     releasevm["ReleaseVirtualMachine<br/>ENTRY_POINT_createInstance / invoke"]
+    astvm["org.lgna.project.virtualmachine.VirtualMachine<br/>addVirtualMachineListener / removeVirtualMachineListener"]
     vmlisten["VirtualMachineListener<br/>statementExecuting / statementExecuted<br/>expressionEvaluated"]
     tweedlevm["org.alice.tweedle.run.VirtualMachine<br/>createInstance / invoke / evaluate / executeStatement"]
 
     runctx --> releasevm
-    releasevm --> vmlisten
+    releasevm --> astvm
+    astvm --> vmlisten
   end
 
   subgraph story["Story API facade"]
@@ -61,22 +63,32 @@ flowchart TD
 
   subgraph io["Project I/O contracts"]
     loader["AbstractFileProjectLoader.load"]
-    ioutils["IoUtilities<br/>readProject / writeProject / exportProject / writeType"]
-    xmlio["XmlProjectIo<br/>XmlProjectReader / XmlProjectWriter"]
-    app["ProjectApplication<br/>saveProjectTo / exportProjectTo"]
-    files["ProjectFileUtilities<br/>saveCopyOfProjectTo / exportCopyOfProjectTo"]
+    readio["IoUtilities.projectReader"]
+    xmlread["XmlProjectIo.reader<br/>load .a3p"]
+    saveapp["ProjectApplication.saveProjectTo"]
+    savefiles["ProjectFileUtilities.saveCopyOfProjectTo"]
+    saveio["IoUtilities.writeProject"]
+    xmlwrite["XmlProjectIo.writer<br/>save .a3p"]
+    exportapp["ProjectApplication.exportProjectTo"]
+    exportfiles["ProjectFileUtilities.exportCopyOfProjectTo"]
+    exportio["IoUtilities.exportProject"]
+    jsonwrite["JsonProjectIo.writer<br/>export .a3w"]
 
-    loader --> ioutils
-    ioutils --> xmlio
-    app --> files
-    files --> ioutils
+    loader --> readio
+    readio --> xmlread
+    saveapp --> savefiles
+    savefiles --> saveio
+    saveio --> xmlwrite
+    exportapp --> exportfiles
+    exportfiles --> exportio
+    exportio --> jsonwrite
   end
 
-  filemenu --> app
+  filemenu --> saveapp
+  filemenu --> exportapp
   runmenu --> runctx
   decls --> sthing
   gallery --> composite
   releasevm --> sprog
-  tweedlevm -. alternate interpreter surface .-> vmlisten
   smove --> xform
   smodel --> composite

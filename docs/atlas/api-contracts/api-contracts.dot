@@ -42,11 +42,13 @@ digraph api_contracts {
     style="rounded";
     runctx [label="ProgramContext / RunProgramContext", fillcolor="#D5F5E3"];
     releasevm [label="ReleaseVirtualMachine\nENTRY_POINT_createInstance / invoke", fillcolor="#D5F5E3"];
+    astvm [label="org.lgna.project.virtualmachine.VirtualMachine\naddVirtualMachineListener / removeVirtualMachineListener", fillcolor="#D5F5E3"];
     vmlisten [label="VirtualMachineListener\nstatementExecuting / statementExecuted\nexpressionEvaluated", fillcolor="#D5F5E3"];
     tweedlevm [label="org.alice.tweedle.run.VirtualMachine\ncreateInstance / invoke / evaluate / executeStatement", fillcolor="#D5F5E3"];
 
     runctx -> releasevm;
-    releasevm -> vmlisten;
+    releasevm -> astvm;
+    astvm -> vmlisten;
   }
 
   subgraph cluster_story {
@@ -81,23 +83,33 @@ digraph api_contracts {
     color="#D2B4DE";
     style="rounded";
     loader [label="AbstractFileProjectLoader.load", fillcolor="#EBDEF0"];
-    ioutils [label="IoUtilities\nreadProject / writeProject / exportProject / writeType", fillcolor="#EBDEF0"];
-    xmlio [label="XmlProjectIo\nXmlProjectReader / XmlProjectWriter", fillcolor="#EBDEF0"];
-    app [label="ProjectApplication\nsaveProjectTo / exportProjectTo", fillcolor="#EBDEF0"];
-    files [label="ProjectFileUtilities\nsaveCopyOfProjectTo / exportCopyOfProjectTo", fillcolor="#EBDEF0"];
+    readio [label="IoUtilities.projectReader", fillcolor="#EBDEF0"];
+    xmlread [label="XmlProjectIo.reader\nload .a3p", fillcolor="#EBDEF0"];
+    saveapp [label="ProjectApplication.saveProjectTo", fillcolor="#EBDEF0"];
+    savefiles [label="ProjectFileUtilities.saveCopyOfProjectTo", fillcolor="#EBDEF0"];
+    saveio [label="IoUtilities.writeProject", fillcolor="#EBDEF0"];
+    xmlwrite [label="XmlProjectIo.writer\nsave .a3p", fillcolor="#EBDEF0"];
+    exportapp [label="ProjectApplication.exportProjectTo", fillcolor="#EBDEF0"];
+    exportfiles [label="ProjectFileUtilities.exportCopyOfProjectTo", fillcolor="#EBDEF0"];
+    exportio [label="IoUtilities.exportProject", fillcolor="#EBDEF0"];
+    jsonwrite [label="JsonProjectIo.writer\nexport .a3w", fillcolor="#EBDEF0"];
 
-    loader -> ioutils;
-    ioutils -> xmlio;
-    app -> files;
-    files -> ioutils;
+    loader -> readio;
+    readio -> xmlread;
+    saveapp -> savefiles;
+    savefiles -> saveio;
+    saveio -> xmlwrite;
+    exportapp -> exportfiles;
+    exportfiles -> exportio;
+    exportio -> jsonwrite;
   }
 
-  filemenu -> app;
+  filemenu -> saveapp;
+  filemenu -> exportapp;
   runmenu -> runctx;
   decls -> sthing;
   gallery -> composite;
   releasevm -> sprog;
-  tweedlevm -> vmlisten [style=dashed, label="alternate interpreter surface"];
   smove -> xform;
   smodel -> composite;
 }

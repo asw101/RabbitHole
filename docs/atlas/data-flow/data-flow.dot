@@ -22,11 +22,14 @@ digraph data_flow {
   interact [label="interact manipulators + handles", fillcolor="#F5B7B1"];
   transform [label="AbstractTransformable.setTransformation", fillcolor="#F5B7B1"];
 
-  saveReq [label="SaveProjectOperation /\nProjectApplication.saveProjectTo", fillcolor="#D2B4DE"];
-  snapshot [label="ProjectFileUtilities.saveCopyOfProjectTo", fillcolor="#D2B4DE"];
-  writeXml [label="XmlProjectIo.writeType / writeResources", fillcolor="#D2B4DE"];
-  zip [label="ZipOutputStream + manifest + resources", fillcolor="#D2B4DE"];
+  saveReq [label="ProjectApplication.saveProjectTo", fillcolor="#D2B4DE"];
+  saveCopy [label="ProjectFileUtilities.saveCopyOfProjectTo", fillcolor="#D2B4DE"];
+  saveIo [label="IoUtilities.writeProject\nXmlProjectIo.writer", fillcolor="#D2B4DE"];
   outA3p [label=".a3p archive", fillcolor="#D2B4DE"];
+  exportReq [label="ProjectApplication.exportProjectTo", fillcolor="#D2B4DE"];
+  exportCopy [label="ProjectFileUtilities.exportCopyOfProjectTo", fillcolor="#D2B4DE"];
+  exportIo [label="IoUtilities.exportProject\nJsonProjectIo.writer", fillcolor="#D2B4DE"];
+  outA3w [label=".a3w archive", fillcolor="#D2B4DE"];
 
   loadA3p -> loadReq;
   loadReq -> readIo;
@@ -45,9 +48,13 @@ digraph data_flow {
   interact -> transform;
   transform -> scenegraph;
 
-  saveReq -> snapshot;
-  ast -> snapshot;
-  snapshot -> writeXml;
-  writeXml -> zip;
-  zip -> outA3p;
+  saveReq -> saveCopy;
+  ast -> saveCopy;
+  saveCopy -> saveIo;
+  saveIo -> outA3p;
+
+  exportReq -> exportCopy;
+  ast -> exportCopy;
+  exportCopy -> exportIo;
+  exportIo -> outA3w;
 }

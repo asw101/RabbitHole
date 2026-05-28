@@ -20,7 +20,9 @@ vendored Jama.*", fillcolor="#D5F5E3"];
 wrapped-flow-layout + FlatLaf"];
   support [label="support modules
 i18n + image-editor + issue-reporting
-resources + models + story-api-migration", fillcolor="#EBF5FB"];
+resources + models", fillcolor="#EBF5FB"];
+  migration [label="story-api-migration
+project I/O bridge", fillcolor="#EBF5FB"];
   ide [label="ide", fillcolor="#FADBD8"];
   modelloading [label="model-loading
 Collada + glTF + JAXB", fillcolor="#FADBD8"];
@@ -47,6 +49,7 @@ core/story-api/src/main/java/Jama", fillcolor="#FEF5E7"];
   storyapi -> ast;
   croquet -> util;
   ide -> support;
+  ide -> migration;
   ide -> util;
   ide -> ast;
   ide -> croquet;
@@ -60,6 +63,7 @@ core/story-api/src/main/java/Jama", fillcolor="#FEF5E7"];
   modelloading -> storyapi;
   aliceide -> ide;
   netbeans -> support;
+  netbeans -> migration;
   netbeans -> util;
   netbeans -> ast;
   netbeans -> scenegraph;
