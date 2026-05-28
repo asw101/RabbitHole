@@ -377,6 +377,27 @@ The new behavior tests complement (not replace) existing test files:
 | `PlaceAnimationTest` | Place animation logic | Independent — animation internals |
 | `OrientationDataTest` | Orientation data handling | Independent — data structure tests |
 | `VehicleManagerTest` | Vehicle hierarchy logic | Complementary — new tests cover EntityImp side |
+| `AbstractEventHandlerAsyncTest` | Event handler async dispatch | Independent — tests isFiringMap lifecycle |
+
+### AbstractEventHandlerAsyncTest
+
+**File:** `src/test/java/org/lgna/story/implementation/eventhandling/AbstractEventHandlerAsyncTest.java`
+
+Tests `AbstractEventHandler` event dispatch lifecycle using a minimal
+`TestEventHandler` subclass. All tests are async-safe and use `CountDownLatch`
++ polling with bounded timeouts (5 seconds).
+
+| Category | Test method | Status |
+|---|---|---|
+| Enqueue policy | `enqueuePolicyDeliversQueuedEventsAfterActiveListenerCompletes` | ✅ Exists |
+| Silence/restore | `silenceAndRestoreToggleEventDelivery` | ✅ Exists |
+| Exception safety | `isFiringMapClearedEvenWhenFireThrows` | ✅ Exists |
+
+The exception-safety test (`isFiringMapClearedEvenWhenFireThrows`) is the
+characterization test for the try-finally fix in `newEventCall()`. It
+confirms that the `isFiringMap` flag is always cleared even when `fire()`
+throws. See [Event Handler Thread Safety](../../docs/architecture/event-handler-thread-safety.md)
+for the full design rationale.
 
 ---
 
