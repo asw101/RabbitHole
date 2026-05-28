@@ -1,0 +1,37 @@
+graph TD
+  stage["StageIDE<br/>story-specific IDE shell"]
+  persp["perspectives.*<br/>Code + SetupScene perspectives"]
+  scene["sceneeditor.*<br/>looking glass + selection + lifecycle"]
+  gallery["gallerybrowser.*<br/>gallery tabs + drag models"]
+  modelres["modelresource.*<br/>resource keys + type mapping"]
+  run["run.* + program.*<br/>RunComposite + RunProgramContext"]
+  ast["ast.*<br/>bootstrap scene/program methods"]
+  apis["apis.*<br/>story/event adapters for VM"]
+  cascade["cascade.*<br/>story expression cascades"]
+  croquet["croquet.*<br/>stageide dialogs and operations"]
+  member["member.*<br/>story-specific member UI"]
+  props["properties.*<br/>property adapters + controllers"]
+  typepkg["type.*<br/>other-type dialog + type filters"]
+  inst["instancefactory.*<br/>joint and scene instance factories"]
+  oneshot["oneshot.*<br/>one-shot animation menus"]
+
+  stage --> persp
+  stage --> scene
+  stage --> run
+  stage --> ast
+  stage --> apis
+  persp --> scene
+  persp --> gallery
+  persp --> run
+  gallery --> modelres
+  gallery --> ast
+  scene --> inst
+  scene --> props
+  scene --> ast
+  scene --> apis
+  croquet --> cascade
+  croquet --> oneshot
+  member --> ast
+  typepkg --> modelres
+  typepkg --> ast
+  inst --> modelres

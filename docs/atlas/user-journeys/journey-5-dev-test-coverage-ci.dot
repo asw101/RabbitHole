@@ -1,0 +1,28 @@
+digraph journey_5_dev_test_coverage_ci {
+  rankdir=LR;
+  graph [fontname="Helvetica", labelloc=t, label="Journey 5: developer runs tests, measures coverage, pushes to CI"];
+  node [shape=box, style="rounded,filled", fillcolor="#F8F9FA", color="#34495E", fontname="Helvetica"];
+  edge [color="#5D6D7E", arrowsize=0.8];
+
+  Developer [shape=oval, fillcolor="#FCF3CF"];
+  Maven [label="local mvn", fillcolor="#D6EAF8"];
+  Surefire [label="surefire tests", fillcolor="#D6EAF8"];
+  JaCoCo [label="-Pcoverage verify", fillcolor="#D5F5E3"];
+  Summary [label="summarize-jacoco-coverage.py", fillcolor="#D5F5E3"];
+  TestCI [label="alice-test-ci.yml", fillcolor="#FADBD8"];
+  CoverageCI [label="alice-coverage-ci.yml", fillcolor="#FADBD8"];
+  Artifacts [label="uploaded evidence artifact", fillcolor="#EBDEF0"];
+
+  Developer -> Maven [label="1 clean test"];
+  Maven -> Surefire [label="2 run headless no-Sims tests"];
+  Surefire -> Developer [label="3 results"];
+  Developer -> JaCoCo [label="4 coverage verify"];
+  JaCoCo -> Summary [label="5 aggregate + module reports"];
+  Summary -> Developer [label="6 coverage summary"];
+  Developer -> TestCI [label="7 push branch / PR"];
+  TestCI -> Maven [label="8 submodule + setup-java + clean test"];
+  Developer -> CoverageCI [label="9 same push triggers coverage"];
+  CoverageCI -> JaCoCo [label="10 verify + coverage reports"];
+  CoverageCI -> Summary [label="11 summarize and gate"];
+  CoverageCI -> Artifacts [label="12 upload evidence"];
+}

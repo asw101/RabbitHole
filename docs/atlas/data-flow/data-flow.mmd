@@ -1,0 +1,23 @@
+flowchart LR
+  loadA3p[".a3p archive"] --> loadReq["OpenProjectOperation / AbstractFileProjectLoader"]
+  loadReq --> readIo["IoUtilities.projectReader"]
+  readIo --> readXml["XmlProjectIo.readXML<br/>SecureXmlParser + XmlEncoderDecoder"]
+  readXml --> ast["Project / NamedUserType AST"]
+  ast --> sceneboot["ProgramContext / SceneImp"]
+  sceneboot --> scenegraph["scenegraph Composite + Transformable"]
+  scenegraph --> render["GlrRenderFactory / OnscreenRenderTarget"]
+
+  editUi["CodeEditor / DeclarationsEditorComposite"] --> astMut["UserMethod / BlockStatement mutation"]
+  astMut --> ast
+  ast --> generated["CodeGenerator / SourceCodeGenerator<br/>JavaCodeGenerator + HtmlEncoder"]
+  generated --> display["TypeEditor / printed HTML / exported text"]
+
+  dragUi["SceneEditorDropReceptor / GlobalDragAdapter"] --> interact["interact manipulators + handles"]
+  interact --> transform["AbstractTransformable.setTransformation"]
+  transform --> scenegraph
+
+  saveReq["SaveProjectOperation / ProjectApplication.saveProjectTo"] --> snapshot["ProjectFileUtilities.saveCopyOfProjectTo"]
+  ast --> snapshot
+  snapshot --> writeXml["XmlProjectIo.writeType / writeResources"]
+  writeXml --> zip["ZipOutputStream + manifest + resources"]
+  zip --> outA3p[".a3p archive"]

@@ -1,0 +1,33 @@
+digraph journey_1_open_edit_run {
+  rankdir=LR;
+  graph [fontname="Helvetica", labelloc=t, label="Journey 1: open project, edit procedure, run world"];
+  node [shape=box, style="rounded,filled", fillcolor="#F8F9FA", color="#34495E", fontname="Helvetica"];
+  edge [color="#5D6D7E", arrowsize=0.8];
+
+  Student [shape=oval, fillcolor="#FCF3CF"];
+  EntryPoint [label="EntryPoint.main", fillcolor="#D6EAF8"];
+  IDE [label="StageIDE", fillcolor="#D6EAF8"];
+  Loader [label="AbstractFileProjectLoader", fillcolor="#D5F5E3"];
+  IO [label="IoUtilities / XmlProjectIo", fillcolor="#D5F5E3"];
+  Frame [label="ProjectDocumentFrame", fillcolor="#D6EAF8"];
+  Editor [label="DeclarationsEditorComposite / CodeEditor", fillcolor="#FADBD8"];
+  AST [label="Project AST", fillcolor="#FADBD8"];
+  Run [label="RunComposite", fillcolor="#EBDEF0"];
+  VM [label="RunProgramContext / ReleaseVirtualMachine", fillcolor="#EBDEF0"];
+  World [label="SProgram / SceneImp", fillcolor="#D2B4DE"];
+  Render [label="OnscreenRenderTarget", fillcolor="#D2B4DE"];
+
+  Student -> EntryPoint [label="1 launch Alice"];
+  EntryPoint -> IDE [label="2 initialize(args)"];
+  Student -> IDE [label="3 open .a3p"];
+  IDE -> Loader [label="4 load project"];
+  Loader -> IO [label="5 projectReader/readProject"];
+  IO -> AST [label="6 decode XML -> NamedUserType"];
+  IDE -> Frame [label="7 set project + perspective"];
+  Student -> Editor [label="8 select procedure"];
+  Editor -> AST [label="9 mutate method body"];
+  Student -> Run [label="10 click Run"];
+  Run -> VM [label="11 init + setActiveScene()"];
+  VM -> World [label="12 create/invoke program"];
+  World -> Render [label="13 activate + render"];
+}

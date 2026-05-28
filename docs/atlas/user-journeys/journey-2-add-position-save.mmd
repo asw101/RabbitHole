@@ -1,0 +1,25 @@
+sequenceDiagram
+  actor Student
+  participant Setup as SetupScenePerspective
+  participant Gallery as GalleryComposite
+  participant Drop as SceneEditorDropReceptor
+  participant Drag as GlobalDragAdapter
+  participant Scene as StorytellingSceneEditor
+  participant AST as SceneType / UserField AST
+  participant Xform as AbstractTransformable
+  participant Save as ProjectApplication
+  participant Files as ProjectFileUtilities
+  participant IO as IoUtilities / XmlProjectIo
+
+  Student->>Setup: switch to scene setup
+  Student->>Gallery: drag gallery item
+  Gallery->>Drop: GalleryDragModel
+  Drop->>Drag: dragUpdated / SceneDropSite
+  Drag->>Scene: drop target + selection
+  Scene->>AST: add managed scene field / instance
+  Student->>Scene: drag object to position it
+  Scene->>Drag: manipulator input
+  Drag->>Xform: setTransformation()
+  Student->>Save: save project
+  Save->>Files: saveCopyOfProjectTo
+  Files->>IO: writeProject / writeType / writeResources
