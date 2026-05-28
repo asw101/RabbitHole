@@ -60,6 +60,46 @@ A good rule of thumb:
 
 ## Documentation expectations
 
-Put contributor-facing documentation in `docs/` and link it from
-`docs/index.md`. If your change alters a workflow, command, or contract,
-update the matching docs in the same branch.
+The `docs/` directory contains durable project documentation — content that
+remains useful regardless of which PR introduced it or which sprint produced it.
+
+### What belongs in docs/
+
+- **Getting started, architecture, testing, and contributing guides** that help
+  new contributors get oriented.
+- **Concept explanations** that describe *why* a design exists, not which PR
+  created it.
+- **Architecture atlas diagrams** generated from the codebase.
+
+### What does not belong in docs/
+
+- Per-PR evidence, extraction traces, or validation proofs.
+- Sprint-specific coverage push notes or ratchet-by-ratchet logs.
+- How-to guides that reference a specific issue number or PR as the reason
+  they exist.
+- Tutorials that walk through one refactoring step that has already landed.
+
+These artifacts are useful during review but become noise once the work merges.
+Keep them in `drinkme/` (investigation artifacts) or PR descriptions instead.
+
+### Adding documentation
+
+1. Write the content in `docs/`.
+2. Add a nav entry in `mkdocs.yml`.
+3. Link from `docs/index.md` if the page is a top-level entry point.
+4. Run `mkdocs build --strict` if you have mkdocs installed, or verify
+   the YAML is valid and all nav paths resolve to existing files.
+
+### Site structure
+
+The docs site uses four sections:
+
+| Section | Purpose |
+| --- | --- |
+| **Start here** | Onboarding: clone, build, test, contribute |
+| **Concepts** | Durable design explanations |
+| **Architecture Atlas** | Machine-generated architecture diagrams |
+| *(future sections)* | Add new sections when content does not fit the above |
+
+Keep the site small and navigable. Every page should be useful to someone
+arriving six months after the page was written.
