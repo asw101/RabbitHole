@@ -53,6 +53,9 @@ public class ApplicationRootTest {
     if (SystemUtilities.isWindows()) {
       return "win" + bitCount;
     }
+    if (SystemUtilities.isAarch64Architecture()) {
+      return "linux-aarch64";
+    }
     if (SystemUtilities.isArmArchitecture()) {
       return "linux-armv6hf";
     }
@@ -62,6 +65,9 @@ public class ApplicationRootTest {
   private String expectedJoglSubDirectory() {
     if (SystemUtilities.isMac()) {
       return "natives/macosx-universal/";
+    }
+    if (SystemUtilities.isAarch64Architecture()) {
+      return "natives/linux-aarch64/";
     }
     if (SystemUtilities.isArmArchitecture()) {
       return "natives/linux-armv6hf/";

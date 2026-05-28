@@ -124,6 +124,10 @@ public class ApplicationRoot {
   }
 
   private static void appendArchitecture(StringBuilder sb, Integer bitCount) {
+    if (SystemUtilities.isAarch64Architecture()) {
+      sb.append("aarch64/");
+      return;
+    }
     if (SystemUtilities.isArmArchitecture()) {
       sb.append("armv6hf/");
       return;

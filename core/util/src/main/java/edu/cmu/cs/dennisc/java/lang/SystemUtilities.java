@@ -161,7 +161,11 @@ public class SystemUtilities {
   }
 
   public static boolean isArmArchitecture() {
-    return architecture.contains("arm");
+    return architecture.contains("arm") || architecture.contains("aarch64");
+  }
+
+  public static boolean isAarch64Architecture() {
+    return architecture.contains("aarch64");
   }
 
   public static boolean isMac() {
