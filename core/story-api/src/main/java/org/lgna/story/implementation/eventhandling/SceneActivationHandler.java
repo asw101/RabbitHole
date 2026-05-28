@@ -47,7 +47,6 @@ import org.lgna.story.MultipleEventPolicy;
 import org.lgna.story.event.SceneActivationEvent;
 import org.lgna.story.event.SceneActivationListener;
 
-import java.util.LinkedHashSet;
 import java.util.List;
 
 /**
@@ -58,12 +57,7 @@ public class SceneActivationHandler extends AbstractEventHandler<SceneActivation
   private final List<SceneActivationListener> listeners = Lists.newCopyOnWriteArrayList();
 
   public void handleEventFire(SceneActivationEvent event) {
-    // Deduplicate when iterating so that the same listener registered
-    // multiple times is only fired once per event. The in-flight lock in
-    // AbstractEventHandler.fireEvent is racy when the ComponentExecutor
-    // thread completes before the next loop iteration, which can cause
-    // duplicate callbacks.
-    for (SceneActivationListener listener : new LinkedHashSet<>(listeners)) {
+    for (SceneActivationListener listener : listeners) {
       fireEvent(listener, event);
     }
   }
