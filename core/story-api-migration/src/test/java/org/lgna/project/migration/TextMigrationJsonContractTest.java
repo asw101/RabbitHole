@@ -28,6 +28,12 @@ import static org.junit.Assert.fail;
  */
 public class TextMigrationJsonContractTest {
 
+  // Cached reflection — avoids per-call Class.forName and getDeclaredField in extractPairs()
+  private static Field cachedPairsField;
+  private static Field cachedPatternField;
+  private static Field cachedReplacementField;
+  private static String cachedLegacyPropName;
+
   // ── JSON resource existence (FAILS on develop) ────────────────────
 
   @Test
@@ -108,13 +114,9 @@ public class TextMigrationJsonContractTest {
 
   @Test
   public void jsonAndLegacy_haveSameMigrationCount() throws Exception {
-    String previousValue = System.getProperty(
-        (String) TextMigrationRegistry.class.getDeclaredField("USE_LEGACY_REGISTRIES_PROPERTY").get(null));
+    String propName = getLegacyPropertyName();
+    String previousValue = System.getProperty(propName);
     try {
-      Field prop = TextMigrationRegistry.class.getDeclaredField("USE_LEGACY_REGISTRIES_PROPERTY");
-      prop.setAccessible(true);
-      String propName = (String) prop.get(null);
-
       System.setProperty(propName, Boolean.TRUE.toString());
       TextMigration[] legacy = TextMigrationRegistry.createAll();
 
@@ -124,18 +126,13 @@ public class TextMigrationJsonContractTest {
       assertEquals("JSON migration count must match legacy count",
           legacy.length, json.length);
     } finally {
-      restoreProperty(
-          (String) TextMigrationRegistry.class.getDeclaredField("USE_LEGACY_REGISTRIES_PROPERTY").get(null),
-          previousValue);
+      restoreProperty(propName, previousValue);
     }
   }
 
   @Test
   public void jsonAndLegacy_haveIdenticalVersionsInOrder() throws Exception {
-    Field prop = TextMigrationRegistry.class.getDeclaredField("USE_LEGACY_REGISTRIES_PROPERTY");
-    prop.setAccessible(true);
-    String propName = (String) prop.get(null);
-
+    String propName = getLegacyPropertyName();
     String previousValue = System.getProperty(propName);
     try {
       System.setProperty(propName, Boolean.TRUE.toString());
@@ -156,10 +153,7 @@ public class TextMigrationJsonContractTest {
 
   @Test
   public void jsonAndLegacy_haveIdenticalPairsPerVersion() throws Exception {
-    Field prop = TextMigrationRegistry.class.getDeclaredField("USE_LEGACY_REGISTRIES_PROPERTY");
-    prop.setAccessible(true);
-    String propName = (String) prop.get(null);
-
+    String propName = getLegacyPropertyName();
     String previousValue = System.getProperty(propName);
     try {
       System.setProperty(propName, Boolean.TRUE.toString());
@@ -197,24 +191,37 @@ public class TextMigrationJsonContractTest {
     return null;
   }
 
+  private static void ensurePairReflectionCached() throws Exception {
+    if (cachedPairsField == null) {
+      cachedPairsField = TextMigration.class.getDeclaredField("pairs");
+      cachedPairsField.setAccessible(true);
+      Class<?> pairClass = Class.forName(TextMigration.class.getName() + "$Pair");
+      cachedPatternField = pairClass.getDeclaredField("pattern");
+      cachedPatternField.setAccessible(true);
+      cachedReplacementField = pairClass.getDeclaredField("replacement");
+      cachedReplacementField.setAccessible(true);
+    }
+  }
+
   private static List<PairData> extractPairs(TextMigration migration) throws Exception {
-    Field pairsField = TextMigration.class.getDeclaredField("pairs");
-    pairsField.setAccessible(true);
-
-    Class<?> pairClass = Class.forName(TextMigration.class.getName() + "$Pair");
-    Field patternField = pairClass.getDeclaredField("pattern");
-    patternField.setAccessible(true);
-    Field replacementField = pairClass.getDeclaredField("replacement");
-    replacementField.setAccessible(true);
-
-    Object[] pairs = (Object[]) pairsField.get(migration);
+    ensurePairReflectionCached();
+    Object[] pairs = (Object[]) cachedPairsField.get(migration);
     List<PairData> result = new ArrayList<>(pairs.length);
     for (Object pair : pairs) {
       result.add(new PairData(
-          ((Pattern) patternField.get(pair)).pattern(),
-          (String) replacementField.get(pair)));
+          ((Pattern) cachedPatternField.get(pair)).pattern(),
+          (String) cachedReplacementField.get(pair)));
     }
     return result;
+  }
+
+  private static String getLegacyPropertyName() throws Exception {
+    if (cachedLegacyPropName == null) {
+      Field prop = TextMigrationRegistry.class.getDeclaredField("USE_LEGACY_REGISTRIES_PROPERTY");
+      prop.setAccessible(true);
+      cachedLegacyPropName = (String) prop.get(null);
+    }
+    return cachedLegacyPropName;
   }
 
   private static void restoreProperty(String propName, String previousValue) {

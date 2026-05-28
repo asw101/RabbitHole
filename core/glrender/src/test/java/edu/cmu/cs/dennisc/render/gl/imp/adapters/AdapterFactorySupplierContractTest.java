@@ -61,18 +61,14 @@ public class AdapterFactorySupplierContractTest {
 
   @Test
   public void supplierMap_isPopulated() throws Exception {
-    Field field = AdapterFactory.class.getDeclaredField("s_supplierMap");
-    field.setAccessible(true);
-    Map<?, ?> map = (Map<?, ?>) field.get(null);
+    Map<?, ?> map = getSupplierMap();
     assertNotNull(map);
     assertTrue("s_supplierMap must have registrations", map.size() > 0);
   }
 
   @Test
   public void supplierMap_containsCoreScenegraphTypes() throws Exception {
-    Field field = AdapterFactory.class.getDeclaredField("s_supplierMap");
-    field.setAccessible(true);
-    Map<?, ?> map = (Map<?, ?>) field.get(null);
+    Map<?, ?> map = getSupplierMap();
 
     Class<?>[] requiredTypes = {
         Scene.class, Transformable.class, Visual.class,
@@ -93,9 +89,7 @@ public class AdapterFactorySupplierContractTest {
 
   @Test
   public void supplierMap_hasAtLeast30Registrations() throws Exception {
-    Field field = AdapterFactory.class.getDeclaredField("s_supplierMap");
-    field.setAccessible(true);
-    Map<?, ?> map = (Map<?, ?>) field.get(null);
+    Map<?, ?> map = getSupplierMap();
     assertTrue("Must have at least 30 Supplier registrations (was " + map.size() + ")",
         map.size() >= 30);
   }
@@ -206,5 +200,11 @@ public class AdapterFactorySupplierContractTest {
     for (int i = 1; i < 20; i++) {
       assertSame("Concurrent access must return same adapter", results[0], results[i]);
     }
+  }
+
+  private static Map<?, ?> getSupplierMap() throws Exception {
+    Field field = AdapterFactory.class.getDeclaredField("s_supplierMap");
+    field.setAccessible(true);
+    return (Map<?, ?>) field.get(null);
   }
 }

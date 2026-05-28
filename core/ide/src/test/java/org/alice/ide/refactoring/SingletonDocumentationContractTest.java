@@ -22,15 +22,22 @@ import static org.junit.Assert.assertTrue;
  */
 public class SingletonDocumentationContractTest {
 
+  private static Path cachedRepoRoot;
+
   private static Path findRepoRoot() {
+    if (cachedRepoRoot != null) {
+      return cachedRepoRoot;
+    }
     Path current = Paths.get("").toAbsolutePath();
     while (current != null) {
       if (Files.exists(current.resolve("pom.xml")) && Files.exists(current.resolve("docs"))) {
-        return current;
+        cachedRepoRoot = current;
+        return cachedRepoRoot;
       }
       current = current.getParent();
     }
-    return Paths.get("").toAbsolutePath();
+    cachedRepoRoot = Paths.get("").toAbsolutePath();
+    return cachedRepoRoot;
   }
 
   // ── Documentation file existence ──────────────────────────────────
