@@ -3,7 +3,7 @@
 #
 # TDD contract: every scenario YAML in scenarios/ must carry gadugi-test
 # compatible fields (name, steps, agents) and pass gadugi-test validate.
-set -u
+set -eu
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 BASE_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)

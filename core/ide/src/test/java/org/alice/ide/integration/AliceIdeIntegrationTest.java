@@ -1,5 +1,7 @@
 package org.alice.ide.integration;
 
+/** Audit note: this integration test is ~2147 LOC and should be split into focused suites in a future refactoring. */
+
 import edu.cmu.cs.dennisc.color.Color4f;
 import edu.cmu.cs.dennisc.javax.swing.components.AbstractHyperlink;
 import edu.cmu.cs.dennisc.scenegraph.Box;

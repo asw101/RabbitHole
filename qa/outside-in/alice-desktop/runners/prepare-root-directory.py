@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import subprocess
 import sys
 import xml.etree.ElementTree as ET
@@ -16,6 +17,7 @@ ROOT_PROPERTY = "org.alice.ide.rootDirectory"
 EXPECTED_ROOT = "../core/resources/target/distribution"
 MAVEN_PHASE = "process-resources"
 MAVEN_PROJECT = "core/resources"
+LOGGER = logging.getLogger(__name__)
 PREP_COMMAND = [
     "mvn",
     "-DincludeSims=false",
@@ -65,7 +67,8 @@ def child_text(element: ET.Element, name: str) -> str:
 def configured_root_directory(pom_path: Path) -> str:
     try:
         tree = ET.parse(pom_path)
-    except (OSError, ET.ParseError):
+    except (OSError, ET.ParseError) as exc:
+        LOGGER.warning("Failed to inspect %s for %s: %s", pom_path, ROOT_PROPERTY, exc)
         return ""
 
     for element in tree.iter():

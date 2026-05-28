@@ -1,5 +1,7 @@
 package org.lgna.project.io;
 
+/** Audit note: this characterization test is ~1762 LOC and should be split into focused suites in a future refactoring. */
+
 import edu.cmu.cs.dennisc.pattern.IsInstanceCrawler;
 import org.alice.tweedle.file.ImageReference;
 import org.alice.tweedle.file.Manifest;

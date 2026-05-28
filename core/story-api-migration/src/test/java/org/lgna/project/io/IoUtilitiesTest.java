@@ -1,5 +1,7 @@
 package org.lgna.project.io;
 
+/** Audit note: this characterization-heavy test is ~2388 LOC and should be split into focused suites in a future refactoring. */
+
 import edu.cmu.cs.dennisc.java.util.zip.ByteArrayDataSource;
 import edu.cmu.cs.dennisc.java.util.zip.DataSource;
 import edu.cmu.cs.dennisc.pattern.IsInstanceCrawler;

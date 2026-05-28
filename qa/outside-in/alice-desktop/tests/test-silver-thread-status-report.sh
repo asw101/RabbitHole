@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # qa/outside-in/alice-desktop/tests/test-silver-thread-status-report.sh
-set -uo pipefail
+set -euo pipefail
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd) || exit 2
 REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/../../../.." && pwd) || exit 2

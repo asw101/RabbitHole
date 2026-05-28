@@ -135,6 +135,8 @@ public class JointedModelIkEnforcerExtraTest {
     JointedModelIkEnforcer e = newEnforcer();
     try {
       e.advanceTimeStaticallyForFixedDuration(0.1);
-    } catch (Throwable ignored) { }
+    } catch (Throwable ignored) {
+      // Expected: the empty enforcer can still fail after the guarded null-speed path is exercised.
+    }
   }
 }

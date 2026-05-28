@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # qa/outside-in/alice-desktop/tests/test-world-canvas-pixel-sampler-contract.sh
-set -u
+set -eu
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 BASE_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
@@ -196,7 +196,7 @@ write_sampler_fixture() {
 
   {
     printf '#!/usr/bin/env bash\n'
-    printf 'set -u\n\n'
+    printf 'set -eu\n\n'
     printf 'mode=%s\n' "$(printf '%q' "$mode")"
     printf 'invocation_log=%s\n' "$(printf '%q' "$invocation_log")"
     cat <<'SH'
@@ -379,13 +379,13 @@ cat >"$standalone_dir/target.json" <<'JSON'
 JSON
 cat >"$standalone_dir/fake-bin/xwd" <<'SH'
 #!/usr/bin/env bash
-set -u
+set -eu
 printf 'xwd\n' >>"$SAMPLER_XWD_LOG"
 printf 'fake-root-window-image'
 SH
 cat >"$standalone_dir/fake-bin/convert" <<'SH'
 #!/usr/bin/env bash
-set -u
+set -eu
 printf 'convert %s\n' "$*" >>"$SAMPLER_CONVERT_LOG"
 while IFS= read -r _sampler_input; do
   :

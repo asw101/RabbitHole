@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # qa/outside-in/alice-desktop/tests/run-tests.sh
-set -u
+set -eu
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 status=0

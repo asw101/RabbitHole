@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # qa/outside-in/alice-desktop/tests/test-pr419-readiness-evidence-contract.sh
-set -u
+set -eu
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 BASE_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)

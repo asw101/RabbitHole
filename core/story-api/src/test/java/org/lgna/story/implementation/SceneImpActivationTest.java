@@ -85,13 +85,17 @@ public class SceneImpActivationTest {
   @Test
   public void activateOnly() {
     sceneImp.ACCEPTABLE_HACK_FOR_SCENE_EDITOR_pushPerformMinimalInitialization();
-    try { sceneImp.activate(program); } catch (Throwable ignored) { }
+    try { sceneImp.activate(program); } catch (Throwable ignored) {
+      // Expected: activation may still touch render plumbing beyond this headless test stub.
+    }
     finally { sceneImp.ACCEPTABLE_HACK_FOR_SCENE_EDITOR_popPerformMinimalInitialization(); }
   }
 
   @Test
   public void deactivateWithoutActivateNoOp() {
-    try { sceneImp.deactivate(); } catch (Throwable ignored) { }
+    try { sceneImp.deactivate(); } catch (Throwable ignored) {
+      // Expected: deactivate may observe incomplete activation state in this minimal coverage test.
+    }
   }
 
   @Test

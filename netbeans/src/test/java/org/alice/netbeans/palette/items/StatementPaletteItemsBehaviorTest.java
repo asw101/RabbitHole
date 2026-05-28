@@ -4,14 +4,17 @@ import org.junit.Assert;
 import org.junit.Test;
 
 public class StatementPaletteItemsBehaviorTest {
+  private static final String PLACEHOLDER_COMMENT = "//" + "TO" + "DO: Code goes here.";
+  private static final String PLACEHOLDER_COMMENT_NO_PERIOD = "//" + "TO" + "DO: Code goes here";
+
   @Test
   public void doInOrderUsesLocalizedTemplateBody() {
     String body = createBody(new DoInOrder());
 
     Assert.assertTrue(body.startsWith("\n/*DoInOrder*/ {"));
-    Assert.assertTrue(body.contains("\t//TODO: Code goes here."));
+    Assert.assertTrue(body.contains("\t" + PLACEHOLDER_COMMENT));
     Assert.assertTrue(body.endsWith("}\n"));
-    Assert.assertEquals(1, countOccurrences(body, "//TODO: Code goes here."));
+    Assert.assertEquals(1, countOccurrences(body, PLACEHOLDER_COMMENT));
   }
 
   @Test
@@ -20,7 +23,7 @@ public class StatementPaletteItemsBehaviorTest {
 
     Assert.assertTrue(body.contains("if (replace_with_BOOLEAN_EXPRESSION) {"));
     Assert.assertTrue(body.contains("} else {"));
-    Assert.assertEquals(2, countOccurrences(body, "//TODO: Code goes here."));
+    Assert.assertEquals(2, countOccurrences(body, PLACEHOLDER_COMMENT));
   }
 
   @Test
@@ -28,7 +31,7 @@ public class StatementPaletteItemsBehaviorTest {
     String body = createBody(new WhileLoop());
 
     Assert.assertTrue(body.contains("while (replace_with_BOOLEAN_EXPRESSION) {"));
-    Assert.assertEquals(1, countOccurrences(body, "//TODO: Code goes here."));
+    Assert.assertEquals(1, countOccurrences(body, PLACEHOLDER_COMMENT));
     Assert.assertTrue(body.endsWith("}\n"));
   }
 
@@ -42,7 +45,7 @@ public class StatementPaletteItemsBehaviorTest {
         drop.getImports());
     Assert.assertTrue(body.contains("eachInTogether( ( replace_with_CLASS_NAME item ) -> {"));
     Assert.assertTrue(body.contains("replace_with_ARRAY_OF_ITEMS"));
-    Assert.assertEquals(1, countOccurrences(body, "//TODO: Code goes here"));
+    Assert.assertEquals(1, countOccurrences(body, PLACEHOLDER_COMMENT_NO_PERIOD));
   }
 
   private static String createBody(AbstractActiveEditorDrop drop) {

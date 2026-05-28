@@ -1,5 +1,7 @@
 package org.alice.serialization.tweedle;
 
+/** Audit note: this characterization-heavy test is ~2395 LOC and should be split into focused suites in a future refactoring. */
+
 import org.junit.Test;
 import org.lgna.common.resources.AudioResource;
 import org.lgna.common.resources.ImageResource;

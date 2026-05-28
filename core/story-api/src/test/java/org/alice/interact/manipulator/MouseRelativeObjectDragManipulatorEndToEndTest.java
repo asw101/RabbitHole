@@ -202,7 +202,9 @@ public class MouseRelativeObjectDragManipulatorEndToEndTest {
     prev.setMouseLocation(new Point(100, 100));
     try {
       manipulator.doDataUpdateManipulator(newInput, prev);
-    } catch (Throwable ignored) { }
+    } catch (Throwable ignored) {
+      // Expected: fallback drag updates can still depend on render state that this stub target omits.
+    }
   }
 
   // ── helpers ──

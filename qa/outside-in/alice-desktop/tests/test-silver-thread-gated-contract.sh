@@ -7,7 +7,7 @@
 #   2. Gate-enabled path with fake mvn captures the correct argv
 #   3. Prepare-only path records intentional skip
 #   4. Scenario YAML name field is present and non-empty
-set -u
+set -eu
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 BASE_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
