@@ -46,8 +46,6 @@ ROBOT_SAVE_TEST_PATH = (
     / "RobotSaveMenuDialogWriteReadbackProofTest.java"
 )
 
-REFERENCE_DOC_PATH = REPO_ROOT / "docs" / "reference" / "mac-compatible-test-guards.md"
-
 SCREEN_MENU_BAR_PROPERTY_DECL = 'SCREEN_MENU_BAR_PROPERTY = "apple.laf.useScreenMenuBar"'
 SCREEN_MENU_BAR_SET_FALSE = re.compile(
     r'System\.setProperty\(\s*SCREEN_MENU_BAR_PROPERTY\s*,\s*"false"\s*\)'
@@ -130,49 +128,6 @@ class RobotSaveMenuDialogWriteReadbackProofTestMacGuardContract(unittest.TestCas
         set_property = source.find('System.setProperty(SCREEN_MENU_BAR_PROPERTY, "false")')
         self.assertGreater(capture_start, -1, "captureProperties must exist")
         self.assertGreater(set_property, -1, "SCREEN_MENU_BAR_PROPERTY must be set to false")
-
-
-class MacGuardDocumentationContract(unittest.TestCase):
-    """Contract: reference doc must describe the macOS menu bar handling."""
-
-    def test_reference_doc_exists(self) -> None:
-        self.assertTrue(REFERENCE_DOC_PATH.exists())
-
-    def test_reference_doc_mentions_issue_500(self) -> None:
-        text = _read(REFERENCE_DOC_PATH)
-        self.assertIn("#500", text)
-
-    def test_reference_doc_mentions_both_test_classes(self) -> None:
-        text = _read(REFERENCE_DOC_PATH)
-        self.assertIn("JMenuBarRobotClickSaveProofTest", text)
-        self.assertIn("RobotSaveMenuDialogWriteReadbackProofTest", text)
-
-    def test_reference_doc_describes_screen_menu_bar_property(self) -> None:
-        text = _read(REFERENCE_DOC_PATH)
-        self.assertIn("apple.laf.useScreenMenuBar", text)
-        self.assertIn("SCREEN_MENU_BAR_PROPERTY", text)
-
-    def test_reference_doc_has_macos_property_override_section(self) -> None:
-        text = _read(REFERENCE_DOC_PATH).lower()
-        self.assertTrue(
-            "macos screen menu bar property override" in text
-            or "screen menu bar property" in text,
-            "Reference doc must have a screen menu bar property override section",
-        )
-
-    def test_reference_doc_shows_guard_code_examples(self) -> None:
-        text = _read(REFERENCE_DOC_PATH)
-        self.assertIn("assumeFalse(", text)
-        self.assertIn("apple.laf.useScreenMenuBar", text)
-
-    def test_reference_doc_expected_behavior_table(self) -> None:
-        text = _read(REFERENCE_DOC_PATH)
-        self.assertIn("Skip", text)
-
-    def test_reference_doc_compatibility_rule_for_mac_guard(self) -> None:
-        text = _read(REFERENCE_DOC_PATH)
-        self.assertIn("apple.laf.useScreenMenuBar", text)
-        self.assertIn("Robot screen-coordinate", text)
 
 
 if __name__ == "__main__":

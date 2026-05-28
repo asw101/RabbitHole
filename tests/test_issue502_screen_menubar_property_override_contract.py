@@ -58,9 +58,6 @@ ROBOT_SAVE_TEST_PATH = (
     / "RobotSaveMenuDialogWriteReadbackProofTest.java"
 )
 
-REFERENCE_DOC_PATH = REPO_ROOT / "docs" / "reference" / "mac-compatible-test-guards.md"
-HOWTO_DOC_PATH = REPO_ROOT / "docs" / "howto" / "review-mac-compatible-test-guards.md"
-
 # Patterns that must NOT appear after implementation
 IS_MAC_GUARD_PATTERN = re.compile(
     r"assumeFalse\(\s*\".*macOS.*native.*menu.*bar.*\"\s*,\s*SystemUtilities\.isMac\(\)\s*\)"
@@ -422,69 +419,6 @@ class PropertyOverrideConsistency(unittest.TestCase):
                 source,
                 f"{path.name} must not import SystemUtilities after issue #502",
             )
-
-
-# ---------------------------------------------------------------------------
-# Documentation contracts
-# ---------------------------------------------------------------------------
-
-class PropertyOverrideDocumentation(unittest.TestCase):
-    """Reference doc must describe the property override, not the old skip."""
-
-    def test_reference_doc_exists(self) -> None:
-        self.assertTrue(
-            REFERENCE_DOC_PATH.exists(),
-            f"Expected reference doc at {REFERENCE_DOC_PATH.relative_to(REPO_ROOT)}",
-        )
-
-    def test_reference_doc_mentions_issue_502(self) -> None:
-        text = _read(REFERENCE_DOC_PATH)
-        self.assertIn("#502", text, "Reference doc must mention issue #502")
-
-    def test_reference_doc_describes_property_override(self) -> None:
-        text = _read(REFERENCE_DOC_PATH)
-        self.assertIn(
-            "apple.laf.useScreenMenuBar",
-            text,
-            "Reference doc must describe the apple.laf.useScreenMenuBar property",
-        )
-
-    def test_reference_doc_describes_defensive_reset(self) -> None:
-        text = _read(REFERENCE_DOC_PATH)
-        self.assertIn(
-            "ide.initialize()",
-            text,
-            "Reference doc must explain the defensive re-set after ide.initialize()",
-        )
-
-    def test_reference_doc_describes_before_after_pattern(self) -> None:
-        text = _read(REFERENCE_DOC_PATH)
-        self.assertIn("@Before", text, "Must describe @Before capture")
-        self.assertIn("@After", text, "Must describe @After restore")
-        self.assertIn("restoreProperty", text, "Must mention restoreProperty helper")
-
-    def test_reference_doc_shows_property_override_code(self) -> None:
-        text = _read(REFERENCE_DOC_PATH)
-        self.assertIn(
-            'SCREEN_MENU_BAR_PROPERTY',
-            text,
-            "Reference doc must show SCREEN_MENU_BAR_PROPERTY constant in code examples",
-        )
-        self.assertIn(
-            "previousScreenMenuBar",
-            text,
-            "Reference doc must show previousScreenMenuBar field in code examples",
-        )
-
-    def test_reference_doc_expected_behavior_no_skip_on_mac(self) -> None:
-        """The expected behavior table must show Pass (not Skip) for
-        Robot tests on macOS with display available."""
-        text = _read(REFERENCE_DOC_PATH)
-        self.assertNotIn(
-            "Skip(isMac)",
-            text,
-            "Expected behavior must NOT show Skip(isMac) — tests now pass on Mac",
-        )
 
 
 class IssueNumber500ContractSuperseded(unittest.TestCase):

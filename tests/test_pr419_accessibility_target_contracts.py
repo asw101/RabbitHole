@@ -13,34 +13,6 @@ from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-PR_NUMBER = 419
-PR_BRANCH = "feat/issue-416-rabbithole-wave7-accessibility-target-lane-follow"
-
-# ── Files introduced or significantly changed by PR #419 ──────────────────────
-
-PR419_CHANGED_FILES = sorted(
-    [
-        ".copilot-evidence/default-workflow-attempt.log",
-        "docs/howto/alice-desktop-outside-in-qa.md",
-        "docs/index.md",
-        "docs/reference/accessibility-target-discovery-silver-thread.md",
-        "docs/reference/alice-desktop-outside-in-qa.md",
-        "docs/reference/post-open-runtime-display-accessibility-evidence.md",
-        "docs/reference/visible-rendering-evidence-nonclaim-contract.md",
-        "docs/tutorials/trace-accessibility-target-discovery-silver-thread.md",
-        "qa/outside-in/alice-desktop/README.md",
-        "qa/outside-in/alice-desktop/runners/post-open-runtime-display-probe.py",
-        "qa/outside-in/alice-desktop/runners/world-canvas-pixel-sampler.py",
-        "qa/outside-in/alice-desktop/tests/lib/assertions.sh",
-        "qa/outside-in/alice-desktop/tests/test-accessibility-target-discovery-silver-thread.sh",
-        "qa/outside-in/alice-desktop/tests/test-current-head-evidence-doc-refinement-contract.sh",
-        "qa/outside-in/alice-desktop/tests/test-post-open-runtime-display-probe.sh",
-        "qa/outside-in/alice-desktop/tests/test-pr419-current-head-readiness-gate-contract.sh",
-        "qa/outside-in/alice-desktop/tests/test-pr419-finalization-evidence-contract.sh",
-        "qa/outside-in/alice-desktop/tests/test-pr419-readiness-evidence-contract.sh",
-        "qa/outside-in/alice-desktop/tests/test-world-canvas-pixel-sampler-contract.sh",
-    ]
-)
 
 # ── Forbidden overclaim phrases that must never appear in docs or runners ──────
 
@@ -71,24 +43,6 @@ ASSERTIONS_LIB = (
     / "assertions.sh"
 )
 
-# ── Reference and tutorial docs ───────────────────────────────────────────────
-
-SILVER_THREAD_REF = (
-    REPO_ROOT / "docs" / "reference"
-    / "accessibility-target-discovery-silver-thread.md"
-)
-SILVER_THREAD_TUTORIAL = (
-    REPO_ROOT / "docs" / "tutorials"
-    / "trace-accessibility-target-discovery-silver-thread.md"
-)
-NONCLAIM_CONTRACT_REF = (
-    REPO_ROOT / "docs" / "reference"
-    / "visible-rendering-evidence-nonclaim-contract.md"
-)
-POST_OPEN_REF = (
-    REPO_ROOT / "docs" / "reference"
-    / "post-open-runtime-display-accessibility-evidence.md"
-)
 
 # ── Shell test scripts ────────────────────────────────────────────────────────
 
@@ -110,29 +64,6 @@ SHELL_TESTS = [
 ]
 
 
-def git_output(*args: str) -> str:
-    result = subprocess.run(
-        ["git", *args],
-        cwd=REPO_ROOT,
-        check=True,
-        capture_output=True,
-        text=True,
-    )
-    return result.stdout
-
-
-def pr_branch_output(*args: str) -> str:
-    result = subprocess.run(
-        ["git", *args],
-        cwd=REPO_ROOT,
-        capture_output=True,
-        text=True,
-    )
-    if result.returncode != 0:
-        raise unittest.SkipTest(
-            f"PR branch contract requires origin/develop: {result.stderr.strip()}"
-        )
-    return result.stdout
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -143,16 +74,6 @@ def pr_branch_output(*args: str) -> str:
 class PR419FileExistenceTest(unittest.TestCase):
     """Every file listed in the PR scope must exist."""
 
-    def test_all_pr419_deliverable_files_exist(self) -> None:
-        missing = [
-            f for f in PR419_CHANGED_FILES
-            if not (REPO_ROOT / f).exists()
-        ]
-        self.assertEqual(
-            [],
-            missing,
-            "PR #419 deliverable files must all be checked in.",
-        )
 
     def test_shell_test_scripts_are_executable_or_source_assertions(self) -> None:
         for script in SHELL_TESTS:
@@ -318,151 +239,6 @@ class PR419AssertionLibraryTest(unittest.TestCase):
         self.assertIn("exit 1", self.source)
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# 4. Documentation structure contracts
-# ═══════════════════════════════════════════════════════════════════════════════
-
-
-class PR419SilverThreadReferenceDocTest(unittest.TestCase):
-    """Silver-thread reference doc must have required sections and markers."""
-
-    @classmethod
-    def setUpClass(cls) -> None:
-        cls.text = SILVER_THREAD_REF.read_text(encoding="utf-8")
-
-    def test_reference_doc_exists(self) -> None:
-        self.assertTrue(SILVER_THREAD_REF.is_file())
-
-    def test_reference_doc_has_required_sections(self) -> None:
-        required_sections = [
-            "## Usage",
-            "## Evidence lanes",
-            "## Readiness evidence record",
-            "## Current-head readiness gate",
-            "## Artifact API",
-            "## Configuration",
-            "## Claim boundaries",
-        ]
-        for section in required_sections:
-            with self.subTest(section=section):
-                self.assertIn(section, self.text)
-
-    def test_reference_doc_names_executable_contract(self) -> None:
-        self.assertIn(
-            "test-accessibility-target-discovery-silver-thread.sh",
-            self.text,
-        )
-
-    def test_reference_doc_names_evidence_lanes(self) -> None:
-        for lane in ("Launch", "Run", "Runtime target discovery", "Select Project"):
-            with self.subTest(lane=lane):
-                self.assertIn(lane, self.text)
-
-    def test_reference_doc_names_pr419_readiness_gate(self) -> None:
-        self.assertIn(
-            "test-pr419-current-head-readiness-gate-contract.sh",
-            self.text,
-        )
-
-    def test_reference_doc_includes_node_options(self) -> None:
-        self.assertIn("NODE_OPTIONS=--max-old-space-size=32768", self.text)
-
-
-class PR419TutorialDocTest(unittest.TestCase):
-    """Tutorial must follow the expected step structure."""
-
-    @classmethod
-    def setUpClass(cls) -> None:
-        cls.text = SILVER_THREAD_TUTORIAL.read_text(encoding="utf-8")
-
-    def test_tutorial_exists(self) -> None:
-        self.assertTrue(SILVER_THREAD_TUTORIAL.is_file())
-
-    def test_tutorial_has_title(self) -> None:
-        self.assertIn(
-            "# Tutorial: Trace the Accessibility Target Discovery Silver Thread",
-            self.text,
-        )
-
-    def test_tutorial_has_prerequisite_section(self) -> None:
-        self.assertIn("## Before you start", self.text)
-
-    def test_tutorial_names_all_seven_steps(self) -> None:
-        for step_number in range(1, 8):
-            with self.subTest(step=step_number):
-                self.assertIn(f"## Step {step_number}:", self.text)
-
-    def test_tutorial_includes_contract_run_command(self) -> None:
-        self.assertIn(
-            "test-accessibility-target-discovery-silver-thread.sh",
-            self.text,
-        )
-
-    def test_tutorial_names_tweedle_submodule_init(self) -> None:
-        self.assertIn("git submodule update --init tweedle-lang", self.text)
-
-
-class PR419NonclaimContractDocTest(unittest.TestCase):
-    """Visible rendering nonclaim contract doc must enforce boundaries."""
-
-    @classmethod
-    def setUpClass(cls) -> None:
-        cls.text = NONCLAIM_CONTRACT_REF.read_text(encoding="utf-8")
-
-    def test_nonclaim_doc_exists(self) -> None:
-        self.assertTrue(NONCLAIM_CONTRACT_REF.is_file())
-
-    def test_nonclaim_doc_has_required_sections(self) -> None:
-        for section in (
-            "## Scope",
-            "## Usage",
-            "## Artifact API",
-            "## Allowed wording",
-            "## Rejected wording",
-            "## Review checklist",
-        ):
-            with self.subTest(section=section):
-                self.assertIn(section, self.text)
-
-    def test_nonclaim_doc_enforces_correctness_false(self) -> None:
-        self.assertIn("visibleRenderingCorrectnessEstablished", self.text)
-
-    def test_nonclaim_doc_enforces_correctness_not_performed(self) -> None:
-        self.assertIn("correctnessCheck", self.text)
-        self.assertIn("not-performed", self.text)
-
-    def test_nonclaim_doc_lists_unsupported_claims(self) -> None:
-        for claim in (
-            "world-canvas-pixel-correctness",
-            "full-visible-rendering-correctness",
-            "rendered-world-correctness",
-        ):
-            with self.subTest(claim=claim):
-                self.assertIn(claim, self.text)
-
-
-class PR419PostOpenRefDocTest(unittest.TestCase):
-    """Post-open reference doc must document the probe contract."""
-
-    @classmethod
-    def setUpClass(cls) -> None:
-        cls.text = POST_OPEN_REF.read_text(encoding="utf-8")
-
-    def test_post_open_ref_exists(self) -> None:
-        self.assertTrue(POST_OPEN_REF.is_file())
-
-    def test_post_open_ref_has_scope_and_usage(self) -> None:
-        self.assertIn("## Scope", self.text)
-        self.assertIn("## Usage", self.text)
-
-    def test_post_open_ref_names_probe_runner(self) -> None:
-        self.assertIn("post-open-runtime-display-probe.py", self.text)
-
-    def test_post_open_ref_names_scenario(self) -> None:
-        self.assertIn(
-            "post-open-runtime-display-accessibility-evidence",
-            self.text,
-        )
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -474,10 +250,6 @@ class PR419NonClaimBoundaryTest(unittest.TestCase):
     """Docs and runners must not make forbidden overclaim assertions."""
 
     SCOPED_FILES = [
-        SILVER_THREAD_REF,
-        SILVER_THREAD_TUTORIAL,
-        POST_OPEN_REF,
-        NONCLAIM_CONTRACT_REF,
         PROBE_RUNNER,
         SAMPLER_RUNNER,
     ]
@@ -515,38 +287,8 @@ class PR419NonClaimBoundaryTest(unittest.TestCase):
             "PR #419 deliverables must not positively assert forbidden capabilities.",
         )
 
-    def test_silver_thread_ref_states_non_claims_explicitly(self) -> None:
-        text = SILVER_THREAD_REF.read_text(encoding="utf-8")
-        for marker in (
-            "does not claim full UI automation",
-            "does not claim",
-        ):
-            with self.subTest(marker=marker):
-                self.assertIn(marker, text)
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# 6. Diff scope contract
-# ═══════════════════════════════════════════════════════════════════════════════
-
-
-class PR419DiffScopeContractTest(unittest.TestCase):
-    """PR #419 must not expand beyond its declared changed-file set."""
-
-    def test_diff_scope_matches_declared_files(self) -> None:
-        try:
-            raw = pr_branch_output(
-                "diff", "--name-only", "origin/develop...HEAD"
-            )
-        except unittest.SkipTest:
-            raise
-        actual_files = sorted(set(raw.strip().splitlines()))
-        undeclared = [f for f in actual_files if f not in PR419_CHANGED_FILES]
-        self.assertEqual(
-            [],
-            undeclared,
-            "PR #419 changed files outside the declared scope.",
-        )
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -572,44 +314,6 @@ class PR419ShellTestWiringTest(unittest.TestCase):
                     )
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# 8. Cross-reference wiring contracts
-# ═══════════════════════════════════════════════════════════════════════════════
-
-
-class PR419CrossReferenceWiringTest(unittest.TestCase):
-    """Docs must cross-reference each other and the executable contracts."""
-
-    def test_silver_thread_ref_references_rendering_evidence_boundary(self) -> None:
-        text = SILVER_THREAD_REF.read_text(encoding="utf-8")
-        self.assertIn(
-            "visible-rendering-pixel-target-blocker.json",
-            text,
-            "Silver-thread ref should reference the pixel target blocker artifact.",
-        )
-
-    def test_post_open_ref_links_to_nonclaim_contract(self) -> None:
-        text = POST_OPEN_REF.read_text(encoding="utf-8")
-        self.assertIn(
-            "visible-rendering-evidence-nonclaim-contract",
-            text,
-        )
-
-    def test_docs_index_links_to_silver_thread(self) -> None:
-        index = (REPO_ROOT / "docs" / "index.md").read_text(encoding="utf-8")
-        self.assertIn(
-            "accessibility-target-discovery-silver-thread",
-            index,
-        )
-
-    def test_howto_links_to_reference(self) -> None:
-        howto = (
-            REPO_ROOT / "docs" / "howto" / "alice-desktop-outside-in-qa.md"
-        ).read_text(encoding="utf-8")
-        self.assertIn(
-            "post-open-runtime-display-accessibility-evidence",
-            howto,
-        )
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

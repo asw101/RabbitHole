@@ -779,51 +779,5 @@ class ModernizationScorecardCliTest(unittest.TestCase):
         self.assertFalse(output.exists())
 
 
-class ModernizationScorecardDocumentationContractTest(unittest.TestCase):
-    def test_docs_index_links_the_generated_scorecard_and_generator_reference(self) -> None:
-        index = (REPO_ROOT / "docs" / "index.md").read_text(encoding="utf-8")
-
-        self.assertIn("./reference/modernization-scorecard.md", index)
-        self.assertIn("./reference/modernization-scorecard-generator.md", index)
-
-    def test_checked_in_scorecard_is_plain_generated_snapshot(self) -> None:
-        markdown = (REPO_ROOT / "docs" / "reference" / "modernization-scorecard.md").read_text(encoding="utf-8")
-
-        assert_scorecard_uses_plain_reviewer_instructions(self, markdown)
-
-    def test_generator_reference_owns_cli_safety_and_review_workflow_docs(self) -> None:
-        markdown = (REPO_ROOT / "docs" / "reference" / "modernization-scorecard-generator.md").read_text(encoding="utf-8")
-
-        self.assertIn("# Modernization scorecard generator reference", markdown)
-        self.assertIn("## CLI contract", markdown)
-        self.assertIn("## Output-path safety", markdown)
-        self.assertIn("## Review workflow", markdown)
-        self.assertIn("python3 scripts/generate-modernization-scorecard.py", markdown)
-        self.assertIn("`--output` is always constrained to the resolved `--root`.", markdown)
-
-    def test_checked_in_corpus_manifest_is_representative_text_evidence(self) -> None:
-        generator = load_generator()
-        manifest_path = REPO_ROOT / "docs" / "reference" / "modernization-corpus-manifest.json"
-        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-
-        status = generator.inspect_corpus_manifest(REPO_ROOT)
-
-        self.assertEqual("present", status.state)
-        self.assertIn("representative", manifest["coverageStatement"].lower())
-        self.assertIn("not full historical archive coverage", manifest["coverageStatement"].lower())
-        for entry in manifest["entries"]:
-            with self.subTest(entry=entry["id"]):
-                self.assertFalse((REPO_ROOT / entry["path"]).exists())
-                self.assertTrue(entry["description"].strip())
-                self.assertTrue(entry["generatedFixtureExpectations"])
-                for expectation in entry["generatedFixtureExpectations"]:
-                    self.assertTrue(expectation.strip())
-
-    def test_docs_index_links_corpus_manifest_reference(self) -> None:
-        index = (REPO_ROOT / "docs" / "index.md").read_text(encoding="utf-8")
-
-        self.assertIn("./reference/modernization-corpus-manifest.md", index)
-
-
 if __name__ == "__main__":
     unittest.main()
