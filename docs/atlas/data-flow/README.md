@@ -8,9 +8,10 @@ This layer follows the main behavioral data paths through Alice's desktop author
 - Rendering is fed from the loaded AST through `ProgramContext`, `SceneImp`, the scenegraph, and `GlrRenderFactory`/`OnscreenRenderTarget`.
 - Code editing mutates AST structures directly in `CodeEditor`; generated source is a secondary surface used by code generators and print/export paths rather than the primary block editor.
 - Dragging in the scene editor flows through `SceneEditorDropReceptor`, `GlobalDragAdapter`, and the interaction/manipulator stack before scenegraph transforms are updated.
-- Save/export turns the current AST back into XML + resources + manifest entries inside a ZIP-backed `.a3p` archive.
+- Save turns the current AST into XML + resources + manifest entries inside a ZIP-backed `.a3p` archive via `ProjectFileUtilities.saveCopyOfProjectTo`, `IoUtilities.writeProject`, and `XmlProjectIo.writer()`.
+- Export turns the current AST into a JSON-backed ZIP `.a3w` archive via `ProjectFileUtilities.exportCopyOfProjectTo`, `IoUtilities.exportProject`, and `JsonProjectIo.writer()`.
 
-Derived from: `core/ide/src/main/java/org/alice/ide/uricontent/AbstractFileProjectLoader.java`, `core/story-api-migration/src/main/java/org/lgna/project/io/IoUtilities.java`, `core/story-api-migration/src/main/java/org/lgna/project/io/XmlProjectIo.java`, `core/ide/src/main/java/org/alice/stageide/program/ProgramContext.java`, `core/story-api/src/main/java/org/lgna/story/implementation/SceneImp.java`, `core/ide/src/main/java/org/alice/ide/codeeditor/CodeEditor.java`, `core/ast/src/main/java/org/lgna/project/code/CodeGenerator.java`, `core/ast/src/main/java/org/lgna/project/ast/SourceCodeGenerator.java`, `core/ast/src/main/java/org/lgna/project/ast/JavaCodeGenerator.java`, `core/ide/src/main/java/org/alice/ide/declarationseditor/components/TypeEditor.java`, `core/ide/src/main/java/org/alice/stageide/sceneeditor/SceneEditorDropReceptor.java`, `core/ide/src/main/java/org/alice/stageide/sceneeditor/interact/GlobalDragAdapter.java`, `core/scenegraph/src/main/java/edu/cmu/cs/dennisc/scenegraph/AbstractTransformable.java`, `core/ide/src/main/java/org/alice/ide/ProjectApplication.java`, and `core/ide/src/main/java/org/alice/ide/ProjectFileUtilities.java`.
+Derived from: `core/ide/src/main/java/org/alice/ide/uricontent/AbstractFileProjectLoader.java`, `core/story-api-migration/src/main/java/org/lgna/project/io/IoUtilities.java`, `core/story-api-migration/src/main/java/org/lgna/project/io/XmlProjectIo.java`, `core/story-api-migration/src/main/java/org/lgna/project/io/JsonProjectIo.java`, `core/ide/src/main/java/org/alice/stageide/program/ProgramContext.java`, `core/story-api/src/main/java/org/lgna/story/implementation/SceneImp.java`, `core/ide/src/main/java/org/alice/ide/codeeditor/CodeEditor.java`, `core/ast/src/main/java/org/lgna/project/code/CodeGenerator.java`, `core/ast/src/main/java/org/lgna/project/ast/SourceCodeGenerator.java`, `core/ast/src/main/java/org/lgna/project/ast/JavaCodeGenerator.java`, `core/ide/src/main/java/org/alice/ide/declarationseditor/components/TypeEditor.java`, `core/ide/src/main/java/org/alice/stageide/sceneeditor/SceneEditorDropReceptor.java`, `core/ide/src/main/java/org/alice/stageide/sceneeditor/interact/GlobalDragAdapter.java`, `core/scenegraph/src/main/java/edu/cmu/cs/dennisc/scenegraph/AbstractTransformable.java`, `core/ide/src/main/java/org/alice/ide/ProjectApplication.java`, and `core/ide/src/main/java/org/alice/ide/ProjectFileUtilities.java`.
 
 ## Mermaid
 
@@ -33,11 +34,15 @@ flowchart LR
   interact --> transform["AbstractTransformable.setTransformation"]
   transform --> scenegraph
 
-  saveReq["SaveProjectOperation / ProjectApplication.saveProjectTo"] --> snapshot["ProjectFileUtilities.saveCopyOfProjectTo"]
-  ast --> snapshot
-  snapshot --> writeXml["XmlProjectIo.writeType / writeResources"]
-  writeXml --> zip["ZipOutputStream + manifest + resources"]
-  zip --> outA3p[".a3p archive"]
+  saveReq["ProjectApplication.saveProjectTo"] --> saveCopy["ProjectFileUtilities.saveCopyOfProjectTo"]
+  ast --> saveCopy
+  saveCopy --> saveIo["IoUtilities.writeProject<br/>XmlProjectIo.writer"]
+  saveIo --> outA3p[".a3p archive"]
+
+  exportReq["ProjectApplication.exportProjectTo"] --> exportCopy["ProjectFileUtilities.exportCopyOfProjectTo"]
+  ast --> exportCopy
+  exportCopy --> exportIo["IoUtilities.exportProject<br/>JsonProjectIo.writer"]
+  exportIo --> outA3w[".a3w archive"]
 ```
 
 Source: [`data-flow.mmd`](./data-flow.mmd)
@@ -69,11 +74,14 @@ digraph data_flow {
   interact [label="interact manipulators + handles", fillcolor="#F5B7B1"];
   transform [label="AbstractTransformable.setTransformation", fillcolor="#F5B7B1"];
 
-  saveReq [label="SaveProjectOperation /\nProjectApplication.saveProjectTo", fillcolor="#D2B4DE"];
-  snapshot [label="ProjectFileUtilities.saveCopyOfProjectTo", fillcolor="#D2B4DE"];
-  writeXml [label="XmlProjectIo.writeType / writeResources", fillcolor="#D2B4DE"];
-  zip [label="ZipOutputStream + manifest + resources", fillcolor="#D2B4DE"];
+  saveReq [label="ProjectApplication.saveProjectTo", fillcolor="#D2B4DE"];
+  saveCopy [label="ProjectFileUtilities.saveCopyOfProjectTo", fillcolor="#D2B4DE"];
+  saveIo [label="IoUtilities.writeProject\nXmlProjectIo.writer", fillcolor="#D2B4DE"];
   outA3p [label=".a3p archive", fillcolor="#D2B4DE"];
+  exportReq [label="ProjectApplication.exportProjectTo", fillcolor="#D2B4DE"];
+  exportCopy [label="ProjectFileUtilities.exportCopyOfProjectTo", fillcolor="#D2B4DE"];
+  exportIo [label="IoUtilities.exportProject\nJsonProjectIo.writer", fillcolor="#D2B4DE"];
+  outA3w [label=".a3w archive", fillcolor="#D2B4DE"];
 
   loadA3p -> loadReq;
   loadReq -> readIo;
@@ -92,11 +100,15 @@ digraph data_flow {
   interact -> transform;
   transform -> scenegraph;
 
-  saveReq -> snapshot;
-  ast -> snapshot;
-  snapshot -> writeXml;
-  writeXml -> zip;
-  zip -> outA3p;
+  saveReq -> saveCopy;
+  ast -> saveCopy;
+  saveCopy -> saveIo;
+  saveIo -> outA3p;
+
+  exportReq -> exportCopy;
+  ast -> exportCopy;
+  exportCopy -> exportIo;
+  exportIo -> outA3w;
 }
 ```
 

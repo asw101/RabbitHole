@@ -7,7 +7,7 @@ This layer traces five high-value paths through Alice's behavioral stack. The fi
 - Journeys 1 and 2 stay inside the desktop authoring loop: load/edit/run and add/position/save.
 - Journey 3 uses `TypeManager`, `OtherTypeDialog`, and declaration editors to show how custom types and methods become scene-usable AST declarations.
 - Journey 4 stops at the review/export boundary because grading itself happens outside Alice; the codebase exposes review surfaces (`DeclarationsEditorComposite`, `PrintAllOperation`, `HtmlProjectWriter`) rather than an internal grading subsystem.
-- Journey 5 is grounded in the repository's documented headless Maven and coverage workflows plus the two GitHub Actions lanes.
+- Journey 5 is grounded in the repository's documented headless Maven and coverage workflows plus the two GitHub Actions lanes, including the no-op branch for docs/QA/tests/scripts/license-only pull requests that skip Maven validation.
 
 Derived from: `alice-ide/src/main/java/org/alice/stageide/EntryPoint.java`, `core/ide/src/main/java/org/alice/ide/IDE.java`, `core/ide/src/main/java/org/alice/ide/uricontent/AbstractFileProjectLoader.java`, `core/story-api-migration/src/main/java/org/lgna/project/io/IoUtilities.java`, `core/ide/src/main/java/org/alice/ide/declarationseditor/TypeMenu.java`, `core/ide/src/main/java/org/alice/ide/codeeditor/CodeEditor.java`, `core/ide/src/main/java/org/alice/stageide/run/RunComposite.java`, `core/ide/src/main/java/org/alice/stageide/program/ProgramContext.java`, `core/ide/src/main/java/org/alice/stageide/gallerybrowser/GalleryComposite.java`, `core/ide/src/main/java/org/alice/stageide/sceneeditor/SceneEditorDropReceptor.java`, `core/ide/src/main/java/org/alice/stageide/sceneeditor/interact/GlobalDragAdapter.java`, `core/ide/src/main/java/org/alice/ide/ProjectApplication.java`, `core/ide/src/main/java/org/alice/ide/ProjectFileUtilities.java`, `core/ide/src/main/java/org/alice/ide/typemanager/TypeManager.java`, `core/ide/src/main/java/org/alice/stageide/type/croquet/OtherTypeDialog.java`, `core/ide/src/main/java/org/alice/ide/ast/declaration/AddProcedureComposite.java`, `core/ide/src/main/java/org/alice/ide/ast/declaration/AddFunctionComposite.java`, `core/ide/src/main/java/org/alice/ide/ast/declaration/AddUnmanagedFieldComposite.java`, `core/ide/src/main/java/org/alice/ide/croquet/models/print/PrintAllOperation.java`, `core/ide/src/main/java/org/alice/ide/croquet/models/html/HtmlProjectWriter.java`, `README.md`, `.github/workflows/alice-test-ci.yml`, and `.github/workflows/alice-coverage-ci.yml`.
 
@@ -313,11 +313,17 @@ sequenceDiagram
   JaCoCo->>Summary: generate aggregate + module reports
   Summary-->>Developer: coverage-summary.md
   Developer->>TestCI: push branch / PR
-  TestCI->>Maven: git submodule update, setup-java, clean test
-  Developer->>CoverageCI: same push triggers coverage workflow
-  CoverageCI->>JaCoCo: verify + coverage reports
-  CoverageCI->>Summary: summarize and gate coverage
-  CoverageCI->>Artifacts: upload coverage evidence
+  alt push or validation-impacting PR
+    TestCI->>Maven: git submodule update, setup-java, clean test
+    Developer->>CoverageCI: same push triggers coverage workflow
+    CoverageCI->>JaCoCo: verify + coverage reports
+    CoverageCI->>Summary: summarize and gate coverage
+    CoverageCI->>Artifacts: upload coverage evidence
+  else docs/QA/tests/scripts/license-only PR
+    TestCI-->>Developer: report Maven validation no-op
+    Developer->>CoverageCI: same PR triggers coverage workflow
+    CoverageCI-->>Developer: report Maven validation no-op
+  end
 ```
 
 Source: [`journey-5-dev-test-coverage-ci.mmd`](./journey-5-dev-test-coverage-ci.mmd)
@@ -337,7 +343,11 @@ digraph journey_5_dev_test_coverage_ci {
   JaCoCo [label="-Pcoverage verify", fillcolor="#D5F5E3"];
   Summary [label="summarize-jacoco-coverage.py", fillcolor="#D5F5E3"];
   TestCI [label="alice-test-ci.yml", fillcolor="#FADBD8"];
+  TestScope [shape=diamond, label="push or\nvalidation-impacting PR?", fillcolor="#FADBD8"];
+  TestNoOp [label="report Maven\nvalidation no-op", fillcolor="#FDEDEC"];
   CoverageCI [label="alice-coverage-ci.yml", fillcolor="#FADBD8"];
+  CoverageScope [shape=diamond, label="push or\nvalidation-impacting PR?", fillcolor="#FADBD8"];
+  CoverageNoOp [label="report Maven\nvalidation no-op", fillcolor="#FDEDEC"];
   Artifacts [label="uploaded evidence artifact", fillcolor="#EBDEF0"];
 
   Developer -> Maven [label="1 clean test"];
@@ -347,11 +357,15 @@ digraph journey_5_dev_test_coverage_ci {
   JaCoCo -> Summary [label="5 aggregate + module reports"];
   Summary -> Developer [label="6 coverage summary"];
   Developer -> TestCI [label="7 push branch / PR"];
-  TestCI -> Maven [label="8 submodule + setup-java + clean test"];
-  Developer -> CoverageCI [label="9 same push triggers coverage"];
-  CoverageCI -> JaCoCo [label="10 verify + coverage reports"];
-  CoverageCI -> Summary [label="11 summarize and gate"];
-  CoverageCI -> Artifacts [label="12 upload evidence"];
+  TestCI -> TestScope [label="8 classify change scope"];
+  TestScope -> Maven [label="9 yes: submodule + setup-java + clean test"];
+  TestScope -> TestNoOp [label="9 no: docs/QA/tests/scripts/license-only PR"];
+  Developer -> CoverageCI [label="10 same push triggers coverage"];
+  CoverageCI -> CoverageScope [label="11 classify change scope"];
+  CoverageScope -> JaCoCo [label="12 yes: verify + coverage reports"];
+  CoverageScope -> CoverageNoOp [label="12 no: docs/QA/tests/scripts/license-only PR"];
+  CoverageCI -> Summary [label="13 summarize and gate"];
+  CoverageCI -> Artifacts [label="14 upload evidence"];
 }
 ```
 

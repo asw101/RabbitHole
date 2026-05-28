@@ -15,8 +15,14 @@ sequenceDiagram
   JaCoCo->>Summary: generate aggregate + module reports
   Summary-->>Developer: coverage-summary.md
   Developer->>TestCI: push branch / PR
-  TestCI->>Maven: git submodule update, setup-java, clean test
-  Developer->>CoverageCI: same push triggers coverage workflow
-  CoverageCI->>JaCoCo: verify + coverage reports
-  CoverageCI->>Summary: summarize and gate coverage
-  CoverageCI->>Artifacts: upload coverage evidence
+  alt push or validation-impacting PR
+    TestCI->>Maven: git submodule update, setup-java, clean test
+    Developer->>CoverageCI: same push triggers coverage workflow
+    CoverageCI->>JaCoCo: verify + coverage reports
+    CoverageCI->>Summary: summarize and gate coverage
+    CoverageCI->>Artifacts: upload coverage evidence
+  else docs/QA/tests/scripts/license-only PR
+    TestCI-->>Developer: report Maven validation no-op
+    Developer->>CoverageCI: same PR triggers coverage workflow
+    CoverageCI-->>Developer: report Maven validation no-op
+  end

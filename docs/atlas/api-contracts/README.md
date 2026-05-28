@@ -5,12 +5,12 @@ This layer maps Alice's internal contract surfaces where extension points, VM en
 ## Contract notes
 
 - The IDE contract surface is menu- and perspective-driven: `ProjectDocumentFrame` wires `AliceMenuBar`, `PerspectiveState`, `CodePerspective`, and `SetupScenePerspective`.
-- The VM surface is split across the project VM (`ReleaseVirtualMachine`) and the lower-level Tweedle interpreter (`org.alice.tweedle.run.VirtualMachine`).
+- The VM surface is split across the project VM in `core/ast` (`ReleaseVirtualMachine`, `org.lgna.project.virtualmachine.VirtualMachine`, and `org.lgna.project.virtualmachine.events.VirtualMachineListener`) and the lower-level Tweedle interpreter (`org.alice.tweedle.run.VirtualMachine`).
 - The scene graph contract names in current code are `addComponent`/`removeComponent` and `setLocalTransformation`/`setTransformation`, which correspond to the user-facing shorthand “add child/remove child/set transform”.
 - The story facade exposes behavior through `SProgram`, `SThing`, `STurnable`, `SMovableTurnable`, `SModel`, and concrete entities such as `SBiped`.
-- Project load/save/export contracts flow through `AbstractFileProjectLoader`, `IoUtilities`, `ProjectApplication`, `ProjectFileUtilities`, and `XmlProjectIo`.
+- Project load flows through `AbstractFileProjectLoader`, `IoUtilities.projectReader`, and `XmlProjectIo.reader()`; save (`.a3p`) flows through `ProjectApplication.saveProjectTo`, `ProjectFileUtilities.saveCopyOfProjectTo`, `IoUtilities.writeProject`, and `XmlProjectIo.writer()`; export (`.a3w`) flows through `ProjectApplication.exportProjectTo`, `ProjectFileUtilities.exportCopyOfProjectTo`, `IoUtilities.exportProject`, and `JsonProjectIo.writer()`.
 
-Derived from: `core/ide/src/main/java/org/alice/ide/ProjectDocumentFrame.java`, `core/ide/src/main/java/org/alice/ide/croquet/models/menubar/FileMenuModel.java`, `core/ide/src/main/java/org/alice/stageide/perspectives/CodePerspective.java`, `core/ide/src/main/java/org/alice/stageide/perspectives/SetupScenePerspective.java`, `core/ide/src/main/java/org/alice/stageide/gallerybrowser/GalleryComposite.java`, `core/ide/src/main/java/org/alice/stageide/program/ProgramContext.java`, `core/tweedle/src/main/java/org/alice/tweedle/run/VirtualMachine.java`, `core/story-api/src/main/java/org/lgna/story/SProgram.java`, `core/story-api/src/main/java/org/lgna/story/SThing.java`, `core/story-api/src/main/java/org/lgna/story/SMovableTurnable.java`, `core/story-api/src/main/java/org/lgna/story/SModel.java`, `core/story-api/src/main/java/org/lgna/story/SBiped.java`, `core/scenegraph/src/main/java/edu/cmu/cs/dennisc/scenegraph/Composite.java`, `core/scenegraph/src/main/java/edu/cmu/cs/dennisc/scenegraph/AbstractTransformable.java`, `core/ide/src/main/java/org/alice/ide/ProjectApplication.java`, `core/ide/src/main/java/org/alice/ide/ProjectFileUtilities.java`, `core/ide/src/main/java/org/alice/ide/uricontent/AbstractFileProjectLoader.java`, and `core/story-api-migration/src/main/java/org/lgna/project/io/IoUtilities.java`.
+Derived from: `core/ide/src/main/java/org/alice/ide/ProjectDocumentFrame.java`, `core/ide/src/main/java/org/alice/ide/croquet/models/menubar/FileMenuModel.java`, `core/ide/src/main/java/org/alice/stageide/perspectives/CodePerspective.java`, `core/ide/src/main/java/org/alice/stageide/perspectives/SetupScenePerspective.java`, `core/ide/src/main/java/org/alice/stageide/gallerybrowser/GalleryComposite.java`, `core/ide/src/main/java/org/alice/stageide/program/ProgramContext.java`, `core/ast/src/main/java/org/lgna/project/virtualmachine/VirtualMachine.java`, `core/ast/src/main/java/org/lgna/project/virtualmachine/events/VirtualMachineListener.java`, `core/tweedle/src/main/java/org/alice/tweedle/run/VirtualMachine.java`, `core/story-api/src/main/java/org/lgna/story/SProgram.java`, `core/story-api/src/main/java/org/lgna/story/SThing.java`, `core/story-api/src/main/java/org/lgna/story/SMovableTurnable.java`, `core/story-api/src/main/java/org/lgna/story/SModel.java`, `core/story-api/src/main/java/org/lgna/story/SBiped.java`, `core/scenegraph/src/main/java/edu/cmu/cs/dennisc/scenegraph/Composite.java`, `core/scenegraph/src/main/java/edu/cmu/cs/dennisc/scenegraph/AbstractTransformable.java`, `core/ide/src/main/java/org/alice/ide/ProjectApplication.java`, `core/ide/src/main/java/org/alice/ide/ProjectFileUtilities.java`, `core/ide/src/main/java/org/alice/ide/uricontent/AbstractFileProjectLoader.java`, `core/story-api-migration/src/main/java/org/lgna/project/io/IoUtilities.java`, `core/story-api-migration/src/main/java/org/lgna/project/io/XmlProjectIo.java`, and `core/story-api-migration/src/main/java/org/lgna/project/io/JsonProjectIo.java`.
 
 ## Mermaid
 
@@ -48,11 +48,13 @@ flowchart TD
   subgraph vm["Virtual machine contracts"]
     runctx["ProgramContext / RunProgramContext"]
     releasevm["ReleaseVirtualMachine<br/>ENTRY_POINT_createInstance / invoke"]
+    astvm["org.lgna.project.virtualmachine.VirtualMachine<br/>addVirtualMachineListener / removeVirtualMachineListener"]
     vmlisten["VirtualMachineListener<br/>statementExecuting / statementExecuted<br/>expressionEvaluated"]
     tweedlevm["org.alice.tweedle.run.VirtualMachine<br/>createInstance / invoke / evaluate / executeStatement"]
 
     runctx --> releasevm
-    releasevm --> vmlisten
+    releasevm --> astvm
+    astvm --> vmlisten
   end
 
   subgraph story["Story API facade"]
@@ -78,23 +80,33 @@ flowchart TD
 
   subgraph io["Project I/O contracts"]
     loader["AbstractFileProjectLoader.load"]
-    ioutils["IoUtilities<br/>readProject / writeProject / exportProject / writeType"]
-    xmlio["XmlProjectIo<br/>XmlProjectReader / XmlProjectWriter"]
-    app["ProjectApplication<br/>saveProjectTo / exportProjectTo"]
-    files["ProjectFileUtilities<br/>saveCopyOfProjectTo / exportCopyOfProjectTo"]
+    readio["IoUtilities.projectReader"]
+    xmlread["XmlProjectIo.reader<br/>load .a3p"]
+    saveapp["ProjectApplication.saveProjectTo"]
+    savefiles["ProjectFileUtilities.saveCopyOfProjectTo"]
+    saveio["IoUtilities.writeProject"]
+    xmlwrite["XmlProjectIo.writer<br/>save .a3p"]
+    exportapp["ProjectApplication.exportProjectTo"]
+    exportfiles["ProjectFileUtilities.exportCopyOfProjectTo"]
+    exportio["IoUtilities.exportProject"]
+    jsonwrite["JsonProjectIo.writer<br/>export .a3w"]
 
-    loader --> ioutils
-    ioutils --> xmlio
-    app --> files
-    files --> ioutils
+    loader --> readio
+    readio --> xmlread
+    saveapp --> savefiles
+    savefiles --> saveio
+    saveio --> xmlwrite
+    exportapp --> exportfiles
+    exportfiles --> exportio
+    exportio --> jsonwrite
   end
 
-  filemenu --> app
+  filemenu --> saveapp
+  filemenu --> exportapp
   runmenu --> runctx
   decls --> sthing
   gallery --> composite
   releasevm --> sprog
-  tweedlevm -. alternate interpreter surface .-> vmlisten
   smove --> xform
   smodel --> composite
 ```
@@ -148,11 +160,13 @@ digraph api_contracts {
     style="rounded";
     runctx [label="ProgramContext / RunProgramContext", fillcolor="#D5F5E3"];
     releasevm [label="ReleaseVirtualMachine\nENTRY_POINT_createInstance / invoke", fillcolor="#D5F5E3"];
+    astvm [label="org.lgna.project.virtualmachine.VirtualMachine\naddVirtualMachineListener / removeVirtualMachineListener", fillcolor="#D5F5E3"];
     vmlisten [label="VirtualMachineListener\nstatementExecuting / statementExecuted\nexpressionEvaluated", fillcolor="#D5F5E3"];
     tweedlevm [label="org.alice.tweedle.run.VirtualMachine\ncreateInstance / invoke / evaluate / executeStatement", fillcolor="#D5F5E3"];
 
     runctx -> releasevm;
-    releasevm -> vmlisten;
+    releasevm -> astvm;
+    astvm -> vmlisten;
   }
 
   subgraph cluster_story {
@@ -187,23 +201,33 @@ digraph api_contracts {
     color="#D2B4DE";
     style="rounded";
     loader [label="AbstractFileProjectLoader.load", fillcolor="#EBDEF0"];
-    ioutils [label="IoUtilities\nreadProject / writeProject / exportProject / writeType", fillcolor="#EBDEF0"];
-    xmlio [label="XmlProjectIo\nXmlProjectReader / XmlProjectWriter", fillcolor="#EBDEF0"];
-    app [label="ProjectApplication\nsaveProjectTo / exportProjectTo", fillcolor="#EBDEF0"];
-    files [label="ProjectFileUtilities\nsaveCopyOfProjectTo / exportCopyOfProjectTo", fillcolor="#EBDEF0"];
+    readio [label="IoUtilities.projectReader", fillcolor="#EBDEF0"];
+    xmlread [label="XmlProjectIo.reader\nload .a3p", fillcolor="#EBDEF0"];
+    saveapp [label="ProjectApplication.saveProjectTo", fillcolor="#EBDEF0"];
+    savefiles [label="ProjectFileUtilities.saveCopyOfProjectTo", fillcolor="#EBDEF0"];
+    saveio [label="IoUtilities.writeProject", fillcolor="#EBDEF0"];
+    xmlwrite [label="XmlProjectIo.writer\nsave .a3p", fillcolor="#EBDEF0"];
+    exportapp [label="ProjectApplication.exportProjectTo", fillcolor="#EBDEF0"];
+    exportfiles [label="ProjectFileUtilities.exportCopyOfProjectTo", fillcolor="#EBDEF0"];
+    exportio [label="IoUtilities.exportProject", fillcolor="#EBDEF0"];
+    jsonwrite [label="JsonProjectIo.writer\nexport .a3w", fillcolor="#EBDEF0"];
 
-    loader -> ioutils;
-    ioutils -> xmlio;
-    app -> files;
-    files -> ioutils;
+    loader -> readio;
+    readio -> xmlread;
+    saveapp -> savefiles;
+    savefiles -> saveio;
+    saveio -> xmlwrite;
+    exportapp -> exportfiles;
+    exportfiles -> exportio;
+    exportio -> jsonwrite;
   }
 
-  filemenu -> app;
+  filemenu -> saveapp;
+  filemenu -> exportapp;
   runmenu -> runctx;
   decls -> sthing;
   gallery -> composite;
   releasevm -> sprog;
-  tweedlevm -> vmlisten [style=dashed, label="alternate interpreter surface"];
   smove -> xform;
   smodel -> composite;
 }
