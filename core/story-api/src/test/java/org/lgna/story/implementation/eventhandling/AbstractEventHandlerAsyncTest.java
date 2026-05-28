@@ -43,6 +43,11 @@ public class AbstractEventHandlerAsyncTest {
 
     assertTrue(completed.await(5, TimeUnit.SECONDS));
     assertEquals(List.of("first", "second"), calls);
+    // The isFiringMap flag is cleared after fire() returns, so poll briefly
+    long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+    while (handler.isFiringMap.get(listener).get(listener) && System.nanoTime() < deadline) {
+      Thread.sleep(10);
+    }
     assertFalse(handler.isFiringMap.get(listener).get(listener));
   }
 
