@@ -5,8 +5,10 @@ after cleanup.  They are written *before* the final deletions so they
 start RED and turn GREEN once the implementation is complete.
 """
 
+import itertools
 import re
 import unittest
+from functools import lru_cache
 from pathlib import Path
 
 import yaml
@@ -82,6 +84,7 @@ _MkdocsLoader.add_multi_constructor(
 )
 
 
+@lru_cache(maxsize=1)
 def _load_mkdocs() -> dict:
     return yaml.load(MKDOCS_YML.read_text(encoding="utf-8"), Loader=_MkdocsLoader)
 
@@ -188,12 +191,11 @@ class TestKeptFilesIntact(unittest.TestCase):
                     (layer_dir / "README.md").is_file(),
                     f"Atlas layer {layer}/README.md is missing",
                 )
-                diagrams = list(layer_dir.glob("*.dot")) + list(
-                    layer_dir.glob("*.mmd")
+                has_diagram = any(
+                    itertools.chain(layer_dir.glob("*.dot"), layer_dir.glob("*.mmd"))
                 )
-                self.assertGreater(
-                    len(diagrams),
-                    0,
+                self.assertTrue(
+                    has_diagram,
                     f"Atlas layer {layer} has no diagram files",
                 )
 
@@ -206,6 +208,7 @@ class TestMkdocsNavCleaned(unittest.TestCase):
         cls.config = _load_mkdocs()
         cls.nav = cls.config.get("nav", [])
         cls.section_titles = _nav_section_titles(cls.nav)
+        cls.nav_refs = _collect_nav_file_refs(cls.nav)
 
     def test_mkdocs_parses_as_valid_yaml(self):
         self.assertIsInstance(self.config, dict)
@@ -230,9 +233,8 @@ class TestMkdocsNavCleaned(unittest.TestCase):
                 )
 
     def test_all_nav_refs_resolve_to_existing_files(self):
-        refs = _collect_nav_file_refs(self.nav)
-        self.assertGreater(len(refs), 0, "No nav file refs found")
-        for ref in refs:
+        self.assertGreater(len(self.nav_refs), 0, "No nav file refs found")
+        for ref in self.nav_refs:
             with self.subTest(ref=ref):
                 target = DOCS_DIR / ref
                 self.assertTrue(
@@ -242,7 +244,6 @@ class TestMkdocsNavCleaned(unittest.TestCase):
 
     def test_nav_does_not_reference_deleted_paths(self):
         """No nav entry should point into a deleted directory."""
-        refs = _collect_nav_file_refs(self.nav)
         deleted_prefixes = (
             "howto/",
             "tutorials/",
@@ -250,7 +251,7 @@ class TestMkdocsNavCleaned(unittest.TestCase):
             "atlas/bug-reports/",
             "testing/",
         )
-        for ref in refs:
+        for ref in self.nav_refs:
             with self.subTest(ref=ref):
                 for prefix in deleted_prefixes:
                     self.assertFalse(
@@ -259,9 +260,8 @@ class TestMkdocsNavCleaned(unittest.TestCase):
                     )
 
     def test_no_nav_references_to_deleted_loose_files(self):
-        refs = _collect_nav_file_refs(self.nav)
         deleted_basenames = {f.name for f in DELETED_LOOSE_FILES}
-        for ref in refs:
+        for ref in self.nav_refs:
             with self.subTest(ref=ref):
                 self.assertNotIn(
                     Path(ref).name,
@@ -291,7 +291,8 @@ class TestNoPointInTimeContentInKeptDocs(unittest.TestCase):
     def test_kept_docs_are_not_point_in_time(self):
         flagged = []
         for md in self._kept_md_files():
-            head = "\n".join(md.read_text(encoding="utf-8").splitlines()[:20])
+            with md.open(encoding="utf-8") as fh:
+                head = "\n".join(itertools.islice(fh, 20))
             if POINT_IN_TIME_RE.search(head):
                 flagged.append(str(md.relative_to(REPO_ROOT)))
         self.assertEqual(
