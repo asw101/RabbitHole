@@ -1,279 +1,341 @@
-# Alice Modernization Documentation
+# Alice 3 Modernization
 
-Alice modernization documentation describes durable behavior, repo-owned
-contracts, contributor workflows, and compatibility characterization for this
-repository.
+Alice 3 is a teaching tool for building 3D stories, animations, and simple games. 
+RabbitHole keeps that classroom experience working while the codebase is modernized, tested, and broken into smaller pieces that are easier to change safely.
 
-## Project save, export, and migration characterization
+## Current status
 
-- [SaveOperationCompletionEvidence Extraction](./reference/save-operation-completion-evidence-extraction.md) - Reference for the extraction of JSON evidence builders and file-system guards from `SaveOperationCompletionEvidence` into `EvidenceJsonWriter` and `EvidenceFileOperations` delegate classes (issue #561).
-- [Validate SaveOperationCompletionEvidence Extraction](./howto/validate-save-operation-completion-evidence-extraction.md) - How to verify compilation, line counts, visibility rules, and test pass/fail after the `SaveOperationCompletionEvidence` extraction.
-- [Project Save and Export Operations](./reference/project-save-export-operations.md) - Reference for the `core/ide` Save, Save As, Export operation behavior, headless loaded-project bridge, and characterization seams.
-- [Save Menu Dialog Write/Readback Proof](./reference/save-menu-dialog-write-proof.md) - Implemented contract for the `save-menu-dialog-write-proof` QA scenario that runs the rendered File-menu Save, controlled Swing chooser, `.a3p` write, readback, and marker proof path without workflow timeout wiring.
-- [Save Proof Evidence](./reference/save-proof-evidence.md) - Canonical JSON artifact contract, fail-closed validation rules, and executable blocker semantics for the rendered Save proof path.
-- [Save Menu Dialog Negative Artifact Contract](./reference/save-menu-dialog-negative-artifact-contract.md) - Independent negative contract proving the Save proof evidence validator rejects missing context, missing, wrong-name, symlinked, malformed, non-object, stale, future-dated, identity-mismatched, blocked, partial, unknown-blocker, and inconsistent artifacts.
-- [PR #430 Merge-Ready Gate](./reference/pr430-merge-ready-gate.md) - Programmatic no-merge evidence gate for PR #430 head, focused Save negative artifact scope, green checks, and no-op justification.
-- [Robot Save Menu Dialog Write/Readback Proof](./reference/robot-save-menu-dialog-write-readback-proof.md) - Reference for the Robot File-menu Save activation, Swing chooser control, `.a3p` write, readback, marker, and blocker artifact contract.
-- [Project Archive Corpus Characterization](./reference/project-io-corpus-characterization.md) - Reference for generated `.a3p`, `.a3w`, and `.a3c` archive characterization in `core/story-api-migration`.
-- [Archive/Player Boundary](./reference/archive-player-boundary.md) - Reference for supported JSON `.a3w` program readback, narrow legacy image-resource compatibility, and fail-closed unsupported legacy player archive shapes.
-- [Legacy Fixture Round-Trip Readiness](./reference/legacy-fixture-roundtrip-readiness.md) - Reference for the focused generated legacy fixture round-trip lane, fail-closed unsupported archive boundaries, validation command, PR evidence, PR #433 no-timeout finalization profile, merge-ready evidence contract, and explicit non-claims.
-- [JSON `.a3c` Constructor Assignment Characterization](./reference/json-a3c-constructor-assignment-characterization.md) - Narrow feature contract for a generated JSON type archive whose constructor assigns a decoded field.
-- [Migration Hotspot Characterization](./concepts/migration-hotspot-characterization.md) - Why migration hotspot characterization exists, what it protects, how it fits the modernization approach, and its relationship to the formal-spec and IO corpus layers.
-- [ProjectMigrationManager Migration Characterization](./reference/project-migration-manager-characterization.md) - Reference for generated XML-string characterization around versioned Alice project text migrations, selected rewrite seams, and current-version guards.
-- [TextMigrationRegistry Extraction](./reference/text-migration-registry.md) - Reference for the `TextMigrationRegistry` class hierarchy that holds text migration data extracted from `ProjectMigrationManager`.
-- [Extract Text Migration Registry](./howto/extract-text-migration-registry.md) - How to verify, extend, or review the text migration registry extraction.
-- [Exported NetBeans Ant Project Behavior](./reference/exported-netbeans-ant-project-behavior.md) - Reference for exported-project launcher evidence, deterministic display no-go behavior, the bounded no-Sims exported Ant/NetBeans build proof, and Ant runtime metadata.
-- [Headless Runtime Dispatch and Generated Story API Listener Source Characterization](./reference/generated-story-api-listener-source-characterization.md) - Reference for bounded headless virtual-machine listener dispatch, generated listener registration source, scene activation dispatch, AST/source-code-generator snippets, generated NetBeans project source, and no-desktop boundaries.
-- [Run the Runtime Event Dispatch Characterization](./howto/run-runtime-event-dispatch-characterization.md) - How to run and review the headless runtime event dispatch and generated Story API listener source characterization.
-- [Tutorial: Trace the Runtime Event Dispatch Characterization](./tutorials/trace-runtime-event-dispatch-characterization.md) - Guided walkthrough from core AST listener dispatch to generated listener source, bounded scene activation dispatch, QA scenario metadata, and documentation contracts.
-- [VM Characterization Tests](./reference/vm-characterization-tests.md) - Reference for five focused characterization test suites covering VM expression evaluation, statement execution, field access, error handling, and Story API dispatch.
-- [Run the VM Characterization Tests](./howto/run-vm-characterization-tests.md) - How to run and review the virtual machine execution engine and StoryAPI dispatch characterization tests.
-- [Tutorial: Trace the VM Characterization Tests](./tutorials/vm-characterization-tests.md) - Guided walkthrough of expression evaluation, statement execution, field access, error handling, and Story API dispatch test patterns.
-- [NonCachingTextRenderer Characterization](./reference/noncaching-text-renderer-characterization.md) - Reference for headless-safe characterization of NonCachingTextRenderer inner classes, buffer constants, glyph cache lifecycle, and GL-boundary skip rules.
-- [Characterize NonCachingTextRenderer](./howto/characterize-noncaching-text-renderer.md) - How to run and review the NonCachingTextRenderer characterization tests for buffer constants, inner class behavior, and glyph cache lifecycle.
-- [Tutorial: Trace the NonCachingTextRenderer Characterization](./tutorials/noncaching-text-renderer-characterization.md) - Guided walkthrough of constant derivation, CharSequenceIterator boundary behavior, TextData accessors, DefaultRenderDelegate bounds, CharacterCache identity, and Glyph/GlyphProducer GL boundaries.
-- [NonCachingTextRenderer Inner Class Extraction](./reference/noncaching-text-renderer-inner-class-extraction.md) - Reference for extraction of all 9 inner classes from NonCachingTextRenderer into separate top-level package-private files (Phases 1–2).
-- [Validate NonCachingTextRenderer Inner Class Extraction](./howto/validate-noncaching-text-renderer-inner-class-extraction.md) - How to verify compilation, file existence, visibility, and contract tests after inner class extraction.
-- [NonCachingTextRenderer Pipeline Extraction](./reference/noncaching-text-renderer-pipeline-extraction.md) - Reference for extraction of 6 rendering pipeline methods into TextRendererPipeline delegate class (Phase 3, issue #537), reducing NonCachingTextRenderer under 650 lines.
-- [Validate NonCachingTextRenderer Pipeline Extraction](./howto/validate-noncaching-text-renderer-pipeline-extraction.md) - How to verify compilation, delegate wiring, line counts, and all 159 tests after pipeline method extraction.
-- [Tutorial: Trace the NonCachingTextRenderer Pipeline Extraction](./tutorials/noncaching-text-renderer-pipeline-extraction.md) - Guided walkthrough of delegate constructor, public API delegation, retained thin delegators, field widenings, and before/after comparison.
-- [NonCachingTextRenderer Properties Extraction](./reference/noncaching-text-renderer-properties-extraction.md) - Reference for extraction of color state, property accessors, dispose/cleanup, and query utilities into TextRendererProperties delegate class (Phase 4, issue #543), reducing NonCachingTextRenderer under 500 lines.
-- [Validate NonCachingTextRenderer Properties Extraction](./howto/validate-noncaching-text-renderer-properties-extraction.md) - How to verify compilation, two-level field paths, line counts, and contract tests after properties extraction.
-- [Tutorial: Trace the NonCachingTextRenderer Properties Extraction](./tutorials/noncaching-text-renderer-properties-extraction.md) - Guided walkthrough of properties delegate, color state delegation, two-level field paths in Manager and Pipeline, dispose delegation, and dead code removal.
-- [StorytellingSceneEditor Characterization](./reference/storytelling-scene-editor-characterization.md) - Reference for reflection-based characterization of StorytellingSceneEditor class hierarchy, inner classes, public API surface, key fields, and aggregate stability guardrails.
-- [Characterize StorytellingSceneEditor](./howto/characterize-storytelling-scene-editor.md) - How to run and review the StorytellingSceneEditor characterization tests for class structure, singleton pattern, API surface, and field declarations.
-- [Tutorial: Trace the StorytellingSceneEditor Characterization](./tutorials/storytelling-scene-editor-characterization.md) - Guided walkthrough of hierarchy assertions, singleton verification, inner class modifiers, public API parameter types, RenderTargetListener overrides, and aggregate guardrails.
-- [StorytellingSceneEditor Inner Class Extraction](./reference/storytelling-scene-editor-inner-class-extraction.md) - Reference for extraction of SceneEditorDropReceptor, LookingGlassPanel, and SceneEditorListeners from StorytellingSceneEditor into top-level package-private files.
-- [Validate StorytellingSceneEditor Inner Class Extraction](./howto/validate-storytelling-scene-editor-inner-class-extraction.md) - How to verify compilation, file existence, visibility, and characterization tests after inner class extraction.
-- [Tutorial: Trace the StorytellingSceneEditor Inner Class Extraction](./tutorials/trace-storytelling-scene-editor-inner-class-extraction.md) - Guided walkthrough of constructor design decisions, visibility widening, listener consolidation, and test adaptation for the extraction.
-- [StorytellingSceneEditor Checkstyle Import Cleanup](./reference/storytelling-scene-editor-checkstyle-cleanup.md) - Reference for removal of unused `java.awt.Dimension` and `java.awt.Graphics` imports orphaned by field manager and render target listener extraction.
-- [Project Archive Reopen/Edit Seam](./reference/project-archive-reopen-edit-seam.md) - Reference for the bounded `core/story-api-migration` `.a3p` write/read/edit/write/read and `.a3w` export archive IO seam.
-- [PR 402 Reopen/Edit Recovery Output Contract](./reference/pr-402-reopen-edit-recovery-output-contract.md) - Guard-checkable exact-head recovery contract for scoped `Files modified`, `NO_OP_GUARD`, or explicit `NOT_MERGE_READY` evidence.
-- [Characterize Source-Code-Generator Behavior](./howto/characterize-source-code-generator.md) - How to add or review focused AST, generated NetBeans source, Story API listener, and launcher evidence characterization.
-- [Finalize a source-code-generator pull request](./howto/finalize-source-code-generator.md) - How to refresh current-head GitHub evidence, verify review and required-check state, preserve focused `core/ast` scope, and produce a no-timeout no-op or focused-fix finalization.
-- [Characterize Project Save and Export Operations](./howto/characterize-project-save-export-operations.md) - How to add or review compatibility tests for save/export operations and the headless loaded-project bridge.
-- [Validate the Project Archive Reopen/Edit Seam](./howto/validate-project-archive-reopen-edit-seam.md) - How to sync PR 402 recovery state, run focused `core/story-api-migration` validation, and record exact-head readiness evidence for the repository-owned archive reopen/edit seam.
-- [Finalize exported NetBeans Ant smoke recovery](./howto/finalize-exported-netbeans-ant-smoke-recovery.md) - How to collect current-head, diff-scope, QA scenario, focused Ant smoke, quality-audit, docs-impact, GitHub Actions, and PR description evidence for a bounded recovery handoff.
-- [Run the Save Menu Dialog Write/Readback Proof](./howto/run-save-menu-dialog-write-proof.md) - How to run the focused Robot Save menu/dialog/write/readback QA scenario with Xvfb when needed.
-- [Run the Save Menu Dialog Negative Artifact Contract](./howto/run-save-menu-dialog-negative-artifact-contract.md) - How to run the independent fail-closed Save proof artifact validation contract.
-- [Finalize PR #430 Recovery](./howto/finalize-pr430-recovery.md) - How to confirm current-head PR #430 readiness, keep scope limited to the Save negative artifact contract, and emit a valid no-op result.
-- [Run the Robot Save Menu Dialog Write/Readback Proof](./howto/run-robot-save-menu-dialog-write-readback-proof.md) - Guide for running the focused Robot Save menu/dialog/write/readback proof and reviewing the canonical artifact contract.
-- [Characterize Project Archive Corpus Behavior](./howto/characterize-project-io-corpus.md) - How to add deterministic LFS-free archive corpus characterization around Alice archive readers and writers.
-- [Characterize the Archive/Player Boundary](./howto/characterize-archive-player-boundary.md) - How to add or review focused JSON player archive boundary tests without broadening partial recovery claims.
-- [Tutorial: Add a Save Operation Characterization Test](./tutorials/save-operation-characterization-test.md) - A guided example for the first direct Save operation characterization test.
-- [Tutorial: Trace the Robot Save Menu Dialog Write/Readback Proof](./tutorials/trace-robot-save-menu-dialog-write-readback-proof.md) - Guided review of Robot menu activation, chooser approval, `.a3p` write, readback, marker evidence, and non-claims.
-- [Tutorial: Add a Project IO Corpus Characterization](./tutorials/project-io-corpus-characterization.md) - A guided example for protecting generated `.a3p` archive behavior.
-- [Tutorial: Trace the Archive/Player Boundary](./tutorials/trace-archive-player-boundary.md) - Guided review of supported player decode, exact legacy image-resource compatibility, and fail-closed neighboring archive shapes.
-- [Characterize Legacy Fixture Round-Trip Readiness](./howto/characterize-legacy-fixture-roundtrip-readiness.md) - How to add or review the focused generated fixture round-trip lane, including PR #433 current-head finalization evidence, without broad migration or decode claims.
-- [Tutorial: Trace the Project Archive Reopen/Edit Seam](./tutorials/trace-project-archive-reopen-edit-seam.md) - Guided review of the `IoUtilities` archive journey, required edit persistence assertion, `.a3p` manifest checks, `.a3w` export manifest/source checks, and non-claims.
-- [Tutorial: Trace PR #430 No-Op Finalization](./tutorials/pr430-save-negative-no-op-finalization.md) - Guided example tying clean current-head PR evidence, green checks, and scoped Save negative artifact evidence to a no-op finalization.
-- [Tutorial: Trace Legacy Fixture Round-Trip Readiness](./tutorials/legacy-fixture-roundtrip-readiness.md) - Guided review of generated `.a3p`, `.a3w`, `.a3c`, fail-closed fixture readiness evidence, and merge-ready PR wording.
-- [Tutorial: Add a ProjectMigrationManager Migration Characterization](./tutorials/project-migration-manager-characterization.md) - A guided example for protecting ordered text migration behavior without binary fixtures.
-- [Characterize ProjectMigrationManager migrations](./howto/characterize-project-migration-manager.md) - How to add or review generated XML-string characterization for protected migration hotspots.
-- [Tutorial: Trace Source-Code-Generator Characterization](./tutorials/trace-source-code-generator-characterization.md) - Guided review from core AST snippets to generated NetBeans source, Story API listener seams, launcher evidence, and bounded non-claims.
-- [SecureXmlParser Allowlist and Headless Guard](./reference/securexmlparser-allowlist-headless-guard.md) - Reference for the allowlist regression hotfix (issue #664): adds `org.alice.` to `ALLOWED_RESOURCE_PACKAGES` and guards WindowStack/Frame static initializers for headless CI environments.
-- [Validate SecureXmlParser Allowlist and Headless Guard](./howto/validate-securexmlparser-allowlist-headless-guard.md) - How to verify the allowlist expansion, headless guard, and previously-failing integration tests after checkout or merge.
+- Coverage snapshot: **74%**
+- Documentation pages: **283** in `docs/`
+- Build system: **22 Maven modules** on **Java 21**
+- Main validation lanes: **Checkstyle**, **headless no-Sims tests**, and **JaCoCo coverage**
 
-## Issue-reporting characterization
+## Quick links
 
-- [IssueSubmissionProgressWorker Characterization](./reference/issue-submission-progress-worker.md) - Reference for the background submission lifecycle, three test seams, `RecordingIssueSubmissionProgressWorker` harness, QA scenario contract, and compatibility rules.
-- [Characterize IssueSubmissionProgressWorker Behavior](./howto/characterize-issue-submission-progress-worker.md) - How to add or review characterization tests for the background submission progress worker seams.
-- [Tutorial: Trace the IssueSubmissionProgressWorker Characterization](./tutorials/trace-issue-submission-progress-worker.md) - Guided review of the three test methods: success-path progress ordering, attachment opt-out carry-through, and exception-path incomplete sequence.
+- [Getting started](./getting-started.md)
+- [Architecture](./architecture.md)
+- [Testing](./testing.md)
+- [Contributing](./contributing.md)
+- [Concepts](#concepts)
+- [How-to guides](#how-to-guides)
+- [Reference](#reference)
+- [Tutorials](#tutorials)
+- [Testing notes](#testing-notes)
+- [Additional docs](#additional-docs)
 
-## QA and acceptance testing
+## What this site covers
 
-- [Run Alice desktop outside-in QA](./howto/alice-desktop-outside-in-qa.md) - validate, list, and collect reviewable evidence for user-like desktop acceptance scenarios.
-- [Open Africa Full through Select Project with AT-SPI](./howto/open-africa-full-through-select-project-atspi.md) - run and review the target-specific Select Project evidence path for the committed starter project.
-- [Recover PR #437 after DIRTY merge state](./howto/recover-pr437-dirty-select-project.md) - dirty-repair operator flow for focused Select Project recovery, validation, edit-and-push reporting, and finalization refresh.
-- [Alice desktop outside-in QA tutorial](./tutorials/alice-desktop-outside-in-qa.md) - collect launch evidence and complete a manual workflow evidence checklist.
-- [Alice desktop outside-in QA reference](./reference/alice-desktop-outside-in-qa.md) - scenario schema, runner commands, configuration, and evidence artifacts.
-- [Learner-world assessment boundary](./reference/learner-world-assessment-boundary.md) - reference for the manual instructor/student setup/open/save evidence boundary, generated checklist wording, unsupported assessment claims, and `define-reviewed-assessment-contract` next boundary.
-- [Select Project Africa Full AT-SPI evidence reference](./reference/select-project-africa-full-atspi-evidence.md) - target starter metadata, runner environment, evidence statuses, blocker contract, and post-open gating.
-- [PR #437 dirty recovery reference](./reference/pr437-dirty-recovery.md) - dirty-repair mode, metadata contract, validation matrix, report shape, no-op prohibition, and push safety rules.
-- [Post-open runtime/display accessibility evidence](./reference/post-open-runtime-display-accessibility-evidence.md) - usage, configuration, artifact API, examples, claim boundaries, and world-canvas pixel target readiness contract.
-- [Desktop Run execution gap report](./reference/desktop-run-execution-gap-report.md) - fail-closed report for bounded Run-window evidence and the missing deterministic world-advance proof blocker.
-- [Desktop Run execution evidence decomposition](./reference/desktop-run-execution-evidence-decomposition.md) - decomposition of EatmeDesktopRunExecutionEvidence (1103 lines) into a thin coordinator plus EatmeEvidenceWriter, EatmeWindowDetector, EatmeScreenshotCapture, PixelObservation, and BlockerDetail.
-- [Validate the desktop Run execution evidence decomposition](./howto/validate-desktop-run-execution-evidence-decomposition.md) - how to verify file existence, line counts, visibility, tests, and security invariants after the decomposition.
-- [Tutorial: Trace the desktop Run execution evidence decomposition](./tutorials/trace-desktop-run-execution-evidence-decomposition.md) - guided walkthrough of each extraction move, dependency decisions, and forwarding delegate design.
-- [Accessibility Target Discovery Silver-Thread Contract](./reference/accessibility-target-discovery-silver-thread.md) - focused executable contract that validates bounded launch, run/runtime, and Select Project accessibility target discovery evidence and structured blockers.
-- [Visible rendering evidence nonclaim contract](./reference/visible-rendering-evidence-nonclaim-contract.md) - executable QA contract for keeping render artifacts, screenshots, generated files, and sampled pixels from becoming visible correctness claims without a separate visual-correctness observation contract.
-- [Tutorial: Trace the Accessibility Target Discovery Silver Thread](./tutorials/trace-accessibility-target-discovery-silver-thread.md) - guided review of launch, run/runtime, and Select Project target discovery evidence, structured blockers, and bounded claim wording.
-- [Alice Desktop Silver-Thread Status Report](./reference/silver-thread-status-report.md) - fail-closed shell QA report that aggregates bounded launch, starter change, object placement, procedure edit, run-window/render-affordance, and optional Save/reopen evidence.
-- [Default workflow recovery report](./reference/default-workflow-recovery-report.md) - implemented repo-path/no-op report helper plus the no-timeout merge-ready extension for PR branch recovery.
-- [Recover a pull request with no-timeout default workflow](./howto/recover-pr-with-default-workflow.md) - flow to verify the current PR head, collect GitHub evidence, run focused QA, review docs and PR wording, record quality-audit cycles, and emit `MERGE_READY` or `NOT_MERGE_READY`.
-- [Tutorial: Trace no-timeout pull request recovery](./tutorials/trace-no-timeout-pr-recovery.md) - guided PR #404 recovery example for exact-head evidence, no-timeout QA, docs impact, quality-audit cycles, and explicit readiness blockers.
-- [Run-Window Creation/Wiring Contract](./reference/run-window-creation-wiring-contract.md) - reference for the focused Run-window creation/wiring artifact API, configuration, path safety, scenario wiring, and explicit non-claims.
-- [Review the Run-Window Creation/Wiring Contract](./howto/review-run-window-creation-wiring-contract.md) - how to run and review the focused Run-window contract without timeout wrappers or broad UI claims.
-- [Silver Thread Launch-Build-Run Test](./reference/silver-thread-launch-build-run-test.md) - design specification for the first real E2E silver thread test: headless create→add statement→save→reopen→execute via VM→verify events→round-trip, plus real `.a3p` starter project load/inspect/copy/reopen.
-- [Run the Silver Thread Launch-Build-Run Test](./howto/run-silver-thread-launch-build-run-test.md) - validation command and review checklist for the headless create→build→run→save→reopen end-to-end journey.
-- [Tutorial: Trace the Silver Thread Launch-Build-Run Test](./tutorials/silver-thread-launch-build-run-test.md) - guided walkthrough of project creation, statement addition, VM execution, listener events, and round-trip fidelity assertions.
-- [Silver Thread Tweedle Decoder Round-Trip Test](./reference/silver-thread-tweedle-decoder-round-trip-test.md) - characterization test proving Tweedle encode→decode round-trip preserves AST structural identity for all `NamedUserType` declarations in a real `.a3p` starter project.
-- [Run the Silver Thread Tweedle Decoder Round-Trip Test](./howto/run-silver-thread-tweedle-decoder-round-trip-test.md) - validation command and review checklist for the headless Tweedle encode→decode structural round-trip.
-- [Tutorial: Trace the Silver Thread Tweedle Decoder Round-Trip Test](./tutorials/silver-thread-tweedle-decoder-round-trip-test.md) - guided walkthrough of project loading, Tweedle encoding, decoding with terminals, structural assertions, and UnsupportedTweedleDecodeException gap handling.
-- [Silver Thread Edit-Save-Readback Test](./reference/silver-thread-edit-save-readback-test.md) - connected silver thread test chaining EatmeEditProcedure edit → production `saveProjectTo` → `IoUtilities.readProject` readback, proving an appended comment survives the full edit-save-readback journey headlessly.
-- [Run the Silver Thread Edit-Save-Readback Test](./howto/run-silver-thread-edit-save-readback-test.md) - validation command and review checklist for the headless edit→save→readback connected chain.
-- [Tutorial: Trace the Silver Thread Edit-Save-Readback Test](./tutorials/silver-thread-edit-save-readback-test.md) - guided walkthrough of starter project creation, EatmeEditProcedure invocation, singleton reset, TestProjectApplication bootstrap, production save, readback verification, and proof artifact.
-- [First-Lesson Live Procedure Target Action Seam](./reference/first-lesson-live-procedure-target-observation.md) - read-only live desktop shard contract for opening the first-lesson starter through Select Project and producing edit-ready-or-named-blocker evidence.
-- [Run the First-Lesson Live Procedure Target Action Seam](./howto/run-first-lesson-live-procedure-target-action-seam.md) - how to collect and review the read-only first-lesson procedure/code-editor action-seam evidence.
-- [First-Lesson Procedure Tab Code-Editor Backing](./reference/first-lesson-procedure-tab-code-editor-backing.md) - reference for proving `scene.eatmeFirstLesson` tab selection lands on the expected `CodeComposite` and `CodeEditor.getCode()` model.
-- [Run the First-Lesson Procedure Tab Code-Editor Backing Proof](./howto/run-first-lesson-procedure-tab-code-editor-backing.md) - validation command and review checklist for the focused `ProcedureTabSelectionTest` backing seam without claiming edit, Save, rendering, assessment, or completion.
-- [First-Lesson Code-Editor Action Proof](./reference/first-lesson-code-editor-action-proof.md) - Java proof that the selected `scene.eatmeFirstLesson` code-editor backing seam accepts one deterministic `append-comment` action with target-only marker evidence and negative checks.
-- [Run the First-Lesson Code-Editor Action Proof](./howto/run-first-lesson-code-editor-action-proof.md) - command and review checklist for the timeout-free focused action proof.
-- [First-Lesson Procedure/Edit Seam](./reference/first-lesson-procedure-edit-seam.md) - narrow executable proof that chains deterministic object placement into AST-level procedure editing.
-- [Run the First-Lesson Procedure/Edit Handoff Proof](./howto/run-first-lesson-procedure-edit-handoff.md) - how to run the focused Maven proof and QA command smoke for the procedure/edit handoff.
-- [Tutorial: Trace the First-Lesson Procedure Tab Code-Editor Backing Seam](./tutorials/trace-first-lesson-procedure-tab-code-editor-backing.md) - guided review of the selected procedure, selected `CodeComposite`, and backing code-editor model assertions.
-- [Tutorial: Trace the First-Lesson Code-Editor Action Proof](./tutorials/trace-first-lesson-code-editor-action-proof.md) - guided review of the target selection, backing identity, deterministic edit action, target-only marker evidence, and non-claims.
-- [Tutorial: Trace the First-Lesson Procedure/Edit Seam](./tutorials/trace-first-lesson-procedure-edit-seam.md) - guided review of asserted placement evidence, procedure-edit artifacts, and strict evidence boundaries.
-- [Tutorial: Trace the Run-Window Creation/Wiring Contract](./tutorials/trace-run-window-creation-wiring-contract.md) - guided review of the Run-window evidence writer, fixed artifact shape, path-safety checks, and non-claim boundary.
-- [Desktop procedure edit and Save automation](./reference/desktop-procedure-edit-and-save-automation.md) - checked-in hook points, next tests, and unproven limits for procedure tab selection and project Save automation.
-- [Gadugi exported launcher evidence scenario](./reference/gadugi-exported-launcher-evidence.md) - Gadugi CLI scenario contract, configuration, commands, and conservative boundaries for exported launcher evidence checks.
-- [Gadugi archive/player boundary evidence scenario](./reference/gadugi-archive-player-boundary-evidence.md) - Gadugi CLI scenario contract, configuration, commands, and conservative boundaries for archive/player boundary evidence checks.
-- [Gadugi select-project tab-click evidence scenario](./reference/gadugi-select-project-tab-click-evidence.md) - Gadugi CLI scenario contract, configuration, commands, and conservative boundaries for Select Project tab-click evidence checks added by PR #437.
-- [Gadugi runtime event dispatch evidence scenario](./reference/gadugi-runtime-event-dispatch-evidence.md) - Gadugi CLI scenario contract, configuration, commands, and conservative boundaries for bounded headless runtime dispatch evidence checks.
-- [Gadugi Run execution gap evidence scenario](./reference/gadugi-run-execution-gap-evidence.md) - Gadugi CLI scenario contract, configuration, commands, and conservative boundaries for desktop Run execution gap evidence checks.
-- [Gadugi run-window contract evidence scenario](./reference/gadugi-run-window-contract-evidence.md) - Gadugi CLI scenario contract, configuration, commands, and conservative boundaries for Run-window creation/wiring evidence checks.
-- [Headless-safe desktop action characterization](./reference/headless-safe-desktop-action-characterization.md) - JavaFX/Swing headless startup contract, Croquet action-flow seams, validation commands, and compatibility rules.
-- [Gadugi Window menu registration evidence scenario](./reference/gadugi-window-menu-registration-evidence.md) - Gadugi CLI scenario contract, configuration, commands, and conservative boundaries for PR #401 Window menu registration evidence checks.
-- [Run Gadugi Window menu registration evidence](./howto/run-gadugi-window-menu-registration-evidence.md) - validate, run, and review the Gadugi Window menu registration evidence scenario and contract test.
-- [Tutorial: Trace the Gadugi Window menu registration evidence](./tutorials/gadugi-window-menu-registration-evidence.md) - guided walkthrough from Gadugi scenario to delegated QA runner to underlying menu/action smoke.
-- [Window menu action contract](./reference/window-menu-action-contract.md) - canonical focused specification for `WindowMenuModel` registration, stable identity, menu-bar membership lookup, gated smoke usage, and non-claims.
-- [PR #401 UI Action Menu Contract Handoff](./reference/pr401-ui-action-menu-contract-evidence.md) - merge-ready evidence requirements, bounded `alice-desktop-menu-action-smoke` recovery scope, and no-op source justification.
-- [Characterize headless-safe desktop actions](./howto/characterize-headless-safe-desktop-actions.md) - how to add or review desktop action characterization without display-dependent tests.
-- [Tutorial: Trace a Desktop Action Journey](./tutorials/desktop-action-journey-characterization.md) - guided walkthrough from outside-in menu/action smoke evidence to headless-safe Save action tests.
-- [Expand coverage ratchets](./howto/expand-coverage-ratchets.md) - measure no-Sims coverage, choose safe module floors, and document protected hotspot decisions.
-- [Coverage ratchet and hotspot review tutorial](./tutorials/coverage-ratchet-and-hotspot-review.md) - guided ratchet expansion example with conservative thresholds and a hotspot skip/refactor decision.
-- [Coverage reporting reference](./reference/coverage-reporting.md) - aggregate and module JaCoCo reporting, CLI options, CI ratchet gates, configuration, and path toward 70% line coverage.
-- [core/util test coverage reference](./reference/core-util-test-coverage.md) - test inventory table, coverage arithmetic (3.63%→40.2%), excluded AWT/Swing areas, file tree layout, and ratchet configuration.
-- [Raise core/util test coverage](./howto/raise-core-util-test-coverage.md) - prerequisites, test architecture (3-phase), step-by-step guide for adding new tests, static state management, and troubleshooting.
-- [Tutorial: Write headless-safe tests for core/util](./tutorials/core-util-headless-test-coverage.md) - walkthrough writing a BufferUtilitiesTest, plus reusable patterns: TemporaryFolder, static state save/restore, headless guards, and encode→decode round-trips.
-- [core/story-api coverage sprint](./reference/core-story-api-coverage-sprint.md) - test inventory (50.2%→70%), 6 tiers covering Jama matrix, implementation facades, transforms, shapes, facade layer, and resource utilities.
-- [core/util coverage sprint](./reference/core-util-coverage-sprint.md) - test inventory (42.7%→70%), 5 tiers covering animation framework, math interpolation, property system, codec edge cases, and gap-fillers.
-- [core/ast coverage sprint](./reference/core-ast-coverage-sprint.md) - test inventory (50.4%→70%), 6 tiers covering VM events, exception types, VM core, code generators, AST nodes, and Tweedle serialization.
-- [core/glrender coverage sprint](./reference/core-glrender-coverage-sprint.md) - test inventory (4.6%→30%), 4 tiers covering selection buffer z-math, geometry intersection, camera projection, and curve/mesh utilities.
-- [Run coverage sprint tests](./howto/run-coverage-sprint-tests.md) - how to run, verify, and troubleshoot the Issue #751 coverage sprint tests across all three modules.
-- [core/croquet coverage push](./reference/core-croquet-coverage-push.md) - test inventory (30.4%→50%), 7 tiers covering triggers, cascade runtime, history steps, preferences, codec/icon/data/meta, state/model, and composite.
-- [core/util coverage push phase 3](./reference/core-util-coverage-push-phase3.md) - test inventory (51.6%→70%), 5 tiers covering AWT utilities, animation deepening, codec edge cases, image/texture, and miscellaneous utilities.
-- [core/story-api coverage push phase 2](./reference/core-story-api-coverage-push-phase2.md) - test inventory (52.3%→70%), 6 tiers covering IK solver math, interact conditions, handle/input state, manipulator snap math, implementation helpers, and events.
-- [Run Issue #775 coverage push tests](./howto/run-issue-775-coverage-push.md) - how to run, verify, and troubleshoot the 84 test files added by Issue #775 across core/croquet, core/util, and core/story-api.
-- [Headless test patterns for coverage push](./tutorials/headless-test-patterns-coverage-push.md) - 9 reusable patterns: listener removal, concrete stubs, AWT data-only, synthetic events, IK pure-math, binary codec round-trip, preferences isolation, temporary filesystem, and animation test doubles.
-- [CI efficiency notes](./reference/ci-efficiency.md) - current pull request check timing, parallelism status, and safe next targets.
-- [Merge-ready PR recovery](./reference/merge-ready-pr-recovery.md) - Specification for the automated merge-ready blocker resolution script: CLI contract, recovery steps, evidence template, and validation.
-- [Run merge-ready PR recovery](./howto/run-merge-ready-pr-recovery.md) - how to bring a pull request to merge-ready status with QA scenario validation, quality audit cycles, and PR description updates.
-- [Mac-compatible test guards](./reference/mac-compatible-test-guards.md) - platform-tolerant render-target dimension assertions (#496), JUnit `Assume` headless-skip guards (#497), and macOS screen menu bar property override (#500, #502) for cross-platform CI compatibility.
-- [Review Mac-compatible test guards](./howto/review-mac-compatible-test-guards.md) - how to verify, extend, or add platform-tolerant assertions, headless-skip guards, and macOS menu bar property overrides for desktop proof tests.
-- [Standalone project test process drain and macOS guard](./reference/standalone-project-test-process-drain-and-macos-guard.md) - `runCommand()` stream drain fix (#726 bug 1) and macOS xvfb-run `assumeFalse` guard (#726 bug 2) for `ProjectCodeGeneratorStandaloneProjectTest`.
-- [Review standalone project test reliability](./howto/review-standalone-project-test-reliability.md) - how to verify the `runCommand()` drain thread pattern and macOS xvfb-run skip guard.
-- [Scene-Object-Added Evidence](./reference/scene-object-added-evidence.md) - Reference for the property-gated proof hook that records JSON evidence when a student adds a scene object via gallery drag-drop, enabling eatme harness verification of the Building a Scene lesson step.
-- [Run the Scene-Object-Added Evidence Proof](./howto/run-scene-object-added-evidence-proof.md) - How to run and review the unit tests for the scene-object-added evidence hook.
-- [Tutorial: Trace the Scene-Object-Added Evidence Hook](./tutorials/trace-scene-object-added-evidence.md) - Guided walkthrough from gallery drag-drop trigger through property gate, data extraction, directory validation, and atomic JSON write.
+- how to clone, build, test, and package Alice 3
+- how the Maven modules fit together
+- how characterization tests protect refactors
+- how save, export, migration, desktop proof, and QA contracts are documented
+- where to find detailed reference material for each modernization seam
 
-## Modernization evidence and scorecards
+## Documentation map
 
-- [Alice modernization scorecard](./reference/modernization-scorecard.md) - generated, reproducible scorecard snapshot for modernization evidence.
-- [Modernization scorecard generator reference](./reference/modernization-scorecard-generator.md) - CLI contract, evidence inputs, output-path safety, examples, and review workflow.
-- [Modernization corpus manifest](./reference/modernization-corpus-manifest.md) - representative, LFS-independent corpus evidence manifest and validation contract.
-- [Maintain the modernization corpus manifest](./howto/maintain-modernization-corpus-manifest.md) - how to update representative corpus evidence without adding binary payloads or Git LFS objects.
-- [Tutorial: Add a modernization corpus manifest entry](./tutorials/add-modernization-corpus-manifest-entry.md) - guided example for documenting a new generated fixture shape and refreshing scorecard evidence.
-- [Characterize ModelResourceExporter behavior](./howto/characterize-model-resource-exporter.md) - how to add focused, behavior-backed model resource exporter coverage before protected hotspot work.
-- [Model resource exporter reference](./reference/model-resource-exporter.md) - XML, generated Java, thumbnail, and protected-hotspot contracts for model-loading resource export.
-- [ModelResourceExporter dead code removal](./reference/model-resource-exporter-dead-code-removal.md) - dead code removal and static method extraction from the exporter into `ModelResourceJavaGenerator`.
-- [ModelResourceExporter dead inner class and wrapper removal](./reference/model-resource-exporter-dead-inner-class-and-wrapper-removal.md) - removal of dead `NamedFile` inner class and three `shouldSuppress*`/`shouldHide*` wrappers, plus new `getArraysToExposeFirstElementOf()` getter.
-- [Tutorial: Characterize ModelResourceExporter bounding-box state](./tutorials/model-resource-exporter-bounding-box-state.md) - guided example for protecting the intentional stateful XML bounding-box behavior.
-- [Tutorial: Trace a Model Export PR Recovery](./tutorials/trace-model-export-pr-recovery.md) - guided walkthrough from QA scenario validation through quality audit to the merge-ready PR evidence template.
-- [COLLADA Exporter Decomposition](./reference/collada-exporter-decomposition.md) - extraction of `ColladaParser`, `ColladaJointExtractor`, and `ColladaMeshProcessor` from `JointedModelColladaExporter` (issue #576, 1181→~350 lines).
-- [Validate COLLADA Exporter Decomposition](./howto/validate-collada-exporter-decomposition.md) - how to verify compilation, line counts, visibility, and test pass/fail after the COLLADA exporter extraction.
-- [Decode coverage characterization](./reference/decode-coverage-characterization.md) - build contract, API behavior, examples, and tutorial guidance for Tweedle, literal arithmetic field initializers, player archive, type archive boundaries, and resource decode tests.
-- [Zero-argument this-method call decode reference](./reference/zero-argument-this-method-call-decode.md) - narrow Tweedle decoder contract for explicit same-type `this.method()` calls with no arguments and the argument-bearing explicit `this.method(label: value, ...)` fail-fast boundary.
-- [Simple if-statement decode reference](./reference/simple-if-statement-decode.md) - Tweedle decoder contract for simple `if (condition) { ... }` bodies with supported conditions and an explicit conditional-body allowlist including zero-argument `this.method();` calls.
-- [Player archive unsupported Tweedle diagnostics](./reference/player-archive-unsupported-tweedle-diagnostics.md) - narrow JSON `.a3w` archive contract for surfacing unsupported argument-bearing explicit `this` call reasons while keeping literal arithmetic field-initializer support scoped.
-- [Validate the Archive/Player Boundary](./howto/validate-archive-player-boundary.md) - how to run and review the focused resource-recovery fail-closed evidence without broad player, rendering, Save, grading, Sims, installer, or lesson-completion claims.
-- [Characterize zero-argument this-method call decode](./howto/characterize-zero-argument-this-method-call-decode.md) - how to review focused positive and negative tests for the implemented call slice and named argument-bearing boundary.
-- [Characterize simple if-statement decode](./howto/characterize-simple-if-statement-decode.md) - how to add or review focused positive and negative tests for simple-if bodies that preserve supported conditions and the conditional-body allowlist.
-- [Characterize player archive unsupported Tweedle diagnostics](./howto/characterize-player-archive-unsupported-tweedle-diagnostics.md) - how to add generated `.a3w` characterization for archive-level unsupported decode reason reporting.
-- [Tutorial: Add Archive/Player Boundary Characterization](./tutorials/archive-player-boundary-characterization.md) - guided example for a generated JSON `.a3w` image-resource archive that must fail closed when the manifest-named program type is unsupported.
-- [Tutorial: Add zero-argument this-method call decode coverage](./tutorials/zero-argument-this-method-call-decode.md) - guided example for adding decoded `MethodInvocation` shape coverage and unsupported-neighbor assertions without broadening decoder claims.
-- [Tutorial: Trace simple if-statement decode](./tutorials/simple-if-statement-decode.md) - guided example for asserting the decoded `ConditionalStatement` shape, allowlisted body statements, and unsupported neighboring conditional-body cases.
-- [Tutorial: Trace a player archive unsupported this-call diagnostic](./tutorials/player-archive-unsupported-this-call-diagnostic.md) - guided example for checking fail-closed `.a3w` diagnostics around `this.helper(value: 1)` and `caller.this.helper` context.
-- [PR #463 Recovery Gate](./reference/pr463-recovery-gate.md) - evidence shape, verifiers, blocker codes, and readiness result contract for the focused archive/player PR #463 recovery gate.
-- [Run the PR #463 Recovery Gate](./howto/run-pr463-recovery-gate.md) - how to collect evidence, run the gate, and interpret merge-readiness results.
-- [Tutorial: Assemble PR #463 Recovery Evidence](./tutorials/pr463-recovery-gate-evidence.md) - guided walkthrough for building the structured evidence JSON and running the gate.
-- [Decoder Delegate Decomposition](./reference/decoder-delegate-decomposition.md) - internal decomposition of the 1258-line `Decoder` into a thin coordinator plus `ExpressionDecoder`, `StatementDecoder`, and `FieldDecoder` package-private delegates with preserved behavior.
-- [Validate the Decoder Delegate Decomposition](./howto/validate-decoder-delegate-decomposition.md) - step-by-step validation for the Decoder decomposition: core AST tests, story-api-migration tests, silver-thread round-trip, line counts, and visibility checks.
-- [Tutorial: Trace the Decoder Delegate Decomposition](./tutorials/trace-decoder-delegate-decomposition.md) - guided walkthrough of a Tweedle class decode flowing through the coordinator, ExpressionDecoder, StatementDecoder, and FieldDecoder delegates.
-- [TweedleEncoder Rename](./reference/tweedle-encoder-rename.md) - rename of `Encoder` to `TweedleEncoder` for disambiguation from `java.beans.Encoder` and `org.lgna.project.io.Encoder`, aligning with the `TweedleEncoderDecoder` facade naming while preserving all encoding behavior.
-- [Validate the TweedleEncoder Rename](./howto/validate-tweedle-encoder-rename.md) - step-by-step validation for the `Encoder` → `TweedleEncoder` rename: stale reference check, core AST tests, story-api-migration tests, silver-thread round-trip, and git history preservation.
-- [Tutorial: Trace the TweedleEncoder Rename](./tutorials/trace-tweedle-encoder-rename.md) - guided walkthrough of the rename from facade instantiation through visitor-pattern interfaces to Story API implementors.
-- [StatementEncoder Extraction](./reference/statement-encoder-extraction.md) - extraction of statement-completion, disabled-marker, and statement-end methods from `TweedleEncoder` into a package-private `StatementEncoder` delegate (issue #506 step 1), with bridge methods for `super` calls and forwarding methods for inherited `protected` access.
-- [Validate the StatementEncoder Extraction](./howto/validate-statement-encoder-extraction.md) - step-by-step validation for the `StatementEncoder` extraction: file existence, visibility, delegation, core AST tests, and story-api-migration tests.
-- [Tutorial: Trace the StatementEncoder Extraction](./tutorials/trace-statement-encoder-extraction.md) - guided walkthrough of statement-completion and disabled-marker flows through `TweedleEncoder` and its `StatementEncoder` delegate, including bridge and forwarding method patterns.
-- [ExpressionEncoder Extraction](./reference/expression-encoder-extraction.md) - extraction of instantiation dispatch, target-and-member resolution, Math module routing, and resource expression encoding from `TweedleEncoder` into a package-private `ExpressionEncoder` delegate (issue #506 step 2, expanded in #730 with `processInstantiation`), with `super` and forwarding bridge methods.
-- [Validate the ExpressionEncoder Extraction](./howto/validate-expression-encoder-extraction.md) - step-by-step validation for the `ExpressionEncoder` extraction: file existence, visibility, bridge methods, delegation, core AST tests, and story-api-migration tests.
-- [Tutorial: Trace the ExpressionEncoder Extraction](./tutorials/trace-expression-encoder-extraction.md) - guided walkthrough of instantiation dispatch, target-and-member, Math module routing, resource expression, member rename, and super bridge fallback flows through `TweedleEncoder` and its `ExpressionEncoder` delegate.
-- [ArgumentEncoder Extraction](./reference/argument-encoder-extraction.md) - extraction of keyed argument dispatch, labeled argument formatting, parameter label resolution, and argument wrapping from `TweedleEncoder` into a package-private `ArgumentEncoder` delegate (issue #730), with `forwardIdentifierName` bridge for protected access.
-- [Validate the ArgumentEncoder Extraction](./howto/validate-argument-encoder-extraction.md) - step-by-step validation for the `ArgumentEncoder` extraction: file existence, visibility, bridge method, delegation, private method removal, line count, core AST tests, and story-api-migration tests.
-- [Tutorial: Trace the ArgumentEncoder Extraction](./tutorials/trace-argument-encoder-extraction.md) - guided walkthrough of labeled argument, keyed argument, parameter label resolution, argument wrapping, and `argument.process(encoder)` visitor dispatch flows through `TweedleEncoder` and its `ArgumentEncoder` delegate.
-- [FormattingEncoder Extraction](./reference/formatting-encoder-extraction.md) - extraction of indent management, argument formatting, list rendering, string quoting, visibility tags, and instantiation helpers from `TweedleEncoder` into a package-private `FormattingEncoder` delegate (issue #506 step 3), bringing `TweedleEncoder` under 500 lines.
-- [Validate the FormattingEncoder Extraction](./howto/validate-formatting-encoder-extraction.md) - step-by-step validation for the `FormattingEncoder` extraction: file existence, indent state migration, bridge methods, delegation, line count, core AST tests, story-api-migration tests, and core/ide tests.
-- [Tutorial: Trace the FormattingEncoder Extraction](./tutorials/trace-formatting-encoder-extraction.md) - guided walkthrough of indent management, argument formatting, list rendering, visibility tags, and string quoting flows through `TweedleEncoder` and its `FormattingEncoder` delegate.
-- [Encoder Delegate Decomposition](./reference/encoder-delegate-decomposition.md) - internal decomposition of the 959-line `TweedleEncoder` into a thin coordinator plus `StatementEncoder`, `ExpressionEncoder`, `EncoderMappings`, and `ResourceStructureEncoder` package-private delegates with preserved behavior.
-- [Validate the TweedleEncoder Extraction](./howto/validate-tweedle-encoder-extraction.md) - step-by-step validation for the TweedleEncoder extraction: delegate visibility, line counts, core AST tests, story-api-migration tests, silver-thread round-trip, and stale reference checks.
-- [Tutorial: Trace the Encoder Delegate Decomposition](./tutorials/trace-encoder-delegate-decomposition.md) - guided walkthrough of a Tweedle encode request flowing through TweedleEncoder, StatementEncoder, ExpressionEncoder, EncoderMappings, and ResourceStructureEncoder.
-- [Tweedle VirtualMachine Dead Code Removal](./reference/tweedle-vm-dead-code-removal.md) - removal of ~835 lines of commented-out dead code from `VirtualMachine.java` (938→104 lines), preserving all 11 active methods with identical signatures (issue #579).
-- [JavaCodeGenerator Delegate Extraction](./reference/java-code-generator-delegate-extraction.md) - extraction of import management, comment formatting, and concurrency emission from the 643-line `JavaCodeGenerator` into `JavaImportCollector`, `JavaCommentFormatter`, and `JavaConcurrencyEmitter` package-private delegates (issue #649), reducing to ~475 lines.
-- [Validate the JavaCodeGenerator Extraction](./howto/validate-java-code-generator-extraction.md) - step-by-step validation for the `JavaCodeGenerator` extraction: delegate visibility, line counts, protected method retention, NetBeans compatibility, and compilation checks.
-- [Tutorial: Trace the JavaCodeGenerator Extraction](./tutorials/trace-java-code-generator-extraction.md) - guided walkthrough of import collection, localized comment formatting, and concurrency emission flows through `JavaCodeGenerator` and its three delegates.
+### Start here
 
-## Croquet framework test coverage
+- [Getting started](./getting-started.md)
+- [Architecture](./architecture.md)
+- [Testing](./testing.md)
+- [Contributing](./contributing.md)
 
-- [Core Croquet Test Coverage — 70%+ Push](./testing/core-croquet-coverage.md) - Reference for ~3,790 new test lines covering all State subclasses, all Operation subclasses, all Codec implementations, all EditFactory implementations, ListData, and MenuModel (issue #794).
-- [Run the Core Croquet Coverage Tests](./howto/run-core-croquet-coverage-tests.md) - How to run, verify, and extend the core/croquet coverage tests.
-- [Tutorial: Trace the Core Croquet Coverage Push](./tutorials/trace-core-croquet-coverage-push.md) - Guided walkthrough of test strategies, headless patterns, and coverage verification.
+### Concepts
 
-## Croquet framework decomposition
+- [Formal Specification Lane](./concepts/formal-spec-lane.md)
+- [Migration Hotspot Characterization](./concepts/migration-hotspot-characterization.md)
 
-- [CompositeResourceManager Extraction](./reference/composite-resource-manager-extraction.md) - Reference for extraction of 13 inner state classes into `InternalStateTypes` and localization methods into `CompositeLocalizationDelegate` from `CompositeResourceManager` (issue #631), reducing 649 lines to ~225.
-- [Validate CompositeResourceManager Extraction](./howto/validate-composite-resource-manager-extraction.md) - How to verify compilation, line counts, visibility, and contract tests after the inner class and localization extraction.
-- [Tutorial: Trace the CompositeResourceManager Extraction](./tutorials/trace-composite-resource-manager-extraction.md) - Guided walkthrough of inner class extraction into InternalStateTypes, stateless localization delegate design, factory method references, encryption call chain preservation, and characterization test boundaries.
+### How-to guides
 
-## IDE declaration composite decomposition
+- [Run Alice desktop outside-in QA](./howto/alice-desktop-outside-in-qa.md)
+- [Characterize the Archive/Player Boundary](./howto/characterize-archive-player-boundary.md)
+- [Characterize Headless-Safe Desktop Actions](./howto/characterize-headless-safe-desktop-actions.md)
+- [Characterize IssueSubmissionProgressWorker Behavior](./howto/characterize-issue-submission-progress-worker.md)
+- [Characterize Legacy Fixture Round-Trip Readiness](./howto/characterize-legacy-fixture-roundtrip-readiness.md)
+- [Characterize ModelResourceExporter behavior](./howto/characterize-model-resource-exporter.md)
+- [Characterize NonCachingTextRenderer](./howto/characterize-noncaching-text-renderer.md)
+- [Characterize Player Archive Unsupported Tweedle Diagnostics](./howto/characterize-player-archive-unsupported-tweedle-diagnostics.md)
+- [Characterize Project Archive Corpus Behavior](./howto/characterize-project-io-corpus.md)
+- [Characterize ProjectMigrationManager migrations](./howto/characterize-project-migration-manager.md)
+- [Characterize Project Save and Export Operations](./howto/characterize-project-save-export-operations.md)
+- [Characterize Simple If-Statement Decode](./howto/characterize-simple-if-statement-decode.md)
+- [Characterize Source-Code-Generator Behavior](./howto/characterize-source-code-generator.md)
+- [Characterize StorytellingSceneEditor](./howto/characterize-storytelling-scene-editor.md)
+- [Characterize Zero-Argument This-Method Call Decode](./howto/characterize-zero-argument-this-method-call-decode.md)
+- [Expand coverage ratchets](./howto/expand-coverage-ratchets.md)
+- [Extract Text Migration Data from ProjectMigrationManager](./howto/extract-text-migration-registry.md)
+- [Finalize exported NetBeans Ant smoke recovery](./howto/finalize-exported-netbeans-ant-smoke-recovery.md)
+- [Finalize PR #430 Recovery](./howto/finalize-pr430-recovery.md)
+- [Finalize a Source-Code-Generator Pull Request](./howto/finalize-source-code-generator.md)
+- [How to Implement a New AstProcessor](./howto/implement-ast-processor.md)
+- [Maintain the modernization corpus manifest](./howto/maintain-modernization-corpus-manifest.md)
+- [Open Africa Full through Select Project with AT-SPI](./howto/open-africa-full-through-select-project-atspi.md)
+- [Raise core/ide test coverage](./howto/raise-core-ide-test-coverage.md)
+- [How to raise core/util coverage from 46% to 70%](./howto/raise-core-util-coverage-to-70.md)
+- [Raise core/util test coverage](./howto/raise-core-util-test-coverage.md)
+- [Recover a pull request with no-timeout default workflow](./howto/recover-pr-with-default-workflow.md)
+- [Recover PR #437 after DIRTY merge state](./howto/recover-pr437-dirty-select-project.md)
+- [Review Mac-Compatible Test Guards](./howto/review-mac-compatible-test-guards.md)
+- [Review the Run-Window Creation/Wiring Contract](./howto/review-run-window-creation-wiring-contract.md)
+- [Review Standalone Project Test Reliability](./howto/review-standalone-project-test-reliability.md)
+- [Run the Core Croquet Coverage Tests](./howto/run-core-croquet-coverage-tests.md)
+- [How to run the coverage sprint tests](./howto/run-coverage-sprint-tests.md)
+- [Run the First-Lesson Code-Editor Action Proof](./howto/run-first-lesson-code-editor-action-proof.md)
+- [Run the First-Lesson Live Procedure Target Action Seam](./howto/run-first-lesson-live-procedure-target-action-seam.md)
+- [Run the First-Lesson Procedure/Edit Handoff Proof](./howto/run-first-lesson-procedure-edit-handoff.md)
+- [Run the First-Lesson Procedure Tab Code-Editor Backing Proof](./howto/run-first-lesson-procedure-tab-code-editor-backing.md)
+- [Run Gadugi Window menu registration evidence](./howto/run-gadugi-window-menu-registration-evidence.md)
+- [How to run the Issue #775 coverage push tests](./howto/run-issue-775-coverage-push.md)
+- [Run merge-ready PR recovery](./howto/run-merge-ready-pr-recovery.md)
+- [Run the PR #463 Recovery Gate](./howto/run-pr463-recovery-gate.md)
+- [Run the Robot Save Menu Dialog Write/Readback Proof](./howto/run-robot-save-menu-dialog-write-readback-proof.md)
+- [Run the Run-Window Detection Proof](./howto/run-run-window-detection-proof.md)
+- [Run the Runtime Event Dispatch Characterization](./howto/run-runtime-event-dispatch-characterization.md)
+- [Run the Save Menu Dialog Negative Artifact Contract](./howto/run-save-menu-dialog-negative-artifact-contract.md)
+- [Run the Save Menu Dialog Write/Readback Proof](./howto/run-save-menu-dialog-write-proof.md)
+- [Run the Scene-Object-Added Evidence Proof](./howto/run-scene-object-added-evidence-proof.md)
+- [Run the Silver Thread Edit-Save-Readback End-to-End Test](./howto/run-silver-thread-edit-save-readback-test.md)
+- [Run the Silver Thread Launch-Build-Run End-to-End Test](./howto/run-silver-thread-launch-build-run-test.md)
+- [Run the Silver Thread Save Round-Trip End-to-End Test](./howto/run-silver-thread-save-round-trip-test.md)
+- [Run the Silver Thread Tweedle Decoder Round-Trip Test](./howto/run-silver-thread-tweedle-decoder-round-trip-test.md)
+- [Run the VM Characterization Tests](./howto/run-vm-characterization-tests.md)
+- [Use the Formal Spec Artifacts](./howto/use-formal-spec-artifacts.md)
+- [Validate the Archive/Player Boundary](./howto/validate-archive-player-boundary.md)
+- [Validate the ArgumentEncoder Extraction](./howto/validate-argument-encoder-extraction.md)
+- [Validate COLLADA Exporter Decomposition](./howto/validate-collada-exporter-decomposition.md)
+- [Validate CompositeResourceManager Extraction](./howto/validate-composite-resource-manager-extraction.md)
+- [How to Validate the Declaration Composite Delegate Decomposition](./howto/validate-declaration-composite-delegate-decomposition.md)
+- [Validate the Decoder Delegate Decomposition](./howto/validate-decoder-delegate-decomposition.md)
+- [Validate the desktop Run execution evidence decomposition](./howto/validate-desktop-run-execution-evidence-decomposition.md)
+- [Validate DragAdapter Event and Camera Extraction](./howto/validate-drag-adapter-event-camera-extraction.md)
+- [Validate the ExpressionEncoder Extraction](./howto/validate-expression-encoder-extraction.md)
+- [Validate FolderTabbedPane Inner Class Extraction](./howto/validate-folder-tabbed-pane-inner-class-extraction.md)
+- [Validate the FormattingEncoder Extraction](./howto/validate-formatting-encoder-extraction.md)
+- [Validate GlobalDragAdapter Handle Setup Extraction](./howto/validate-global-drag-adapter-handle-setup-extraction.md)
+- [Validate the Graphics2D Delegate Decomposition](./howto/validate-graphics2d-delegate-decomposition.md)
+- [Validate the JavaCodeGenerator Delegate Extraction](./howto/validate-java-code-generator-extraction.md)
+- [Validate Joint Hierarchy Manager Decomposition](./howto/validate-joint-hierarchy-manager-decomposition.md)
+- [How to Validate the ManipulationHandle3D Geometry Extraction](./howto/validate-manipulation-handle-3d-geometry-extraction.md)
+- [Validate the ModelResourceXmlParser Extraction](./howto/validate-model-resource-xml-parser-extraction.md)
+- [Validate NonCachingTextRenderer Inner Class Extraction](./howto/validate-noncaching-text-renderer-inner-class-extraction.md)
+- [Validate NonCachingTextRenderer Pipeline Extraction](./howto/validate-noncaching-text-renderer-pipeline-extraction.md)
+- [Validate NonCachingTextRenderer Properties Extraction](./howto/validate-noncaching-text-renderer-properties-extraction.md)
+- [Validate the Project Archive Reopen/Edit Seam](./howto/validate-project-archive-reopen-edit-seam.md)
+- [Validate SaveOperationCompletionEvidence Extraction](./howto/validate-save-operation-completion-evidence-extraction.md)
+- [Validate SceneEditorFieldManager Extraction](./howto/validate-scene-editor-field-manager-extraction.md)
+- [Validate SecureXmlParser Allowlist and Headless Guard](./howto/validate-securexmlparser-allowlist-headless-guard.md)
+- [Validate the StatementEncoder Extraction](./howto/validate-statement-encoder-extraction.md)
+- [Validate StoryApiConfigurationManager Decomposition](./howto/validate-story-api-configuration-manager-decomposition.md)
+- [Validate StorytellingSceneEditor Inner Class Extraction](./howto/validate-storytelling-scene-editor-inner-class-extraction.md)
+- [Validate TransformAnimator Inner Class Extraction](./howto/validate-transform-animator-inner-class-extraction.md)
+- [Validate the TweedleEncoder Extraction](./howto/validate-tweedle-encoder-extraction.md)
+- [Validate the TweedleEncoder Rename](./howto/validate-tweedle-encoder-rename.md)
+- [Validate VirtualMachine Extraction](./howto/validate-vm-expression-evaluator-statement-executor-extraction.md)
 
-- [Declaration Composite Delegate Decomposition](./reference/declaration-composite-delegate-decomposition.md) - Reference for extraction of validation logic and dialog lifecycle management from `DeclarationLikeSubstanceComposite` (617 lines) into `DeclarationValidationDelegate` and `DeclarationDialogLifecycleDelegate` package-private delegates (issue #637), reducing to ~460 lines.
-- [Validate Declaration Composite Delegate Decomposition](./howto/validate-declaration-composite-delegate-decomposition.md) - How to verify compilation, line counts, visibility, subclass override chains, and contract tests after the delegate extraction.
-- [Tutorial: Trace the Declaration Composite Delegate Decomposition](./tutorials/trace-declaration-composite-delegate-decomposition.md) - Guided walkthrough of validation delegation, dialog lifecycle wiring, listener symmetry, type-to-initializer cache, and subclass override preservation.
+### Reference
 
-## IDE StoryApiConfigurationManager decomposition
+- [Accessibility Target Discovery Silver-Thread Contract](./reference/accessibility-target-discovery-silver-thread.md)
+- [Alice desktop outside-in QA reference](./reference/alice-desktop-outside-in-qa.md)
+- [Archive/Player Boundary](./reference/archive-player-boundary.md)
+- [ArgumentEncoder Extraction](./reference/argument-encoder-extraction.md)
+- [ASG Scene Graph I/O Decomposition](./reference/asg-scenegraph-io-decomposition.md)
+- [CI efficiency and no-op validation skips](./reference/ci-efficiency.md)
+- [Clipboard Icon Rendering Decomposition](./reference/clipboard-icon-rendering-decomposition.md)
+- [COLLADA Exporter Decomposition](./reference/collada-exporter-decomposition.md)
+- [CompositeResourceManager Inner Class and Localization Extraction](./reference/composite-resource-manager-extraction.md)
+- [core/ast coverage sprint — 50.4% → 70%](./reference/core-ast-coverage-sprint.md)
+- [core/croquet coverage push — 30.4% → 50%](./reference/core-croquet-coverage-push.md)
+- [core/glrender coverage sprint — 4.6% → 30%](./reference/core-glrender-coverage-sprint.md)
+- [core/ide test coverage](./reference/core-ide-test-coverage.md)
+- [core/story-api coverage push phase 2 — 52.3% → 70%](./reference/core-story-api-coverage-push-phase2.md)
+- [core/story-api coverage sprint — 50.2% → 70%](./reference/core-story-api-coverage-sprint.md)
+- [core/story-api, core/model-loading, core/image-editor coverage push — phase 3](./reference/core-story-api-model-loading-image-editor-coverage-push.md)
+- [core/util coverage push phase 3 — 51.6% → 70%](./reference/core-util-coverage-push-phase3.md)
+- [core/util coverage sprint phase 2 — 46% → 70%+](./reference/core-util-coverage-sprint-phase2.md)
+- [core/util coverage sprint — 42.7% → 70%](./reference/core-util-coverage-sprint.md)
+- [core/util test coverage](./reference/core-util-test-coverage.md)
+- [Coverage reporting and ratchets](./reference/coverage-reporting.md)
+- [Declaration Composite Delegate Decomposition](./reference/declaration-composite-delegate-decomposition.md)
+- [Decode Coverage Characterization](./reference/decode-coverage-characterization.md)
+- [Decoder Delegate and IoUtilities Boundary Tests](./reference/decoder-delegate-boundary-tests.md)
+- [Decoder Delegate Decomposition](./reference/decoder-delegate-decomposition.md)
+- [Default workflow recovery report](./reference/default-workflow-recovery-report.md)
+- [Desktop Procedure Edit and Save Automation](./reference/desktop-procedure-edit-and-save-automation.md)
+- [Desktop Run execution evidence decomposition](./reference/desktop-run-execution-evidence-decomposition.md)
+- [Desktop Run execution gap report](./reference/desktop-run-execution-gap-report.md)
+- [DragAdapter Event and Camera Extraction](./reference/drag-adapter-event-camera-extraction.md)
+- [Encoder Delegate Decomposition](./reference/encoder-delegate-decomposition.md)
+- [Exported NetBeans Ant Project Behavior](./reference/exported-netbeans-ant-project-behavior.md)
+- [ExpressionEncoder Extraction](./reference/expression-encoder-extraction.md)
+- [First-Lesson Code-Editor Action Proof](./reference/first-lesson-code-editor-action-proof.md)
+- [First-Lesson Live Procedure Target Action Seam](./reference/first-lesson-live-procedure-target-observation.md)
+- [First-Lesson Procedure/Edit Seam](./reference/first-lesson-procedure-edit-seam.md)
+- [First-Lesson Procedure Tab Code-Editor Backing](./reference/first-lesson-procedure-tab-code-editor-backing.md)
+- [FolderTabbedPane Inner Class Extraction](./reference/folder-tabbed-pane-inner-class-extraction.md)
+- [Formal Spec Contracts Reference](./reference/formal-spec-contracts.md)
+- [FormattingEncoder Extraction](./reference/formatting-encoder-extraction.md)
+- [Gadugi archive/player boundary evidence scenario](./reference/gadugi-archive-player-boundary-evidence.md)
+- [Gadugi exported launcher evidence scenario](./reference/gadugi-exported-launcher-evidence.md)
+- [Gadugi Run execution gap evidence scenario](./reference/gadugi-run-execution-gap-evidence.md)
+- [Gadugi run-window contract evidence scenario](./reference/gadugi-run-window-contract-evidence.md)
+- [Gadugi runtime event dispatch evidence scenario](./reference/gadugi-runtime-event-dispatch-evidence.md)
+- [Gadugi select-project tab-click evidence scenario](./reference/gadugi-select-project-tab-click-evidence.md)
+- [Gadugi Window menu registration evidence scenario](./reference/gadugi-window-menu-registration-evidence.md)
+- [Headless Runtime Dispatch and Generated Story API Listener Source Characterization](./reference/generated-story-api-listener-source-characterization.md)
+- [GlobalDragAdapter Handle Setup Extraction](./reference/global-drag-adapter-handle-setup-extraction.md)
+- [Graphics2D Delegate Decomposition](./reference/graphics2d-delegate-decomposition.md)
+- [Headless-Safe Desktop Action Characterization](./reference/headless-safe-desktop-action-characterization.md)
+- [HtmlEncoder SVG Delegate Decomposition](./reference/html-encoder-svg-delegate-decomposition.md)
+- [IK Enforcer Downstream Import Fixups](./reference/ik-enforcer-downstream-import-fixups.md)
+- [ImageEditorFrame Dead Code Removal](./reference/image-editor-frame-dead-code-removal.md)
+- [IngredientsComposite HairStyleManager and OutfitFactory Extraction](./reference/ingredients-composite-extraction.md)
+- [IssueSubmissionProgressWorker Characterization](./reference/issue-submission-progress-worker.md)
+- [JavaCodeGenerator Delegate Extraction](./reference/java-code-generator-delegate-extraction.md)
+- [Joint Hierarchy Manager Decomposition](./reference/joint-hierarchy-manager-decomposition.md)
+- [JSON `.a3c` Constructor Assignment Characterization](./reference/json-a3c-constructor-assignment-characterization.md)
+- [Learner-world assessment boundary](./reference/learner-world-assessment-boundary.md)
+- [Legacy Fixture Round-Trip Readiness](./reference/legacy-fixture-roundtrip-readiness.md)
+- [Mac-Compatible Test Guards](./reference/mac-compatible-test-guards.md)
+- [ManipulationHandle3D Geometry and Interaction Delegate Extraction](./reference/manipulation-handle-3d-geometry-extraction.md)
+- [Merge-ready PR recovery](./reference/merge-ready-pr-recovery.md)
+- [ModelResourceExporter Dead Code Removal and Static Method Extraction](./reference/model-resource-exporter-dead-code-removal.md)
+- [ModelResourceExporter: Dead Inner Class and Wrapper Removal](./reference/model-resource-exporter-dead-inner-class-and-wrapper-removal.md)
+- [Model resource exporter reference](./reference/model-resource-exporter.md)
+- [ModelResourceFileUtilities reference](./reference/model-resource-file-utilities.md)
+- [ModelResourceXmlParser reference](./reference/model-resource-xml-parser.md)
+- [Modernization corpus manifest](./reference/modernization-corpus-manifest.md)
+- [Modernization scorecard generator reference](./reference/modernization-scorecard-generator.md)
+- [Alice Modernization Scorecard](./reference/modernization-scorecard.md)
+- [NonCachingTextRenderer Characterization](./reference/noncaching-text-renderer-characterization.md)
+- [NonCachingTextRenderer Inner Class Extraction](./reference/noncaching-text-renderer-inner-class-extraction.md)
+- [NonCachingTextRenderer Pipeline Extraction](./reference/noncaching-text-renderer-pipeline-extraction.md)
+- [NonCachingTextRenderer Properties Extraction](./reference/noncaching-text-renderer-properties-extraction.md)
+- [Player Archive Unsupported Tweedle Diagnostics](./reference/player-archive-unsupported-tweedle-diagnostics.md)
+- [Post-open runtime/display accessibility evidence](./reference/post-open-runtime-display-accessibility-evidence.md)
+- [PR 402 Reopen/Edit Recovery Output Contract](./reference/pr-402-reopen-edit-recovery-output-contract.md)
+- [PR #401 UI Action Menu Contract Handoff](./reference/pr401-ui-action-menu-contract-evidence.md)
+- [PR #430 Merge-Ready Gate](./reference/pr430-merge-ready-gate.md)
+- [PR #437 dirty recovery reference](./reference/pr437-dirty-recovery.md)
+- [PR #463 Recovery Gate](./reference/pr463-recovery-gate.md)
+- [Project Archive Reopen/Edit Seam](./reference/project-archive-reopen-edit-seam.md)
+- [Project Load and Backup Recovery Characterization](./reference/project-backup-recovery-io.md)
+- [Project Archive Corpus Characterization](./reference/project-io-corpus-characterization.md)
+- [ProjectMigrationManager Migration Characterization](./reference/project-migration-manager-characterization.md)
+- [Project Save and Export Operations](./reference/project-save-export-operations.md)
+- [Robot Save Menu Dialog Write/Readback Proof](./reference/robot-save-menu-dialog-write-readback-proof.md)
+- [Run-Window Creation/Wiring Contract](./reference/run-window-creation-wiring-contract.md)
+- [Run-Window Detection Proof](./reference/run-window-detection-proof.md)
+- [Save Menu Dialog Negative Artifact Contract](./reference/save-menu-dialog-negative-artifact-contract.md)
+- [Save Menu Dialog Write/Readback Proof](./reference/save-menu-dialog-write-proof.md)
+- [SaveOperationCompletionEvidence Extraction](./reference/save-operation-completion-evidence-extraction.md)
+- [Save Proof Evidence](./reference/save-proof-evidence.md)
+- [SceneEditorFieldManager and SceneRenderTargetListener Extraction](./reference/scene-editor-field-manager-extraction.md)
+- [SceneEditorInitializer and SceneEditorLifecycleManager Extraction](./reference/scene-editor-initializer-lifecycle-extraction.md)
+- [Scene-Object-Added Evidence](./reference/scene-object-added-evidence.md)
+- [SecureXmlParser Extraction from XmlProjectIo](./reference/secure-xml-parser-extraction.md)
+- [SecureXmlParser Allowlist and Headless Guard Hotfix](./reference/securexmlparser-allowlist-headless-guard.md)
+- [Select Project Africa Full AT-SPI evidence reference](./reference/select-project-africa-full-atspi-evidence.md)
+- [Silver Thread Edit-Save-Readback End-to-End Test](./reference/silver-thread-edit-save-readback-test.md)
+- [Silver Thread Launch-Build-Run End-to-End Test](./reference/silver-thread-launch-build-run-test.md)
+- [Silver Thread Save Round-Trip End-to-End Test](./reference/silver-thread-save-round-trip-test.md)
+- [Alice Desktop Silver-Thread Status Report](./reference/silver-thread-status-report.md)
+- [Silver Thread Tweedle Decoder Round-Trip Test](./reference/silver-thread-tweedle-decoder-round-trip-test.md)
+- [Silver Thread Virtual Machine Execution Test](./reference/silver-thread-vm-execution-test.md)
+- [Simple If-Statement Decode](./reference/simple-if-statement-decode.md)
+- [Solver JacobianMath Extraction](./reference/solver-jacobian-math-extraction.md)
+- [Standalone Project Test: Process Stream Drain and macOS Guards](./reference/standalone-project-test-process-drain-and-macos-guard.md)
+- [StatementEncoder Extraction](./reference/statement-encoder-extraction.md)
+- [StoryApiConfigurationManager Decomposition](./reference/story-api-configuration-manager-decomposition.md)
+- [StorytellingResources Decomposition](./reference/storytelling-resources-decomposition.md)
+- [StorytellingSceneEditor Characterization](./reference/storytelling-scene-editor-characterization.md)
+- [StorytellingSceneEditor Checkstyle Import Cleanup](./reference/storytelling-scene-editor-checkstyle-cleanup.md)
+- [StorytellingSceneEditor Inner Class Extraction](./reference/storytelling-scene-editor-inner-class-extraction.md)
+- [TextMigrationRegistry Extraction](./reference/text-migration-registry.md)
+- [TightPositionalIkEnforcer Inner Class Extraction](./reference/tight-positional-ik-enforcer-decomposition.md)
+- [TransformAnimator Inner Class Extraction](./reference/transform-animator-inner-class-extraction.md)
+- [TweedleEncoder Rename](./reference/tweedle-encoder-rename.md)
+- [TweedleUnlinkedParser Visitor Extraction](./reference/tweedle-unlinked-parser-decomposition.md)
+- [Tweedle VirtualMachine Dead Code Removal](./reference/tweedle-vm-dead-code-removal.md)
+- [Visible rendering evidence nonclaim contract](./reference/visible-rendering-evidence-nonclaim-contract.md)
+- [Virtual Machine Characterization Tests](./reference/vm-characterization-tests.md)
+- [VmExpressionEvaluator and VmStatementExecutor Extraction](./reference/vm-expression-evaluator-statement-executor-extraction.md)
+- [Window Menu Action Contract](./reference/window-menu-action-contract.md)
+- [Zero-Argument This-Method Call Decode and Argument-Bearing Boundary](./reference/zero-argument-this-method-call-decode.md)
 
-- [StoryApiConfigurationManager Decomposition](./reference/story-api-configuration-manager-decomposition.md) - Reference for extraction of `StoryTypeComparator` enum and `JointMethodAugmentor` class from `StoryApiConfigurationManager` (587 lines) into package-private delegates (issue #661), reducing to 391 lines.
-- [Validate StoryApiConfigurationManager Decomposition](./howto/validate-story-api-configuration-manager-decomposition.md) - How to verify compilation, line counts, visibility, delegation wiring, and nonfree subclass compatibility after the extraction.
+### Tutorials
 
-## IK enforcer decomposition
+- [Tutorial: Add a modernization corpus manifest entry](./tutorials/add-modernization-corpus-manifest-entry.md)
+- [Alice desktop outside-in QA tutorial](./tutorials/alice-desktop-outside-in-qa.md)
+- [Tutorial: Add Archive/Player Boundary Characterization](./tutorials/archive-player-boundary-characterization.md)
+- [Tutorial: Trace the core/ide test coverage effort](./tutorials/core-ide-test-coverage.md)
+- [Tutorial: Edge-case testing patterns for core/util Phase 2](./tutorials/core-util-edge-case-testing.md)
+- [Tutorial: Write headless-safe tests for core/util](./tutorials/core-util-headless-test-coverage.md)
+- [Tutorial: Expand a coverage ratchet and review one hotspot](./tutorials/coverage-ratchet-and-hotspot-review.md)
+- [Tutorial: Trace a Desktop Action Journey](./tutorials/desktop-action-journey-characterization.md)
+- [Tutorial: Trace the Gadugi Window menu registration evidence](./tutorials/gadugi-window-menu-registration-evidence.md)
+- [Headless test patterns for the Issue #775 coverage push](./tutorials/headless-test-patterns-coverage-push.md)
+- [Tutorial: Trace Legacy Fixture Round-Trip Readiness](./tutorials/legacy-fixture-roundtrip-readiness.md)
+- [Tutorial: Characterize ModelResourceExporter Bounding-Box State](./tutorials/model-resource-exporter-bounding-box-state.md)
+- [Tutorial: Trace the NonCachingTextRenderer Characterization](./tutorials/noncaching-text-renderer-characterization.md)
+- [Tutorial: Trace the NonCachingTextRenderer Pipeline Extraction](./tutorials/noncaching-text-renderer-pipeline-extraction.md)
+- [Tutorial: Trace the NonCachingTextRenderer Properties Extraction](./tutorials/noncaching-text-renderer-properties-extraction.md)
+- [Tutorial: Trace a Player Archive Unsupported This-Call Diagnostic](./tutorials/player-archive-unsupported-this-call-diagnostic.md)
+- [Tutorial: Trace PR #430 No-Op Finalization](./tutorials/pr430-save-negative-no-op-finalization.md)
+- [Tutorial: Assemble PR #463 Recovery Evidence](./tutorials/pr463-recovery-gate-evidence.md)
+- [Tutorial: Add a Project Archive Corpus Characterization](./tutorials/project-io-corpus-characterization.md)
+- [Tutorial: Add a ProjectMigrationManager Migration Characterization](./tutorials/project-migration-manager-characterization.md)
+- [Tutorial: Add a Save Operation Characterization Test](./tutorials/save-operation-characterization-test.md)
+- [Tutorial: Trace the Silver Thread Edit-Save-Readback Test](./tutorials/silver-thread-edit-save-readback-test.md)
+- [Tutorial: Trace the Silver Thread Launch-Build-Run Test](./tutorials/silver-thread-launch-build-run-test.md)
+- [Tutorial: Trace the Silver Thread Save Round-Trip Test](./tutorials/silver-thread-save-round-trip-test.md)
+- [Tutorial: Trace the Silver Thread Tweedle Decoder Round-Trip Test](./tutorials/silver-thread-tweedle-decoder-round-trip-test.md)
+- [Tutorial: Trace the Silver Thread VM Execution Test](./tutorials/silver-thread-vm-execution-test.md)
+- [Tutorial: Trace Simple If-Statement Decode](./tutorials/simple-if-statement-decode.md)
+- [Tutorial: Trace the StorytellingSceneEditor Characterization](./tutorials/storytelling-scene-editor-characterization.md)
+- [Tutorial: Trace the Accessibility Target Discovery Silver Thread](./tutorials/trace-accessibility-target-discovery-silver-thread.md)
+- [Tutorial: Trace the Archive/Player Boundary](./tutorials/trace-archive-player-boundary.md)
+- [Tutorial: Trace the ArgumentEncoder Extraction](./tutorials/trace-argument-encoder-extraction.md)
+- [Tutorial: Trace the CompositeResourceManager Extraction](./tutorials/trace-composite-resource-manager-extraction.md)
+- [Tutorial: Trace the Core Croquet Coverage Push](./tutorials/trace-core-croquet-coverage-push.md)
+- [Tracing the Declaration Composite Delegate Decomposition](./tutorials/trace-declaration-composite-delegate-decomposition.md)
+- [Trace the Decoder Delegate Decomposition](./tutorials/trace-decoder-delegate-decomposition.md)
+- [Tutorial: Trace the desktop Run execution evidence decomposition](./tutorials/trace-desktop-run-execution-evidence-decomposition.md)
+- [Tutorial: Trace the DragAdapter Event and Camera Extraction](./tutorials/trace-drag-adapter-event-camera-extraction.md)
+- [Tutorial: Trace the Encoder Delegate Decomposition](./tutorials/trace-encoder-delegate-decomposition.md)
+- [Tutorial: Trace the ExpressionEncoder Extraction](./tutorials/trace-expression-encoder-extraction.md)
+- [Tutorial: Trace the First-Lesson Code-Editor Action Proof](./tutorials/trace-first-lesson-code-editor-action-proof.md)
+- [Tutorial: Trace the First-Lesson Procedure/Edit Seam](./tutorials/trace-first-lesson-procedure-edit-seam.md)
+- [Tutorial: Trace the First-Lesson Procedure Tab Code-Editor Backing Seam](./tutorials/trace-first-lesson-procedure-tab-code-editor-backing.md)
+- [Tutorial: Trace the FolderTabbedPane Inner Class Extraction](./tutorials/trace-folder-tabbed-pane-inner-class-extraction.md)
+- [Tutorial: Trace the FormattingEncoder Extraction](./tutorials/trace-formatting-encoder-extraction.md)
+- [Tutorial: Trace the GlobalDragAdapter Handle Setup Extraction](./tutorials/trace-global-drag-adapter-handle-setup-extraction.md)
+- [Tutorial: Trace the IssueSubmissionProgressWorker Characterization](./tutorials/trace-issue-submission-progress-worker.md)
+- [Tutorial: Trace the JavaCodeGenerator Delegate Extraction](./tutorials/trace-java-code-generator-extraction.md)
+- [Tutorial: Trace the Joint Hierarchy Manager Decomposition](./tutorials/trace-joint-hierarchy-manager-decomposition.md)
+- [Tutorial: Trace the ManipulationHandle3D Geometry Extraction](./tutorials/trace-manipulation-handle-3d-geometry-extraction.md)
+- [Tutorial: Trace a Model Export PR Recovery](./tutorials/trace-model-export-pr-recovery.md)
+- [Tutorial: Trace no-timeout pull request recovery](./tutorials/trace-no-timeout-pr-recovery.md)
+- [Tutorial: Trace the Project Archive Reopen/Edit Seam](./tutorials/trace-project-archive-reopen-edit-seam.md)
+- [Tutorial: Trace the Robot Save Menu Dialog Write/Readback Proof](./tutorials/trace-robot-save-menu-dialog-write-readback-proof.md)
+- [Tutorial: Trace the Run-Window Creation/Wiring Contract](./tutorials/trace-run-window-creation-wiring-contract.md)
+- [Tutorial: Trace the Run-Window Detection Proof](./tutorials/trace-run-window-detection-proof.md)
+- [Tutorial: Trace the Runtime Event Dispatch Characterization](./tutorials/trace-runtime-event-dispatch-characterization.md)
+- [Trace Save, Load, Export, and Recovery Behavior](./tutorials/trace-save-load-recovery.md)
+- [Trace the Scene-Object-Added Evidence Hook](./tutorials/trace-scene-object-added-evidence.md)
+- [Tutorial: Trace Source-Code-Generator Characterization](./tutorials/trace-source-code-generator-characterization.md)
+- [Tutorial: Trace the StatementEncoder Extraction](./tutorials/trace-statement-encoder-extraction.md)
+- [Tutorial: Trace the StorytellingSceneEditor Inner Class Extraction](./tutorials/trace-storytelling-scene-editor-inner-class-extraction.md)
+- [Tutorial: Trace the TransformAnimator Inner Class Extraction](./tutorials/trace-transform-animator-inner-class-extraction.md)
+- [Tutorial: Trace the TweedleEncoder Rename](./tutorials/trace-tweedle-encoder-rename.md)
+- [Tutorial: Trace the VM Characterization Tests](./tutorials/vm-characterization-tests.md)
+- [Tutorial: Add Zero-Argument This-Method Call Decode Coverage](./tutorials/zero-argument-this-method-call-decode.md)
 
-- [TightPositionalIkEnforcer Inner Class Extraction](./reference/tight-positional-ik-enforcer-decomposition.md) - Reference for extraction of all 14 inner classes from `TightPositionalIkEnforcer` (1328 lines) into top-level files in `org.lgna.ik.core.enforcer`, with `IkEnforcerContext` interface replacing implicit outer-class references.
-- [IK Enforcer Downstream Import Fixups](./reference/ik-enforcer-downstream-import-fixups.md) - Reference for mechanical import fixups in `IKCore.java` and `IkProgram.java` after inner classes were promoted to top-level classes (issue #557).
+### Testing notes
 
-## Story-API transform animator decomposition
+- [Code Editor & Declarations Editor Test Coverage](./testing/codeeditor-declarationseditor-coverage.md)
+- [Core Croquet Test Coverage — 70%+ Push](./testing/core-croquet-coverage.md)
 
-- [TransformAnimator Inner Class Extraction](./reference/transform-animator-inner-class-extraction.md) - Reference for extraction of 9 inner classes from `TransformAnimator` (616 lines) into `OrientationData.java`, `SmoothPositionAnimations.java`, and `PlaceAnimation.java` (issue #639), reducing to ~368 lines.
-- [Validate TransformAnimator Inner Class Extraction](./howto/validate-transform-animator-inner-class-extraction.md) - How to verify compilation, line counts, visibility, field access fix, and tests after the inner class extraction.
-- [Tutorial: Trace the TransformAnimator Inner Class Extraction](./tutorials/trace-transform-animator-inner-class-extraction.md) - Guided walkthrough of orientation hierarchy co-location, smooth animation field access, data.subject→data.getSubject() fix, and inline class retention decisions.
+### Additional docs
 
-## Formal specification lane
-
-The formal-spec lane documents Alice project archive and backup-recovery
-behavior as acceptance contracts, a small TLA+ recovery model, and focused JUnit
-characterization tests.
-
-- [Formal spec lane concepts](./concepts/formal-spec-lane.md) - Why the lane
-  exists and how the artifacts fit together.
-- [Use the formal spec artifacts](./howto/use-formal-spec-artifacts.md) - How to
-  apply the Gherkin and TLA+ contracts while changing save, load, export, or
-  backup recovery behavior.
-- [Formal spec contracts reference](./reference/formal-spec-contracts.md) -
-  Artifact inventory, archive contracts, recovery model details, configuration,
-  and executable validation boundaries.
-- [Project Load and Backup Recovery Characterization](./reference/project-backup-recovery-io.md) -
-  Reference for saved temporary project loading, corrupt project rejection,
-  file-loader QA smoke evidence, backup selection, all-backups failure dispatch,
-  configuration, and focused `core/ide` validation.
-- [Trace save, load, export, and recovery behavior](./tutorials/trace-save-load-recovery.md) -
-  A guided walkthrough from acceptance scenario to model rule to focused test.
+- [SaveProofJsonDelegate — Evidence JSON Extraction](./evidence-json-writer-saveproof-delegate.md)
+- [Core/IDE Deep Test Coverage — Cascade, FillerInner, CodeEditor, DeclarationsEditor](./test-coverage-cascade-fillerinner-editors.md)
