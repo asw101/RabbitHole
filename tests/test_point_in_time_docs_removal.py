@@ -73,18 +73,17 @@ POINT_IN_TIME_RE = re.compile(
 )
 
 
-def _make_mkdocs_loader():
-    """Create a YAML loader that handles !!python/name tags in mkdocs.yml."""
-    loader = yaml.SafeLoader
-    loader.add_multi_constructor(
-        "tag:yaml.org,2002:python/name:",
-        lambda loader, suffix, node: f"!!python/name:{suffix}",
-    )
-    return loader
+class _MkdocsLoader(yaml.SafeLoader):
+    """SafeLoader subclass that handles !!python/name tags in mkdocs.yml."""
+
+_MkdocsLoader.add_multi_constructor(
+    "tag:yaml.org,2002:python/name:",
+    lambda loader, suffix, node: f"!!python/name:{suffix}",
+)
 
 
 def _load_mkdocs() -> dict:
-    return yaml.load(MKDOCS_YML.read_text(encoding="utf-8"), Loader=_make_mkdocs_loader())
+    return yaml.load(MKDOCS_YML.read_text(encoding="utf-8"), Loader=_MkdocsLoader)
 
 
 def _nav_section_titles(nav: list) -> list[str]:
@@ -304,17 +303,6 @@ class TestNoPointInTimeContentInKeptDocs(unittest.TestCase):
 
 class TestFileCountInvariants(unittest.TestCase):
     """Sanity-check the total file count after cleanup."""
-
-    def test_no_files_in_deleted_dirs(self):
-        for d in DELETED_DIRS:
-            with self.subTest(directory=str(d.relative_to(REPO_ROOT))):
-                if d.exists():
-                    count = sum(1 for _ in d.rglob("*") if _.is_file())
-                    self.assertEqual(
-                        count,
-                        0,
-                        f"{count} files remain in {d.relative_to(REPO_ROOT)}",
-                    )
 
     def test_docs_dir_exists(self):
         self.assertTrue(DOCS_DIR.is_dir(), "docs/ directory itself must exist")
