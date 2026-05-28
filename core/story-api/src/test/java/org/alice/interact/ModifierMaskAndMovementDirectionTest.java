@@ -1,5 +1,6 @@
 package org.alice.interact;
 
+import edu.cmu.cs.dennisc.java.awt.event.KeyEventUtilities;
 import org.alice.interact.handle.HandleSet;
 import org.alice.math.immutable.Vector3;
 import org.junit.Test;
@@ -17,7 +18,7 @@ public class ModifierMaskAndMovementDirectionTest {
   public void allMustBeValidRequiresEveryConfiguredModifier() {
     InputState state = new InputState();
     state.setKeyState(KeyEvent.VK_SHIFT, true);
-    state.setKeyState(KeyEvent.VK_CONTROL, true);
+    state.setKeyState(KeyEventUtilities.getQuoteControlUnquoteKey(), true);
 
     ModifierMask mask = new ModifierMask(new ModifierMask.ModifierKey[] {
         ModifierMask.ModifierKey.SHIFT,
@@ -26,7 +27,7 @@ public class ModifierMaskAndMovementDirectionTest {
 
     assertTrue(mask.test(state));
 
-    state.setKeyState(KeyEvent.VK_CONTROL, false);
+    state.setKeyState(KeyEventUtilities.getQuoteControlUnquoteKey(), false);
     assertFalse(mask.test(state));
   }
 
@@ -41,7 +42,7 @@ public class ModifierMaskAndMovementDirectionTest {
     assertTrue(mask.test(state));
 
     state.setKeyState(KeyEvent.VK_SHIFT, false);
-    state.setKeyState(KeyEvent.VK_ALT, true);
+    state.setKeyState(KeyEventUtilities.getQuoteAltUnquoteKey(), true);
     assertTrue(mask.test(state));
   }
 
