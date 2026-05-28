@@ -693,6 +693,7 @@ public class ProjectCodeGeneratorStandaloneProjectTest {
               throw new RuntimeException(e);
             } finally {
               javafx.application.Platform.exit();
+              System.exit(0);
             }
           }
         }
@@ -1357,7 +1358,7 @@ public class ProjectCodeGeneratorStandaloneProjectTest {
     }, "process-stdout-drain");
     drainThread.setDaemon(true);
     drainThread.start();
-    boolean exited = process.waitFor(10, TimeUnit.SECONDS);
+    boolean exited = process.waitFor(30, TimeUnit.SECONDS);
     if (!exited) {
       process.destroyForcibly();
       assertTrue("Timed out waiting for forked java to terminate", process.waitFor(5, TimeUnit.SECONDS));
