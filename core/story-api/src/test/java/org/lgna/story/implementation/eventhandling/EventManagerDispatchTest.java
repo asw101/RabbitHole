@@ -54,9 +54,9 @@ public class EventManagerDispatchTest {
   }
 
   @Test
-  public void duplicateSceneActivationRegistrationsShareTheSameInFlightLock() throws Exception {
+  public void duplicateSceneActivationRegistrationsFireForEachRegistration() throws Exception {
     AtomicInteger fired = new AtomicInteger();
-    AtomicReference<CountDownLatch> latch = new AtomicReference<>(new CountDownLatch(1));
+    AtomicReference<CountDownLatch> latch = new AtomicReference<>(new CountDownLatch(2));
     SceneActivationListener listener = event -> {
       fired.incrementAndGet();
       latch.get().countDown();
@@ -66,15 +66,15 @@ public class EventManagerDispatchTest {
     eventManager.addSceneActivationListener(listener);
     eventManager.sceneActivated();
 
-    assertTrue("duplicate registrations of the same listener collapse to one active callback", latch.get().await(2, TimeUnit.SECONDS));
-    assertEquals(1, fired.get());
+    assertTrue("duplicate registrations each fire independently", latch.get().await(2, TimeUnit.SECONDS));
+    assertEquals(2, fired.get());
 
     eventManager.removeSceneActivationListener(listener);
     latch.set(new CountDownLatch(1));
     eventManager.sceneActivated();
 
     assertTrue("removing one registration still leaves one callback", latch.get().await(2, TimeUnit.SECONDS));
-    assertEquals(2, fired.get());
+    assertEquals(3, fired.get());
   }
 
   @Test
