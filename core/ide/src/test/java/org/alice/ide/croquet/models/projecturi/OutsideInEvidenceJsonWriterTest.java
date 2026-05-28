@@ -87,7 +87,6 @@ public class OutsideInEvidenceJsonWriterTest {
     assertTrue("projectReadable=true", json.contains("\"projectReadable\": true"));
     assertTrue("markerPresent=true", json.contains("\"markerPresent\": true"));
 
-    System.out.println("SCENARIO 1 PASS: Proven save path produces valid JSON with all sections");
   }
 
   // ── Scenario 2: Blocked path with auto-inferred blocker ───────────
@@ -147,7 +146,6 @@ public class OutsideInEvidenceJsonWriterTest {
     assertTrue("fileMenuOpened=false", json.contains("\"fileMenuOpened\": false"));
     assertTrue("fileWritten=false", json.contains("\"fileWritten\": false"));
 
-    System.out.println("SCENARIO 2 PASS: Blocked path with auto-inferred blocker produces valid JSON");
   }
 
   // ── Scenario 3: Edge case — special characters in JSON escaping ───
@@ -185,7 +183,6 @@ public class OutsideInEvidenceJsonWriterTest {
     assertTrue("Escaped quote must appear",
         json.contains("\\\"scenario\\\""));
 
-    System.out.println("SCENARIO 3 PASS: Special characters properly escaped in JSON output");
   }
 
   // ── Helper ─────────────────────────────────────────────────────────

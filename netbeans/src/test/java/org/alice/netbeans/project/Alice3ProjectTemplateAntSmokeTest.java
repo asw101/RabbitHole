@@ -417,7 +417,7 @@ public class Alice3ProjectTemplateAntSmokeTest {
                     throw new AssertionError(Program.class.getSuperclass().getName());
                 }
                 Program.main(args);
-                System.out.println("ANT_RUN_PROBE_OK " + Program.class.getSuperclass().getName() + " args=" + args.length);
+                System.err.println("ANT_RUN_PROBE_OK " + Program.class.getSuperclass().getName() + " args=" + args.length);
             }
         }
         """,
@@ -441,7 +441,7 @@ public class Alice3ProjectTemplateAntSmokeTest {
                 if (AntResourceProbe.class.getClassLoader().getResource("resources/probe.wav") == null) {
                     throw new AssertionError("resources/probe.wav missing from runtime classpath");
                 }
-                System.out.println("ANT_RESOURCE_PROBE_OK " + resource.getContentType() + " " + body.trim());
+                System.err.println("ANT_RESOURCE_PROBE_OK " + resource.getContentType() + " " + body.trim());
             }
         }
         """,
@@ -470,7 +470,7 @@ public class Alice3ProjectTemplateAntSmokeTest {
                 if (!normalizedAliceRootDirectory.endsWith("aliceSource.jar_root")) {
                     throw new AssertionError("Unexpected Alice root directory: " + aliceRootDirectory);
                 }
-                System.out.println("ANT_RUNTIME_CONFIGURATION_PROBE_OK " + normalizedAliceRootDirectory);
+                System.err.println("ANT_RUNTIME_CONFIGURATION_PROBE_OK " + normalizedAliceRootDirectory);
             }
         }
         """,
@@ -503,7 +503,7 @@ public class Alice3ProjectTemplateAntSmokeTest {
                 if (!normalizedAliceRootDirectory.endsWith("aliceSource.jar_root")) {
                     throw new AssertionError("Unexpected Alice root directory: " + aliceRootDirectory);
                 }
-                System.out.println("ANT_TEST_MAIN_PROBE_OK "
+                System.err.println("ANT_TEST_MAIN_PROBE_OK "
                     + Program.class.getSuperclass().getName()
                     + " "
                     + normalizedAliceRootDirectory);
@@ -619,12 +619,12 @@ public class Alice3ProjectTemplateAntSmokeTest {
         }
       }
       String output = Files.readString(outputFile, StandardCharsets.UTF_8);
-      System.out.println("----- BEGIN " + targetName + " Ant log: " + logFileName + " -----");
-      System.out.print(output);
+      System.err.println("----- BEGIN " + targetName + " Ant log: " + logFileName + " -----");
+      System.err.print(output);
       if (!output.endsWith(System.lineSeparator())) {
-        System.out.println();
+        System.err.println();
       }
-      System.out.println("----- END " + targetName + " Ant log: " + logFileName + " -----");
+      System.err.println("----- END " + targetName + " Ant log: " + logFileName + " -----");
       if (!exited) {
         throw new AssertionError("Ant smoke timed out running " + targetName + "\n" + output);
       }

@@ -105,10 +105,11 @@ public class Alice3ProjectTemplateWizardIteratorTest {
     assertTrue(aliceProject.getParentFile().mkdirs());
     assertTrue(aliceProject.createNewFile());
 
+    Path portableUserHome = Path.of(System.getProperty("java.io.tmpdir"), "dennisc-home");
     String previousUserHome = System.getProperty("user.home");
     File previousDefaultDirectory = setDefaultDirectory(defaultDirectory);
     try {
-      System.setProperty("user.home", "C:\\Users\\dennisc");
+      System.setProperty("user.home", portableUserHome.toString());
       Alice3ProjectTemplatePanelVisual visual = new Alice3ProjectTemplatePanelVisual(new Alice3ProjectTemplateWizardPanel());
 
       visual.addNotify();
