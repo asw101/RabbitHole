@@ -228,17 +228,27 @@ public class SystemUtilitiesTest {
     }
   }
 
-  // --- isArmArchitecture ---
+  // --- isArmArchitecture / isAarch64Architecture ---
 
   @Test
   public void isArmArchitecture_returnsBooleanWithoutThrowing() {
     boolean result = SystemUtilities.isArmArchitecture();
-    // Verify consistency with os.arch — implementation checks for "arm" only
     String arch = System.getProperty("os.arch", "").toLowerCase(java.util.Locale.ENGLISH);
-    if (arch.contains("arm")) {
-      assertTrue("Should be true when os.arch contains 'arm'", result);
+    if (arch.contains("arm") || arch.contains("aarch64")) {
+      assertTrue("Should be true when os.arch contains 'arm' or 'aarch64'", result);
     } else {
-      assertFalse("Should be false when os.arch does not contain 'arm' (" + arch + ")", result);
+      assertFalse("Should be false when os.arch does not contain 'arm' or 'aarch64' (" + arch + ")", result);
+    }
+  }
+
+  @Test
+  public void isAarch64Architecture_returnsBooleanWithoutThrowing() {
+    boolean result = SystemUtilities.isAarch64Architecture();
+    String arch = System.getProperty("os.arch", "").toLowerCase(java.util.Locale.ENGLISH);
+    if (arch.contains("aarch64")) {
+      assertTrue("Should be true when os.arch contains 'aarch64'", result);
+    } else {
+      assertFalse("Should be false when os.arch does not contain 'aarch64' (" + arch + ")", result);
     }
   }
 
