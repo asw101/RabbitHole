@@ -2,6 +2,8 @@ package org.alice.netbeans.project;
 
 import edu.cmu.cs.dennisc.animation.Animator;
 import edu.cmu.cs.dennisc.animation.ClockBasedAnimator;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -64,9 +66,27 @@ import javax.tools.ToolProvider;
 import static org.junit.Assert.*;
 
 public class ProjectCodeGeneratorStoryApiGeneratedSourceTest {
+  private static final java.util.concurrent.atomic.AtomicReference<ProjectCodeGeneratorStoryApiGeneratedSourceTest>
+      CURRENT_TEST = new java.util.concurrent.atomic.AtomicReference<>();
 
   @Rule
   public TemporaryFolder temporaryFolder = new TemporaryFolder();
+
+  @Before
+  public void setUpRuntimeEventState() {
+    CURRENT_TEST.set(this);
+    this.sceneActivationRuntimeDispatchLatch = new CountDownLatch(1);
+    this.timeEventLatch = new CountDownLatch(1);
+    this.timeEventElapsedLatch = new CountDownLatch(1);
+    this.recordedRuntimeSceneActivationEvent = null;
+    this.sceneActivationRuntimeDispatchCount = new AtomicInteger();
+    this.recordedTimeSinceLastFire = null;
+  }
+
+  @After
+  public void clearRuntimeEventState() {
+    CURRENT_TEST.set(null);
+  }
 
   @Test
   public void generatedSyntheticStoryApiCallSourceCompiles() throws Exception {
@@ -189,9 +209,6 @@ public class ProjectCodeGeneratorStoryApiGeneratedSourceTest {
     Path classesDirectory = compileAllGeneratedSources(
         "generated-scene-activation-listener-runtime-dispatch-classes",
         sourceDirectory);
-    sceneActivationRuntimeDispatchLatch = new CountDownLatch(1);
-    sceneActivationRuntimeDispatchCount = new AtomicInteger();
-    recordedRuntimeSceneActivationEvent = null;
     try (URLClassLoader classLoader = new URLClassLoader(
         new URL[] {classesDirectory.toUri().toURL()},
         Thread.currentThread().getContextClassLoader())) {
@@ -216,10 +233,6 @@ public class ProjectCodeGeneratorStoryApiGeneratedSourceTest {
       assertSame("Generated listener should receive the runtime scene activation event payload type",
           SceneActivationEvent.class,
           recordedRuntimeSceneActivationEvent.getClass());
-    } finally {
-      recordedRuntimeSceneActivationEvent = null;
-      sceneActivationRuntimeDispatchCount = null;
-      sceneActivationRuntimeDispatchLatch = null;
     }
   }
 
@@ -239,7 +252,6 @@ public class ProjectCodeGeneratorStoryApiGeneratedSourceTest {
     Path classesDirectory = compileAllGeneratedSources(
         "generated-time-listener-runtime-classes",
         sourceDirectory);
-    timeEventLatch = new CountDownLatch(1);
     Object timer = null;
     try (URLClassLoader classLoader = new URLClassLoader(
         new URL[] {classesDirectory.toUri().toURL()},
@@ -270,8 +282,6 @@ public class ProjectCodeGeneratorStoryApiGeneratedSourceTest {
     Path classesDirectory = compileAllGeneratedSources(
         "generated-time-listener-payload-runtime-classes",
         sourceDirectory);
-    timeEventElapsedLatch = new CountDownLatch(1);
-    recordedTimeSinceLastFire = null;
     Object timer = null;
     try (URLClassLoader classLoader = new URLClassLoader(
         new URL[] {classesDirectory.toUri().toURL()},
@@ -284,8 +294,6 @@ public class ProjectCodeGeneratorStoryApiGeneratedSourceTest {
       assertEquals(2.0, recordedTimeSinceLastFire, 0.0);
     } finally {
       disableTimer(timer);
-      recordedTimeSinceLastFire = null;
-      timeEventElapsedLatch = null;
     }
   }
 
@@ -329,26 +337,47 @@ public class ProjectCodeGeneratorStoryApiGeneratedSourceTest {
   }
 
   public static void recordSceneActivationRuntimeDispatch(SceneActivationEvent event) {
-    recordedRuntimeSceneActivationEvent = event;
-    sceneActivationRuntimeDispatchCount.incrementAndGet();
-    sceneActivationRuntimeDispatchLatch.countDown();
+    currentTest().recordSceneActivationRuntimeDispatchInstance(event);
   }
 
   public static void recordTimeEvent() {
-    timeEventLatch.countDown();
+    currentTest().recordTimeEventInstance();
   }
 
   public static void recordTimeEventElapsed(Double timeSinceLastFire) {
-    recordedTimeSinceLastFire = timeSinceLastFire;
-    timeEventElapsedLatch.countDown();
+    currentTest().recordTimeEventElapsedInstance(timeSinceLastFire);
   }
 
-  private static CountDownLatch sceneActivationRuntimeDispatchLatch;
-  private static CountDownLatch timeEventLatch;
-  private static CountDownLatch timeEventElapsedLatch;
-  private static volatile SceneActivationEvent recordedRuntimeSceneActivationEvent;
-  private static AtomicInteger sceneActivationRuntimeDispatchCount;
-  private static volatile Double recordedTimeSinceLastFire;
+  private static ProjectCodeGeneratorStoryApiGeneratedSourceTest currentTest() {
+    ProjectCodeGeneratorStoryApiGeneratedSourceTest currentTest = CURRENT_TEST.get();
+    if (currentTest == null) {
+      throw new IllegalStateException(
+          "No active ProjectCodeGeneratorStoryApiGeneratedSourceTest instance");
+    }
+    return currentTest;
+  }
+
+  private void recordSceneActivationRuntimeDispatchInstance(SceneActivationEvent event) {
+    this.recordedRuntimeSceneActivationEvent = event;
+    this.sceneActivationRuntimeDispatchCount.incrementAndGet();
+    this.sceneActivationRuntimeDispatchLatch.countDown();
+  }
+
+  private void recordTimeEventInstance() {
+    this.timeEventLatch.countDown();
+  }
+
+  private void recordTimeEventElapsedInstance(Double timeSinceLastFire) {
+    this.recordedTimeSinceLastFire = timeSinceLastFire;
+    this.timeEventElapsedLatch.countDown();
+  }
+
+  private CountDownLatch sceneActivationRuntimeDispatchLatch;
+  private CountDownLatch timeEventLatch;
+  private CountDownLatch timeEventElapsedLatch;
+  private volatile SceneActivationEvent recordedRuntimeSceneActivationEvent;
+  private AtomicInteger sceneActivationRuntimeDispatchCount;
+  private volatile Double recordedTimeSinceLastFire;
 
   private Path generateProgramSource(String projectFileName, NamedUserType programType, String sourceDirectoryName)
       throws Exception {
