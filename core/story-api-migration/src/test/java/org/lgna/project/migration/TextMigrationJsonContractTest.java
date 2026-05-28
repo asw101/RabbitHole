@@ -124,7 +124,9 @@ public class TextMigrationJsonContractTest {
       assertEquals("JSON migration count must match legacy count",
           legacy.length, json.length);
     } finally {
-      // cleanup handled by test framework
+      restoreProperty(
+          (String) TextMigrationRegistry.class.getDeclaredField("USE_LEGACY_REGISTRIES_PROPERTY").get(null),
+          previousValue);
     }
   }
 

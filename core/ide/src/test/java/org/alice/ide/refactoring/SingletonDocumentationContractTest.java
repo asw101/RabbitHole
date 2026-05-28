@@ -24,15 +24,6 @@ public class SingletonDocumentationContractTest {
 
   private static Path findRepoRoot() {
     Path current = Paths.get("").toAbsolutePath();
-    // Walk up looking for root pom.xml with docs/ directory
-    while (current != null) {
-      if (Files.exists(current.resolve("pom.xml")) && Files.exists(current.resolve("docs"))) {
-        return current;
-      }
-      current = current.getParent();
-    }
-    // Fallback: Maven may run from module dir, so walk up from user.dir
-    current = Paths.get(System.getProperty("user.dir")).toAbsolutePath();
     while (current != null) {
       if (Files.exists(current.resolve("pom.xml")) && Files.exists(current.resolve("docs"))) {
         return current;

@@ -6,7 +6,6 @@ import java.io.InputStream;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 /**
  * TDD contract tests for PR #833 (IK Poser) and PR #834 (Clipboard/DnD).
