@@ -24,7 +24,7 @@ When `fireEvent()` dispatches to a listener:
 Previously, the cleanup in step 3 was **not** wrapped in `try-finally`:
 
 ```java
-// BEFORE — current code with the bug
+// BEFORE — the original code (the bug)
 private ComponentExecutor newEventCall(L listener, E event, Object eventLock) {
   return new ComponentExecutor(() -> {
     fire(listener, event);
