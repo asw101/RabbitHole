@@ -67,7 +67,7 @@ import static com.jogamp.opengl.fixedfunc.GLLightingFunc.GL_LIGHTING;
 /**
  * @author Dennis Cosgrove
  */
-public class GlrJointedModelVisualization extends GlrLeaf<JointedModelVisualization> implements GlrRenderContributor {
+class GlrJointedModelVisualization extends GlrLeaf<JointedModelVisualization> implements GlrRenderContributor {
   private abstract static class GlWalkObserver<C extends Context> implements JointedModelImp.TreeWalkObserver {
     private final C context;
     private final ReferenceFrame asSeenBy;

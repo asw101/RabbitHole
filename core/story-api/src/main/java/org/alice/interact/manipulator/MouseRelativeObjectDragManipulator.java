@@ -64,7 +64,7 @@ import org.alice.math.immutable.Vector3;
 
 import java.awt.Point;
 
-public class MouseRelativeObjectDragManipulator extends AbstractManipulator implements CameraInformedManipulator, OnscreenPicturePlaneInformedManipulator {
+class MouseRelativeObjectDragManipulator extends AbstractManipulator implements CameraInformedManipulator, OnscreenPicturePlaneInformedManipulator {
 
   private static final double PIXEL_DISTANCE_FACTOR = 200.0d;
 
