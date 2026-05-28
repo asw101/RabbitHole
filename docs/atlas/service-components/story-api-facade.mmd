@@ -1,0 +1,29 @@
+graph TD
+  sprog["SProgram<br/>active scene + simulation speed"]
+  sscene["SScene<br/>world root + listener hooks"]
+  sthing["SThing<br/>base entity facade"]
+  sturn["STurnable<br/>turn / orient"]
+  smove["SMovableTurnable<br/>move / place / moveTo"]
+  smodel["SModel<br/>say / paint / opacity"]
+  sjointed["SJointedModel<br/>joint access + poses"]
+  sbiped["SBiped"]
+  squad["SQuadruped"]
+  sfly["SFlyer"]
+  sswim["SSwimmer"]
+  eventpkg["event.*<br/>listener interfaces + event types"]
+  res["resources.*<br/>model resource catalogs"]
+
+  sprog --> sscene
+  sthing --> sturn
+  sturn --> smove
+  smove --> smodel
+  smodel --> sjointed
+  sjointed --> sbiped
+  sjointed --> squad
+  sjointed --> sfly
+  sjointed --> sswim
+  sscene --> eventpkg
+  sbiped --> res
+  squad --> res
+  sfly --> res
+  sswim --> res

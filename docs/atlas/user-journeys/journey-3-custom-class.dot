@@ -1,0 +1,28 @@
+digraph journey_3_custom_class {
+  rankdir=LR;
+  graph [fontname="Helvetica", labelloc=t, label="Journey 3: create custom class, add methods, use it in scene"];
+  node [shape=box, style="rounded,filled", fillcolor="#F8F9FA", color="#34495E", fontname="Helvetica"];
+  edge [color="#5D6D7E", arrowsize=0.8];
+
+  Student [shape=oval, fillcolor="#FCF3CF"];
+  TypeMgr [label="TypeManager", fillcolor="#D6EAF8"];
+  TypeMenu [label="TypeMenu / DeclarationsEditorComposite", fillcolor="#D6EAF8"];
+  OtherType [label="OtherTypeDialog", fillcolor="#D5F5E3"];
+  TypeAST [label="NamedUserType AST", fillcolor="#FADBD8"];
+  AddProc [label="AddProcedureComposite / AddFunctionComposite", fillcolor="#FADBD8"];
+  Code [label="CodeEditor", fillcolor="#FADBD8"];
+  AddField [label="AddUnmanagedFieldComposite", fillcolor="#EBDEF0"];
+  Scene [label="SceneType AST", fillcolor="#EBDEF0"];
+
+  Student -> OtherType [label="1 choose base type"];
+  OtherType -> TypeMgr [label="2 resolve assignable type"];
+  TypeMgr -> TypeAST [label="3 createTypeFor(...) if missing"];
+  Student -> TypeMenu [label="4 open class tab"];
+  TypeMenu -> TypeAST [label="5 select declaration"];
+  Student -> AddProc [label="6 add procedure/function"];
+  AddProc -> TypeAST [label="7 declare UserMethod"];
+  Student -> Code [label="8 edit method body"];
+  Code -> TypeAST [label="9 mutate BlockStatement"];
+  Student -> AddField [label="10 use class in scene"];
+  AddField -> Scene [label="11 declare UserField + initializer"];
+}

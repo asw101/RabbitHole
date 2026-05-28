@@ -1,0 +1,82 @@
+flowchart TD
+  subgraph ide["IDE plugin points"]
+    frame["ProjectDocumentFrame"]
+    menubar["AliceMenuBar"]
+    filemenu["FileMenuModel<br/>new/open/save/export/print/capture"]
+    runmenu["RunMenuModel"]
+    gallerymenu["GalleryMenuModel"]
+    printmenu["PrintMenuModel"]
+    perspectives["PerspectiveState"]
+    codep["CodePerspective"]
+    scenep["SetupScenePerspective"]
+    codetb["CodeToolBarComposite"]
+    scenetb["SetupSceneToolBarComposite"]
+    decls["DeclarationsEditorComposite<br/>TypeMenu + AddProcedureComposite"]
+    gallery["GalleryComposite<br/>resource/theme/group/search/import tabs"]
+
+    frame --> menubar
+    menubar --> filemenu
+    menubar --> runmenu
+    menubar --> gallerymenu
+    menubar --> printmenu
+    frame --> perspectives
+    perspectives --> codep
+    perspectives --> scenep
+    codep --> codetb
+    codep --> decls
+    scenep --> scenetb
+    scenep --> gallery
+  end
+
+  subgraph vm["Virtual machine contracts"]
+    runctx["ProgramContext / RunProgramContext"]
+    releasevm["ReleaseVirtualMachine<br/>ENTRY_POINT_createInstance / invoke"]
+    vmlisten["VirtualMachineListener<br/>statementExecuting / statementExecuted<br/>expressionEvaluated"]
+    tweedlevm["org.alice.tweedle.run.VirtualMachine<br/>createInstance / invoke / evaluate / executeStatement"]
+
+    runctx --> releasevm
+    releasevm --> vmlisten
+  end
+
+  subgraph story["Story API facade"]
+    sprog["SProgram.setActiveScene"]
+    sthing["SThing<br/>getName / setName / getVehicle / delay"]
+    sturn["STurnable.turn"]
+    smove["SMovableTurnable<br/>move / moveTo / place"]
+    smodel["SModel<br/>say / setPaint / setOpacity"]
+    sbiped["SBiped<br/>walkTo / reachFor / joints"]
+
+    sthing --> sturn
+    sturn --> smove
+    smove --> smodel
+    smodel --> sbiped
+  end
+
+  subgraph scenegraph["Scene graph contracts"]
+    composite["Composite.addComponent / removeComponent"]
+    xform["AbstractTransformable<br/>setLocalTransformation / setTransformation"]
+
+    composite --> xform
+  end
+
+  subgraph io["Project I/O contracts"]
+    loader["AbstractFileProjectLoader.load"]
+    ioutils["IoUtilities<br/>readProject / writeProject / exportProject / writeType"]
+    xmlio["XmlProjectIo<br/>XmlProjectReader / XmlProjectWriter"]
+    app["ProjectApplication<br/>saveProjectTo / exportProjectTo"]
+    files["ProjectFileUtilities<br/>saveCopyOfProjectTo / exportCopyOfProjectTo"]
+
+    loader --> ioutils
+    ioutils --> xmlio
+    app --> files
+    files --> ioutils
+  end
+
+  filemenu --> app
+  runmenu --> runctx
+  decls --> sthing
+  gallery --> composite
+  releasevm --> sprog
+  tweedlevm -. alternate interpreter surface .-> vmlisten
+  smove --> xform
+  smodel --> composite

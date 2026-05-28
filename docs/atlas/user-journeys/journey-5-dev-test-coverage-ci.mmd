@@ -1,0 +1,22 @@
+sequenceDiagram
+  actor Developer
+  participant Maven as local mvn
+  participant Surefire as surefire tests
+  participant JaCoCo as Pcoverage verify
+  participant Summary as summarize-jacoco-coverage.py
+  participant TestCI as alice-test-ci.yml
+  participant CoverageCI as alice-coverage-ci.yml
+  participant Artifacts as uploaded evidence artifact
+
+  Developer->>Maven: mvn -DincludeSims=false ... clean test
+  Maven->>Surefire: run headless no-Sims tests
+  Surefire-->>Developer: test results
+  Developer->>JaCoCo: mvn -DincludeSims=false ... -Pcoverage verify
+  JaCoCo->>Summary: generate aggregate + module reports
+  Summary-->>Developer: coverage-summary.md
+  Developer->>TestCI: push branch / PR
+  TestCI->>Maven: git submodule update, setup-java, clean test
+  Developer->>CoverageCI: same push triggers coverage workflow
+  CoverageCI->>JaCoCo: verify + coverage reports
+  CoverageCI->>Summary: summarize and gate coverage
+  CoverageCI->>Artifacts: upload coverage evidence

@@ -1,0 +1,41 @@
+flowchart LR
+  util["core/util<br/>foundation packages"]
+  tweedle["core/tweedle<br/>org.alice.tweedle.*"]
+  ast["core/ast<br/>org.lgna.project.*"]
+  scenegraph["core/scenegraph<br/>render + scenegraph API"]
+  glrender["core/glrender<br/>render.gl.*"]
+  storyapi["core/story-api<br/>org.lgna.story.*<br/>plus Jama.*"]
+  croquet["core/croquet<br/>org.lgna.croquet.*"]
+  ide["core/ide<br/>org.alice.ide.*<br/>org.alice.stageide.*"]
+  modelloading["core/model-loading<br/>org.lgna.project.io.*"]
+  netbeans["netbeans<br/>org.alice.netbeans.*"]
+
+  ast --> util
+  ast --> tweedle
+  scenegraph --> util
+  glrender --> scenegraph
+  glrender --> util
+  storyapi --> ast
+  storyapi --> glrender
+  storyapi --> scenegraph
+  storyapi --> tweedle
+  storyapi --> util
+  croquet --> util
+  ide --> ast
+  ide --> croquet
+  ide --> glrender
+  ide --> modelloading
+  ide --> scenegraph
+  ide --> storyapi
+  ide --> tweedle
+  ide --> util
+  modelloading --> ast
+  modelloading --> glrender
+  modelloading --> scenegraph
+  modelloading --> storyapi
+  modelloading --> tweedle
+  modelloading --> util
+  netbeans --> ast
+  netbeans --> modelloading
+  netbeans --> storyapi
+  netbeans --> util
