@@ -6,6 +6,7 @@ import org.lgna.story.event.AbstractEvent;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -65,6 +66,34 @@ public class AbstractEventHandlerAsyncTest {
     handler.restoreListeners();
     handler.dispatch(listener, new TestEvent("restored"));
     assertTrue(delivered.await(5, TimeUnit.SECONDS));
+  }
+
+  @Test
+  public void isFiringMapClearedEvenWhenFireThrows() throws Exception {
+    TestEventHandler handler = new TestEventHandler();
+    CountDownLatch fireStarted = new CountDownLatch(1);
+
+    TestListener listener = event -> {
+      fireStarted.countDown();
+      throw new RuntimeException("deliberate test explosion");
+    };
+    handler.addListener(listener, MultipleEventPolicy.IGNORE);
+
+    handler.dispatch(listener, new TestEvent("boom"));
+
+    // Wait for fire() to have been invoked (the listener signals via latch)
+    assertTrue("fire() was never called", fireStarted.await(5, TimeUnit.SECONDS));
+
+    // Poll for the isFiringMap flag to be cleared back to false.
+    // Without the try-finally fix, this flag stays true permanently.
+    Map<Object, Boolean> activeThings = handler.isFiringMap.get(listener);
+    long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+    while (activeThings.get(listener) && System.nanoTime() < deadline) {
+      Thread.sleep(10);
+    }
+    assertFalse(
+        "isFiringMap flag stuck true — fire() exception prevented cleanup",
+        activeThings.get(listener));
   }
 
   private interface TestListener {

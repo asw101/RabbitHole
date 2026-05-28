@@ -34,6 +34,11 @@ RabbitHole keeps that classroom experience working while the codebase is moderni
 - [Testing](./testing.md)
 - [Contributing](./contributing.md)
 
+### Architecture deep dives
+
+- [Singletons](./architecture/singletons.md)
+- [Event Handler Thread Safety](./architecture/event-handler-thread-safety.md)
+
 ### Concepts
 
 - [Formal Specification Lane](./concepts/formal-spec-lane.md)

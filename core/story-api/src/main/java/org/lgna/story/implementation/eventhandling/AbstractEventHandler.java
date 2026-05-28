@@ -49,6 +49,8 @@ import org.lgna.story.Visual;
 import org.lgna.story.event.AbstractEvent;
 import org.lgna.story.implementation.SceneImp;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -72,29 +74,37 @@ public abstract class AbstractEventHandler<L, E extends AbstractEvent> {
       final Map<Object, Boolean> activeThings = activeThingsFor(listener, eventLock);
       if (!activeThings.get(eventLock)) {
         activeThings.put(eventLock, true);
-        newEventCall(listener, event, eventLock).start();
-      } else if (policyMap.get(listener).equals(MultipleEventPolicy.COMBINE)) {
-        newEventCall(listener, event, eventLock).start();
-      } else if (policyMap.get(listener).equals(MultipleEventPolicy.ENQUEUE)) {
-        enqueue(event);
+        newEventCall(listener, event, eventLock, activeThings).start();
+      } else {
+        MultipleEventPolicy policy = policyMap.get(listener);
+        if (policy == MultipleEventPolicy.COMBINE) {
+          newEventCall(listener, event, eventLock, activeThings).start();
+        } else if (policy == MultipleEventPolicy.ENQUEUE) {
+          enqueue(event);
+        }
       }
     }
   }
 
   private Map<Object, Boolean> activeThingsFor(L listener, Object eventLock) {
-    isFiringMap.computeIfAbsent(listener, k -> new ConcurrentHashMap<>());
-    final Map<Object, Boolean> activeThings = isFiringMap.get(listener);
+    final Map<Object, Boolean> activeThings =
+        isFiringMap.computeIfAbsent(listener, k -> new ConcurrentHashMap<>());
     activeThings.putIfAbsent(eventLock, false);
     return activeThings;
   }
 
-  private ComponentExecutor newEventCall(L listener, E event, Object eventLock) {
+  private ComponentExecutor newEventCall(L listener, E event, Object eventLock,
+                                          Map<Object, Boolean> activeThings) {
+    MultipleEventPolicy policy = policyMap.get(listener);
     return new ComponentExecutor(() -> {
-      fire(listener, event);
-      if (policyMap.get(listener).equals(MultipleEventPolicy.ENQUEUE)) {
-        fireDequeue(listener);
+      try {
+        fire(listener, event);
+        if (policy == MultipleEventPolicy.ENQUEUE) {
+          fireDequeue(listener);
+        }
+      } finally {
+        activeThings.put(eventLock, false);
       }
-      isFiringMap.get(listener).put(eventLock, false);
     }, "eventThread");
   }
 
@@ -103,15 +113,13 @@ public abstract class AbstractEventHandler<L, E extends AbstractEvent> {
   }
 
   protected void fireDequeue(L listener) {
-    if (queue.isEmpty()) {
-      return;
+    while (!queue.isEmpty()) {
+      List<E> batch = new ArrayList<>(queue);
+      queue.clear();
+      for (E event : batch) {
+        fire(listener, event);
+      }
     }
-    CopyOnWriteArrayList<E> internalQueue = new CopyOnWriteArrayList<>(queue);
-    queue.clear();
-    while (!internalQueue.isEmpty()) {
-      fire(listener, internalQueue.removeFirst());
-    }
-    fireDequeue(listener);
   }
 
   protected abstract void fire(L listener, E event);
@@ -125,17 +133,19 @@ public abstract class AbstractEventHandler<L, E extends AbstractEvent> {
   }
 
   protected void registerIsFiringMap(L eventListener) {
-    isFiringMap.put(eventListener, new ConcurrentHashMap<>());
-    isFiringMap.get(eventListener).put(eventListener, false);
+    ConcurrentHashMap<Object, Boolean> map = new ConcurrentHashMap<>();
+    map.put(eventListener, false);
+    isFiringMap.put(eventListener, map);
   }
 
   protected void registerIsFiringMap(L eventListener, Visual[] targets) {
-    isFiringMap.put(eventListener, new ConcurrentHashMap<>());
+    ConcurrentHashMap<Object, Boolean> map = new ConcurrentHashMap<>();
     if (targets != null) {
       for (Visual target : targets) {
-        isFiringMap.get(eventListener).put(target, false);
+        map.put(target, false);
       }
     }
+    isFiringMap.put(eventListener, map);
   }
 
   protected void registerPolicyMap(L listener, MultipleEventPolicy policy) {
