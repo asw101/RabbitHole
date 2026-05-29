@@ -1,10 +1,15 @@
 package org.alice.ide.coverage;
 
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.Timeout;
 
 import static org.junit.Assert.assertTrue;
 
 public class InstanceFactoryHeadlessSweepTest {
+
+  @Rule
+  public Timeout globalTimeout = Timeout.seconds(120);
 
   @Test
   public void exerciseInstanceFactoryClasses() {

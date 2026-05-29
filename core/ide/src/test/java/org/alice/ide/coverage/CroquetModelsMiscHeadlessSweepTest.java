@@ -1,10 +1,15 @@
 package org.alice.ide.coverage;
 
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.Timeout;
 
 import static org.junit.Assert.assertTrue;
 
 public class CroquetModelsMiscHeadlessSweepTest {
+
+  @Rule
+  public Timeout globalTimeout = Timeout.seconds(120);
 
   @Test
   public void exerciseCroquetCodecsAndEdits() {
@@ -99,7 +104,6 @@ public class CroquetModelsMiscHeadlessSweepTest {
         "org.alice.ide.croquet.models.cascade.array.ArrayLengthSeparator",
         "org.alice.ide.croquet.models.cascade.blanks.TypeUnsetBlank",
         "org.alice.ide.croquet.models.cascade.number.IntegerBlank",
-        "org.alice.ide.croquet.models.declaration.GalleryResourceUtilities",
         "org.alice.ide.croquet.models.declaration.InitializerState",
         "org.alice.ide.croquet.models.declaration.InitializerStateOwner",
         "org.alice.ide.croquet.models.project.find.core.FindContentManager",
@@ -110,8 +114,8 @@ public class CroquetModelsMiscHeadlessSweepTest {
         "org.alice.ide.croquet.models.project.find.croquet.tree.FindReferencesTreeStateLogic",
         "org.alice.ide.croquet.models.project.stats.croquet.StatisticsMethodFrequencyTabCompositeHelper",
         "org.alice.ide.croquet.models.help.BugSubmitAttachment",
-        "org.alice.ide.croquet.models.help.BugSubmitVisibility",
-        "org.alice.ide.croquet.models.gallerybrowser.GalleryDragModel"
+        "org.alice.ide.croquet.models.help.BugSubmitVisibility"
+        // GalleryResourceUtilities and GalleryDragModel excluded: trigger resource loading dialog
     );
     assertTrue("Should load at least 5 classes, loaded=" + stats.getLoadedCount(),
         stats.getLoadedCount() >= 5);
