@@ -211,7 +211,7 @@ provides deeper exercise (instantiation, method invocation, not just loading).
 5. Assert that `stats.getLoadedCount() > 0` (not exact counts — class
    discovery varies with build state).
 
-**Planned sweep tests (to be created):**
+**Implemented sweep tests:**
 
 | Test class | Target packages |
 |------------|-----------------|
@@ -227,6 +227,7 @@ provides deeper exercise (instantiation, method invocation, not just loading).
 | `CroquetModelsMiscHeadlessSweepTest` | `org.alice.ide.croquet.models` (misc sub-packages) |
 | `StageideOneshotHeadlessSweepTest` | `org.alice.stageide.oneshot` |
 | `StageidePropertiesHeadlessSweepTest` | `org.alice.stageide.properties` |
+| `SceneeditorViewmanagerHeadlessSweepTest` | `org.alice.stageide.sceneeditor.viewmanager` |
 
 **Yield:** ~80–200 covered lines per package sweep, depending on package size.
 
@@ -280,18 +281,19 @@ public class ExpressionCascadeManagerTest {
 5. Avoid calling methods that create Swing components — test the logic layer
    only.
 
-**Planned targeted test classes (to be created):**
+**Implemented and planned targeted test classes:**
 
-| Test class | What it covers |
-|------------|---------------|
-| `SetUpMethodGeneratorLogicTest` | Scene setup code generation paths |
-| `SceneEditorFieldManagerLogicTest` | Field registration and lookup in scene editor |
-| `ExpressionCascadeManagerTest` | Cascade menu construction for expression types |
-| `HtmlEncoderLogicTest` | HTML encoding/escaping utilities |
-| `MarkerUtilitiesTest` | Camera and object marker helper methods |
-| `SceneFieldCodeGeneratorLogicTest` | Scene field initialization code generation |
-| `TreeUtilitiesLogicTest` | Model resource tree traversal utilities |
-| `DeclarationCompositeHistoryTest` | Declaration editor navigation history |
+| Test class | What it covers | Status |
+|------------|---------------|--------|
+| `HtmlEncoderLogicTest` | HTML encoding/escaping utilities | ✅ Implemented |
+| `MethodInvocationBlankLogicTest` | One-shot method invocation dispatch logic | ✅ Implemented |
+| `SetUpMethodGeneratorLogicTest` | Scene setup code generation paths | Planned |
+| `SceneEditorFieldManagerLogicTest` | Field registration and lookup in scene editor | Planned |
+| `ExpressionCascadeManagerTest` | Cascade menu construction for expression types | Planned |
+| `MarkerUtilitiesTest` | Camera and object marker helper methods | Planned |
+| `SceneFieldCodeGeneratorLogicTest` | Scene field initialization code generation | Planned |
+| `TreeUtilitiesLogicTest` | Model resource tree traversal utilities | Planned |
+| `DeclarationCompositeHistoryTest` | Declaration editor navigation history | Planned |
 
 **Yield:** ~30–100 covered lines per test class, with deeper branch coverage.
 

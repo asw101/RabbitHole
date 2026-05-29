@@ -5,10 +5,6 @@ import org.junit.Test;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
 
 import static org.junit.Assert.assertTrue;
 
@@ -41,10 +37,7 @@ public class DirectClassLoadingSweepTest {
         }
         // Try to instantiate with no-arg constructor
         try {
-          Constructor<?>[] ctors = clazz.getDeclaredConstructors();
-          List<Constructor<?>> sorted = new ArrayList<>(Arrays.asList(ctors));
-          sorted.sort(Comparator.comparingInt(Constructor::getParameterCount));
-          for (Constructor<?> ctor : sorted) {
+          for (Constructor<?> ctor : clazz.getDeclaredConstructors()) {
             if (ctor.getParameterCount() == 0) {
               ctor.setAccessible(true);
               Object instance = ctor.newInstance();
