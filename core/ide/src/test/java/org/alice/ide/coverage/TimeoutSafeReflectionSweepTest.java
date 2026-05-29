@@ -8,6 +8,12 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Locale;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertTrue;
@@ -23,18 +29,17 @@ public class TimeoutSafeReflectionSweepTest {
   @Rule
   public Timeout globalTimeout = Timeout.seconds(600);
 
-  private static final String[] BLOCKED_METHOD_NAMES = {
-      "show", "showDialog", "showMessageDialog", "showSaveDialog",
-      "showOpenDialog", "showConfirmDialog", "showInputDialog",
-      "display", "paint", "paintComponent", "repaint", "render",
-      "draw", "main", "exit", "dispose", "setVisible"
-  };
+  private static final Set<String> BLOCKED_METHOD_NAMES = Set.of(
+      "show", "showdialog", "showmessagedialog", "showsavedialog",
+      "showopendialog", "showconfirmdialog", "showinputdialog",
+      "display", "paint", "paintcomponent", "repaint", "render",
+      "draw", "main", "exit", "dispose", "setvisible"
+  );
 
   private static boolean isBlockedMethod(String name) {
-    for (String blocked : BLOCKED_METHOD_NAMES) {
-      if (name.equalsIgnoreCase(blocked)) return true;
-    }
-    return name.startsWith("show") || name.startsWith("paint") || name.startsWith("draw");
+    String lower = name.toLowerCase(Locale.ROOT);
+    if (BLOCKED_METHOD_NAMES.contains(lower)) return true;
+    return lower.startsWith("show") || lower.startsWith("paint") || lower.startsWith("draw");
   }
 
   private void exerciseOneClass(String className) {
@@ -110,21 +115,25 @@ public class TimeoutSafeReflectionSweepTest {
 
   private void exerciseWithTimeout(String... classNames) {
     AtomicInteger exercised = new AtomicInteger(0);
-    for (String className : classNames) {
-      Thread worker = new Thread(() -> {
-        exerciseOneClass(className);
-        exercised.incrementAndGet();
-      }, "exercise-" + className);
-      worker.setDaemon(true);
-      worker.start();
-      try {
-        worker.join(3000); // 3 second timeout per class
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
+    ExecutorService pool = Executors.newFixedThreadPool(
+        Math.min(classNames.length, Runtime.getRuntime().availableProcessors()));
+    try {
+      Future<?>[] futures = new Future<?>[classNames.length];
+      for (int i = 0; i < classNames.length; i++) {
+        final String className = classNames[i];
+        futures[i] = pool.submit(() -> {
+          exerciseOneClass(className);
+          exercised.incrementAndGet();
+        });
       }
-      if (worker.isAlive()) {
-        worker.interrupt();
+      for (Future<?> future : futures) {
+        try {
+          future.get(3, TimeUnit.SECONDS);
+        } catch (Exception ignored) {
+        }
       }
+    } finally {
+      pool.shutdownNow();
     }
     assertTrue("Should exercise at least 1 class", exercised.get() >= 1);
   }
