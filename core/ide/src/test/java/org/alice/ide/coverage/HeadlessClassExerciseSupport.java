@@ -58,6 +58,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 final class HeadlessClassExerciseSupport {
   private static final Object UNSUPPORTED = new Object();
@@ -94,7 +95,9 @@ final class HeadlessClassExerciseSupport {
       try {
         Path path = Paths.get(Objects.requireNonNull(
             HeadlessClassExerciseSupport.class.getResource("/org/alice/ide/coverage/small-class-targets.txt")).toURI());
-        targets = Files.readAllLines(path);
+        targets = Files.readAllLines(path).stream()
+            .filter(line -> !line.isBlank() && !line.startsWith("#"))
+            .collect(Collectors.toList());
         cachedTargets = targets;
       } catch (Exception exception) {
         throw new AssertionError(exception);
