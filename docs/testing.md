@@ -103,6 +103,46 @@ mvn -pl core/scenegraph -am test
 mvn -pl core/story-api -am test
 ```
 
+## core/ide coverage test infrastructure
+
+The `core/ide` module has ~960 test files in
+`core/ide/src/test/java/org/alice/ide/coverage/` built on four support classes
+(`HeadlessClassExerciseSupport`, `ClassLoadingSweepSupport`,
+`SingleClassDefaultArgsSweepTestSupport`, `CompositeCreateViewSweepSupport`).
+New coverage follows a three-tier approach. See
+[docs/core-ide-coverage.md](core-ide-coverage.md) for the full guide.
+
+### Quick reference
+
+Run core/ide tests with coverage:
+
+```bash
+xvfb-run mvn -pl core/ide -am -DfailIfNoTests=false \
+  -Dsurefire.failIfNoSpecifiedTests=false verify
+```
+
+Check the JaCoCo report:
+
+```bash
+cat core/ide/target/site/jacoco/jacoco.csv | python3 -c "
+import csv, sys
+r = csv.DictReader(sys.stdin)
+missed = covered = 0
+for row in r:
+    missed += int(row['LINE_MISSED']); covered += int(row['LINE_COVERED'])
+total = missed + covered
+print(f'{covered}/{total} lines = {100*covered/total:.1f}%')
+"
+```
+
+### Coverage tiers for adding new tests
+
+| Tier | Pattern | Example | Typical yield |
+|------|---------|---------|---------------|
+| 1 — Sweep targets | Class names in `small-class-targets.txt` | Add `org.alice.ide.ast.export.TypeInfo` | ~20 lines/class |
+| 2 — Headless package sweeps | `*HeadlessSweepTest.java` with explicit class name lists | `SceneeditorLogicHeadlessSweepTest` | ~80–200 lines/package |
+| 3 — Targeted unit tests | `*Test.java` testing specific logic paths | `ExpressionCascadeManagerTest` | ~30–100 lines/class |
+
 ## Practical advice
 
 - Use headless-safe tests for data models and serialization.
@@ -110,3 +150,6 @@ mvn -pl core/story-api -am test
 - Keep proof-artifact tests separate from UI-skip logic.
 - Run the coverage lane after larger refactors so you catch dropped coverage
   before review.
+- When adding coverage to `core/ide`, prefer Tier 2 headless sweeps for new
+  packages and Tier 3 targeted tests for high-LOC logic classes. See
+  [docs/core-ide-coverage.md](core-ide-coverage.md).
