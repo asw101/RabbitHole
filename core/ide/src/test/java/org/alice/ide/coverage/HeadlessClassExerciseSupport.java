@@ -58,6 +58,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 final class HeadlessClassExerciseSupport {
   private static final Object UNSUPPORTED = new Object();
@@ -86,42 +87,23 @@ final class HeadlessClassExerciseSupport {
     return stats;
   }
 
+  private static volatile List<String> cachedTargets;
+
   private static Set<String> loadTargetTopLevels() {
-    try {
-      Path path = Paths.get(Objects.requireNonNull(
-          HeadlessClassExerciseSupport.class.getResource("/org/alice/ide/coverage/small-class-targets.txt")).toURI());
-      return new LinkedHashSet<>(Files.readAllLines(path));
-    } catch (Exception exception) {
-      throw new AssertionError(exception);
-    }
-  }
-
-  private static List<String> discoverModuleClasses() {
-    try {
-      Path testClasses = Paths.get(HeadlessClassExerciseSupport.class.getProtectionDomain().getCodeSource().getLocation().toURI());
-      Path moduleClasses = testClasses.getParent().resolve("classes").normalize();
-      if (!Files.isDirectory(moduleClasses)) {
-        return Collections.emptyList();
+    List<String> targets = cachedTargets;
+    if (targets == null) {
+      try {
+        Path path = Paths.get(Objects.requireNonNull(
+            HeadlessClassExerciseSupport.class.getResource("/org/alice/ide/coverage/small-class-targets.txt")).toURI());
+        targets = Files.readAllLines(path).stream()
+            .filter(line -> !line.isBlank() && !line.startsWith("#"))
+            .collect(Collectors.toList());
+        cachedTargets = targets;
+      } catch (Exception exception) {
+        throw new AssertionError(exception);
       }
-      List<String> classNames = new ArrayList<>();
-      try (var stream = Files.walk(moduleClasses)) {
-        stream.filter(path -> Files.isRegularFile(path) && path.toString().endsWith(".class"))
-            .forEach(path -> classNames.add(toClassName(moduleClasses, path)));
-      }
-      return classNames;
-    } catch (Exception exception) {
-      throw new AssertionError(exception);
     }
-  }
-
-  private static String toClassName(Path root, Path classFile) {
-    String relative = root.relativize(classFile).toString();
-    return relative.substring(0, relative.length() - ".class".length()).replace(File.separatorChar, '.');
-  }
-
-  private static String topLevelName(String className) {
-    int innerIndex = className.indexOf('$');
-    return innerIndex >= 0 ? className.substring(0, innerIndex) : className;
+    return new LinkedHashSet<>(targets);
   }
 
   private static void exerciseClass(String className, SmokeStats stats) {
@@ -173,8 +155,8 @@ final class HeadlessClassExerciseSupport {
   }
 
   private static void invokeStaticMethods(Class<?> clazz) {
-    List<Method> methods = new ArrayList<>(Arrays.asList(clazz.getDeclaredMethods()));
-    methods.sort(Comparator.comparingInt(Method::getParameterCount));
+    Method[] methods = clazz.getDeclaredMethods();
+    Arrays.sort(methods, Comparator.comparingInt(Method::getParameterCount));
     for (Method method : methods) {
       if (!Modifier.isStatic(method.getModifiers()) || !isExercisable(method)) {
         continue;
@@ -210,8 +192,8 @@ final class HeadlessClassExerciseSupport {
     if (clazz.isInterface() || Modifier.isAbstract(clazz.getModifiers()) || clazz.isAnnotation()) {
       return null;
     }
-    List<Constructor<?>> constructors = new ArrayList<>(Arrays.asList(clazz.getDeclaredConstructors()));
-    constructors.sort(Comparator.comparingInt(Constructor::getParameterCount));
+    Constructor<?>[] constructors = clazz.getDeclaredConstructors();
+    Arrays.sort(constructors, Comparator.comparingInt(Constructor::getParameterCount));
     for (Constructor<?> constructor : constructors) {
       Object[] args = buildArguments(clazz, constructor.getParameterTypes(), depth + 1);
       if (args == null) {
@@ -237,6 +219,8 @@ final class HeadlessClassExerciseSupport {
     }
     return args;
   }
+
+  private static final Map<Class<?>, Object> ARGUMENT_CACHE = new java.util.concurrent.ConcurrentHashMap<>();
 
   private static Object createArgument(Class<?> owner, Class<?> type, int depth) {
     if (type.isPrimitive()) {
@@ -306,25 +290,25 @@ final class HeadlessClassExerciseSupport {
       return Map.of();
     }
     if (type == Project.class) {
-      return TestIdeBootstrap.createMinimalProject();
+      return ARGUMENT_CACHE.computeIfAbsent(type, k -> TestIdeBootstrap.createMinimalProject());
     }
     if (type == SceneImp.class) {
-      return new SceneImp(null);
+      return ARGUMENT_CACHE.computeIfAbsent(type, k -> new SceneImp(null));
     }
     if (type == GroundImp.class || type == ModelImp.class) {
-      return new SGround().getImplementation();
+      return ARGUMENT_CACHE.computeIfAbsent(type, k -> new SGround().getImplementation());
     }
     if (type == SMovableTurnable.class) {
-      return new SThingMarker();
+      return ARGUMENT_CACHE.computeIfAbsent(type, k -> new SThingMarker());
     }
     if (type == AudioResource.class) {
-      return new AudioResource(UUID.randomUUID());
+      return ARGUMENT_CACHE.computeIfAbsent(type, k -> new AudioResource(UUID.randomUUID()));
     }
     if (type == ResourceKey.class) {
-      return new DummyResourceKey();
+      return ARGUMENT_CACHE.computeIfAbsent(type, k -> new DummyResourceKey());
     }
     if (type == ClassResourceKey.class) {
-      return new ClassResourceKey(FishResource.class);
+      return ARGUMENT_CACHE.computeIfAbsent(type, k -> new ClassResourceKey(FishResource.class));
     }
     if (type == BlockStatement.class) {
       return new BlockStatement();
@@ -391,8 +375,8 @@ final class HeadlessClassExerciseSupport {
     touch(instance.toString());
     touch(instance.hashCode());
     touch(instance.equals(instance));
-    List<Method> methods = new ArrayList<>(Arrays.asList(clazz.getDeclaredMethods()));
-    methods.sort(Comparator.comparingInt(Method::getParameterCount));
+    Method[] methods = clazz.getDeclaredMethods();
+    Arrays.sort(methods, Comparator.comparingInt(Method::getParameterCount));
     for (Method method : methods) {
       if (Modifier.isStatic(method.getModifiers()) || !isExercisable(method)) {
         continue;
