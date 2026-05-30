@@ -216,7 +216,7 @@ provides deeper exercise (instantiation, method invocation, not just loading).
 | Test class | Target packages |
 |------------|-----------------|
 | `SceneeditorLogicHeadlessSweepTest` | `org.alice.stageide.sceneeditor` (non-interact, non-viewmanager) |
-| `IdeCommonHeadlessSweepTest` | `org.alice.ide.common` |
+| `IdeCommonHeadlessSweepTest` | `org.alice.ide.ast`, `org.alice.ide.identifier`, `org.alice.ide.name`, `org.alice.ide.type`, `org.alice.stageide.ast`, `org.alice.stageide.modelresource` |
 | `DeclarationsEditorHeadlessSweepTest` | `org.alice.ide.declarationseditor` |
 | `CodeEditorHeadlessSweepTest` | `org.alice.ide.codeeditor` |
 | `IdeMemberHeadlessSweepTest` | `org.alice.ide.member` |

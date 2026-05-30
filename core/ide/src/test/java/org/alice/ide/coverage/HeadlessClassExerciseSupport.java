@@ -106,34 +106,6 @@ final class HeadlessClassExerciseSupport {
     return new LinkedHashSet<>(targets);
   }
 
-  private static List<String> discoverModuleClasses() {
-    try {
-      Path testClasses = Paths.get(HeadlessClassExerciseSupport.class.getProtectionDomain().getCodeSource().getLocation().toURI());
-      Path moduleClasses = testClasses.getParent().resolve("classes").normalize();
-      if (!Files.isDirectory(moduleClasses)) {
-        return Collections.emptyList();
-      }
-      List<String> classNames = new ArrayList<>();
-      try (var stream = Files.walk(moduleClasses)) {
-        stream.filter(path -> Files.isRegularFile(path) && path.toString().endsWith(".class"))
-            .forEach(path -> classNames.add(toClassName(moduleClasses, path)));
-      }
-      return classNames;
-    } catch (Exception exception) {
-      throw new AssertionError(exception);
-    }
-  }
-
-  private static String toClassName(Path root, Path classFile) {
-    String relative = root.relativize(classFile).toString();
-    return relative.substring(0, relative.length() - ".class".length()).replace(File.separatorChar, '.');
-  }
-
-  private static String topLevelName(String className) {
-    int innerIndex = className.indexOf('$');
-    return innerIndex >= 0 ? className.substring(0, innerIndex) : className;
-  }
-
   private static void exerciseClass(String className, SmokeStats stats) {
     if (!isHeadlessFriendlyName(className)) {
       return;
