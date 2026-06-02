@@ -9,8 +9,8 @@ import org.lgna.project.ast.UserMethod;
 import org.lgna.project.io.IoUtilities;
 import org.lgna.story.SScene;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -34,7 +34,7 @@ public final class EatmeReopenProject {
 
   static int run(String[] args, PrintStream out, PrintStream err) {
     PrintStream originalSystemOut = System.out;
-    PrintStream silentSystemOut = new PrintStream(new ByteArrayOutputStream());
+    PrintStream silentSystemOut = new PrintStream(OutputStream.nullOutputStream());
     System.setOut(silentSystemOut);
     try {
       Arguments arguments = Arguments.parse(args);
@@ -90,9 +90,7 @@ public final class EatmeReopenProject {
         sceneType.getName(),
         methodName,
         sourceSavedProject,
-        REOPENED_PROJECT,
-        REOPEN_ARTIFACT,
-        REOPENED_STATE_ARTIFACT);
+        REOPENED_PROJECT);
 
     Path reopenArtifactPath = artifactPath(arguments.evidenceDir(), REOPEN_ARTIFACT);
     Files.writeString(reopenArtifactPath, reopenArtifactJson(reopen), StandardCharsets.UTF_8);
@@ -259,8 +257,6 @@ public final class EatmeReopenProject {
       String sceneType,
       String methodName,
       String sourceSavedProject,
-      String reopenedProject,
-      String reopenArtifact,
-      String reopenedStateArtifact) {
+      String reopenedProject) {
   }
 }

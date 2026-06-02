@@ -9,8 +9,8 @@ import org.lgna.project.ast.UserMethod;
 import org.lgna.project.io.IoUtilities;
 import org.lgna.story.SScene;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -33,7 +33,7 @@ public final class EatmeSaveProject {
 
   static int run(String[] args, PrintStream out, PrintStream err) {
     PrintStream originalSystemOut = System.out;
-    PrintStream silentSystemOut = new PrintStream(new ByteArrayOutputStream());
+    PrintStream silentSystemOut = new PrintStream(OutputStream.nullOutputStream());
     System.setOut(silentSystemOut);
     try {
       Arguments arguments = Arguments.parse(args);

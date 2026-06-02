@@ -79,7 +79,7 @@ Schema: `eatme.alice-project-reopen-result/v1`
 |---|---|---|
 | `schema_version` | string | Always `eatme.alice-project-reopen-result/v1`. |
 | `status` | string | Always `reopened` on success. |
-| `source_saved_project_artifact` | string | The `--saved-project` value as provided (may be absolute or relative). |
+| `source_saved_project_artifact` | string | Relative path from the working directory to the `--saved-project` file. |
 | `reopen_selector` | string | The qualified selector that was verified (e.g., `scene.eatmeFirstLessonStep`). |
 | `reopened_project_artifact` | string | Simple filename under `--evidence-dir` — always `reopened.a3p`. |
 | `reopen_artifact` | string | Simple filename under `--evidence-dir` — always `reopen-evidence.json`. |
@@ -271,9 +271,7 @@ record ProjectReopen(
     String sceneType,
     String methodName,
     String sourceSavedProject,
-    String reopenedProject,
-    String reopenArtifact,
-    String reopenedStateArtifact)
+    String reopenedProject)
 ```
 
 ## Testing
