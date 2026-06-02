@@ -17,11 +17,12 @@
 | Metric | Value |
 |--------|-------|
 | Branch | `main` |
-| Source files | 175 |
-| Source lines | 68,500+ |
-| Tests | 2,500+ (Vitest) |
-| Build | `npm run build` clean |
-| Key subsystems | Tweedle (parser, VM, compiler, type system, stdlib, debugger), AST (80+ node types, serialization, manipulation, editor), Story API (entities, properties, animations, behaviors, events, methods, lifecycle, movement, joints, vehicles), Scenegraph (transforms, hierarchy, scene management, setup), Renderer (pipeline, materials, shaders, textures, effects, text, mesh, animation, picking), IDE (code editor, procedure editor, declaration editor, type browser, gallery, debugging, dialogs, code completion, keyboard shortcuts, layout, drag-drop, perspectives, state management), Croquet (state machine, operations), Infrastructure (A3P parse/write, project system, collaboration, persistence, plugin system, export, accessibility, web runtime, state sync, network layer, performance monitoring) |
+| Version | `0.16.0` |
+| Source files | 335 |
+| Source lines | 76,118 |
+| Tests | 3,127 (Vitest, 244 test files) |
+| Build | `npm run build:server` clean |
+| Key subsystems | Tweedle (parser, VM, compiler, type system, stdlib, debugger), AST (80+ node types, serialization, manipulation, editor), Story API (29 entity types with named joint accessors, camera/scene API, properties, animations, behaviors, events, methods, lifecycle, movement, joints, vehicles, listener convenience methods), Scenegraph (transforms, hierarchy, scene management, setup), Renderer (pipeline, materials, shaders, textures, effects, text, mesh, animation, picking), IDE (code editor, procedure editor, declaration editor, type browser, gallery, debugging, dialogs, code completion, keyboard shortcuts, layout, drag-drop, perspectives, state management), Croquet (state machine, operations, codecs, composites), Audio (WebAudioPlayer, SayOutLoud TTS), Project I/O (backup/revert, recent projects, DynamicResource), Infrastructure (A3P parse/write, project system, collaboration, persistence, plugin system, export, accessibility, web runtime, state sync, network layer, performance monitoring) |
 
 ### End-to-End Test Suite — [rysweet/eatme](https://github.com/rysweet/eatme)
 
@@ -35,9 +36,9 @@
 
 ### What's left
 
-- **Java**: Coverage at 74%, well above 70% target. Remaining uncovered code is mostly Swing GUI rendering (paint, mouse handlers, OpenGL adapters) that can't run headless.
-- **TypeScript**: Feature parity achieved across all major Java subsystems. TS is inherently more concise (~3-5x fewer lines for equivalent functionality). Story-api entity depth can always be deepened further.
-- **Eatme**: Full curriculum coverage with dual-platform support. Desktop tests gated behind `EATME_REAL_ALICE=1`, web tests behind `EATME_WEB_PLATFORM=1`.
+- **Java**: Coverage at 74%, well above 70% target. Remaining uncovered code is mostly Swing GUI rendering (paint, mouse handlers, OpenGL adapters) that can't run headless. Zero open issues or PRs.
+- **TypeScript**: Feature parity achieved across all major Java subsystems (PRs #79, #83, #85 closed 15 parity issues). TS is inherently more concise (~3-5x fewer lines for equivalent functionality). Three structural blockers remain as reference issues (#86–#88): proprietary 3D model assets, scene graph design differences (AWT/Swing vs Three.js), and Croquet UI layer (Swing vs HTML/browser).
+- **Eatme**: Full curriculum coverage with dual-platform support. Desktop tests gated behind `EATME_REAL_ALICE=1`, web tests behind `EATME_WEB_PLATFORM=1`. Two open enhancement issues: #264 (step block composition for gadugi adapter) and #276 (desktop save-reopen integration tests).
 
 ---
 
