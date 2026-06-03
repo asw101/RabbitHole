@@ -5,7 +5,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.awt.HeadlessException;
 import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -146,33 +145,42 @@ public class ApplicationRootTest {
     assertTrue(ApplicationRoot.getArchitectureSpecificDirectory().getPath().contains(expectedArchitectureSegment()));
   }
 
-  @Test
-  public void initializeIfNecessaryWithMissingPropertyThrowsHeadlessExceptionInHeadlessMode() throws Exception {
-    System.clearProperty(ROOT_PROPERTY);
-    resetRootDirectory();
+  private String expectedMissingPropertyMessage() {
+    return "system property: " + ROOT_PROPERTY + " is not set.\nAlice will not work until this is addressed.";
+  }
 
-    try {
-      ApplicationRoot.initializeIfNecessary();
-      fail();
-    } catch (HeadlessException expected) {
-      Field field = ApplicationRoot.class.getDeclaredField("rootDirectory");
-      field.setAccessible(true);
-      assertNull(field.get(null));
-    }
+  private String expectedInvalidPathMessage(File path) {
+    return "system property: " + ROOT_PROPERTY + " is incorrectly set.\n"
+        + path.getAbsoluteFile()
+        + " does not exist.\nAlice will not work until this is addressed.";
   }
 
   @Test
-  public void initializeIfNecessaryWithInvalidPathThrowsHeadlessExceptionBeforeExit() throws Exception {
-    System.setProperty(ROOT_PROPERTY, new File("target/test-artifacts/ApplicationRootTest/does-not-exist").getAbsolutePath());
+  public void initializeIfNecessaryWithMissingPropertyThrowsInitializationException() throws Exception {
+    System.clearProperty(ROOT_PROPERTY);
     resetRootDirectory();
 
-    try {
-      ApplicationRoot.initializeIfNecessary();
-      fail();
-    } catch (HeadlessException expected) {
-      Field field = ApplicationRoot.class.getDeclaredField("rootDirectory");
-      field.setAccessible(true);
-      assertNotNull(field.get(null));
-    }
+    ApplicationRootInitializationException exception = assertThrows(ApplicationRootInitializationException.class,
+        ApplicationRoot::initializeIfNecessary);
+
+    Field field = ApplicationRoot.class.getDeclaredField("rootDirectory");
+    field.setAccessible(true);
+    assertNull(field.get(null));
+    assertEquals(expectedMissingPropertyMessage(), exception.getMessage());
+  }
+
+  @Test
+  public void initializeIfNecessaryWithInvalidPathThrowsInitializationException() throws Exception {
+    File missingRoot = new File("target/test-artifacts/ApplicationRootTest/does-not-exist").getAbsoluteFile();
+    System.setProperty(ROOT_PROPERTY, missingRoot.getAbsolutePath());
+    resetRootDirectory();
+
+    ApplicationRootInitializationException exception = assertThrows(ApplicationRootInitializationException.class,
+        ApplicationRoot::initializeIfNecessary);
+
+    Field field = ApplicationRoot.class.getDeclaredField("rootDirectory");
+    field.setAccessible(true);
+    assertNull(field.get(null));
+    assertEquals(expectedInvalidPathMessage(missingRoot), exception.getMessage());
   }
 }

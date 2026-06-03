@@ -45,6 +45,7 @@ package org.alice.stageide;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.formdev.flatlaf.FlatLaf;
+import edu.cmu.cs.dennisc.app.ApplicationRootInitializationException;
 import edu.cmu.cs.dennisc.crash.CrashDetector;
 import edu.cmu.cs.dennisc.java.awt.ConsistentMouseDragEventQueue;
 import edu.cmu.cs.dennisc.java.io.TextFileUtilities;
@@ -102,7 +103,12 @@ public class EntryPoint extends Application {
     }
 
     // Initialize this on the main thread, before Swing or JavaFX, and before opening a project in args.
-    RendererNativeLibraryLoader.initializeIfNecessary();
+    try {
+      RendererNativeLibraryLoader.initializeIfNecessary();
+    } catch (ApplicationRootInitializationException e) {
+      JOptionPane.showMessageDialog(null, e.getMessage(), "Application Root Error", JOptionPane.ERROR_MESSAGE);
+      System.exit(-1);
+    }
 
     // Initialize Swing here to do it on the correct thread, outside of JavaFX
     SwingUtilities.invokeLater(() -> {
