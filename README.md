@@ -60,10 +60,16 @@ More information about configuring Install4j can be found [here](https://www.ej-
 
 ## Executing and testing
 
-After successfully compiling and installing the Alice jars into the mvn repository, you can launch the Alice IDE
+After successfully compiling and installing the Alice jars into the mvn
+repository, you can launch the Alice IDE.
 
     cd alice-ide
-    mvn exec:java -Dalice-ide
+    mvn exec:java -Dalice-ide                     # full build (includes Sims)
+    mvn -DincludeSims=false exec:java -Dalice-ide # no-Sims build
+
+If you installed with `-DincludeSims=false`, you **must** pass the same flag
+when launching. See [Working without the Sims*](#working-without-the-sims) for
+the reason.
 
 Run unit tests
 
@@ -185,6 +191,18 @@ Or:
     cd ${alice3}
     mvn -DincludeSims=false clean install
 
+`-DincludeSims=false` is **also required when launching** the IDE, not just
+during build:
+
+    cd alice-ide
+    mvn -DincludeSims=false exec:java -Dalice-ide
+
+`alice-ide/pom.xml` declares its dependency on `org.alice.nonfree:ide-nonfree`
+inside the same `includeSims` profile (whose activation is
+`<value>!false</value>`, i.e. active unless the property is explicitly set to
+`false`). If the launch command omits the flag, Maven re-activates the
+profile and tries to resolve `ide-nonfree:9.1.0-SNAPSHOT`, which fails for
+any developer who built without the Sims modules.
 
 **This is still experimental, so there may be errors.*
 
