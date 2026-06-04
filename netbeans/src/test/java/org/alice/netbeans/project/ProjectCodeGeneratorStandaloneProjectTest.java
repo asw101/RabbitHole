@@ -429,6 +429,9 @@ public class ProjectCodeGeneratorStandaloneProjectTest {
     org.junit.Assume.assumeTrue(
         "JavaFX runtime modules must be on classpath for this test",
         !javaFxModulePath.isEmpty());
+    org.junit.Assume.assumeTrue(
+        "xvfb-run must be able to start a Java process before proving the real JavaFX display launch path",
+        xvfbRunStartsJava(xvfbRun));
 
     Path projectDirectory = temporaryFolder.newFolder("template-real-javafx-xvfb-runtime").toPath();
     extractProjectTemplate(projectDirectory);
@@ -1352,8 +1355,10 @@ public class ProjectCodeGeneratorStandaloneProjectTest {
         while ((n = process.getInputStream().read(buf)) != -1) {
           drainBuffer.write(buf, 0, n);
         }
-      } catch (IOException ignored) {
-        // Stream closed by destroyForcibly — partial output preserved in drainBuffer
+      } catch (IOException e) {
+        byte[] message = ("\n[process-stdout-drain failed: " + e.getMessage() + "]\n")
+            .getBytes(StandardCharsets.UTF_8);
+        drainBuffer.write(message, 0, message.length);
       }
     }, "process-stdout-drain");
     drainThread.setDaemon(true);
@@ -1383,6 +1388,19 @@ public class ProjectCodeGeneratorStandaloneProjectTest {
       }
     }
     return null;
+  }
+
+  private static boolean xvfbRunStartsJava(Path xvfbRun) throws Exception {
+    List<String> command = new ArrayList<>();
+    command.add(xvfbRun.toAbsolutePath().normalize().toString());
+    command.add("-a");
+    command.add("-s");
+    command.add("-screen 0 1024x768x24");
+    command.add(Path.of(System.getProperty("java.home"), "bin", "java").toString());
+    command.add("-version");
+
+    ProcessResult result = runCommand(Path.of(".").toAbsolutePath().normalize(), command);
+    return !result.timedOut && result.exitCode == 0;
   }
 
   private static void assertProgramMarker(Path programMarker, String... expectedArgs) throws Exception {
