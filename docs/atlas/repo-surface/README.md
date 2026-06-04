@@ -7,7 +7,8 @@ The diagram is derived from the root `pom.xml`, the first `find . -name "pom.xml
 
 - `pom.xml` is the parent aggregator for `core/`, `external/`, `alice-ide/`, `netbeans/`, `installer/`, and preserved `core-nonfree/*` modules.
 - `core/` splits into foundations (`util`, `croquet`, `tweedle`, `ast`) and runtime/UI modules (`scenegraph`, `glrender`, `story-api`, `ide`, `model-loading`).
-- `drinkme/`, `qa/`, `scripts/`, and `.github/` are outside the production module graph but materially affect investigation, validation, and automation.
+- `qa/`, `scripts/`, and `.github/` are outside the production module graph but materially affect validation and automation.
+- Top-level `drinkme/` and `eatme/` directories are intentionally absent from the tracked repository surface. Investigation and evidence artifacts belong outside the repository unless promoted into a durable documented surface such as `docs/`, `qa/`, `scripts/`, `tests/`, or the owning Java module.
 
 ## Mermaid
 
@@ -18,7 +19,6 @@ flowchart TD
   root --> gh[".github/"]
   root --> scripts["scripts/"]
   root --> qa["qa/"]
-  root --> drinkme["drinkme/"]
 
   rootpom --> aliceide["alice-ide/<br/>JavaFX + Swing desktop launcher"]
   rootpom --> netbeans["netbeans/<br/>NetBeans module"]
@@ -73,7 +73,6 @@ digraph repo_surface {
   gh [label=".github/", fillcolor="#FCF3CF"];
   scripts [label="scripts/", fillcolor="#FCF3CF"];
   qa [label="qa/", fillcolor="#FCF3CF"];
-  drinkme [label="drinkme/", fillcolor="#FCF3CF"];
   aliceide [label="alice-ide/
 JavaFX + Swing launcher", fillcolor="#D5F5E3"];
   netbeans [label="netbeans/
@@ -87,7 +86,6 @@ preserved nonfree mirrors", fillcolor="#FADBD8"];
   root -> gh;
   root -> scripts;
   root -> qa;
-  root -> drinkme;
   rootpom -> aliceide;
   rootpom -> netbeans;
   rootpom -> installer;

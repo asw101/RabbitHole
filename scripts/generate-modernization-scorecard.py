@@ -797,7 +797,7 @@ def render_scorecard(root: Path) -> str:
             "",
             "Hotspots identify review and characterization risk. They do not authorize",
             "production refactors by themselves. Follow the protected hotspot rule in",
-            "[Coverage reporting and ratchets](./coverage-reporting.md) before moving",
+            "[Testing](../testing.md) before moving",
             "production behavior.",
             "",
             "Journey gaps are derived from the outside-in QA scenario catalog, not from",

@@ -5,7 +5,8 @@ project save, load, export, and backup recovery behavior.
 
 It keeps the user-visible contract readable, the recovery policy precise, and
 the executable checks focused on existing Java test infrastructure. It does not
-add Cucumber, a Maven TLC plugin, or runtime configuration.
+add Cucumber, a Maven TLC plugin, a tracked `eatme/` directory, a tracked
+`drinkme/` directory, or runtime configuration.
 
 ## Contract layers
 
@@ -13,13 +14,14 @@ The lane has three durable layers:
 
 | Layer | Location | Purpose |
 | --- | --- | --- |
-| Acceptance contract | [`../../eatme/specs/save-load-export/project-archive.feature`](../../eatme/specs/save-load-export/project-archive.feature) | Describes the save, load, export, resource safety, and backup recovery behavior in Gherkin. |
-| Formal recovery model | [`../../eatme/formal/backup-load-recovery/BackupLoadRecovery.tla`](../../eatme/formal/backup-load-recovery/BackupLoadRecovery.tla) and [`BackupLoadRecovery.cfg`](../../eatme/formal/backup-load-recovery/BackupLoadRecovery.cfg) | Defines the ordered backup recovery state machine and invariants. |
+| Acceptance contract | This document | Describes the save, load, export, resource safety, and backup recovery behavior that modernization must preserve. |
+| Recovery policy | This document and `core/ide` characterization tests | Defines the ordered backup recovery state machine and invariants. |
 | Executable characterization | `core/ide` and `core/story-api-migration` JUnit tests | Enforces the contract against the Java implementation. |
 
-The [`../../drinkme/formal-spec-save-load-export-evaluation.md`](../../drinkme/formal-spec-save-load-export-evaluation.md)
-handoff records investigation context. It is not runtime input and is not the
-product documentation surface.
+Historical investigation handoffs are not part of the tracked repository
+surface. Keep new handoff or evidence artifacts outside the repository unless a
+specific durable artifact is promoted into `docs/`, `tests/`, `qa/`, `scripts/`,
+or the Java module that owns the behavior.
 
 ## Why the lane exists
 
@@ -27,12 +29,11 @@ Alice archive handling combines old editable project archives, newer player
 exports, resource serialization, and IDE recovery prompts. Those behaviors are
 easy to regress when the implementation is modernized.
 
-The formal-spec lane prevents drift by making each behavior visible in one of
-three forms:
+The formal-spec lane prevents drift by making each behavior visible in the two
+durable surfaces that remain after the cleanup:
 
-1. A human-readable scenario in the Gherkin feature.
-2. A recovery rule or invariant in the TLA+ model.
-3. A focused JUnit test in the module that owns the behavior.
+1. This human-readable contract, including the recovery invariants below.
+2. A focused JUnit characterization test in the module that owns the behavior.
 
 ## Feature contract
 
@@ -57,6 +58,19 @@ tied to focused JUnit characterization so future modernization can detect drift.
   unloadable candidates, never escapes the backup directory, retries accepted
   candidates that fail to load, and reaches one terminal result.
 
+## Recovery invariants
+
+Backup recovery keeps the named guarantees that were previously captured in
+investigation artifacts, but the durable contract now lives here and in the
+`core/ide` JUnit characterization tests.
+
+| Invariant | Contract |
+| --- | --- |
+| Prompted backups are safe | Alice only offers backup candidates that exist under the named backup directory beside the corrupt project. Traversal paths, missing files, candidate symlinks, and symlinked backup directories are rejected. |
+| Unloadable backups are skipped | Candidates already known to be unloadable are not reselected. If an accepted backup fails to load, recovery continues with the next safe candidate instead of looping on the failed one. |
+| Stale async completion cannot replace state | A corrupt primary project does not become the current project while recovery is pending, and failed load completions do not overwrite a later recovered or terminal state. |
+| Recovery eventually reaches a terminal result | Recovery stops after the first successfully loaded backup, or after a user-visible all-backups-failed/new-project outcome when no candidate can be loaded. |
+
 ## Implemented coverage
 
 The implemented contract is covered at the Java boundary that owns each
@@ -71,14 +85,33 @@ behavior:
 
 ## What remains outside the lane
 
-The lane is not a new framework, runtime mode, or source generator.
+The lane is not a new framework, runtime mode, source generator, or tracked
+artifact staging area.
 
-- `.feature` files are not executed by Cucumber.
-- TLA+ files are not wired into Maven or CI.
-- `drinkme/` files remain investigation and handoff material.
+- Historical Gherkin or TLA+ investigation artifacts are not tracked runtime
+  surfaces and are not Maven or CI inputs unless a future change explicitly
+  promotes them into a durable repository surface.
+- Top-level `drinkme/` and `eatme/` directories are not tracked repository
+  surfaces.
+- Eatme evidence workflow names remain valid when they refer to
+  `tools/eatme-*`, `org.alice.tools.Eatme*` classes, test names, or JSON schema
+  identifiers. They do not imply a top-level `eatme/` directory.
 - Java behavior remains compatible with the current Alice 3 baseline unless a
   behavior change is explicitly documented and covered by characterization
   tests.
+
+## Evidence workflow usage
+
+The evidence workflow is invoked through tools, not by reading files from a
+top-level `eatme/` directory. For example:
+
+```bash
+tools/eatme-save-project --help
+tools/eatme-reopen-project --help
+```
+
+Detailed reopen evidence output is documented in
+[`../tools-eatme-reopen-project.md`](../tools-eatme-reopen-project.md).
 
 ## Ownership rule
 
@@ -86,7 +119,7 @@ When behavior changes, update the smallest complete set of artifacts:
 
 | Change | Required update |
 | --- | --- |
-| User-visible archive behavior changes | Update the Gherkin scenario and the matching JUnit test. |
-| Backup recovery policy changes | Update the Gherkin scenario, TLA+ model/config, and `core/ide` JUnit tests. |
-| Archive entry, manifest, version, or resource safety changes | Update the Gherkin scenario and the matching archive test (`IoUtilitiesTest` for low-level I/O, `ProjectFileUtilitiesTest` for IDE save/export copy flows). |
+| User-visible archive behavior changes | Update this contract and the matching JUnit test. |
+| Backup recovery policy changes | Update this contract and the `core/ide` JUnit tests. |
+| Archive entry, manifest, version, or resource safety changes | Update this contract and the matching archive test (`IoUtilitiesTest` for low-level I/O, `ProjectFileUtilitiesTest` for IDE save/export copy flows). |
 | Only implementation structure changes | Keep specs stable and update or add characterization tests only if the observable contract is affected. |
