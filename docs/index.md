@@ -44,6 +44,12 @@ RabbitHole keeps that classroom experience working while the codebase is moderni
 - [Formal Specification Lane](./concepts/formal-spec-lane.md)
 - [Migration Hotspot Characterization](./concepts/migration-hotspot-characterization.md)
 
+### Reference
+
+- [Modernization Scorecard](./reference/modernization-scorecard.md)
+- [Modernization Scorecard Generator](./reference/modernization-scorecard-generator.md)
+- [Modernization Corpus Manifest](./reference/modernization-corpus-manifest.md)
+
 ### Architecture Atlas
 
 - [Atlas Overview](./atlas/index.md)

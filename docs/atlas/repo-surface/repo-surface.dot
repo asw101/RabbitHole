@@ -10,7 +10,6 @@ digraph repo_surface {
   gh [label=".github/", fillcolor="#FCF3CF"];
   scripts [label="scripts/", fillcolor="#FCF3CF"];
   qa [label="qa/", fillcolor="#FCF3CF"];
-  drinkme [label="drinkme/", fillcolor="#FCF3CF"];
   aliceide [label="alice-ide/
 JavaFX + Swing launcher", fillcolor="#D5F5E3"];
   netbeans [label="netbeans/
@@ -24,7 +23,6 @@ preserved nonfree mirrors", fillcolor="#FADBD8"];
   root -> gh;
   root -> scripts;
   root -> qa;
-  root -> drinkme;
   rootpom -> aliceide;
   rootpom -> netbeans;
   rootpom -> installer;
