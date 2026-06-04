@@ -44,7 +44,6 @@ package edu.cmu.cs.dennisc.app;
 
 import edu.cmu.cs.dennisc.java.lang.SystemUtilities;
 
-import javax.swing.JOptionPane;
 import java.io.File;
 
 /**
@@ -61,19 +60,19 @@ public class ApplicationRoot {
       String rootDirectoryPath = System.getProperty(DEFAULT_APPLICATION_ROOT_SYSTEM_PROPERTY);
       //todo: fallback to System.getProperty( "user.dir" ) ???
       if (rootDirectoryPath != null) {
-        rootDirectory = new File(rootDirectoryPath);
-        if (!rootDirectory.exists()) {
+        File candidate = new File(rootDirectoryPath);
+        if (!candidate.exists()) {
           StringBuilder sb = new StringBuilder();
           sb.append("system property: ");
           sb.append(DEFAULT_APPLICATION_ROOT_SYSTEM_PROPERTY);
           sb.append(" is incorrectly set.\n");
-          sb.append(rootDirectory);
+          sb.append(candidate);
           sb.append(" does not exist.\n");
           sb.append(DEFAULT_APPLICATION_NAME);
           sb.append(" will not work until this is addressed.");
-          JOptionPane.showMessageDialog(null, sb.toString(), "Application Root Error", JOptionPane.ERROR_MESSAGE);
-          System.exit(-1);
+          throw new ApplicationRootInitializationException(sb.toString());
         }
+        rootDirectory = candidate;
       } else {
         StringBuilder sb = new StringBuilder();
         sb.append("system property: ");
@@ -81,9 +80,8 @@ public class ApplicationRoot {
         sb.append(" is not set.\n");
         sb.append(DEFAULT_APPLICATION_NAME);
         sb.append(" will not work until this is addressed.");
-        JOptionPane.showMessageDialog(null, sb.toString(), "Application Root Error", JOptionPane.ERROR_MESSAGE);
         rootDirectory = null;
-        System.exit(-1);
+        throw new ApplicationRootInitializationException(sb.toString());
       }
     }
   }
