@@ -20,6 +20,12 @@ public class DualBaselineReplayHarnessTest {
     for (ReplayCase replayCase : new ReplayCaseFactory().createCases()) {
       ReplaySummary first = runner.summarize(replayCase);
       ReplaySummary second = runner.summarize(replayCase);
+
+      // Fallback mode has no external baseline by design. RabbitHoleReplayRunnerTest
+      // proves the summaries come from real project/source/archive IO; this test
+      // only locks down the no-baseline comparison contract.
+      assertEquals("RabbitHole", first.providerName());
+      assertEquals(replayCase.id(), first.caseId());
       comparator.assertMatches(replayCase, first, second);
       assertEquals(first.text(), second.text());
     }
