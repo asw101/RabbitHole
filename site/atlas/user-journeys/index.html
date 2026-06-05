@@ -1,0 +1,1882 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Modernizing the Alice 3 educational programming environment">
+      
+      
+      
+      
+        <link rel="prev" href="../service-components/">
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>User Journeys - Alice 3 Modernization</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="blue" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#user-journeys" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Alice 3 Modernization" class="md-header__button md-logo" aria-label="Alice 3 Modernization" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Alice 3 Modernization
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              User Journeys
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/rysweet/RabbitHole" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Alice 3 Modernization" class="md-nav__button md-logo" aria-label="Alice 3 Modernization" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Alice 3 Modernization
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/rysweet/RabbitHole" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Start here
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Start here
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../rabbithole-baseline-parity/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RabbitHole baseline parity
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../repository-hygiene/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Repository hygiene
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Concepts
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Concepts
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/formal-spec-lane/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Formal Specification Lane
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/migration-hotspot-characterization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Migration Hotspot Characterization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/modernization-scorecard-generator/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Modernization Scorecard Generator
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/modernization-corpus-manifest/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Modernization Corpus Manifest
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture Atlas
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture Atlas
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Atlas Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../repo-surface/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Repository Surface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ast-lsp-bindings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Symbol Bindings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../compile-deps/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compile Dependencies
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../runtime-topology/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Runtime Topology
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api-contracts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Contracts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../data-flow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Flow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../service-components/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Service Components
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Journeys
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Journeys
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#journey-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Journey notes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-student-opens-alice-loads-project-edits-procedure-runs-world" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Student opens Alice, loads project, edits procedure, runs world
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. Student opens Alice, loads project, edits procedure, runs world">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mermaid" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mermaid
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#graphviz-dot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Graphviz DOT
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-student-adds-entity-to-scene-positions-it-saves" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Student adds entity to scene, positions it, saves
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Student adds entity to scene, positions it, saves">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mermaid_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mermaid
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#graphviz-dot_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Graphviz DOT
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-student-creates-custom-class-adds-methods-uses-it-in-scene" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Student creates custom class, adds methods, uses it in scene
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. Student creates custom class, adds methods, uses it in scene">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mermaid_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mermaid
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#graphviz-dot_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Graphviz DOT
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-instructor-opens-student-project-reviews-code-grades" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Instructor opens student project, reviews code, grades
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Instructor opens student project, reviews code, grades">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mermaid_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mermaid
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#graphviz-dot_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Graphviz DOT
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-developer-runs-tests-measures-coverage-pushes-to-ci" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Developer runs tests, measures coverage, pushes to CI
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. Developer runs tests, measures coverage, pushes to CI">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mermaid_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mermaid
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#graphviz-dot_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Graphviz DOT
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#journey-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Journey notes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-student-opens-alice-loads-project-edits-procedure-runs-world" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Student opens Alice, loads project, edits procedure, runs world
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. Student opens Alice, loads project, edits procedure, runs world">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mermaid" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mermaid
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#graphviz-dot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Graphviz DOT
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-student-adds-entity-to-scene-positions-it-saves" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Student adds entity to scene, positions it, saves
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Student adds entity to scene, positions it, saves">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mermaid_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mermaid
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#graphviz-dot_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Graphviz DOT
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-student-creates-custom-class-adds-methods-uses-it-in-scene" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Student creates custom class, adds methods, uses it in scene
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. Student creates custom class, adds methods, uses it in scene">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mermaid_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mermaid
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#graphviz-dot_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Graphviz DOT
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-instructor-opens-student-project-reviews-code-grades" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Instructor opens student project, reviews code, grades
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Instructor opens student project, reviews code, grades">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mermaid_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mermaid
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#graphviz-dot_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Graphviz DOT
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-developer-runs-tests-measures-coverage-pushes-to-ci" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Developer runs tests, measures coverage, pushes to CI
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. Developer runs tests, measures coverage, pushes to CI">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mermaid_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mermaid
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#graphviz-dot_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Graphviz DOT
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="user-journeys">User Journeys</h1>
+<p>This layer traces five high-value paths through Alice's behavioral stack. The first four stay inside the IDE until they hit an explicit system boundary; the fifth follows the repository's documented local/CI validation path.</p>
+<h2 id="journey-notes">Journey notes</h2>
+<ul>
+<li>Journeys 1 and 2 stay inside the desktop authoring loop: load/edit/run and add/position/save.</li>
+<li>Journey 3 uses <code>TypeManager</code>, <code>OtherTypeDialog</code>, and declaration editors to show how custom types and methods become scene-usable AST declarations.</li>
+<li>Journey 4 stops at the review/export boundary because grading itself happens outside Alice; the codebase exposes review surfaces (<code>DeclarationsEditorComposite</code>, <code>PrintAllOperation</code>, <code>HtmlProjectWriter</code>) rather than an internal grading subsystem.</li>
+<li>Journey 5 is grounded in the repository's documented headless Maven and coverage workflows plus the two GitHub Actions lanes, including the no-op branch for docs/QA/tests/scripts/license-only pull requests that skip Maven validation.</li>
+</ul>
+<p>Derived from: <code>alice-ide/src/main/java/org/alice/stageide/EntryPoint.java</code>, <code>core/ide/src/main/java/org/alice/ide/IDE.java</code>, <code>core/ide/src/main/java/org/alice/ide/uricontent/AbstractFileProjectLoader.java</code>, <code>core/story-api-migration/src/main/java/org/lgna/project/io/IoUtilities.java</code>, <code>core/ide/src/main/java/org/alice/ide/declarationseditor/TypeMenu.java</code>, <code>core/ide/src/main/java/org/alice/ide/codeeditor/CodeEditor.java</code>, <code>core/ide/src/main/java/org/alice/stageide/run/RunComposite.java</code>, <code>core/ide/src/main/java/org/alice/stageide/program/ProgramContext.java</code>, <code>core/ide/src/main/java/org/alice/stageide/gallerybrowser/GalleryComposite.java</code>, <code>core/ide/src/main/java/org/alice/stageide/sceneeditor/SceneEditorDropReceptor.java</code>, <code>core/ide/src/main/java/org/alice/stageide/sceneeditor/interact/GlobalDragAdapter.java</code>, <code>core/ide/src/main/java/org/alice/ide/ProjectApplication.java</code>, <code>core/ide/src/main/java/org/alice/ide/ProjectFileUtilities.java</code>, <code>core/ide/src/main/java/org/alice/ide/typemanager/TypeManager.java</code>, <code>core/ide/src/main/java/org/alice/stageide/type/croquet/OtherTypeDialog.java</code>, <code>core/ide/src/main/java/org/alice/ide/ast/declaration/AddProcedureComposite.java</code>, <code>core/ide/src/main/java/org/alice/ide/ast/declaration/AddFunctionComposite.java</code>, <code>core/ide/src/main/java/org/alice/ide/ast/declaration/AddUnmanagedFieldComposite.java</code>, <code>core/ide/src/main/java/org/alice/ide/croquet/models/print/PrintAllOperation.java</code>, <code>core/ide/src/main/java/org/alice/ide/croquet/models/html/HtmlProjectWriter.java</code>, <code>README.md</code>, <code>.github/workflows/alice-test-ci.yml</code>, and <code>.github/workflows/alice-coverage-ci.yml</code>.</p>
+<h2 id="1-student-opens-alice-loads-project-edits-procedure-runs-world">1. Student opens Alice, loads project, edits procedure, runs world</h2>
+<h3 id="mermaid">Mermaid</h3>
+<pre class="mermaid"><code>sequenceDiagram
+  actor Student
+  participant EntryPoint as EntryPoint.main
+  participant IDE as StageIDE
+  participant Loader as AbstractFileProjectLoader
+  participant IO as IoUtilities / XmlProjectIo
+  participant Frame as ProjectDocumentFrame
+  participant Editor as DeclarationsEditorComposite / CodeEditor
+  participant AST as Project AST
+  participant Run as RunComposite
+  participant VM as RunProgramContext / ReleaseVirtualMachine
+  participant World as SProgram / SceneImp
+  participant Render as OnscreenRenderTarget
+
+  Student-&gt;&gt;EntryPoint: launch Alice
+  EntryPoint-&gt;&gt;IDE: initialize(args)
+  Student-&gt;&gt;IDE: open .a3p project
+  IDE-&gt;&gt;Loader: load project file
+  Loader-&gt;&gt;IO: projectReader / readProject
+  IO--&gt;&gt;AST: decode XML into NamedUserType
+  IDE-&gt;&gt;Frame: set project + choose perspective
+  Student-&gt;&gt;Editor: select procedure tab
+  Editor-&gt;&gt;AST: mutate UserMethod body
+  Student-&gt;&gt;Run: click Run
+  Run-&gt;&gt;VM: initializeInContainer + setActiveScene()
+  VM-&gt;&gt;World: ENTRY_POINT_createInstance / invoke
+  World-&gt;&gt;Render: activate scene and render world</code></pre>
+<p>Source: <a href="journey-1-open-edit-run.mmd"><code>journey-1-open-edit-run.mmd</code></a></p>
+<h3 id="graphviz-dot">Graphviz DOT</h3>
+<div class="highlight"><pre><span></span><code><span class="k">digraph</span><span class="w"> </span><span class="nt">journey_1_open_edit_run</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="na">rankdir</span><span class="p">=</span><span class="s">LR</span><span class="p">;</span>
+<span class="w">  </span><span class="k">graph</span><span class="w"> </span><span class="p">[</span><span class="na">fontname</span><span class="p">=</span><span class="s2">&quot;Helvetica&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">labelloc</span><span class="p">=</span><span class="s">t</span><span class="p">,</span><span class="w"> </span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;Journey 1: open project, edit procedure, run world&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="k">node</span><span class="w"> </span><span class="p">[</span><span class="na">shape</span><span class="p">=</span><span class="s">box</span><span class="p">,</span><span class="w"> </span><span class="na">style</span><span class="p">=</span><span class="s2">&quot;rounded,filled&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#F8F9FA&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">color</span><span class="p">=</span><span class="s2">&quot;#34495E&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fontname</span><span class="p">=</span><span class="s2">&quot;Helvetica&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="k">edge</span><span class="w"> </span><span class="p">[</span><span class="na">color</span><span class="p">=</span><span class="s2">&quot;#5D6D7E&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">arrowsize</span><span class="p">=</span><span class="m">0.8</span><span class="p">];</span>
+
+<span class="w">  </span><span class="nt">Student</span><span class="w"> </span><span class="p">[</span><span class="na">shape</span><span class="p">=</span><span class="s">oval</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#FCF3CF&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">EntryPoint</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;EntryPoint.main&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#D6EAF8&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">IDE</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;StageIDE&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#D6EAF8&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Loader</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;AbstractFileProjectLoader&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#D5F5E3&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">IO</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;IoUtilities / XmlProjectIo&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#D5F5E3&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Frame</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;ProjectDocumentFrame&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#D6EAF8&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Editor</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;DeclarationsEditorComposite / CodeEditor&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#FADBD8&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">AST</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;Project AST&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#FADBD8&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Run</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;RunComposite&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#EBDEF0&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">VM</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;RunProgramContext / ReleaseVirtualMachine&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#EBDEF0&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">World</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;SProgram / SceneImp&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#D2B4DE&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Render</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;OnscreenRenderTarget&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#D2B4DE&quot;</span><span class="p">];</span>
+
+<span class="w">  </span><span class="nt">Student</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">EntryPoint</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;1 launch Alice&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">EntryPoint</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">IDE</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;2 initialize(args)&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Student</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">IDE</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;3 open .a3p&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">IDE</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">Loader</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;4 load project&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Loader</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">IO</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;5 projectReader/readProject&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">IO</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">AST</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;6 decode XML -&gt; NamedUserType&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">IDE</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">Frame</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;7 set project + perspective&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Student</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">Editor</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;8 select procedure&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Editor</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">AST</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;9 mutate method body&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Student</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">Run</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;10 click Run&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Run</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">VM</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;11 init + setActiveScene()&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">VM</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">World</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;12 create/invoke program&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">World</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">Render</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;13 activate + render&quot;</span><span class="p">];</span>
+<span class="p">}</span>
+</code></pre></div>
+<p>Source: <a href="journey-1-open-edit-run.dot"><code>journey-1-open-edit-run.dot</code></a></p>
+<h2 id="2-student-adds-entity-to-scene-positions-it-saves">2. Student adds entity to scene, positions it, saves</h2>
+<h3 id="mermaid_1">Mermaid</h3>
+<pre class="mermaid"><code>sequenceDiagram
+  actor Student
+  participant Setup as SetupScenePerspective
+  participant Gallery as GalleryComposite
+  participant Drop as SceneEditorDropReceptor
+  participant Drag as GlobalDragAdapter
+  participant Scene as StorytellingSceneEditor
+  participant AST as SceneType / UserField AST
+  participant Xform as AbstractTransformable
+  participant Save as ProjectApplication
+  participant Files as ProjectFileUtilities
+  participant IO as IoUtilities / XmlProjectIo
+
+  Student-&gt;&gt;Setup: switch to scene setup
+  Student-&gt;&gt;Gallery: drag gallery item
+  Gallery-&gt;&gt;Drop: GalleryDragModel
+  Drop-&gt;&gt;Drag: dragUpdated / SceneDropSite
+  Drag-&gt;&gt;Scene: drop target + selection
+  Scene-&gt;&gt;AST: add managed scene field / instance
+  Student-&gt;&gt;Scene: drag object to position it
+  Scene-&gt;&gt;Drag: manipulator input
+  Drag-&gt;&gt;Xform: setTransformation()
+  Student-&gt;&gt;Save: save project
+  Save-&gt;&gt;Files: saveCopyOfProjectTo
+  Files-&gt;&gt;IO: writeProject / writeType / writeResources</code></pre>
+<p>Source: <a href="journey-2-add-position-save.mmd"><code>journey-2-add-position-save.mmd</code></a></p>
+<h3 id="graphviz-dot_1">Graphviz DOT</h3>
+<div class="highlight"><pre><span></span><code><span class="k">digraph</span><span class="w"> </span><span class="nt">journey_2_add_position_save</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="na">rankdir</span><span class="p">=</span><span class="s">LR</span><span class="p">;</span>
+<span class="w">  </span><span class="k">graph</span><span class="w"> </span><span class="p">[</span><span class="na">fontname</span><span class="p">=</span><span class="s2">&quot;Helvetica&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">labelloc</span><span class="p">=</span><span class="s">t</span><span class="p">,</span><span class="w"> </span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;Journey 2: add entity, position it, save project&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="k">node</span><span class="w"> </span><span class="p">[</span><span class="na">shape</span><span class="p">=</span><span class="s">box</span><span class="p">,</span><span class="w"> </span><span class="na">style</span><span class="p">=</span><span class="s2">&quot;rounded,filled&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#F8F9FA&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">color</span><span class="p">=</span><span class="s2">&quot;#34495E&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fontname</span><span class="p">=</span><span class="s2">&quot;Helvetica&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="k">edge</span><span class="w"> </span><span class="p">[</span><span class="na">color</span><span class="p">=</span><span class="s2">&quot;#5D6D7E&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">arrowsize</span><span class="p">=</span><span class="m">0.8</span><span class="p">];</span>
+
+<span class="w">  </span><span class="nt">Student</span><span class="w"> </span><span class="p">[</span><span class="na">shape</span><span class="p">=</span><span class="s">oval</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#FCF3CF&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Setup</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;SetupScenePerspective&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#D6EAF8&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Gallery</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;GalleryComposite&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#D6EAF8&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Drop</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;SceneEditorDropReceptor&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#D5F5E3&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Drag</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;GlobalDragAdapter&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#D5F5E3&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Scene</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;StorytellingSceneEditor&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#FADBD8&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">AST</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;SceneType / UserField AST&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#FADBD8&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Xform</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;AbstractTransformable&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#EBDEF0&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Save</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;ProjectApplication&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#D2B4DE&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Files</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;ProjectFileUtilities&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#D2B4DE&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">IO</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;IoUtilities / XmlProjectIo&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#D2B4DE&quot;</span><span class="p">];</span>
+
+<span class="w">  </span><span class="nt">Student</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">Setup</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;1 switch to scene setup&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Student</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">Gallery</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;2 drag gallery item&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Gallery</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">Drop</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;3 GalleryDragModel&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Drop</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">Drag</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;4 SceneDropSite&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Drag</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">Scene</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;5 target + selection&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Scene</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">AST</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;6 add scene field / instance&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Student</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">Scene</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;7 drag to position&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Scene</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">Drag</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;8 manipulator input&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Drag</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">Xform</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;9 setTransformation()&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Student</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">Save</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;10 save project&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Save</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">Files</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;11 saveCopyOfProjectTo&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Files</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">IO</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;12 write XML/resources&quot;</span><span class="p">];</span>
+<span class="p">}</span>
+</code></pre></div>
+<p>Source: <a href="journey-2-add-position-save.dot"><code>journey-2-add-position-save.dot</code></a></p>
+<h2 id="3-student-creates-custom-class-adds-methods-uses-it-in-scene">3. Student creates custom class, adds methods, uses it in scene</h2>
+<h3 id="mermaid_2">Mermaid</h3>
+<pre class="mermaid"><code>sequenceDiagram
+  actor Student
+  participant TypeMgr as TypeManager
+  participant TypeMenu as TypeMenu / DeclarationsEditorComposite
+  participant OtherType as OtherTypeDialog
+  participant TypeAST as NamedUserType AST
+  participant AddProc as AddProcedureComposite / AddFunctionComposite
+  participant Code as CodeEditor
+  participant AddField as AddUnmanagedFieldComposite
+  participant Scene as SceneType AST
+
+  Student-&gt;&gt;OtherType: choose base type for custom class
+  OtherType-&gt;&gt;TypeMgr: resolve assignable type
+  TypeMgr-&gt;&gt;TypeAST: createTypeFor(...) if missing
+  Student-&gt;&gt;TypeMenu: open custom class tab
+  TypeMenu-&gt;&gt;TypeAST: select class declaration
+  Student-&gt;&gt;AddProc: add procedure / function
+  AddProc-&gt;&gt;TypeAST: declare UserMethod
+  Student-&gt;&gt;Code: edit method body
+  Code-&gt;&gt;TypeAST: mutate BlockStatement
+  Student-&gt;&gt;AddField: add custom-class field to scene
+  AddField-&gt;&gt;Scene: declare UserField / initializer</code></pre>
+<p>Source: <a href="journey-3-custom-class.mmd"><code>journey-3-custom-class.mmd</code></a></p>
+<h3 id="graphviz-dot_2">Graphviz DOT</h3>
+<div class="highlight"><pre><span></span><code><span class="k">digraph</span><span class="w"> </span><span class="nt">journey_3_custom_class</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="na">rankdir</span><span class="p">=</span><span class="s">LR</span><span class="p">;</span>
+<span class="w">  </span><span class="k">graph</span><span class="w"> </span><span class="p">[</span><span class="na">fontname</span><span class="p">=</span><span class="s2">&quot;Helvetica&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">labelloc</span><span class="p">=</span><span class="s">t</span><span class="p">,</span><span class="w"> </span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;Journey 3: create custom class, add methods, use it in scene&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="k">node</span><span class="w"> </span><span class="p">[</span><span class="na">shape</span><span class="p">=</span><span class="s">box</span><span class="p">,</span><span class="w"> </span><span class="na">style</span><span class="p">=</span><span class="s2">&quot;rounded,filled&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#F8F9FA&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">color</span><span class="p">=</span><span class="s2">&quot;#34495E&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fontname</span><span class="p">=</span><span class="s2">&quot;Helvetica&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="k">edge</span><span class="w"> </span><span class="p">[</span><span class="na">color</span><span class="p">=</span><span class="s2">&quot;#5D6D7E&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">arrowsize</span><span class="p">=</span><span class="m">0.8</span><span class="p">];</span>
+
+<span class="w">  </span><span class="nt">Student</span><span class="w"> </span><span class="p">[</span><span class="na">shape</span><span class="p">=</span><span class="s">oval</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#FCF3CF&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">TypeMgr</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;TypeManager&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#D6EAF8&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">TypeMenu</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;TypeMenu / DeclarationsEditorComposite&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#D6EAF8&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">OtherType</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;OtherTypeDialog&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#D5F5E3&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">TypeAST</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;NamedUserType AST&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#FADBD8&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">AddProc</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;AddProcedureComposite / AddFunctionComposite&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#FADBD8&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Code</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;CodeEditor&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#FADBD8&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">AddField</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;AddUnmanagedFieldComposite&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#EBDEF0&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Scene</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;SceneType AST&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#EBDEF0&quot;</span><span class="p">];</span>
+
+<span class="w">  </span><span class="nt">Student</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">OtherType</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;1 choose base type&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">OtherType</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">TypeMgr</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;2 resolve assignable type&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">TypeMgr</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">TypeAST</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;3 createTypeFor(...) if missing&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Student</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">TypeMenu</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;4 open class tab&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">TypeMenu</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">TypeAST</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;5 select declaration&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Student</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">AddProc</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;6 add procedure/function&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">AddProc</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">TypeAST</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;7 declare UserMethod&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Student</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">Code</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;8 edit method body&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Code</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">TypeAST</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;9 mutate BlockStatement&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Student</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">AddField</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;10 use class in scene&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">AddField</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">Scene</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;11 declare UserField + initializer&quot;</span><span class="p">];</span>
+<span class="p">}</span>
+</code></pre></div>
+<p>Source: <a href="journey-3-custom-class.dot"><code>journey-3-custom-class.dot</code></a></p>
+<h2 id="4-instructor-opens-student-project-reviews-code-grades">4. Instructor opens student project, reviews code, grades</h2>
+<h3 id="mermaid_3">Mermaid</h3>
+<pre class="mermaid"><code>sequenceDiagram
+  actor Instructor
+  participant EntryPoint as EntryPoint.main
+  participant IDE as StageIDE
+  participant Loader as AbstractFileProjectLoader
+  participant IO as IoUtilities / XmlProjectIo
+  participant Frame as ProjectDocumentFrame
+  participant Review as DeclarationsEditorComposite / TypeMenu
+  participant Print as PrintAllOperation
+  participant Html as HtmlProjectWriter
+  participant Gradebook as External gradebook / rubric
+
+  Instructor-&gt;&gt;EntryPoint: launch Alice
+  EntryPoint-&gt;&gt;IDE: initialize desktop shell
+  Instructor-&gt;&gt;IDE: open student project
+  IDE-&gt;&gt;Loader: load .a3p
+  Loader-&gt;&gt;IO: readProject
+  IO--&gt;&gt;Frame: project AST loaded
+  Instructor-&gt;&gt;Review: inspect classes, methods, and scene code
+  Instructor-&gt;&gt;Print: export printable review
+  Print-&gt;&gt;Html: writeProject(...) as HTML/PDF source
+  Instructor-&gt;&gt;Gradebook: record assessment outside Alice</code></pre>
+<p>Source: <a href="journey-4-instructor-review-grade.mmd"><code>journey-4-instructor-review-grade.mmd</code></a></p>
+<h3 id="graphviz-dot_3">Graphviz DOT</h3>
+<div class="highlight"><pre><span></span><code><span class="k">digraph</span><span class="w"> </span><span class="nt">journey_4_instructor_review_grade</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="na">rankdir</span><span class="p">=</span><span class="s">LR</span><span class="p">;</span>
+<span class="w">  </span><span class="k">graph</span><span class="w"> </span><span class="p">[</span><span class="na">fontname</span><span class="p">=</span><span class="s2">&quot;Helvetica&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">labelloc</span><span class="p">=</span><span class="s">t</span><span class="p">,</span><span class="w"> </span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;Journey 4: instructor opens project, reviews code, grades&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="k">node</span><span class="w"> </span><span class="p">[</span><span class="na">shape</span><span class="p">=</span><span class="s">box</span><span class="p">,</span><span class="w"> </span><span class="na">style</span><span class="p">=</span><span class="s2">&quot;rounded,filled&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#F8F9FA&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">color</span><span class="p">=</span><span class="s2">&quot;#34495E&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fontname</span><span class="p">=</span><span class="s2">&quot;Helvetica&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="k">edge</span><span class="w"> </span><span class="p">[</span><span class="na">color</span><span class="p">=</span><span class="s2">&quot;#5D6D7E&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">arrowsize</span><span class="p">=</span><span class="m">0.8</span><span class="p">];</span>
+
+<span class="w">  </span><span class="nt">Instructor</span><span class="w"> </span><span class="p">[</span><span class="na">shape</span><span class="p">=</span><span class="s">oval</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#FCF3CF&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">EntryPoint</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;EntryPoint.main&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#D6EAF8&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">IDE</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;StageIDE&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#D6EAF8&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Loader</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;AbstractFileProjectLoader&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#D5F5E3&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">IO</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;IoUtilities / XmlProjectIo&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#D5F5E3&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Frame</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;ProjectDocumentFrame&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#FADBD8&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Review</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;DeclarationsEditorComposite / TypeMenu&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#FADBD8&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Print</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;PrintAllOperation&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#EBDEF0&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Html</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;HtmlProjectWriter&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#EBDEF0&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Gradebook</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;External gradebook / rubric&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#D2B4DE&quot;</span><span class="p">];</span>
+
+<span class="w">  </span><span class="nt">Instructor</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">EntryPoint</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;1 launch Alice&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">EntryPoint</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">IDE</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;2 initialize shell&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Instructor</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">IDE</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;3 open student project&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">IDE</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">Loader</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;4 load .a3p&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Loader</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">IO</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;5 readProject&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">IO</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">Frame</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;6 project AST loaded&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Instructor</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">Review</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;7 inspect code&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Instructor</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">Print</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;8 export printable review&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Print</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">Html</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;9 writeProject(...) HTML&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Instructor</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">Gradebook</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;10 record grade outside Alice&quot;</span><span class="p">];</span>
+<span class="p">}</span>
+</code></pre></div>
+<p>Source: <a href="journey-4-instructor-review-grade.dot"><code>journey-4-instructor-review-grade.dot</code></a></p>
+<h2 id="5-developer-runs-tests-measures-coverage-pushes-to-ci">5. Developer runs tests, measures coverage, pushes to CI</h2>
+<h3 id="mermaid_4">Mermaid</h3>
+<pre class="mermaid"><code>sequenceDiagram
+  actor Developer
+  participant Maven as local mvn
+  participant Surefire as surefire tests
+  participant JaCoCo as Pcoverage verify
+  participant Summary as summarize-jacoco-coverage.py
+  participant TestCI as alice-test-ci.yml
+  participant CoverageCI as alice-coverage-ci.yml
+  participant Artifacts as uploaded evidence artifact
+
+  Developer-&gt;&gt;Maven: mvn -DincludeSims=false ... clean test
+  Maven-&gt;&gt;Surefire: run headless no-Sims tests
+  Surefire--&gt;&gt;Developer: test results
+  Developer-&gt;&gt;JaCoCo: mvn -DincludeSims=false ... -Pcoverage verify
+  JaCoCo-&gt;&gt;Summary: generate aggregate + module reports
+  Summary--&gt;&gt;Developer: coverage-summary.md
+  Developer-&gt;&gt;TestCI: push branch / PR
+  alt push or validation-impacting PR
+    TestCI-&gt;&gt;Maven: git submodule update, setup-java, clean test
+    Developer-&gt;&gt;CoverageCI: same push triggers coverage workflow
+    CoverageCI-&gt;&gt;JaCoCo: verify + coverage reports
+    CoverageCI-&gt;&gt;Summary: summarize and gate coverage
+    CoverageCI-&gt;&gt;Artifacts: upload coverage evidence
+  else docs/QA/tests/scripts/license-only PR
+    TestCI--&gt;&gt;Developer: report Maven validation no-op
+    Developer-&gt;&gt;CoverageCI: same PR triggers coverage workflow
+    CoverageCI--&gt;&gt;Developer: report Maven validation no-op
+  end</code></pre>
+<p>Source: <a href="journey-5-dev-test-coverage-ci.mmd"><code>journey-5-dev-test-coverage-ci.mmd</code></a></p>
+<h3 id="graphviz-dot_4">Graphviz DOT</h3>
+<div class="highlight"><pre><span></span><code><span class="k">digraph</span><span class="w"> </span><span class="nt">journey_5_dev_test_coverage_ci</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="na">rankdir</span><span class="p">=</span><span class="s">LR</span><span class="p">;</span>
+<span class="w">  </span><span class="k">graph</span><span class="w"> </span><span class="p">[</span><span class="na">fontname</span><span class="p">=</span><span class="s2">&quot;Helvetica&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">labelloc</span><span class="p">=</span><span class="s">t</span><span class="p">,</span><span class="w"> </span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;Journey 5: developer runs tests, measures coverage, pushes to CI&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="k">node</span><span class="w"> </span><span class="p">[</span><span class="na">shape</span><span class="p">=</span><span class="s">box</span><span class="p">,</span><span class="w"> </span><span class="na">style</span><span class="p">=</span><span class="s2">&quot;rounded,filled&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#F8F9FA&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">color</span><span class="p">=</span><span class="s2">&quot;#34495E&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fontname</span><span class="p">=</span><span class="s2">&quot;Helvetica&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="k">edge</span><span class="w"> </span><span class="p">[</span><span class="na">color</span><span class="p">=</span><span class="s2">&quot;#5D6D7E&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">arrowsize</span><span class="p">=</span><span class="m">0.8</span><span class="p">];</span>
+
+<span class="w">  </span><span class="nt">Developer</span><span class="w"> </span><span class="p">[</span><span class="na">shape</span><span class="p">=</span><span class="s">oval</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#FCF3CF&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Maven</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;local mvn&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#D6EAF8&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Surefire</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;surefire tests&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#D6EAF8&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">JaCoCo</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;-Pcoverage verify&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#D5F5E3&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Summary</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;summarize-jacoco-coverage.py&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#D5F5E3&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">TestCI</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;alice-test-ci.yml&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#FADBD8&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">TestScope</span><span class="w"> </span><span class="p">[</span><span class="na">shape</span><span class="p">=</span><span class="s">diamond</span><span class="p">,</span><span class="w"> </span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;push or\nvalidation-impacting PR?&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#FADBD8&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">TestNoOp</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;report Maven\nvalidation no-op&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#FDEDEC&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">CoverageCI</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;alice-coverage-ci.yml&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#FADBD8&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">CoverageScope</span><span class="w"> </span><span class="p">[</span><span class="na">shape</span><span class="p">=</span><span class="s">diamond</span><span class="p">,</span><span class="w"> </span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;push or\nvalidation-impacting PR?&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#FADBD8&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">CoverageNoOp</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;report Maven\nvalidation no-op&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#FDEDEC&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Artifacts</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;uploaded evidence artifact&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#EBDEF0&quot;</span><span class="p">];</span>
+
+<span class="w">  </span><span class="nt">Developer</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">Maven</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;1 clean test&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Maven</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">Surefire</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;2 run headless no-Sims tests&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Surefire</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">Developer</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;3 results&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Developer</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">JaCoCo</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;4 coverage verify&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">JaCoCo</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">Summary</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;5 aggregate + module reports&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Summary</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">Developer</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;6 coverage summary&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Developer</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">TestCI</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;7 push branch / PR&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">TestCI</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">TestScope</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;8 classify change scope&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">TestScope</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">Maven</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;9 yes: submodule + setup-java + clean test&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">TestScope</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">TestNoOp</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;9 no: docs/QA/tests/scripts/license-only PR&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">Developer</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">CoverageCI</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;10 same push triggers coverage&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">CoverageCI</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">CoverageScope</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;11 classify change scope&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">CoverageScope</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">JaCoCo</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;12 yes: verify + coverage reports&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">CoverageScope</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">CoverageNoOp</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;12 no: docs/QA/tests/scripts/license-only PR&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">CoverageCI</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">Summary</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;13 summarize and gate&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">CoverageCI</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">Artifacts</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;14 upload evidence&quot;</span><span class="p">];</span>
+<span class="p">}</span>
+</code></pre></div>
+<p>Source: <a href="journey-5-dev-test-coverage-ci.dot"><code>journey-5-dev-test-coverage-ci.dot</code></a></p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

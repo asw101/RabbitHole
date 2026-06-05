@@ -15,7 +15,7 @@ preconditions:
   - libatk-wrapper-java is installed at /usr/share/java/java-atk-wrapper.jar.
   - The AT-SPI2 accessibility bus is running for the current user session.
   - alice-ide/pom.xml declares the alice-ide-atk exec:exec execution with -Xbootclasspath/a:/usr/share/java/java-atk-wrapper.jar.
-  - PR #272 has been merged, proving Java/Swing widgets are visible through AT-SPI with exec:exec + NO_AT_BRIDGE=1.
+  - Java/Swing widgets are visible through AT-SPI with exec:exec and NO_AT_BRIDGE=1.
 userActions:
   - Prepare core/resources/target/distribution, then start Alice using exec:exec@alice-ide-atk.
   - Launch with ALICE_QA_ACCEPT_LICENSES_FOR_TESTS=1 so first-run license dialogs are bypassed.

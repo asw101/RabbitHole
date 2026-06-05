@@ -15,7 +15,7 @@ preconditions:
   - libatk-wrapper-java is installed at /usr/share/java/java-atk-wrapper.jar.
   - The AT-SPI2 accessibility bus is running for the current user session.
   - alice-ide/pom.xml declares the alice-ide-atk exec:exec execution with -Xbootclasspath/a:/usr/share/java/java-atk-wrapper.jar.
-  - PR #278 has been merged, proving Select Project tab click and project open (projectOpenObserved=true).
+  - Select Project tab click and project open evidence is available with projectOpenObserved=true.
   - tab-click-observation.json from the alice-desktop-select-project-tab-click-exec run is available.
 userActions:
   - Run the alice-desktop-select-project-tab-click-exec scenario to completion (Select Project dismissed with Africa Full selected).
@@ -28,7 +28,7 @@ expectedOutcomes:
   - post-project-open-observation.json records mainFrameNames containing at least one entry that is NOT "Select Project".
   - post-project-open-observation.json records mainWindowObservationBlocker=none.
   - mainFrameChildCounts contains at least one non-zero entry, confirming the main Alice 3 frame has accessible children (widgets present in the IDE).
-  - The evidence closes the gap left by PR #278: Select Project frame disappeared (projectOpenObserved=true) but the main IDE window state was previously uncharacterised.
+  - The evidence confirms that the Select Project frame disappeared and the main IDE window state is observable.
 automation:
   cwd: alice-ide
   argv:

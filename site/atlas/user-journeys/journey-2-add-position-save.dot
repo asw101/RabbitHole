@@ -1,0 +1,31 @@
+digraph journey_2_add_position_save {
+  rankdir=LR;
+  graph [fontname="Helvetica", labelloc=t, label="Journey 2: add entity, position it, save project"];
+  node [shape=box, style="rounded,filled", fillcolor="#F8F9FA", color="#34495E", fontname="Helvetica"];
+  edge [color="#5D6D7E", arrowsize=0.8];
+
+  Student [shape=oval, fillcolor="#FCF3CF"];
+  Setup [label="SetupScenePerspective", fillcolor="#D6EAF8"];
+  Gallery [label="GalleryComposite", fillcolor="#D6EAF8"];
+  Drop [label="SceneEditorDropReceptor", fillcolor="#D5F5E3"];
+  Drag [label="GlobalDragAdapter", fillcolor="#D5F5E3"];
+  Scene [label="StorytellingSceneEditor", fillcolor="#FADBD8"];
+  AST [label="SceneType / UserField AST", fillcolor="#FADBD8"];
+  Xform [label="AbstractTransformable", fillcolor="#EBDEF0"];
+  Save [label="ProjectApplication", fillcolor="#D2B4DE"];
+  Files [label="ProjectFileUtilities", fillcolor="#D2B4DE"];
+  IO [label="IoUtilities / XmlProjectIo", fillcolor="#D2B4DE"];
+
+  Student -> Setup [label="1 switch to scene setup"];
+  Student -> Gallery [label="2 drag gallery item"];
+  Gallery -> Drop [label="3 GalleryDragModel"];
+  Drop -> Drag [label="4 SceneDropSite"];
+  Drag -> Scene [label="5 target + selection"];
+  Scene -> AST [label="6 add scene field / instance"];
+  Student -> Scene [label="7 drag to position"];
+  Scene -> Drag [label="8 manipulator input"];
+  Drag -> Xform [label="9 setTransformation()"];
+  Student -> Save [label="10 save project"];
+  Save -> Files [label="11 saveCopyOfProjectTo"];
+  Files -> IO [label="12 write XML/resources"];
+}

@@ -1,0 +1,36 @@
+digraph journey_5_dev_test_coverage_ci {
+  rankdir=LR;
+  graph [fontname="Helvetica", labelloc=t, label="Journey 5: developer runs tests, measures coverage, pushes to CI"];
+  node [shape=box, style="rounded,filled", fillcolor="#F8F9FA", color="#34495E", fontname="Helvetica"];
+  edge [color="#5D6D7E", arrowsize=0.8];
+
+  Developer [shape=oval, fillcolor="#FCF3CF"];
+  Maven [label="local mvn", fillcolor="#D6EAF8"];
+  Surefire [label="surefire tests", fillcolor="#D6EAF8"];
+  JaCoCo [label="-Pcoverage verify", fillcolor="#D5F5E3"];
+  Summary [label="summarize-jacoco-coverage.py", fillcolor="#D5F5E3"];
+  TestCI [label="alice-test-ci.yml", fillcolor="#FADBD8"];
+  TestScope [shape=diamond, label="push or\nvalidation-impacting PR?", fillcolor="#FADBD8"];
+  TestNoOp [label="report Maven\nvalidation no-op", fillcolor="#FDEDEC"];
+  CoverageCI [label="alice-coverage-ci.yml", fillcolor="#FADBD8"];
+  CoverageScope [shape=diamond, label="push or\nvalidation-impacting PR?", fillcolor="#FADBD8"];
+  CoverageNoOp [label="report Maven\nvalidation no-op", fillcolor="#FDEDEC"];
+  Artifacts [label="uploaded evidence artifact", fillcolor="#EBDEF0"];
+
+  Developer -> Maven [label="1 clean test"];
+  Maven -> Surefire [label="2 run headless no-Sims tests"];
+  Surefire -> Developer [label="3 results"];
+  Developer -> JaCoCo [label="4 coverage verify"];
+  JaCoCo -> Summary [label="5 aggregate + module reports"];
+  Summary -> Developer [label="6 coverage summary"];
+  Developer -> TestCI [label="7 push branch / PR"];
+  TestCI -> TestScope [label="8 classify change scope"];
+  TestScope -> Maven [label="9 yes: submodule + setup-java + clean test"];
+  TestScope -> TestNoOp [label="9 no: docs/QA/tests/scripts/license-only PR"];
+  Developer -> CoverageCI [label="10 same push triggers coverage"];
+  CoverageCI -> CoverageScope [label="11 classify change scope"];
+  CoverageScope -> JaCoCo [label="12 yes: verify + coverage reports"];
+  CoverageScope -> CoverageNoOp [label="12 no: docs/QA/tests/scripts/license-only PR"];
+  JaCoCo -> Summary [label="13 summarize and gate"];
+  Summary -> Artifacts [label="14 upload evidence"];
+}

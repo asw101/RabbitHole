@@ -9,7 +9,7 @@ Validate the documented Getting Started path:
 
 ```bash
 ./scripts/validate-getting-started.sh
-uvx --from git+https://github.com/rysweet/RabbitHole.git@<branch-or-commit> amplihack getting-started validate --headless
+python3 alice_qa.py getting-started validate --headless
 ```
 
 Run everything:
@@ -85,8 +85,8 @@ immediately after cloning.
 `tests/test_getting_started_validation_contract.py` protects the documented
 command surface from drift by checking the validator flags, submodule failure
 guidance, no-Sims launch command, and GUI skip/block semantics described here.
-`amplihack getting-started validate` is the branch-installable wrapper entry
-point for running the same validator with `uvx --from git+...@<branch-or-commit>`.
+`python3 alice_qa.py getting-started validate` is the wrapper entry point for
+running the same validator from the checkout under review.
 
 | Lane | Command | Intended environment | Success condition |
 | --- | --- | --- | --- |
@@ -117,7 +117,7 @@ the command proves the GUI boundary without opening the IDE on local desktops.
 | Missing Git checkout metadata | Fail | Fail | Fail |
 | Missing `tweedle-lang` or `tweedle-lang/Grammar` | Fail with `git submodule update --init tweedle-lang` guidance | Fail with the same guidance | Fail with the same guidance |
 | No desktop display | Pass only if the launch probe reports `Alice desktop launch requires a graphical environment.` | Exit non-zero because GUI was requested explicitly | Skip the GUI lane and exit successfully after headless validation passes |
-| macOS Apple Silicon desktop GUI launch | Headless lane remains valid | Exit non-zero as blocked by [#848](https://github.com/rysweet/RabbitHole/issues/848) | Report blocked and exit successfully after headless validation passes |
+| macOS Apple Silicon desktop GUI launch | Headless lane remains valid | Exit non-zero as a known platform blocker | Report blocked and exit successfully after headless validation passes |
 | Unknown validator flag | Fail | Fail | Fail |
 
 CI integration calls the headless lane only. Local users should run `--gui`

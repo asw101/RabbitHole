@@ -1,0 +1,1368 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Modernizing the Alice 3 educational programming environment">
+      
+      
+      
+      
+        <link rel="prev" href="../ast-lsp-bindings/">
+      
+      
+        <link rel="next" href="../runtime-topology/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Compile Dependencies - Alice 3 Modernization</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="blue" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#compile-time-dependencies" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Alice 3 Modernization" class="md-header__button md-logo" aria-label="Alice 3 Modernization" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Alice 3 Modernization
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Compile Dependencies
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/rysweet/RabbitHole" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Alice 3 Modernization" class="md-nav__button md-logo" aria-label="Alice 3 Modernization" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Alice 3 Modernization
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/rysweet/RabbitHole" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Start here
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Start here
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../rabbithole-baseline-parity/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RabbitHole baseline parity
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../repository-hygiene/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Repository hygiene
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Concepts
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Concepts
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/formal-spec-lane/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Formal Specification Lane
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/migration-hotspot-characterization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Migration Hotspot Characterization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/modernization-scorecard-generator/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Modernization Scorecard Generator
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/modernization-corpus-manifest/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Modernization Corpus Manifest
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture Atlas
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture Atlas
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Atlas Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../repo-surface/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Repository Surface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ast-lsp-bindings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Symbol Bindings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compile Dependencies
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compile Dependencies
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#dependency-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dependency notes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mermaid" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mermaid
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#graphviz-dot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Graphviz DOT
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../runtime-topology/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Runtime Topology
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api-contracts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Contracts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../data-flow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Flow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../service-components/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Service Components
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-journeys/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Journeys
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#dependency-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dependency notes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mermaid" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mermaid
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#graphviz-dot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Graphviz DOT
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="compile-time-dependencies">Compile-time Dependencies</h1>
+<p>This layer maps Maven POM dependencies between the main Alice modules and the key third-party technologies they pull in.
+The graph follows declared dependencies first, with one extra structural note for <code>Jama</code>, which is vendored inside <code>core/story-api</code> rather than declared as a Maven artifact.</p>
+<h2 id="dependency-notes">Dependency notes</h2>
+<ul>
+<li><code>util</code> is the base library for JavaFX-enabled desktop support.</li>
+<li><code>story-api</code> is the main convergence point: it depends on <code>ast</code>, <code>tweedle</code>, <code>scenegraph</code>, <code>glrender</code>, and <code>util</code>, while also carrying the bundled <code>Jama</code> math package.</li>
+<li><code>glrender</code> is the JOGL/GlueGen bridge; <code>alice-ide</code> and <code>netbeans</code> reach JavaFX through launcher/plugin wiring rather than only through direct Java code imports.</li>
+<li><code>story-api-migration</code> is shown as its own direct edge because both <code>ide</code> and <code>netbeans</code> declare it explicitly for project I/O, while the remaining support modules stay grouped as <code>i18n</code>, <code>image-editor</code>, <code>issue-reporting</code>, <code>resources</code>, and <code>models</code>.</li>
+</ul>
+<h2 id="mermaid">Mermaid</h2>
+<pre class="mermaid"><code>flowchart TD
+  util["util&lt;br/&gt;JavaFX 21.0.7"]
+  tweedle["tweedle&lt;br/&gt;ANTLR4 + Jackson"]
+  ast["ast&lt;br/&gt;commons-text"]
+  scenegraph["scenegraph"]
+  glrender["glrender&lt;br/&gt;JOGL 2.5.0 + GlueGen 2.5.0"]
+  storyapi["story-api&lt;br/&gt;jsvg + FlatLaf&lt;br/&gt;vendored Jama.*"]
+  croquet["croquet&lt;br/&gt;wrapped-flow-layout + FlatLaf"]
+  support["support modules&lt;br/&gt;i18n + image-editor + issue-reporting&lt;br/&gt;resources + models"]
+  migration["story-api-migration&lt;br/&gt;project I/O bridge"]
+  ide["ide"]
+  modelloading["model-loading&lt;br/&gt;Collada + glTF + JAXB"]
+  aliceide["alice-ide&lt;br/&gt;EntryPoint launcher"]
+  netbeans["netbeans&lt;br/&gt;NetBeans platform plugin"]
+
+  tweedle --&gt; util
+  ast --&gt; util
+  ast --&gt; tweedle
+  scenegraph --&gt; util
+  glrender --&gt; scenegraph
+  storyapi --&gt; util
+  storyapi --&gt; scenegraph
+  storyapi --&gt; glrender
+  storyapi --&gt; tweedle
+  storyapi --&gt; ast
+  croquet --&gt; util
+  ide --&gt; support
+  ide --&gt; migration
+  ide --&gt; util
+  ide --&gt; ast
+  ide --&gt; croquet
+  ide --&gt; scenegraph
+  ide --&gt; glrender
+  ide --&gt; storyapi
+  modelloading --&gt; util
+  modelloading --&gt; ast
+  modelloading --&gt; scenegraph
+  modelloading --&gt; glrender
+  modelloading --&gt; storyapi
+  aliceide --&gt; ide
+  netbeans --&gt; support
+  netbeans --&gt; migration
+  netbeans --&gt; util
+  netbeans --&gt; ast
+  netbeans --&gt; scenegraph
+  netbeans --&gt; glrender
+  netbeans --&gt; storyapi
+  netbeans --&gt; tweedle
+
+  glrender --&gt; jogl["JOGL 2.5.0"]
+  glrender --&gt; gluegen["GlueGen 2.5.0"]
+  util --&gt; javafx["JavaFX 21.0.7"]
+  netbeans --&gt; javafx
+  aliceide -.exec plugin module-path.-&gt; javafx
+  storyapi -.bundled source package.-&gt; jama["Jama&lt;br/&gt;core/story-api/src/main/java/Jama"]</code></pre>
+<p>Source: <a href="compile-deps.mmd"><code>compile-deps.mmd</code></a></p>
+<h2 id="graphviz-dot">Graphviz DOT</h2>
+<div class="highlight"><pre><span></span><code><span class="k">digraph</span><span class="w"> </span><span class="nt">compile_deps</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="na">rankdir</span><span class="p">=</span><span class="s">LR</span><span class="p">;</span>
+<span class="w">  </span><span class="k">graph</span><span class="w"> </span><span class="p">[</span><span class="na">fontname</span><span class="p">=</span><span class="s2">&quot;Helvetica&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">labelloc</span><span class="p">=</span><span class="s">t</span><span class="p">,</span><span class="w"> </span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;Compile-time dependencies from Maven POMs&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="k">node</span><span class="w"> </span><span class="p">[</span><span class="na">shape</span><span class="p">=</span><span class="s">box</span><span class="p">,</span><span class="w"> </span><span class="na">style</span><span class="p">=</span><span class="s2">&quot;rounded,filled&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#F8F9FA&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">color</span><span class="p">=</span><span class="s2">&quot;#34495E&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fontname</span><span class="p">=</span><span class="s2">&quot;Helvetica&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="k">edge</span><span class="w"> </span><span class="p">[</span><span class="na">color</span><span class="p">=</span><span class="s2">&quot;#5D6D7E&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">arrowsize</span><span class="p">=</span><span class="m">0.8</span><span class="p">];</span>
+
+<span class="w">  </span><span class="nt">util</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;util</span>
+<span class="s2">JavaFX 21.0.7&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#D6EAF8&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">tweedle</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;tweedle</span>
+<span class="s2">ANTLR4 + Jackson&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#FCF3CF&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">ast</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;ast</span>
+<span class="s2">commons-text&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#D6EAF8&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">scenegraph</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;scenegraph&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#D6EAF8&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">glrender</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;glrender</span>
+<span class="s2">JOGL 2.5.0 + GlueGen 2.5.0&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#D5F5E3&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">storyapi</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;story-api</span>
+<span class="s2">jsvg + FlatLaf</span>
+<span class="s2">vendored Jama.*&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#D5F5E3&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">croquet</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;croquet</span>
+<span class="s2">wrapped-flow-layout + FlatLaf&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">support</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;support modules</span>
+<span class="s2">i18n + image-editor + issue-reporting</span>
+<span class="s2">resources + models&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#EBF5FB&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">migration</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;story-api-migration</span>
+<span class="s2">project I/O bridge&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#EBF5FB&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">ide</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;ide&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#FADBD8&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">modelloading</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;model-loading</span>
+<span class="s2">Collada + glTF + JAXB&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#FADBD8&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">aliceide</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;alice-ide</span>
+<span class="s2">EntryPoint launcher&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#F9E79F&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">netbeans</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;netbeans</span>
+<span class="s2">NetBeans platform plugin&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#F9E79F&quot;</span><span class="p">];</span>
+
+<span class="w">  </span><span class="nt">jogl</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;JOGL 2.5.0&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#FEF5E7&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">gluegen</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;GlueGen 2.5.0&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#FEF5E7&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">javafx</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;JavaFX 21.0.7&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#FEF5E7&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">jama</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;Jama</span>
+<span class="s2">core/story-api/src/main/java/Jama&quot;</span><span class="p">,</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#FEF5E7&quot;</span><span class="p">];</span>
+
+<span class="w">  </span><span class="nt">tweedle</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">util</span><span class="p">;</span>
+<span class="w">  </span><span class="nt">ast</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">util</span><span class="p">;</span>
+<span class="w">  </span><span class="nt">ast</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">tweedle</span><span class="p">;</span>
+<span class="w">  </span><span class="nt">scenegraph</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">util</span><span class="p">;</span>
+<span class="w">  </span><span class="nt">glrender</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">scenegraph</span><span class="p">;</span>
+<span class="w">  </span><span class="nt">storyapi</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">util</span><span class="p">;</span>
+<span class="w">  </span><span class="nt">storyapi</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">scenegraph</span><span class="p">;</span>
+<span class="w">  </span><span class="nt">storyapi</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">glrender</span><span class="p">;</span>
+<span class="w">  </span><span class="nt">storyapi</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">tweedle</span><span class="p">;</span>
+<span class="w">  </span><span class="nt">storyapi</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">ast</span><span class="p">;</span>
+<span class="w">  </span><span class="nt">croquet</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">util</span><span class="p">;</span>
+<span class="w">  </span><span class="nt">ide</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">support</span><span class="p">;</span>
+<span class="w">  </span><span class="nt">ide</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">migration</span><span class="p">;</span>
+<span class="w">  </span><span class="nt">ide</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">util</span><span class="p">;</span>
+<span class="w">  </span><span class="nt">ide</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">ast</span><span class="p">;</span>
+<span class="w">  </span><span class="nt">ide</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">croquet</span><span class="p">;</span>
+<span class="w">  </span><span class="nt">ide</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">scenegraph</span><span class="p">;</span>
+<span class="w">  </span><span class="nt">ide</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">glrender</span><span class="p">;</span>
+<span class="w">  </span><span class="nt">ide</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">storyapi</span><span class="p">;</span>
+<span class="w">  </span><span class="nt">modelloading</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">util</span><span class="p">;</span>
+<span class="w">  </span><span class="nt">modelloading</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">ast</span><span class="p">;</span>
+<span class="w">  </span><span class="nt">modelloading</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">scenegraph</span><span class="p">;</span>
+<span class="w">  </span><span class="nt">modelloading</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">glrender</span><span class="p">;</span>
+<span class="w">  </span><span class="nt">modelloading</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">storyapi</span><span class="p">;</span>
+<span class="w">  </span><span class="nt">aliceide</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">ide</span><span class="p">;</span>
+<span class="w">  </span><span class="nt">netbeans</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">support</span><span class="p">;</span>
+<span class="w">  </span><span class="nt">netbeans</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">migration</span><span class="p">;</span>
+<span class="w">  </span><span class="nt">netbeans</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">util</span><span class="p">;</span>
+<span class="w">  </span><span class="nt">netbeans</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">ast</span><span class="p">;</span>
+<span class="w">  </span><span class="nt">netbeans</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">scenegraph</span><span class="p">;</span>
+<span class="w">  </span><span class="nt">netbeans</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">glrender</span><span class="p">;</span>
+<span class="w">  </span><span class="nt">netbeans</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">storyapi</span><span class="p">;</span>
+<span class="w">  </span><span class="nt">netbeans</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">tweedle</span><span class="p">;</span>
+
+<span class="w">  </span><span class="nt">glrender</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">jogl</span><span class="p">;</span>
+<span class="w">  </span><span class="nt">glrender</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">gluegen</span><span class="p">;</span>
+<span class="w">  </span><span class="nt">util</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">javafx</span><span class="p">;</span>
+<span class="w">  </span><span class="nt">netbeans</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">javafx</span><span class="p">;</span>
+<span class="w">  </span><span class="nt">aliceide</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">javafx</span><span class="w"> </span><span class="p">[</span><span class="na">style</span><span class="p">=</span><span class="s">dashed</span><span class="p">,</span><span class="w"> </span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;exec plugin module-path&quot;</span><span class="p">];</span>
+<span class="w">  </span><span class="nt">storyapi</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">jama</span><span class="w"> </span><span class="p">[</span><span class="na">style</span><span class="p">=</span><span class="s">dashed</span><span class="p">,</span><span class="w"> </span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;bundled source package&quot;</span><span class="p">];</span>
+<span class="p">}</span>
+</code></pre></div>
+<p>Source: <a href="compile-deps.dot"><code>compile-deps.dot</code></a></p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

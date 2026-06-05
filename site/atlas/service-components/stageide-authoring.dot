@@ -1,0 +1,43 @@
+digraph stageide_authoring {
+  rankdir=LR;
+  graph [fontname="Helvetica", labelloc=t, label="core/ide: org.alice.stageide.* authoring components"];
+  node [shape=box, style="rounded,filled", fillcolor="#F8F9FA", color="#34495E", fontname="Helvetica"];
+  edge [color="#5D6D7E", arrowsize=0.8];
+
+  stage [label="StageIDE\nstory-specific IDE shell", fillcolor="#D6EAF8"];
+  persp [label="perspectives.*\nCode + SetupScene perspectives", fillcolor="#D6EAF8"];
+  scene [label="sceneeditor.*\nlooking glass + selection + lifecycle", fillcolor="#D5F5E3"];
+  gallery [label="gallerybrowser.*\ngallery tabs + drag models", fillcolor="#D5F5E3"];
+  modelres [label="modelresource.*\nresource keys + type mapping", fillcolor="#D5F5E3"];
+  run [label="run.* + program.*\nRunComposite + RunProgramContext", fillcolor="#FADBD8"];
+  ast [label="ast.*\nbootstrap scene/program methods", fillcolor="#FCF3CF"];
+  apis [label="apis.*\nstory/event adapters for VM", fillcolor="#FCF3CF"];
+  cascade [label="cascade.*\nstory expression cascades", fillcolor="#EBDEF0"];
+  croquet [label="croquet.*\nstageide dialogs and operations", fillcolor="#EBDEF0"];
+  member [label="member.*\nstory-specific member UI", fillcolor="#EBDEF0"];
+  props [label="properties.*\nproperty adapters + controllers", fillcolor="#D2B4DE"];
+  typepkg [label="type.*\nother-type dialog + type filters", fillcolor="#D2B4DE"];
+  inst [label="instancefactory.*\njoint and scene instance factories", fillcolor="#F9E79F"];
+  oneshot [label="oneshot.*\none-shot animation menus", fillcolor="#F9E79F"];
+
+  stage -> persp;
+  stage -> scene;
+  stage -> run;
+  stage -> ast;
+  stage -> apis;
+  persp -> scene;
+  persp -> gallery;
+  persp -> run;
+  gallery -> modelres;
+  gallery -> ast;
+  scene -> inst;
+  scene -> props;
+  scene -> ast;
+  scene -> apis;
+  croquet -> cascade;
+  croquet -> oneshot;
+  member -> ast;
+  typepkg -> modelres;
+  typepkg -> ast;
+  inst -> modelres;
+}

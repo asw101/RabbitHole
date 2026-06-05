@@ -1,0 +1,28 @@
+digraph journey_4_instructor_review_grade {
+  rankdir=LR;
+  graph [fontname="Helvetica", labelloc=t, label="Journey 4: instructor opens project, reviews code, grades"];
+  node [shape=box, style="rounded,filled", fillcolor="#F8F9FA", color="#34495E", fontname="Helvetica"];
+  edge [color="#5D6D7E", arrowsize=0.8];
+
+  Instructor [shape=oval, fillcolor="#FCF3CF"];
+  EntryPoint [label="EntryPoint.main", fillcolor="#D6EAF8"];
+  IDE [label="StageIDE", fillcolor="#D6EAF8"];
+  Loader [label="AbstractFileProjectLoader", fillcolor="#D5F5E3"];
+  IO [label="IoUtilities / XmlProjectIo", fillcolor="#D5F5E3"];
+  Frame [label="ProjectDocumentFrame", fillcolor="#FADBD8"];
+  Review [label="DeclarationsEditorComposite / TypeMenu", fillcolor="#FADBD8"];
+  Print [label="PrintAllOperation", fillcolor="#EBDEF0"];
+  Html [label="HtmlProjectWriter", fillcolor="#EBDEF0"];
+  Gradebook [label="External gradebook / rubric", fillcolor="#D2B4DE"];
+
+  Instructor -> EntryPoint [label="1 launch Alice"];
+  EntryPoint -> IDE [label="2 initialize shell"];
+  Instructor -> IDE [label="3 open student project"];
+  IDE -> Loader [label="4 load .a3p"];
+  Loader -> IO [label="5 readProject"];
+  IO -> Frame [label="6 project AST loaded"];
+  Instructor -> Review [label="7 inspect code"];
+  Instructor -> Print [label="8 export printable review"];
+  Print -> Html [label="9 writeProject(...) HTML"];
+  Instructor -> Gradebook [label="10 record grade outside Alice"];
+}

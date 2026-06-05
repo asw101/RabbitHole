@@ -1,0 +1,41 @@
+flowchart TD
+  root["alice/"] --> rootpom["pom.xml parent"]
+  root --> docs["docs/"]
+  root --> gh[".github/"]
+  root --> scripts["scripts/"]
+  root --> qa["qa/"]
+
+  rootpom --> aliceide["alice-ide/<br/>JavaFX + Swing desktop launcher"]
+  rootpom --> netbeans["netbeans/<br/>NetBeans module"]
+  rootpom --> installer["installer/"]
+  rootpom --> corenonfree["core-nonfree/*<br/>preserved nonfree mirrors"]
+  rootpom --> corepom["core/pom.xml aggregator"]
+  rootpom --> externalpom["external/pom.xml aggregator"]
+
+  subgraph coremods["core/ modules"]
+    corepom --> util["util"]
+    corepom --> croquet["croquet"]
+    corepom --> tweedle["tweedle"]
+    corepom --> ast["ast"]
+    corepom --> scenegraph["scenegraph"]
+    corepom --> glrender["glrender"]
+    corepom --> storyapi["story-api"]
+    corepom --> ide["ide"]
+    corepom --> modelloading["model-loading"]
+    corepom --> imageeditor["image-editor"]
+    corepom --> issuereporting["issue-reporting"]
+    corepom --> aux["i18n + resources + models<br/>story-api-migration + core/core"]
+  end
+
+  subgraph externalmods["external/ modules"]
+    externalpom --> collada["collada"]
+    externalpom --> colladaschema["collada-schema-1-4-1"]
+    externalpom --> wrapped["wrapped-flow-layout"]
+  end
+
+  aliceide --> ide
+  netbeans --> storyapi
+  netbeans --> glrender
+  netbeans --> ast
+  modelloading --> collada
+  modelloading --> colladaschema

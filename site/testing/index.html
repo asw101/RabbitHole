@@ -1,0 +1,2109 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Modernizing the Alice 3 educational programming environment">
+      
+      
+      
+      
+        <link rel="prev" href="../architecture/">
+      
+      
+        <link rel="next" href="../rabbithole-baseline-parity/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Testing - Alice 3 Modernization</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="blue" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#testing" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Alice 3 Modernization" class="md-header__button md-logo" aria-label="Alice 3 Modernization" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Alice 3 Modernization
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Testing
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/rysweet/RabbitHole" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Alice 3 Modernization" class="md-nav__button md-logo" aria-label="Alice 3 Modernization" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Alice 3 Modernization
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/rysweet/RabbitHole" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Start here
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Start here
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testing
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#run-the-main-test-lanes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Run the main test lanes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#getting-started-validation-lanes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Getting Started validation lanes
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Getting Started validation lanes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#skip-fail-and-block-behavior" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Skip, fail, and block behavior
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#golden-alice-project-corpus-validator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Golden Alice project corpus validator
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Golden Alice project corpus validator">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-it-proves" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What it proves
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#manifest-format" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Manifest format
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#local-commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Local commands
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ci-behavior" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CI behavior
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rabbithole-baseline-parity-harness" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        RabbitHole baseline parity harness
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="RabbitHole baseline parity harness">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#adding-a-corpus-case" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Adding a corpus case
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-the-coverage-lane-measures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What the coverage lane measures
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#test-patterns-used-in-this-repository" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Test patterns used in this repository
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Test patterns used in this repository">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#headless-guards" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Headless guards
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gl-skip-patterns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GL skip patterns
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#characterization-first-refactoring" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Characterization-first refactoring
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#focused-module-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Focused module validation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#coreide-coverage-test-infrastructure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        core/ide coverage test infrastructure
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="core/ide coverage test infrastructure">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#quick-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quick reference
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#coverage-tiers-for-adding-new-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Coverage tiers for adding new tests
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#practical-advice" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Practical advice
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../rabbithole-baseline-parity/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RabbitHole baseline parity
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../repository-hygiene/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Repository hygiene
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Concepts
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Concepts
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concepts/formal-spec-lane/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Formal Specification Lane
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concepts/migration-hotspot-characterization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Migration Hotspot Characterization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/modernization-scorecard-generator/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Modernization Scorecard Generator
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/modernization-corpus-manifest/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Modernization Corpus Manifest
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture Atlas
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture Atlas
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../atlas/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Atlas Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../atlas/repo-surface/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Repository Surface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../atlas/ast-lsp-bindings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Symbol Bindings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../atlas/compile-deps/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compile Dependencies
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../atlas/runtime-topology/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Runtime Topology
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../atlas/api-contracts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Contracts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../atlas/data-flow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Flow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../atlas/service-components/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Service Components
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../atlas/user-journeys/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Journeys
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#run-the-main-test-lanes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Run the main test lanes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#getting-started-validation-lanes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Getting Started validation lanes
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Getting Started validation lanes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#skip-fail-and-block-behavior" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Skip, fail, and block behavior
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#golden-alice-project-corpus-validator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Golden Alice project corpus validator
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Golden Alice project corpus validator">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-it-proves" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What it proves
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#manifest-format" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Manifest format
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#local-commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Local commands
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ci-behavior" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CI behavior
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rabbithole-baseline-parity-harness" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        RabbitHole baseline parity harness
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="RabbitHole baseline parity harness">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#adding-a-corpus-case" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Adding a corpus case
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-the-coverage-lane-measures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What the coverage lane measures
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#test-patterns-used-in-this-repository" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Test patterns used in this repository
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Test patterns used in this repository">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#headless-guards" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Headless guards
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gl-skip-patterns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GL skip patterns
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#characterization-first-refactoring" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Characterization-first refactoring
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#focused-module-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Focused module validation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#coreide-coverage-test-infrastructure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        core/ide coverage test infrastructure
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="core/ide coverage test infrastructure">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#quick-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quick reference
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#coverage-tiers-for-adding-new-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Coverage tiers for adding new tests
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#practical-advice" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Practical advice
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="testing">Testing</h1>
+<p>RabbitHole uses a mix of unit tests, characterization tests, and focused
+desktop proof tests.</p>
+<h2 id="run-the-main-test-lanes">Run the main test lanes</h2>
+<p>Validate the documented Getting Started path:</p>
+<div class="highlight"><pre><span></span><code>./scripts/validate-getting-started.sh
+python3<span class="w"> </span>alice_qa.py<span class="w"> </span>getting-started<span class="w"> </span>validate<span class="w"> </span>--headless
+</code></pre></div>
+<p>Run everything:</p>
+<div class="highlight"><pre><span></span><code>mvn<span class="w"> </span><span class="nb">test</span>
+</code></pre></div>
+<p>Run the no-Sims, headless-friendly install lane:</p>
+<div class="highlight"><pre><span></span><code>mvn<span class="w"> </span>-DincludeSims<span class="o">=</span><span class="nb">false</span><span class="w"> </span>-Dinstall4j.skip<span class="w"> </span>-Dcheckstyle.skip<span class="w"> </span>-Djava.awt.headless<span class="o">=</span><span class="nb">true</span><span class="w"> </span>clean<span class="w"> </span>install
+</code></pre></div>
+<p>Run the golden Alice project corpus validator:</p>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>submodule<span class="w"> </span>update<span class="w"> </span>--init<span class="w"> </span>tweedle-lang
+mvn<span class="w"> </span>-pl<span class="w"> </span>core/story-api-migration<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-DincludeSims<span class="o">=</span><span class="nb">false</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-Dinstall4j.skip<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-Dcheckstyle.skip<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-Djava.awt.headless<span class="o">=</span><span class="nb">true</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-Dtest<span class="o">=</span>GoldenProjectCorpusValidatorTest<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="nb">test</span>
+</code></pre></div>
+<p>Run the RabbitHole baseline parity harness:</p>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>submodule<span class="w"> </span>update<span class="w"> </span>--init<span class="w"> </span>tweedle-lang
+mvn<span class="w"> </span>-pl<span class="w"> </span>netbeans<span class="w"> </span>-am<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-DincludeSims<span class="o">=</span><span class="nb">false</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-Dinstall4j.skip<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-Dcheckstyle.skip<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-Djava.awt.headless<span class="o">=</span><span class="nb">true</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-Dtest<span class="o">=</span>RabbitHoleBaselineParityTest<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-Dsurefire.failIfNoSpecifiedTests<span class="o">=</span><span class="nb">false</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="nb">test</span>
+</code></pre></div>
+<p>Run Checkstyle separately:</p>
+<div class="highlight"><pre><span></span><code>mvn<span class="w"> </span>checkstyle:check<span class="w"> </span>-Dcheckstyle.config.location<span class="o">=</span>checkstyle.xml
+</code></pre></div>
+<p>Run coverage:</p>
+<div class="highlight"><pre><span></span><code>mvn<span class="w"> </span>-DincludeSims<span class="o">=</span><span class="nb">false</span><span class="w"> </span>-Dinstall4j.skip<span class="w"> </span>-Dcheckstyle.skip<span class="w"> </span>-Dmdep.skip<span class="o">=</span><span class="nb">true</span><span class="w"> </span>-Pcoverage<span class="w"> </span>verify
+python3<span class="w"> </span>scripts/summarize-jacoco-coverage.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--output<span class="w"> </span>coverage-summary.md<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--evidence-manifest<span class="w"> </span>coverage-evidence-manifest.json<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--target-aggregate-line-percent<span class="w"> </span><span class="m">70</span>.0<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--min-aggregate-line-percent<span class="w"> </span><span class="m">8</span>.0<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--min-module-line-percent<span class="w"> </span>core/ast<span class="o">=</span><span class="m">18</span>.0<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--min-module-line-percent<span class="w"> </span>core/model-loading<span class="o">=</span><span class="m">10</span>.0<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--min-module-line-percent<span class="w"> </span>core/story-api-migration<span class="o">=</span><span class="m">75</span>.0<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--min-module-line-percent<span class="w"> </span>core/tweedle<span class="o">=</span><span class="m">50</span>.0<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--min-module-line-percent<span class="w"> </span>core/scenegraph<span class="o">=</span><span class="m">10</span>.0<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--min-module-line-percent<span class="w"> </span><span class="nv">netbeans</span><span class="o">=</span><span class="m">25</span>.0
+</code></pre></div>
+<h2 id="getting-started-validation-lanes">Getting Started validation lanes</h2>
+<p><code>scripts/validate-getting-started.sh</code> is the executable contract for the
+out-of-the-box setup instructions in <a href="../getting-started/">Getting started</a>. It
+validates the current checkout instead of creating a nested clone: GitHub
+Actions supplies the fresh checkout, and local users can run the script
+immediately after cloning.</p>
+<p><code>tests/test_getting_started_validation_contract.py</code> protects the documented
+command surface from drift by checking the validator flags, submodule failure
+guidance, no-Sims launch command, and GUI skip/block semantics described here.
+<code>python3 alice_qa.py getting-started validate</code> is the wrapper entry point for
+running the same validator from the checkout under review.</p>
+<table>
+<thead>
+<tr>
+<th>Lane</th>
+<th>Command</th>
+<th>Intended environment</th>
+<th>Success condition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Headless</td>
+<td><code>./scripts/validate-getting-started.sh</code> or <code>./scripts/validate-getting-started.sh --headless</code></td>
+<td>CI and local shells without a display</td>
+<td>Git checkout and <code>tweedle-lang/Grammar</code> are present, the no-Sims Maven install command passes, and the no-Sims launch probe reaches the expected GUI-required message.</td>
+</tr>
+<tr>
+<td>GUI</td>
+<td><code>./scripts/validate-getting-started.sh --gui</code></td>
+<td>Local desktop with real Java AWT display support</td>
+<td>The no-Sims Alice desktop launch starts far enough to prove the documented GUI launch path is usable on that platform.</td>
+</tr>
+<tr>
+<td>All</td>
+<td><code>./scripts/validate-getting-started.sh --all</code></td>
+<td>Local validation before sharing setup changes</td>
+<td>Headless validation passes; GUI validation runs when supported and reports a clear skip or blocker when unsupported without failing the command.</td>
+</tr>
+</tbody>
+</table>
+<p>The headless lane runs this Maven command:</p>
+<div class="highlight"><pre><span></span><code>mvn<span class="w"> </span>-DincludeSims<span class="o">=</span><span class="nb">false</span><span class="w"> </span>-Dinstall4j.skip<span class="w"> </span>-Dcheckstyle.skip<span class="w"> </span>-Djava.awt.headless<span class="o">=</span><span class="nb">true</span><span class="w"> </span>clean<span class="w"> </span>install
+</code></pre></div>
+<p>The launch probe uses this documented no-Sims launch command:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>alice-ide
+mvn<span class="w"> </span>-DincludeSims<span class="o">=</span><span class="nb">false</span><span class="w"> </span>exec:java<span class="w"> </span>-Dalice-ide
+</code></pre></div>
+<p>The headless validator adds <code>-Djava.awt.headless=true</code> to that launch probe so
+the command proves the GUI boundary without opening the IDE on local desktops.</p>
+<h3 id="skip-fail-and-block-behavior">Skip, fail, and block behavior</h3>
+<table>
+<thead>
+<tr>
+<th>Situation</th>
+<th><code>--headless</code></th>
+<th><code>--gui</code></th>
+<th><code>--all</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Missing Git checkout metadata</td>
+<td>Fail</td>
+<td>Fail</td>
+<td>Fail</td>
+</tr>
+<tr>
+<td>Missing <code>tweedle-lang</code> or <code>tweedle-lang/Grammar</code></td>
+<td>Fail with <code>git submodule update --init tweedle-lang</code> guidance</td>
+<td>Fail with the same guidance</td>
+<td>Fail with the same guidance</td>
+</tr>
+<tr>
+<td>No desktop display</td>
+<td>Pass only if the launch probe reports <code>Alice desktop launch requires a graphical environment.</code></td>
+<td>Exit non-zero because GUI was requested explicitly</td>
+<td>Skip the GUI lane and exit successfully after headless validation passes</td>
+</tr>
+<tr>
+<td>macOS Apple Silicon desktop GUI launch</td>
+<td>Headless lane remains valid</td>
+<td>Exit non-zero as a known platform blocker</td>
+<td>Report blocked and exit successfully after headless validation passes</td>
+</tr>
+<tr>
+<td>Unknown validator flag</td>
+<td>Fail</td>
+<td>Fail</td>
+<td>Fail</td>
+</tr>
+</tbody>
+</table>
+<p>CI integration calls the headless lane only. Local users should run <code>--gui</code>
+only when their desktop session supports Java GUI launch.</p>
+<h2 id="golden-alice-project-corpus-validator">Golden Alice project corpus validator</h2>
+<p><code>GoldenProjectCorpusValidatorTest</code> is the executable archive contract for
+representative Alice project and player-export shapes. It lives in
+<code>core/story-api-migration/src/test/java/org/lgna/project/io/</code> because it
+characterizes the same save, reopen, export, manifest, and ZIP-entry behavior
+implemented by <code>IoUtilities</code>, <code>ProjectIo</code>, <code>XmlProjectIo</code>, and <code>JsonProjectIo</code>.</p>
+<p>The corpus is text-only. The checked-in manifest is:</p>
+<div class="highlight"><pre><span></span><code>core/story-api-migration/src/test/resources/golden-project-corpus/corpus.properties
+</code></pre></div>
+<p>The test reads that manifest, generates deterministic temporary <code>.a3p</code> and
+<code>.a3w</code> archives, validates each archive with <code>ZipFile</code>, and deletes the generated
+payloads with the test temporary directory. Do not check in generated <code>.a3p</code>,
+<code>.a3w</code>, image, audio, or other binary fixture payloads for this corpus.</p>
+<h3 id="what-it-proves">What it proves</h3>
+<p>Each manifest case describes one archive shape. The validator applies the
+expectations that match the case type:</p>
+<table>
+<thead>
+<tr>
+<th>Case type</th>
+<th>Extension</th>
+<th>Validation contract</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Editable project</td>
+<td><code>.a3p</code></td>
+<td>Generate the project, save it, reopen it with <code>IoUtilities.readProject</code>, save the reopened project to a second archive, reopen that second archive, export it to <code>.a3w</code>, and verify the expected project name, camera type, resource metadata, manifest file type, and archive entries.</td>
+</tr>
+<tr>
+<td>Player export</td>
+<td><code>.a3w</code></td>
+<td>Generate a project, export it to the player archive, and verify the expected manifest metadata, Tweedle source entries, resource entries, readable ZIP entries, and absence of editable-only entries such as <code>programType.xml</code>. Player export cases are ZIP/player-shape characterization only; they do not require editable save/reopen through <code>IoUtilities.readProject</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>For both types, ZIP entry validation rejects unsafe entry names before checking
+content. Invalid entries include empty names, absolute paths, <code>..</code> traversal,
+Windows drive-letter paths, and backslash-separated paths.</p>
+<h3 id="manifest-format">Manifest format</h3>
+<p><code>corpus.properties</code> is a JDK <code>Properties</code> file. It uses one comma-separated
+<code>cases</code> key and one <code>case.&lt;id&gt;.*</code> namespace per case.</p>
+<div class="highlight"><pre><span></span><code><span class="na">cases</span><span class="o">=</span><span class="s">editable-minimal,editable-with-image-resource,player-export-minimal,player-export-with-image-resource</span>
+
+<span class="na">case.editable-minimal.archiveType</span><span class="o">=</span><span class="s">a3p</span>
+<span class="na">case.editable-minimal.projectName</span><span class="o">=</span><span class="s">GoldenEditableMinimal</span>
+<span class="na">case.editable-minimal.cameraType</span><span class="o">=</span><span class="s">WindowCamera</span>
+<span class="na">case.editable-minimal.resources</span><span class="o">=</span><span class="s">none</span>
+<span class="na">case.editable-minimal.expectedEntries</span><span class="o">=</span><span class="s">version.txt,manifest.json,programType.xml</span>
+<span class="na">case.editable-minimal.absentEntries</span><span class="o">=</span><span class="s">resources.xml</span>
+<span class="na">case.editable-minimal.roundTripEditable</span><span class="o">=</span><span class="s">true</span>
+<span class="na">case.editable-minimal.exportAfterReopen</span><span class="o">=</span><span class="s">true</span>
+
+<span class="na">case.editable-with-image-resource.archiveType</span><span class="o">=</span><span class="s">a3p</span>
+<span class="na">case.editable-with-image-resource.projectName</span><span class="o">=</span><span class="s">GoldenEditableWithImageResource</span>
+<span class="na">case.editable-with-image-resource.cameraType</span><span class="o">=</span><span class="s">WindowCamera</span>
+<span class="na">case.editable-with-image-resource.resources</span><span class="o">=</span><span class="s">image:golden-texture.png</span>
+<span class="na">case.editable-with-image-resource.expectedEntries</span><span class="o">=</span><span class="s">version.txt,manifest.json,programType.xml,resources.xml,resources/golden-texture.png</span>
+<span class="na">case.editable-with-image-resource.roundTripEditable</span><span class="o">=</span><span class="s">true</span>
+<span class="na">case.editable-with-image-resource.exportAfterReopen</span><span class="o">=</span><span class="s">true</span>
+
+<span class="na">case.player-export-minimal.archiveType</span><span class="o">=</span><span class="s">a3w</span>
+<span class="na">case.player-export-minimal.projectName</span><span class="o">=</span><span class="s">GoldenPlayerExportMinimal</span>
+<span class="na">case.player-export-minimal.cameraType</span><span class="o">=</span><span class="s">VRHeadset</span>
+<span class="na">case.player-export-minimal.resources</span><span class="o">=</span><span class="s">none</span>
+<span class="na">case.player-export-minimal.expectedEntries</span><span class="o">=</span><span class="s">version.txt,manifest.json,src/GoldenPlayerExportMinimal.twe</span>
+<span class="na">case.player-export-minimal.absentEntries</span><span class="o">=</span><span class="s">programType.xml</span>
+<span class="na">case.player-export-minimal.roundTripEditable</span><span class="o">=</span><span class="s">false</span>
+
+<span class="na">case.player-export-with-image-resource.archiveType</span><span class="o">=</span><span class="s">a3w</span>
+<span class="na">case.player-export-with-image-resource.projectName</span><span class="o">=</span><span class="s">GoldenPlayerExportWithImageResource</span>
+<span class="na">case.player-export-with-image-resource.cameraType</span><span class="o">=</span><span class="s">WindowCamera</span>
+<span class="na">case.player-export-with-image-resource.resources</span><span class="o">=</span><span class="s">image:golden-export-texture.png</span>
+<span class="na">case.player-export-with-image-resource.expectedEntries</span><span class="o">=</span><span class="s">version.txt,manifest.json,src/GoldenPlayerExportWithImageResource.twe,resources/golden-export-texture.png</span>
+<span class="na">case.player-export-with-image-resource.absentEntries</span><span class="o">=</span><span class="s">programType.xml</span>
+<span class="na">case.player-export-with-image-resource.roundTripEditable</span><span class="o">=</span><span class="s">false</span>
+</code></pre></div>
+<p>Supported fields:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Required</th>
+<th>Values</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>cases</code></td>
+<td>Yes</td>
+<td>Comma-separated case IDs. IDs must be unique and use safe filename characters: letters, numbers, <code>.</code>, <code>_</code>, and <code>-</code>.</td>
+</tr>
+<tr>
+<td><code>case.&lt;id&gt;.archiveType</code></td>
+<td>Yes</td>
+<td><code>a3p</code> for editable projects or <code>a3w</code> for player exports.</td>
+</tr>
+<tr>
+<td><code>case.&lt;id&gt;.projectName</code></td>
+<td>Yes</td>
+<td>Simple ASCII Alice type name used for generated program type and manifest assertions. It must match <code>[A-Za-z_][A-Za-z0-9_]*</code> and must not be a Java reserved word.</td>
+</tr>
+<tr>
+<td><code>case.&lt;id&gt;.cameraType</code></td>
+<td>Yes</td>
+<td><code>WindowCamera</code> or <code>VRHeadset</code>.</td>
+</tr>
+<tr>
+<td><code>case.&lt;id&gt;.resources</code></td>
+<td>Yes</td>
+<td><code>none</code> or a comma-separated list of generated resources such as <code>image:golden-texture.png</code>. Resource payloads are generated in the test temporary directory.</td>
+</tr>
+<tr>
+<td><code>case.&lt;id&gt;.expectedEntries</code></td>
+<td>Yes</td>
+<td>Comma-separated archive entries that must exist and be readable. Use forward slashes.</td>
+</tr>
+<tr>
+<td><code>case.&lt;id&gt;.absentEntries</code></td>
+<td>No</td>
+<td>Comma-separated archive entries that must not exist.</td>
+</tr>
+<tr>
+<td><code>case.&lt;id&gt;.roundTripEditable</code></td>
+<td>Yes</td>
+<td><code>true</code> only for archive shapes that are expected to reopen as editable projects and save again as <code>.a3p</code>.</td>
+</tr>
+<tr>
+<td><code>case.&lt;id&gt;.exportAfterReopen</code></td>
+<td>No</td>
+<td><code>true</code> when an editable case must also prove export to <code>.a3w</code> after reopen.</td>
+</tr>
+</tbody>
+</table>
+<p>The validator fails fast on duplicate case IDs, missing required fields,
+unsupported archive types, unsupported resource declarations, unsafe project
+names, empty expected-entry lists, or unsafe ZIP-entry paths.</p>
+<h3 id="local-commands">Local commands</h3>
+<p>Run the focused corpus test when changing project archive save, read, export, or
+resource handling:</p>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>submodule<span class="w"> </span>update<span class="w"> </span>--init<span class="w"> </span>tweedle-lang
+mvn<span class="w"> </span>-pl<span class="w"> </span>core/story-api-migration<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-DincludeSims<span class="o">=</span><span class="nb">false</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-Dinstall4j.skip<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-Dcheckstyle.skip<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-Djava.awt.headless<span class="o">=</span><span class="nb">true</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-Dtest<span class="o">=</span>GoldenProjectCorpusValidatorTest<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="nb">test</span>
+</code></pre></div>
+<p>Run the full <code>story-api-migration</code> test lane:</p>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>submodule<span class="w"> </span>update<span class="w"> </span>--init<span class="w"> </span>tweedle-lang
+mvn<span class="w"> </span>-pl<span class="w"> </span>core/story-api-migration<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-DincludeSims<span class="o">=</span><span class="nb">false</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-Dinstall4j.skip<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-Dcheckstyle.skip<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-Djava.awt.headless<span class="o">=</span><span class="nb">true</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="nb">test</span>
+</code></pre></div>
+<h3 id="ci-behavior">CI behavior</h3>
+<p>The validator is named <code>GoldenProjectCorpusValidatorTest</code>, so Maven Surefire
+picks it up with the existing <code>core/story-api-migration</code> test command and
+reactor test or verify commands when those lanes run. There is no separate CI
+workflow for the corpus, and docs-only pull requests may skip Maven by
+change-scope rules. A CI failure in this test means a project/archive behavior
+changed and the manifest expectations or the IO implementation need to be
+reviewed together.</p>
+<h2 id="rabbithole-baseline-parity-harness">RabbitHole baseline parity harness</h2>
+<p><code>RabbitHoleBaselineParityTest</code> is the text-only baseline lane for generated
+NetBeans Java project output and representative Alice <code>.a3p</code>/<code>.a3w</code> archive
+shape. It lives in <code>netbeans/src/test/java/org/alice/netbeans/project/</code> because
+it exercises <code>ProjectCodeGenerator</code> alongside <code>IoUtilities.writeProject()</code> and
+<code>IoUtilities.exportProject()</code>.</p>
+<p>The checked-in snapshots are:</p>
+<div class="highlight"><pre><span></span><code>netbeans/src/test/resources/org/alice/netbeans/project/parity/
+</code></pre></div>
+<p>Normal runs never mutate snapshots. Update them only after reviewing an
+intentional behavior change:</p>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>submodule<span class="w"> </span>update<span class="w"> </span>--init<span class="w"> </span>tweedle-lang
+mvn<span class="w"> </span>-pl<span class="w"> </span>netbeans<span class="w"> </span>-am<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-DincludeSims<span class="o">=</span><span class="nb">false</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-Dinstall4j.skip<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-Dcheckstyle.skip<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-Djava.awt.headless<span class="o">=</span><span class="nb">true</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-Dtest<span class="o">=</span>RabbitHoleBaselineParityTest<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-Dsurefire.failIfNoSpecifiedTests<span class="o">=</span><span class="nb">false</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-Drabbithole.baseline.updateSnapshots<span class="o">=</span><span class="nb">true</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-Drabbithole.baseline.snapshotDir<span class="o">=</span>netbeans/src/test/resources/org/alice/netbeans/project/parity<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="nb">test</span>
+</code></pre></div>
+<p>See <a href="../rabbithole-baseline-parity/">RabbitHole baseline parity</a> for the
+normalization rules, review workflow, and relationship to <code>eatme</code>.</p>
+<h3 id="adding-a-corpus-case">Adding a corpus case</h3>
+<ol>
+<li>Add a new ID to the <code>cases</code> list in
+   <code>core/story-api-migration/src/test/resources/golden-project-corpus/corpus.properties</code>.</li>
+<li>Add the matching <code>case.&lt;id&gt;.*</code> keys with explicit archive type, project name,
+   camera type, generated resources, and expected entries.</li>
+<li>Keep expected entries focused on stable archive contracts: <code>version.txt</code>,
+   <code>manifest.json</code>, editable XML entries, generated <code>src/*.twe</code> exports, and
+   generated <code>resources/*</code> entries.</li>
+<li>Run the focused validator command before opening a pull request.</li>
+</ol>
+<h2 id="what-the-coverage-lane-measures">What the coverage lane measures</h2>
+<p>The aggregate report is written to:</p>
+<div class="highlight"><pre><span></span><code>coverage-report/target/site/jacoco-aggregate/index.html
+</code></pre></div>
+<p>The coverage workflow also uploads:</p>
+<ul>
+<li><code>coverage-summary.md</code></li>
+<li><code>coverage-evidence-manifest.json</code></li>
+<li>per-module <code>target/site/jacoco/</code> reports when they exist</li>
+</ul>
+<h2 id="test-patterns-used-in-this-repository">Test patterns used in this repository</h2>
+<h3 id="headless-guards">Headless guards</h3>
+<p>GUI tests must skip clearly when there is no real display. Use JUnit <code>Assume</code>
+guards as the first line of the test instead of <code>if (...) return</code>.</p>
+<p>Examples used in the repository:</p>
+<div class="highlight"><pre><span></span><code><span class="n">assumeFalse</span><span class="p">(</span><span class="s">&quot;requires a graphical display&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">GraphicsEnvironment</span><span class="p">.</span><span class="na">isHeadless</span><span class="p">());</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><span class="n">assumeTrue</span><span class="p">(</span><span class="s">&quot;Requires non-headless AWT display&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="n">SaveMenuDoClickProbe</span><span class="p">.</span><span class="na">isNonHeadlessAwtDisplayAvailable</span><span class="p">());</span>
+</code></pre></div>
+<p>These guards make CI output honest: skipped means skipped, not silently passed.</p>
+<h3 id="gl-skip-patterns">GL skip patterns</h3>
+<p>Most unit tests stay away from real OpenGL work. Instead, they test pure math,
+scene data, serialization, and state changes in isolation.</p>
+<p>Common patterns:</p>
+<ul>
+<li>keep <code>scenegraph</code> tests pure model tests with no rendering pipeline</li>
+<li>keep <code>story-api</code> tests headless-safe by avoiding <code>GlrRenderFactory</code></li>
+<li>characterize non-GL seams around rendering code, then leave real GL behavior
+  to focused integration or proof tests</li>
+<li>use stubs and artifact checks when you only need to prove contract shape</li>
+</ul>
+<h3 id="characterization-first-refactoring">Characterization-first refactoring</h3>
+<p>Modernization changes usually start with a characterization test. That protects
+the current Alice 3 behavior before a large class is split or moved.</p>
+<h3 id="focused-module-validation">Focused module validation</h3>
+<p>When you touch one area, prefer a targeted Maven command before you run the
+whole reactor. For example:</p>
+<div class="highlight"><pre><span></span><code>mvn<span class="w"> </span>-pl<span class="w"> </span>core/ide<span class="w"> </span>-am<span class="w"> </span><span class="nb">test</span>
+mvn<span class="w"> </span>-pl<span class="w"> </span>core/scenegraph<span class="w"> </span>-am<span class="w"> </span><span class="nb">test</span>
+mvn<span class="w"> </span>-pl<span class="w"> </span>core/story-api<span class="w"> </span>-am<span class="w"> </span><span class="nb">test</span>
+</code></pre></div>
+<h2 id="coreide-coverage-test-infrastructure">core/ide coverage test infrastructure</h2>
+<p>The <code>core/ide</code> module has ~960 test files in
+<code>core/ide/src/test/java/org/alice/ide/coverage/</code> built on four support classes
+(<code>HeadlessClassExerciseSupport</code>, <code>ClassLoadingSweepSupport</code>,
+<code>SingleClassDefaultArgsSweepTestSupport</code>, <code>CompositeCreateViewSweepSupport</code>).
+New coverage follows a three-tier approach. See
+<a href="../core-ide-coverage/">docs/core-ide-coverage.md</a> for the full guide.</p>
+<h3 id="quick-reference">Quick reference</h3>
+<p>Run core/ide tests with coverage:</p>
+<div class="highlight"><pre><span></span><code>xvfb-run<span class="w"> </span>mvn<span class="w"> </span>-pl<span class="w"> </span>core/ide<span class="w"> </span>-am<span class="w"> </span>-DfailIfNoTests<span class="o">=</span><span class="nb">false</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-Dsurefire.failIfNoSpecifiedTests<span class="o">=</span><span class="nb">false</span><span class="w"> </span>verify
+</code></pre></div>
+<p>Check the JaCoCo report:</p>
+<div class="highlight"><pre><span></span><code>cat<span class="w"> </span>core/ide/target/site/jacoco/jacoco.csv<span class="w"> </span><span class="p">|</span><span class="w"> </span>python3<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;</span>
+<span class="s2">import csv, sys</span>
+<span class="s2">r = csv.DictReader(sys.stdin)</span>
+<span class="s2">missed = covered = 0</span>
+<span class="s2">for row in r:</span>
+<span class="s2">    missed += int(row[&#39;LINE_MISSED&#39;]); covered += int(row[&#39;LINE_COVERED&#39;])</span>
+<span class="s2">total = missed + covered</span>
+<span class="s2">print(f&#39;{covered}/{total} lines = {100*covered/total:.1f}%&#39;)</span>
+<span class="s2">&quot;</span>
+</code></pre></div>
+<h3 id="coverage-tiers-for-adding-new-tests">Coverage tiers for adding new tests</h3>
+<table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>Pattern</th>
+<th>Example</th>
+<th>Typical yield</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1 — Sweep targets</td>
+<td>Class names in <code>small-class-targets.txt</code></td>
+<td>Add <code>org.alice.ide.ast.export.TypeInfo</code></td>
+<td>~20 lines/class</td>
+</tr>
+<tr>
+<td>2 — Headless package sweeps</td>
+<td><code>*HeadlessSweepTest.java</code> with explicit class name lists</td>
+<td><code>SceneeditorLogicHeadlessSweepTest</code></td>
+<td>~80–200 lines/package</td>
+</tr>
+<tr>
+<td>3 — Targeted unit tests</td>
+<td><code>*Test.java</code> testing specific logic paths</td>
+<td><code>ExpressionCascadeManagerTest</code></td>
+<td>~30–100 lines/class</td>
+</tr>
+</tbody>
+</table>
+<h2 id="practical-advice">Practical advice</h2>
+<ul>
+<li>Use headless-safe tests for data models and serialization.</li>
+<li>Add display guards only when a real UI is required.</li>
+<li>Keep proof-artifact tests separate from UI-skip logic.</li>
+<li>Run the coverage lane after larger refactors so you catch dropped coverage
+  before review.</li>
+<li>When adding coverage to <code>core/ide</code>, prefer Tier 2 headless sweeps for new
+  packages and Tier 3 targeted tests for high-LOC logic classes. See
+  <a href="../core-ide-coverage/">docs/core-ide-coverage.md</a>.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

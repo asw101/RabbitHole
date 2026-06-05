@@ -1,0 +1,60 @@
+digraph data_flow {
+  rankdir=LR;
+  graph [fontname="Helvetica", labelloc=t, label="Alice behavioral data flow"];
+  node [shape=box, style="rounded,filled", fillcolor="#F8F9FA", color="#34495E", fontname="Helvetica"];
+  edge [color="#5D6D7E", arrowsize=0.8];
+
+  loadA3p [label=".a3p archive", fillcolor="#F9E79F"];
+  loadReq [label="OpenProjectOperation /\nAbstractFileProjectLoader", fillcolor="#D6EAF8"];
+  readIo [label="IoUtilities.projectReader", fillcolor="#D6EAF8"];
+  readXml [label="XmlProjectIo.readXML\nSecureXmlParser + XmlEncoderDecoder", fillcolor="#D6EAF8"];
+  ast [label="Project / NamedUserType AST", fillcolor="#D5F5E3"];
+  sceneboot [label="ProgramContext / SceneImp", fillcolor="#FADBD8"];
+  scenegraph [label="scenegraph Composite + Transformable", fillcolor="#FCF3CF"];
+  render [label="GlrRenderFactory / OnscreenRenderTarget", fillcolor="#FCF3CF"];
+
+  editUi [label="CodeEditor /\nDeclarationsEditorComposite", fillcolor="#EBDEF0"];
+  astMut [label="UserMethod / BlockStatement mutation", fillcolor="#EBDEF0"];
+  generated [label="CodeGenerator / SourceCodeGenerator\nJavaCodeGenerator + HtmlEncoder", fillcolor="#EBDEF0"];
+  display [label="TypeEditor / printed HTML / exported text", fillcolor="#EBDEF0"];
+
+  dragUi [label="SceneEditorDropReceptor /\nGlobalDragAdapter", fillcolor="#F5B7B1"];
+  interact [label="interact manipulators + handles", fillcolor="#F5B7B1"];
+  transform [label="AbstractTransformable.setTransformation", fillcolor="#F5B7B1"];
+
+  saveReq [label="ProjectApplication.saveProjectTo", fillcolor="#D2B4DE"];
+  saveCopy [label="ProjectFileUtilities.saveCopyOfProjectTo", fillcolor="#D2B4DE"];
+  saveIo [label="IoUtilities.writeProject\nXmlProjectIo.writer", fillcolor="#D2B4DE"];
+  outA3p [label=".a3p archive", fillcolor="#D2B4DE"];
+  exportReq [label="ProjectApplication.exportProjectTo", fillcolor="#D2B4DE"];
+  exportCopy [label="ProjectFileUtilities.exportCopyOfProjectTo", fillcolor="#D2B4DE"];
+  exportIo [label="IoUtilities.exportProject\nJsonProjectIo.writer", fillcolor="#D2B4DE"];
+  outA3w [label=".a3w archive", fillcolor="#D2B4DE"];
+
+  loadA3p -> loadReq;
+  loadReq -> readIo;
+  readIo -> readXml;
+  readXml -> ast;
+  ast -> sceneboot;
+  sceneboot -> scenegraph;
+  scenegraph -> render;
+
+  editUi -> astMut;
+  astMut -> ast;
+  ast -> generated;
+  generated -> display;
+
+  dragUi -> interact;
+  interact -> transform;
+  transform -> scenegraph;
+
+  saveReq -> saveCopy;
+  ast -> saveCopy;
+  saveCopy -> saveIo;
+  saveIo -> outA3p;
+
+  exportReq -> exportCopy;
+  ast -> exportCopy;
+  exportCopy -> exportIo;
+  exportIo -> outA3w;
+}

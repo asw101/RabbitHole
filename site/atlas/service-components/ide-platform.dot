@@ -1,0 +1,45 @@
+digraph ide_platform {
+  rankdir=LR;
+  graph [fontname="Helvetica", labelloc=t, label="core/ide: org.alice.ide.* platform components"];
+  node [shape=box, style="rounded,filled", fillcolor="#F8F9FA", color="#34495E", fontname="Helvetica"];
+  edge [color="#5D6D7E", arrowsize=0.8];
+
+  app [label="ProjectApplication\nproject lifecycle + save/export", fillcolor="#D6EAF8"];
+  frame [label="ProjectDocumentFrame\nmenus + perspectives + active document", fillcolor="#D6EAF8"];
+  croquet [label="org.alice.ide.croquet.*\nmenu/operation framework", fillcolor="#D6EAF8"];
+  perspectives [label="org.alice.ide.perspectives.*\nshared perspective shell", fillcolor="#D6EAF8"];
+  projecturi [label="projecturi.* + uricontent.*\nURI loaders and save targets", fillcolor="#D5F5E3"];
+  decls [label="declarationseditor.*\ntype tabs + declaration navigation", fillcolor="#FADBD8"];
+  codeeditor [label="codeeditor.*\nstatement/body editor surfaces", fillcolor="#FADBD8"];
+  astpkg [label="ast.*\nrename/import/export and AST actions", fillcolor="#FCF3CF"];
+  member [label="member.* + members.*\nmember menus and collections", fillcolor="#FCF3CF"];
+  props [label="properties.*\nproperty controllers and adapters", fillcolor="#EBDEF0"];
+  inst [label="instancefactory.*\nselected-instance model", fillcolor="#EBDEF0"];
+  resource [label="resource.*\nresource management", fillcolor="#D2B4DE"];
+  clipboard [label="clipboard.*\ncopy/paste edits", fillcolor="#D2B4DE"];
+  recent [label="recentprojects.*\nrecent/open history", fillcolor="#F9E79F"];
+  issue [label="issue.*\nissue reporting + attachments", fillcolor="#F9E79F"];
+
+  app -> frame;
+  app -> projecturi;
+  app -> recent;
+  app -> issue;
+  frame -> croquet;
+  frame -> perspectives;
+  frame -> decls;
+  frame -> inst;
+  croquet -> astpkg;
+  croquet -> projecturi;
+  croquet -> resource;
+  perspectives -> decls;
+  perspectives -> codeeditor;
+  decls -> codeeditor;
+  decls -> member;
+  decls -> astpkg;
+  member -> astpkg;
+  props -> inst;
+  props -> astpkg;
+  clipboard -> codeeditor;
+  clipboard -> astpkg;
+  resource -> astpkg;
+}

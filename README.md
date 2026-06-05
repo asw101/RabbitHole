@@ -65,10 +65,10 @@ setup path. Run it from the repository root:
 
     ./scripts/validate-getting-started.sh
 
-The same validator is exposed through the branch-installable QA wrapper for
-outside-in validation of pull-request branches:
+The same validator is exposed through the neutral Alice QA wrapper for
+outside-in validation of the checkout under review:
 
-    uvx --from git+https://github.com/rysweet/RabbitHole.git@<branch-or-commit> amplihack getting-started validate --headless
+    python3 alice_qa.py getting-started validate --headless
 
 The default validation lane is CI-safe and headless. It verifies Git checkout
 state, the initialized `tweedle-lang` grammar submodule, the documented no-Sims
@@ -79,11 +79,10 @@ GUI lane explicitly:
     ./scripts/validate-getting-started.sh --gui
 
 Use `--all` to run the headless lane and attempt the GUI lane when the platform
-supports it. macOS Apple Silicon desktop GUI launch is currently blocked by
-RabbitHole issue [#848](https://github.com/rysweet/RabbitHole/issues/848), so
-explicit `--gui` validation will exit non-zero with a blocked result on that
-platform. `--all` will report the blocked GUI lane without failing after
-headless validation passes. See [Getting started](docs/getting-started.md#validate-this-checkout)
+supports it. macOS Apple Silicon desktop GUI launch is treated as a known
+platform blocker, so explicit `--gui` validation exits non-zero with a blocked
+result on that platform. `--all` reports the blocked GUI lane without failing
+after headless validation passes. See [Getting started](docs/getting-started.md#validate-this-checkout)
 and [Testing](docs/testing.md#getting-started-validation-lanes) for the
 validation lanes, skip rules, and failure semantics.
 

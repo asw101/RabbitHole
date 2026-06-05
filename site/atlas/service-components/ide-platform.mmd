@@ -1,0 +1,39 @@
+graph TD
+  app["ProjectApplication<br/>project lifecycle + save/export"]
+  frame["ProjectDocumentFrame<br/>menus + perspectives + active document"]
+  croquet["org.alice.ide.croquet.*<br/>menu/operation framework"]
+  perspectives["org.alice.ide.perspectives.*<br/>shared perspective shell"]
+  projecturi["projecturi.* + uricontent.*<br/>URI loaders and save targets"]
+  decls["declarationseditor.*<br/>type tabs + declaration navigation"]
+  codeeditor["codeeditor.*<br/>statement/body editor surfaces"]
+  astpkg["ast.*<br/>rename/import/export and AST actions"]
+  member["member.* + members.*<br/>member menus and collections"]
+  props["properties.*<br/>property controllers and adapters"]
+  inst["instancefactory.*<br/>selected-instance model"]
+  resource["resource.*<br/>resource management"]
+  clipboard["clipboard.*<br/>copy/paste edits"]
+  recent["recentprojects.*<br/>recent/open history"]
+  issue["issue.*<br/>issue reporting + attachments"]
+
+  app --> frame
+  app --> projecturi
+  app --> recent
+  app --> issue
+  frame --> croquet
+  frame --> perspectives
+  frame --> decls
+  frame --> inst
+  croquet --> astpkg
+  croquet --> projecturi
+  croquet --> resource
+  perspectives --> decls
+  perspectives --> codeeditor
+  decls --> codeeditor
+  decls --> member
+  decls --> astpkg
+  member --> astpkg
+  props --> inst
+  props --> astpkg
+  clipboard --> codeeditor
+  clipboard --> astpkg
+  resource --> astpkg

@@ -1,0 +1,55 @@
+flowchart TD
+  util["util<br/>JavaFX 21.0.7"]
+  tweedle["tweedle<br/>ANTLR4 + Jackson"]
+  ast["ast<br/>commons-text"]
+  scenegraph["scenegraph"]
+  glrender["glrender<br/>JOGL 2.5.0 + GlueGen 2.5.0"]
+  storyapi["story-api<br/>jsvg + FlatLaf<br/>vendored Jama.*"]
+  croquet["croquet<br/>wrapped-flow-layout + FlatLaf"]
+  support["support modules<br/>i18n + image-editor + issue-reporting<br/>resources + models"]
+  migration["story-api-migration<br/>project I/O bridge"]
+  ide["ide"]
+  modelloading["model-loading<br/>Collada + glTF + JAXB"]
+  aliceide["alice-ide<br/>EntryPoint launcher"]
+  netbeans["netbeans<br/>NetBeans platform plugin"]
+
+  tweedle --> util
+  ast --> util
+  ast --> tweedle
+  scenegraph --> util
+  glrender --> scenegraph
+  storyapi --> util
+  storyapi --> scenegraph
+  storyapi --> glrender
+  storyapi --> tweedle
+  storyapi --> ast
+  croquet --> util
+  ide --> support
+  ide --> migration
+  ide --> util
+  ide --> ast
+  ide --> croquet
+  ide --> scenegraph
+  ide --> glrender
+  ide --> storyapi
+  modelloading --> util
+  modelloading --> ast
+  modelloading --> scenegraph
+  modelloading --> glrender
+  modelloading --> storyapi
+  aliceide --> ide
+  netbeans --> support
+  netbeans --> migration
+  netbeans --> util
+  netbeans --> ast
+  netbeans --> scenegraph
+  netbeans --> glrender
+  netbeans --> storyapi
+  netbeans --> tweedle
+
+  glrender --> jogl["JOGL 2.5.0"]
+  glrender --> gluegen["GlueGen 2.5.0"]
+  util --> javafx["JavaFX 21.0.7"]
+  netbeans --> javafx
+  aliceide -.exec plugin module-path.-> javafx
+  storyapi -.bundled source package.-> jama["Jama<br/>core/story-api/src/main/java/Jama"]

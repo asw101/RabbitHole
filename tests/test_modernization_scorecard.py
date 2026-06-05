@@ -780,16 +780,16 @@ class ModernizationScorecardCliTest(unittest.TestCase):
 
 
 class ModernizationScorecardDocumentationContractTest(unittest.TestCase):
-    def test_docs_index_links_the_generated_scorecard_and_generator_reference(self) -> None:
+    def test_docs_index_links_the_generator_reference_only(self) -> None:
         index = (REPO_ROOT / "docs" / "index.md").read_text(encoding="utf-8")
 
-        self.assertIn("./reference/modernization-scorecard.md", index)
         self.assertIn("./reference/modernization-scorecard-generator.md", index)
+        self.assertNotIn("./reference/modernization-scorecard.md", index)
 
-    def test_checked_in_scorecard_is_plain_generated_snapshot(self) -> None:
-        markdown = (REPO_ROOT / "docs" / "reference" / "modernization-scorecard.md").read_text(encoding="utf-8")
+    def test_generated_scorecard_snapshot_is_not_checked_in(self) -> None:
+        snapshot = REPO_ROOT / "docs" / "reference" / "modernization-scorecard.md"
 
-        assert_scorecard_uses_plain_reviewer_instructions(self, markdown)
+        self.assertFalse(snapshot.exists())
 
     def test_generator_reference_owns_cli_safety_and_review_workflow_docs(self) -> None:
         markdown = (REPO_ROOT / "docs" / "reference" / "modernization-scorecard-generator.md").read_text(encoding="utf-8")
