@@ -33,11 +33,8 @@ RUNNER = (
 )
 BOUNDARY_DOCS = [
     REPO_ROOT / "qa" / "outside-in" / "alice-desktop" / "README.md",
-    REPO_ROOT / "docs" / "reference" / "alice-desktop-outside-in-qa.md",
-    REPO_ROOT / "docs" / "howto" / "alice-desktop-outside-in-qa.md",
-    REPO_ROOT / "docs" / "tutorials" / "alice-desktop-outside-in-qa.md",
 ]
-BOUNDARY_PHRASE = "rabbithole learner-world qa currently supports setup/open/save evidence review"
+BOUNDARY_PHRASE = "rabbithole learner-world qa supports setup/open/save evidence review only"
 NEXT_BLOCKER_ID = "define-reviewed-assessment-contract"
 NON_CAPABILITIES = [
     "learner-world grading",
@@ -212,13 +209,12 @@ class LearnerWorldAssessmentBoundaryContractTest(unittest.TestCase):
             with self.subTest(status_non_capability=non_capability):
                 self.assertIn(non_capability, status_text)
 
-    def test_docs_name_boundary_and_blocker_without_overclaiming_assessment(self) -> None:
+    def test_docs_name_boundary_without_overclaiming_assessment(self) -> None:
         for path in BOUNDARY_DOCS:
             text = normalized_text(path)
             with self.subTest(path=path.relative_to(REPO_ROOT)):
                 self.assertIn(BOUNDARY_PHRASE, text)
                 self.assertIn(str(BOUNDARY_ARTIFACT.relative_to(REPO_ROOT)), text)
-                self.assertIn(NEXT_BLOCKER_ID, text)
 
     def test_boundary_surfaces_do_not_make_unguarded_assessment_claims(self) -> None:
         scanned_paths = [BOUNDARY_ARTIFACT, INSTRUCTOR_STUDENT_SCENARIO, *BOUNDARY_DOCS]

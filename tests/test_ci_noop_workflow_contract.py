@@ -25,8 +25,28 @@ WORKFLOWS = {
         "path": WORKFLOW_DIR / "alice-test-ci.yml",
         "workflow_name": "Alice Test CI",
         "job": "test",
-        "maven_step": "Run no-Sims test baseline",
-        "maven_command": "mvn -DincludeSims=false -Dinstall4j.skip -Dcheckstyle.skip -Djava.awt.headless=true clean test",
+        "validation_steps": [
+            {
+                "name": "Run Getting Started headless validation",
+                "fragments": [
+                    "run: ./scripts/validate-getting-started.sh --headless",
+                ],
+                "requires_checkstyle_skip": False,
+            },
+            {
+                "name": "Run dual-baseline replay harness fallback",
+                "fragments": [
+                    "mvn -pl core/story-api-migration",
+                    "-DincludeSims=false",
+                    "-Dinstall4j.skip",
+                    "-Dcheckstyle.skip",
+                    "-Djava.awt.headless=true",
+                    "-Dtest=DualBaselineReplayHarnessTest",
+                    "test",
+                ],
+                "requires_checkstyle_skip": True,
+            },
+        ],
         "dependent_steps": [],
     },
     "coverage": {
@@ -51,6 +71,19 @@ WORKFLOWS = {
         ],
     },
 }
+
+
+def validation_steps(spec: dict) -> list[dict]:
+    if "validation_steps" in spec:
+        return spec["validation_steps"]
+    return [
+        {
+            "name": spec["maven_step"],
+            "fragments": [f"run: {spec['maven_command']}"],
+            "unique_command": spec["maven_command"],
+            "requires_checkstyle_skip": spec["workflow_name"] != "Alice Checkstyle CI",
+        }
+    ]
 
 
 def read_workflow(key: str) -> str:
@@ -187,15 +220,18 @@ class CiNoopWorkflowContractTest(unittest.TestCase):
     def test_maven_commands_preserve_validation_surfaces_and_event_aware_gates(self) -> None:
         for key, spec in WORKFLOWS.items():
             workflow = read_workflow(key)
-            with self.subTest(workflow=key):
-                block = step_block(workflow, spec["maven_step"])
-                self.assertIn(f"run: {spec['maven_command']}", block)
-                self.assertEqual(1, workflow.count(spec["maven_command"]))
-                self.assertIn(f"if: {EVENT_AWARE_MAVEN_GATE}", block)
-                if key == "checkstyle":
-                    self.assertNotIn("-Dcheckstyle.skip", block)
-                else:
-                    self.assertIn("-Dcheckstyle.skip", block)
+            for step in validation_steps(spec):
+                with self.subTest(workflow=key, step=step["name"]):
+                    block = step_block(workflow, step["name"])
+                    for fragment in step["fragments"]:
+                        self.assertIn(fragment, block)
+                    if "unique_command" in step:
+                        self.assertEqual(1, workflow.count(step["unique_command"]))
+                    self.assertIn(f"if: {EVENT_AWARE_MAVEN_GATE}", block)
+                    if step["requires_checkstyle_skip"]:
+                        self.assertIn("-Dcheckstyle.skip", block)
+                    else:
+                        self.assertNotIn("-Dcheckstyle.skip", block)
 
     def test_maven_setup_runs_only_when_maven_validation_is_required(self) -> None:
         for key in WORKFLOWS:
