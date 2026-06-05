@@ -46,6 +46,7 @@ refactor-*.log
 *status-report*.md
 *status-report*.txt
 coverage-summary-*.md
+site/
 
 # Test log artifacts
 logs/
