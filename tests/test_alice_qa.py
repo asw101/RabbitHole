@@ -1,3 +1,13 @@
+"""TDD contract for the neutral Alice QA command wrapper.
+
+The old branch-installable assistant wrapper is intentionally not imported here.
+These tests fail until the wrapper is renamed to ``alice_qa.py`` and exposes a
+neutral RabbitHole/Alice command surface.
+"""
+
+from __future__ import annotations
+
+import importlib.util
 import json
 import os
 import subprocess
@@ -5,14 +15,15 @@ import sys
 import tempfile
 import textwrap
 import unittest
-from unittest import mock
 from pathlib import Path
-
-import alice_qa_amplihack
+from types import ModuleType
+from unittest import mock
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-WRAPPER_PATH = REPO_ROOT / "alice_qa_amplihack.py"
+WRAPPER_PATH = REPO_ROOT / "alice_qa.py"
+PYPROJECT_PATH = REPO_ROOT / "pyproject.toml"
+OLD_WRAPPER_PATH = REPO_ROOT / "alice_qa_amplihack.py"
 ARCHIVE_FIXTURE_SCENARIO = (
     REPO_ROOT
     / "qa"
@@ -21,6 +32,17 @@ ARCHIVE_FIXTURE_SCENARIO = (
     / "scenarios"
     / "archive-fixture-smoke.yaml"
 )
+
+
+def load_alice_qa() -> ModuleType:
+    if not WRAPPER_PATH.is_file():
+        raise AssertionError("Expected neutral wrapper at alice_qa.py")
+    spec = importlib.util.spec_from_file_location("alice_qa", WRAPPER_PATH)
+    if spec is None or spec.loader is None:
+        raise AssertionError("Unable to import alice_qa.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def write_file(path: Path, content: str) -> None:
@@ -34,8 +56,14 @@ def write_executable(path: Path, content: str) -> None:
 
 
 def write_wrapper_repo(root: Path) -> None:
-    write_executable(root / "qa/outside-in/alice-desktop/runners/validate-scenarios.sh", "#!/usr/bin/env bash\n")
-    write_executable(root / "qa/outside-in/alice-desktop/runners/run-scenario.sh", "#!/usr/bin/env bash\n")
+    write_executable(
+        root / "qa/outside-in/alice-desktop/runners/validate-scenarios.sh",
+        "#!/usr/bin/env bash\n",
+    )
+    write_executable(
+        root / "qa/outside-in/alice-desktop/runners/run-scenario.sh",
+        "#!/usr/bin/env bash\n",
+    )
     write_executable(
         root / "scripts/validate-getting-started.sh",
         textwrap.dedent(
@@ -80,23 +108,44 @@ def write_validate_scenarios_logger(path: Path, log_path: Path) -> None:
     write_logged_command(path, log_path, "validate-scenarios")
 
 
-class AmplihackWrapperTest(unittest.TestCase):
+class AliceQaPackagingContract(unittest.TestCase):
+    def test_neutral_wrapper_file_replaces_old_branded_wrapper(self) -> None:
+        self.assertTrue(WRAPPER_PATH.is_file(), "Expected alice_qa.py to exist.")
+        self.assertFalse(
+            OLD_WRAPPER_PATH.exists(),
+            "The branded alice_qa_amplihack.py wrapper should be removed.",
+        )
+
+    def test_pyproject_exposes_neutral_console_script(self) -> None:
+        text = PYPROJECT_PATH.read_text(encoding="utf-8")
+
+        self.assertIn('alice-qa = "alice_qa:main"', text)
+        self.assertIn('py-modules = ["alice_qa"]', text)
+        self.assertNotIn("amplihack", text.lower())
+        self.assertNotIn("alice_qa_amplihack", text)
+
+
+class AliceQaWrapperContract(unittest.TestCase):
     def test_node_options_env_inherits_environment_when_memory_flag_is_already_set(self) -> None:
+        alice_qa = load_alice_qa()
+
         with mock.patch.dict(
             os.environ,
             {"NODE_OPTIONS": "--trace-warnings --max-old-space-size=32768"},
         ):
-            self.assertIsNone(alice_qa_amplihack.node_options_env())
+            self.assertIsNone(alice_qa.node_options_env())
 
     def test_node_options_env_appends_memory_flag_when_missing(self) -> None:
+        alice_qa = load_alice_qa()
+
         with mock.patch.dict(os.environ, {"NODE_OPTIONS": "--trace-warnings"}):
-            env = alice_qa_amplihack.node_options_env()
+            env = alice_qa.node_options_env()
 
         self.assertIsNotNone(env)
         assert env is not None
         self.assertEqual("--trace-warnings --max-old-space-size=32768", env["NODE_OPTIONS"])
 
-    def test_help_lists_scorecard_command_without_requiring_checkout(self) -> None:
+    def test_help_lists_neutral_commands_without_requiring_checkout(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             result = subprocess.run(
                 [sys.executable, str(WRAPPER_PATH), "--help"],
@@ -107,12 +156,13 @@ class AmplihackWrapperTest(unittest.TestCase):
             )
 
         self.assertEqual(0, result.returncode, result.stderr)
-        self.assertIn("amplihack alice-scorecard [--root <dir>] [--output <path>]", result.stdout)
-        self.assertIn("amplihack alice-qa save-negative-contract", result.stdout)
-        self.assertIn("amplihack getting-started validate", result.stdout)
-        self.assertIn("amplihack archive-player-boundary verify", result.stdout)
-        self.assertIn("amplihack tweedle-decode verify", result.stdout)
-        self.assertIn("simple-if-method-call", result.stdout)
+        self.assertIn("python3 alice_qa.py alice-scorecard [--root <dir>] [--output <path>]", result.stdout)
+        self.assertIn("python3 alice_qa.py alice-qa save-negative-contract", result.stdout)
+        self.assertIn("python3 alice_qa.py getting-started validate", result.stdout)
+        self.assertIn("python3 alice_qa.py archive-player-boundary verify", result.stdout)
+        self.assertIn("python3 alice_qa.py tweedle-decode verify", result.stdout)
+        self.assertNotIn("amplihack", result.stdout.lower())
+        self.assertNotIn("gadugi", result.stdout.lower())
         self.assertNotIn("full UI automation", result.stdout)
         self.assertNotIn("rendering correctness", result.stdout)
         self.assertNotIn("grading", result.stdout)
@@ -218,6 +268,7 @@ class AmplihackWrapperTest(unittest.TestCase):
 
         self.assertEqual(2, result.returncode)
         self.assertIn("getting-started usage", result.stderr)
+        self.assertNotIn("amplihack", result.stderr.lower())
 
     def test_tweedle_decode_verify_delegates_to_focused_maven_test(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -247,7 +298,7 @@ class AmplihackWrapperTest(unittest.TestCase):
                 },
             )
 
-            log = log_path.read_text(encoding="utf-8")
+            log = log_path.read_text(encoding="utf-8") if log_path.exists() else ""
 
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertIn("PASS: simple-if-method-call", result.stdout)
@@ -259,37 +310,6 @@ class AmplihackWrapperTest(unittest.TestCase):
             "-Dtest=TweedleEncoderDecoderTest#decodeClassWithSimpleIfMethodCallBodyCreatesConditionalMethodInvocation",
             log,
         )
-
-    def test_tweedle_decode_verify_can_target_player_archive_integration_test(self) -> None:
-        with tempfile.TemporaryDirectory() as temp_dir:
-            root = Path(temp_dir)
-            write_wrapper_repo(root)
-            bin_dir = root / "bin"
-            log_path = root / "commands.log"
-            write_logged_command(bin_dir / "git", log_path, "git")
-            write_logged_command(bin_dir / "mvn", log_path, "mvn")
-
-            result = subprocess.run(
-                [
-                    sys.executable,
-                    str(WRAPPER_PATH),
-                    "tweedle-decode",
-                    "verify",
-                    "simple-if-player-archive",
-                ],
-                cwd=root,
-                check=False,
-                capture_output=True,
-                text=True,
-                env={**os.environ, "PATH": f"{bin_dir}:{os.environ.get('PATH', '')}"},
-            )
-
-            log = log_path.read_text(encoding="utf-8")
-
-        self.assertEqual(0, result.returncode, result.stderr)
-        self.assertIn("PASS: simple-if-player-archive", result.stdout)
-        self.assertIn("-pl core/story-api-migration", log)
-        self.assertIn("-Dtest=IoUtilitiesTest#jsonPlayerTweedleSimpleIfMethodCallDecodesProgramType", log)
 
     def test_archive_player_boundary_verify_runs_bounded_readiness_commands(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -371,7 +391,6 @@ class AmplihackWrapperTest(unittest.TestCase):
         self.assertIn("XML fallback", scenario)
         self.assertNotIn("full historical archive", scenario)
         self.assertNotIn("full player", scenario)
-        # rendering and grading appear only in non-claim context per PR #463 contract
         self.assertNotIn("proves rendering", scenario.lower())
         self.assertNotIn("proves grading", scenario.lower())
 

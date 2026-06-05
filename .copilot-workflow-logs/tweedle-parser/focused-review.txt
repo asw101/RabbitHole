@@ -1,2 +1,0 @@
-Focused review result: No blocking issues.
-Reviewer scope checked: test-only core/tweedle parser characterization, no production code, no forbidden UI/procedure/archive/decoder scope drift, assertions and validation logs consistent.

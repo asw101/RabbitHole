@@ -47,9 +47,8 @@ The durable artifact stack is:
 | --- | --- | --- |
 | Concepts (this document) | `docs/concepts/migration-hotspot-characterization.md` | Explains why the layer exists and what it protects. |
 | Executable tests | `ProjectMigrationManagerTest` in `core/story-api-migration` | 18 focused Java characterization tests. |
-| Executable tests | `ProjectMigrationManagerTest` in `core/story-api-migration` | 18 focused Java characterization tests. |
-| QA automation | `migration-hotspot-characterization-smoke` gadugi scenario | Gated-command-smoke that runs the 18-test focused Maven command through the 4-layer argv allowlist. |
-| Repository contract | `tests/test_pr424_migration_hotspot_recovery_contract.py` | Python policy checks for diff scope, doc links, conflict markers, and test method presence. |
+| QA automation | `migration-hotspot-characterization-smoke` scenario | Gated-command smoke that runs the 18-test focused Maven command through the scenario allowlist. |
+| Repository contract | Scenario and documentation tests | Python policy checks for documentation links, conflict markers, and test method presence. |
 
 ## What it protects
 
@@ -99,12 +98,13 @@ fixtures.
 
 ## QA automation
 
-The migration hotspot characterization has a gadugi QA scenario that runs the
-focused Maven test command through the repository's 4-layer argv allowlist
-(`scenario.schema.json`, `validate-scenarios.sh`, `run-scenario.sh`,
+The migration hotspot characterization has an Alice desktop QA scenario that
+runs the focused Maven test command through the repository's scenario allowlist
+(`scenario.schema.json`, `validate-scenarios.sh`, `run-scenario.sh`, and
 `test-schema-contract.sh`). The scenario is
 `migration-hotspot-characterization-smoke` with automation mode
-`gated-command-smoke`. When the gate is enabled, the scenario executes:
+`gated-command-smoke`. When gated command smokes are enabled, the scenario
+executes:
 
 ```sh
 mvn -DincludeSims=false -Dinstall4j.skip -DfailIfNoTests=false \

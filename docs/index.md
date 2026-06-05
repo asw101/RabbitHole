@@ -3,11 +3,12 @@
 Alice 3 is a teaching tool for building 3D stories, animations, and simple games.
 RabbitHole keeps that classroom experience working while the codebase is modernized, tested, and broken into smaller pieces that are easier to change safely.
 
-## Current status
+## Validation overview
 
-- Coverage snapshot: **74%**
-- Build system: **22 Maven modules** on **Java 21**
-- Main validation lanes: **Checkstyle**, **headless no-Sims tests**, **Getting Started headless validation**, and **JaCoCo coverage**.
+RabbitHole is validated with Maven, Checkstyle, headless no-Sims tests,
+Getting Started headless validation, and coverage reporting. See
+[Testing](./testing.md) for the maintained command list and local validation
+expectations.
 
 ## Quick links
 
@@ -17,6 +18,7 @@ RabbitHole keeps that classroom experience working while the codebase is moderni
 - [RabbitHole baseline parity](./rabbithole-baseline-parity.md)
 - [Dual-baseline replay harness](./dual-baseline-replay-harness.md)
 - [Contributing](./contributing.md)
+- [Repository hygiene](./repository-hygiene.md)
 - [Concepts](#concepts)
 - [Architecture Atlas](#architecture-atlas)
 
@@ -39,6 +41,7 @@ RabbitHole keeps that classroom experience working while the codebase is moderni
 - [RabbitHole baseline parity](./rabbithole-baseline-parity.md)
 - [Dual-baseline replay harness](./dual-baseline-replay-harness.md)
 - [Contributing](./contributing.md)
+- [Repository hygiene](./repository-hygiene.md)
 
 ### Architecture deep dives
 
@@ -52,7 +55,6 @@ RabbitHole keeps that classroom experience working while the codebase is moderni
 
 ### Reference
 
-- [Modernization Scorecard](./reference/modernization-scorecard.md)
 - [Modernization Scorecard Generator](./reference/modernization-scorecard-generator.md)
 - [Modernization Corpus Manifest](./reference/modernization-corpus-manifest.md)
 

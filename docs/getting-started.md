@@ -78,11 +78,11 @@ Run: git submodule update --init tweedle-lang
 | `./scripts/validate-getting-started.sh --all` | Local full validation | Runs headless validation, then runs GUI validation only when supported; unsupported GUI lanes are reported as skipped or blocked without failing after headless validation passes. |
 | `./scripts/validate-getting-started.sh --help` | Usage reference | Prints supported flags and exits. |
 
-For branch-based outside-in validation, install the QA wrapper from the branch
-or commit under review and run the same checked-out validator:
+For outside-in validation through the neutral Alice QA wrapper, run the same
+checked-out validator from the repository root or one of its child directories:
 
 ```bash
-uvx --from git+https://github.com/rysweet/RabbitHole.git@<branch-or-commit> amplihack getting-started validate --headless
+python3 alice_qa.py getting-started validate --headless
 ```
 
 Unknown flags are rejected with exit code 2 so CI does not accidentally run the
@@ -145,13 +145,12 @@ passes, and the command exits successfully.
 
 ### macOS Apple Silicon GUI blocker
 
-Desktop GUI launch on macOS Apple Silicon is blocked by RabbitHole issue
-[#848](https://github.com/rysweet/RabbitHole/issues/848). The validator
-detects that platform and reports the GUI lane as blocked. Explicit `--gui`
-must exit non-zero with that blocked result. `--all` must report the blocked
-GUI lane and still exit successfully after headless validation passes. This is
-not a Getting Started setup error, and this validation feature does not fix the
-GUI blocker.
+Desktop GUI launch on macOS Apple Silicon is treated as a known platform
+blocker. The validator detects that platform and reports the GUI lane as
+blocked. Explicit `--gui` must exit non-zero with that blocked result. `--all`
+must report the blocked GUI lane and still exit successfully after headless
+validation passes. This is not a Getting Started setup error, and this
+validation feature does not fix the GUI blocker.
 
 ## Build the project
 

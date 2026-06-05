@@ -1,82 +1,129 @@
-"""TDD tests for issue #828: remove point-in-time documentation artifacts.
+"""Repository hygiene contract for durable RabbitHole documentation.
 
-These tests define the contract for what the docs/ tree must look like
-after cleanup.  They are written *before* the final deletions so they
-start RED and turn GREEN once the implementation is complete.
+These tests are intentionally written before the cleanup implementation. They
+define the red/green contract for removing non-durable point-in-time artifacts
+while preserving maintained RabbitHole/Alice documentation.
 """
 
-import itertools
+from __future__ import annotations
+
 import re
+import subprocess
 import unittest
 from functools import lru_cache
 from pathlib import Path
 
 import yaml
 
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DOCS_DIR = REPO_ROOT / "docs"
 MKDOCS_YML = REPO_ROOT / "mkdocs.yml"
+GITIGNORE = REPO_ROOT / ".gitignore"
 
-# ── directories that must NOT exist after cleanup ─────────────────────
-DELETED_DIRS = [
-    DOCS_DIR / "howto",
-    DOCS_DIR / "tutorials",
-    DOCS_DIR / "reference",
-    DOCS_DIR / "atlas" / "bug-reports",
-    DOCS_DIR / "testing",           # testing *directory* (testing.md is kept)
-]
-
-# ── loose files that must NOT exist after cleanup ─────────────────────
-DELETED_LOOSE_FILES = [
-    DOCS_DIR / "evidence-json-writer-saveproof-delegate.md",
-    DOCS_DIR / "test-coverage-cascade-fillerinner-editors.md",
-]
-
-# ── nav sections that must NOT appear in mkdocs.yml ───────────────────
-DELETED_NAV_SECTIONS = [
-    "How-to Guides",
-    "Reference",
-    "Tutorials",
-    "Testing notes",
-    "Additional docs",
-]
-
-# ── nav entries that MUST survive ─────────────────────────────────────
-EXPECTED_NAV_SECTIONS = [
-    "Home",
-    "Start here",
-    "Concepts",
-    "Architecture Atlas",
-]
-
-# ── files that MUST exist (kept documentation) ────────────────────────
-KEPT_FILES = [
-    DOCS_DIR / "index.md",
-    DOCS_DIR / "getting-started.md",
-    DOCS_DIR / "architecture.md",
-    DOCS_DIR / "testing.md",
-    DOCS_DIR / "contributing.md",
-    DOCS_DIR / "concepts" / "formal-spec-lane.md",
-    DOCS_DIR / "concepts" / "migration-hotspot-characterization.md",
-    DOCS_DIR / "atlas" / "index.md",
-]
-
-# Regex for PR / issue references that signal point-in-time content
-POINT_IN_TIME_RE = re.compile(
+TEMPORARY_TRACKED_PATH_RE = re.compile(
     r"(?:"
-    r"PR\s*#\d{2,}"            # PR #123
-    r"|pull/\d{2,}"            # pull/123
-    r"|issues/\d{2,}"          # issues/123
-    r"|sprint[\s-]*\d"         # sprint-1, sprint 2
-    r"|extraction[\s-]*trace"  # extraction trace
-    r"|proof[\s-]*of[\s-]*extraction"
+    r"^\.copilot(?:-|/)"
+    r"|^\.amplihack/"
+    r"|^\.github/hooks/"
+    r"|^drinkme/"
+    r"|^refactor-[^/]+\.log$"
+    r"|(?:^|/)[^/]*workflow[^/]*\.(?:log|status|summary|exit)$"
+    r"|(?:^|/)[^/]*(?:progress|status)-report[^/]*\.(?:md|txt|log|sh)$"
+    r"|(?:^|/)coverage-summary-[^/]*\.md$"
+    r"|^qa/outside-in/alice-desktop/logs/(?!\.gitignore$).+"
+    r"|^qa/outside-in/alice-desktop/outputs/(?!sessions/\.gitignore$).+"
+    r"|^qa/outside-in/alice-desktop/evidence/(?!\.gitignore$).+"
+    r"|^qa/outside-in/alice-desktop/(?:gadugi|gadugi-scenarios)/"
+    r"|^qa/outside-in/alice-desktop/tests/test-amplihack-cli-contract\.sh$"
+    r"|^qa/outside-in/alice-desktop/tests/test-gadugi[^/]*\.sh$"
+    r"|^tests/test_alice_qa_amplihack(?:_docs_contract)?\.py$"
+    r"|^tests/test_gadugi[^/]*\.py$"
+    r"|^alice_qa_amplihack\.py$"
     r")",
     re.IGNORECASE,
 )
 
+POINT_IN_TIME_REFERENCE_RE = re.compile(
+    r"(?:"
+    r"\bPR\s*#\d{2,}"
+    r"|\bpr[-_ ]#?\d{2,}"
+    r"|\bpull/\d{2,}"
+    r"|\bissues/\d{2,}"
+    r"|(?<![A-Za-z0-9])#\d{2,}\b"
+    r")",
+    re.IGNORECASE,
+)
+
+TEMPORARY_BRANDING_RE = re.compile(
+    r"\b(?:amplihack|copilot|gadugi|gadugi-test)\b",
+    re.IGNORECASE,
+)
+
+POINT_IN_TIME_LANGUAGE_RE = re.compile(
+    r"\b(?:"
+    r"current status"
+    r"|coverage snapshot"
+    r"|refactor progress"
+    r"|status report"
+    r"|work in progress"
+    r"|remaining work"
+    r"|next steps"
+    r"|session artifact"
+    r"|assistant trace"
+    r"|workflow log"
+    r")\b",
+    re.IGNORECASE,
+)
+
+DURABLE_CONTENT_SUFFIXES = {".md", ".yaml", ".yml", ".toml", ".sh", ".py"}
+DURABLE_CONTENT_ROOTS = (
+    "README.md",
+    "AGENTS.md",
+    "docs/",
+    "qa/outside-in/alice-desktop/",
+    "pyproject.toml",
+)
+CONTENT_SCAN_EXCLUDES = (
+    "qa/outside-in/alice-desktop/tests/fixtures/",
+    "qa/outside-in/alice-desktop/schema/",
+    "qa/outside-in/alice-desktop/runners/",
+)
+POINT_IN_TIME_LANGUAGE_SCAN_EXCLUDES = (
+    "docs/repository-hygiene.md",
+)
+
+REQUIRED_IGNORES = (
+    ".copilot/",
+    ".copilot-*",
+    ".amplihack/",
+    ".github/hooks/",
+    "refactor-*.log",
+    "*workflow*.log",
+    "qa/outside-in/alice-desktop/logs/",
+    "qa/outside-in/alice-desktop/outputs/",
+    "qa/outside-in/alice-desktop/evidence/",
+)
+
+REMOVED_POINT_IN_TIME_DOCS = (
+    "docs/reference/modernization-scorecard.md",
+)
+
+EXPECTED_DURABLE_DOCS = (
+    "README.md",
+    "AGENTS.md",
+    "docs/index.md",
+    "docs/getting-started.md",
+    "docs/testing.md",
+    "docs/contributing.md",
+    "docs/repository-hygiene.md",
+    "qa/outside-in/alice-desktop/README.md",
+)
+
 
 class _MkdocsLoader(yaml.SafeLoader):
-    """SafeLoader subclass that handles !!python/name tags in mkdocs.yml."""
+    """SafeLoader subclass that accepts mkdocs custom Python tags."""
+
 
 _MkdocsLoader.add_multi_constructor(
     "tag:yaml.org,2002:python/name:",
@@ -85,271 +132,161 @@ _MkdocsLoader.add_multi_constructor(
 
 
 @lru_cache(maxsize=1)
-def _load_mkdocs() -> dict:
+def tracked_files() -> tuple[str, ...]:
+    result = subprocess.run(
+        ["git", "ls-files"],
+        cwd=REPO_ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return tuple(path for path in result.stdout.splitlines() if path)
+
+
+@lru_cache(maxsize=1)
+def mkdocs_config() -> dict:
     return yaml.load(MKDOCS_YML.read_text(encoding="utf-8"), Loader=_MkdocsLoader)
 
 
-def _nav_section_titles(nav: list) -> list[str]:
-    """Extract top-level nav section titles from mkdocs nav list."""
-    titles = []
-    for entry in nav:
-        if isinstance(entry, dict):
-            titles.extend(entry.keys())
-        elif isinstance(entry, str):
-            titles.append(entry)
-    return titles
-
-
-def _collect_nav_file_refs(nav, refs=None) -> list[str]:
-    """Recursively collect all file path strings from the nav tree."""
+def collect_nav_refs(nav, refs: list[str] | None = None) -> list[str]:
     if refs is None:
         refs = []
     if isinstance(nav, str):
         refs.append(nav)
     elif isinstance(nav, dict):
-        for v in nav.values():
-            _collect_nav_file_refs(v, refs)
+        for value in nav.values():
+            collect_nav_refs(value, refs)
     elif isinstance(nav, list):
         for item in nav:
-            _collect_nav_file_refs(item, refs)
+            collect_nav_refs(item, refs)
     return refs
 
 
-# ══════════════════════════════════════════════════════════════════════
-# Test suite
-# ══════════════════════════════════════════════════════════════════════
+def durable_content_paths(exclude: tuple[str, ...] = ()) -> list[str]:
+    paths: list[str] = []
+    for path in tracked_files():
+        if not path.endswith(tuple(DURABLE_CONTENT_SUFFIXES)):
+            continue
+        if not any(path == root or path.startswith(root) for root in DURABLE_CONTENT_ROOTS):
+            continue
+        if any(path.startswith(excluded) for excluded in CONTENT_SCAN_EXCLUDES):
+            continue
+        if path in exclude:
+            continue
+        paths.append(path)
+    return paths
 
 
-class TestDeletedDirectories(unittest.TestCase):
-    """Directories containing point-in-time artifacts must be gone."""
-
-    def test_deleted_dirs_do_not_exist(self):
-        for d in DELETED_DIRS:
-            with self.subTest(directory=str(d.relative_to(REPO_ROOT))):
-                self.assertFalse(
-                    d.is_dir(),
-                    f"{d.relative_to(REPO_ROOT)} still exists as a directory",
-                )
-
-    def test_deleted_dirs_contain_no_tracked_files(self):
-        """Even if empty dirs linger, no files should remain."""
-        for d in DELETED_DIRS:
-            with self.subTest(directory=str(d.relative_to(REPO_ROOT))):
-                if d.is_dir():
-                    files = list(d.rglob("*"))
-                    real_files = [f for f in files if f.is_file()]
-                    self.assertEqual(
-                        real_files,
-                        [],
-                        f"Files remain in {d.relative_to(REPO_ROOT)}: {real_files}",
-                    )
+def matching_lines(pattern: re.Pattern[str], paths: list[str]) -> list[str]:
+    matches: list[str] = []
+    for relative_path in paths:
+        text = (REPO_ROOT / relative_path).read_text(encoding="utf-8")
+        for line_number, line in enumerate(text.splitlines(), start=1):
+            if pattern.search(line):
+                matches.append(f"{relative_path}:{line_number}:{line.strip()}")
+    return matches
 
 
-class TestDeletedLooseFiles(unittest.TestCase):
-    """Individual point-in-time markdown files must be gone."""
-
-    def test_loose_pit_files_do_not_exist(self):
-        for f in DELETED_LOOSE_FILES:
-            with self.subTest(file=str(f.relative_to(REPO_ROOT))):
-                self.assertFalse(
-                    f.exists(),
-                    f"{f.relative_to(REPO_ROOT)} still exists",
-                )
-
-
-class TestKeptFilesIntact(unittest.TestCase):
-    """Core documentation files must survive the cleanup."""
-
-    def test_kept_files_exist(self):
-        for f in KEPT_FILES:
-            with self.subTest(file=str(f.relative_to(REPO_ROOT))):
-                self.assertTrue(
-                    f.is_file(),
-                    f"{f.relative_to(REPO_ROOT)} is missing — cleanup over-deleted",
-                )
-
-    def test_atlas_subdirectories_intact(self):
-        """Each atlas layer dir must have at least a README and one diagram."""
-        atlas_layers = [
-            "repo-surface",
-            "ast-lsp-bindings",
-            "compile-deps",
-            "runtime-topology",
-            "api-contracts",
-            "data-flow",
-            "service-components",
-            "user-journeys",
+class RepositoryArtifactPrunerContract(unittest.TestCase):
+    def test_no_tracked_temporary_artifacts_remain(self) -> None:
+        offenders = [
+            path for path in tracked_files() if TEMPORARY_TRACKED_PATH_RE.search(path)
         ]
-        for layer in atlas_layers:
-            layer_dir = DOCS_DIR / "atlas" / layer
-            with self.subTest(layer=layer):
-                self.assertTrue(
-                    layer_dir.is_dir(),
-                    f"Atlas layer dir {layer} is missing",
-                )
-                self.assertTrue(
-                    (layer_dir / "README.md").is_file(),
-                    f"Atlas layer {layer}/README.md is missing",
-                )
-                has_diagram = any(
-                    itertools.chain(layer_dir.glob("*.dot"), layer_dir.glob("*.mmd"))
-                )
-                self.assertTrue(
-                    has_diagram,
-                    f"Atlas layer {layer} has no diagram files",
-                )
 
-
-class TestMkdocsNavCleaned(unittest.TestCase):
-    """mkdocs.yml nav must not reference deleted sections."""
-
-    @classmethod
-    def setUpClass(cls):
-        cls.config = _load_mkdocs()
-        cls.nav = cls.config.get("nav", [])
-        cls.section_titles = _nav_section_titles(cls.nav)
-        cls.nav_refs = _collect_nav_file_refs(cls.nav)
-
-    def test_mkdocs_parses_as_valid_yaml(self):
-        self.assertIsInstance(self.config, dict)
-        self.assertIn("nav", self.config)
-
-    def test_deleted_nav_sections_absent(self):
-        for section in DELETED_NAV_SECTIONS:
-            with self.subTest(section=section):
-                self.assertNotIn(
-                    section,
-                    self.section_titles,
-                    f"Stale nav section '{section}' still in mkdocs.yml",
-                )
-
-    def test_expected_nav_sections_present(self):
-        for section in EXPECTED_NAV_SECTIONS:
-            with self.subTest(section=section):
-                self.assertIn(
-                    section,
-                    self.section_titles,
-                    f"Expected nav section '{section}' missing from mkdocs.yml",
-                )
-
-    def test_all_nav_refs_resolve_to_existing_files(self):
-        self.assertGreater(len(self.nav_refs), 0, "No nav file refs found")
-        for ref in self.nav_refs:
-            with self.subTest(ref=ref):
-                target = DOCS_DIR / ref
-                self.assertTrue(
-                    target.is_file(),
-                    f"Nav ref '{ref}' -> {target.relative_to(REPO_ROOT)} does not exist",
-                )
-
-    def test_nav_does_not_reference_deleted_paths(self):
-        """No nav entry should point into a deleted directory."""
-        deleted_prefixes = (
-            "howto/",
-            "tutorials/",
-            "reference/",
-            "atlas/bug-reports/",
-            "testing/",
-        )
-        for ref in self.nav_refs:
-            with self.subTest(ref=ref):
-                for prefix in deleted_prefixes:
-                    self.assertFalse(
-                        ref.startswith(prefix),
-                        f"Nav ref '{ref}' points into deleted dir '{prefix}'",
-                    )
-
-    def test_no_nav_references_to_deleted_loose_files(self):
-        deleted_basenames = {f.name for f in DELETED_LOOSE_FILES}
-        for ref in self.nav_refs:
-            with self.subTest(ref=ref):
-                self.assertNotIn(
-                    Path(ref).name,
-                    deleted_basenames,
-                    f"Nav ref '{ref}' points to a deleted loose file",
-                )
-
-
-class TestNoPointInTimeContentInKeptDocs(unittest.TestCase):
-    """Remaining docs must not themselves be point-in-time artifacts.
-
-    We scan only .md files in the *kept* tree (excluding atlas diagrams).
-    A file is flagged if its first 20 lines contain point-in-time markers.
-    """
-
-    def _kept_md_files(self):
-        """Yield markdown files in docs/ that should be permanent."""
-        for f in DOCS_DIR.rglob("*.md"):
-            rel = f.relative_to(DOCS_DIR)
-            parts = rel.parts
-            if parts[0] in ("howto", "tutorials", "reference", "testing"):
-                continue  # already deleted (or should be)
-            if len(parts) >= 2 and parts[0] == "atlas" and parts[1] == "bug-reports":
-                continue
-            yield f
-
-    def test_kept_docs_are_not_point_in_time(self):
-        flagged = []
-        for md in self._kept_md_files():
-            with md.open(encoding="utf-8") as fh:
-                head = "\n".join(itertools.islice(fh, 20))
-            if POINT_IN_TIME_RE.search(head):
-                flagged.append(str(md.relative_to(REPO_ROOT)))
         self.assertEqual(
-            flagged,
             [],
-            f"Kept docs appear to be point-in-time artifacts: {flagged}",
+            offenders,
+            "Tracked workflow logs, session/evidence outputs, branded wrappers, or "
+            "point-in-time reports remain in the repository.",
         )
 
+    def test_ignore_rules_cover_removed_artifact_families(self) -> None:
+        ignore_text = GITIGNORE.read_text(encoding="utf-8")
 
-class TestFileCountInvariants(unittest.TestCase):
-    """Sanity-check the total file count after cleanup."""
+        missing = [pattern for pattern in REQUIRED_IGNORES if pattern not in ignore_text]
 
-    def test_docs_dir_exists(self):
-        self.assertTrue(DOCS_DIR.is_dir(), "docs/ directory itself must exist")
-
-    def test_images_dir_untouched(self):
-        """docs/images/ is out of scope and must remain."""
-        images_dir = DOCS_DIR / "images"
-        self.assertTrue(
-            images_dir.is_dir(),
-            "docs/images/ should not have been deleted",
-        )
-
-
-class TestMkdocsValidation(unittest.TestCase):
-    """Ensure mkdocs.yml remains structurally valid after edits."""
-
-    @classmethod
-    def setUpClass(cls):
-        cls.config = _load_mkdocs()
-
-    def test_strict_mode_enabled(self):
-        self.assertTrue(
-            self.config.get("strict", False),
-            "mkdocs strict mode should remain enabled",
-        )
-
-    def test_validation_links_not_found_ignore(self):
-        """Must keep 'ignore' for orphaned cross-refs during transition."""
-        val = self.config.get("validation", {})
-        links = val.get("links", {})
         self.assertEqual(
-            links.get("not_found"),
-            "ignore",
-            "validation.links.not_found must be 'ignore'",
+            [],
+            missing,
+            "Removed local workflow/session artifact families must be ignored so they "
+            "are not reintroduced.",
         )
 
-    def test_docs_dir_setting(self):
+
+class DurableDocumentationRewriteContract(unittest.TestCase):
+    def test_core_user_facing_docs_survive_cleanup(self) -> None:
+        missing = [
+            path for path in EXPECTED_DURABLE_DOCS if not (REPO_ROOT / path).is_file()
+        ]
+
+        self.assertEqual([], missing, "Cleanup deleted durable user-facing docs.")
+
+    def test_point_in_time_scorecard_snapshot_is_not_tracked(self) -> None:
+        tracked = set(tracked_files())
+        remaining = [path for path in REMOVED_POINT_IN_TIME_DOCS if path in tracked]
+
         self.assertEqual(
-            self.config.get("docs_dir"),
-            "docs",
-            "docs_dir must point to 'docs'",
+            [],
+            remaining,
+            "Generated scorecard/status snapshots should be deleted or rewritten as "
+            "durable generator documentation.",
         )
 
-    def test_theme_configured(self):
-        self.assertIn("theme", self.config)
-        self.assertEqual(self.config["theme"].get("name"), "material")
+    def test_durable_docs_do_not_contain_concrete_tracking_references(self) -> None:
+        matches = matching_lines(POINT_IN_TIME_REFERENCE_RE, durable_content_paths())
+
+        self.assertEqual(
+            [],
+            matches,
+            "Durable docs and QA metadata may use generic issue/pull request "
+            "language, but not concrete PR/issue numbers.",
+        )
+
+    def test_durable_docs_do_not_use_point_in_time_language(self) -> None:
+        matches = matching_lines(
+            POINT_IN_TIME_LANGUAGE_RE,
+            durable_content_paths(exclude=POINT_IN_TIME_LANGUAGE_SCAN_EXCLUDES),
+        )
+
+        self.assertEqual(
+            [],
+            matches,
+            "Durable docs should describe the maintained contract, not branch-local "
+            "status, progress, next-step, or session narratives.",
+        )
+
+    def test_durable_docs_do_not_keep_tool_specific_branding(self) -> None:
+        matches = matching_lines(TEMPORARY_BRANDING_RE, durable_content_paths())
+
+        self.assertEqual(
+            [],
+            matches,
+            "RabbitHole documentation and retained QA contracts should use neutral "
+            "Alice/RabbitHole names rather than assistant/tool branding.",
+        )
+
+
+class MkDocsNavigationContract(unittest.TestCase):
+    def test_mkdocs_parses_and_all_nav_refs_exist(self) -> None:
+        config = mkdocs_config()
+        refs = collect_nav_refs(config.get("nav", []))
+
+        self.assertGreater(len(refs), 0, "mkdocs.yml must define navigation.")
+        missing = [ref for ref in refs if not (DOCS_DIR / ref).is_file()]
+
+        self.assertEqual([], missing, "mkdocs.yml references missing docs.")
+
+    def test_nav_does_not_link_deleted_point_in_time_docs(self) -> None:
+        refs = collect_nav_refs(mkdocs_config().get("nav", []))
+
+        stale = [ref for ref in refs if f"docs/{ref}" in REMOVED_POINT_IN_TIME_DOCS]
+
+        self.assertEqual([], stale, "mkdocs.yml still links point-in-time docs.")
+
+    def test_strict_docs_mode_remains_enabled(self) -> None:
+        config = mkdocs_config()
+
+        self.assertTrue(config.get("strict"), "mkdocs strict mode should remain enabled.")
 
 
 if __name__ == "__main__":

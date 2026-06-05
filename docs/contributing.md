@@ -63,3 +63,9 @@ A good rule of thumb:
 Put contributor-facing documentation in `docs/` and link it from
 `docs/index.md`. If your change alters a workflow, command, or contract,
 update the matching docs in the same branch.
+
+Durable docs should describe the supported RabbitHole behavior, not the branch
+or local investigation that produced it. Keep generated evidence, scratch
+reports, local tool traces, and time-bound progress notes out of Git unless the
+content has been rewritten as a maintained reference. See
+[Repository hygiene](repository-hygiene.md) for the cleanup rules and checks.

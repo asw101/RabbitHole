@@ -11,14 +11,14 @@ from pathlib import Path
 
 
 USAGE = """usage:
-  amplihack alice-scorecard [--root <dir>] [--output <path>]
-  amplihack alice-qa validate
-  amplihack alice-qa list
-  amplihack alice-qa save-negative-contract
-  amplihack alice-qa run <scenario-id-or-path> [--evidence-dir <dir>] [--timeout-seconds <seconds>] [--prepare-only]
-  amplihack getting-started validate [--headless|--gui|--all|--help]
-  amplihack archive-player-boundary verify
-  amplihack tweedle-decode verify <simple-if-method-call|simple-if-boundaries|simple-if-player-archive>
+  python3 alice_qa.py alice-scorecard [--root <dir>] [--output <path>]
+  python3 alice_qa.py alice-qa validate
+  python3 alice_qa.py alice-qa list
+  python3 alice_qa.py alice-qa save-negative-contract
+  python3 alice_qa.py alice-qa run <scenario-id-or-path> [--evidence-dir <dir>] [--timeout-seconds <seconds>] [--prepare-only]
+  python3 alice_qa.py getting-started validate [--headless|--gui|--all|--help]
+  python3 alice_qa.py archive-player-boundary verify
+  python3 alice_qa.py tweedle-decode verify <simple-if-method-call|simple-if-boundaries|simple-if-player-archive>
 
 Run from the Alice repository root or one of its child directories.
 """
@@ -233,7 +233,7 @@ def run_getting_started_validation(root: Path, args: Sequence[str]) -> int:
         return run_from_repo(root, [str(root / "scripts" / "validate-getting-started.sh"), "--help"])
     if args[1] != "validate":
         print(
-            "getting-started usage: amplihack getting-started validate [--headless|--gui|--all|--help]",
+            "getting-started usage: python3 alice_qa.py getting-started validate [--headless|--gui|--all|--help]",
             file=sys.stderr,
         )
         return 2
@@ -241,7 +241,7 @@ def run_getting_started_validation(root: Path, args: Sequence[str]) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    """Dispatch amplihack command wrapper arguments."""
+    """Dispatch Alice QA command wrapper arguments."""
     args = list(sys.argv[1:] if argv is None else argv)
     if not args or args[0] in {"-h", "--help", "help"}:
         print(USAGE, end="")
@@ -250,7 +250,7 @@ def main(argv: list[str] | None = None) -> int:
     root = find_repo_root(Path.cwd().resolve())
     if root is None:
         print(
-            "amplihack alice-qa must be run from an Alice repository checkout",
+            "alice_qa.py must be run from an Alice repository checkout",
             file=sys.stderr,
         )
         return 2
@@ -260,13 +260,13 @@ def main(argv: list[str] | None = None) -> int:
 
     if args[0] == "tweedle-decode":
         if len(args) != 3 or args[1] != "verify":
-            print("tweedle-decode usage: amplihack tweedle-decode verify <scenario>", file=sys.stderr)
+            print("tweedle-decode usage: python3 alice_qa.py tweedle-decode verify <scenario>", file=sys.stderr)
             return 2
         return run_tweedle_decode_verification(root, args[2])
 
     if args[0] == "archive-player-boundary":
         if len(args) != 2 or args[1] != "verify":
-            print("archive-player-boundary usage: amplihack archive-player-boundary verify", file=sys.stderr)
+            print("archive-player-boundary usage: python3 alice_qa.py archive-player-boundary verify", file=sys.stderr)
             return 2
         return run_archive_player_boundary_verification(root)
 

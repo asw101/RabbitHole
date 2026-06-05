@@ -30,14 +30,29 @@ out/*
 *.dae
 # Agent runtime/session artifacts
 .copilot/
+.copilot-*
+.amplihack/
+.github/hooks/
 .claude/runtime/
 __pycache__/
 outputs/
 logs/
+refactor-*.log
+*workflow*.log
+*workflow*.status
+*workflow*.summary
+*workflow*.exit
+*progress*.log
+*status-report*.md
+*status-report*.txt
+coverage-summary-*.md
+site/
 
 # Test log artifacts
 logs/
 qa/outside-in/alice-desktop/logs/
+qa/outside-in/alice-desktop/outputs/
+qa/outside-in/alice-desktop/evidence/
 
 # Git worktrees used during refactoring — never track
 worktrees/

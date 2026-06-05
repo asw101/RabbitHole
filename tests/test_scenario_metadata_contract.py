@@ -1,16 +1,14 @@
-"""Contract tests for gadugi-test scenario name compatibility.
+"""Contract tests for Alice desktop scenario metadata.
 
 Every scenario YAML in qa/outside-in/alice-desktop/scenarios/ must carry
-a ``name`` field (matching ``title``), plus ``steps`` and ``agents`` arrays,
-so that ``gadugi-test validate`` reports 0 invalid files.
+a ``name`` field matching ``title``, plus ``steps`` and ``agents`` arrays.
 
-These tests enforce the contract — they fail if any scenario is missing
-the required gadugi-test fields. All 37 scenario files must pass.
+These tests enforce the repository-local scenario metadata contract. All
+scenario files must pass.
 """
 
 import json
 import os
-import shutil
 import subprocess
 import unittest
 from pathlib import Path
@@ -24,7 +22,6 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 SCENARIOS_DIR = REPO_ROOT / "qa" / "outside-in" / "alice-desktop" / "scenarios"
 SCHEMA_PATH = REPO_ROOT / "qa" / "outside-in" / "alice-desktop" / "schema" / "scenario.schema.json"
 VALIDATOR_PATH = REPO_ROOT / "qa" / "outside-in" / "alice-desktop" / "runners" / "validate-scenarios.sh"
-GADUGI_BASE = REPO_ROOT / "qa" / "outside-in" / "alice-desktop"
 
 
 def scenario_files():
@@ -78,7 +75,7 @@ class TestNameMatchesTitle(unittest.TestCase):
 
 
 @unittest.skipIf(yaml is None, "PyYAML not installed")
-class TestGadugiRequiredFields(unittest.TestCase):
+class TestRunnerMetadataFields(unittest.TestCase):
     """Contract: every scenario must have ``steps`` and ``agents`` arrays."""
 
     def test_all_scenarios_have_steps(self) -> None:
@@ -119,7 +116,7 @@ class TestScenarioCount(unittest.TestCase):
         self.assertEqual(count, 37, f"Expected 37 scenarios, found {count}")
 
 
-class TestSchemaAcceptsGadugiFields(unittest.TestCase):
+class TestSchemaAcceptsRunnerMetadataFields(unittest.TestCase):
     """Contract: scenario.schema.json must declare name, steps, agents."""
 
     def setUp(self) -> None:
@@ -159,8 +156,8 @@ class TestSchemaAcceptsGadugiFields(unittest.TestCase):
         self.assertNotIn("agents", required)
 
 
-class TestValidatorAllowsGadugiFields(unittest.TestCase):
-    """Contract: validate-scenarios.sh allowed_top must include gadugi fields."""
+class TestValidatorAllowsRunnerMetadataFields(unittest.TestCase):
+    """Contract: validate-scenarios.sh allowed_top must include metadata fields."""
 
     def setUp(self) -> None:
         self.validator_text = VALIDATOR_PATH.read_text(encoding="utf-8")
@@ -192,41 +189,6 @@ class TestValidateScenariosShPasses(unittest.TestCase):
             result.returncode,
             f"validate-scenarios.sh failed:\nstdout: {result.stdout}\nstderr: {result.stderr}",
         )
-
-
-@unittest.skipUnless(shutil.which("gadugi-test"), "gadugi-test not installed")
-class TestGadugiTestValidate(unittest.TestCase):
-    """Integration: gadugi-test validate must report 0 invalid files."""
-
-    _result: subprocess.CompletedProcess | None = None
-
-    @classmethod
-    def setUpClass(cls) -> None:
-        cls._result = subprocess.run(
-            ["gadugi-test", "validate", "scenarios/"],
-            cwd=str(GADUGI_BASE),
-            capture_output=True,
-            text=True,
-            timeout=60,
-        )
-
-    def test_gadugi_validate_exits_zero(self) -> None:
-        assert self._result is not None
-        self.assertEqual(
-            0,
-            self._result.returncode,
-            f"gadugi-test validate failed:\n{self._result.stdout}\n{self._result.stderr}",
-        )
-
-    def test_gadugi_reports_zero_invalid(self) -> None:
-        assert self._result is not None
-        combined = self._result.stdout + self._result.stderr
-        self.assertIn("Invalid files: 0", combined)
-
-    def test_gadugi_reports_30_valid(self) -> None:
-        assert self._result is not None
-        combined = self._result.stdout + self._result.stderr
-        self.assertIn("Valid files: 37", combined)
 
 
 @unittest.skipIf(yaml is None, "PyYAML not installed")
