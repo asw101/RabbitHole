@@ -19,7 +19,7 @@ expectedOutcomes:
   - The instructor can prepare and save a starter project without uncaught application errors.
   - The starter a3p file is available as an artifact for student use.
   - The student can open the starter project and save a separate copy.
-  - RabbitHole learner-world QA currently supports setup/open/save evidence review only.
+  - RabbitHole learner-world QA supports setup/open/save evidence review only.
 evidence:
   required:
     - Instructor launch log.

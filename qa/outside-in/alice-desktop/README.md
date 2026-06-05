@@ -144,8 +144,8 @@ artifacts fail closed.
 
 ## Learner-world boundary
 
-RabbitHole learner-world QA supports setup, open, and save evidence review only.
-The `alice-desktop-instructor-student-setup` scenario lets a reviewer collect
+RabbitHole learner-world QA supports setup/open/save evidence review only. The
+`alice-desktop-instructor-student-setup` scenario lets a reviewer collect
 instructor starter-project setup evidence, student open evidence, and student
 save evidence. It is a manual evidence workflow; checklist generation is not a
 pass result and does not evaluate the learner's work.

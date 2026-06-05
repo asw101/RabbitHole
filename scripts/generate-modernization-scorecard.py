@@ -12,6 +12,7 @@ import subprocess
 import sys
 from collections import Counter
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 from typing import Iterable
 
@@ -169,6 +170,28 @@ def read_jacoco_line_coverage(path: Path, name: str) -> Coverage | None:
     return Coverage(name=name, covered=covered, missed=missed, source=path)
 
 
+@lru_cache(maxsize=None)
+def tracked_repo_files(root: Path) -> tuple[str, ...] | None:
+    result = subprocess.run(
+        ["git", "ls-files"],
+        cwd=root,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode == 0:
+        return tuple(line for line in result.stdout.splitlines() if line)
+    if result.returncode == 128 and "not a git repository" in result.stderr.lower():
+        return None
+    raise ValueError(f"git ls-files failed while collecting tracked files (exit {result.returncode})")
+
+
+@lru_cache(maxsize=None)
+def tracked_repo_file_set(root: Path) -> frozenset[str] | None:
+    files = tracked_repo_files(root)
+    return None if files is None else frozenset(files)
+
+
 def module_name(csv_path: Path, root: Path) -> str:
     relative = csv_path.relative_to(root)
     target_index = relative.parts.index("target")
@@ -176,7 +199,19 @@ def module_name(csv_path: Path, root: Path) -> str:
     return "/".join(module_parts) if module_parts else "."
 
 
-def iter_module_jacoco_csvs(root: Path) -> Iterable[Path]:
+def tracked_maven_module_dirs(root: Path) -> list[Path] | None:
+    tracked = tracked_repo_files(root)
+    if tracked is None:
+        return None
+    module_dirs = {
+        Path(path).parent
+        for path in tracked
+        if path == "pom.xml" or path.endswith("/pom.xml")
+    }
+    return sorted(module_dirs, key=lambda path: path.as_posix())
+
+
+def iter_module_jacoco_csvs_by_walk(root: Path) -> Iterable[Path]:
     for current, dirnames, _filenames in os.walk(root):
         dirnames[:] = sorted(dirname for dirname in dirnames if dirname not in VCS_DIR_NAMES)
         if "target" not in dirnames:
@@ -185,6 +220,17 @@ def iter_module_jacoco_csvs(root: Path) -> Iterable[Path]:
         if candidate.exists():
             yield candidate
         dirnames.remove("target")
+
+
+def iter_module_jacoco_csvs(root: Path) -> Iterable[Path]:
+    module_dirs = tracked_maven_module_dirs(root)
+    if module_dirs:
+        for module_dir in module_dirs:
+            candidate = root / module_dir / "target" / "site" / "jacoco" / "jacoco.csv"
+            if candidate.exists():
+                yield candidate
+        return
+    yield from iter_module_jacoco_csvs_by_walk(root)
 
 
 def collect_coverage_reports(root: Path) -> tuple[Coverage | None, list[Coverage]]:
@@ -246,19 +292,13 @@ def is_production_java_path(path: str) -> bool:
 
 
 def tracked_java_files(root: Path) -> list[str]:
-    result = subprocess.run(
-        ["git", "ls-files", "*.java"],
-        cwd=root,
-        check=False,
-        capture_output=True,
-        text=True,
-    )
-    if result.returncode != 0:
+    tracked = tracked_repo_files(root)
+    if tracked is None:
         raise ValueError(
             "git ls-files failed while collecting Java hotspots "
-            f"(exit {result.returncode})"
+            "(not a git repository)"
         )
-    return [line for line in result.stdout.splitlines() if line]
+    return [line for line in tracked if line.endswith(".java")]
 
 
 def count_physical_lines(path: Path) -> int:
@@ -352,23 +392,10 @@ def classify_journeys(scenarios: Iterable[dict[str, object]]) -> JourneySummary:
 
 
 def is_git_tracked(root: Path, relative_path: Path) -> bool:
-    result = subprocess.run(
-        ["git", "ls-files", "--error-unmatch", "--", relative_path.as_posix()],
-        cwd=root,
-        check=False,
-        capture_output=True,
-        text=True,
-    )
-    if result.returncode == 0:
-        return True
-    if result.returncode == 1:
+    tracked = tracked_repo_file_set(root)
+    if tracked is None:
         return False
-    if result.returncode == 128 and "not a git repository" in result.stderr.lower():
-        return False
-    raise ValueError(
-        "git ls-files failed while validating corpus manifest path "
-        f"{relative_path.as_posix()} (exit {result.returncode})"
-    )
+    return relative_path.as_posix() in tracked
 
 
 def validate_corpus_entry(entry: object, index: int, root: Path) -> None:

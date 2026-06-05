@@ -2,7 +2,6 @@
 
 > Characterization test suite for the AST i18n factory hierarchy, component views,
 > croquet integration classes, and Java code rendering utilities in `core/ide`.
-> Issue [#777](https://github.com/rysweet/alice3-modernization/issues/777).
 
 ---
 

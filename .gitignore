@@ -43,8 +43,10 @@ refactor-*.log
 *workflow*.summary
 *workflow*.exit
 *progress*.log
+*progress*.md
 *status-report*.md
 *status-report*.txt
+*status*.md
 coverage-summary-*.md
 site/
 

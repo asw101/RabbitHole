@@ -298,6 +298,19 @@ class ModernizationScorecardComponentTest(unittest.TestCase):
         self.assertIsNotNone(aggregate)
         self.assertEqual(["core/ast"], [coverage.name for coverage in reports])
 
+    def test_coverage_report_collection_uses_tracked_maven_modules_when_available(self) -> None:
+        generator = load_generator()
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            write_file(root / "core/ast/pom.xml", "<project />\n")
+            write_jacoco_csv(root, "core/ast/target/site/jacoco/jacoco.csv", [(10, 90)])
+            write_jacoco_csv(root, "scratch/target/site/jacoco/jacoco.csv", [(1, 999)])
+            initialize_git_repo(root)
+
+            _aggregate, reports = generator.collect_coverage_reports(root)
+
+        self.assertEqual(["core/ast"], [coverage.name for coverage in reports])
+
     def test_coverage_target_status_is_conservative_until_aggregate_is_measured(self) -> None:
         generator = load_generator()
 

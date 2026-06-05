@@ -100,6 +100,8 @@ REQUIRED_IGNORES = (
     ".github/hooks/",
     "refactor-*.log",
     "*workflow*.log",
+    "*progress*.md",
+    "*status*.md",
     "qa/outside-in/alice-desktop/logs/",
     "qa/outside-in/alice-desktop/outputs/",
     "qa/outside-in/alice-desktop/evidence/",
