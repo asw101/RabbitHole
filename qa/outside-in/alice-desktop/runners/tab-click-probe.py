@@ -6,8 +6,8 @@ frame, dumps ALL widget roles (including unnamed nodes), identifies page-tab
 and page-tab-list nodes, attempts DoAction("click") on each tab found, and
 records the results as machine-readable JSON.
 
-This is the next increment after PR #272, which proved Swing widgets are
-visible through AT-SPI but found that tab labels are empty.  This probe
+This probe builds on prior Swing widget visibility work that found tab labels
+are empty through AT-SPI. It
 diagnoses the full tree (including unnamed nodes) to identify the tab
 structure and attempts an AT-SPI action-based click.
 

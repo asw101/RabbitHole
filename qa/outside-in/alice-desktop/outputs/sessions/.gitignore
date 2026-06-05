@@ -1,3 +1,0 @@
-# Session output artifacts are generated at runtime — do not commit.
-*
-!.gitignore

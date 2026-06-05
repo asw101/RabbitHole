@@ -13,16 +13,16 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
- * TDD contract test for issue #502: verifies that both Robot menu test classes
- * declare the expected fields and constants for the
- * {@code apple.laf.useScreenMenuBar} property override pattern.
+ * Contract test verifying that both Robot menu test classes declare the expected
+ * fields and constants for the {@code apple.laf.useScreenMenuBar} property
+ * override pattern.
  *
  * <p>These tests use reflection to verify the structural contract. They FAIL
  * before implementation (fields/constants don't exist yet) and PASS after
  * the property override pattern is added to both test classes.
  *
- * <p>Complements the Python source-code contract tests in
- * {@code tests/test_issue502_screen_menubar_property_override_contract.py}.
+ * <p>Complements the Python source-code contract tests for the same property
+ * override pattern.
  */
 public class ScreenMenuBarPropertyOverrideContractTest {
 

@@ -199,7 +199,6 @@ class GettingStartedValidatorGuiContract(unittest.TestCase):
     def test_macos_apple_silicon_gui_blocker_is_documented_in_script(self) -> None:
         source = script_text()
 
-        self.assertIn("#848", source)
         self.assertRegex(source, r"Darwin|macOS")
         self.assertRegex(source, r"arm64|aarch64|Apple Silicon")
         self.assertRegex(source, r"(?i)blocked")
@@ -208,12 +207,13 @@ class GettingStartedValidatorGuiContract(unittest.TestCase):
 class GettingStartedValidationDocsContract(unittest.TestCase):
     def test_readme_exposes_validator_and_lanes(self) -> None:
         text = read_text(README_PATH)
+        normalized = " ".join(text.split())
 
         self.assertIn("./scripts/validate-getting-started.sh", text)
         self.assertIn("./scripts/validate-getting-started.sh --gui", text)
         self.assertIn("python3 alice_qa.py getting-started validate --headless", text)
         self.assertIn("--all", text)
-        self.assertIn("#848", text)
+        self.assertIn("known platform blocker", normalized)
 
     def test_getting_started_docs_name_commands_and_failure_guidance(self) -> None:
         text = read_text(GETTING_STARTED_PATH)
@@ -246,7 +246,7 @@ class GettingStartedValidationDocsContract(unittest.TestCase):
         self.assertIn("Missing `tweedle-lang` or `tweedle-lang/Grammar`", text)
         self.assertIn("No desktop display", text)
         self.assertIn("Unknown validator flag", text)
-        self.assertIn("#848", text)
+        self.assertIn("known platform blocker", text)
         self.assertIn("--headless", text)
         self.assertIn("--gui", text)
         self.assertIn("--all", text)

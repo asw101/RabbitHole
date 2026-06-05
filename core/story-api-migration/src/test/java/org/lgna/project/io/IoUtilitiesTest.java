@@ -1383,8 +1383,8 @@ public class IoUtilitiesTest {
   }
 
   @Test
-  public void pr426ProjectArchiveContractRejectsMalformedPlayerArchiveMetadataBeforeXmlFallback() throws Exception {
-    File exportFile = temporaryFolder.newFile("pr426-missing-filetype.a3w");
+  public void projectArchiveContractRejectsMalformedPlayerArchiveMetadataBeforeXmlFallback() throws Exception {
+    File exportFile = temporaryFolder.newFile("missing-filetype.a3w");
     ProjectManifest manifest = new ProjectManifest();
     manifest.description.name = "Program";
     manifest.metadata.fileType = null;
@@ -1403,9 +1403,9 @@ public class IoUtilitiesTest {
   }
 
   @Test
-  public void pr426ProjectArchiveContractRejectsUnsafeSupplementalEntryNames() throws Exception {
+  public void projectArchiveContractRejectsUnsafeSupplementalEntryNames() throws Exception {
     Project project = new Project(programType("Program"), Project.SceneCameraType.WindowCamera);
-    File projectFile = temporaryFolder.newFile("pr426-unsafe-supplemental-entry.a3p");
+    File projectFile = temporaryFolder.newFile("unsafe-supplemental-entry.a3p");
 
     IOException thrown = assertThrows(
         IOException.class,

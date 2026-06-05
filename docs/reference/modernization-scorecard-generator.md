@@ -1,6 +1,6 @@
 # Modernization scorecard generator reference
 
-The modernization scorecard generator is the repository-owned CLI for producing the review snapshot at [`modernization-scorecard.md`](./modernization-scorecard.md).
+The modernization scorecard generator is the repository-owned CLI for producing a local review report.
 
 ## CLI contract
 
@@ -19,4 +19,4 @@ The generator reads deterministic repository inputs: coverage ratchets from `.gi
 
 ## Review workflow
 
-Regenerate the scorecard before claiming modernization status changes, then review the diff. The checked-in scorecard is a snapshot of current evidence, not a hand-maintained policy document and not a substitute for the underlying tests or CI artifacts.
+Generate the scorecard when you need a local modernization review report, then inspect the output alongside the underlying tests and CI artifacts. Do not commit generated scorecard reports as durable documentation.
