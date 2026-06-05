@@ -1,0 +1,21 @@
+schema: rabbithole.archive/v1
+fixture: simple-project
+archiveType: a3p
+
+entries:
+  manifest.json
+  programType.xml
+  resources.xml
+  resources/baseline-texture.png
+  version.txt
+
+manifest:
+  description.name: Program
+  metadata.fileType: a3p
+  metadata.formatVersion: 0.1
+  metadata.identifier.type: World
+  projectStructure.sceneCameraType: WindowCamera
+  prerequisites:
+    <none>
+  resources:
+    <none>

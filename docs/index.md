@@ -14,6 +14,7 @@ RabbitHole keeps that classroom experience working while the codebase is moderni
 - [Getting started](./getting-started.md)
 - [Architecture](./architecture.md)
 - [Testing](./testing.md)
+- [RabbitHole baseline parity](./rabbithole-baseline-parity.md)
 - [Contributing](./contributing.md)
 - [Concepts](#concepts)
 - [Architecture Atlas](#architecture-atlas)
@@ -24,6 +25,7 @@ RabbitHole keeps that classroom experience working while the codebase is moderni
 - how the Maven modules fit together
 - how characterization tests protect refactors
 - how save, export, golden corpus, migration, desktop proof, and QA contracts work
+- how the text-only RabbitHole baseline parity snapshots catch generated-output drift
 
 ## Documentation map
 
@@ -32,6 +34,7 @@ RabbitHole keeps that classroom experience working while the codebase is moderni
 - [Getting started](./getting-started.md)
 - [Architecture](./architecture.md)
 - [Testing](./testing.md)
+- [RabbitHole baseline parity](./rabbithole-baseline-parity.md)
 - [Contributing](./contributing.md)
 
 ### Architecture deep dives
