@@ -15,6 +15,7 @@ RabbitHole keeps that classroom experience working while the codebase is moderni
 - [Architecture](./architecture.md)
 - [Testing](./testing.md)
 - [RabbitHole baseline parity](./rabbithole-baseline-parity.md)
+- [Dual-baseline replay harness](./dual-baseline-replay-harness.md)
 - [Contributing](./contributing.md)
 - [Concepts](#concepts)
 - [Architecture Atlas](#architecture-atlas)
@@ -26,6 +27,7 @@ RabbitHole keeps that classroom experience working while the codebase is moderni
 - how characterization tests protect refactors
 - how save, export, golden corpus, migration, desktop proof, and QA contracts work
 - how the text-only RabbitHole baseline parity snapshots catch generated-output drift
+- how the dual-baseline replay harness compares RabbitHole against a local preserved Alice baseline when configured
 
 ## Documentation map
 
@@ -35,6 +37,7 @@ RabbitHole keeps that classroom experience working while the codebase is moderni
 - [Architecture](./architecture.md)
 - [Testing](./testing.md)
 - [RabbitHole baseline parity](./rabbithole-baseline-parity.md)
+- [Dual-baseline replay harness](./dual-baseline-replay-harness.md)
 - [Contributing](./contributing.md)
 
 ### Architecture deep dives
