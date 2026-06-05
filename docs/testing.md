@@ -37,6 +37,20 @@ mvn -pl core/story-api-migration \
   test
 ```
 
+Run the RabbitHole baseline parity harness:
+
+```bash
+git submodule update --init tweedle-lang
+mvn -pl netbeans -am \
+  -DincludeSims=false \
+  -Dinstall4j.skip \
+  -Dcheckstyle.skip \
+  -Djava.awt.headless=true \
+  -Dtest=RabbitHoleBaselineParityTest \
+  -Dsurefire.failIfNoSpecifiedTests=false \
+  test
+```
+
 Run Checkstyle separately:
 
 ```bash
@@ -239,6 +253,40 @@ workflow for the corpus, and docs-only pull requests may skip Maven by
 change-scope rules. A CI failure in this test means a project/archive behavior
 changed and the manifest expectations or the IO implementation need to be
 reviewed together.
+
+## RabbitHole baseline parity harness
+
+`RabbitHoleBaselineParityTest` is the text-only baseline lane for generated
+NetBeans Java project output and representative Alice `.a3p`/`.a3w` archive
+shape. It lives in `netbeans/src/test/java/org/alice/netbeans/project/` because
+it exercises `ProjectCodeGenerator` alongside `IoUtilities.writeProject()` and
+`IoUtilities.exportProject()`.
+
+The checked-in snapshots are:
+
+```text
+netbeans/src/test/resources/org/alice/netbeans/project/parity/
+```
+
+Normal runs never mutate snapshots. Update them only after reviewing an
+intentional behavior change:
+
+```bash
+git submodule update --init tweedle-lang
+mvn -pl netbeans -am \
+  -DincludeSims=false \
+  -Dinstall4j.skip \
+  -Dcheckstyle.skip \
+  -Djava.awt.headless=true \
+  -Dtest=RabbitHoleBaselineParityTest \
+  -Dsurefire.failIfNoSpecifiedTests=false \
+  -Drabbithole.baseline.updateSnapshots=true \
+  -Drabbithole.baseline.snapshotDir=netbeans/src/test/resources/org/alice/netbeans/project/parity \
+  test
+```
+
+See [RabbitHole baseline parity](rabbithole-baseline-parity.md) for the
+normalization rules, review workflow, and relationship to `eatme`.
 
 ### Adding a corpus case
 

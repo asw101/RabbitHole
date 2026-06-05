@@ -1,0 +1,67 @@
+schema: rabbithole.generated-java/v1
+fixture: simple-project
+
+file: AliceJavaFXLauncher.java
+bytes: 15589
+sha256: ab3f9ddd8367ef062f2bf62a8bc8ee619e65c609d708d6c82753217647b59731
+lines: 374
+imports:
+  import javafx.application.Application;
+  import javafx.scene.Group;
+  import javafx.scene.Scene;
+  import javafx.scene.paint.Color;
+  import javafx.scene.robot.Robot;
+  import javafx.scene.shape.Rectangle;
+  import javafx.stage.Stage;
+  import javafx.stage.Window;
+declarations:
+  public class AliceJavaFXLauncher extends Application {
+  private static final Color OBSERVATION_MARKER_COLOR = Color.rgb(32, 96, 160);
+  public void start(Stage primaryStage) throws Exception {
+  private static Scene createObservationScene() {
+  private static PixelObservation observeShownScenePixel(Scene scene) {
+  private static void delegateProgramMain() {
+  private static void evidence(String marker) {
+  private static void noGo(String marker) {
+  private static PixelObservation observed(String detail) {
+  private static boolean matchesObservationMarker(Color observedColor) {
+  private static String colorDetail(Color color) {
+  private static String coordinateDetail(double screenX, double screenY) {
+  private static String jsonField(String name, String value) {
+  private static String jsonField(String name, boolean value) {
+  private static String escapeJson(String value) {
+  private static void appendEscapedJsonCharacter(StringBuilder builder, char ch) {
+  private static boolean isPixelObservationUnsupportedFailure(Throwable throwable) {
+  private static String describeFailure(Throwable throwable) {
+  private static boolean isDisplayUnavailableFailure(Throwable throwable) {
+  private static boolean isRenderTargetUnavailableFailure(Throwable throwable) {
+  private static boolean isRenderTargetUnavailableMessage(String message) {
+  private static boolean isDisplayUnavailableMessage(String message) {
+  private static boolean isDisplayUnavailableNormalizedMessage(String normalized) {
+  public static void main(final String[] args) {
+
+file: Program.java
+bytes: 261
+sha256: 38ec3125e0ed24df4dcdfa93f8e1ebe89cd035fd7ac6ce399fc6c94a54f7cdb6
+lines: 3
+imports:
+  import org.lgna.story.*;
+  import org.lgna.common.resources.ImageResource;
+declarations:
+  class Program extends SProgram{
+  public static void main(String[] args){
+  public void rememberBaselineImage(){
+
+file: Resources.java
+bytes: 214
+sha256: a2f04fd2e8bf440cfcd05097b4e8e59d1429ff5861ec65e7fcead1b3c2732fdb
+lines: 1
+imports:
+  import org.lgna.common.resources.ImageResource;
+declarations:
+  class Resources extends Object{
+  public static final ImageResource baseline_texture_png=new ImageResource(Resources.class,"resources/baseline-texture.png","image.png");
+
+file: resources/baseline-texture.png
+bytes: 34
+sha256: 9e17aa1319ce463bfd5d6ec19475fd962dc79eba19d61ebe74193f0709565d8e

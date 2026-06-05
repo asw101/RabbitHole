@@ -138,8 +138,9 @@ Run all event handler tests with:
 mvn -pl core/story-api -am -Dtest=AbstractEventHandlerAsyncTest test
 ```
 
-See [core/story-api TESTING.md](../../core/story-api/TESTING.md) for the
-full story-api test inventory.
+See the
+[core/story-api TESTING.md](https://github.com/rysweet/RabbitHole/blob/develop/core/story-api/TESTING.md)
+file for the full story-api test inventory.
 
 ## Design rationale
 
