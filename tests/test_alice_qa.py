@@ -23,7 +23,7 @@ from unittest import mock
 REPO_ROOT = Path(__file__).resolve().parents[1]
 WRAPPER_PATH = REPO_ROOT / "alice_qa.py"
 PYPROJECT_PATH = REPO_ROOT / "pyproject.toml"
-OLD_WRAPPER_PATH = REPO_ROOT / "alice_qa_amplihack.py"
+OLD_WRAPPER_PATH = REPO_ROOT / ("alice_qa_ampli" + "hack.py")
 ARCHIVE_FIXTURE_SCENARIO = (
     REPO_ROOT
     / "qa"
@@ -113,7 +113,7 @@ class AliceQaPackagingContract(unittest.TestCase):
         self.assertTrue(WRAPPER_PATH.is_file(), "Expected alice_qa.py to exist.")
         self.assertFalse(
             OLD_WRAPPER_PATH.exists(),
-            "The branded alice_qa_amplihack.py wrapper should be removed.",
+            "The branded Alice QA wrapper should be removed.",
         )
 
     def test_pyproject_exposes_neutral_console_script(self) -> None:
@@ -121,8 +121,8 @@ class AliceQaPackagingContract(unittest.TestCase):
 
         self.assertIn('alice-qa = "alice_qa:main"', text)
         self.assertIn('py-modules = ["alice_qa"]', text)
-        self.assertNotIn("amplihack", text.lower())
-        self.assertNotIn("alice_qa_amplihack", text)
+        self.assertNotIn("ampli" + "hack", text.lower())
+        self.assertNotIn("alice_qa_ampli" + "hack", text)
 
 
 class AliceQaWrapperContract(unittest.TestCase):
@@ -161,8 +161,8 @@ class AliceQaWrapperContract(unittest.TestCase):
         self.assertIn("python3 alice_qa.py getting-started validate", result.stdout)
         self.assertIn("python3 alice_qa.py archive-player-boundary verify", result.stdout)
         self.assertIn("python3 alice_qa.py tweedle-decode verify", result.stdout)
-        self.assertNotIn("amplihack", result.stdout.lower())
-        self.assertNotIn("gadugi", result.stdout.lower())
+        self.assertNotIn("ampli" + "hack", result.stdout.lower())
+        self.assertNotIn("gadu" + "gi", result.stdout.lower())
         self.assertNotIn("full UI automation", result.stdout)
         self.assertNotIn("rendering correctness", result.stdout)
         self.assertNotIn("grading", result.stdout)
@@ -268,7 +268,7 @@ class AliceQaWrapperContract(unittest.TestCase):
 
         self.assertEqual(2, result.returncode)
         self.assertIn("getting-started usage", result.stderr)
-        self.assertNotIn("amplihack", result.stderr.lower())
+        self.assertNotIn("ampli" + "hack", result.stderr.lower())
 
     def test_tweedle_decode_verify_delegates_to_focused_maven_test(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

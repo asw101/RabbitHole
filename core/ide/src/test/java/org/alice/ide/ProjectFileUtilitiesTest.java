@@ -106,7 +106,7 @@ public class ProjectFileUtilitiesTest {
   }
 
   @Test
-  public void pr426BackupPathContractKeepsNamedBackupDirectoryBesideProjectFile()
+  public void backupPathContractKeepsNamedBackupDirectoryBesideProjectFile()
       throws IOException {
     Path lessonDirectory = temporaryFolder.newFolder("classroom").toPath();
     File project = lessonDirectory.resolve("lesson.a3p").toFile();

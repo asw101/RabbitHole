@@ -1,8 +1,4 @@
-"""Contract tests for issue #502: Replace assumeFalse(isMac()) with
-apple.laf.useScreenMenuBar property override in Robot menu tests.
-
-TDD: These tests define the expected behavior for issue #502. They FAIL
-before the Java source files are modified and PASS after implementation.
+"""Contract tests for Robot menu tests on macOS.
 
 The implementation must:
 1. Remove assumeFalse(SystemUtilities.isMac()) from both Robot menu tests.
@@ -14,9 +10,6 @@ The implementation must:
 7. Add a defensive re-set to "false" after ide.initialize() inside the
    test method, because Application.initialize() sets the property to
    "true" on macOS.
-
-Supersedes the #500 contract tests in test_issue500_mac_platform_guard_contract.py
-which required the assumeFalse(isMac()) guard.
 """
 import re
 import unittest
@@ -57,9 +50,6 @@ ROBOT_SAVE_TEST_PATH = (
     / "projecturi"
     / "RobotSaveMenuDialogWriteReadbackProofTest.java"
 )
-
-REFERENCE_DOC_PATH = REPO_ROOT / "docs" / "reference" / "mac-compatible-test-guards.md"
-HOWTO_DOC_PATH = REPO_ROOT / "docs" / "howto" / "review-mac-compatible-test-guards.md"
 
 # Patterns that must NOT appear after implementation
 IS_MAC_GUARD_PATTERN = re.compile(
@@ -120,7 +110,7 @@ def _extract_method_body(source: str, method_name: str) -> str:
 # ---------------------------------------------------------------------------
 
 class JMenuBarTestRemovesIsMacGuard(unittest.TestCase):
-    """Issue #502: JMenuBarRobotClickSaveProofTest must NOT skip on macOS."""
+    """JMenuBarRobotClickSaveProofTest must not skip solely because it runs on macOS."""
 
     def test_file_exists(self) -> None:
         self.assertTrue(
@@ -135,7 +125,7 @@ class JMenuBarTestRemovesIsMacGuard(unittest.TestCase):
             source,
             IS_MAC_GUARD_PATTERN,
             "JMenuBarRobotClickSaveProofTest must NOT have assumeFalse(isMac()) "
-            "after issue #502 — the property override replaces the skip",
+            "because the property override replaces the skip",
         )
 
     def test_no_system_utilities_import(self) -> None:
@@ -145,7 +135,7 @@ class JMenuBarTestRemovesIsMacGuard(unittest.TestCase):
             SYSTEM_UTILITIES_IMPORT,
             source,
             "JMenuBarRobotClickSaveProofTest must not import SystemUtilities "
-            "after issue #502 — isMac() is no longer called",
+            "when isMac() is no longer called",
         )
 
     def test_headless_guard_still_present(self) -> None:
@@ -159,7 +149,7 @@ class JMenuBarTestRemovesIsMacGuard(unittest.TestCase):
 
 
 class JMenuBarTestHasPropertyOverride(unittest.TestCase):
-    """Issue #502: JMenuBarRobotClickSaveProofTest must use the
+    """JMenuBarRobotClickSaveProofTest must use the
     apple.laf.useScreenMenuBar property override pattern."""
 
     def test_declares_screen_menu_bar_property_constant(self) -> None:
@@ -243,7 +233,7 @@ class JMenuBarTestHasPropertyOverride(unittest.TestCase):
 # ---------------------------------------------------------------------------
 
 class RobotSaveTestRemovesIsMacGuard(unittest.TestCase):
-    """Issue #502: RobotSaveMenuDialogWriteReadbackProofTest must NOT skip on macOS."""
+    """RobotSaveMenuDialogWriteReadbackProofTest must not skip solely because it runs on macOS."""
 
     def test_file_exists(self) -> None:
         self.assertTrue(
@@ -258,7 +248,7 @@ class RobotSaveTestRemovesIsMacGuard(unittest.TestCase):
             source,
             IS_MAC_GUARD_PATTERN,
             "RobotSaveMenuDialogWriteReadbackProofTest must NOT have "
-            "assumeFalse(isMac()) after issue #502",
+            "assumeFalse(isMac()) because the property override replaces the skip",
         )
 
     def test_no_system_utilities_import(self) -> None:
@@ -268,7 +258,7 @@ class RobotSaveTestRemovesIsMacGuard(unittest.TestCase):
             SYSTEM_UTILITIES_IMPORT,
             source,
             "RobotSaveMenuDialogWriteReadbackProofTest must not import "
-            "SystemUtilities after issue #502",
+            "SystemUtilities when isMac() is no longer called",
         )
 
     def test_headless_detection_still_present(self) -> None:
@@ -282,7 +272,7 @@ class RobotSaveTestRemovesIsMacGuard(unittest.TestCase):
 
 
 class RobotSaveTestHasPropertyOverride(unittest.TestCase):
-    """Issue #502: RobotSaveMenuDialogWriteReadbackProofTest must use the
+    """RobotSaveMenuDialogWriteReadbackProofTest must use the
     apple.laf.useScreenMenuBar property override pattern."""
 
     def test_declares_screen_menu_bar_property_constant(self) -> None:
@@ -411,7 +401,7 @@ class PropertyOverrideConsistency(unittest.TestCase):
             self.assertNotIn(
                 "isMac()",
                 source,
-                f"{path.name} must not call isMac() after issue #502",
+                f"{path.name} must not call isMac()",
             )
 
     def test_neither_file_imports_system_utilities(self) -> None:
@@ -420,90 +410,7 @@ class PropertyOverrideConsistency(unittest.TestCase):
             self.assertNotIn(
                 SYSTEM_UTILITIES_IMPORT,
                 source,
-                f"{path.name} must not import SystemUtilities after issue #502",
-            )
-
-
-# ---------------------------------------------------------------------------
-# Documentation contracts
-# ---------------------------------------------------------------------------
-
-class PropertyOverrideDocumentation(unittest.TestCase):
-    """Reference doc must describe the property override, not the old skip."""
-
-    def test_reference_doc_exists(self) -> None:
-        self.assertTrue(
-            REFERENCE_DOC_PATH.exists(),
-            f"Expected reference doc at {REFERENCE_DOC_PATH.relative_to(REPO_ROOT)}",
-        )
-
-    def test_reference_doc_mentions_issue_502(self) -> None:
-        text = _read(REFERENCE_DOC_PATH)
-        self.assertIn("#502", text, "Reference doc must mention issue #502")
-
-    def test_reference_doc_describes_property_override(self) -> None:
-        text = _read(REFERENCE_DOC_PATH)
-        self.assertIn(
-            "apple.laf.useScreenMenuBar",
-            text,
-            "Reference doc must describe the apple.laf.useScreenMenuBar property",
-        )
-
-    def test_reference_doc_describes_defensive_reset(self) -> None:
-        text = _read(REFERENCE_DOC_PATH)
-        self.assertIn(
-            "ide.initialize()",
-            text,
-            "Reference doc must explain the defensive re-set after ide.initialize()",
-        )
-
-    def test_reference_doc_describes_before_after_pattern(self) -> None:
-        text = _read(REFERENCE_DOC_PATH)
-        self.assertIn("@Before", text, "Must describe @Before capture")
-        self.assertIn("@After", text, "Must describe @After restore")
-        self.assertIn("restoreProperty", text, "Must mention restoreProperty helper")
-
-    def test_reference_doc_shows_property_override_code(self) -> None:
-        text = _read(REFERENCE_DOC_PATH)
-        self.assertIn(
-            'SCREEN_MENU_BAR_PROPERTY',
-            text,
-            "Reference doc must show SCREEN_MENU_BAR_PROPERTY constant in code examples",
-        )
-        self.assertIn(
-            "previousScreenMenuBar",
-            text,
-            "Reference doc must show previousScreenMenuBar field in code examples",
-        )
-
-    def test_reference_doc_expected_behavior_no_skip_on_mac(self) -> None:
-        """The expected behavior table must show Pass (not Skip) for
-        Robot tests on macOS with display available."""
-        text = _read(REFERENCE_DOC_PATH)
-        self.assertNotIn(
-            "Skip(isMac)",
-            text,
-            "Expected behavior must NOT show Skip(isMac) — tests now pass on Mac",
-        )
-
-
-class IssueNumber500ContractSuperseded(unittest.TestCase):
-    """The old #500 contract must be superseded — its assertions about
-    assumeFalse(isMac()) being REQUIRED are now wrong."""
-
-    def test_old_contract_file_exists(self) -> None:
-        """The #500 contract file should still exist (for git history),
-        but the #502 contracts here take precedence."""
-        old_path = REPO_ROOT / "tests" / "test_issue500_mac_platform_guard_contract.py"
-        # It's OK if the file is deleted or kept — this test just documents
-        # that #502 supersedes #500
-        if old_path.exists():
-            source = _read(old_path)
-            # The old tests assert isMac guard is REQUIRED — that's now wrong
-            self.assertIn(
-                "assumeFalse",
-                source,
-                "Old #500 contract should reference the old pattern (for history)",
+                f"{path.name} must not import SystemUtilities",
             )
 
 

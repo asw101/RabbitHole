@@ -79,9 +79,9 @@ GUI lane explicitly:
     ./scripts/validate-getting-started.sh --gui
 
 Use `--all` to run the headless lane and attempt the GUI lane when the platform
-supports it. macOS Apple Silicon desktop GUI launch is treated as a known
-platform blocker, so explicit `--gui` validation exits non-zero with a blocked
-result on that platform. `--all` reports the blocked GUI lane without failing
+supports it. macOS Apple Silicon desktop GUI launch is treated as a known platform
+blocker, so explicit `--gui` validation exits non-zero with a blocked result on
+that platform. `--all` reports the blocked GUI lane without failing
 after headless validation passes. See [Getting started](docs/getting-started.md#validate-this-checkout)
 and [Testing](docs/testing.md#getting-started-validation-lanes) for the
 validation lanes, skip rules, and failure semantics.

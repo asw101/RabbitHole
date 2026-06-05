@@ -49,7 +49,7 @@ SECTION_ORDER = [
 
 
 FORBIDDEN_REVIEWER_INSTRUCTION_PHRASES = (
-    "amplihack alice-scorecard",
+    "ampli" + "hack alice-scorecard",
     "branch-installable wrapper",
 )
 

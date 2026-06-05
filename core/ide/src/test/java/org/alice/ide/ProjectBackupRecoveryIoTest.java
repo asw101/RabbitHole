@@ -254,7 +254,7 @@ public class ProjectBackupRecoveryIoTest {
   }
 
   @Test
-  public void pr426BackupContractStopsAfterSuccessfulRecovery() throws Exception {
+  public void backupContractStopsAfterSuccessfulRecovery() throws Exception {
     File corruptMainProject = temporaryFolder.newFile("single-success-world.a3p");
     Files.writeString(corruptMainProject.toPath(), "not a project archive", StandardCharsets.UTF_8);
     File backupDirectory = temporaryFolder.newFolder("single-success-world.bak");

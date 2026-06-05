@@ -23,7 +23,7 @@ Modes:
   --gui       Local desktop lane. Requires a real graphical environment and
               fails when GUI validation is unavailable or blocked.
   --all       Runs --headless first, then attempts --gui when supported. GUI
-              unavailability or the macOS Apple Silicon #848 blocker is
+              unavailability or the macOS Apple Silicon blocker is
               reported as skipped/blocked after headless validation passes.
   --help      Show this usage text.
 
@@ -200,7 +200,7 @@ is_macos_apple_silicon() {
 
 check_gui_capability() {
   if is_macos_apple_silicon; then
-    printf 'macOS Apple Silicon desktop GUI launch is blocked by RabbitHole issue #848.'
+    printf 'macOS Apple Silicon desktop GUI launch is blocked by a known RabbitHole platform guard.'
     return 2
   fi
 

@@ -276,7 +276,7 @@ public class ProjectBackupSelectorTest {
   }
 
   @Test
-  public void pr426BackupContractSelectsNewestSafeCandidateAndNeverReselectsFailedOrUnsafe()
+  public void backupContractSelectsNewestSafeCandidateAndNeverReselectsFailedOrUnsafe()
       throws IOException {
     Path backupDirectory = temporaryFolder.newFolder("world.bak").toPath();
     File failedNewest = backup(backupDirectory, "auto20240102_150000.a3p");

@@ -1,4 +1,4 @@
-"""PR #470 contract tests: silver-thread-launch-build-run 4-layer allowlist consistency.
+"""Silver-thread launch/build/run allowlist consistency tests.
 
 Verifies that the silver-thread scenario is correctly wired across all four
 allowlist layers (schema, validator, runner, contract test) and that the

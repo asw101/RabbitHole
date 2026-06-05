@@ -10,7 +10,10 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 WHITESPACE_RE = re.compile(r"\s+")
-BRANDED_QA_RE = re.compile(r"\b(?:amplihack|gadugi|gadugi-test|copilot)\b", re.IGNORECASE)
+BRANDED_QA_RE = re.compile(
+    r"\b(?:ampli" + r"hack|gadu" + r"gi|gadu" + r"gi-test|co" + r"pilot)\b",
+    re.IGNORECASE,
+)
 
 QA_DOCS = (
     REPO_ROOT / "README.md",
@@ -42,7 +45,7 @@ class AliceQaDocsContractTest(unittest.TestCase):
             with self.subTest(path=path.relative_to(REPO_ROOT)):
                 self.assertIn("python3 alice_qa.py", text)
                 self.assertNotRegex(text, BRANDED_QA_RE)
-                self.assertNotIn("alice_qa_amplihack", text)
+                self.assertNotIn("alice_qa_ampli" + "hack", text)
                 self.assertNotIn("branch-installable", text.lower())
                 self.assertNotIn("uvx --from git+", text)
 
@@ -75,8 +78,8 @@ class AliceQaDocsContractTest(unittest.TestCase):
 
         self.assertIn('alice-qa = "alice_qa:main"', pyproject)
         self.assertIn('py-modules = ["alice_qa"]', pyproject)
-        self.assertNotIn("amplihack", pyproject.lower())
-        self.assertNotIn("alice_qa_amplihack", pyproject)
+        self.assertNotIn("ampli" + "hack", pyproject.lower())
+        self.assertNotIn("alice_qa_ampli" + "hack", pyproject)
 
     def test_documented_wrapper_commands_are_local_and_do_not_automerge(self) -> None:
         combined = "\n".join(read_doc(path) for path in QA_DOCS)

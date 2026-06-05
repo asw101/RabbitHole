@@ -39,7 +39,7 @@ def git_ls_files(*pathspecs: str) -> list[str]:
     return [line for line in result.stdout.splitlines() if line]
 
 
-class PR426FormalContractWiringTest(unittest.TestCase):
+class FormalContractWiringTest(unittest.TestCase):
     def test_top_level_investigation_directories_are_not_tracked_surfaces(self) -> None:
         tracked_paths = git_ls_files("drinkme/**", "eatme/**")
         self.assertEqual(
@@ -89,7 +89,7 @@ class PR426FormalContractWiringTest(unittest.TestCase):
         ):
             self.assertIn(marker, formal_text)
 
-    def test_pr426_project_archive_feature_maps_to_executable_junit_anchors(self) -> None:
+    def test_project_archive_feature_maps_to_executable_junit_anchors(self) -> None:
         formal_text = read_repo_text(FORMAL_SPEC_LANE)
         io_test_text = read_repo_text(IO_UTILITIES_TEST)
         for marker in (
@@ -101,8 +101,8 @@ class PR426FormalContractWiringTest(unittest.TestCase):
         ):
             self.assertIn(marker, formal_text)
         for anchor in (
-            "pr426ProjectArchiveContractRejectsMalformedPlayerArchiveMetadataBeforeXmlFallback",
-            "pr426ProjectArchiveContractRejectsUnsafeSupplementalEntryNames",
+            "projectArchiveContractRejectsMalformedPlayerArchiveMetadataBeforeXmlFallback",
+            "projectArchiveContractRejectsUnsafeSupplementalEntryNames",
             "jsonPlayerExportUsesSafeDistinctResourceEntries",
             "jsonPlayerExportDoesNotLeakAbsoluteResourcePaths",
             "jsonPlayerReaderRejectsTraversalResourceReference",
@@ -112,7 +112,7 @@ class PR426FormalContractWiringTest(unittest.TestCase):
         ):
             self.assertIn(anchor, io_test_text)
 
-    def test_pr426_backup_recovery_model_maps_to_executable_junit_anchors(self) -> None:
+    def test_backup_recovery_model_maps_to_executable_junit_anchors(self) -> None:
         formal_text = read_repo_text(FORMAL_SPEC_LANE)
         selector_text = read_repo_text(BACKUP_SELECTOR_TEST)
         recovery_text = read_repo_text(BACKUP_RECOVERY_IO_TEST)
@@ -126,19 +126,19 @@ class PR426FormalContractWiringTest(unittest.TestCase):
         ):
             self.assertIn(marker, formal_text)
         for anchor in (
-            "pr426BackupContractSelectsNewestSafeCandidateAndNeverReselectsFailedOrUnsafe",
+            "backupContractSelectsNewestSafeCandidateAndNeverReselectsFailedOrUnsafe",
             "corruptedMainProjectSkipsBackupSymlinkEscapingBackupDirectory",
             "corruptedMainProjectSkipsCandidatesFromSymlinkedBackupDirectory",
         ):
             self.assertIn(anchor, selector_text)
         for anchor in (
-            "pr426BackupContractStopsAfterSuccessfulRecovery",
+            "backupContractStopsAfterSuccessfulRecovery",
             "corruptMainProjectSkipsUnloadableBackupAndLoadsNextBackupWithResources",
             "corruptMainProjectAndAllBackupsPlanUserVisibleFailure",
         ):
             self.assertIn(anchor, recovery_text)
         self.assertIn(
-            "pr426BackupPathContractKeepsNamedBackupDirectoryBesideProjectFile",
+            "backupPathContractKeepsNamedBackupDirectoryBesideProjectFile",
             file_utilities_text,
         )
 
