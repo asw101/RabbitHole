@@ -166,6 +166,17 @@ jobs:
         if: github.event_name != 'pull_request' || steps.change-scope.outputs.maven-required == 'true'
         run: ./scripts/validate-getting-started.sh --headless
 
+      - name: Run dual-baseline replay harness fallback
+        if: github.event_name != 'pull_request' || steps.change-scope.outputs.maven-required == 'true'
+        run: |
+          mvn -pl core/story-api-migration \
+            -DincludeSims=false \
+            -Dinstall4j.skip \
+            -Dcheckstyle.skip \
+            -Djava.awt.headless=true \
+            -Dtest=DualBaselineReplayHarnessTest \
+            test
+
       - name: Report Maven validation no-op
         if: github.event_name == 'pull_request' && steps.change-scope.outputs.maven-required == 'false'
         shell: bash

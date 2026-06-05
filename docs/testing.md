@@ -51,6 +51,33 @@ mvn -pl netbeans -am \
   test
 ```
 
+Run the dual-baseline replay harness in CI-safe fallback mode:
+
+```bash
+git submodule update --init tweedle-lang
+mvn -pl core/story-api-migration \
+  -DincludeSims=false \
+  -Dinstall4j.skip \
+  -Dcheckstyle.skip \
+  -Djava.awt.headless=true \
+  -Dtest=DualBaselineReplayHarnessTest \
+  test
+```
+
+Run the same harness against a local preserved baseline checkout:
+
+```bash
+git submodule update --init tweedle-lang
+mvn -pl core/story-api-migration \
+  -DincludeSims=false \
+  -Dinstall4j.skip \
+  -Dcheckstyle.skip \
+  -Djava.awt.headless=true \
+  -Dtest=DualBaselineReplayHarnessTest \
+  -Drabbithole.baseline.checkout=/absolute/path/to/preserved-alice-baseline \
+  test
+```
+
 Run Checkstyle separately:
 
 ```bash
@@ -287,6 +314,81 @@ mvn -pl netbeans -am \
 
 See [RabbitHole baseline parity](rabbithole-baseline-parity.md) for the
 normalization rules, review workflow, and relationship to `eatme`.
+
+## Dual-baseline replay harness
+
+`DualBaselineReplayHarnessTest` will be the headless compatibility lane for
+comparing current RabbitHole project I/O summaries against a local preserved
+Alice baseline checkout. It will live in
+`core/story-api-migration/src/test/java/org/lgna/project/io/compat/` because it
+will characterize project save, reopen, export, manifest, source, and resource
+behavior around `IoUtilities` and the story API migration boundary.
+
+**Status: planned - implementation pending.** This section describes the feature
+contract to build. Remove this note when `DualBaselineReplayHarnessTest` and its
+test-scope support classes land.
+
+The harness uses deterministic generated cases only. It never requires checked-in
+`.a3p`, `.a3w`, `.a3c`, image, audio, or ZIP payloads. Temporary project,
+archive, source, and resource files are generated under the test temporary
+directory and deleted after the run.
+
+### Modes
+
+| Mode | How to enable | CI behavior | What it proves |
+| --- | --- | --- | --- |
+| Fallback | Leave `rabbithole.baseline.checkout` and `RABBITHOLE_BASELINE_CHECKOUT` unset. | Default. | RabbitHole summaries are deterministic, normalized, text-only, and safe to compare. |
+| Strict baseline | Set `-Drabbithole.baseline.checkout=/path/to/baseline` or `RABBITHOLE_BASELINE_CHECKOUT=/path/to/baseline`. | Opt-in only; CI does not set it. | RabbitHole summaries exactly match the preserved baseline summaries for the same generated cases. |
+
+The Maven system property takes precedence over the environment variable. Missing
+configuration selects fallback mode. A configured but invalid baseline path fails
+the test.
+
+### Focused commands
+
+Fallback mode:
+
+```bash
+git submodule update --init tweedle-lang
+mvn -pl core/story-api-migration \
+  -DincludeSims=false \
+  -Dinstall4j.skip \
+  -Dcheckstyle.skip \
+  -Djava.awt.headless=true \
+  -Dtest=DualBaselineReplayHarnessTest \
+  test
+```
+
+Strict mode with a Maven property:
+
+```bash
+git submodule update --init tweedle-lang
+mvn -pl core/story-api-migration \
+  -DincludeSims=false \
+  -Dinstall4j.skip \
+  -Dcheckstyle.skip \
+  -Djava.awt.headless=true \
+  -Dtest=DualBaselineReplayHarnessTest \
+  -Drabbithole.baseline.checkout=/absolute/path/to/preserved-alice-baseline \
+  test
+```
+
+Strict mode with an environment variable:
+
+```bash
+export RABBITHOLE_BASELINE_CHECKOUT=/absolute/path/to/preserved-alice-baseline
+mvn -pl core/story-api-migration \
+  -DincludeSims=false \
+  -Dinstall4j.skip \
+  -Dcheckstyle.skip \
+  -Djava.awt.headless=true \
+  -Dtest=DualBaselineReplayHarnessTest \
+  test
+```
+
+See [Dual-baseline replay harness](dual-baseline-replay-harness.md) for the
+summary format, baseline process contract, configuration reference,
+test-scope API, and relationship to `eatme`.
 
 ### Adding a corpus case
 
