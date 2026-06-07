@@ -1,5 +1,6 @@
 package org.lgna.story;
 
+import org.junit.Assume;
 import org.junit.Test;
 import org.lgna.story.resources.QuadrupedResource;
 
@@ -8,7 +9,6 @@ import java.awt.HeadlessException;
 
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
 
 public class SQuadrupedBehaviorTest {
   @Test
@@ -34,7 +34,8 @@ public class SQuadrupedBehaviorTest {
   @Test
   public void walkToAndTouchShowHeadlessDialogsInHeadlessRuns() {
     SQuadruped quadruped = new SQuadruped(new JointedModelStubSupport.StubQuadrupedResource());
-    assertTrue(GraphicsEnvironment.isHeadless());
+    Assume.assumeTrue("HeadlessException behavior only applies in headless mode",
+        GraphicsEnvironment.isHeadless());
 
     assertThrows(HeadlessException.class, () -> quadruped.walkTo(new SThingMarker()));
     assertThrows(HeadlessException.class, () -> quadruped.touch(new SThingMarker()));
