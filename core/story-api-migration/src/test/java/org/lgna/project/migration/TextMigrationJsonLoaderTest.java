@@ -1,6 +1,7 @@
 package org.lgna.project.migration;
 
 import org.junit.Test;
+import org.lgna.project.Version;
 
 import java.io.IOException;
 import java.util.List;
@@ -44,6 +45,18 @@ public class TextMigrationJsonLoaderTest {
     assertNull("JSON null replacement must reload as Java null", firstPair.replacement);
     assertEquals("JSON null replacement must match MigrationManager.NO_REPLACEMENT",
         MigrationManager.NO_REPLACEMENT, firstPair.replacement);
+  }
+
+  @Test
+  public void nullReplacementEntriesAreNoOpTextMigrations() {
+    TextMigration migration = new TextMigration(
+        new Version("3.1.9.0.0"),
+        "legacyName",
+        MigrationManager.NO_REPLACEMENT,
+        "oldName",
+        "newName");
+
+    assertEquals("legacyName and newName", migration.migrate("legacyName and oldName"));
   }
 
   @Test
