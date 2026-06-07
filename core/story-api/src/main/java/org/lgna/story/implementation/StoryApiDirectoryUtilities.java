@@ -42,8 +42,6 @@
  *******************************************************************************/
 package org.lgna.story.implementation;
 
-import edu.cmu.cs.dennisc.java.io.FileUtilities;
-
 import java.io.File;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
@@ -80,10 +78,6 @@ public class StoryApiDirectoryUtilities {
       return getDirectoryFromProperty("user.dir");
     }
     return rootDir;
-  }
-
-  private static File getFallbackDirectory() {
-    return FileUtilities.getDefaultDirectory();
   }
 
   private static File modelGalleryDirectory;
@@ -153,21 +147,16 @@ public class StoryApiDirectoryUtilities {
   }
 
   private static File getDirectory(String name) {
-    try {
-      File installDirectory = getInstallDirectory();
-      if (installDirectory != null) {
-        File resourceDirectory = new File(installDirectory, name);
-        if (resourceDirectory.isDirectory()) {
-          return resourceDirectory;
-        } else {
-          throw new RuntimeException();
-        }
-      } else {
-        throw new NullPointerException();
+    File installDirectory = getInstallDirectory();
+    if (installDirectory != null) {
+      File resourceDirectory = new File(installDirectory, name);
+      if (resourceDirectory.isDirectory()) {
+        return resourceDirectory;
       }
-    } catch (Throwable t) {
-      return getFallbackDirectory();
     }
+    logger.warning("Resource directory '" + name + "' not found. "
+        + "Set -Dorg.alice.ide.rootDirectory to a valid Alice installation.");
+    return null;
   }
 
   private static File userGalleryDirectory = null;
