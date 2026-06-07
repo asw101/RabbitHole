@@ -20,7 +20,7 @@ Modes:
   --headless  CI-safe default. Checks Git/submodule setup, runs the no-Sims
               Maven test lane, then verifies the no-Sims launch reaches the
               expected GUI-required boundary in headless mode.
-  --gui       Local desktop lane. Requires a real graphical environment and
+  --gui       GUI lane. Requires a real or Xvfb graphical environment and
               fails when GUI validation is unavailable or blocked.
   --all       Runs --headless first, then attempts --gui when supported. GUI
               unavailability or the macOS Apple Silicon blocker is
@@ -102,6 +102,35 @@ print_command() {
   printf '\n'
 }
 
+process_tree_pids() {
+  local root_pid="$1"
+  local child_pid
+
+  printf '%s\n' "${root_pid}"
+  for child_pid in $(pgrep -P "${root_pid}" 2>/dev/null || true); do
+    process_tree_pids "${child_pid}"
+  done
+}
+
+send_signal_to_pids() {
+  local signal="$1"
+  shift
+  local pid
+
+  for pid in "$@"; do
+    kill "-${signal}" "${pid}" 2>/dev/null || true
+  done
+}
+
+any_pid_alive() {
+  local pid
+
+  for pid in "$@"; do
+    kill -0 "${pid}" 2>/dev/null && return 0
+  done
+  return 1
+}
+
 run_with_timeout() {
   local output_file="$1"
   local timeout_seconds="$2"
@@ -117,7 +146,18 @@ run_with_timeout() {
   local elapsed_seconds=0
   while kill -0 "${command_pid}" 2>/dev/null; do
     if (( elapsed_seconds >= timeout_seconds )); then
-      kill "${command_pid}" 2>/dev/null || true
+      local timed_out_pids=()
+      local timed_out_pid
+      while IFS= read -r timed_out_pid; do
+        timed_out_pids+=("${timed_out_pid}")
+      done < <(process_tree_pids "${command_pid}")
+      send_signal_to_pids TERM "${timed_out_pids[@]}"
+      local grace_seconds=5
+      while (( grace_seconds > 0 )) && any_pid_alive "${timed_out_pids[@]}"; do
+        sleep 1
+        grace_seconds=$((grace_seconds - 1))
+      done
+      send_signal_to_pids KILL "${timed_out_pids[@]}"
       wait "${command_pid}" 2>/dev/null || true
       return 124
     fi
@@ -217,20 +257,20 @@ check_gui_capability() {
   awt_check_dir="$(mktemp -d)"
   add_temp_path "${awt_check_dir}"
   cat >"${awt_check_dir}/AwtDisplayCheck.java" <<'JAVA'
-import java.awt.GraphicsEnvironment;
+ import java.awt.GraphicsEnvironment;
 
-public final class AwtDisplayCheck {
-  public static void main(String[] args) {
-    if (GraphicsEnvironment.isHeadless()) {
-      System.err.println("No graphical environment detected: Java AWT reports headless.");
-      System.exit(1);
-    }
+ public final class AwtDisplayCheck {
+   public static void main(String[] args) {
+     if (GraphicsEnvironment.isHeadless()) {
+       System.err.println("No graphical environment detected: Java AWT reports headless.");
+       System.exit(1);
+     }
+   }
   }
-}
 JAVA
 
   local awt_check_output
-  if ! awt_check_output="$(java "${awt_check_dir}/AwtDisplayCheck.java" 2>&1)"; then
+  if ! awt_check_output="$(java -Djava.awt.headless=false "${awt_check_dir}/AwtDisplayCheck.java" 2>&1)"; then
     if [[ "${awt_check_output}" == *"No graphical environment detected"* ]]; then
       printf 'No graphical environment detected: Java AWT reports headless.'
     else
@@ -244,6 +284,7 @@ run_gui_launch() {
   local gui_launch_maven=(
     mvn
     -DincludeSims=false
+    -Djava.awt.headless=false
     exec:java
     -Dalice-ide
   )
@@ -270,6 +311,23 @@ run_gui_launch() {
   fail "GUI launch failed unexpectedly."
 }
 
+run_gui_maven_validation() {
+  local mvn_cmd=(
+    mvn
+    -DincludeSims=false
+    -Dinstall4j.skip
+    -Dcheckstyle.skip
+    -DskipTests
+    -Djava.awt.headless=false
+    clean
+    install
+  )
+
+  info "Running GUI no-Sims Maven validation."
+  print_command "${mvn_cmd[@]}"
+  "${mvn_cmd[@]}"
+}
+
 run_gui_lane() {
   info "Checking desktop GUI capability for requested GUI validation."
   local gui_status=0
@@ -282,6 +340,7 @@ run_gui_lane() {
     fail "GUI validation was explicitly requested but is unavailable. ${gui_message}"
   fi
 
+  run_gui_maven_validation
   run_gui_launch
 }
 
@@ -301,6 +360,7 @@ run_all_lane() {
     return 0
   fi
 
+  run_gui_maven_validation
   run_gui_launch
 }
 
