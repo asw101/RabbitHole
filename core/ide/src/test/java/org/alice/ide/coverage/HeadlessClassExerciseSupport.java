@@ -174,11 +174,21 @@ final class HeadlessClassExerciseSupport {
     }
   }
 
+  private static final Set<String> BLOCKED_METHOD_NAMES = Set.of(
+      "show", "showDialog", "showSaveDialog", "showOpenDialog",
+      "showMessageDialog", "showConfirmDialog", "showInputDialog",
+      "showOptionDialog", "showSaveFileDialog", "showOpenFileDialog",
+      "showMemoryWarning", "getGalleryLocationFromUser",
+      "setVisible", "hide", "pack", "toFront", "toBack",
+      "dispose", "close", "requestFocus", "requestFocusInWindow",
+      "browse", "openInSystemEditor", "launch");
+
   private static boolean isExercisable(Method method) {
     return !method.isSynthetic()
         && !Modifier.isNative(method.getModifiers())
         && !method.getName().equals("$jacocoInit")
-        && !method.getName().equals("main");
+        && !method.getName().equals("main")
+        && !BLOCKED_METHOD_NAMES.contains(method.getName());
   }
 
   private static Object instantiate(Class<?> clazz, int depth) {
