@@ -130,6 +130,14 @@ public class TextMigrationRegistryTest {
   }
 
   @Test
+  public void registryLegacySwitchMatchesJsonDefinitionsExactly() throws Exception {
+    TextMigration[] fromLegacy = TextMigrationTestHelper.createRegistryMigrationsWithProperty(true);
+    TextMigration[] fromJson = TextMigrationTestHelper.createRegistryMigrationsWithProperty(false);
+
+    TextMigrationTestHelper.assertDefinitionsEqual(fromLegacy, fromJson);
+  }
+
+  @Test
   public void registryMigrationsProduceSameOutputAsOriginal() {
     TextMigration[] fromRegistry = TextMigrationRegistry.createAll();
     TextMigration[] fromManager = ProjectMigrationManager.getInstance().getTextMigrations();
@@ -151,6 +159,45 @@ public class TextMigrationRegistryTest {
               + fromManager[i].getResultVersion(),
           managerResult, registryResult);
     }
+  }
+
+  @Test
+  public void jsonRegistryMatchesLegacyRegistryForRepresentativeOldProjectFragments() {
+    TextMigration[] fromJson = TextMigrationTestHelper.createRegistryMigrationsWithProperty(false);
+    TextMigration[] fromLegacy = TextMigrationTestHelper.createRegistryMigrationsWithProperty(true);
+
+    assertMigrationBehaviorParity(fromLegacy, fromJson, "3.1.34.0.0",
+        "org.lgna.story.Program",
+        "org.lgna.story.SProgram");
+    assertMigrationBehaviorParity(fromLegacy, fromJson, "3.2.110.0.0",
+        "name=\"OVAL\">\n<declaringClass name=\"org.lgna.story.resources.prop.SandDunesResource\"",
+        "name=\"OVAL_DESERT\"> <declaringClass name=\"org.lgna.story.resources.prop.SandDunesResource\"");
+    assertMigrationBehaviorParity(fromLegacy, fromJson, "3.2.111.0.0",
+        "name=\"BONE_PILE\">\n<declaringClass name=\"org.lgna.story.resources.prop.BonesResource\"",
+        "name=\"DEFAULT\"> <declaringClass name=\"org.lgna.story.resources.prop.BonePileResource\"");
+  }
+
+  @Test
+  public void jsonRegistryMatchesLegacyRegistryForSequentialAndVersionGatedMigrationFlow() {
+    TextMigration[] fromJson = TextMigrationTestHelper.createRegistryMigrationsWithProperty(false);
+    TextMigration[] fromLegacy = TextMigrationTestHelper.createRegistryMigrationsWithProperty(true);
+    String oldDresser = String.join("\n",
+        "<type name=\"org.lgna.story.resources.dresser.DresserCentralAsian\"/>",
+        "<declaringClass name=\"org.lgna.story.resources.dresser.DresserCentralAsian\"/>"
+    );
+    String expectedMigratedDresser = String.join("\n",
+        "<type name=\"org.lgna.story.resources.prop.DresserResource\"/>",
+        "<declaringClass name=\"org.lgna.story.resources.prop.DresserResource\"/>"
+    );
+
+    assertEquals(expectedMigratedDresser,
+        TextMigrationTestHelper.migrateThrough(fromLegacy, oldDresser, "3.1.19.0.0"));
+    assertEquals(expectedMigratedDresser,
+        TextMigrationTestHelper.migrateThrough(fromJson, oldDresser, "3.1.19.0.0"));
+    assertEquals(oldDresser,
+        TextMigrationTestHelper.migrateThrough(fromLegacy, oldDresser, "3.1.20.0.0"));
+    assertEquals(oldDresser,
+        TextMigrationTestHelper.migrateThrough(fromJson, oldDresser, "3.1.20.0.0"));
   }
 
   // ── Sub-component: SmallVersions ─────────────────────────────────────
@@ -365,5 +412,16 @@ public class TextMigrationRegistryTest {
     assertNotSame("createAll must return a new array each time",
         first, second);
     assertEquals(first.length, second.length);
+  }
+
+  private static void assertMigrationBehaviorParity(TextMigration[] expectedMigrations, TextMigration[] actualMigrations,
+      String version, String source, String expectedOutput) {
+    TextMigration expected = TextMigrationTestHelper.migrationForVersion(expectedMigrations, version);
+    TextMigration actual = TextMigrationTestHelper.migrationForVersion(actualMigrations, version);
+
+    assertEquals("Legacy oracle output for " + version, expectedOutput, expected.migrate(source));
+    assertEquals("JSON-loaded output for " + version, expectedOutput, actual.migrate(source));
+    assertEquals("JSON-loaded migration must match legacy output for " + version,
+        expected.migrate(source), actual.migrate(source));
   }
 }

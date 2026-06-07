@@ -64,6 +64,20 @@ mvn -pl core/story-api-migration \
   test
 ```
 
+Run the text migration registry characterization lane:
+
+```bash
+git submodule update --init tweedle-lang
+mvn -pl core/story-api-migration -am \
+  -DincludeSims=false \
+  -Dinstall4j.skip \
+  -Dcheckstyle.skip \
+  -Djava.awt.headless=true \
+  -Dtest=TextMigrationJsonGeneratorTest,TextMigrationJsonLoaderTest,TextMigrationRegistryTest \
+  -Dsurefire.failIfNoSpecifiedTests=false \
+  test
+```
+
 Run the same harness against a local preserved baseline checkout:
 
 ```bash
@@ -448,6 +462,11 @@ Common patterns:
 
 Modernization changes usually start with a characterization test. That protects
 the current Alice 3 behavior before a large class is split or moved.
+
+For text migration registry work, use
+[Text Migration Registry Characterization](reference/text-migration-registry-characterization.md)
+as the safety contract for read-only JSON parity, explicit JSON regeneration,
+legacy registry parity, and old-project text rewrite behavior.
 
 ### Focused module validation
 

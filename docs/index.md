@@ -57,6 +57,7 @@ expectations.
 
 - [Modernization Scorecard Generator](./reference/modernization-scorecard-generator.md)
 - [Modernization Corpus Manifest](./reference/modernization-corpus-manifest.md)
+- [Text Migration Registry Characterization](./reference/text-migration-registry-characterization.md)
 
 ### Architecture Atlas
 
