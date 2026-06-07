@@ -49,7 +49,6 @@ import org.alice.tweedle.file.ModelManifest;
 import org.lgna.story.implementation.StoryApiDirectoryUtilities;
 import org.lgna.story.resources.ModelResource;
 
-import javax.swing.JOptionPane;
 import java.io.File;
 import java.io.InputStream;
 import java.net.URL;
@@ -263,10 +262,6 @@ public enum StorytellingResources {
       if (installedAliceClassesLoaded.isEmpty()) {
         clearAliceResourceInfo();
         File galleryDir = FindResourcesPanel.getInstance().getGalleryDir();
-        if (galleryDir == null) {
-          FindResourcesPanel.getInstance().show(null);
-          galleryDir = FindResourcesPanel.getInstance().getGalleryDir();
-        }
         if (galleryDir != null) {
           String[] dirArray = {galleryDir.getAbsolutePath()};
           setGalleryResourceDirs(dirArray);
@@ -281,17 +276,17 @@ public enum StorytellingResources {
         StringBuilder sb = new StringBuilder();
         sb.append("Cannot find the Alice gallery resources.");
         if ((resourcePaths == null) || (resourcePaths.isEmpty())) {
-          sb.append("\nNo gallery directories were detected. Make sure Alice is properly installed and has been run at least once.");
+          sb.append(" No gallery directories were detected. Make sure Alice is properly installed and has been run at least once.");
         } else {
-          sb.append("\nFailed to locate the resources in:");
-          String separator = "\n   ";
+          sb.append(" Failed to locate the resources in:");
+          String separator = " ";
           for (File path : resourcePaths) {
             sb.append(separator + "'" + path + "'");
           }
           String phrase = resourcePaths.size() > 1 ? "these directories exist" : "this directory exists";
-          sb.append("\nVerify that " + phrase + " and verify that Alice is properly installed.");
+          sb.append(" Verify that " + phrase + " and verify that Alice is properly installed.");
         }
-        JOptionPane.showMessageDialog(null, sb.toString());
+        Logger.severe(sb.toString());
       } else {
         String[] galleryDirs = new String[resourcePaths.size()];
         for (int i = 0; i < resourcePaths.size(); i++) {

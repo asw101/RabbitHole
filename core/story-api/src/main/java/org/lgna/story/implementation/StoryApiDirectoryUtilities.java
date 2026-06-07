@@ -43,15 +43,16 @@
 package org.lgna.story.implementation;
 
 import edu.cmu.cs.dennisc.java.io.FileUtilities;
-import org.lgna.story.resourceutilities.FindResourcesPanel;
 
 import java.io.File;
+import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 
 /**
  * @author Dennis Cosgrove
  */
 public class StoryApiDirectoryUtilities {
+  private static final Logger logger = Logger.getLogger(StoryApiDirectoryUtilities.class.getName());
   private static final String MODEL_GALLERY_PREFRENCE_KEY = "MODEL_GALLERY_PREFRENCE_KEY";
   private static final String MODEL_GALLERY_NAME = "application/gallery";
   private static final String SOUND_GALLERY_NAME = "application/sound-gallery";
@@ -92,7 +93,8 @@ public class StoryApiDirectoryUtilities {
       initializeModelGallery();
     }
     if (StoryApiDirectoryUtilities.modelGalleryDirectory == null) {
-      askUserForModelGallery();
+      logger.warning("Model gallery directory not found. "
+          + "Set -Dorg.alice.ide.rootDirectory to a directory containing application/gallery.");
     }
     return StoryApiDirectoryUtilities.modelGalleryDirectory;
   }
@@ -126,9 +128,16 @@ public class StoryApiDirectoryUtilities {
     }
   }
 
-  private static void askUserForModelGallery() {
-    FindResourcesPanel.getInstance().show(null);
-    StoryApiDirectoryUtilities.modelGalleryDirectory = FindResourcesPanel.getInstance().getGalleryDir();
+  /**
+   * Prompt the user to locate the gallery directory via a dialog.
+   * Call this from application entry points (not library code) when
+   * {@link #getModelGalleryDirectory()} returns null and user interaction
+   * is appropriate.
+   */
+  public static void promptUserForModelGallery() {
+    org.lgna.story.resourceutilities.FindResourcesPanel.getInstance().show(null);
+    StoryApiDirectoryUtilities.modelGalleryDirectory =
+        org.lgna.story.resourceutilities.FindResourcesPanel.getInstance().getGalleryDir();
   }
 
   public static File getSoundGalleryDirectory() {
