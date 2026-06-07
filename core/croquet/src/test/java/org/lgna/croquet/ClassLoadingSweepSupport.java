@@ -259,9 +259,27 @@ public final class ClassLoadingSweepSupport {
     }
   }
 
+  private static final Set<String> BLOCKED_METHOD_NAMES = Set.of(
+      "setVisible", "hide", "pack", "toFront", "toBack",
+      "dispose", "close", "requestFocus", "requestFocusInWindow",
+      "browse", "openInSystemEditor", "launch",
+      "getGalleryLocationFromUser");
+
+  private static final String[] BLOCKED_METHOD_PREFIXES = {
+      "show", "open", "print", "display"
+  };
+
   private static boolean opensRealModalDialog(Class<?> owner, Method method) {
-    return owner == DocumentFrame.class
-        && (method.getName().equals("showSaveFileDialog") || method.getName().equals("showOpenFileDialog"));
+    String name = method.getName();
+    if (BLOCKED_METHOD_NAMES.contains(name)) {
+      return true;
+    }
+    for (String prefix : BLOCKED_METHOD_PREFIXES) {
+      if (name.startsWith(prefix)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private static Object[] buildArguments(Class<?>[] parameterTypes) {
