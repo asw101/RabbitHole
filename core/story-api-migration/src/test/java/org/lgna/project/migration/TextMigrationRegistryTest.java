@@ -109,6 +109,45 @@ public class TextMigrationRegistryTest {
         TextMigrationParityTestSupport.migrationForVersion(all, "3.2.110.0.0"),
         "name=\"OVAL\">\\s*<declaringClass name=\"org.lgna.story.resources.prop.SandDunesResource\"",
         "name=\"OVAL_DESERT\"> <declaringClass name=\"org.lgna.story.resources.prop.SandDunesResource\""));
+    assertTrue(TextMigrationParityTestSupport.containsPair(
+        TextMigrationParityTestSupport.migrationForVersion(all, "3.2.111.0.0"),
+        "name=\"BONE_PILE\">\\s*<declaringClass name=\"org.lgna.story.resources.prop.BonesResource\"",
+        "name=\"DEFAULT\"> <declaringClass name=\"org.lgna.story.resources.prop.BonePileResource\""));
+  }
+
+  @Test
+  public void jsonRegistryMatchesLegacyRegistryForRepresentativeOldProjectFragments() throws Exception {
+    TextMigration[] fromJson = TextMigrationParityTestSupport.runtimeJsonRegistrySequence();
+    TextMigration[] fromLegacy = TextMigrationParityTestSupport.legacyRegistrySequence();
+
+    assertMigrationBehaviorParity(fromLegacy, fromJson, "3.1.34.0.0",
+        "org.lgna.story.Program",
+        "org.lgna.story.SProgram");
+    assertMigrationBehaviorParity(fromLegacy, fromJson, "3.2.110.0.0",
+        "name=\"OVAL\">\n<declaringClass name=\"org.lgna.story.resources.prop.SandDunesResource\"",
+        "name=\"OVAL_DESERT\"> <declaringClass name=\"org.lgna.story.resources.prop.SandDunesResource\"");
+    assertMigrationBehaviorParity(fromLegacy, fromJson, "3.2.111.0.0",
+        "name=\"BONE_PILE\">\n<declaringClass name=\"org.lgna.story.resources.prop.BonesResource\"",
+        "name=\"DEFAULT\"> <declaringClass name=\"org.lgna.story.resources.prop.BonePileResource\"");
+  }
+
+  @Test
+  public void jsonRegistryMatchesLegacyRegistryForSequentialAndVersionGatedMigrationFlow() throws Exception {
+    TextMigration[] fromJson = TextMigrationParityTestSupport.runtimeJsonRegistrySequence();
+    TextMigration[] fromLegacy = TextMigrationParityTestSupport.legacyRegistrySequence();
+    String oldDresser = String.join("\n",
+        "<type name=\"org.lgna.story.resources.dresser.DresserCentralAsian\"/>",
+        "<declaringClass name=\"org.lgna.story.resources.dresser.DresserCentralAsian\"/>"
+    );
+    String expectedMigratedDresser = String.join("\n",
+        "<type name=\"org.lgna.story.resources.prop.DresserResource\"/>",
+        "<declaringClass name=\"org.lgna.story.resources.prop.DresserResource\"/>"
+    );
+
+    assertEquals(expectedMigratedDresser, migrateThrough(fromLegacy, oldDresser, "3.1.19.0.0"));
+    assertEquals(expectedMigratedDresser, migrateThrough(fromJson, oldDresser, "3.1.19.0.0"));
+    assertEquals(oldDresser, migrateThrough(fromLegacy, oldDresser, "3.1.20.0.0"));
+    assertEquals(oldDresser, migrateThrough(fromJson, oldDresser, "3.1.20.0.0"));
   }
 
   @Test
@@ -139,6 +178,29 @@ public class TextMigrationRegistryTest {
 
     assertNotSame("createAll must return a new array each time", first, second);
     assertEquals(first.length, second.length);
+  }
+
+  private static void assertMigrationBehaviorParity(TextMigration[] expectedMigrations, TextMigration[] actualMigrations,
+      String version, String source, String expectedOutput) {
+    TextMigration expected = TextMigrationParityTestSupport.migrationForVersion(expectedMigrations, version);
+    TextMigration actual = TextMigrationParityTestSupport.migrationForVersion(actualMigrations, version);
+
+    assertEquals("Legacy oracle output for " + version, expectedOutput, expected.migrate(source));
+    assertEquals("JSON-loaded output for " + version, expectedOutput, actual.migrate(source));
+    assertEquals("JSON-loaded migration must match legacy output for " + version,
+        expected.migrate(source), actual.migrate(source));
+  }
+
+  private static String migrateThrough(TextMigration[] migrations, String source, String versionText) {
+    String result = source;
+    Version version = new Version(versionText);
+    for (TextMigration migration : migrations) {
+      if (migration.isApplicable(version)) {
+        result = migration.migrate(result);
+        version = migration.getResultVersion();
+      }
+    }
+    return result;
   }
 
   private static int assertSegmentMatches(String segmentName, TextMigration[] segment, TextMigration[] all, int offset)

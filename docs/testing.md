@@ -75,6 +75,7 @@ mvn -pl core/story-api-migration -am \
   -Dcheckstyle.skip \
   -Djava.awt.headless=true \
   -Dtest=TextMigrationRegistryTest,TextMigrationJsonLoaderTest,TextMigrationJsonGeneratorTest \
+  -Dsurefire.failIfNoSpecifiedTests=false \
   test
 ```
 

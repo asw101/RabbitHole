@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -15,6 +16,8 @@ import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 
 final class TextMigrationParityTestSupport {
+  static final String WRITE_JSON_PROPERTY = "org.lgna.project.migration.TextMigrationJsonGenerator.write";
+
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
   private static final Field PAIRS_FIELD = declaredField(TextMigration.class, "pairs");
@@ -122,7 +125,15 @@ final class TextMigrationParityTestSupport {
     if (parent != null) {
       Files.createDirectories(parent);
     }
-    OBJECT_MAPPER.writerWithDefaultPrettyPrinter().writeValue(outputPath.toFile(), serialize(legacyRegistrySequence()));
+    Files.writeString(outputPath, legacyRegistryJson(), StandardCharsets.UTF_8);
+  }
+
+  static String legacyRegistryJson() throws Exception {
+    return OBJECT_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(serialize(legacyRegistrySequence()));
+  }
+
+  static String committedJson() throws IOException {
+    return Files.readString(committedJsonPath(), StandardCharsets.UTF_8);
   }
 
   static Path committedJsonPath() {
@@ -177,11 +188,15 @@ final class TextMigrationParityTestSupport {
       }
       return supplier.call();
     } finally {
-      if (previousValue == null) {
-        System.clearProperty(TextMigrationRegistry.USE_LEGACY_REGISTRIES_PROPERTY);
-      } else {
-        System.setProperty(TextMigrationRegistry.USE_LEGACY_REGISTRIES_PROPERTY, previousValue);
-      }
+      restoreProperty(TextMigrationRegistry.USE_LEGACY_REGISTRIES_PROPERTY, previousValue);
+    }
+  }
+
+  static void restoreProperty(String propertyName, String previousValue) {
+    if (previousValue == null) {
+      System.clearProperty(propertyName);
+    } else {
+      System.setProperty(propertyName, previousValue);
     }
   }
 

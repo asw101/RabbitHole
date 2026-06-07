@@ -46,6 +46,7 @@ The durable artifact stack is:
 | Layer | Artifact | Role |
 | --- | --- | --- |
 | Concepts (this document) | `docs/concepts/migration-hotspot-characterization.md` | Explains why the layer exists and what it protects. |
+| Registry parity reference | [`docs/reference/text-migration-registry-parity.md`](../reference/text-migration-registry-parity.md) | Documents the JSON-backed registry contract, read-only parity checks, explicit regeneration command, and legacy registry parity gate. |
 | Executable tests | `ProjectMigrationManagerTest` in `core/story-api-migration` | 18 focused Java characterization tests. |
 | QA automation | `migration-hotspot-characterization-smoke` scenario | Gated-command smoke that runs the 18-test focused Maven command through the scenario allowlist. |
 | Repository contract | Scenario and documentation tests | Python policy checks for documentation links, conflict markers, and test method presence. |
@@ -69,6 +70,13 @@ The characterization covers six kinds of observable behavior:
    methods reach their current names from historical versions.
 6. **Current-version guard** — The compiled current version has no pending text
    or AST migrations.
+
+The [text migration registry parity reference](../reference/text-migration-registry-parity.md)
+adds definition-level coverage for the JSON-backed registry. It compares every
+legacy and JSON migration entry by index, version, pair order, regex pattern,
+replacement string, and null/no-replacement semantics, then keeps representative
+behavior tests for old-project text fragments. JSON regeneration is an explicit
+maintainer action, not a side effect of the normal test lane.
 
 ## What it does not protect
 

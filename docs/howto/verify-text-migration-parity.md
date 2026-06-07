@@ -18,6 +18,7 @@ mvn -pl core/story-api-migration -am \
   -Dcheckstyle.skip \
   -Djava.awt.headless=true \
   -Dtest=TextMigrationRegistryTest,TextMigrationJsonLoaderTest,TextMigrationJsonGeneratorTest \
+  -Dsurefire.failIfNoSpecifiedTests=false \
   test
 git diff --exit-code -- core/story-api-migration/src/main/resources/migrations/text-migrations.json
 ```
@@ -55,9 +56,10 @@ mvn -pl core/story-api-migration -am \
 `text-migrations.json` is generated data. Do not edit it by hand.
 
 When the legacy registry definitions intentionally change, run the approved
-generator validation path. It writes canonical JSON to a temporary file, compares
-that output with the committed resource, then proves the generated JSON still
-loads to the legacy registry definitions:
+generator validation path. By default it compares generated JSON exactly against
+the committed resource, writes canonical JSON to a temporary file, compares that
+output with the committed resource, then proves the generated JSON still loads to
+the legacy registry definitions:
 
 ```bash
 export NODE_OPTIONS=--max-old-space-size=32768
@@ -68,6 +70,7 @@ mvn -pl core/story-api-migration -am \
   -Dcheckstyle.skip \
   -Djava.awt.headless=true \
   -Dtest=TextMigrationJsonGeneratorTest \
+  -Dsurefire.failIfNoSpecifiedTests=false \
   test
 git diff -- core/story-api-migration/src/main/resources/migrations/text-migrations.json
 ```
@@ -82,7 +85,7 @@ valid.
 
 1. Update the authoritative legacy registry class that owns the migration
    version segment.
-2. Run `TextMigrationJsonGeneratorTest` to regenerate canonical JSON.
+2. Run `TextMigrationJsonGeneratorTest` to regenerate canonical JSON and compare it with the committed resource.
 3. Run `TextMigrationRegistryTest`, `TextMigrationJsonLoaderTest`, and
    `TextMigrationJsonGeneratorTest` together.
 4. If `text-migrations.json` changes, confirm it changed only through generator

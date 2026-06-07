@@ -8,12 +8,13 @@ import java.util.List;
 import java.util.regex.PatternSyntaxException;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 public class TextMigrationJsonLoaderTest {
   @Test
-  public void jsonLoaderMatchesLegacyRegistryDefinitions() throws Exception {
+  public void jsonLoaderMatchesLegacyRegistryDefinitionsExactly() throws Exception {
     assertEquals(TextMigrationParityTestSupport.legacyRegistryData(), TextMigrationParityTestSupport.loadedJsonData());
   }
 
@@ -33,6 +34,17 @@ public class TextMigrationJsonLoaderTest {
         TextMigrationParityTestSupport.migrationForVersion(migrations, "3.2.110.0.0"),
         "name=\"OVAL\">\\s*<declaringClass name=\"org.lgna.story.resources.prop.SandDunesResource\"",
         "name=\"OVAL_DESERT\"> <declaringClass name=\"org.lgna.story.resources.prop.SandDunesResource\""));
+  }
+
+  @Test
+  public void jsonLoaderPreservesNullNoReplacementSemantics() throws Exception {
+    TextMigration migration = TextMigrationParityTestSupport.migrationForVersion(TextMigrationJsonLoader.load(), "3.1.9.0.0");
+    TextMigrationParityTestSupport.PairData firstPair = TextMigrationParityTestSupport.pairsOf(migration).get(0);
+
+    assertEquals("ARMOIRE_CLOTHING", firstPair.pattern);
+    assertNull("JSON null replacement must reload as Java null", firstPair.replacement);
+    assertEquals("JSON null replacement must match MigrationManager.NO_REPLACEMENT",
+        MigrationManager.NO_REPLACEMENT, firstPair.replacement);
   }
 
   @Test

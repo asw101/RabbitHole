@@ -130,9 +130,10 @@ The tests use that extraction for these checks:
 3. Generated JSON loaded back to the concatenated legacy registry sequence.
 
 The generator test writes to a temporary file, compares the canonical JSON tree
-with the committed resource, and verifies that generated JSON loads to the
-legacy sequence. Reflection stays test-scope only. Production code should
-continue to use `TextMigrationRegistry.createAll()`.
+with the committed resource, compares the in-memory generated JSON exactly with
+the committed resource, and verifies that generated JSON loads to the legacy
+sequence. Reflection stays test-scope only. Production code should continue to
+use `TextMigrationRegistry.createAll()`.
 
 ## Validation commands
 
@@ -147,6 +148,7 @@ mvn -pl core/story-api-migration -am \
   -Dcheckstyle.skip \
   -Djava.awt.headless=true \
   -Dtest=TextMigrationRegistryTest,TextMigrationJsonLoaderTest,TextMigrationJsonGeneratorTest \
+  -Dsurefire.failIfNoSpecifiedTests=false \
   test
 ```
 
