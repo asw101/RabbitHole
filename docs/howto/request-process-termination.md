@@ -1,20 +1,25 @@
+---
+title: Request Process Termination Safely
+description: How to request RabbitHole process termination from reusable code without calling System.exit directly.
+last_updated: 2026-06-10
+review_schedule: quarterly
+owner: modernization
+doc_type: howto
+---
+
 # Request process termination safely
 
 Use `ProcessTerminator` when Alice code needs the process to end but is not
 itself a process entry point.
-
-This how-to describes the intended migration target for the
-process-termination feature. If a referenced class still calls `System.exit`
-directly, that call is work to migrate, not an allowed final state.
 
 ## Contents
 
 - [Before you start](#before-you-start)
 - [Request exit from reusable code](#request-exit-from-reusable-code)
 - [Convert a legacy direct exit](#convert-a-legacy-direct-exit)
-- [Migrate current reusable exits](#migrate-current-reusable-exits)
 - [Handle termination inside exception handlers](#handle-termination-inside-exception-handlers)
 - [Install the entry-point handler](#install-the-entry-point-handler)
+- [Add a command-line entry point](#add-a-command-line-entry-point)
 - [Add characterization for a new termination path](#add-characterization-for-a-new-termination-path)
 - [Validate the boundary](#validate-the-boundary)
 
@@ -31,8 +36,10 @@ Call `ProcessTerminator.requestExit(status)` instead of `System.exit(status)`.
 ```java
 import org.lgna.croquet.ProcessTerminator;
 
-public final class ProjectCloseOperation {
-  public void handleUserConfirmedExit() {
+public final class SystemExitOperation extends ActionOperation {
+  @Override
+  protected void perform(UserActivity activity) {
+    activity.finish();
     ProcessTerminator.requestExit(0);
   }
 }
@@ -61,25 +68,20 @@ Keep the surrounding user-visible behavior unchanged. If the old path showed a
 dialog or logged an error before exiting, keep that dialog or log message before
 the `requestExit` call.
 
-## Migrate current reusable exits
+## Audit direct exits
 
-Start by finding direct exits:
+Find direct process termination before changing launcher or reusable-code paths:
 
 ```bash
-rg 'System\.exit\(' --glob '*.java'
+rg 'System\.exit|System::exit|Runtime\.getRuntime\(\)\.(exit|halt)' \
+  --glob '**/src/main/java/**/*.java'
 ```
 
-Only launcher files in the boundary allowlist may keep direct `System.exit`
-calls. Convert reusable call sites such as:
-
-| Class or area | Migration rule |
-| --- | --- |
-| `org.alice.stageide.StageIDE` | Keep the same startup failure message/status, then call `ProcessTerminator.requestExit(-1)`. |
-| `org.alice.ide.croquet.models.projecturi.SystemExitOperation` | Keep the project operation behavior, but request exit instead of terminating the JVM from the operation. |
-| `org.lgna.croquet.simple.SimpleApplication` | Route application close termination through `ProcessTerminator` unless an explicit launcher owns the call. |
-| Dialogs including `org.lgna.croquet.views.Dialog`, `org.alice.stageide.type.croquet.OtherTypeDialog`, `org.alice.ide.upgrade.ProjectAheadDialog`, `org.alice.ide.ast.type.croquet.ImportTypeWizard`, and custom-expression dialogs | Preserve dialog behavior and request termination after the existing user-visible action. |
-| `org.alice.ide.issue.DefaultExceptionHandler` and `org.alice.ide.issue.IdeUncaughtExceptionHandler` | Keep existing logging and dialogs, then request failure termination without re-reporting `ProcessTerminationRequestedException`. |
-| Utility and optional UI code such as `edu.cmu.cs.dennisc.eula.swing.JEulaPane` and `org.alice.stageide.personresource.PersonResourceComposite` | Keep existing UI behavior and request termination through the shared API. |
+Every result must either be a true process boundary or be converted to
+`ProcessTerminator.requestExit(status)`. The checked-in boundary test currently
+uses a file-level allowlist for `System.exit(...)`; the
+[System.exit allowlist](../reference/system-exit-allowlist.md) records the
+target exact call sites that the scanner must enforce when the feature lands.
 
 ## Handle termination inside exception handlers
 
@@ -94,9 +96,7 @@ JOptionPane.showMessageDialog(
 try {
   ProcessTerminator.requestExit(-1);
 } catch (ProcessTerminationRequestedException request) {
-  if (request.getStatus() != -1) {
-    throw request;
-  }
+  // The exception handler must not report intentional termination as another crash.
 }
 ```
 
@@ -111,11 +111,12 @@ before starting reusable Alice code and catches the fallback exception at the
 launcher boundary.
 
 ```java
-public static void main(String[] args) {
-  ProcessTerminator.Handler previous =
-      ProcessTerminator.setHandler(status -> System.exit(status));
+public static void main(final String[] args) {
+  ProcessTerminator.Handler previous = ProcessTerminator.setHandler(System::exit);
   try {
-    launchAliceDesktop(args);
+    requireGraphicalEnvironmentForDesktopLaunch(GraphicsEnvironment.isHeadless());
+    // EntryPoint initializes Alice desktop services here.
+    launch(args);
   } catch (ProcessTerminationRequestedException request) {
     System.exit(request.getStatus());
   } finally {
@@ -129,6 +130,47 @@ shared JVM. The handler is process-wide and must be implemented with
 cross-thread visibility because requests can come from launcher, UI, and
 exception-handler threads.
 
+## Add a command-line entry point
+
+Command-line tools may convert a final tool status into a process status in
+their `main` method. Keep reusable tool logic in a `run` method that returns an
+integer status so tests can characterize behavior without exiting the JVM.
+
+```java
+public static void main(String[] args) {
+  int status = run(args, System.out, System.err);
+  if (status != 0) {
+    System.exit(status);
+  }
+}
+
+static int run(String[] args, PrintStream out, PrintStream err) {
+  PrintStream originalSystemOut = System.out;
+  PrintStream silentSystemOut = new PrintStream(OutputStream.nullOutputStream());
+  System.setOut(silentSystemOut);
+  try {
+    Arguments arguments = Arguments.parse(args);
+    ProjectSave save = saveProject(arguments);
+    out.println(resultJson(save));
+    return 0;
+  } catch (IllegalArgumentException | IOException | VersionNotSupportedException ex) {
+    err.println(ex.getMessage());
+    return 2;
+  } catch (RuntimeException ex) {
+    err.println("project save failed: " + ex.getMessage());
+    return 3;
+  } finally {
+    System.setOut(originalSystemOut);
+    silentSystemOut.close();
+  }
+}
+```
+
+When the tool is a real process boundary, add the exact `System.exit(status)`
+call site to [System.exit allowlist reference](../reference/system-exit-allowlist.md).
+Until the exact scanner is implemented, also add the tool file to
+`APPROVED_SYSTEM_EXIT_FILES` in `SystemExitBoundaryTest`.
+
 ## Add characterization for a new termination path
 
 When migrating a path from `System.exit` to `ProcessTerminator`, add or update a
@@ -136,7 +178,7 @@ test that records the requested status:
 
 ```java
 @Test
-public void requestsFailureExitWithoutTerminatingTestJvm() {
+public void requestExitInvokesInstalledHandlerWithRequestedStatus() {
   AtomicInteger requestedStatus = new AtomicInteger(Integer.MIN_VALUE);
   ProcessTerminator.Handler previous =
       ProcessTerminator.setHandler(requestedStatus::set);
@@ -144,18 +186,18 @@ public void requestsFailureExitWithoutTerminatingTestJvm() {
     ProcessTerminationRequestedException request =
         assertThrows(
             ProcessTerminationRequestedException.class,
-            () -> operationThatRequestsExit());
+            () -> ProcessTerminator.requestExit(42));
 
-    assertEquals(-1, request.getStatus());
-    assertEquals(-1, requestedStatus.get());
+    assertEquals(42, requestedStatus.get());
+    assertEquals(42, request.getStatus());
   } finally {
     ProcessTerminator.setHandler(previous);
   }
 }
 ```
 
-This proves both halves of the contract: reusable code requested the correct
-status, and the test JVM did not exit.
+This proves both halves of the contract: the request preserves the correct
+status, and the test JVM does not exit.
 
 ## Validate the boundary
 
@@ -175,4 +217,6 @@ mvn -DincludeSims=false -Dinstall4j.skip -Dcheckstyle.skip -Djava.awt.headless=t
 ```
 
 See [Process termination API reference](../reference/process-termination-api.md)
-for method details and allowlist policy.
+for method details and
+[System.exit allowlist reference](../reference/system-exit-allowlist.md) for
+approved direct termination sites.

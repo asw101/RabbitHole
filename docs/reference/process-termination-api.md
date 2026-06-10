@@ -1,11 +1,16 @@
+---
+title: Process Termination API Reference
+description: Reference for ProcessTerminator, ProcessTerminationRequestedException, and RabbitHole process-termination configuration.
+last_updated: 2026-06-10
+review_schedule: quarterly
+owner: modernization
+doc_type: reference
+---
+
 # Process termination API reference
 
 `ProcessTerminator` is the shared API for requesting process termination without
 allowing reusable code to call `System.exit` directly.
-
-This reference describes the intended API contract for the
-process-termination feature. Until the implementation lands, matching classes,
-tests, and migration call sites may not exist in every branch.
 
 ## Contents
 
@@ -80,9 +85,11 @@ Always restore the previous handler in a `finally` block:
 
 ```java
 ProcessTerminator.Handler previous =
-    ProcessTerminator.setHandler(status -> System.exit(status));
+    ProcessTerminator.setHandler(System::exit);
 try {
-  runApplication(args);
+  requireGraphicalEnvironmentForDesktopLaunch(GraphicsEnvironment.isHeadless());
+  // EntryPoint initializes Alice desktop services here.
+  launch(args);
 } catch (ProcessTerminationRequestedException request) {
   System.exit(request.getStatus());
 } finally {
@@ -96,7 +103,7 @@ other tests.
 ## `ProcessTerminationRequestedException`
 
 ```java
-public final class ProcessTerminationRequestedException extends RuntimeException {
+public class ProcessTerminationRequestedException extends RuntimeException {
   public ProcessTerminationRequestedException(int status)
 
   public int getStatus()
@@ -112,14 +119,11 @@ around unrelated code.
 
 ## Thread-safety
 
-Handler storage is process-wide and must be safe for calls from the desktop
-launcher, Swing event dispatch thread, JavaFX thread, and uncaught-exception
-handler threads.
-
-The implementation must make handler updates visible across threads. Use a
-thread-safe holder such as `AtomicReference<ProcessTerminator.Handler>` or an
-equivalent visibility guarantee; do not store the handler in an unsynchronized
-plain static field.
+Handler storage is process-wide and safe for calls from the desktop launcher,
+Swing event dispatch thread, JavaFX thread, and uncaught-exception handler
+threads. Handler updates are visible across threads, so a termination request
+uses the currently installed handler even when the request is made outside the
+launcher thread.
 
 Operational rules:
 
@@ -151,26 +155,44 @@ Configuration is process-local Java state:
 | --- | --- |
 | `0` | Normal successful tool or launcher completion. |
 | `-1` | Existing Alice desktop startup or exception-handler failure exit. |
-| Tool-specific non-zero status | Headless tool argument or runtime failure, as documented by that tool. |
+| Tool-specific non-zero status | Existing headless tool argument or runtime failure status returned by that tool's `run(...)` method. |
 
 `ProcessTerminator` preserves the exact status supplied by the caller. It does
 not normalize, remap, or swallow statuses.
 
 ## Allowlist contract
 
-`SystemExitBoundaryTest` is the code-level authorization boundary for direct JVM
-termination. It scans repository production Java sources under `src/main/java`
-across every module, including `alice-ide`, `core`, `core/ide`, `core/util`,
-`core-nonfree`, and `netbeans` production roots. Test sources are outside the
-production allowlist scan, but tests must not terminate the Maven test JVM.
+`SystemExitBoundaryTest` is the current file-level code authorization boundary
+for direct JVM termination. It scans repository production Java sources under
+`src/main/java` across every module, including `alice-ide`, `core`, `core/ide`,
+`core/util`, `core-nonfree`, and `netbeans` production roots. Test sources are
+outside the production allowlist scan, but tests must not terminate the Maven
+test JVM.
 
-When a new production launcher truly needs to call `System.exit`, update the
-explicit allowlist in that test in the same change that introduces the launcher.
+The checked-in test currently recognizes `System.exit(...)` by source text and
+approves whole files through `APPROVED_SYSTEM_EXIT_FILES`. The feature target is
+exact call-site approval: repository-relative source path, enclosing context,
+and normalized call text must match the allowlist, and adding another direct
+exit to an otherwise-approved file must fail until the new call site is
+explicitly approved.
+
+The target scanner must recognize direct process termination through
+`System.exit(...)`, `System::exit`, `Runtime.getRuntime().exit(...)`, and
+`Runtime.getRuntime().halt(...)`.
+
+When a new production launcher truly needs direct process termination, update
+the allowlist in `SystemExitBoundaryTest` and
+[System.exit allowlist reference](./system-exit-allowlist.md) in the same
+change that introduces the launcher. Until the exact scanner lands, the test
+allowlist is file-level and the documentation table records the intended exact
+call site.
 
 Do not add `System.exit` to reusable classes, exception handlers, Croquet
 operations, dialogs, composites, utilities, or tests that run in the same JVM as
 the Maven test process.
 
 See [Process termination boundary](../concepts/process-termination-boundary.md)
-for the architectural rule and [requesting process termination](../howto/request-process-termination.md)
-for examples.
+for the architectural rule, [System.exit allowlist reference](./system-exit-allowlist.md)
+for approved direct termination sites, and
+[requesting process termination](../howto/request-process-termination.md) for
+examples.

@@ -58,11 +58,13 @@ expectations.
 - [Migration Hotspot Characterization](./concepts/migration-hotspot-characterization.md)
 - [Process Termination Boundary](./concepts/process-termination-boundary.md)
 - [Scoped Clipboard Operation Registries](./concepts/scoped-clipboard-operation-registries.md)
+- [Reflection Sweep Contracts](./concepts/reflection-sweep-contracts.md)
 
 ### How-to guides
 
 - [Request Process Termination Safely](./howto/request-process-termination.md)
 - [Use a Scoped Clipboard Operation Registry](./howto/use-scoped-clipboard-operation-registry.md)
+- [Replace Reflection Sweeps with Explicit Contracts](./howto/replace-reflection-sweeps.md)
 
 ### Reference
 
@@ -72,6 +74,8 @@ expectations.
 - [Text Migration Registry Parity](./reference/text-migration-registry-parity.md)
 - [Process Termination API](./reference/process-termination-api.md)
 - [Clipboard Operation Registry](./reference/clipboard-operation-registry.md)
+- [Reflection Smoke Support](./reference/reflection-smoke-support.md)
+- [System.exit Allowlist](./reference/system-exit-allowlist.md)
 
 ### Architecture Atlas
 
