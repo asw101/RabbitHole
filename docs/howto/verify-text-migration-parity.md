@@ -98,8 +98,8 @@ The strict path performs all validation in test memory or temporary files:
    JSON registry path.
 
 When strict verification fails, the test reports drift against the repo-relative
-resource path and points developers to this strict command and the explicit
-regeneration command below.
+resource path and reminds developers that the write property is only for
+explicit regeneration.
 
 ## Regenerate generated migration JSON explicitly
 
