@@ -1,19 +1,28 @@
+---
+title: Process Termination Boundary
+description: Explains why RabbitHole restricts direct JVM termination to exact launcher and tool call sites.
+last_updated: 2026-06-10
+review_schedule: quarterly
+owner: modernization
+doc_type: explanation
+---
+
 # Process termination boundary
 
 Alice treats JVM termination as a top-level launcher responsibility. Reusable
 Croquet, IDE, dialog, and exception-handler code request termination intent; they
 do not call `System.exit` directly.
 
-This document is the target-state contract for the process-termination feature.
-Direct exits that exist today outside the allowlist are migration targets, not
-approved exceptions.
+The boundary keeps the Alice desktop launcher and documented command-line tools
+responsible for final process status while keeping reusable RabbitHole code
+testable and embeddable.
 
 ## Contents
 
 - [Why the boundary exists](#why-the-boundary-exists)
 - [Termination flow](#termination-flow)
 - [Approved `System.exit` locations](#approved-systemexit-locations)
-- [Reusable exit migration targets](#reusable-exit-migration-targets)
+- [Reusable code behavior](#reusable-code-behavior)
 - [Exception-handler behavior](#exception-handler-behavior)
 - [Characterization coverage](#characterization-coverage)
 
@@ -31,7 +40,7 @@ The process termination boundary keeps those responsibilities separate:
 | Entry points and launchers | Convert a final exit status into `System.exit(status)`. |
 | Reusable application code | Call `ProcessTerminator.requestExit(status)` when it needs the process to end. |
 | Exception handlers | Preserve the existing dialog and logging behavior, then consume intentional termination requests instead of reporting them as new crashes. |
-| Tests | Enforce the explicit `System.exit` allowlist and characterize the termination control flow. |
+| Tests | Enforce the current `System.exit` file allowlist, define the target exact call-site allowlist, and characterize the termination control flow. |
 
 ## Termination flow
 
@@ -59,42 +68,44 @@ handler records the request and returns.
 
 ## Approved `System.exit` locations
 
-Production `System.exit` calls are limited to explicit process entry points and
-headless tool launchers. `SystemExitBoundaryTest` scans repository production
-Java sources under `src/main/java` and fails if any other file calls
-`System.exit`. The scan covers every production module in this repository,
-including `alice-ide`, `core`, `core/ide`, `core/util`, `core-nonfree`, and
-`netbeans` production source roots.
+Production direct termination calls are limited to approved launcher and tool
+files today. The feature target is stricter: exact approved call sites in the
+Alice desktop entry point and Eatme command-line tools.
 
-The allowlist contains:
+`SystemExitBoundaryTest` currently scans production Java sources under
+`src/main/java` for `System.exit(` text and fails on:
 
-| File | Reason |
-| --- | --- |
-| `alice-ide/src/main/java/org/alice/stageide/EntryPoint.java` | Desktop Alice launcher and JavaFX/Swing process boundary. |
-| `core/ide/src/main/java/org/alice/tools/EatmeSaveProject.java` | Headless project-save tool launcher. |
-| `core/ide/src/main/java/org/alice/tools/EatmePlaceObject.java` | Headless place-object tool launcher. |
-| `core/ide/src/main/java/org/alice/tools/EatmeEditProcedure.java` | Headless edit-procedure tool launcher. |
-| `core/ide/src/main/java/org/alice/tools/EatmeReopenProject.java` | Headless reopen-project tool launcher. |
-| `core/ide/src/main/java/org/alice/tools/EatmeRunWorld.java` | Headless run-world tool launcher. |
+1. a discovered `System.exit(` call in a file outside the approved file list;
+2. an approved file entry whose source file is missing or no longer contains
+   `System.exit(`;
+3. a traversal or source-read error while scanning production sources.
+
+The planned exact scanner must also cover `System::exit`,
+`Runtime.getRuntime().exit(...)`, and `Runtime.getRuntime().halt(...)`.
+Approval will be by repository-relative path, enclosing context, and normalized
+call text, not by whole file.
+
+See the [System.exit allowlist reference](../reference/system-exit-allowlist.md)
+for the current enforcement status and target approved call-site table.
 
 Main methods used as demos, dialogs, components, or diagnostics are not process
 boundaries. They must return normally, throw a useful exception, or request exit
 through `ProcessTerminator`.
 
-## Reusable exit migration targets
+## Reusable code behavior
 
-The implementation must migrate reusable direct-exit call sites to
-`ProcessTerminator.requestExit(status)`. Representative migration targets
-include:
+Reusable code expresses termination intent with
+`ProcessTerminator.requestExit(status)`. This includes Croquet operations,
+dialogs, composites, IDE services, exception handlers, optional UI code, and
+other code that can be called from tests or embedded in a larger process.
 
-| Current area | Required target behavior |
+| Area | Termination behavior |
 | --- | --- |
-| `org.alice.stageide.StageIDE` | Preserve startup failure behavior and request failure termination instead of exiting from IDE code. |
-| `org.alice.ide.croquet.models.projecturi.SystemExitOperation` | Keep the user operation behavior, but request termination through the shared boundary. |
-| Croquet and IDE dialogs such as `org.lgna.croquet.views.Dialog`, `org.alice.stageide.type.croquet.OtherTypeDialog`, `org.alice.ide.upgrade.ProjectAheadDialog`, and import/custom-expression dialogs | Keep dialog-visible behavior, then request termination through `ProcessTerminator`. |
-| `org.lgna.croquet.simple.SimpleApplication` | Treat application-level close behavior as reusable Croquet code unless called from an explicit launcher. |
-| `org.alice.ide.issue.DefaultExceptionHandler` and `org.alice.ide.issue.IdeUncaughtExceptionHandler` | Preserve logging and dialogs, then request termination without reporting the request as another crash. |
-| Utility and nonfree UI code such as `edu.cmu.cs.dennisc.eula.swing.JEulaPane` and `org.alice.stageide.personresource.PersonResourceComposite` | Keep user-facing behavior and route termination through the shared boundary. |
+| Alice desktop launcher | Installs the production handler and owns final JVM termination. |
+| Eatme command-line tools | Convert final tool status to process status in `main`. |
+| Reusable IDE and Croquet code | Calls `ProcessTerminator.requestExit(status)`. |
+| Dialog and operation code | Preserves the existing user-visible action, then requests termination. |
+| Exception handlers | Preserve logging/dialog behavior, request termination, and consume the intentional fallback exception from that request. |
 
 ## Exception-handler behavior
 
@@ -120,10 +131,12 @@ The boundary is protected by tests at the module that owns each behavior:
 | Test | Contract |
 | --- | --- |
 | `core/croquet/src/test/java/org/lgna/croquet/ProcessTerminatorTest.java` | Default request behavior, handler invocation, fallback exception when a handler returns, status propagation, and handler cleanup. |
-| `core/ide/src/test/java/org/alice/ide/SystemExitBoundaryTest.java` | Only allowlisted production entry-point files call `System.exit`. |
+| `core/ide/src/test/java/org/alice/ide/SystemExitBoundaryTest.java` | Currently restricts `System.exit(...)` to approved production launcher/tool files; the feature target is exact call-site enforcement. |
 | `core/ide/src/test/java/org/alice/ide/issue/DefaultExceptionHandlerTest.java` | Handler-initiated termination requests do not leak as uncaught failures and preserve the existing visible failure message/status. |
 | `core/ide/src/test/java/org/alice/ide/issue/IdeUncaughtExceptionHandlerTest.java` | IDE uncaught handler treats `ProcessTerminationRequestedException` as intentional termination control flow. |
 
 See [Process termination API reference](../reference/process-termination-api.md)
-for the class contract and [requesting process termination](../howto/request-process-termination.md)
-for migration examples.
+for the class contract, [System.exit allowlist reference](../reference/system-exit-allowlist.md)
+for approved direct termination sites, and
+[requesting process termination](../howto/request-process-termination.md) for
+usage examples.
