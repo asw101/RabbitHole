@@ -109,7 +109,8 @@ public class HeapWatchDog {
                 ResourceBundleUtilities.getStringForKey("message", BUNDLE_NAME),
                 ResourceBundleUtilities.getStringForKey("title", BUNDLE_NAME),
                 JOptionPane.WARNING_MESSAGE));
-      } catch (Exception ignored) {
+      } catch (Exception e) {
+        Logger.warning("Failed to show memory warning dialog", e);
       }
     }
   }
