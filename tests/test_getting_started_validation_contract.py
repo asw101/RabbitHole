@@ -469,6 +469,7 @@ class GettingStartedValidationCiContract(unittest.TestCase):
         self.assertIn("scripts/validate-gui-with-xvfb.sh", headed_job)
         self.assertIn("--timeout-seconds", headed_job)
         self.assertIn("RABBITHOLE_LAUNCH_TIMEOUT_SECONDS", headed_job)
+        self.assertIn("RABBITHOLE_XVFB_VALIDATION_TIMEOUT_SECONDS", headed_job)
         self.assertIn("--expect success", headed_job)
         self.assertIn("--xvfb-run", headed_job)
         self.assertIn(SETUP_XVFB_ACTION_OUTPUT, headed_job)

@@ -215,10 +215,12 @@ jobs:
 
       - name: Run Getting Started GUI validation under Xvfb
         shell: bash
+        env:
+          RABBITHOLE_LAUNCH_TIMEOUT_SECONDS: '60'
         run: |
           set -euo pipefail
           scripts/validate-gui-with-xvfb.sh \
-            --timeout-seconds "${RABBITHOLE_LAUNCH_TIMEOUT_SECONDS:-60}" \
+            --timeout-seconds "${RABBITHOLE_XVFB_VALIDATION_TIMEOUT_SECONDS:-900}" \
             --expect success \
             --xvfb-run "${{ steps.setup-xvfb.outputs.xvfb-run }}" \
             -- \

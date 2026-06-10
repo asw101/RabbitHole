@@ -28,8 +28,9 @@ The headed Ubuntu GUI validation lane runs under Xvfb:
 
 ```bash
 xvfb_run="${{ steps.setup-xvfb.outputs.xvfb-run }}"
+RABBITHOLE_LAUNCH_TIMEOUT_SECONDS=60 \
 scripts/validate-gui-with-xvfb.sh \
-  --timeout-seconds "${RABBITHOLE_LAUNCH_TIMEOUT_SECONDS:-60}" \
+  --timeout-seconds "${RABBITHOLE_XVFB_VALIDATION_TIMEOUT_SECONDS:-900}" \
   --expect success \
   --xvfb-run "${xvfb_run}" \
   -- \
@@ -147,7 +148,7 @@ running the same validator from the checkout under review.
 | Lane | Command | Intended environment | Success condition |
 | --- | --- | --- | --- |
 | Headless | `./scripts/validate-getting-started.sh` or `./scripts/validate-getting-started.sh --headless` | CI and local shells without a display | Git checkout and `tweedle-lang/Grammar` are present, the no-Sims Maven install command passes with `java.awt.headless=true`, and the no-Sims launch probe reaches the expected GUI-required message. |
-| Headed Ubuntu Xvfb | `scripts/validate-gui-with-xvfb.sh --timeout-seconds "${RABBITHOLE_LAUNCH_TIMEOUT_SECONDS:-60}" --expect success --xvfb-run "${xvfb_run}" -- scripts/validate-getting-started.sh --gui`, where `xvfb_run` is the shared action output | Ubuntu CI runner without a physical display | The no-Sims build/install passes under Xvfb with `java.awt.headless=false` and tests skipped, and the Alice desktop launch starts far enough under Xvfb to prove the documented display-dependent GUI launch path without hanging. |
+| Headed Ubuntu Xvfb | `RABBITHOLE_LAUNCH_TIMEOUT_SECONDS=60 scripts/validate-gui-with-xvfb.sh --timeout-seconds "${RABBITHOLE_XVFB_VALIDATION_TIMEOUT_SECONDS:-900}" --expect success --xvfb-run "${xvfb_run}" -- scripts/validate-getting-started.sh --gui`, where `xvfb_run` is the shared action output | Ubuntu CI runner without a physical display | The no-Sims build/install passes under Xvfb with `java.awt.headless=false` and tests skipped, and the Alice desktop launch starts far enough under Xvfb to prove the documented display-dependent GUI launch path without hanging. |
 | Local GUI | `./scripts/validate-getting-started.sh --gui` | Local desktop with real Java AWT display support | The no-Sims Alice desktop launch starts far enough to prove the documented GUI launch path is usable on that platform. |
 | All | `./scripts/validate-getting-started.sh --all` | Local validation before sharing setup changes | Headless validation passes; GUI validation runs when supported and reports a clear skip or blocker when unsupported without failing the command. |
 
@@ -173,9 +174,10 @@ setup action to install Xvfb from Ubuntu apt repositories and expose an absolute
 validation because Java still runs with `java.awt.headless=true`; the headed
 lane must use `-Djava.awt.headless=false` and `--gui` so display-dependent
 behavior is actually exercised. The reusable Xvfb harness owns the standard
-`xvfb-run --auto-servernum -s "-screen 0 1024x768x24 -ac"` invocation, and the
-`RABBITHOLE_LAUNCH_TIMEOUT_SECONDS` setting is required in the CI job so a
-failed GUI startup cannot hang the workflow indefinitely.
+`xvfb-run --auto-servernum -s "-screen 0 1024x768x24 -ac"` invocation. The
+`RABBITHOLE_LAUNCH_TIMEOUT_SECONDS` setting bounds the Alice startup probe, and
+`RABBITHOLE_XVFB_VALIDATION_TIMEOUT_SECONDS` is the larger whole-command
+deadline for the harness.
 
 ### Skip, fail, and block behavior
 
