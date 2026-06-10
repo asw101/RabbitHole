@@ -1,5 +1,6 @@
 package org.lgna.story;
 
+import org.junit.Assume;
 import org.junit.Test;
 import org.lgna.story.resources.FlyerResource;
 
@@ -8,7 +9,6 @@ import java.awt.HeadlessException;
 
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
 
 public class SFlyerBehaviorTest {
   @Test
@@ -26,7 +26,8 @@ public class SFlyerBehaviorTest {
   @Test
   public void walkToAndTouchShowHeadlessDialogsInHeadlessRuns() {
     SFlyer flyer = new SFlyer(new JointedModelStubSupport.StubFlyerResource());
-    assertTrue(GraphicsEnvironment.isHeadless());
+    Assume.assumeTrue("HeadlessException behavior only applies in headless mode",
+        GraphicsEnvironment.isHeadless());
 
     assertThrows(HeadlessException.class, () -> flyer.walkTo(new SThingMarker()));
     assertThrows(HeadlessException.class, () -> flyer.touch(new SThingMarker()));

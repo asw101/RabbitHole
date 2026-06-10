@@ -1,5 +1,6 @@
 package org.lgna.story;
 
+import org.junit.Assume;
 import org.junit.Test;
 import org.lgna.story.resources.SwimmerResource;
 
@@ -8,7 +9,6 @@ import java.awt.HeadlessException;
 
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
 
 public class SSwimmerBehaviorTest {
   @Test
@@ -25,7 +25,8 @@ public class SSwimmerBehaviorTest {
   @Test
   public void swimToShowsHeadlessDialogInHeadlessRuns() {
     SSwimmer swimmer = new SSwimmer(new JointedModelStubSupport.StubSwimmerResource());
-    assertTrue(GraphicsEnvironment.isHeadless());
+    Assume.assumeTrue("HeadlessException behavior only applies in headless mode",
+        GraphicsEnvironment.isHeadless());
 
     assertThrows(HeadlessException.class, () -> swimmer.swimTo(new SThingMarker()));
   }
