@@ -3,6 +3,8 @@ package org.lgna.project.ast;
 import org.lgna.project.code.CodeOrganizer;
 import org.junit.Test;
 
+import java.util.Arrays;
+
 import static org.junit.Assert.*;
 
 public class SourceCodeGeneratorTest {
@@ -267,6 +269,187 @@ public class SourceCodeGeneratorTest {
     assertEquals(
         "ThreadUtilities.doTogether(new Runnable(){public void run(){final String left=\"L\";}},new Runnable(){public void run(){final String right=\"R\";}});",
         generate(doTogether));
+  }
+
+  @Test
+  public void characterizesUserMethodDeclarationsAndCallsPreviouslyCoveredByNetBeans() {
+    NamedUserType program = new NamedUserType(
+        "Program",
+        null,
+        Object.class,
+        new NamedUserConstructor[] {new NamedUserConstructor(new UserParameter[] {}, new ConstructorBlockStatement())},
+        new UserMethod[] {},
+        new UserField[] {});
+    UserMethod sayHello = new UserMethod(
+        "sayHello",
+        Void.TYPE,
+        new UserParameter[0],
+        new BlockStatement(new Comment("hello alice")));
+    UserParameter message = new UserParameter("message", String.class);
+    UserLocal copy = new UserLocal("copy", String.class, true);
+    UserMethod remember = new UserMethod(
+        "remember",
+        Void.TYPE,
+        new UserParameter[] {message},
+        new BlockStatement(new LocalDeclarationStatement(copy, new ParameterAccess(message))));
+    UserMethod callSayHello = new UserMethod(
+        "callSayHello",
+        Void.TYPE,
+        new UserParameter[0],
+        new BlockStatement(AstUtilities.createMethodInvocationStatement(new ThisExpression(), sayHello)));
+    UserMethod callRemember = new UserMethod(
+        "callRemember",
+        Void.TYPE,
+        new UserParameter[0],
+        new BlockStatement(AstUtilities.createMethodInvocationStatement(
+            new ThisExpression(),
+            remember,
+            new StringLiteral("hello alice"))));
+    program.methods.add(sayHello);
+    program.methods.add(remember);
+    program.methods.add(callSayHello);
+    program.methods.add(callRemember);
+
+    String source = generate(program);
+
+    assertTrue(source, source.contains("void sayHello()"));
+    assertTrue(source, source.contains("hello alice"));
+    assertTrue(source, source.contains("void remember(String message)"));
+    assertTrue(source, source.contains("final String copy=message;"));
+    assertTrue(source, source.contains("void callSayHello()"));
+    assertTrue(source, source.contains("this.sayHello();"));
+    assertTrue(source, source.contains("void callRemember()"));
+    assertTrue(source, source.contains("this.remember(\"hello alice\");"));
+  }
+
+  @Test
+  public void characterizesUserMethodControlFlowPreviouslyCoveredByNetBeans() {
+    CountLoop countLoop = AstUtilities.createCountLoop(new IntegerLiteral(3));
+    countLoop.variable.getValue().name.setValue("indexA");
+    countLoop.body.getValue().statements.add(new Comment("loop body"));
+
+    ConditionalStatement conditional = new ConditionalStatement(
+        new BooleanExpressionBodyPair[] {
+            new BooleanExpressionBodyPair(new BooleanLiteral(true), new BlockStatement(new Comment("then branch")))
+        },
+        new BlockStatement(new Comment("else branch")));
+    WhileLoop whileLoop = AstUtilities.createWhileLoop(new BooleanLiteral(true));
+    whileLoop.body.getValue().statements.add(new Comment("loop body"));
+
+    NamedUserType program = new NamedUserType(
+        "Program",
+        null,
+        Object.class,
+        new NamedUserConstructor[] {new NamedUserConstructor(new UserParameter[] {}, new ConstructorBlockStatement())},
+        new UserMethod[] {
+            new UserMethod("choose", Void.TYPE, new UserParameter[0], new BlockStatement(conditional)),
+            new UserMethod("repeat", Void.TYPE, new UserParameter[0], new BlockStatement(countLoop)),
+            new UserMethod("spin", Void.TYPE, new UserParameter[0], new BlockStatement(whileLoop))
+        },
+        new UserField[] {});
+
+    String source = generate(program);
+
+    assertTrue(source, source.contains("void choose()"));
+    assertTrue(source, source.contains("if(true)"));
+    assertTrue(source, source.contains(" else"));
+    assertTrue(source, source.contains("void repeat()"));
+    assertTrue(source, source.contains("for(Integer indexA=0;indexA<3;indexA++)"));
+    assertTrue(source, source.contains("void spin()"));
+    assertTrue(source, source.contains("while (true)"));
+  }
+
+  @Test
+  public void characterizesForEachSourceShapePreviouslyCoveredByNetBeans() {
+    ForEachInArrayLoop generatedItemLoop = AstUtilities.createForEachInArrayLoop(AstUtilities.createArrayInstanceCreation(
+        String[].class,
+        new StringLiteral("red"),
+        new StringLiteral("blue")));
+    UserLocal generatedCopy = new UserLocal("copy", String.class, true);
+    generatedItemLoop.body.getValue().statements.add(
+        new LocalDeclarationStatement(generatedCopy, new LocalAccess(generatedItemLoop.item.getValue())));
+
+    ForEachInArrayLoop cachedCountLoop = AstUtilities.createForEachInArrayLoop(AstUtilities.createArrayInstanceCreation(
+        String[].class,
+        new StringLiteral("red"),
+        new StringLiteral("blue")));
+    cachedCountLoop.item.getValue().name.setValue("COUNT__");
+    UserLocal cachedCopy = new UserLocal("copy", String.class, true);
+    cachedCountLoop.body.getValue().statements.add(
+        new LocalDeclarationStatement(cachedCopy, new LocalAccess(cachedCountLoop.item.getValue())));
+
+    ForEachInArrayLoop namedItemLoop = new ForEachInArrayLoop(
+        new UserLocal("item", String.class, true),
+        AstUtilities.createArrayInstanceCreation(
+            String[].class,
+            new StringLiteral("red"),
+            new StringLiteral("blue")),
+        new BlockStatement());
+    UserLocal namedCopy = new UserLocal("copy", String.class, true);
+    namedItemLoop.body.getValue().statements.add(
+        new LocalDeclarationStatement(namedCopy, new LocalAccess(namedItemLoop.item.getValue())));
+
+    NamedUserType program = new NamedUserType(
+        "Program",
+        null,
+        Object.class,
+        new NamedUserConstructor[] {new NamedUserConstructor(new UserParameter[] {}, new ConstructorBlockStatement())},
+        new UserMethod[] {
+            new UserMethod("copyEach", Void.TYPE, new UserParameter[0], new BlockStatement(generatedItemLoop)),
+            new UserMethod("copyCachedItem", Void.TYPE, new UserParameter[0], new BlockStatement(cachedCountLoop)),
+            new UserMethod("copyNamedItem", Void.TYPE, new UserParameter[0], new BlockStatement(namedItemLoop))
+        },
+        new UserField[] {});
+
+    String source = generate(program);
+
+    assertFalse(source, source.contains("COUNT__"));
+    assertTrue(source, source.contains("void copyEach()"));
+    assertTrue(source, source.contains("void copyCachedItem()"));
+    assertTrue(source, source.contains("for(String itemA : new String[]{\"red\", \"blue\"})"));
+    assertTrue(source, source.contains("final String copy=itemA;"));
+    assertTrue(source, source.contains("void copyNamedItem()"));
+    assertTrue(source, source.contains("for(String item : new String[]{\"red\", \"blue\"})"));
+    assertTrue(source, source.contains("final String copy=item;"));
+  }
+
+  @Test
+  public void characterizesIterableForEachSourceShapePreviouslyCoveredByNetBeans() {
+    JavaMethod asList = AstMethodLookupHelpers.lookupMethod(Arrays.class, "asList", Object[].class);
+    MethodInvocation iterable = new MethodInvocation(
+        new TypeExpression(asList.getDeclaringType()),
+        asList,
+        new SimpleArgument[0],
+        new SimpleArgument[] {
+            new SimpleArgument(asList.getVariableLengthParameter(), new StringLiteral("red")),
+            new SimpleArgument(asList.getVariableLengthParameter(), new StringLiteral("blue"))
+        },
+        null);
+    ForEachInIterableLoop loop = new ForEachInIterableLoop(
+        new UserLocal("item", String.class, true),
+        iterable,
+        new BlockStatement());
+    UserLocal copy = new UserLocal("copy", String.class, true);
+    loop.body.getValue().statements.add(new LocalDeclarationStatement(copy, new LocalAccess(loop.item.getValue())));
+    UserMethod visitIterable = new UserMethod(
+        "visitIterable",
+        Void.TYPE,
+        new UserParameter[0],
+        new BlockStatement(loop));
+    NamedUserType program = new NamedUserType(
+        "Program",
+        null,
+        Object.class,
+        new NamedUserConstructor[] {new NamedUserConstructor(new UserParameter[] {}, new ConstructorBlockStatement())},
+        new UserMethod[] {visitIterable},
+        new UserField[] {});
+
+    String source = generate(program);
+
+    assertTrue(source, source.contains("import java.util.Arrays;"));
+    assertTrue(source, source.contains("void visitIterable()"));
+    assertTrue(source, source.contains("for(String item : Arrays.asList(\"red\",\"blue\"))"));
+    assertTrue(source, source.contains("final String copy=item;"));
   }
 
   private static ForEachInArrayLoop forEachLoop(String itemName) {

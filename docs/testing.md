@@ -79,6 +79,45 @@ mvn -pl netbeans -am \
   test
 ```
 
+Run the generated-source validation ownership lanes after changes that affect
+compiler/story source shape or NetBeans project generation.
+
+```bash
+git submodule update --init tweedle-lang
+mvn -pl core/ast -am \
+  -DincludeSims=false \
+  -Dinstall4j.skip \
+  -Dcheckstyle.skip \
+  -Djava.awt.headless=true \
+  -Dtest=SourceCodeGeneratorTest,JavaCodeGeneratorExtendedTest,JavaCodeGeneratorDelegationTest \
+  -Dsurefire.failIfNoSpecifiedTests=false \
+  test
+mvn -pl core/story-api-migration -am \
+  -DincludeSims=false \
+  -Dinstall4j.skip \
+  -Dcheckstyle.skip \
+  -Djava.awt.headless=true \
+  -Dtest=StoryApiGeneratedSourceTest \
+  -Dsurefire.failIfNoSpecifiedTests=false \
+  test
+mvn -pl core/ide -am \
+  -DincludeSims=false \
+  -Dinstall4j.skip \
+  -Dcheckstyle.skip \
+  -Djava.awt.headless=true \
+  -Dtest=SilverThreadStudentProgramCodegenTest \
+  -Dsurefire.failIfNoSpecifiedTests=false \
+  test
+mvn -pl netbeans -am \
+  -DincludeSims=false \
+  -Dinstall4j.skip \
+  -Dcheckstyle.skip \
+  -Djava.awt.headless=true \
+  -Dtest=ProjectCodeGeneratorGeneratedSourceTest,ProjectCodeGeneratorStoryApiGeneratedSourceTest,ProjectCodeGeneratorTest,ProjectCodeGeneratorStandaloneProjectTest,RabbitHoleBaselineParityTest \
+  -Dsurefire.failIfNoSpecifiedTests=false \
+  test
+```
+
 Run the dual-baseline replay harness in CI-safe fallback mode:
 
 ```bash
@@ -375,10 +414,13 @@ reviewed together.
 ## RabbitHole baseline parity harness
 
 `RabbitHoleBaselineParityTest` is the text-only baseline lane for generated
-NetBeans Java project output and representative Alice `.a3p`/`.a3w` archive
-shape. It lives in `netbeans/src/test/java/org/alice/netbeans/project/` because
-it exercises `ProjectCodeGenerator` alongside `IoUtilities.writeProject()` and
-`IoUtilities.exportProject()`.
+NetBeans package output and representative Alice `.a3p`/`.a3w` archive shape.
+It lives in `netbeans/src/test/java/org/alice/netbeans/project/` because it
+exercises `ProjectCodeGenerator` alongside `IoUtilities.writeProject()` and
+`IoUtilities.exportProject()`. Source file presence and hashes are allowed only
+as package parity evidence; pure Java imports, declarations, and snippet syntax
+live in the focused generated-source lanes described in
+[Generated Source Validation](reference/generated-source-validation.md).
 
 The checked-in snapshots are:
 

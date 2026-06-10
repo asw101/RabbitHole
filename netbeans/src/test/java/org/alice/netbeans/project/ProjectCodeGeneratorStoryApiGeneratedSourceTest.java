@@ -96,9 +96,6 @@ public class ProjectCodeGeneratorStoryApiGeneratedSourceTest {
         "generated-story-api-call-src");
 
     Path programPath = sourceDirectory.resolve("Program.java");
-    String programSource = Files.readString(programPath);
-    assertTrue(programSource.contains("void configureStory()"));
-    assertTrue(programSource, programSource.contains("this.setSimulationSpeedFactor(1.5);"));
     compileProgramAndLauncher("generated-story-api-call-classes", programPath, sourceDirectory);
   }
 
@@ -150,9 +147,6 @@ public class ProjectCodeGeneratorStoryApiGeneratedSourceTest {
         "generated-scene-activation-call-src");
 
     Path programPath = sourceDirectory.resolve("Program.java");
-    String programSource = Files.readString(programPath);
-    assertTrue(programSource.contains("void clearScene()"));
-    assertTrue(programSource, programSource.contains("this.setActiveScene(null);"));
     compileProgramAndLauncher("generated-scene-activation-call-classes", programPath, sourceDirectory);
   }
 
@@ -163,18 +157,6 @@ public class ProjectCodeGeneratorStoryApiGeneratedSourceTest {
         programTypeWithSceneModelEventAndRenderingCalls(),
         "generated-scene-model-event-rendering-call-src");
 
-    Path programPath = sourceDirectory.resolve("Program.java");
-    Path scenePath = sourceDirectory.resolve("Scene.java");
-    String programSource = Files.readString(programPath);
-    String sceneSource = Files.readString(scenePath);
-    assertTrue(programSource, programSource.contains("this.setActiveScene(this.scene);"));
-    assertTrue(programSource, programSource.contains("this.box.setPaint(Color.RED);"));
-    assertTrue(programSource, programSource.contains("this.box.setOpacity(0.5);"));
-    assertTrue(programSource, programSource.contains("this.box.say(\"hello box\");"));
-    assertTrue(sceneSource, sceneSource.contains("this.setAtmosphereColor(Color.BLUE);"));
-    assertTrue(sceneSource, sceneSource.contains("this.setFogDensity(0.25);"));
-    assertTrue(sceneSource, sceneSource.contains("this.addTimeListener(null,1);"));
-    assertTrue(sceneSource, sceneSource.contains("this.addSceneActivationListener(null);"));
     compileAllGeneratedSources("generated-scene-model-event-rendering-call-classes", sourceDirectory);
   }
 
@@ -185,10 +167,6 @@ public class ProjectCodeGeneratorStoryApiGeneratedSourceTest {
         programTypeWithSceneListenerRegistrationCalls(),
         "generated-scene-listener-registration-call-src");
 
-    Path scenePath = sourceDirectory.resolve("Scene.java");
-    String sceneSource = Files.readString(scenePath);
-    assertTrue(sceneSource, sceneSource.contains("this.addTimeListener(null,2);"));
-    assertTrue(sceneSource, sceneSource.contains("this.addSceneActivationListener(null);"));
     compileAllGeneratedSources("generated-scene-listener-registration-call-classes", sourceDirectory);
   }
 
@@ -198,13 +176,6 @@ public class ProjectCodeGeneratorStoryApiGeneratedSourceTest {
         "synthetic-scene-activation-listener-runtime-dispatch.a3p",
         programTypeWithExecutableSceneActivationRuntimeDispatchProbe(),
         "generated-scene-activation-listener-runtime-dispatch-src");
-
-    Path scenePath = sourceDirectory.resolve("Scene.java");
-    String sceneSource = Files.readString(scenePath);
-    assertTrue(sceneSource, sceneSource.contains("public void handleActiveChanged(Boolean isActive,Integer activationCount)"));
-    assertTrue(sceneSource, sceneSource.contains("this.addSceneActivationListener((SceneActivationEvent p0) ->"));
-    assertTrue(sceneSource, sceneSource.contains(
-        "ProjectCodeGeneratorStoryApiGeneratedSourceTest.recordSceneActivationRuntimeDispatch(p0);"));
 
     Path classesDirectory = compileAllGeneratedSources(
         "generated-scene-activation-listener-runtime-dispatch-classes",
@@ -243,12 +214,6 @@ public class ProjectCodeGeneratorStoryApiGeneratedSourceTest {
         programTypeWithExecutableTimeListenerRegistration(),
         "generated-time-listener-runtime-src");
 
-    Path scenePath = sourceDirectory.resolve("Scene.java");
-    String sceneSource = Files.readString(scenePath);
-    assertTrue(sceneSource, sceneSource.contains("public void handleActiveChanged(Boolean isActive,Integer activationCount)"));
-    assertTrue(sceneSource, sceneSource.contains("this.addTimeListener((TimeEvent p0) ->"));
-    assertTrue(sceneSource, sceneSource.contains("ProjectCodeGeneratorStoryApiGeneratedSourceTest.recordTimeEvent();"));
-
     Path classesDirectory = compileAllGeneratedSources(
         "generated-time-listener-runtime-classes",
         sourceDirectory);
@@ -272,12 +237,6 @@ public class ProjectCodeGeneratorStoryApiGeneratedSourceTest {
         "synthetic-time-listener-payload-runtime.a3p",
         programTypeWithExecutableTimeListenerElapsedProbe(),
         "generated-time-listener-payload-runtime-src");
-
-    Path scenePath = sourceDirectory.resolve("Scene.java");
-    String sceneSource = Files.readString(scenePath);
-    assertTrue(sceneSource, sceneSource.contains("this.addTimeListener((TimeEvent p0) ->"));
-    assertTrue(sceneSource, sceneSource.contains(
-        "ProjectCodeGeneratorStoryApiGeneratedSourceTest.recordTimeEventElapsed(p0.getTimeSinceLastFire());"));
 
     Path classesDirectory = compileAllGeneratedSources(
         "generated-time-listener-payload-runtime-classes",

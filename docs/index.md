@@ -15,6 +15,7 @@ expectations.
 - [Getting started](./getting-started.md)
 - [Architecture](./architecture.md)
 - [Testing](./testing.md)
+- [Generated source validation](./reference/generated-source-validation.md)
 - [Verify Text Migration Registry Parity](./howto/verify-text-migration-parity.md)
 - [RabbitHole baseline parity](./rabbithole-baseline-parity.md)
 - [Dual-baseline replay harness](./dual-baseline-replay-harness.md)
@@ -44,6 +45,7 @@ expectations.
 - [Getting started](./getting-started.md)
 - [Architecture](./architecture.md)
 - [Testing](./testing.md)
+- [Generated source validation](./reference/generated-source-validation.md)
 - [Verify Text Migration Registry Parity](./howto/verify-text-migration-parity.md)
 - [RabbitHole baseline parity](./rabbithole-baseline-parity.md)
 - [Dual-baseline replay harness](./dual-baseline-replay-harness.md)
@@ -72,6 +74,7 @@ expectations.
 - [Use a Scoped Clipboard Operation Registry](./howto/use-scoped-clipboard-operation-registry.md)
 - [Replace Reflection Sweeps with Explicit Contracts](./howto/replace-reflection-sweeps.md)
 - [Replace Test Sleeps with Deterministic Waits](./howto/replace-test-sleeps.md)
+- [Verify Generated Source Validation](./howto/verify-generated-source-validation.md)
 
 ### Tutorials
 
@@ -79,6 +82,7 @@ expectations.
 
 ### Reference
 
+- [Generated Source Validation](./reference/generated-source-validation.md)
 - [JavaFX Xvfb Launcher Reference](./reference/javafx-xvfb-launcher.md)
 - [Modernization Scorecard Generator](./reference/modernization-scorecard-generator.md)
 - [Modernization Corpus Manifest](./reference/modernization-corpus-manifest.md)

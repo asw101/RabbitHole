@@ -1,16 +1,21 @@
 # RabbitHole baseline parity
 
 `RabbitHoleBaselineParityTest` is a focused JUnit baseline harness for generated
-NetBeans project output and Alice project archive shapes. It compares current
+NetBeans package output and Alice project archive shapes. It compares current
 RabbitHole behavior against committed UTF-8 text snapshots and runs through the
 normal Maven test lane; there is no separate runner or binary fixture corpus.
+Pure Java source-shape assertions live in the focused generated-source tests
+described in
+[Generated Source Validation](reference/generated-source-validation.md).
+This harness may record generated-source file presence or hashes only to prove
+package parity; it does not own imports, declarations, or snippet syntax.
 
 ## What it covers
 
 The fixture is generated in memory for every test run. It creates a minimal
 `Program` Alice project with a referenced generated image resource, then verifies:
 
-- generated Java project summaries from `ProjectCodeGenerator.generateCode(...)`
+- generated project file summaries from `ProjectCodeGenerator.generateCode(...)`
 - editable `.a3p` archive entry lists and manifest summaries from `IoUtilities.writeProject(...)`
 - player `.a3w` export entry lists and manifest summaries from `IoUtilities.exportProject(...)`
 
@@ -32,8 +37,10 @@ The harness keeps snapshots deterministic by recording only stable text:
   snapshotted.
 - Manifest summaries omit volatile fields such as generated identifiers and
   creation timestamps.
-- Java source hashes are computed after line-ending normalization, with imports
-  and declaration-like lines included to make review easier.
+- Java source entries are summarized only as package artifacts. Hashes are
+  computed after line-ending normalization so parity changes remain reviewable
+  without making this harness the owner of imports, declarations, or Java syntax
+  snippets.
 - Resource payloads are represented by size and hash in the generated-source
   summary, not by embedding binary content.
 
@@ -71,4 +78,5 @@ This harness is low-level deterministic parity coverage for generator and archiv
 contracts. It complements `eatme`, which remains the broader outside-in workflow
 for save, reopen, run, and evidence artifacts. Use this baseline when changing
 NetBeans project generation, Alice project save/export behavior, manifest fields,
-or resource archive shape.
+or resource archive shape. Use the focused compiler and Story API tests for pure
+generated Java source-shape changes.
