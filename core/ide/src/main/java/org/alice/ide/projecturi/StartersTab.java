@@ -60,7 +60,10 @@ public class StartersTab extends ListUriTab {
   public StartersTab() {
     super(UUID.fromString("e31ab4b2-c305-4d04-8dcc-5de8cbb6facf"));
     File starterProjectsDirectory = StoryApiDirectoryUtilities.getStarterProjectsDirectory();
-    File[] files = FileUtilities.listFiles(starterProjectsDirectory, "a3p");
+    File[] files = starterProjectsDirectory != null ? FileUtilities.listFiles(starterProjectsDirectory, "a3p") : new File[0];
+    if (files == null) {
+      files = new File[0];
+    }
     ProjectSnapshot[] projectSnapshots = new ProjectSnapshot[files.length];
     int i = 0;
     Arrays.sort(files);
