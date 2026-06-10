@@ -51,24 +51,40 @@ import org.lgna.project.io.IoUtilities;
 import java.io.File;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Supplier;
 
 /**
  * @author Dennis Cosgrove
  */
 public final class DirectoryUriListData extends RefreshableListData<ProjectSnapshot> {
-  private final File directory;
+  private final Supplier<File> directorySupplier;
+  private File directory;
 
   public DirectoryUriListData(File directory) {
     super(ProjectSnapshotCodec.SINGLETON);
+    this.directorySupplier = null;
     this.directory = directory;
+  }
+
+  public DirectoryUriListData(Supplier<File> directorySupplier) {
+    super(ProjectSnapshotCodec.SINGLETON);
+    this.directorySupplier = directorySupplier;
+    this.directory = null;
+  }
+
+  private File resolveDirectory() {
+    if (directory == null && directorySupplier != null) {
+      directory = directorySupplier.get();
+    }
+    return directory;
   }
 
   @Override
   protected List<ProjectSnapshot> createValues() {
-
-    if (directory != null) {
+    File dir = resolveDirectory();
+    if (dir != null) {
       ProjectSnapshot[] snapshots;
-      File[] files = IoUtilities.listProjectFiles(directory);
+      File[] files = IoUtilities.listProjectFiles(dir);
       final int N = files.length;
       snapshots = new ProjectSnapshot[N];
       for (int i = 0; i < N; i++) {
@@ -85,6 +101,6 @@ public final class DirectoryUriListData extends RefreshableListData<ProjectSnaps
   }
 
   public File getDirectory() {
-    return this.directory;
+    return resolveDirectory();
   }
 }
