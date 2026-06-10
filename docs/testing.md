@@ -10,6 +10,14 @@ and render behaviors belong in explicit JUnit contracts. See
 [Replace Reflection Sweeps with Explicit Contracts](howto/replace-reflection-sweeps.md),
 and [Reflection Smoke Support](reference/reflection-smoke-support.md).
 
+Deterministic-wait helpers replace fixed sleeps in tests that observe
+asynchronous work, UI state, generated launchers, process output, or worker
+threads. See
+[Replace test sleeps with deterministic waits](./howto/replace-test-sleeps.md)
+for usage examples and
+[Deterministic test wait reference](./reference/deterministic-test-waits.md)
+for helper contracts and the sleep inventory disposition.
+
 ## Run the main test lanes
 
 Validate the documented Getting Started path:

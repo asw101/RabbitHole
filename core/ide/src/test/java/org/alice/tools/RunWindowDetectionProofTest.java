@@ -1,5 +1,6 @@
 package org.alice.tools;
 
+import org.alice.ide.IdeTestWait;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -194,10 +195,7 @@ public class RunWindowDetectionProofTest {
       toolbarFrame.setLocationRelativeTo(null);
       toolbarFrame.setVisible(true);
 
-      // Poll for button visibility instead of fixed 500ms sleep
-      for (int i = 0; i < 50 && !runButton.isShowing(); i++) {
-        Thread.sleep(10);
-      }
+      IdeTestWait.untilOnEdt(runButton::isShowing, "Run button to become visible");
 
       Robot robot = new Robot();
       robot.setAutoDelay(50);
@@ -401,24 +399,29 @@ public class RunWindowDetectionProofTest {
     }
   }
 
-  private static DetectionResult pollForWindow(String titleSubstring) throws InterruptedException {
+  private static DetectionResult pollForWindow(String titleSubstring) {
     return pollForWindow(titleSubstring, MAX_POLL_ITERATIONS, POLL_INTERVAL_MS);
   }
 
   private static DetectionResult pollForWindow(String titleSubstring,
-      int maxIterations, int intervalMs) throws InterruptedException {
-    for (int i = 0; i < maxIterations; i++) {
+      int maxIterations, int intervalMs) {
+    AtomicReference<DetectionResult> detected = new AtomicReference<>();
+    long timeoutNanos = TimeUnit.MILLISECONDS.toNanos((long) maxIterations * intervalMs);
+    long deadline = System.nanoTime() + timeoutNanos;
+    IdeTestWait.until(() -> {
       for (Window w : Window.getWindows()) {
         if (w instanceof JFrame jf
             && jf.getTitle().contains(titleSubstring)
             && jf.isShowing()) {
           String windowId = "0x" + Integer.toHexString(System.identityHashCode(jf));
-          return new DetectionResult("detected", jf.getTitle(), windowId, null);
+          detected.set(new DetectionResult("detected", jf.getTitle(), windowId, null));
+          break;
         }
       }
-      if (i + 1 < maxIterations) {
-        Thread.sleep(intervalMs);
-      }
+      return detected.get() != null || System.nanoTime() >= deadline;
+    }, "run window detection to complete", timeoutNanos, TimeUnit.NANOSECONDS);
+    if (detected.get() != null) {
+      return detected.get();
     }
     int totalSeconds = (maxIterations * intervalMs) / 1000;
     return new DetectionResult("not_detected", null, null,

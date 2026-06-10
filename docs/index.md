@@ -71,6 +71,7 @@ expectations.
 - [Use the UI Prompt Boundary](./howto/use-ui-prompt-boundary.md)
 - [Use a Scoped Clipboard Operation Registry](./howto/use-scoped-clipboard-operation-registry.md)
 - [Replace Reflection Sweeps with Explicit Contracts](./howto/replace-reflection-sweeps.md)
+- [Replace Test Sleeps with Deterministic Waits](./howto/replace-test-sleeps.md)
 
 ### Tutorials
 
@@ -87,6 +88,7 @@ expectations.
 - [Clipboard Operation Registry](./reference/clipboard-operation-registry.md)
 - [Reflection Smoke Support](./reference/reflection-smoke-support.md)
 - [System.exit Allowlist](./reference/system-exit-allowlist.md)
+- [Deterministic Test Waits](./reference/deterministic-test-waits.md)
 
 ### Architecture Atlas
 

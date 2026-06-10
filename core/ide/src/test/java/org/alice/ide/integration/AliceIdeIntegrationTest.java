@@ -12,6 +12,7 @@ import edu.cmu.cs.dennisc.scenegraph.TexturedAppearance;
 import edu.cmu.cs.dennisc.scenegraph.Transformable;
 import edu.cmu.cs.dennisc.scenegraph.Visual;
 import org.alice.ide.IdeApp;
+import org.alice.ide.IdeTestWait;
 import org.alice.ide.ProjectStack;
 import org.alice.ide.ast.code.edits.MoveStatementEdit;
 import org.alice.ide.ast.delete.DeleteStatementOperation;
@@ -181,6 +182,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.TimerTask;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
 import java.util.function.Predicate;
@@ -361,7 +363,7 @@ public class AliceIdeIntegrationTest {
     probe.start();
     try {
       clickCenter(menuFrame);
-      this.robot.delay(150);
+    waitForIdle();
       clickCenter(fileMenu);
       awaitCondition("file menu did not open", () -> onEdt(fileMenu::isPopupMenuVisible));
 
@@ -394,10 +396,9 @@ public class AliceIdeIntegrationTest {
       this.ide.getDocumentFrame().setToSetupScenePerspectiveTransactionlessly();
       sceneEditorRef.set(this.ide.getSceneEditor());
     });
-    for (int i = 0; i < 200 && sceneEditorRef.get() == null; i++) {
-      this.robot.delay(100);
-    }
-    Assume.assumeTrue("scene perspective unavailable in bootstrap environment", sceneEditorRef.get() != null);
+    Assume.assumeTrue(
+        "scene perspective unavailable in bootstrap environment",
+        IdeTestWait.isTrueWithin(() -> sceneEditorRef.get() != null, 20, TimeUnit.SECONDS));
     StorytellingSceneEditor sceneEditor = sceneEditorRef.get();
     waitForIdle();
 
@@ -1583,11 +1584,11 @@ public class AliceIdeIntegrationTest {
     int startY = startBounds.y + (startBounds.height / 2);
     this.robot.mouseMove(startX, startY);
     this.robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-    this.robot.delay(120);
+    waitForIdle();
     this.robot.mouseMove((startX + targetPointOnScreen.x) / 2, (startY + targetPointOnScreen.y) / 2);
-    this.robot.delay(120);
+    waitForIdle();
     this.robot.mouseMove(targetPointOnScreen.x, targetPointOnScreen.y);
-    this.robot.delay(200);
+    waitForIdle();
     this.robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
     waitForIdle();
   }
@@ -1917,29 +1918,20 @@ public class AliceIdeIntegrationTest {
 
   private void waitForIdle() {
     this.robot.waitForIdle();
-    this.robot.delay(120);
+    IdeTestWait.drainEdt();
   }
 
   private void awaitCondition(String message, BooleanSupplier condition) {
-    for (int i = 0; i < 200; i++) {
-      if (condition.getAsBoolean()) {
-        return;
-      }
-      this.robot.delay(100);
-    }
-    fail(message);
+    IdeTestWait.until(condition, message);
   }
 
   private JDialog awaitWindow(Predicate<Window> predicate, String message) {
-    for (int i = 0; i < 50; i++) {
-      JDialog dialog = onEdt(() -> findWindow(predicate));
-      if (dialog != null) {
-        return dialog;
-      }
-      this.robot.delay(100);
-    }
-    fail(message);
-    return null;
+    AtomicReference<JDialog> dialogRef = new AtomicReference<>();
+    IdeTestWait.untilOnEdt(() -> {
+      dialogRef.set(findWindow(predicate));
+      return dialogRef.get() != null;
+    }, message);
+    return dialogRef.get();
   }
 
   private JDialog findWindow(Predicate<Window> predicate) {

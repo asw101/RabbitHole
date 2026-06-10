@@ -154,11 +154,7 @@ public class CoverageBoostBehaviorTest {
   }
 
   private static void waitUntil(BooleanSupplier condition, long timeoutMillis) throws InterruptedException {
-    long deadline = System.currentTimeMillis() + timeoutMillis;
-    while (!condition.getAsBoolean() && System.currentTimeMillis() < deadline) {
-      Thread.sleep(10L);
-    }
-    assertTrue("Timed out waiting for condition", condition.getAsBoolean());
+    GlRenderTestWait.until(condition, "GL render condition within " + timeoutMillis + "ms");
   }
 
   private static Object getField(Class<?> type, Object target, String name) throws Exception {

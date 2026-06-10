@@ -17,6 +17,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
 import static org.junit.Assert.*;
 
@@ -157,9 +158,17 @@ public class RunCommandStreamDrainTest {
     PipedInputStream reader = new PipedInputStream(writer);
 
     ByteArrayOutputStream drainBuffer = new ByteArrayOutputStream();
+    CountDownLatch partialCopied = new CountDownLatch(1);
     Thread drainer = new Thread(() -> {
       try {
-        reader.transferTo(drainBuffer);
+        byte[] buffer = new byte[64];
+        int count;
+        while ((count = reader.read(buffer)) != -1) {
+          drainBuffer.write(buffer, 0, count);
+          if (drainBuffer.toString(StandardCharsets.UTF_8).contains("PARTIAL_BEFORE_KILL")) {
+            partialCopied.countDown();
+          }
+        }
       } catch (IOException ignored) {
         // Simulates destroyForcibly closing the pipe
       }
@@ -169,7 +178,7 @@ public class RunCommandStreamDrainTest {
 
     writer.write("PARTIAL_BEFORE_KILL\n".getBytes(StandardCharsets.UTF_8));
     writer.flush();
-    Thread.sleep(100);
+    ProjectTestWait.await(partialCopied, "drain thread to copy partial output");
 
     // Simulate destroyForcibly closing the pipe
     writer.close();

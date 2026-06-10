@@ -409,7 +409,7 @@ public class EventHandlerBehaviorTest {
     activationHandler.addListener(listener);
     activationHandler.removeListener(listener);
     activationHandler.handleEventFire(new SceneActivationEvent());
-    Thread.sleep(200);
+    EventTestSupport.waitForEventDispatchIdle(activationHandler);
     assertFalse("Removed listener should not fire", called.get());
   }
 

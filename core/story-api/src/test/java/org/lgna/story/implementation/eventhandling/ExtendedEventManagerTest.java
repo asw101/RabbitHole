@@ -177,7 +177,7 @@ public class ExtendedEventManagerTest {
     eventManager.addSceneActivationListener(listener);
     eventManager.removeSceneActivationListener(listener);
     eventManager.sceneActivated();
-    Thread.sleep(200);
+    EventTestSupport.waitForSceneActivationDispatchIdle(eventManager);
     assertFalse("Removed listener should not fire", called.get());
   }
 
@@ -187,7 +187,7 @@ public class ExtendedEventManagerTest {
     eventManager.addSceneActivationListener(e -> called.set(true));
     eventManager.silenceAllListeners();
     eventManager.sceneActivated();
-    Thread.sleep(200);
+    EventTestSupport.waitForSceneActivationDispatchIdle(eventManager);
     assertFalse("Silenced listener should not fire", called.get());
     eventManager.restoreAllListeners();
   }
@@ -298,11 +298,16 @@ public class ExtendedEventManagerTest {
     handler.setScene(sceneImp);
 
     AtomicInteger count = new AtomicInteger(0);
-    handler.addListener(e -> count.incrementAndGet());
+    CountDownLatch fired = new CountDownLatch(1);
+    handler.addListener(e -> {
+      count.incrementAndGet();
+      fired.countDown();
+    });
 
     handler.handleEventFire(new SceneActivationEvent());
     handler.handleEventFire(new SceneActivationEvent());
-    Thread.sleep(300);
+    EventTestSupport.await(fired, "scene activation handler listener");
+    EventTestSupport.waitForEventDispatchIdle(handler);
     assertTrue("Should fire at least once", count.get() >= 1);
   }
 

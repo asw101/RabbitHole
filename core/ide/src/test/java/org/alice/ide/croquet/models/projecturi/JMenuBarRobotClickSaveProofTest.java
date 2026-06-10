@@ -1,6 +1,7 @@
 package org.alice.ide.croquet.models.projecturi;
 
 import edu.cmu.cs.dennisc.crash.CrashDetector;
+import org.alice.ide.IdeTestWait;
 import org.alice.ide.croquet.models.menubar.FileMenuModel;
 import org.alice.stageide.StageIDE;
 import org.junit.After;
@@ -163,7 +164,9 @@ public class JMenuBarRobotClickSaveProofTest {
 
     // Step 2: Wait for the Swing paint pass so the JMenu has stable screen bounds.
     robot.waitForIdle();
-    robot.delay(150);
+    IdeTestWait.drainEdt();
+    IdeTestWait.untilOnEdt(() -> fileMenuRef.get().isShowing(),
+        "File JMenu button to become visible");
 
     // Step 3: Get the screen center of the "File" JMenu button (EDT only).
     AtomicReference<Point> fileMenuCenter = new AtomicReference<>();
@@ -186,18 +189,8 @@ public class JMenuBarRobotClickSaveProofTest {
     robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
     robot.waitForIdle();
 
-    // Step 5: Poll for the File popup to become visible (up to 2 s).
-    boolean popupVisible = false;
-    for (int i = 0; i < 20; i++) {
-      robot.delay(100);
-      boolean[] vis = new boolean[1];
-      SwingUtilities.invokeAndWait(() -> vis[0] = fileMenuRef.get().isPopupMenuVisible());
-      if (vis[0]) {
-        popupVisible = true;
-        break;
-      }
-    }
-    assertTrue("File popup menu did not open after Robot click on File JMenu button", popupVisible);
+    IdeTestWait.untilOnEdt(() -> fileMenuRef.get().isPopupMenuVisible(),
+        "File popup menu to open after Robot click");
 
     // Step 6: Find the Save JMenuItem in the open popup by Action identity (EDT only).
     AtomicReference<Point> saveItemCenter = new AtomicReference<>();
@@ -224,8 +217,9 @@ public class JMenuBarRobotClickSaveProofTest {
     robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
     robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
     robot.waitForIdle();
-    // Allow ActionEvent dispatch and evidence write on the EDT before reading artifact.
-    robot.delay(200);
+    IdeTestWait.until(() -> Files.exists(evidenceDir.resolve(
+        SaveOperationCompletionEvidence.SAVE_ACTION_INVOCATION_PROOF_ARTIFACT)),
+        "Save action invocation evidence artifact");
 
     // Step 8: Assert evidence artifact contents.
     Path artifact =

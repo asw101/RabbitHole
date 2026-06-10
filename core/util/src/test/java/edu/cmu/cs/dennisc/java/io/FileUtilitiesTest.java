@@ -1,5 +1,6 @@
 package edu.cmu.cs.dennisc.java.io;
 
+import edu.cmu.cs.dennisc.TestWait;
 import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
@@ -16,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 
@@ -735,7 +737,9 @@ public class FileUtilitiesTest {
     File file = temporaryFolder.newFile("write-time.txt");
     writeText(file, "before");
     LocalDateTime before = FileUtilities.getModifiedDateTime(file);
-    Thread.sleep(30L);
+    // Intentional real-time wait: verifies filesystem modified-time ordering on this platform.
+    TestWait.sleepForSemanticTime(30, TimeUnit.MILLISECONDS,
+        "filesystem modified timestamp ordering");
     writeText(file, "after");
     LocalDateTime after = FileUtilities.getModifiedDateTime(file);
     assertTrue(!after.isBefore(before));

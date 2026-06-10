@@ -86,10 +86,10 @@ public class ProjectCodeGeneratorStandaloneProjectTest {
       Class<?> stageClass = Class.forName("javafx.stage.Stage", true, classLoader);
       String[] args = {"--project", "standalone-smoke.a3p"};
 
-      String output = captureSystemOut(() -> {
-        launcherClass.getMethod("main", String[].class).invoke(null, (Object) args);
-        Thread.sleep(100L);
-      });
+      String output = ProjectTestWait.captureSystemOutUntil(
+          () -> launcherClass.getMethod("main", String[].class).invoke(null, (Object) args),
+          () -> (Boolean) stageClass.getField("showInvoked").get(null),
+          "generated JavaFX launcher to show stage");
 
       assertArrayEquals(args, (String[]) applicationClass.getField("launchedArgs").get(null));
       assertTrue((Boolean) applicationClass.getField("startInvoked").get(null));
