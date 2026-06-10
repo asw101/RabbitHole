@@ -72,6 +72,7 @@ expectations.
 - [Text Migration Registry Parity](./reference/text-migration-registry-parity.md)
 - [Process Termination API](./reference/process-termination-api.md)
 - [Reflection Smoke Support](./reference/reflection-smoke-support.md)
+- [System.exit Allowlist](./reference/system-exit-allowlist.md)
 
 ### Architecture Atlas
 
