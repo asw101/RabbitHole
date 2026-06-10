@@ -44,6 +44,7 @@ package org.alice.ide.projecturi;
 
 import java.io.File;
 import java.util.UUID;
+import java.util.function.Supplier;
 
 /**
  * @author Dennis Cosgrove
@@ -52,5 +53,9 @@ abstract class DirectoryUriListTab extends RefreshableListUriTab {
 
   DirectoryUriListTab(UUID migrationId, File directory) {
     super(migrationId, new DirectoryUriListData(directory));
+  }
+
+  DirectoryUriListTab(UUID migrationId, Supplier<File> directorySupplier) {
+    super(migrationId, new DirectoryUriListData(directorySupplier));
   }
 }
