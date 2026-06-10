@@ -57,10 +57,12 @@ expectations.
 - [Formal Specification Lane](./concepts/formal-spec-lane.md)
 - [Migration Hotspot Characterization](./concepts/migration-hotspot-characterization.md)
 - [Process Termination Boundary](./concepts/process-termination-boundary.md)
+- [Scoped Clipboard Operation Registries](./concepts/scoped-clipboard-operation-registries.md)
 
 ### How-to guides
 
 - [Request Process Termination Safely](./howto/request-process-termination.md)
+- [Use a Scoped Clipboard Operation Registry](./howto/use-scoped-clipboard-operation-registry.md)
 
 ### Reference
 
@@ -69,6 +71,7 @@ expectations.
 - [Modernization Corpus Manifest](./reference/modernization-corpus-manifest.md)
 - [Text Migration Registry Parity](./reference/text-migration-registry-parity.md)
 - [Process Termination API](./reference/process-termination-api.md)
+- [Clipboard Operation Registry](./reference/clipboard-operation-registry.md)
 
 ### Architecture Atlas
 
