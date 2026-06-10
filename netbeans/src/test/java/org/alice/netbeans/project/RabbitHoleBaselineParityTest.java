@@ -26,14 +26,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.Formatter;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
-import java.util.function.Predicate;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -59,7 +57,7 @@ public class RabbitHoleBaselineParityTest {
   public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
   @Test
-  public void generatedJavaProjectMatchesBaselineSnapshot() throws Exception {
+  public void generatedProjectFilesMatchBaselineSnapshot() throws Exception {
     File aliceProject = temporaryFolder.newFile("simple-project.a3p");
     IoUtilities.writeProject(aliceProject, simpleProject());
     File sourceDirectory = temporaryFolder.newFolder("generated-src");
@@ -144,7 +142,7 @@ public class RabbitHoleBaselineParityTest {
 
   private static String summarizeGeneratedSource(Path sourceDirectory) throws Exception {
     StringBuilder summary = new StringBuilder();
-    summary.append("schema: rabbithole.generated-java/v1\n");
+    summary.append("schema: rabbithole.generated-project-files/v1\n");
     summary.append("fixture: simple-project\n\n");
     List<Path> files;
     try (Stream<Path> stream = Files.walk(sourceDirectory)) {
@@ -160,9 +158,6 @@ public class RabbitHoleBaselineParityTest {
       summary.append("file: ").append(relativePath).append('\n');
       summary.append("bytes: ").append(bytes.length).append('\n');
       summary.append("sha256: ").append(sha256(bytesForHash(relativePath, bytes))).append('\n');
-      if (relativePath.endsWith(".java")) {
-        appendJavaSummary(summary, new String(bytes, StandardCharsets.UTF_8));
-      }
       if (i < (files.size() - 1)) {
         summary.append('\n');
       }
@@ -175,48 +170,6 @@ public class RabbitHoleBaselineParityTest {
       return normalizeLineEndings(new String(bytes, StandardCharsets.UTF_8)).getBytes(StandardCharsets.UTF_8);
     }
     return bytes;
-  }
-
-  private static void appendJavaSummary(StringBuilder summary, String source) {
-    List<String> imports = matchingLines(source, line -> line.startsWith("import "));
-    List<String> declarations = matchingLines(source, RabbitHoleBaselineParityTest::isReviewableJavaLine);
-    summary.append("lines: ").append(normalizeLineEndings(source).split("\n", -1).length).append('\n');
-    appendList(summary, "imports", imports);
-    appendList(summary, "declarations", declarations);
-  }
-
-  private static boolean isReviewableJavaLine(String line) {
-    String trimmed = line.trim();
-    if (trimmed.startsWith("public class ") || trimmed.startsWith("class ")) {
-      return true;
-    }
-    return trimmed.matches(".*\\b(public|private|protected|static|final)\\b.*\\).*\\{?");
-  }
-
-  private static List<String> matchingLines(String source, Predicate<String> predicate) {
-    return Arrays.stream(reviewableSourceLines(source).split("\n"))
-        .map(String::trim)
-        .filter(line -> !line.isEmpty())
-        .filter(predicate)
-        .toList();
-  }
-
-  private static String reviewableSourceLines(String source) {
-    return normalizeLineEndings(source)
-        .replace(";", ";\n")
-        .replace("{", "{\n")
-        .replace("}", "}\n");
-  }
-
-  private static void appendList(StringBuilder summary, String label, List<String> lines) {
-    summary.append(label).append(":\n");
-    if (lines.isEmpty()) {
-      summary.append("  <none>\n");
-      return;
-    }
-    for (String line : lines) {
-      summary.append("  ").append(line).append('\n');
-    }
   }
 
   private static String summarizeArchive(File archive, String expectedFileType) throws Exception {

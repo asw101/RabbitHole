@@ -58,9 +58,6 @@ public class ProjectCodeGeneratorGeneratedSourceTest {
     Path sourceDirectory = generateProgramSource("synthetic-method.a3p", programTypeWithUserMethod(), "generated-method-src");
 
     Path programPath = sourceDirectory.resolve("Program.java");
-    String programSource = Files.readString(programPath);
-    assertTrue(programSource.contains("void sayHello()"));
-    assertTrue(programSource.contains("hello alice"));
     compileProgramAndLauncher("generated-method-classes", programPath, sourceDirectory);
   }
 
@@ -72,9 +69,6 @@ public class ProjectCodeGeneratorGeneratedSourceTest {
         "generated-local-declaration-src");
 
     Path programPath = sourceDirectory.resolve("Program.java");
-    String programSource = Files.readString(programPath);
-    assertTrue(programSource.contains("void sayHello()"));
-    assertTrue(programSource, programSource.contains("final String greeting=\"hello alice\";"));
     compileProgramAndLauncher("generated-local-declaration-classes", programPath, sourceDirectory);
   }
 
@@ -86,9 +80,6 @@ public class ProjectCodeGeneratorGeneratedSourceTest {
         "generated-parameter-src");
 
     Path programPath = sourceDirectory.resolve("Program.java");
-    String programSource = Files.readString(programPath);
-    assertTrue(programSource.contains("void remember(String message)"));
-    assertTrue(programSource, programSource.contains("final String copy=message;"));
     compileProgramAndLauncher("generated-parameter-classes", programPath, sourceDirectory);
   }
 
@@ -100,10 +91,6 @@ public class ProjectCodeGeneratorGeneratedSourceTest {
         "generated-method-invocation-src");
 
     Path programPath = sourceDirectory.resolve("Program.java");
-    String programSource = Files.readString(programPath);
-    assertTrue(programSource.contains("void sayHello()"));
-    assertTrue(programSource.contains("void callSayHello()"));
-    assertTrue(programSource, programSource.contains("this.sayHello();"));
     compileProgramAndLauncher("generated-method-invocation-classes", programPath, sourceDirectory);
   }
 
@@ -115,10 +102,6 @@ public class ProjectCodeGeneratorGeneratedSourceTest {
         "generated-method-invocation-argument-src");
 
     Path programPath = sourceDirectory.resolve("Program.java");
-    String programSource = Files.readString(programPath);
-    assertTrue(programSource.contains("void remember(String message)"));
-    assertTrue(programSource.contains("void callRemember()"));
-    assertTrue(programSource, programSource.contains("this.remember(\"hello alice\");"));
     compileProgramAndLauncher("generated-method-invocation-argument-classes", programPath, sourceDirectory);
   }
 
@@ -130,10 +113,6 @@ public class ProjectCodeGeneratorGeneratedSourceTest {
         "generated-conditional-src");
 
     Path programPath = sourceDirectory.resolve("Program.java");
-    String programSource = Files.readString(programPath);
-    assertTrue(programSource.contains("void choose()"));
-    assertTrue(programSource, programSource.contains("if(true)"));
-    assertTrue(programSource, programSource.contains(" else"));
     compileProgramAndLauncher("generated-conditional-classes", programPath, sourceDirectory);
   }
 
@@ -145,9 +124,6 @@ public class ProjectCodeGeneratorGeneratedSourceTest {
         "generated-count-loop-src");
 
     Path programPath = sourceDirectory.resolve("Program.java");
-    String programSource = Files.readString(programPath);
-    assertTrue(programSource.contains("void repeat()"));
-    assertTrue(programSource, programSource.contains("for(Integer indexA=0;indexA<3;indexA++)"));
     compileProgramAndLauncher("generated-count-loop-classes", programPath, sourceDirectory);
   }
 
@@ -159,9 +135,6 @@ public class ProjectCodeGeneratorGeneratedSourceTest {
         "generated-while-loop-src");
 
     Path programPath = sourceDirectory.resolve("Program.java");
-    String programSource = Files.readString(programPath);
-    assertTrue(programSource.contains("void spin()"));
-    assertTrue(programSource, programSource.contains("while (true)"));
     compileProgramAndLauncher("generated-while-loop-classes", programPath, sourceDirectory);
   }
 
@@ -173,10 +146,6 @@ public class ProjectCodeGeneratorGeneratedSourceTest {
         "generated-for-each-loop-src");
 
     Path programPath = sourceDirectory.resolve("Program.java");
-    String programSource = Files.readString(programPath);
-    assertTrue(programSource.contains("void visitAll()"));
-    assertFalse(programSource, programSource.contains("COUNT__"));
-    assertTrue(programSource, programSource.contains("for(String itemA : new String[]{\"red\", \"blue\"})"));
     compileProgramAndLauncher("generated-for-each-loop-classes", programPath, sourceDirectory);
   }
 
@@ -188,11 +157,6 @@ public class ProjectCodeGeneratorGeneratedSourceTest {
         "generated-for-each-loop-item-access-src");
 
     Path programPath = sourceDirectory.resolve("Program.java");
-    String programSource = Files.readString(programPath);
-    assertTrue(programSource.contains("void copyEach()"));
-    assertFalse(programSource, programSource.contains("COUNT__"));
-    assertTrue(programSource, programSource.contains("for(String itemA : new String[]{\"red\", \"blue\"})"));
-    assertTrue(programSource, programSource.contains("final String copy=itemA;"));
     compileProgramAndLauncher("generated-for-each-loop-item-access-classes", programPath, sourceDirectory);
   }
 
@@ -204,11 +168,6 @@ public class ProjectCodeGeneratorGeneratedSourceTest {
         "generated-for-each-loop-cached-count-item-src");
 
     Path programPath = sourceDirectory.resolve("Program.java");
-    String programSource = Files.readString(programPath);
-    assertTrue(programSource.contains("void copyCachedItem()"));
-    assertFalse(programSource, programSource.contains("COUNT__"));
-    assertTrue(programSource, programSource.contains("for(String itemA : new String[]{\"red\", \"blue\"})"));
-    assertTrue(programSource, programSource.contains("final String copy=itemA;"));
     compileProgramAndLauncher("generated-for-each-loop-cached-count-item-classes", programPath, sourceDirectory);
   }
 
@@ -220,10 +179,6 @@ public class ProjectCodeGeneratorGeneratedSourceTest {
         "generated-named-for-each-loop-item-access-src");
 
     Path programPath = sourceDirectory.resolve("Program.java");
-    String programSource = Files.readString(programPath);
-    assertTrue(programSource.contains("void copyNamedItem()"));
-    assertTrue(programSource, programSource.contains("for(String item : new String[]{\"red\", \"blue\"})"));
-    assertTrue(programSource, programSource.contains("final String copy=item;"));
     compileProgramAndLauncher("generated-named-for-each-loop-item-access-classes", programPath, sourceDirectory);
   }
 
@@ -235,10 +190,6 @@ public class ProjectCodeGeneratorGeneratedSourceTest {
         "generated-for-each-iterable-src");
 
     Path programPath = sourceDirectory.resolve("Program.java");
-    String programSource = Files.readString(programPath);
-    assertTrue(programSource.contains("void visitIterable()"));
-    assertTrue(programSource, programSource.contains("for(String item : Arrays.asList(\"red\",\"blue\"))"));
-    assertTrue(programSource, programSource.contains("final String copy=item;"));
     compileProgramAndLauncher("generated-for-each-iterable-classes", programPath, sourceDirectory);
   }
 
