@@ -69,6 +69,7 @@ expectations.
 - [Modernization Corpus Manifest](./reference/modernization-corpus-manifest.md)
 - [Text Migration Registry Parity](./reference/text-migration-registry-parity.md)
 - [Process Termination API](./reference/process-termination-api.md)
+- [System.exit Allowlist](./reference/system-exit-allowlist.md)
 
 ### Architecture Atlas
 
