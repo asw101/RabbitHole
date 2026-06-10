@@ -15,6 +15,7 @@ concurrency:
 
 jobs:
   package-netbeans:
+    timeout-minutes: 30
     runs-on: ubuntu-latest
     steps:
       - name: Check out source

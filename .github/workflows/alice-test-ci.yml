@@ -15,6 +15,7 @@ concurrency:
 
 jobs:
   test:
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -187,6 +188,7 @@ jobs:
           sed 's/^/- /' "${RUNNER_TEMP}/ci-changed-files.txt"
 
   headed-ubuntu-xvfb:
+    timeout-minutes: 30
     runs-on: ubuntu-latest
     steps:
       - name: Check out source
