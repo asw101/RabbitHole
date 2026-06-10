@@ -122,18 +122,6 @@ public class StoryApiDirectoryUtilities {
     }
   }
 
-  /**
-   * Prompt the user to locate the gallery directory via a dialog.
-   * Call this from application entry points (not library code) when
-   * {@link #getModelGalleryDirectory()} returns null and user interaction
-   * is appropriate.
-   */
-  public static void promptUserForModelGallery() {
-    org.lgna.story.resourceutilities.FindResourcesPanel.getInstance().show(null);
-    StoryApiDirectoryUtilities.modelGalleryDirectory =
-        org.lgna.story.resourceutilities.FindResourcesPanel.getInstance().getGalleryDir();
-  }
-
   public static File getSoundGalleryDirectory() {
     return getDirectory(SOUND_GALLERY_NAME);
   }

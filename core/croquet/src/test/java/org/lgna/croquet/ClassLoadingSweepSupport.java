@@ -259,6 +259,11 @@ public final class ClassLoadingSweepSupport {
     }
   }
 
+  // Best-effort denylist for methods that show modal dialogs or have
+  // disruptive side effects. This is NOT exhaustive — new dialog-showing
+  // methods (e.g. alertUser(), confirmAction()) will bypass it. If sweep
+  // tests hang again, take a thread dump, identify the method, and add it
+  // here. A structural fix would be a per-method timeout with thread-kill.
   private static final Set<String> BLOCKED_METHOD_NAMES = Set.of(
       "setVisible", "hide", "pack", "toFront", "toBack",
       "dispose", "close", "requestFocus", "requestFocusInWindow",
