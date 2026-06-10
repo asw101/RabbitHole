@@ -67,8 +67,7 @@ public class EventManagerDispatchTest {
 
     assertTrue("at least one callback fires for duplicate registrations",
         atLeastOne.await(2, TimeUnit.SECONDS));
-    // Allow async executor threads to settle
-    Thread.sleep(250);
+    EventTestSupport.waitForSceneActivationDispatchIdle(eventManager);
     int firstRound = fired.get();
     // The in-flight lock may or may not prevent the second fire depending
     // on thread scheduling, so we accept 1 or 2 callbacks.
@@ -84,8 +83,10 @@ public class EventManagerDispatchTest {
     // remains in the handler's list. Fire again and verify the counter
     // increments by at least 1.
     eventManager.sceneActivated();
-    // Wait for async dispatch
-    Thread.sleep(500);
+    EventTestSupport.until(
+        () -> fired.get() > firstRound,
+        "remaining duplicate scene activation listener to fire");
+    EventTestSupport.waitForSceneActivationDispatchIdle(eventManager);
     int total = fired.get();
     assertTrue("after removing one registration, listener still fires",
         total > firstRound);

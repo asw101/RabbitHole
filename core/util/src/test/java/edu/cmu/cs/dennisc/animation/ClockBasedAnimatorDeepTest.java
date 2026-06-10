@@ -1,6 +1,9 @@
 package edu.cmu.cs.dennisc.animation;
 
+import edu.cmu.cs.dennisc.TestWait;
 import org.junit.Test;
+
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 
@@ -78,7 +81,9 @@ public class ClockBasedAnimatorDeepTest {
     animator.update();
     double initialTime = animator.getCurrentTime();
 
-    Thread.sleep(10);
+    // Intentional real-time wait: ClockBasedAnimator derives simulation time from wall-clock deltas.
+    TestWait.sleepForSemanticTime(10, TimeUnit.MILLISECONDS,
+        "ClockBasedAnimator time advancement");
     animator.update();
 
     assertTrue(animator.getCurrentTime() >= initialTime);
@@ -92,7 +97,9 @@ public class ClockBasedAnimatorDeepTest {
     animator.update();
     double initialTime = animator.getCurrentTime();
 
-    Thread.sleep(10);
+    // Intentional real-time wait: verifies zero speed freezes simulation across elapsed time.
+    TestWait.sleepForSemanticTime(10, TimeUnit.MILLISECONDS,
+        "ClockBasedAnimator zero-speed elapsed-time assertion");
     animator.update();
 
     assertEquals(initialTime, animator.getCurrentTime(), 1e-10);
@@ -105,7 +112,9 @@ public class ClockBasedAnimatorDeepTest {
     animator.setSpeedFactor(-1.0);
     animator.update();
 
-    Thread.sleep(10);
+    // Intentional real-time wait: verifies negative speed applies to elapsed wall-clock time.
+    TestWait.sleepForSemanticTime(10, TimeUnit.MILLISECONDS,
+        "ClockBasedAnimator negative-speed elapsed-time assertion");
     animator.update();
 
     assertTrue(animator.getCurrentTime() <= 0.0);
@@ -192,7 +201,9 @@ public class ClockBasedAnimatorDeepTest {
     fastAnimator.update();
     slowAnimator.update();
 
-    Thread.sleep(50);
+    // Intentional real-time wait: compares simulation deltas produced by different speed factors.
+    TestWait.sleepForSemanticTime(50, TimeUnit.MILLISECONDS,
+        "ClockBasedAnimator speed-factor comparison");
     fastAnimator.update();
     slowAnimator.update();
 

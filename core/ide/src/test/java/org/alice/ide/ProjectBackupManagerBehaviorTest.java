@@ -8,6 +8,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.concurrent.TimeUnit;
 
 import static org.alice.ide.ProjectFileUtilities.BACKUP_AUTO;
 import static org.junit.Assert.assertArrayEquals;
@@ -69,11 +70,8 @@ public class ProjectBackupManagerBehaviorTest {
   }
 
   private static void pauseForDistinctCreationTimes() {
-    try {
-      Thread.sleep(1100L);
-    } catch (InterruptedException ie) {
-      Thread.currentThread().interrupt();
-      throw new AssertionError("Interrupted while waiting for distinct backup creation times", ie);
-    }
+    // Intentional real-time wait: backup ordering depends on filesystem creation timestamps.
+    IdeTestWait.sleepForSemanticTime(1100, TimeUnit.MILLISECONDS,
+        "distinct backup file creation timestamps");
   }
 }

@@ -1,6 +1,9 @@
 package edu.cmu.cs.dennisc.clock;
 
+import edu.cmu.cs.dennisc.TestWait;
 import org.junit.Test;
+
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 
@@ -15,7 +18,9 @@ public class ClockTest {
   public void getCurrentTime_monotonicallyIncreases() throws Exception {
     double first = Clock.getCurrentTime();
 
-    Thread.sleep(10);
+    // Intentional real-time wait: Clock.getCurrentTime() exposes wall-clock elapsed time.
+    TestWait.sleepForSemanticTime(10, TimeUnit.MILLISECONDS,
+        "Clock.getCurrentTime monotonic elapsed-time assertion");
 
     assertTrue(Clock.getCurrentTime() >= first);
   }
@@ -29,7 +34,9 @@ public class ClockTest {
   public void getCurrentTime_inSeconds() throws Exception {
     double first = Clock.getCurrentTime();
 
-    Thread.sleep(100);
+    // Intentional real-time wait: this test asserts seconds-scale wall-clock deltas.
+    TestWait.sleepForSemanticTime(100, TimeUnit.MILLISECONDS,
+        "Clock.getCurrentTime seconds-scale elapsed-time assertion");
 
     double delta = Clock.getCurrentTime() - first;
     assertTrue(delta >= 0.05 && delta < 1.0);

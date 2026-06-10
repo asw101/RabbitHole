@@ -1,5 +1,6 @@
 package edu.cmu.cs.dennisc.animation;
 
+import edu.cmu.cs.dennisc.TestWait;
 import org.junit.Test;
 
 import java.lang.reflect.InvocationTargetException;
@@ -298,9 +299,9 @@ public class AbstractAnimatorTest {
       }
     }, "animation-worker");
     worker.start();
-    for (int i = 0; i < 100 && worker.getState() != Thread.State.WAITING; i++) {
-      Thread.sleep(10L);
-    }
+    TestWait.until(
+        () -> worker.getState() == Thread.State.WAITING,
+        "animation worker to enter WAITING");
     assertEquals(Thread.State.WAITING, worker.getState());
 
     animator.setNextTime(0.0);

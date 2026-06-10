@@ -2,6 +2,7 @@ package org.alice.ide.croquet.models.projecturi;
 
 import edu.cmu.cs.dennisc.crash.CrashDetector;
 import edu.cmu.cs.dennisc.java.awt.FileDialogUtilities;
+import org.alice.ide.IdeTestWait;
 import org.alice.ide.ProjectDocument;
 import org.alice.ide.croquet.models.menubar.FileMenuModel;
 import org.alice.ide.project.ProjectDocumentState;
@@ -464,7 +465,7 @@ public class RobotSaveMenuDialogWriteReadbackProofTest {
     Robot robot = new Robot();
     robot.setAutoDelay(25);
     robot.waitForIdle();
-    robot.delay(150);
+    IdeTestWait.drainEdt();
     return robot;
   }
 
@@ -579,23 +580,25 @@ public class RobotSaveMenuDialogWriteReadbackProofTest {
     robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
     robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
     robot.waitForIdle();
-    for (int i = 0; i < 30; i++) {
-      robot.delay(100);
-      boolean[] visible = new boolean[1];
-      SwingUtilities.invokeAndWait(() -> visible[0] = fileMenu.isPopupMenuVisible());
-      if (visible[0]) {
-        return true;
-      }
+    try {
+      IdeTestWait.untilOnEdt(fileMenu::isPopupMenuVisible,
+          "File popup menu to open after Robot click");
+      return true;
+    } catch (AssertionError timeout) {
+      return false;
     }
-    return false;
   }
 
   private static void waitForFileWrite(Path target) throws Exception {
-    for (int i = 0; i < 100; i++) {
-      if (Files.isRegularFile(target) && Files.size(target) > 0) {
-        return;
-      }
-      Thread.sleep(100);
+    IdeTestWait.until(() -> isNonEmptyRegularFile(target),
+        "saved project file to be written");
+  }
+
+  private static boolean isNonEmptyRegularFile(Path target) {
+    try {
+      return Files.isRegularFile(target) && Files.size(target) > 0;
+    } catch (Exception ex) {
+      throw new AssertionError("Unable to inspect saved project file " + target, ex);
     }
   }
 

@@ -1,5 +1,6 @@
 package edu.cmu.cs.dennisc.animation;
 
+import edu.cmu.cs.dennisc.TestWait;
 import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;
@@ -194,9 +195,9 @@ public class WaitingAnimationTest {
     };
     waiter.start();
     assertTrue(ready.await(1, TimeUnit.SECONDS));
-    for (int i = 0; i < 100 && waiter.getState() != Thread.State.WAITING; i++) {
-      Thread.sleep(10L);
-    }
+    TestWait.until(
+        () -> waiter.getState() == Thread.State.WAITING,
+        "waiting animation worker to enter WAITING");
     assertEquals(Thread.State.WAITING, waiter.getState());
 
     WaitingAnimation waitingAnimation = new WaitingAnimation(new SpyAnimation(null, 0.0), null, waiter);

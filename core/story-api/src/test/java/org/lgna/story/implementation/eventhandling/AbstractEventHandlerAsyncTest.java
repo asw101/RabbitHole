@@ -37,18 +37,16 @@ public class AbstractEventHandlerAsyncTest {
     handler.addListener(listener, MultipleEventPolicy.ENQUEUE);
 
     handler.dispatch(listener, new TestEvent("first"));
-    assertTrue(firstStarted.await(5, TimeUnit.SECONDS));
+    EventTestSupport.await(firstStarted, "first queued listener invocation to start");
 
     handler.dispatch(listener, new TestEvent("second"));
     releaseFirst.countDown();
 
-    assertTrue(completed.await(5, TimeUnit.SECONDS));
+    EventTestSupport.await(completed, "queued listener invocations to complete");
     assertEquals(List.of("first", "second"), calls);
-    // The isFiringMap flag is cleared after fire() returns, so poll briefly
-    long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
-    while (handler.isFiringMap.get(listener).get(listener) && System.nanoTime() < deadline) {
-      Thread.sleep(10);
-    }
+    EventTestSupport.until(
+        () -> !handler.isFiringMap.get(listener).get(listener),
+        "isFiringMap flag to clear after queued event delivery");
     assertFalse(handler.isFiringMap.get(listener).get(listener));
   }
 
@@ -65,7 +63,7 @@ public class AbstractEventHandlerAsyncTest {
 
     handler.restoreListeners();
     handler.dispatch(listener, new TestEvent("restored"));
-    assertTrue(delivered.await(5, TimeUnit.SECONDS));
+    EventTestSupport.await(delivered, "restored listener delivery");
   }
 
   @Test
@@ -82,15 +80,12 @@ public class AbstractEventHandlerAsyncTest {
     handler.dispatch(listener, new TestEvent("boom"));
 
     // Wait for fire() to have been invoked (the listener signals via latch)
-    assertTrue("fire() was never called", fireStarted.await(5, TimeUnit.SECONDS));
+    EventTestSupport.await(fireStarted, "listener fire invocation");
 
-    // Poll for the isFiringMap flag to be cleared back to false.
-    // Without the try-finally fix, this flag stays true permanently.
     Map<Object, Boolean> activeThings = handler.isFiringMap.get(listener);
-    long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
-    while (activeThings.get(listener) && System.nanoTime() < deadline) {
-      Thread.sleep(10);
-    }
+    EventTestSupport.until(
+        () -> !activeThings.get(listener),
+        "isFiringMap flag to clear after listener failure");
     assertFalse(
         "isFiringMap flag stuck true — fire() exception prevented cleanup",
         activeThings.get(listener));

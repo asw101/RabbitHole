@@ -250,12 +250,8 @@ public class ProjectCodeGeneratorTest {
         new URL[] {classesDirectory.toUri().toURL()},
         ClassLoader.getPlatformClassLoader())) {
       Class<?> launcherClass = Class.forName("AliceJavaFXLauncher", true, classLoader);
-      Class<?> programClass = Class.forName("Program", true, classLoader);
-
-      return captureSystemOut(() -> {
-        launcherClass.getMethod("main", String[].class).invoke(null, (Object) new String[0]);
-        waitForStringArray(programClass.getField("receivedArgs"));
-      });
+      return captureSystemOut(() ->
+          launcherClass.getMethod("main", String[].class).invoke(null, (Object) new String[0]));
     }
   }
 
@@ -915,14 +911,8 @@ public class ProjectCodeGeneratorTest {
   }
 
   private static String[] waitForStringArray(Field field) throws Exception {
-    for (int attempt = 0; attempt < 100; attempt++) {
-      String[] value = (String[]) field.get(null);
-      if (value != null) {
-        return value;
-      }
-      Thread.sleep(10L);
-    }
-    return (String[]) field.get(null);
+    return ProjectTestWait.untilNotNull(() -> (String[]) field.get(null),
+        field.getDeclaringClass().getName() + "." + field.getName());
   }
 
   private static String captureSystemOut(ThrowingRunnable runnable) throws Exception {
