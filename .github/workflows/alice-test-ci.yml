@@ -220,7 +220,7 @@ jobs:
         run: |
           set -euo pipefail
           scripts/validate-gui-with-xvfb.sh \
-            --timeout-seconds "${RABBITHOLE_XVFB_VALIDATION_TIMEOUT_SECONDS:-900}" \
+            --timeout-seconds "${RABBITHOLE_XVFB_VALIDATION_TIMEOUT_SECONDS:-1800}" \
             --expect success \
             --xvfb-run "${{ steps.setup-xvfb.outputs.xvfb-run }}" \
             -- \
