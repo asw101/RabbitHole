@@ -84,7 +84,30 @@ mvn -pl core/story-api-migration \
   test
 ```
 
-Run the text migration registry parity lane:
+Run the strict text migration JSON drift check:
+
+```bash
+export NODE_OPTIONS=--max-old-space-size=32768
+git submodule update --init tweedle-lang
+mvn -pl core/story-api-migration -am \
+  -DincludeSims=false \
+  -Dinstall4j.skip \
+  -Dcheckstyle.skip \
+  -Djava.awt.headless=true \
+  -Dtest=TextMigrationJsonGeneratorTest \
+  -Dsurefire.failIfNoSpecifiedTests=false \
+  test
+```
+
+This lane regenerates text migration JSON from the legacy registries in memory,
+compares it with
+`core/story-api-migration/src/main/resources/migrations/text-migrations.json`
+using exact UTF-8 string comparison, and fails non-zero on drift. This strict
+command is read-only. Do not add the write property to this command; use the
+regeneration command in
+[Verify Text Migration Registry Parity](./howto/verify-text-migration-parity.md).
+
+Run the full text migration registry parity lane:
 
 ```bash
 export NODE_OPTIONS=--max-old-space-size=32768
@@ -98,6 +121,15 @@ mvn -pl core/story-api-migration -am \
   -Dsurefire.failIfNoSpecifiedTests=false \
   test
 ```
+
+Both text migration lanes require the Tweedle grammar submodule. If Maven reports
+missing generated Tweedle parser classes, run:
+
+```bash
+git submodule update --init tweedle-lang
+```
+
+Then confirm `tweedle-lang/Grammar` exists.
 
 Run the same harness against a local preserved baseline checkout:
 

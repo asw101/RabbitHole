@@ -61,6 +61,7 @@ expectations.
 
 ### How-to guides
 
+- [Verify Text Migration Registry Parity](./howto/verify-text-migration-parity.md)
 - [Request Process Termination Safely](./howto/request-process-termination.md)
 - [Replace Reflection Sweeps with Explicit Contracts](./howto/replace-reflection-sweeps.md)
 
