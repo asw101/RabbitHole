@@ -7,7 +7,11 @@ owner: rabbithole-maintainers
 
 # GL Graphics2D contract
 
-`edu.cmu.cs.dennisc.render.gl.imp.Graphics2D` is Alice's OpenGL-backed implementation of `edu.cmu.cs.dennisc.render.Graphics2D`. It exposes the Java2D-shaped operations Alice supports in the GL renderer. It is not a full Java2D implementation.
+> **Status:** Implemented
+> **Last reviewed:** 2026-06-11
+> **Applies to:** OpenGL-backed rendering through `edu.cmu.cs.dennisc.render.Graphics2D`
+
+`edu.cmu.cs.dennisc.render.gl.imp.Graphics2D` is Alice's package-private OpenGL-backed implementation of the public `edu.cmu.cs.dennisc.render.Graphics2D` abstraction. It exposes the Java2D-shaped operations Alice supports in the GL renderer. It is not a full Java2D implementation.
 
 ## Supported contract
 
@@ -20,7 +24,7 @@ owner: rabbithole-maintainers
 | Text | String, char, and byte drawing, text bounds, and font lifecycle methods render through `GlTextRenderer`. |
 | Images | `drawImage(Image, int, int, ImageObserver)`, image lifecycle methods, image-generator lifecycle methods, and image-generator painting render through `GlImageRenderer`. |
 
-The implementation coordinates four package-local delegates:
+The implementation coordinates four package-local delegates. These delegate names describe the internal module boundary; callers should depend on the supported behavior, not these package-private classes:
 
 - `GlPrimitiveShapeRenderer`
 - `GlTessellationRenderer`
@@ -42,6 +46,8 @@ Unsupported Java2D operation groups intentionally throw `RuntimeException`. The 
 | Non-color paint rendering | `setPaint(Paint)` when the paint is not a `Color` |
 
 The `drawString(AttributedCharacterIterator, float, float)` compatibility message remains `todo: use drawString( String, float, float ) for now`. `getColor()` with non-`Color` paint remains `use getPaint()`.
+
+Unsupported failures are constructed at the unsupported `Graphics2D` call site so existing diagnostic stack traces continue to start at the method a caller invoked.
 
 ## Preserved Alice 3 baseline cross-map behavior
 
