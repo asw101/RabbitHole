@@ -2,11 +2,13 @@ package edu.cmu.cs.dennisc.render.gl.imp;
 
 import edu.cmu.cs.dennisc.image.ImageGenerator;
 import edu.cmu.cs.dennisc.render.gl.imp.testing.HeadlessRecordingGL2;
+import edu.cmu.cs.dennisc.texture.BufferedImageTexture;
 import edu.cmu.cs.dennisc.texture.MipMapGenerationPolicy;
 import org.junit.Test;
 
 import java.awt.AlphaComposite;
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.GradientPaint;
 import java.awt.Graphics;
 import java.awt.Image;
@@ -19,10 +21,13 @@ import java.awt.image.BufferedImage;
 import java.awt.image.ImageObserver;
 import java.awt.image.ImageProducer;
 import java.text.AttributedCharacterIterator;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
 public class Graphics2DUnsupportedContractTest {
   private static final String NOT_IMPLEMENTED = "not implemented";
@@ -100,6 +105,13 @@ public class Graphics2DUnsupportedContractTest {
   public void legacyUnsupportedImageInputsKeepDelegateCompatibilityMessages() {
     Graphics2D graphics = createGraphics();
 
+    RuntimeException drawImageThrown = assertThrows(RuntimeException.class,
+        () -> graphics.drawImage(new UnsupportedImage(), 0, 0, null));
+    assertSame(RuntimeException.class, drawImageThrown.getClass());
+    assertEquals("todo", drawImageThrown.getMessage());
+    assertEquals(GlImageRenderer.class.getName(),
+        drawImageThrown.getStackTrace()[0].getClassName());
+
     RuntimeException imageThrown = assertThrows(RuntimeException.class,
         () -> graphics.remember(new UnsupportedImage()));
     assertSame(RuntimeException.class, imageThrown.getClass());
@@ -113,6 +125,40 @@ public class Graphics2DUnsupportedContractTest {
     assertEquals("TODO", generatorThrown.getMessage());
     assertEquals(GlImageRenderer.class.getName(),
         generatorThrown.getStackTrace()[0].getClassName());
+  }
+
+  @Test
+  public void disposeForgottenImageGeneratorsPreservesCrossMapCompatibility() throws Exception {
+    Graphics2D graphics = createGraphics();
+    BufferedImageTexture texture = new BufferedImageTexture();
+    texture.setBufferedImage(new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB));
+    texture.setMipMappingDesired(false);
+
+    graphics.remember(texture);
+    graphics.forget(texture);
+
+    Object imageRenderer = getField(graphics, "imageRenderer");
+    @SuppressWarnings("unchecked")
+    Map<ImageGenerator, ReferencedObject<Pixels>> forgottenImages =
+        (Map<ImageGenerator, ReferencedObject<Pixels>>) getField(imageRenderer,
+            "forgottenImageGeneratorToPixelsMap");
+    assertEquals(1, forgottenImages.size());
+    ReferencedObject<Pixels> pixelsRef = forgottenImages.get(texture);
+
+    Object textRenderer = getField(graphics, "textRenderer");
+    @SuppressWarnings("unchecked")
+    Map<Font, ReferencedObject<Object>> forgottenFonts =
+        (Map<Font, ReferencedObject<Object>>) getField(textRenderer,
+            "forgottenFontToTextRendererMap");
+    forgottenFonts.put(new Font(Font.DIALOG, Font.PLAIN, 12),
+        new ReferencedObject<Object>(new Object(), 0));
+
+    graphics.disposeForgottenImageGenerators();
+
+    assertEquals(1, forgottenImages.size());
+    assertSame(pixelsRef, forgottenImages.get(texture));
+    assertTrue(forgottenFonts.isEmpty());
+    assertNull(getField(pixelsRef.getObject(), "m_texture"));
   }
 
   private static Graphics2D createGraphics() {
@@ -131,6 +177,12 @@ public class Graphics2DUnsupportedContractTest {
     } catch (ReflectiveOperationException e) {
       throw new AssertionError(e);
     }
+  }
+
+  private static Object getField(Object target, String name) throws Exception {
+    java.lang.reflect.Field field = target.getClass().getDeclaredField(name);
+    field.setAccessible(true);
+    return field.get(target);
   }
 
   private static <T> void assertRuntimeExceptionValue(ThrowingSupplier<T> action, String message) {

@@ -15,8 +15,8 @@ owner: rabbithole-maintainers
 
 | Area | Supported behavior |
 | --- | --- |
-| Lifecycle | `initialize(Dimension)`, `dispose()`, `isValid()`, and `getGL()` manage a render-pass-scoped GL surface. |
-| State | Color paint, background, font, stroke, rendering hints, font render context, and affine transforms are supported. `getColor()` requires the current paint to be a `Color`. |
+| Internal lifecycle | `initialize(Dimension)`, `dispose()`, `isValid()`, and `getGL()` manage a render-pass-scoped GL surface inside the GL renderer implementation. |
+| State | Color paint, background, font, stroke, rendering hints, font render context, and affine transforms are supported. `getColor()` requires the current paint to be a `Color`. Affine transforms update the GL matrix for primitive and shape rendering; text rendering applies translation, and image rendering uses pixel placement. |
 | Primitives | Lines, rectangles, ovals, round rectangles, polylines, polygons, and filled polygons render through `GlPrimitiveShapeRenderer`. |
 | Shapes | `draw(Shape)`, `fill(Shape)`, and glyph-vector outlines render through `GlTessellationRenderer`. |
 | Text | String, char, and byte drawing, text bounds, and font lifecycle methods render through `GlTextRenderer`. |
