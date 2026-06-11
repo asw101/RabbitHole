@@ -38,6 +38,13 @@ public class AbstractSceneEditorTemplateMethodTest {
   }
 
   @Test
+  public void executeStatementsWithNoStatementsDoesNothingWithoutActiveScene() {
+    RecordingSceneEditor editor = new RecordingSceneEditor();
+
+    editor.executeStatements();
+  }
+
+  @Test
   public void handleProjectOpenedAcceptsNullAndClearsProgramType() throws Exception {
     RecordingSceneEditor editor = new RecordingSceneEditor();
     NamedUserType programType = new NamedUserType("Program", null, Object.class, new NamedUserConstructor[0], new UserMethod[0], new UserField[0]);

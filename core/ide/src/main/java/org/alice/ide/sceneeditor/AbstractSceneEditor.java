@@ -243,6 +243,9 @@ public abstract class AbstractSceneEditor extends BorderPanel {
   }
 
   public void executeStatements(Statement... statements) {
+    if (statements.length == 0) {
+      return;
+    }
     this.getActiveSceneVmSession().executeStatements(statements);
   }
 
