@@ -6,10 +6,11 @@ SUBMODULE_FIX_COMMAND="git submodule update --init tweedle-lang"
 DEFAULT_LAUNCH_TIMEOUT_SECONDS=60
 MAX_LAUNCH_TIMEOUT_SECONDS=600
 LAUNCH_TIMEOUT_SECONDS="${RABBITHOLE_LAUNCH_TIMEOUT_SECONDS:-${DEFAULT_LAUNCH_TIMEOUT_SECONDS}}"
+MAVEN_RETRY_ATTEMPTS="${RABBITHOLE_MAVEN_RETRY_ATTEMPTS:-5}"
 
 TEMP_PATHS=()
 MAVEN_CMD=(mvn)
-trap 'rm -rf "${TEMP_PATHS[@]}"' EXIT
+trap 'if ((${#TEMP_PATHS[@]} > 0)); then rm -rf "${TEMP_PATHS[@]}"; fi' EXIT
 
 usage() {
   cat <<'USAGE'
@@ -111,10 +112,41 @@ validate_launch_timeout_seconds() {
   fi
 }
 
+validate_maven_retry_attempts() {
+  if [[ ! "${MAVEN_RETRY_ATTEMPTS}" =~ ^[0-9]+$ ]]; then
+    fail "RABBITHOLE_MAVEN_RETRY_ATTEMPTS must be an integer from 1 to 5."
+  fi
+  if (( MAVEN_RETRY_ATTEMPTS < 1 || MAVEN_RETRY_ATTEMPTS > 5 )); then
+    fail "RABBITHOLE_MAVEN_RETRY_ATTEMPTS must be an integer from 1 to 5."
+  fi
+}
+
 print_command() {
   printf '[getting-started] Running:'
   printf ' %q' "$@"
   printf '\n'
+}
+
+run_maven_with_retries() {
+  local attempt
+  local status
+
+  for attempt in $(seq 1 "${MAVEN_RETRY_ATTEMPTS}"); do
+    if [[ -d "${HOME}/.m2/repository" ]]; then
+      find "${HOME}/.m2/repository" -name '*.lastUpdated' -delete
+    fi
+    print_command "$@"
+    if "$@"; then
+      return 0
+    else
+      status=$?
+    fi
+    if (( attempt == MAVEN_RETRY_ATTEMPTS )); then
+      return "${status}"
+    fi
+    info "Maven command failed with exit status ${status}; retrying (${attempt}/${MAVEN_RETRY_ATTEMPTS})."
+    sleep $((attempt * 60))
+  done
 }
 
 process_tree_pids() {
@@ -196,9 +228,11 @@ show_captured_output_tail() {
 run_headless_lane() {
   local mvn_cmd=(
     "${MAVEN_CMD[@]}"
+    -U
     -DincludeSims=false
     -Dinstall4j.skip
     -Dcheckstyle.skip
+    -Dmdep.skip=true
     -Djava.awt.headless=true
     clean
     install
@@ -213,8 +247,7 @@ run_headless_lane() {
   local launch_output
 
   info "Running headless no-Sims Maven validation."
-  print_command "${mvn_cmd[@]}"
-  "${mvn_cmd[@]}"
+  run_maven_with_retries "${mvn_cmd[@]}"
 
   launch_output="$(mktemp)"
   add_temp_path "${launch_output}"
@@ -339,8 +372,7 @@ run_gui_maven_validation() {
   )
 
   info "Running GUI no-Sims Maven validation."
-  print_command "${mvn_cmd[@]}"
-  "${mvn_cmd[@]}"
+  run_maven_with_retries "${mvn_cmd[@]}"
 }
 
 run_gui_lane() {
@@ -408,6 +440,7 @@ fi
 require_common_prerequisites
 configure_maven_command
 validate_launch_timeout_seconds
+validate_maven_retry_attempts
 
 case "${mode}" in
   headless)

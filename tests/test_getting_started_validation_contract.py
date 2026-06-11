@@ -25,6 +25,7 @@ HEADLESS_MAVEN_FLAGS = (
     "-DincludeSims=false",
     "-Dinstall4j.skip",
     "-Dcheckstyle.skip",
+    "-Dmdep.skip=true",
     "-Djava.awt.headless=true",
     "clean",
     "install",
@@ -190,6 +191,7 @@ class GettingStartedValidatorHeadlessContract(unittest.TestCase):
         text = re.sub(r"\s+", " ", script_text())
 
         self.assertIn("mvn", text)
+        self.assertIn("run_maven_with_retries", text)
         for token in HEADLESS_MAVEN_FLAGS:
             with self.subTest(token=token):
                 self.assertIn(token, text)
@@ -280,6 +282,7 @@ class GettingStartedValidatorGuiContract(unittest.TestCase):
         for token in HEADED_MAVEN_FLAGS:
             with self.subTest(token=token):
                 self.assertIn(token, normalized)
+        self.assertIn("run_maven_with_retries", body)
         self.assertLess(
             lane_body.index("run_gui_maven_validation"),
             lane_body.index("run_gui_launch"),
@@ -442,7 +445,7 @@ class GettingStartedValidationCiContract(unittest.TestCase):
         workflow = read_text(ALICE_TEST_WORKFLOW_PATH)
         test_job = workflow_job_block(workflow, "test")
 
-        self.assertIn("run: ./scripts/validate-getting-started.sh --headless", test_job)
+        self.assertIn("MAVEN_SETTINGS_PATH=.github/maven/jogamp-ci-settings.xml ./scripts/validate-getting-started.sh --headless", test_job)
         self.assertNotIn("steps.setup-xvfb.outputs.xvfb-run", test_job)
         self.assertNotIn("--auto-servernum", test_job)
         self.assertIn("-Djava.awt.headless=true", test_job)

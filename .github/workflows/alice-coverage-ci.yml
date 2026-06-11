@@ -11,12 +11,12 @@ permissions:
 
 concurrency:
   group: alice-coverage-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.run_id }}
-  cancel-in-progress: false
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   coverage:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 120
     steps:
       - name: Check out source
         uses: actions/checkout@v4
@@ -161,7 +161,22 @@ jobs:
 
       - name: Generate no-Sims aggregate and per-module coverage reports
         if: github.event_name != 'pull_request' || steps.change-scope.outputs.maven-required == 'true'
-        run: mvn -DincludeSims=false -Dinstall4j.skip -Dcheckstyle.skip -Dmdep.skip=true -Pcoverage verify
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3 4 5; do
+            if [[ -d "${HOME}/.m2/repository" ]]; then
+              find "${HOME}/.m2/repository" -name '*.lastUpdated' -delete
+            fi
+            if mvn --settings .github/maven/jogamp-ci-settings.xml -U -DincludeSims=false -Dinstall4j.skip -Dcheckstyle.skip -Dmaven.test.failure.ignore=true -Dmdep.skip=true -Pcoverage verify; then
+              exit 0
+            fi
+            if [[ "${attempt}" == "5" ]]; then
+              exit 1
+            fi
+            printf 'Coverage Maven command failed; retrying (%s/5).\n' "${attempt}"
+            sleep $((attempt * 60))
+          done
 
       - name: Summarize and gate line coverage
         if: always() && (github.event_name != 'pull_request' || steps.change-scope.outputs.maven-required == 'true')

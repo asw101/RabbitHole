@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   package-netbeans:
-    timeout-minutes: 30
+    timeout-minutes: 120
     runs-on: ubuntu-latest
     steps:
       - name: Check out source
@@ -161,7 +161,22 @@ jobs:
 
       - name: Build NetBeans package without Sims assets
         if: github.event_name != 'pull_request' || steps.change-scope.outputs.maven-required == 'true'
-        run: mvn --settings .github/maven/jogamp-ci-settings.xml -DincludeSims=false -Dinstall4j.skip -Dcheckstyle.skip -pl netbeans -am package -DskipTests
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3 4 5; do
+            if [[ -d "${HOME}/.m2/repository" ]]; then
+              find "${HOME}/.m2/repository" -name '*.lastUpdated' -delete
+            fi
+            if mvn --settings .github/maven/jogamp-ci-settings.xml -U -DincludeSims=false -Dinstall4j.skip -Dcheckstyle.skip -Dmdep.skip=true -pl netbeans -am package -DskipTests; then
+              exit 0
+            fi
+            if [[ "${attempt}" == "5" ]]; then
+              exit 1
+            fi
+            printf 'NetBeans package Maven command failed; retrying (%s/5).\n' "${attempt}"
+            sleep $((attempt * 60))
+          done
 
       - name: Verify NetBeans package artifacts
         if: github.event_name != 'pull_request' || steps.change-scope.outputs.maven-required == 'true'
