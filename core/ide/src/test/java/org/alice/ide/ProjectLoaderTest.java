@@ -1,8 +1,10 @@
 package org.alice.ide;
 
+import org.alice.ide.uricontent.ProjectLoadOutcome;
 import org.junit.Test;
 
 import java.io.File;
+import java.io.IOException;
 
 import static org.junit.Assert.*;
 
@@ -185,5 +187,38 @@ public class ProjectLoaderTest {
   public void loadTarget_allValuesExist() {
     ProjectLoadFailureDispatchPlan.LoadTarget[] targets = ProjectLoadFailureDispatchPlan.LoadTarget.values();
     assertEquals(3, targets.length);
+  }
+
+  @Test
+  public void projectFileForOutcome_successUsesSaveTargetBeforeDiagnosticFile() {
+    File sourceProject = new File("source.a3p");
+    File saveTarget = new File("source VR.a3p");
+    ProjectLoadOutcome outcome = ProjectLoadOutcome.success(
+        new org.lgna.project.Project(programType("LoadedProgram"), org.lgna.project.Project.SceneCameraType.WindowCamera),
+        sourceProject);
+
+    assertEquals(saveTarget, ProjectLoader.projectFileForOutcome(outcome, saveTarget));
+  }
+
+  @Test
+  public void projectFileForOutcome_failureUsesDiagnosticFileBeforeSaveTarget() {
+    File failedBackup = new File("backup.a3p");
+    File saveTarget = new File("world.a3p");
+    ProjectLoadOutcome outcome = ProjectLoadOutcome.ioFailure(failedBackup, new IOException("broken"));
+
+    assertEquals(failedBackup, ProjectLoader.projectFileForOutcome(outcome, saveTarget));
+  }
+
+  @Test
+  public void backupRecoveryIsOnlyForExistingProjectLoads() {
+    assertTrue(ProjectLoader.shouldUseBackupRecovery(false));
+    assertFalse(ProjectLoader.shouldUseBackupRecovery(true));
+  }
+
+  private static org.lgna.project.ast.NamedUserType programType(String name) {
+    org.lgna.project.ast.NamedUserType type = new org.lgna.project.ast.NamedUserType();
+    type.name.setValue(name);
+    type.superType.setValue(org.lgna.project.ast.JavaType.getInstance(org.lgna.story.SProgram.class));
+    return type;
   }
 }

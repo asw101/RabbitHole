@@ -95,6 +95,28 @@ public class ProjectLoaderDeepTest {
   }
 
   @Test
+  public void loadProject_nonProjectFailureReturnsAfterExistingDialogPath() {
+    TestProjectApplication application = new TestProjectApplication();
+    Project originalProject = projectNamed("OriginalProgram");
+    application.setProject(originalProject);
+    application.clearObservations();
+    File typeFile = new File("target/project-loader-deep/not-a-project.a3c");
+
+    application.getProjectLoader().loadProject(
+        new UserActivity(),
+        new ImmediateProjectLoader(typeFile, ProjectLoadOutcome.typeFileNotProject(typeFile)),
+        false,
+        false,
+        new HashSet<>());
+
+    assertSame(originalProject, application.getProject());
+    assertEquals(1, application.showWaitCursorCount);
+    assertEquals(1, application.hideWaitCursorCount);
+    assertEquals(0, application.updateInterfaceAfterLoadCount);
+    assertEquals(0, application.newProjectActivityCount);
+  }
+
+  @Test
   public void loadProject_successUsesLoaderUriInsteadOfOutcomeDiagnosticFile() {
     TestProjectApplication application = new TestProjectApplication();
     Project loadedProject = projectNamed("LoadedProgram");
@@ -135,6 +157,25 @@ public class ProjectLoaderDeepTest {
 
     assertEquals(failedFile, application.projectFileUtilities.appropriateBackupDirectoryFile);
     assertEquals(failedFile.getName(), application.backupProjectOperation.loadMainProjectPromptName);
+    assertEquals(1, application.showWaitCursorCount);
+    assertEquals(1, application.hideWaitCursorCount);
+    assertTrue(activity.isCanceled());
+  }
+
+  @Test
+  public void loadProject_newProjectFailureDoesNotUseBackupRecovery() {
+    TestProjectApplication application = new TestProjectApplication();
+    File starterFile = new File("target/project-loader-deep/starter.a3p");
+    ImmediateProjectLoader loader = new ImmediateProjectLoader(
+        starterFile,
+        ProjectLoadOutcome.ioFailure(starterFile, new IOException("broken")),
+        true);
+    UserActivity activity = new UserActivity();
+
+    application.getProjectLoader().loadProject(activity, loader, false, false, new HashSet<>());
+
+    assertNull(application.projectFileUtilities.appropriateBackupDirectoryFile);
+    assertEquals(1, application.newProjectActivityCount);
     assertEquals(1, application.showWaitCursorCount);
     assertEquals(1, application.hideWaitCursorCount);
     assertTrue(activity.isCanceled());
@@ -282,16 +323,22 @@ public class ProjectLoaderDeepTest {
     private final URI uri;
     private final File mainProjectFile;
     private final ProjectLoadOutcome outcome;
+    private final boolean newProject;
 
     ImmediateProjectLoader(File projectFile, Project project) {
       this(projectFile, ProjectLoadOutcome.success(project, projectFile));
     }
 
     ImmediateProjectLoader(File projectFile, ProjectLoadOutcome outcome) {
+      this(projectFile, outcome, false);
+    }
+
+    ImmediateProjectLoader(File projectFile, ProjectLoadOutcome outcome, boolean newProject) {
       super(false);
       this.uri = projectFile.toURI();
       this.mainProjectFile = projectFile;
       this.outcome = outcome;
+      this.newProject = newProject;
     }
 
     @Override
@@ -316,7 +363,7 @@ public class ProjectLoaderDeepTest {
 
     @Override
     public boolean isNewProject() {
-      return false;
+      return this.newProject;
     }
 
     @Override

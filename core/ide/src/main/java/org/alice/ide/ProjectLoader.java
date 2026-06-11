@@ -114,13 +114,7 @@ final class ProjectLoader {
 
     boolean failed = outcome.getKind() == ProjectLoadOutcome.Kind.FAILURE;
     File saved = UriUtilities.getFile(application.getUri());
-    File failureFile = outcome.getFile() != null
-        ? outcome.getFile()
-        : saved;
-    File successFile = saved != null
-        ? saved
-        : outcome.getFile();
-    File projectFile = failed ? failureFile : successFile;
+    File projectFile = projectFileForOutcome(outcome, saved);
 
     if (projectFile != null && !application.getProjectFileUtilities().isProject(projectFile)) {
       return;
@@ -132,10 +126,27 @@ final class ProjectLoader {
       if (projectFile == null) {
         throw new IllegalStateException("Project load failed without a project file.");
       }
+      if (!shouldUseBackupRecovery(application.getUriProjectLoader().isNewProject())) {
+        application.setUriProjectLoader(null);
+        activity.cancel();
+        showNewProjectOperation();
+        return;
+      }
       handleProjectLoadError(projectFile, activity, isBackup, isLoadingBackups, isMainProjectCorrupted, unloadableFiles);
     } else {
       handleProjectLoadSuccess(outcome.getProject(), projectFile, activity, isBackup, isLoadingBackups, isMainProjectCorrupted, unloadableFiles);
     }
+  }
+
+  static File projectFileForOutcome(ProjectLoadOutcome outcome, File saved) {
+    if (outcome.getKind() == ProjectLoadOutcome.Kind.FAILURE) {
+      return outcome.getFile() != null ? outcome.getFile() : saved;
+    }
+    return saved != null ? saved : outcome.getFile();
+  }
+
+  static boolean shouldUseBackupRecovery(boolean isNewProject) {
+    return !isNewProject;
   }
 
   private RuntimeException getRuntimeException(ProjectLoadOutcome outcome) {
