@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.regex.PatternSyntaxException;
 
+import static org.lgna.project.migration.TextMigrationRule.replace;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
@@ -51,10 +52,8 @@ public class TextMigrationJsonLoaderTest {
   public void nullReplacementEntriesAreNoOpTextMigrations() {
     TextMigration migration = new TextMigration(
         new Version("3.1.9.0.0"),
-        "legacyName",
-        MigrationManager.NO_REPLACEMENT,
-        "oldName",
-        "newName");
+        replace("legacyName", MigrationManager.NO_REPLACEMENT),
+        replace("oldName", "newName"));
 
     assertEquals("legacyName and newName", migration.migrate("legacyName and oldName"));
   }

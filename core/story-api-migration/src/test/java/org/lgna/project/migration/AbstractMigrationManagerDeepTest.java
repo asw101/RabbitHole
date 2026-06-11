@@ -16,6 +16,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static org.lgna.project.migration.TextMigrationRule.replace;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -76,7 +77,7 @@ public class AbstractMigrationManagerDeepTest {
 
   @Test
   public void managerReportsPendingTextAndAstMigrationsByVersion() {
-    TextMigration textMigration = new TextMigration(new Version("3.1.1.0.0"), "legacy", "modern");
+    TextMigration textMigration = new TextMigration(new Version("3.1.1.0.0"), replace("legacy", "modern"));
     RecordingAstMigration astMigration = new RecordingAstMigration("ast", "3.1.2.0.0", new ArrayList<>());
     TestMigrationManager manager = new TestMigrationManager(new TextMigration[]{textMigration}, new AstMigration[]{astMigration});
 
@@ -88,7 +89,7 @@ public class AbstractMigrationManagerDeepTest {
 
   @Test
   public void managerClearsCachedTypesBeforeTextMigration() {
-    TextMigration textMigration = new TextMigration(new Version("3.1.1.0.0"), "legacy", "modern");
+    TextMigration textMigration = new TextMigration(new Version("3.1.1.0.0"), replace("legacy", "modern"));
     TestMigrationManager manager = new TestMigrationManager(new TextMigration[]{textMigration}, new AstMigration[0]);
     NamedUserType cachedType = new NamedUserType();
     cachedType.setName("Hero");

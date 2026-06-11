@@ -66,6 +66,12 @@ final class ProjectMigrationTextSnippets {
     return createMoreSpecificFieldString(fieldName, clsName, REPLACEMENT_WHITESPACE);
   }
 
+  static TextMigrationRule createMoreSpecificFieldRule(String previousFieldName, String nextFieldName, String clsName) {
+    return TextMigrationRule.replace(
+        createMoreSpecificFieldPattern(previousFieldName, clsName),
+        createMoreSpecificFieldReplacement(nextFieldName, clsName));
+  }
+
   private static String createPrevJointString(String prevFieldName, String packageSubName) {
     StringBuilder sb = new StringBuilder();
     sb.append("name=\"");
@@ -154,20 +160,18 @@ final class ProjectMigrationTextSnippets {
     return sb.toString();
   }
 
-  private static String CACHE_FROM_PREVIOUS_CALL_subPackageAndClassName;
-
-  static String createJointIdPattern(String prevFieldName, String subPackageAndClassName) {
-    CACHE_FROM_PREVIOUS_CALL_subPackageAndClassName = subPackageAndClassName;
+  private static String createJointIdPattern(String prevFieldName, String subPackageAndClassName) {
     return createJointIdString(prevFieldName, subPackageAndClassName, PATTERN_WHITESPACE);
   }
 
-  static String createJointIdReplacement(String nextFieldName) {
-    assert CACHE_FROM_PREVIOUS_CALL_subPackageAndClassName != null : nextFieldName;
-    try {
-      return createJointIdString(nextFieldName, CACHE_FROM_PREVIOUS_CALL_subPackageAndClassName, PATTERN_WHITESPACE);
-    } finally {
-      CACHE_FROM_PREVIOUS_CALL_subPackageAndClassName = null;
-    }
+  private static String createJointIdReplacement(String nextFieldName, String subPackageAndClassName) {
+    return createJointIdString(nextFieldName, subPackageAndClassName, PATTERN_WHITESPACE);
+  }
+
+  static TextMigrationRule createJointIdRule(String previousFieldName, String nextFieldName, String subPackageAndClassName) {
+    return TextMigrationRule.replace(
+        createJointIdPattern(previousFieldName, subPackageAndClassName),
+        createJointIdReplacement(nextFieldName, subPackageAndClassName));
   }
 
   private ProjectMigrationTextSnippets() {

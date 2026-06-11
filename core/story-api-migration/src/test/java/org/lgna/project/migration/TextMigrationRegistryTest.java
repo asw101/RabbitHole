@@ -113,6 +113,15 @@ public class TextMigrationRegistryTest {
         TextMigrationParityTestSupport.migrationForVersion(all, "3.2.111.0.0"),
         "name=\"BONE_PILE\">\\s*<declaringClass name=\"org.lgna.story.resources.prop.BonesResource\"",
         "name=\"DEFAULT\"> <declaringClass name=\"org.lgna.story.resources.prop.BonePileResource\""));
+    TextMigration jointIdMigration = TextMigrationParityTestSupport.migrationForVersion(all, "3.1.93.0.0");
+    assertTrue(TextMigrationParityTestSupport.containsPair(
+        jointIdMigration,
+        "name=\"TAIL\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.BigBadWolfResource\"",
+        "name=\"TAIL_0\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.BigBadWolfResource\""));
+    assertTrue(TextMigrationParityTestSupport.containsPair(
+        TextMigrationParityTestSupport.migrationForVersion(all, "3.1.93.0.0"),
+        "name=\"LEFT_PLUMAGE_1\">\\s*<declaringClass name=\"org.lgna.story.resources.flyer.PeacockResource\"",
+        "name=\"PLUMAGE_LEFT_TIP\">\\s*<declaringClass name=\"org.lgna.story.resources.flyer.PeacockResource\""));
   }
 
   @Test

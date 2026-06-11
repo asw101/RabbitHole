@@ -3,6 +3,7 @@ package org.lgna.project.migration;
 import org.lgna.project.Version;
 import org.junit.Test;
 
+import static org.lgna.project.migration.TextMigrationRule.replace;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -29,8 +30,8 @@ public class MigrationCoreBehaviorTest {
   public void textMigrationAppliesPairsSequentiallyAndLeavesUnmatchedTextAlone() {
     TextMigration migration = new TextMigration(
         new Version("3.2.110.0.0"),
-        "legacy", "modern",
-        "modern-cat", "cheshire"
+        replace("legacy", "modern"),
+        replace("modern-cat", "cheshire")
     );
 
     assertEquals("modern cheshire untouched", migration.migrate("legacy legacy-cat untouched"));
