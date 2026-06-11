@@ -103,10 +103,24 @@ final class ProjectLoader {
 
   private void projectLoaded(UserActivity activity, ProjectLoadOutcome outcome, boolean isLoadingBackups,
                              boolean isMainProjectCorrupted, Set<String> unloadableFiles) {
+    if (outcome == null) {
+      throw new IllegalStateException("Project loader returned no load outcome.");
+    }
+
+    RuntimeException loadException = getRuntimeException(outcome);
+    if (loadException != null) {
+      throw loadException;
+    }
+
+    boolean failed = outcome.getKind() == ProjectLoadOutcome.Kind.FAILURE;
     File saved = UriUtilities.getFile(application.getUri());
-    File projectFile = outcome != null && outcome.getFile() != null
+    File failureFile = outcome.getFile() != null
         ? outcome.getFile()
         : saved;
+    File successFile = saved != null
+        ? saved
+        : outcome.getFile();
+    File projectFile = failed ? failureFile : successFile;
 
     if (projectFile != null && !application.getProjectFileUtilities().isProject(projectFile)) {
       return;
@@ -114,15 +128,7 @@ final class ProjectLoader {
 
     boolean isBackup = application.getUriProjectLoader().isBackup();
 
-    if (outcome == null) {
-      throw new IllegalStateException("Project loader returned no load outcome.");
-    }
-
-    if (outcome.getKind() == ProjectLoadOutcome.Kind.FAILURE) {
-      RuntimeException loadException = getRuntimeException(outcome);
-      if (loadException != null) {
-        throw loadException;
-      }
+    if (failed) {
       if (projectFile == null) {
         throw new IllegalStateException("Project load failed without a project file.");
       }
@@ -253,7 +259,12 @@ final class ProjectLoader {
   }
 
   void handleProjectLoadException(RuntimeException re, UserActivity activity) {
-    URI uri = application.getUri();
+    URI uri = null;
+    try {
+      uri = application.getUri();
+    } catch (RuntimeException uriException) {
+      re.addSuppressed(uriException);
+    }
     var message = new StringBuilder("Errors reported in " + uri);
     Throwable cause = re;
     Logger.throwable(re, uri);

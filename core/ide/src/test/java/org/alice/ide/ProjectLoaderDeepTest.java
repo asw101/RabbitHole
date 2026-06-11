@@ -95,6 +95,22 @@ public class ProjectLoaderDeepTest {
   }
 
   @Test
+  public void loadProject_successUsesLoaderUriInsteadOfOutcomeDiagnosticFile() {
+    TestProjectApplication application = new TestProjectApplication();
+    Project loadedProject = projectNamed("LoadedProgram");
+    File saveTarget = new File("target/project-loader-deep/success-vr.a3p");
+    File sourceFile = new File("target/project-loader-deep/source.a3p");
+    ImmediateProjectLoader loader = new ImmediateProjectLoader(
+        saveTarget,
+        ProjectLoadOutcome.success(loadedProject, sourceFile));
+
+    application.getProjectLoader().loadProject(new UserActivity(), loader, false, false, new HashSet<>());
+
+    assertSame(loadedProject, application.getProject());
+    assertEquals(saveTarget, application.projectFileUtilities.appropriateBackupDirectoryFile);
+  }
+
+  @Test
   public void loadProject_nullLoaderLeavesUiUntouched() {
     TestProjectApplication application = new TestProjectApplication();
 

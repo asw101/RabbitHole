@@ -104,15 +104,16 @@ public abstract class UriProjectLoader extends UriContentLoader<Project> {
     try {
       return loadOutcome();
     } catch (RuntimeException re) {
-      return ProjectLoadOutcome.runtimeException(fileFromUri(), re);
+      return ProjectLoadOutcome.runtimeException(fileFromUri(re), re);
     }
   }
 
-  private File fileFromUri() {
+  private File fileFromUri(RuntimeException loadException) {
     try {
       URI uri = getUri();
       return uri != null ? UriUtilities.getFile(uri) : null;
     } catch (RuntimeException re) {
+      loadException.addSuppressed(re);
       return null;
     }
   }
