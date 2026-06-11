@@ -2,6 +2,7 @@ package org.lgna.project.virtualmachine;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.lgna.project.ast.BlockStatement;
 import org.lgna.project.ast.Comment;
 import org.lgna.project.ast.IntegerLiteral;
 import org.lgna.project.ast.ManagementLevel;
@@ -30,11 +31,11 @@ public class SceneEditorVmSessionTest {
   public void prepareFieldLookupEnablesJavaInstanceToFieldLookup() {
     UserField field = new UserField("managed", String.class, new StringLiteral("managed-value"));
     field.managementLevel.setValue(ManagementLevel.MANAGED);
-    type.fields.add(field);
 
     SceneEditorVmSession session = SceneEditorVmSession.forScene(instance);
-    session.initializeField(field);
     session.prepareFieldLookup();
+    type.fields.add(field);
+    session.initializeField(field);
 
     assertEquals(field, session.getFieldForJavaInstance("managed-value"));
   }
@@ -56,13 +57,13 @@ public class SceneEditorVmSessionTest {
     vm.addVirtualMachineListener(listener);
     SceneEditorVmSession session = SceneEditorVmSession.forScene(instance);
 
-    session.executeStatements(new Comment("first"), new Comment("second"));
+    session.executeStatements(new Comment("first"), new BlockStatement());
 
     assertEquals(Arrays.asList(
         "executing:Comment",
         "executed:Comment",
-        "executing:Comment",
-        "executed:Comment"),
+        "executing:BlockStatement",
+        "executed:BlockStatement"),
         listener.statementEvents);
   }
 }

@@ -70,7 +70,7 @@ public class SceneEditorVmBehaviorCharacterizationTest {
   }
 
   @Test
-  public void sceneEditorStatementExecutionUsesBogusFrameAndFiresEvents() {
+  public void sceneEditorStatementExecutionFiresEvents() {
     UserInstance instance = vm.ENTRY_POINT_createInstance(type);
     VmTestSupport.RecordingListener listener = new VmTestSupport.RecordingListener();
     vm.addVirtualMachineListener(listener);
