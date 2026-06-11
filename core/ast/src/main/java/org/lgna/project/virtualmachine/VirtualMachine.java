@@ -100,7 +100,15 @@ public abstract class VirtualMachine {
     try {
       Object[] rv = new Object[expressions.length];
       for (int i = 0; i < expressions.length; i++) {
-        rv[i] = this.evaluate(expressions[i]);
+        try {
+          rv[i] = this.evaluate(expressions[i]);
+        } catch (LgnaVmMethodInvocationException e) {
+          if (isForRunning) {
+            throw e;
+          }
+          handleSceneEditorMethodInvocationException(e);
+          rv[i] = null;
+        }
       }
       return rv;
     } finally {
@@ -115,9 +123,17 @@ public abstract class VirtualMachine {
       if (isForRunning) {
         throw e;
       }
-      Logger.warning("Error while invoking scene setup method. Continuing past.", method, e);
+      handleSceneEditorMethodInvocationException(e);
       return null;
     }
+  }
+
+  boolean isForRunning() {
+    return isForRunning;
+  }
+
+  void handleSceneEditorMethodInvocationException(LgnaVmMethodInvocationException e) {
+    Logger.warning("Error while invoking scene setup method. Continuing past.", e.getMethod(), e);
   }
 
   private NamedUserConstructor getConstructor(NamedUserType entryPointType, Object[] arguments) {
@@ -148,36 +164,31 @@ public abstract class VirtualMachine {
   }
 
   public void ACCEPTABLE_HACK_FOR_SCENE_EDITOR_initializeField(UserInstance instance, UserField field) {
-    //pushCurrentThread( null );
-    //try {
     this.pushBogusFrame(instance);
     try {
       createAndSetFieldInstance(instance, field);
     } finally {
       this.popFrame();
     }
-    //} finally {
-    //  popCurrentThread();
-    //}
   }
 
   public void ACCEPTABLE_HACK_FOR_SCENE_EDITOR_executeStatement(UserInstance instance, Statement statement) {
     assert (statement instanceof ReturnStatement) == false;
-    //pushCurrentThread( null );
-    //try {
     this.pushBogusFrame(instance);
     try {
       try {
         this.execute(statement);
       } catch (ReturnException re) {
         throw new AssertionError();
+      } catch (LgnaVmMethodInvocationException e) {
+        if (isForRunning) {
+          throw e;
+        }
+        handleSceneEditorMethodInvocationException(e);
       }
     } finally {
       this.popFrame();
     }
-    //} finally {
-    //  popCurrentThread();
-    //}
   }
 
   final Map<Class<?>, Class<?>> mapAbstractClsToAdapterCls = Maps.newHashMap();

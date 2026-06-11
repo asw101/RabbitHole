@@ -233,6 +233,51 @@ public class VmMethodInvocationErrorTest {
         vm.ENTRY_POINT_invoke(null, entry));
   }
 
+  @Test
+  public void sceneEditorVmContinuesToNextStatementAfterInvocationFailure() {
+    vm.setForSceneEditor();
+    VmTestSupport.RecordingListener listener = new VmTestSupport.RecordingListener();
+    vm.addVirtualMachineListener(listener);
+    UserMethod helper = new UserMethod("failsInBody", Void.TYPE,
+        new UserParameter[0], new BlockStatement(new WhileLoop(
+            new NullLiteral(),
+            new BlockStatement(new Comment("unreachable")))));
+    helper.isStatic.setValue(true);
+    type.methods.add(helper);
+
+    MethodInvocation call = new MethodInvocation(new NullLiteral(), helper);
+    UserMethod entry = new UserMethod("entry", Void.TYPE,
+        new UserParameter[0], new BlockStatement(
+            new ExpressionStatement(call),
+            new Comment("after failure")));
+    entry.isStatic.setValue(true);
+    type.methods.add(entry);
+
+    vm.ENTRY_POINT_invoke(null, entry);
+
+    assertTrue("Scene editor setup should continue to statements after a failed invocation",
+        listener.statementEvents.contains("executing:Comment"));
+  }
+
+  @Test
+  public void sceneEditorVmEvaluateContinuesToNextExpressionAfterInvocationFailure() {
+    vm.setForSceneEditor();
+    UserMethod helper = new UserMethod("failsInBody", Void.TYPE,
+        new UserParameter[0], new BlockStatement(new WhileLoop(
+            new NullLiteral(),
+            new BlockStatement(new Comment("unreachable")))));
+    helper.isStatic.setValue(true);
+    type.methods.add(helper);
+
+    Object[] values = vm.ENTRY_POINT_evaluate(null, new Expression[] {
+        new MethodInvocation(new NullLiteral(), helper),
+        new IntegerLiteral(5)
+    });
+
+    assertNull(values[0]);
+    assertEquals(5, values[1]);
+  }
+
   public static class ThrowingJavaMethods {
     public static void failWith(Integer amount) {
       throw new IllegalStateException("java failure <" + amount + " &>");
