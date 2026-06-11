@@ -7,8 +7,6 @@ owner: rabbithole-maintainers
 
 # GL Graphics2D contract
 
-> **Status:** Implemented
-> **Last reviewed:** 2026-06-11
 > **Applies to:** OpenGL-backed rendering through `edu.cmu.cs.dennisc.render.Graphics2D`
 
 `edu.cmu.cs.dennisc.render.gl.imp.Graphics2D` is Alice's package-private OpenGL-backed implementation of the public `edu.cmu.cs.dennisc.render.Graphics2D` abstraction. It exposes the Java2D-shaped operations Alice supports in the GL renderer. It is not a full Java2D implementation.
@@ -22,7 +20,7 @@ owner: rabbithole-maintainers
 | Primitives | Lines, rectangles, ovals, round rectangles, polylines, polygons, and filled polygons render through `GlPrimitiveShapeRenderer`. |
 | Shapes | `draw(Shape)`, `fill(Shape)`, and glyph-vector outlines render through `GlTessellationRenderer`. |
 | Text | String, char, and byte drawing, text bounds, and font lifecycle methods render through `GlTextRenderer`. |
-| Images | `drawImage(Image, int, int, ImageObserver)`, image lifecycle methods, image-generator lifecycle methods, and image-generator painting render through `GlImageRenderer`. |
+| Images | `drawImage(Image, int, int, ImageObserver)` and image lifecycle methods support `BufferedImage` inputs. Image-generator lifecycle methods and painting support `Texture` image generators. |
 
 The implementation coordinates four package-local delegates. These delegate names describe the internal module boundary; callers should depend on the supported behavior, not these package-private classes:
 
@@ -41,6 +39,7 @@ Unsupported Java2D operation groups intentionally throw `RuntimeException`. The 
 | Clipping and copy | `getClipBounds()`, `clipRect(...)`, `setClip(...)`, `getClip()`, `copyArea(...)`, `clip(Shape)` |
 | Arcs and 3D rectangles | `drawArc(...)`, `fillArc(...)`, `draw3DRect(...)`, `fill3DRect(...)` |
 | Scaled, transformed, filtered, regional, or background images | `drawImage` overloads other than `drawImage(Image, int, int, ImageObserver)`, `drawRenderedImage(...)`, `drawRenderableImage(...)` |
+| Unsupported image input types | non-`BufferedImage` `Image` inputs and non-`Texture` `ImageGenerator` inputs |
 | Attributed text | `drawString(AttributedCharacterIterator, int, int)`, `drawString(AttributedCharacterIterator, float, float)` |
 | Device, composite, and hit testing | `hit(...)`, `getDeviceConfiguration()`, `getComposite()`, `setComposite(Composite)` |
 | Non-color paint rendering | `setPaint(Paint)` when the paint is not a `Color` |
