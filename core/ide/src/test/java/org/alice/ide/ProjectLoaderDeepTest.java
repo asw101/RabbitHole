@@ -5,6 +5,8 @@ import java.awt.GraphicsEnvironment;
 
 import org.alice.ide.frametitle.IdeFrameTitleGenerator;
 import org.alice.ide.project.ProjectDocumentState;
+import org.alice.ide.croquet.models.projecturi.BackupProjectOperation;
+import org.alice.ide.uricontent.ProjectLoadOutcome;
 import org.alice.ide.uricontent.UriProjectLoader;
 import org.junit.After;
 import org.junit.Before;
@@ -21,8 +23,10 @@ import org.lgna.story.SProgram;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.URI;
+import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -102,6 +106,24 @@ public class ProjectLoaderDeepTest {
     assertEquals(0, application.updateInterfaceAfterLoadCount);
   }
 
+  @Test
+  public void loadProject_failureUsesOutcomeFileForBackupRouting() {
+    TestProjectApplication application = new TestProjectApplication();
+    File loaderFile = new File("target/project-loader-deep/original.a3p");
+    File failedFile = new File("target/project-loader-deep/failed-backup.a3p");
+    ProjectLoadOutcome failure = ProjectLoadOutcome.ioFailure(failedFile, new IOException("broken"));
+    ImmediateProjectLoader loader = new ImmediateProjectLoader(loaderFile, failure);
+    UserActivity activity = new UserActivity();
+
+    application.getProjectLoader().loadProject(activity, loader, true, false, new HashSet<>());
+
+    assertEquals(failedFile, application.projectFileUtilities.appropriateBackupDirectoryFile);
+    assertEquals(failedFile.getName(), application.backupProjectOperation.loadMainProjectPromptName);
+    assertEquals(1, application.showWaitCursorCount);
+    assertEquals(1, application.hideWaitCursorCount);
+    assertTrue(activity.isCanceled());
+  }
+
   private static Project projectNamed(String name) {
     return new Project(programType(name), Project.SceneCameraType.WindowCamera);
   }
@@ -118,6 +140,7 @@ public class ProjectLoaderDeepTest {
 
   private static final class TestProjectApplication extends ProjectApplication {
     private final TestProjectFileUtilities projectFileUtilities = new TestProjectFileUtilities(this);
+    private final SilentBackupProjectOperation backupProjectOperation = new SilentBackupProjectOperation();
     private int showWaitCursorCount;
     private int hideWaitCursorCount;
     private int updateInterfaceAfterLoadCount;
@@ -205,27 +228,54 @@ public class ProjectLoaderDeepTest {
     }
 
     @Override
+    BackupProjectOperation getBackupProjectOperation() {
+      return this.backupProjectOperation;
+    }
+
+    @Override
     void updateInterfaceAfterLoad() {
       this.updateInterfaceAfterLoadCount++;
     }
   }
 
   private static final class TestProjectFileUtilities extends ProjectFileUtilities {
+    private File appropriateBackupDirectoryFile;
+
     TestProjectFileUtilities(ProjectApplication application) {
       super(application);
+    }
+
+    @Override
+    public Path appropriateBackupDirectory(File saved) {
+      this.appropriateBackupDirectoryFile = saved;
+      return null;
+    }
+  }
+
+  private static final class SilentBackupProjectOperation extends BackupProjectOperation {
+    private String loadMainProjectPromptName;
+
+    @Override
+    public boolean showProjectLoadRecentBackupsErrorAndLoadMainDialog(String projectName) {
+      this.loadMainProjectPromptName = projectName;
+      return false;
     }
   }
 
   private static final class ImmediateProjectLoader extends UriProjectLoader {
     private final URI uri;
     private final File mainProjectFile;
-    private final Project project;
+    private final ProjectLoadOutcome outcome;
 
     ImmediateProjectLoader(File projectFile, Project project) {
+      this(projectFile, ProjectLoadOutcome.success(project, projectFile));
+    }
+
+    ImmediateProjectLoader(File projectFile, ProjectLoadOutcome outcome) {
       super(false);
       this.uri = projectFile.toURI();
       this.mainProjectFile = projectFile;
-      this.project = project;
+      this.outcome = outcome;
     }
 
     @Override
@@ -235,12 +285,17 @@ public class ProjectLoaderDeepTest {
 
     @Override
     protected Project load() {
-      return this.project;
+      return this.outcome.getProject();
     }
 
     @Override
     public synchronized void deliverContentOnEventDispatchThread(Consumer<Project> observer) {
-      observer.accept(this.project);
+      observer.accept(this.outcome.getProject());
+    }
+
+    @Override
+    public synchronized void deliverLoadOutcomeOnEventDispatchThread(Consumer<ProjectLoadOutcome> observer) {
+      observer.accept(this.outcome);
     }
 
     @Override

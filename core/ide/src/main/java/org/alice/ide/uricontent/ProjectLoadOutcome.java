@@ -75,6 +75,7 @@ public final class ProjectLoadOutcome {
     FUTURE_VERSION_DECLINED,
     VERSION_NOT_SUPPORTED,
     IO_FAILURE,
+    RUNTIME_EXCEPTION,
     UNKNOWN_FAILURE
   }
 
@@ -133,6 +134,10 @@ public final class ProjectLoadOutcome {
 
   public static ProjectLoadOutcome ioFailure(File file, Exception exception) {
     return failure(Status.IO_FAILURE, file, Objects.requireNonNull(exception));
+  }
+
+  public static ProjectLoadOutcome runtimeException(File file, RuntimeException exception) {
+    return failure(Status.RUNTIME_EXCEPTION, file, Objects.requireNonNull(exception));
   }
 
   public static ProjectLoadOutcome unknownFailure(File file) {

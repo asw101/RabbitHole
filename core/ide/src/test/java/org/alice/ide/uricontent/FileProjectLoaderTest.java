@@ -14,6 +14,9 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.*;
 
@@ -116,6 +119,26 @@ public class FileProjectLoaderTest {
 
     assertThrows(NullPointerException.class, () -> ProjectLoadOutcome.versionNotSupported(project, null));
     assertThrows(NullPointerException.class, () -> ProjectLoadOutcome.ioFailure(project, null));
+    assertThrows(NullPointerException.class, () -> ProjectLoadOutcome.runtimeException(project, null));
+  }
+
+  @Test
+  public void deliveredRuntimeExceptionBecomesTypedOutcome() throws Exception {
+    File project = temporaryFolder.newFile("runtime-exception-world.a3p");
+    RuntimeException failure = new RuntimeException("unchecked load failure");
+    RuntimeThrowingUriProjectLoader loader = new RuntimeThrowingUriProjectLoader(project, failure);
+    CountDownLatch delivered = new CountDownLatch(1);
+    AtomicReference<ProjectLoadOutcome> observed = new AtomicReference<>();
+
+    loader.deliverLoadOutcomeOnEventDispatchThread(outcome -> {
+      observed.set(outcome);
+      delivered.countDown();
+    });
+
+    assertTrue(delivered.await(5, TimeUnit.SECONDS));
+    assertLoadFailure(ProjectLoadOutcome.Status.RUNTIME_EXCEPTION, observed.get());
+    assertEquals(project, observed.get().getFile());
+    assertSame(failure, observed.get().getException());
   }
 
   @Test
@@ -296,6 +319,32 @@ public class FileProjectLoaderTest {
     protected void handleLoadException(File file, Exception e) {
       this.file = file;
       this.exception = e;
+    }
+
+    @Override
+    public boolean isNewProject() {
+      return false;
+    }
+  }
+
+  private static class RuntimeThrowingUriProjectLoader extends UriProjectLoader {
+    private final File file;
+    private final RuntimeException failure;
+
+    RuntimeThrowingUriProjectLoader(File file, RuntimeException failure) {
+      super(false);
+      this.file = file;
+      this.failure = failure;
+    }
+
+    @Override
+    public URI getUri() {
+      return this.file.toURI();
+    }
+
+    @Override
+    protected Project load() {
+      throw this.failure;
     }
 
     @Override

@@ -97,7 +97,24 @@ public abstract class UriProjectLoader extends UriContentLoader<Project> {
   }
 
   public synchronized void deliverLoadOutcomeOnEventDispatchThread(Consumer<ProjectLoadOutcome> observer) {
-    deliverContentOnEventDispatchThread(this::loadOutcome, observer);
+    deliverContentOnEventDispatchThread(this::loadOutcomeSafely, observer);
+  }
+
+  private ProjectLoadOutcome loadOutcomeSafely() {
+    try {
+      return loadOutcome();
+    } catch (RuntimeException re) {
+      return ProjectLoadOutcome.runtimeException(fileFromUri(), re);
+    }
+  }
+
+  private File fileFromUri() {
+    try {
+      URI uri = getUri();
+      return uri != null ? UriUtilities.getFile(uri) : null;
+    } catch (RuntimeException re) {
+      return null;
+    }
   }
 
   // If true the project expects to be saved but has not yet.
