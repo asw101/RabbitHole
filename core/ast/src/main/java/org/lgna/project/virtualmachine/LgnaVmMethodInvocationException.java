@@ -40,82 +40,75 @@
  * THE USE OF OR OTHER DEALINGS WITH THE SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************/
-
 package org.lgna.project.virtualmachine;
 
-import edu.cmu.cs.dennisc.java.util.logging.Logger;
-import org.lgna.common.LgnaRuntimeException;
+import org.apache.commons.text.StringEscapeUtils;
+import org.lgna.project.ast.AbstractMethod;
+import org.lgna.project.ast.MethodInvocation;
+
+import java.util.Objects;
 
 /**
- * @author Dennis Cosgrove
+ * Carries the invocation context that callers need to decide whether to stop,
+ * report, or continue after a VM method-invocation failure.
  */
-public abstract class LgnaVmException extends LgnaRuntimeException {
-  private final Thread thread;
-  private final VirtualMachine vm;
-  private final LgnaStackTraceElement[] stackTrace;
+public class LgnaVmMethodInvocationException extends LgnaVmException {
+  private final MethodInvocation methodInvocation;
+  private final AbstractMethod method;
+  private final Object target;
+  private final Object[] arguments;
 
-  public LgnaVmException(String message, VirtualMachine vm) {
-    this(message, vm, null);
+  public LgnaVmMethodInvocationException(VirtualMachine vm, MethodInvocation methodInvocation) {
+    this(vm, "Invalid method invocation", methodInvocation, null, methodInvocation.method.getValue(), new Object[0], null);
   }
 
-  public LgnaVmException(String message, VirtualMachine vm, Throwable cause) {
-    super(message);
+  public LgnaVmMethodInvocationException(VirtualMachine vm, MethodInvocation methodInvocation, Object target, AbstractMethod method, Object[] arguments, Throwable cause) {
+    this(vm, "Method invocation failed", methodInvocation, target, method, arguments, cause);
+  }
+
+  private LgnaVmMethodInvocationException(VirtualMachine vm, String message, MethodInvocation methodInvocation, Object target, AbstractMethod method, Object[] arguments, Throwable cause) {
+    super(message, vm, cause);
+    this.methodInvocation = methodInvocation;
+    this.method = method;
+    this.target = target;
+    this.arguments = Objects.requireNonNull(arguments, "arguments").clone();
+  }
+
+  public MethodInvocation getMethodInvocation() {
+    return this.methodInvocation;
+  }
+
+  public AbstractMethod getMethod() {
+    return this.method;
+  }
+
+  public Object getTarget() {
+    return this.target;
+  }
+
+  public Object[] getArguments() {
+    return this.arguments.clone();
+  }
+
+  @Override
+  protected void appendDescription(StringBuilder sb) {
+    appendEscaped(sb, this.getMessage());
+    if (this.method != null) {
+      sb.append(": ");
+      appendEscaped(sb, this.method);
+    }
+    Throwable cause = this.getCause();
     if (cause != null) {
-      this.initCause(cause);
-    }
-    this.vm = vm;
-    this.thread = Thread.currentThread();
-    this.stackTrace = this.vm.getStackTrace(this.thread);
-  }
-
-  public LgnaVmException(VirtualMachine vm) {
-    this(null, vm);
-  }
-
-  public VirtualMachine getVirtualMachine() {
-    return this.vm;
-  }
-
-  public LgnaStackTraceElement[] getLgnaStackTrace() {
-    return this.stackTrace;
-  }
-
-  protected abstract void appendDescription(StringBuilder sb);
-
-  @Override
-  protected final void appendFormattedString(StringBuilder sb) {
-    sb.append("<html>");
-    sb.append("<h1>");
-    this.appendDescription(sb);
-    sb.append("</h1>");
-    LgnaStackTraceElement[] lgnaStackTrace = this.getLgnaStackTrace();
-    if (lgnaStackTrace != null) {
-      sb.append("<ul>");
-      for (LgnaStackTraceElement stackTraceElement : lgnaStackTrace) {
-        sb.append("<li>");
-        if (stackTraceElement != null) {
-          stackTraceElement.appendFormatted(sb);
-        } else {
-          Logger.severe();
-        }
-      }
-      sb.append("</ul>");
-    }
-    sb.append("</html>");
-  }
-
-  @Override
-  public String toString() {
-    StringBuilder sb = new StringBuilder();
-    sb.append(super.toString());
-    LgnaStackTraceElement[] lgnaStackTrace = this.getLgnaStackTrace();
-    if (lgnaStackTrace != null) {
-      for (LgnaStackTraceElement stackTraceElement : lgnaStackTrace) {
-        if (stackTraceElement != null) {
-          sb.append("\n\t" + stackTraceElement.toString());
-        }
+      sb.append(" caused by ");
+      appendEscaped(sb, cause.getClass().getName());
+      if (cause.getMessage() != null) {
+        sb.append(": ");
+        appendEscaped(sb, cause.getMessage());
       }
     }
-    return sb.toString();
+  }
+
+  private static void appendEscaped(StringBuilder sb, Object value) {
+    sb.append(StringEscapeUtils.escapeHtml4(String.valueOf(value)));
   }
 }
