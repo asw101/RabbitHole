@@ -352,6 +352,8 @@ final class VmExpressionEvaluator {
       Object target = this.evaluate(methodInvocation.expression.getValue());
       try {
         return vm.invoke(target, method, allArguments);
+      } catch (LgnaVmMethodInvocationException e) {
+        throw e;
       } catch (RuntimeException e) {
         throw new LgnaVmMethodInvocationException(vm, methodInvocation, target, method, contextArguments, e);
       }

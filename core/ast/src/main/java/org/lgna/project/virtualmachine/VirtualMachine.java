@@ -109,7 +109,15 @@ public abstract class VirtualMachine {
   }
 
   public Object ENTRY_POINT_invoke(UserInstance target, AbstractMethod method, Object... arguments) {
-    return invoke(target, method, arguments);
+    try {
+      return invoke(target, method, arguments);
+    } catch (LgnaVmMethodInvocationException e) {
+      if (isForRunning) {
+        throw e;
+      }
+      Logger.warning("Error while invoking scene setup method. Continuing past.", method, e);
+      return null;
+    }
   }
 
   private NamedUserConstructor getConstructor(NamedUserType entryPointType, Object[] arguments) {

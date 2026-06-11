@@ -213,6 +213,26 @@ public class VmMethodInvocationErrorTest {
     }
   }
 
+  @Test
+  public void sceneEditorVmDecidesToContinuePastInvocationFailure() {
+    vm.setForSceneEditor();
+    UserMethod helper = new UserMethod("failsInBody", Void.TYPE,
+        new UserParameter[0], new BlockStatement(new WhileLoop(
+            new NullLiteral(),
+            new BlockStatement(new Comment("unreachable")))));
+    helper.isStatic.setValue(true);
+    type.methods.add(helper);
+
+    MethodInvocation call = new MethodInvocation(new NullLiteral(), helper);
+    UserMethod entry = new UserMethod("entry", Void.TYPE,
+        new UserParameter[0], new BlockStatement(new ExpressionStatement(call)));
+    entry.isStatic.setValue(true);
+    type.methods.add(entry);
+
+    assertNull("Scene editor VM should keep setup best-effort policy upstream of the evaluator",
+        vm.ENTRY_POINT_invoke(null, entry));
+  }
+
   public static class ThrowingJavaMethods {
     public static void failWith(Integer amount) {
       throw new IllegalStateException("java failure <" + amount + " &>");
