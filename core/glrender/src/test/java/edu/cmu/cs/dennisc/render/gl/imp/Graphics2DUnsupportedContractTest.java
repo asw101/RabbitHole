@@ -80,6 +80,16 @@ public class Graphics2DUnsupportedContractTest {
     assertRuntimeExceptionValue(graphics::getColor, "use getPaint()");
   }
 
+  @Test
+  public void unsupportedExceptionsStartAtGraphics2DCallSite() {
+    Graphics2D graphics = createGraphics();
+
+    RuntimeException thrown = assertThrows(RuntimeException.class, graphics::setPaintMode);
+
+    assertEquals(Graphics2D.class.getName(), thrown.getStackTrace()[0].getClassName());
+    assertEquals("setPaintMode", thrown.getStackTrace()[0].getMethodName());
+  }
+
   private static Graphics2D createGraphics() {
     RenderContext renderContext = new RenderContext();
     renderContext.setGL(new HeadlessRecordingGL2());

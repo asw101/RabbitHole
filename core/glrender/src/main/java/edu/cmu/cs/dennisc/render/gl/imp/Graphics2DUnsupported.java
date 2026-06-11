@@ -43,17 +43,9 @@
 package edu.cmu.cs.dennisc.render.gl.imp;
 
 /*package-private*/ final class Graphics2DUnsupported {
-  private static final String NOT_IMPLEMENTED = "not implemented";
-  private static final String ATTRIBUTED_TEXT_MESSAGE = "todo: use drawString( String, float, float ) for now";
+  static final String NOT_IMPLEMENTED = "not implemented";
+  static final String ATTRIBUTED_TEXT_MESSAGE = "todo: use drawString( String, float, float ) for now";
 
   private Graphics2DUnsupported() {
-  }
-
-  static RuntimeException notImplemented() {
-    return new RuntimeException(NOT_IMPLEMENTED);
-  }
-
-  static RuntimeException attributedCharacterIterator() {
-    return new RuntimeException(ATTRIBUTED_TEXT_MESSAGE);
   }
 }

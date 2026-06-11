@@ -174,7 +174,7 @@ import static com.jogamp.opengl.fixedfunc.GLMatrixFunc.GL_PROJECTION;
   }
 
   @Override
-  public Graphics create() { throw Graphics2DUnsupported.notImplemented(); }
+  public Graphics create() { throw new RuntimeException(Graphics2DUnsupported.NOT_IMPLEMENTED); }
   @Override
   public Color getColor() {
     if (this.paint instanceof Color color) {
@@ -186,9 +186,9 @@ import static com.jogamp.opengl.fixedfunc.GLMatrixFunc.GL_PROJECTION;
   @Override
   public void setColor(Color color) { setPaint(color); }
   @Override
-  public void setPaintMode() { throw Graphics2DUnsupported.notImplemented(); }
+  public void setPaintMode() { throw new RuntimeException(Graphics2DUnsupported.NOT_IMPLEMENTED); }
   @Override
-  public void setXORMode(Color c1) { throw Graphics2DUnsupported.notImplemented(); }
+  public void setXORMode(Color c1) { throw new RuntimeException(Graphics2DUnsupported.NOT_IMPLEMENTED); }
   @Override
   public Font getFont() { return this.font; }
   @Override
@@ -196,17 +196,17 @@ import static com.jogamp.opengl.fixedfunc.GLMatrixFunc.GL_PROJECTION;
   @Override
   public FontMetrics getFontMetrics(Font f) { return Toolkit.getDefaultToolkit().getFontMetrics(f); }
   @Override
-  public Rectangle getClipBounds() { throw Graphics2DUnsupported.notImplemented(); }
+  public Rectangle getClipBounds() { throw new RuntimeException(Graphics2DUnsupported.NOT_IMPLEMENTED); }
   @Override
-  public void clipRect(int x, int y, int width, int height) { throw Graphics2DUnsupported.notImplemented(); }
+  public void clipRect(int x, int y, int width, int height) { throw new RuntimeException(Graphics2DUnsupported.NOT_IMPLEMENTED); }
   @Override
-  public void setClip(int x, int y, int width, int height) { throw Graphics2DUnsupported.notImplemented(); }
+  public void setClip(int x, int y, int width, int height) { throw new RuntimeException(Graphics2DUnsupported.NOT_IMPLEMENTED); }
   @Override
-  public Shape getClip() { throw Graphics2DUnsupported.notImplemented(); }
+  public Shape getClip() { throw new RuntimeException(Graphics2DUnsupported.NOT_IMPLEMENTED); }
   @Override
-  public void setClip(Shape clip) { throw Graphics2DUnsupported.notImplemented(); }
+  public void setClip(Shape clip) { throw new RuntimeException(Graphics2DUnsupported.NOT_IMPLEMENTED); }
   @Override
-  public void copyArea(int x, int y, int width, int height, int dx, int dy) { throw Graphics2DUnsupported.notImplemented(); }
+  public void copyArea(int x, int y, int width, int height, int dx, int dy) { throw new RuntimeException(Graphics2DUnsupported.NOT_IMPLEMENTED); }
 
   // Primitive shape methods — delegated to GlPrimitiveShapeRenderer
 
@@ -225,9 +225,9 @@ import static com.jogamp.opengl.fixedfunc.GLMatrixFunc.GL_PROJECTION;
   @Override
   public void fillOval(int x, int y, int width, int height) { primitiveRenderer.fillOval(x, y, width, height); }
   @Override
-  public void drawArc(int x, int y, int width, int height, int startAngle, int arcAngle) { throw Graphics2DUnsupported.notImplemented(); }
+  public void drawArc(int x, int y, int width, int height, int startAngle, int arcAngle) { throw new RuntimeException(Graphics2DUnsupported.NOT_IMPLEMENTED); }
   @Override
-  public void fillArc(int x, int y, int width, int height, int startAngle, int arcAngle) { throw Graphics2DUnsupported.notImplemented(); }
+  public void fillArc(int x, int y, int width, int height, int startAngle, int arcAngle) { throw new RuntimeException(Graphics2DUnsupported.NOT_IMPLEMENTED); }
   @Override
   public void drawPolyline(int xPoints[], int yPoints[], int nPoints) { primitiveRenderer.drawPolyline(xPoints, yPoints, nPoints); }
   @Override
@@ -240,7 +240,7 @@ import static com.jogamp.opengl.fixedfunc.GLMatrixFunc.GL_PROJECTION;
   @Override
   public void drawString(String str, int x, int y) { drawString(str, (float) x, (float) y); }
   @Override
-  public void drawString(AttributedCharacterIterator iterator, int x, int y) { throw Graphics2DUnsupported.notImplemented(); }
+  public void drawString(AttributedCharacterIterator iterator, int x, int y) { throw new RuntimeException(Graphics2DUnsupported.NOT_IMPLEMENTED); }
   @Override
   public void drawChars(char[] data, int offset, int length, int x, int y) { drawString(new String(data, offset, length), x, y); }
   @Override
@@ -265,37 +265,37 @@ import static com.jogamp.opengl.fixedfunc.GLMatrixFunc.GL_PROJECTION;
   }
 
   @Override
-  public boolean drawImage(Image image, int x, int y, int width, int height, ImageObserver observer) { throw Graphics2DUnsupported.notImplemented(); }
+  public boolean drawImage(Image image, int x, int y, int width, int height, ImageObserver observer) { throw new RuntimeException(Graphics2DUnsupported.NOT_IMPLEMENTED); }
   @Override
-  public boolean drawImage(Image image, int x, int y, Color bgcolor, ImageObserver observer) { throw Graphics2DUnsupported.notImplemented(); }
+  public boolean drawImage(Image image, int x, int y, Color bgcolor, ImageObserver observer) { throw new RuntimeException(Graphics2DUnsupported.NOT_IMPLEMENTED); }
   @Override
-  public boolean drawImage(Image image, int x, int y, int width, int height, Color bgcolor, ImageObserver observer) { throw Graphics2DUnsupported.notImplemented(); }
+  public boolean drawImage(Image image, int x, int y, int width, int height, Color bgcolor, ImageObserver observer) { throw new RuntimeException(Graphics2DUnsupported.NOT_IMPLEMENTED); }
   @Override
-  public boolean drawImage(Image image, int dx1, int dy1, int dx2, int dy2, int sx1, int sy1, int sx2, int sy2, ImageObserver observer) { throw Graphics2DUnsupported.notImplemented(); }
+  public boolean drawImage(Image image, int dx1, int dy1, int dx2, int dy2, int sx1, int sy1, int sx2, int sy2, ImageObserver observer) { throw new RuntimeException(Graphics2DUnsupported.NOT_IMPLEMENTED); }
   @Override
-  public boolean drawImage(Image image, int dx1, int dy1, int dx2, int dy2, int sx1, int sy1, int sx2, int sy2, Color bgcolor, ImageObserver observer) { throw Graphics2DUnsupported.notImplemented(); }
+  public boolean drawImage(Image image, int dx1, int dy1, int dx2, int dy2, int sx1, int sy1, int sx2, int sy2, Color bgcolor, ImageObserver observer) { throw new RuntimeException(Graphics2DUnsupported.NOT_IMPLEMENTED); }
 
   // java.awt.Graphics2D
 
   @Override
-  public void draw3DRect(int x, int y, int width, int height, boolean raised) { throw Graphics2DUnsupported.notImplemented(); }
+  public void draw3DRect(int x, int y, int width, int height, boolean raised) { throw new RuntimeException(Graphics2DUnsupported.NOT_IMPLEMENTED); }
   @Override
-  public void fill3DRect(int x, int y, int width, int height, boolean raised) { throw Graphics2DUnsupported.notImplemented(); }
+  public void fill3DRect(int x, int y, int width, int height, boolean raised) { throw new RuntimeException(Graphics2DUnsupported.NOT_IMPLEMENTED); }
   @Override
-  public boolean drawImage(Image img, AffineTransform xform, ImageObserver obs) { throw Graphics2DUnsupported.notImplemented(); }
+  public boolean drawImage(Image img, AffineTransform xform, ImageObserver obs) { throw new RuntimeException(Graphics2DUnsupported.NOT_IMPLEMENTED); }
   @Override
-  public void drawImage(BufferedImage img, BufferedImageOp op, int x, int y) { throw Graphics2DUnsupported.notImplemented(); }
+  public void drawImage(BufferedImage img, BufferedImageOp op, int x, int y) { throw new RuntimeException(Graphics2DUnsupported.NOT_IMPLEMENTED); }
   @Override
-  public void drawRenderedImage(RenderedImage img, AffineTransform xform) { throw Graphics2DUnsupported.notImplemented(); }
+  public void drawRenderedImage(RenderedImage img, AffineTransform xform) { throw new RuntimeException(Graphics2DUnsupported.NOT_IMPLEMENTED); }
   @Override
-  public void drawRenderableImage(RenderableImage img, AffineTransform xform) { throw Graphics2DUnsupported.notImplemented(); }
+  public void drawRenderableImage(RenderableImage img, AffineTransform xform) { throw new RuntimeException(Graphics2DUnsupported.NOT_IMPLEMENTED); }
 
   @Override
   public void drawString(String text, float x, float y) { textRenderer.drawString(text, x, y); }
 
   @Override
   public void drawString(AttributedCharacterIterator iterator, float x, float y) {
-    throw Graphics2DUnsupported.attributedCharacterIterator();
+    throw new RuntimeException(Graphics2DUnsupported.ATTRIBUTED_TEXT_MESSAGE);
   }
 
   @Override
@@ -317,13 +317,13 @@ import static com.jogamp.opengl.fixedfunc.GLMatrixFunc.GL_PROJECTION;
   public void fill(Shape s) { tessellationRenderer.fill(s); }
 
   @Override
-  public boolean hit(Rectangle rect, Shape s, boolean onStroke) { throw Graphics2DUnsupported.notImplemented(); }
+  public boolean hit(Rectangle rect, Shape s, boolean onStroke) { throw new RuntimeException(Graphics2DUnsupported.NOT_IMPLEMENTED); }
   @Override
-  public GraphicsConfiguration getDeviceConfiguration() { throw Graphics2DUnsupported.notImplemented(); }
+  public GraphicsConfiguration getDeviceConfiguration() { throw new RuntimeException(Graphics2DUnsupported.NOT_IMPLEMENTED); }
   @Override
-  public Composite getComposite() { throw Graphics2DUnsupported.notImplemented(); }
+  public Composite getComposite() { throw new RuntimeException(Graphics2DUnsupported.NOT_IMPLEMENTED); }
   @Override
-  public void setComposite(Composite comp) { throw Graphics2DUnsupported.notImplemented(); }
+  public void setComposite(Composite comp) { throw new RuntimeException(Graphics2DUnsupported.NOT_IMPLEMENTED); }
 
   @Override
   public Color getBackground() { return this.background; }
@@ -347,7 +347,7 @@ import static com.jogamp.opengl.fixedfunc.GLMatrixFunc.GL_PROJECTION;
     if (paint instanceof Color color) {
       glSetColor(color);
     } else {
-      throw Graphics2DUnsupported.notImplemented();
+      throw new RuntimeException(Graphics2DUnsupported.NOT_IMPLEMENTED);
     }
   }
 
@@ -360,7 +360,7 @@ import static com.jogamp.opengl.fixedfunc.GLMatrixFunc.GL_PROJECTION;
       glSetColor(color);
       this.paint = paint;
     } else {
-      throw Graphics2DUnsupported.notImplemented();
+      throw new RuntimeException(Graphics2DUnsupported.NOT_IMPLEMENTED);
     }
   }
 
@@ -427,7 +427,7 @@ import static com.jogamp.opengl.fixedfunc.GLMatrixFunc.GL_PROJECTION;
   @Override
   public void setTransform(AffineTransform Tx) { this.affineTransform.setTransform(Tx); glUpdateTransform(); }
   @Override
-  public void clip(Shape s) { throw Graphics2DUnsupported.notImplemented(); }
+  public void clip(Shape s) { throw new RuntimeException(Graphics2DUnsupported.NOT_IMPLEMENTED); }
 
   @Override
   public FontRenderContext getFontRenderContext() {
