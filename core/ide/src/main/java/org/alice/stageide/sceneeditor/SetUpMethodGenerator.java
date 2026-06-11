@@ -72,6 +72,7 @@ import org.lgna.project.ast.NullLiteral;
 import org.lgna.project.ast.Statement;
 import org.lgna.project.ast.StatementListProperty;
 import org.lgna.project.ast.ThisExpression;
+import org.lgna.project.virtualmachine.SceneEditorVmSession;
 import org.lgna.project.virtualmachine.UserInstance;
 import org.lgna.story.Color;
 import org.lgna.story.DurationAnimationStyleArgumentFactory;
@@ -122,6 +123,10 @@ public class SetUpMethodGenerator {
       }
       return expressionCreator;
     }
+  }
+
+  private static SceneEditorVmSession getSceneVmSession(UserInstance sceneInstance) {
+    return SceneEditorVmSession.forScene(sceneInstance);
   }
 
   private static Expression createInstanceExpression(boolean isThis, AbstractField field) {
@@ -273,14 +278,14 @@ public class SetUpMethodGenerator {
       return getGetterExpressionForDevice(value, sceneInstance);
     }
     boolean isEntityScene = (value instanceof SScene);
-    AbstractField sceneField = sceneInstance.ACCEPTABLE_HACK_FOR_SCENE_EDITOR_getFieldForInstanceInJava(value);
+    AbstractField sceneField = getSceneVmSession(sceneInstance).getFieldForJavaInstance(value);
     return createInstanceExpression(isEntityScene, sceneField);
   }
 
   private static Expression getGetterExpressionForJoint(SJoint joint, UserInstance sceneInstance) {
     JointImp jointImp = joint.getImplementation();
     SJointedModel jointedModel = getJointedModelForJointImp(jointImp);
-    AbstractField entityField = sceneInstance.ACCEPTABLE_HACK_FOR_SCENE_EDITOR_getFieldForInstanceInJava(jointedModel);
+    AbstractField entityField = getSceneVmSession(sceneInstance).getFieldForJavaInstance(jointedModel);
     AbstractMethod getJointMethod = getJointGetterForJoint(entityField, jointImp.getJointId(), sceneInstance);
     assert getJointMethod != null;
     return new MethodInvocation(new FieldAccess(entityField), getJointMethod);
@@ -309,7 +314,7 @@ public class SetUpMethodGenerator {
   private static Expression getGetterExpressionForDevice(SThing device, UserInstance sceneInstance) {
     // The vehicle will be SCamera for hands, or SVRUser for hands/headset
     SThing vehicle = device.getVehicle();
-    AbstractField userField = sceneInstance.ACCEPTABLE_HACK_FOR_SCENE_EDITOR_getFieldForInstanceInJava(vehicle);
+    AbstractField userField = getSceneVmSession(sceneInstance).getFieldForJavaInstance(vehicle);
     AbstractMethod getDeviceMethod = getGetterForDevice(userField, device, sceneInstance);
     return new MethodInvocation(new FieldAccess(userField), getDeviceMethod);
   }
@@ -330,7 +335,7 @@ public class SetUpMethodGenerator {
     List<Statement> statements = Lists.newLinkedList();
 
     if (instance != null) {
-      AbstractField field = sceneInstance.ACCEPTABLE_HACK_FOR_SCENE_EDITOR_getFieldForInstanceInJava(instance);
+      AbstractField field = getSceneVmSession(sceneInstance).getFieldForJavaInstance(instance);
       if ((field != null) || isThis) {
         JavaType javaType = JavaType.getInstance(instance.getClass());
         for (JavaMethod getter : AstTypeResolutionHelpers.getPersistentPropertyGetters(javaType)) {
