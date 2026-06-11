@@ -46,7 +46,7 @@ Unsupported Java2D operation groups intentionally throw `RuntimeException`. The 
 
 The `drawString(AttributedCharacterIterator, float, float)` compatibility message remains `todo: use drawString( String, float, float ) for now`. `getColor()` with non-`Color` paint remains `use getPaint()`.
 
-Unsupported failures are constructed at the unsupported `Graphics2D` call site so existing diagnostic stack traces continue to start at the method a caller invoked.
+Most unsupported failures are constructed at the unsupported `Graphics2D` call site so existing diagnostic stack traces continue to start at the method a caller invoked. The legacy image-input failures remain in `GlImageRenderer`: non-`BufferedImage` `Image` inputs throw `RuntimeException` with message `todo`, and non-`Texture` `ImageGenerator` inputs throw `RuntimeException` with message `TODO`.
 
 ## Preserved Alice 3 baseline cross-map behavior
 
