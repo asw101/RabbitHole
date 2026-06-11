@@ -50,6 +50,7 @@ import edu.cmu.cs.dennisc.javax.swing.option.Dialogs;
 import org.alice.ide.declarationseditor.TypeMenu;
 import org.alice.ide.instancefactory.croquet.InstanceFactoryFillIn;
 import org.alice.ide.uricontent.FileProjectLoader;
+import org.alice.ide.uricontent.ProjectLoadOutcome;
 import org.alice.ide.uricontent.UriProjectLoader;
 import org.lgna.croquet.CancelException;
 import org.lgna.croquet.history.UserActivity;
@@ -83,9 +84,9 @@ final class ProjectLoader {
     if (uriProjectLoader != null) {
       application.showWaitCursor();
       cleanupForNextProject();
-      uriProjectLoader.deliverContentOnEventDispatchThread(proj -> {
+      uriProjectLoader.deliverLoadOutcomeOnEventDispatchThread(outcome -> {
         try {
-          projectLoaded(activity, proj, isLoadingBackups, isMainProjectCorrupted, unloadableFiles);
+          projectLoaded(activity, outcome, isLoadingBackups, isMainProjectCorrupted, unloadableFiles);
         } catch (RuntimeException re) {
           handleProjectLoadException(re, activity);
         } finally {
@@ -100,7 +101,7 @@ final class ProjectLoader {
     InstanceFactoryFillIn.reset();
   }
 
-  private void projectLoaded(UserActivity activity, Project project, boolean isLoadingBackups,
+  private void projectLoaded(UserActivity activity, ProjectLoadOutcome outcome, boolean isLoadingBackups,
                              boolean isMainProjectCorrupted, Set<String> unloadableFiles) {
     File saved = UriUtilities.getFile(application.getUri());
 
@@ -110,10 +111,10 @@ final class ProjectLoader {
 
     boolean isBackup = application.getUriProjectLoader().isBackup();
 
-    if (project == null) {
+    if (outcome.getKind() == ProjectLoadOutcome.Kind.FAILURE) {
       handleProjectLoadError(saved, activity, isBackup, isLoadingBackups, isMainProjectCorrupted, unloadableFiles);
     } else {
-      handleProjectLoadSuccess(project, saved, activity, isBackup, isLoadingBackups, isMainProjectCorrupted, unloadableFiles);
+      handleProjectLoadSuccess(outcome.getProject(), saved, activity, isBackup, isLoadingBackups, isMainProjectCorrupted, unloadableFiles);
     }
   }
 

@@ -45,6 +45,7 @@ package org.alice.ide.uricontent;
 import javax.swing.SwingUtilities;
 import java.awt.EventQueue;
 import java.net.URI;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -56,27 +57,32 @@ import java.util.function.Consumer;
  */
 //todo: make more thread safe and more sophisticated
 public abstract class UriContentLoader<T> {
-  private class Worker {
-    private final Consumer<T> consumer;
-    private final FutureTask<T> futureTask;
+  private class Worker<C> {
+    private final Consumer<C> consumer;
+    private final FutureTask<C> futureTask;
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
-    Worker(Consumer<T> consumer) {
+    Worker(Callable<C> loader, Consumer<C> consumer) {
       this.consumer = consumer;
-      futureTask = new FutureTask<T>(UriContentLoader.this::load) {
+      futureTask = new FutureTask<C>(loader) {
         @Override
         protected void done() {
           super.done();
           try {
             acceptOnEventDispatchThread(get());
-          } catch (InterruptedException | ExecutionException e) {
+          } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             throw new Error("done", e);
+          } catch (ExecutionException e) {
+            throw new Error("done", e);
+          } finally {
+            executorService.shutdown();
           }
         }
       };
     }
 
-    private void acceptOnEventDispatchThread(final T content) {
+    private void acceptOnEventDispatchThread(final C content) {
       if (EventQueue.isDispatchThread()) {
         consumer.accept(content);
       } else {
@@ -93,7 +99,11 @@ public abstract class UriContentLoader<T> {
 
   protected abstract T load();
 
+  protected synchronized <C> void deliverContentOnEventDispatchThread(Callable<C> loader, Consumer<C> observer) {
+    new Worker<>(loader, observer).execute();
+  }
+
   public synchronized void deliverContentOnEventDispatchThread(Consumer<T> observer) {
-    new Worker(observer).execute();
+    deliverContentOnEventDispatchThread(UriContentLoader.this::load, observer);
   }
 }

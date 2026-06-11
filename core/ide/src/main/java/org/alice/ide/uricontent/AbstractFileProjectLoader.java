@@ -69,54 +69,67 @@ public abstract class AbstractFileProjectLoader extends UriProjectLoader {
 
   @Override
   protected Project load() {
-    if (!isAlice3ProjectFile()) {
-      return null;
+    return loadOutcome().getProject();
+  }
+
+  @Override
+  public ProjectLoadOutcome loadOutcome() {
+    ProjectLoadOutcome fileCheckOutcome = getNonAlice3ProjectOutcome();
+    if (fileCheckOutcome != null) {
+      return fileCheckOutcome;
     }
     try {
       ProjectIo.ProjectReader reader = IoUtilities.projectReader(file);
-      if (isFromFutureVersion(reader)) {
-        return null;
+      Version declinedFutureVersion = getDeclinedFutureVersion(reader);
+      if (declinedFutureVersion != null) {
+        return ProjectLoadOutcome.futureVersionDeclined(file, declinedFutureVersion);
       }
       reader.setResourceTypeHelper(StorytellingResourcesTreeUtils.INSTANCE);
-      return reader.readProject(makeVrReady);
+      Project project = reader.readProject(makeVrReady);
+      return project != null
+          ? ProjectLoadOutcome.success(project, file)
+          : ProjectLoadOutcome.unknownFailure(file);
     } catch (VersionNotSupportedException vnse) {
       ProjectApplication.getActiveInstance().handleVersionNotSupported(file, vnse);
+      return ProjectLoadOutcome.versionNotSupported(file, vnse);
     } catch (IOException ioe) {
       handleLoadException(file, ioe);
+      return ProjectLoadOutcome.ioFailure(file, ioe);
     }
-    return null;
   }
 
   protected abstract void handleLoadException(File file, Exception e);
 
-  private boolean isAlice3ProjectFile() {
+  private ProjectLoadOutcome getNonAlice3ProjectOutcome() {
     if (!file.exists()) {
       // TODO I18n
       Dialogs.showUnableToOpenFileDialog(file, "It does not exist.");
-      return false;
+      return ProjectLoadOutcome.missingFile(file);
     }
     final Locale locale = Locale.ENGLISH;
     String lcFilename = file.getName().toLowerCase(locale);
     if (lcFilename.endsWith(".a2w")) {
       // TODO I18n
       Dialogs.showError("Cannot read file", "Alice3 does not load Alice2 worlds");
-      return false;
+      return ProjectLoadOutcome.alice2World(file);
     }
     if (lcFilename.endsWith(IoUtilities.TYPE_EXTENSION.toLowerCase(locale))) {
       // TODO I18n
       Dialogs.showError("Incorrect File Type", file.getAbsolutePath() + " appears to be a class file and not a project file.\n\nLook for files with the extension " + IoUtilities.PROJECT_EXTENSION);
-      return false;
+      return ProjectLoadOutcome.typeFileNotProject(file);
     }
-    return true;
+    return null;
   }
 
-  private boolean isFromFutureVersion(ProjectIo.ProjectReader reader) throws IOException {
+  private Version getDeclinedFutureVersion(ProjectIo.ProjectReader reader) throws IOException {
     Version fromFutureVersion = reader.checkForFutureVersion();
     if (fromFutureVersion != null) {
       // TODO I18n
-      return !Dialogs.confirmWithWarning("From later Alice version", "WARNING: This project was produced by a newer version of Alice:" + fromFutureVersion + "\n" + "You are running " + ProjectVersion.getCurrentVersion() + " and should consider upgrading. Visit alice.org.\n\n" + "Would you like to try to load this anyway?");
+      if (!Dialogs.confirmWithWarning("From later Alice version", "WARNING: This project was produced by a newer version of Alice:" + fromFutureVersion + "\n" + "You are running " + ProjectVersion.getCurrentVersion() + " and should consider upgrading. Visit alice.org.\n\n" + "Would you like to try to load this anyway?")) {
+        return fromFutureVersion;
+      }
     }
-    return false;
+    return null;
   }
 
   private final File file;
