@@ -215,6 +215,36 @@ public class ProjectLoaderTest {
     assertFalse(ProjectLoader.shouldUseBackupRecovery(true));
   }
 
+  @Test
+  public void headlessFailureOutcomeRoutesBackupLookupToDiagnosticFile() {
+    File loaderFile = new File("original.a3p");
+    File failedBackup = new File("failed-backup.a3p");
+    File routedFile = ProjectLoader.projectFileForOutcome(
+        ProjectLoadOutcome.ioFailure(failedBackup, new IOException("broken")),
+        loaderFile);
+
+    assertEquals(failedBackup, routedFile);
+    assertTrue(ProjectLoader.shouldUseBackupRecovery(false));
+
+    ProjectLoadFailurePlan plan = ProjectLoadFailurePlan.choose(
+        true, true, true, false, null, routedFile);
+    assertEquals(ProjectLoadFailurePlan.Action.SHOW_PROJECT_AND_ALL_BACKUPS_LOAD_ERROR, plan.getAction());
+  }
+
+  @Test
+  public void headlessNewProjectFailureSkipsBackupRecoveryAndShowsNewProject() {
+    File starterFile = new File("starter.a3p");
+    ProjectLoadOutcome outcome = ProjectLoadOutcome.ioFailure(starterFile, new IOException("broken"));
+
+    assertEquals(starterFile, ProjectLoader.projectFileForOutcome(outcome, null));
+    assertFalse(ProjectLoader.shouldUseBackupRecovery(true));
+
+    ProjectLoadFailureDispatchPlan dispatch = ProjectLoadFailureDispatchPlan.afterUserChoice(
+        ProjectLoadFailurePlan.Action.SHOW_UNSAVED_BACKUPS_LOAD_ERROR, false);
+    assertEquals(ProjectLoadFailureDispatchPlan.LoadTarget.NONE, dispatch.getLoadTarget());
+    assertTrue(dispatch.shouldShowNewProject());
+  }
+
   private static org.lgna.project.ast.NamedUserType programType(String name) {
     org.lgna.project.ast.NamedUserType type = new org.lgna.project.ast.NamedUserType();
     type.name.setValue(name);
