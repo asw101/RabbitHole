@@ -6,9 +6,6 @@ import org.lgna.project.Version;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
-import java.util.ArrayList;
-import java.util.List;
-
 final class TextMigrationJsonLoader {
   private static final String RESOURCE_PATH = "migrations/text-migrations.json";
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
@@ -36,12 +33,14 @@ final class TextMigrationJsonLoader {
 
     TextMigration toTextMigration() {
       ReplacementJson[] entries = this.replacements != null ? this.replacements : new ReplacementJson[0];
-      List<String> values = new ArrayList<>(entries.length * 2);
-      for (ReplacementJson replacement : entries) {
-        values.add(replacement.pattern);
-        values.add(replacement.replacement == null ? MigrationManager.NO_REPLACEMENT : replacement.replacement);
+      TextMigrationRule[] rules = new TextMigrationRule[entries.length];
+      for (int i = 0; i < entries.length; i++) {
+        ReplacementJson replacement = entries[i];
+        rules[i] = TextMigrationRule.replace(
+            replacement.pattern,
+            replacement.replacement == null ? MigrationManager.NO_REPLACEMENT : replacement.replacement);
       }
-      return new TextMigration(new Version(this.version), values.toArray(new String[0]));
+      return new TextMigration(new Version(this.version), rules);
     }
   }
 

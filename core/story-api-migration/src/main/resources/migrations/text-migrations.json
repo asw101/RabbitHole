@@ -2819,7 +2819,7 @@
     "replacement" : "name=\"DEFAULT\"> <declaringClass name=\"org.lgna.story.resources.prop.ShrineLanternResource\""
   }, {
     "pattern" : "name=\"PIRATE_SHIP\">\\s*<declaringClass name=\"org.lgna.story.resources.prop.PirateShipResource\"",
-    "replacement" : "name=\"DEFAULT\">\\s*<declaringClass name=\"org.lgna.story.resources.prop.PirateShipPropResource\""
+    "replacement" : "name=\"DEFAULT\"> <declaringClass name=\"org.lgna.story.resources.prop.PirateShipPropResource\""
   }, {
     "pattern" : "name=\"TEA_TABLE\">\\s*<declaringClass name=\"org.lgna.story.resources.prop.TeaTableResource\"",
     "replacement" : "name=\"DEFAULT\"> <declaringClass name=\"org.lgna.story.resources.prop.TeaTableResource\""
@@ -5063,298 +5063,298 @@
     "replacement" : "name=\"TELEVISION_REMOTE\"> <declaringClass name=\"org.lgna.story.resources.prop.TelevisionRemoteResource\""
   }, {
     "pattern" : "name=\"TAIL\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.BigBadWolfResource\"",
-    "replacement" : "name=\"TAIL_0\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.BigBadWolfResource\""
+    "replacement" : "name=\"TAIL_0\"> <declaringClass name=\"org.lgna.story.resources.biped.BigBadWolfResource\""
   }, {
     "pattern" : "name=\"TAIL_2\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.BigBadWolfResource\"",
-    "replacement" : "name=\"TAIL_1\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.BigBadWolfResource\""
+    "replacement" : "name=\"TAIL_1\"> <declaringClass name=\"org.lgna.story.resources.biped.BigBadWolfResource\""
   }, {
     "pattern" : "name=\"TAIL_3\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.BigBadWolfResource\"",
-    "replacement" : "name=\"TAIL_2\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.BigBadWolfResource\""
+    "replacement" : "name=\"TAIL_2\"> <declaringClass name=\"org.lgna.story.resources.biped.BigBadWolfResource\""
   }, {
     "pattern" : "name=\"TAIL_4\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.BigBadWolfResource\"",
-    "replacement" : "name=\"TAIL_3\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.BigBadWolfResource\""
+    "replacement" : "name=\"TAIL_3\"> <declaringClass name=\"org.lgna.story.resources.biped.BigBadWolfResource\""
   }, {
     "pattern" : "name=\"TAIL\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.BunnyResource\"",
-    "replacement" : "name=\"TAIL_0\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.BunnyResource\""
+    "replacement" : "name=\"TAIL_0\"> <declaringClass name=\"org.lgna.story.resources.biped.BunnyResource\""
   }, {
     "pattern" : "name=\"TAIL_2\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.BunnyResource\"",
-    "replacement" : "name=\"TAIL_1\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.BunnyResource\""
+    "replacement" : "name=\"TAIL_1\"> <declaringClass name=\"org.lgna.story.resources.biped.BunnyResource\""
   }, {
     "pattern" : "name=\"TAIL_3\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.BunnyResource\"",
-    "replacement" : "name=\"TAIL_2\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.BunnyResource\""
+    "replacement" : "name=\"TAIL_2\"> <declaringClass name=\"org.lgna.story.resources.biped.BunnyResource\""
   }, {
     "pattern" : "name=\"TAIL\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.CheshireCatResource\"",
-    "replacement" : "name=\"TAIL_0\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.CheshireCatResource\""
+    "replacement" : "name=\"TAIL_0\"> <declaringClass name=\"org.lgna.story.resources.biped.CheshireCatResource\""
   }, {
     "pattern" : "name=\"TAIL_2\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.CheshireCatResource\"",
-    "replacement" : "name=\"TAIL_1\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.CheshireCatResource\""
+    "replacement" : "name=\"TAIL_1\"> <declaringClass name=\"org.lgna.story.resources.biped.CheshireCatResource\""
   }, {
     "pattern" : "name=\"TAIL_3\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.CheshireCatResource\"",
-    "replacement" : "name=\"TAIL_2\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.CheshireCatResource\""
+    "replacement" : "name=\"TAIL_2\"> <declaringClass name=\"org.lgna.story.resources.biped.CheshireCatResource\""
   }, {
     "pattern" : "name=\"TAIL_4\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.CheshireCatResource\"",
-    "replacement" : "name=\"TAIL_3\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.CheshireCatResource\""
+    "replacement" : "name=\"TAIL_3\"> <declaringClass name=\"org.lgna.story.resources.biped.CheshireCatResource\""
   }, {
     "pattern" : "name=\"TAIL_5\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.CheshireCatResource\"",
-    "replacement" : "name=\"TAIL_4\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.CheshireCatResource\""
+    "replacement" : "name=\"TAIL_4\"> <declaringClass name=\"org.lgna.story.resources.biped.CheshireCatResource\""
   }, {
     "pattern" : "name=\"TAIL\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.GoldenMonkeyResource\"",
-    "replacement" : "name=\"TAIL_0\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.GoldenMonkeyResource\""
+    "replacement" : "name=\"TAIL_0\"> <declaringClass name=\"org.lgna.story.resources.biped.GoldenMonkeyResource\""
   }, {
     "pattern" : "name=\"TAIL_2\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.GoldenMonkeyResource\"",
-    "replacement" : "name=\"TAIL_1\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.GoldenMonkeyResource\""
+    "replacement" : "name=\"TAIL_1\"> <declaringClass name=\"org.lgna.story.resources.biped.GoldenMonkeyResource\""
   }, {
     "pattern" : "name=\"TAIL_3\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.GoldenMonkeyResource\"",
-    "replacement" : "name=\"TAIL_2\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.GoldenMonkeyResource\""
+    "replacement" : "name=\"TAIL_2\"> <declaringClass name=\"org.lgna.story.resources.biped.GoldenMonkeyResource\""
   }, {
     "pattern" : "name=\"JOINT_4\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.GoldenMonkeyResource\"",
-    "replacement" : "name=\"TAIL_3\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.GoldenMonkeyResource\""
+    "replacement" : "name=\"TAIL_3\"> <declaringClass name=\"org.lgna.story.resources.biped.GoldenMonkeyResource\""
   }, {
     "pattern" : "name=\"TAIL\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.HareResource\"",
-    "replacement" : "name=\"TAIL_0\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.HareResource\""
+    "replacement" : "name=\"TAIL_0\"> <declaringClass name=\"org.lgna.story.resources.biped.HareResource\""
   }, {
     "pattern" : "name=\"TAIL_2\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.HareResource\"",
-    "replacement" : "name=\"TAIL_1\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.HareResource\""
+    "replacement" : "name=\"TAIL_1\"> <declaringClass name=\"org.lgna.story.resources.biped.HareResource\""
   }, {
     "pattern" : "name=\"TAIL\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.MandrilResource\"",
-    "replacement" : "name=\"TAIL_0\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.MandrilResource\""
+    "replacement" : "name=\"TAIL_0\"> <declaringClass name=\"org.lgna.story.resources.biped.MandrilResource\""
   }, {
     "pattern" : "name=\"TAIL_2\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.MandrilResource\"",
-    "replacement" : "name=\"TAIL_1\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.MandrilResource\""
+    "replacement" : "name=\"TAIL_1\"> <declaringClass name=\"org.lgna.story.resources.biped.MandrilResource\""
   }, {
     "pattern" : "name=\"TAIL\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.MonkeyKingResource\"",
-    "replacement" : "name=\"TAIL_0\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.MonkeyKingResource\""
+    "replacement" : "name=\"TAIL_0\"> <declaringClass name=\"org.lgna.story.resources.biped.MonkeyKingResource\""
   }, {
     "pattern" : "name=\"TAIL_2\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.MonkeyKingResource\"",
-    "replacement" : "name=\"TAIL_1\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.MonkeyKingResource\""
+    "replacement" : "name=\"TAIL_1\"> <declaringClass name=\"org.lgna.story.resources.biped.MonkeyKingResource\""
   }, {
     "pattern" : "name=\"TAIL_3\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.MonkeyKingResource\"",
-    "replacement" : "name=\"TAIL_2\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.MonkeyKingResource\""
+    "replacement" : "name=\"TAIL_2\"> <declaringClass name=\"org.lgna.story.resources.biped.MonkeyKingResource\""
   }, {
     "pattern" : "name=\"TAIL_4\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.MonkeyKingResource\"",
-    "replacement" : "name=\"TAIL_3\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.MonkeyKingResource\""
+    "replacement" : "name=\"TAIL_3\"> <declaringClass name=\"org.lgna.story.resources.biped.MonkeyKingResource\""
   }, {
     "pattern" : "name=\"JAW_1\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.PandaResource\"",
-    "replacement" : "name=\"MOUTH_TIP\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.PandaResource\""
+    "replacement" : "name=\"MOUTH_TIP\"> <declaringClass name=\"org.lgna.story.resources.biped.PandaResource\""
   }, {
     "pattern" : "name=\"TAIL\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.StuffedTigerResource\"",
-    "replacement" : "name=\"TAIL_0\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.StuffedTigerResource\""
+    "replacement" : "name=\"TAIL_0\"> <declaringClass name=\"org.lgna.story.resources.biped.StuffedTigerResource\""
   }, {
     "pattern" : "name=\"TAIL_2\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.StuffedTigerResource\"",
-    "replacement" : "name=\"TAIL_1\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.StuffedTigerResource\""
+    "replacement" : "name=\"TAIL_1\"> <declaringClass name=\"org.lgna.story.resources.biped.StuffedTigerResource\""
   }, {
     "pattern" : "name=\"TAIL_3\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.StuffedTigerResource\"",
-    "replacement" : "name=\"TAIL_2\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.StuffedTigerResource\""
+    "replacement" : "name=\"TAIL_2\"> <declaringClass name=\"org.lgna.story.resources.biped.StuffedTigerResource\""
   }, {
     "pattern" : "name=\"TAIL_4\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.StuffedTigerResource\"",
-    "replacement" : "name=\"TAIL_3\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.StuffedTigerResource\""
+    "replacement" : "name=\"TAIL_3\"> <declaringClass name=\"org.lgna.story.resources.biped.StuffedTigerResource\""
   }, {
     "pattern" : "name=\"TAIL_5\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.StuffedTigerResource\"",
-    "replacement" : "name=\"TAIL_4\">\\s*<declaringClass name=\"org.lgna.story.resources.biped.StuffedTigerResource\""
+    "replacement" : "name=\"TAIL_4\"> <declaringClass name=\"org.lgna.story.resources.biped.StuffedTigerResource\""
   }, {
     "pattern" : "name=\"NECK\">\\s*<declaringClass name=\"org.lgna.story.resources.FlyerResource\"",
-    "replacement" : "name=\"NECK_0\">\\s*<declaringClass name=\"org.lgna.story.resources.FlyerResource\""
+    "replacement" : "name=\"NECK_0\"> <declaringClass name=\"org.lgna.story.resources.FlyerResource\""
   }, {
     "pattern" : "name=\"NECK_2\">\\s*<declaringClass name=\"org.lgna.story.resources.FlyerResource\"",
-    "replacement" : "name=\"NECK_1\">\\s*<declaringClass name=\"org.lgna.story.resources.FlyerResource\""
+    "replacement" : "name=\"NECK_1\"> <declaringClass name=\"org.lgna.story.resources.FlyerResource\""
   }, {
     "pattern" : "name=\"TAIL\">\\s*<declaringClass name=\"org.lgna.story.resources.FlyerResource\"",
-    "replacement" : "name=\"TAIL_0\">\\s*<declaringClass name=\"org.lgna.story.resources.FlyerResource\""
+    "replacement" : "name=\"TAIL_0\"> <declaringClass name=\"org.lgna.story.resources.FlyerResource\""
   }, {
     "pattern" : "name=\"TAIL_2\">\\s*<declaringClass name=\"org.lgna.story.resources.FlyerResource\"",
-    "replacement" : "name=\"TAIL_1\">\\s*<declaringClass name=\"org.lgna.story.resources.FlyerResource\""
+    "replacement" : "name=\"TAIL_1\"> <declaringClass name=\"org.lgna.story.resources.FlyerResource\""
   }, {
     "pattern" : "name=\"TAIL_3\">\\s*<declaringClass name=\"org.lgna.story.resources.FlyerResource\"",
-    "replacement" : "name=\"TAIL_2\">\\s*<declaringClass name=\"org.lgna.story.resources.FlyerResource\""
+    "replacement" : "name=\"TAIL_2\"> <declaringClass name=\"org.lgna.story.resources.FlyerResource\""
   }, {
     "pattern" : "name=\"LEFT_PLUMAGE_1\">\\s*<declaringClass name=\"org.lgna.story.resources.flyer.PeacockResource\"",
-    "replacement" : "name=\"PLUMAGE_LEFT_TIP\">\\s*<declaringClass name=\"org.lgna.story.resources.flyer.PeacockResource\""
+    "replacement" : "name=\"PLUMAGE_LEFT_TIP\"> <declaringClass name=\"org.lgna.story.resources.flyer.PeacockResource\""
   }, {
     "pattern" : "name=\"RIGHT_PLUMAGE_1\">\\s*<declaringClass name=\"org.lgna.story.resources.flyer.PeacockResource\"",
-    "replacement" : "name=\"PLUMAGE_RIGHT_TIP\">\\s*<declaringClass name=\"org.lgna.story.resources.flyer.PeacockResource\""
+    "replacement" : "name=\"PLUMAGE_RIGHT_TIP\"> <declaringClass name=\"org.lgna.story.resources.flyer.PeacockResource\""
   }, {
     "pattern" : "name=\"TAIL\">\\s*<declaringClass name=\"org.lgna.story.resources.QuadrupedResource\"",
-    "replacement" : "name=\"TAIL_0\">\\s*<declaringClass name=\"org.lgna.story.resources.QuadrupedResource\""
+    "replacement" : "name=\"TAIL_0\"> <declaringClass name=\"org.lgna.story.resources.QuadrupedResource\""
   }, {
     "pattern" : "name=\"TAIL_2\">\\s*<declaringClass name=\"org.lgna.story.resources.QuadrupedResource\"",
-    "replacement" : "name=\"TAIL_1\">\\s*<declaringClass name=\"org.lgna.story.resources.QuadrupedResource\""
+    "replacement" : "name=\"TAIL_1\"> <declaringClass name=\"org.lgna.story.resources.QuadrupedResource\""
   }, {
     "pattern" : "name=\"TAIL_3\">\\s*<declaringClass name=\"org.lgna.story.resources.QuadrupedResource\"",
-    "replacement" : "name=\"TAIL_2\">\\s*<declaringClass name=\"org.lgna.story.resources.QuadrupedResource\""
+    "replacement" : "name=\"TAIL_2\"> <declaringClass name=\"org.lgna.story.resources.QuadrupedResource\""
   }, {
     "pattern" : "name=\"TAIL_4\">\\s*<declaringClass name=\"org.lgna.story.resources.QuadrupedResource\"",
-    "replacement" : "name=\"TAIL_3\">\\s*<declaringClass name=\"org.lgna.story.resources.QuadrupedResource\""
+    "replacement" : "name=\"TAIL_3\"> <declaringClass name=\"org.lgna.story.resources.QuadrupedResource\""
   }, {
     "pattern" : "name=\"JAW_1\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.AbyssinianCatResource\"",
-    "replacement" : "name=\"LOWER_LIP\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.AbyssinianCatResource\""
+    "replacement" : "name=\"LOWER_LIP\"> <declaringClass name=\"org.lgna.story.resources.quadruped.AbyssinianCatResource\""
   }, {
     "pattern" : "name=\"JAW_1\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.AlienRobotResource\"",
-    "replacement" : "name=\"MOUTH_TIP\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.AlienRobotResource\""
+    "replacement" : "name=\"MOUTH_TIP\"> <declaringClass name=\"org.lgna.story.resources.quadruped.AlienRobotResource\""
   }, {
     "pattern" : "name=\"JAW_1\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.CaimanResource\"",
-    "replacement" : "name=\"MOUTH_TIP\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.CaimanResource\""
+    "replacement" : "name=\"MOUTH_TIP\"> <declaringClass name=\"org.lgna.story.resources.quadruped.CaimanResource\""
   }, {
     "pattern" : "name=\"JAW_1\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.CowResource\"",
-    "replacement" : "name=\"MOUTH_TIP\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.CowResource\""
+    "replacement" : "name=\"MOUTH_TIP\"> <declaringClass name=\"org.lgna.story.resources.quadruped.CowResource\""
   }, {
     "pattern" : "name=\"JAW_1\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.DragonResource\"",
-    "replacement" : "name=\"MOUTH_TIP\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.DragonResource\""
+    "replacement" : "name=\"MOUTH_TIP\"> <declaringClass name=\"org.lgna.story.resources.quadruped.DragonResource\""
   }, {
     "pattern" : "name=\"JAW_1\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.DragonBabyResource\"",
-    "replacement" : "name=\"MOUTH_TIP\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.DragonBabyResource\""
+    "replacement" : "name=\"MOUTH_TIP\"> <declaringClass name=\"org.lgna.story.resources.quadruped.DragonBabyResource\""
   }, {
     "pattern" : "name=\"JAW_1\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.PeccaryResource\"",
-    "replacement" : "name=\"MOUTH_TIP\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.PeccaryResource\""
+    "replacement" : "name=\"MOUTH_TIP\"> <declaringClass name=\"org.lgna.story.resources.quadruped.PeccaryResource\""
   }, {
     "pattern" : "name=\"JAW_1\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.YaliResource\"",
-    "replacement" : "name=\"MOUTH_TIP\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.YaliResource\""
+    "replacement" : "name=\"MOUTH_TIP\"> <declaringClass name=\"org.lgna.story.resources.quadruped.YaliResource\""
   }, {
     "pattern" : "name=\"TONGUE\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.CoyoteResource\"",
-    "replacement" : "name=\"TONGUE_0\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.CoyoteResource\""
+    "replacement" : "name=\"TONGUE_0\"> <declaringClass name=\"org.lgna.story.resources.quadruped.CoyoteResource\""
   }, {
     "pattern" : "name=\"TONGUE_2\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.CoyoteResource\"",
-    "replacement" : "name=\"TONGUE_1\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.CoyoteResource\""
+    "replacement" : "name=\"TONGUE_1\"> <declaringClass name=\"org.lgna.story.resources.quadruped.CoyoteResource\""
   }, {
     "pattern" : "name=\"TONGUE_3\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.CoyoteResource\"",
-    "replacement" : "name=\"TONGUE_2\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.CoyoteResource\""
+    "replacement" : "name=\"TONGUE_2\"> <declaringClass name=\"org.lgna.story.resources.quadruped.CoyoteResource\""
   }, {
     "pattern" : "name=\"TONGUE_4\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.CoyoteResource\"",
-    "replacement" : "name=\"TONGUE_3\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.CoyoteResource\""
+    "replacement" : "name=\"TONGUE_3\"> <declaringClass name=\"org.lgna.story.resources.quadruped.CoyoteResource\""
   }, {
     "pattern" : "name=\"TRUNK_1\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.ElephantResource\"",
-    "replacement" : "name=\"TRUNK_0\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.ElephantResource\""
+    "replacement" : "name=\"TRUNK_0\"> <declaringClass name=\"org.lgna.story.resources.quadruped.ElephantResource\""
   }, {
     "pattern" : "name=\"TRUNK_2\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.ElephantResource\"",
-    "replacement" : "name=\"TRUNK_1\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.ElephantResource\""
+    "replacement" : "name=\"TRUNK_1\"> <declaringClass name=\"org.lgna.story.resources.quadruped.ElephantResource\""
   }, {
     "pattern" : "name=\"TRUNK_3\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.ElephantResource\"",
-    "replacement" : "name=\"TRUNK_2\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.ElephantResource\""
+    "replacement" : "name=\"TRUNK_2\"> <declaringClass name=\"org.lgna.story.resources.quadruped.ElephantResource\""
   }, {
     "pattern" : "name=\"TRUNK_4\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.ElephantResource\"",
-    "replacement" : "name=\"TRUNK_3\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.ElephantResource\""
+    "replacement" : "name=\"TRUNK_3\"> <declaringClass name=\"org.lgna.story.resources.quadruped.ElephantResource\""
   }, {
     "pattern" : "name=\"TRUNK_5\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.ElephantResource\"",
-    "replacement" : "name=\"TRUNK_4\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.ElephantResource\""
+    "replacement" : "name=\"TRUNK_4\"> <declaringClass name=\"org.lgna.story.resources.quadruped.ElephantResource\""
   }, {
     "pattern" : "name=\"TRUNK_6\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.ElephantResource\"",
-    "replacement" : "name=\"TRUNK_5\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.ElephantResource\""
+    "replacement" : "name=\"TRUNK_5\"> <declaringClass name=\"org.lgna.story.resources.quadruped.ElephantResource\""
   }, {
     "pattern" : "name=\"TONGUE_1\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.HornedLizardResource\"",
-    "replacement" : "name=\"TONGUE_0\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.HornedLizardResource\""
+    "replacement" : "name=\"TONGUE_0\"> <declaringClass name=\"org.lgna.story.resources.quadruped.HornedLizardResource\""
   }, {
     "pattern" : "name=\"TONGUE_2\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.HornedLizardResource\"",
-    "replacement" : "name=\"TONGUE_1\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.HornedLizardResource\""
+    "replacement" : "name=\"TONGUE_1\"> <declaringClass name=\"org.lgna.story.resources.quadruped.HornedLizardResource\""
   }, {
     "pattern" : "name=\"TONGUE_3\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.HornedLizardResource\"",
-    "replacement" : "name=\"TONGUE_2\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.HornedLizardResource\""
+    "replacement" : "name=\"TONGUE_2\"> <declaringClass name=\"org.lgna.story.resources.quadruped.HornedLizardResource\""
   }, {
     "pattern" : "name=\"TONGUE_4\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.HornedLizardResource\"",
-    "replacement" : "name=\"TONGUE_3\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.HornedLizardResource\""
+    "replacement" : "name=\"TONGUE_3\"> <declaringClass name=\"org.lgna.story.resources.quadruped.HornedLizardResource\""
   }, {
     "pattern" : "name=\"TONGUE\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.YakResource\"",
-    "replacement" : "name=\"TONGUE_0\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.YakResource\""
+    "replacement" : "name=\"TONGUE_0\"> <declaringClass name=\"org.lgna.story.resources.quadruped.YakResource\""
   }, {
     "pattern" : "name=\"TONGUE_2\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.YakResource\"",
-    "replacement" : "name=\"TONGUE_1\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.YakResource\""
+    "replacement" : "name=\"TONGUE_1\"> <declaringClass name=\"org.lgna.story.resources.quadruped.YakResource\""
   }, {
     "pattern" : "name=\"TONGUE_3\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.YakResource\"",
-    "replacement" : "name=\"TONGUE_2\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.YakResource\""
+    "replacement" : "name=\"TONGUE_2\"> <declaringClass name=\"org.lgna.story.resources.quadruped.YakResource\""
   }, {
     "pattern" : "name=\"TONGUE_4\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.YakResource\"",
-    "replacement" : "name=\"TONGUE_3\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.YakResource\""
+    "replacement" : "name=\"TONGUE_3\"> <declaringClass name=\"org.lgna.story.resources.quadruped.YakResource\""
   }, {
     "pattern" : "name=\"TRUNK\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.YaliResource\"",
-    "replacement" : "name=\"TRUNK_0\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.YaliResource\""
+    "replacement" : "name=\"TRUNK_0\"> <declaringClass name=\"org.lgna.story.resources.quadruped.YaliResource\""
   }, {
     "pattern" : "name=\"TRUNK_2\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.YaliResource\"",
-    "replacement" : "name=\"TRUNK_1\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.YaliResource\""
+    "replacement" : "name=\"TRUNK_1\"> <declaringClass name=\"org.lgna.story.resources.quadruped.YaliResource\""
   }, {
     "pattern" : "name=\"TRUNK_3\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.YaliResource\"",
-    "replacement" : "name=\"TRUNK_2\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.YaliResource\""
+    "replacement" : "name=\"TRUNK_2\"> <declaringClass name=\"org.lgna.story.resources.quadruped.YaliResource\""
   }, {
     "pattern" : "name=\"TRUNK_4\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.YaliResource\"",
-    "replacement" : "name=\"TRUNK_3\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.YaliResource\""
+    "replacement" : "name=\"TRUNK_3\"> <declaringClass name=\"org.lgna.story.resources.quadruped.YaliResource\""
   }, {
     "pattern" : "name=\"TRUNK_5\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.YaliResource\"",
-    "replacement" : "name=\"TRUNK_4\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.YaliResource\""
+    "replacement" : "name=\"TRUNK_4\"> <declaringClass name=\"org.lgna.story.resources.quadruped.YaliResource\""
   }, {
     "pattern" : "name=\"TRUNK_6\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.YaliResource\"",
-    "replacement" : "name=\"TRUNK_5\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.YaliResource\""
+    "replacement" : "name=\"TRUNK_5\"> <declaringClass name=\"org.lgna.story.resources.quadruped.YaliResource\""
   }, {
     "pattern" : "name=\"LEFT_1\">\\s*<declaringClass name=\"org.lgna.story.resources.prop.NavajoBlanketResource\"",
-    "replacement" : "name=\"LEFT_0\">\\s*<declaringClass name=\"org.lgna.story.resources.prop.NavajoBlanketResource\""
+    "replacement" : "name=\"LEFT_0\"> <declaringClass name=\"org.lgna.story.resources.prop.NavajoBlanketResource\""
   }, {
     "pattern" : "name=\"LEFT_2\">\\s*<declaringClass name=\"org.lgna.story.resources.prop.NavajoBlanketResource\"",
-    "replacement" : "name=\"LEFT_1\">\\s*<declaringClass name=\"org.lgna.story.resources.prop.NavajoBlanketResource\""
+    "replacement" : "name=\"LEFT_1\"> <declaringClass name=\"org.lgna.story.resources.prop.NavajoBlanketResource\""
   }, {
     "pattern" : "name=\"LEFT_3\">\\s*<declaringClass name=\"org.lgna.story.resources.prop.NavajoBlanketResource\"",
-    "replacement" : "name=\"LEFT_2\">\\s*<declaringClass name=\"org.lgna.story.resources.prop.NavajoBlanketResource\""
+    "replacement" : "name=\"LEFT_2\"> <declaringClass name=\"org.lgna.story.resources.prop.NavajoBlanketResource\""
   }, {
     "pattern" : "name=\"RIGHT_1\">\\s*<declaringClass name=\"org.lgna.story.resources.prop.NavajoBlanketResource\"",
-    "replacement" : "name=\"RIGHT_0\">\\s*<declaringClass name=\"org.lgna.story.resources.prop.NavajoBlanketResource\""
+    "replacement" : "name=\"RIGHT_0\"> <declaringClass name=\"org.lgna.story.resources.prop.NavajoBlanketResource\""
   }, {
     "pattern" : "name=\"RIGHT_2\">\\s*<declaringClass name=\"org.lgna.story.resources.prop.NavajoBlanketResource\"",
-    "replacement" : "name=\"RIGHT_1\">\\s*<declaringClass name=\"org.lgna.story.resources.prop.NavajoBlanketResource\""
+    "replacement" : "name=\"RIGHT_1\"> <declaringClass name=\"org.lgna.story.resources.prop.NavajoBlanketResource\""
   }, {
     "pattern" : "name=\"RIGHT_3\">\\s*<declaringClass name=\"org.lgna.story.resources.prop.NavajoBlanketResource\"",
-    "replacement" : "name=\"RIGHT_2\">\\s*<declaringClass name=\"org.lgna.story.resources.prop.NavajoBlanketResource\""
+    "replacement" : "name=\"RIGHT_2\"> <declaringClass name=\"org.lgna.story.resources.prop.NavajoBlanketResource\""
   }, {
     "pattern" : "name=\"FLAG_5\">\\s*<declaringClass name=\"org.lgna.story.resources.prop.PrayerFlagsResource\"",
-    "replacement" : "name=\"FLAG_05\">\\s*<declaringClass name=\"org.lgna.story.resources.prop.PrayerFlagsResource\""
+    "replacement" : "name=\"FLAG_05\"> <declaringClass name=\"org.lgna.story.resources.prop.PrayerFlagsResource\""
   }, {
     "pattern" : "name=\"FLAG_6\">\\s*<declaringClass name=\"org.lgna.story.resources.prop.PrayerFlagsResource\"",
-    "replacement" : "name=\"FLAG_06\">\\s*<declaringClass name=\"org.lgna.story.resources.prop.PrayerFlagsResource\""
+    "replacement" : "name=\"FLAG_06\"> <declaringClass name=\"org.lgna.story.resources.prop.PrayerFlagsResource\""
   }, {
     "pattern" : "name=\"FLAG_7\">\\s*<declaringClass name=\"org.lgna.story.resources.prop.PrayerFlagsResource\"",
-    "replacement" : "name=\"FLAG_07\">\\s*<declaringClass name=\"org.lgna.story.resources.prop.PrayerFlagsResource\""
+    "replacement" : "name=\"FLAG_07\"> <declaringClass name=\"org.lgna.story.resources.prop.PrayerFlagsResource\""
   }, {
     "pattern" : "name=\"FLAG_8\">\\s*<declaringClass name=\"org.lgna.story.resources.prop.PrayerFlagsResource\"",
-    "replacement" : "name=\"FLAG_08\">\\s*<declaringClass name=\"org.lgna.story.resources.prop.PrayerFlagsResource\""
+    "replacement" : "name=\"FLAG_08\"> <declaringClass name=\"org.lgna.story.resources.prop.PrayerFlagsResource\""
   }, {
     "pattern" : "name=\"FLAG_9\">\\s*<declaringClass name=\"org.lgna.story.resources.prop.PrayerFlagsResource\"",
-    "replacement" : "name=\"FLAG_09\">\\s*<declaringClass name=\"org.lgna.story.resources.prop.PrayerFlagsResource\""
+    "replacement" : "name=\"FLAG_09\"> <declaringClass name=\"org.lgna.story.resources.prop.PrayerFlagsResource\""
   }, {
     "pattern" : "name=\"STRING_2\">\\s*<declaringClass name=\"org.lgna.story.resources.prop.PrayerFlagsResource\"",
-    "replacement" : "name=\"STRING_0\">\\s*<declaringClass name=\"org.lgna.story.resources.prop.PrayerFlagsResource\""
+    "replacement" : "name=\"STRING_0\"> <declaringClass name=\"org.lgna.story.resources.prop.PrayerFlagsResource\""
   }, {
     "pattern" : "name=\"FLAG\">\\s*<declaringClass name=\"org.lgna.story.resources.prop.PrayerFlagsResource\"",
-    "replacement" : "name=\"FLAG_00\">\\s*<declaringClass name=\"org.lgna.story.resources.prop.PrayerFlagsResource\""
+    "replacement" : "name=\"FLAG_00\"> <declaringClass name=\"org.lgna.story.resources.prop.PrayerFlagsResource\""
   }, {
     "pattern" : "name=\"FLAG_1\">\\s*<declaringClass name=\"org.lgna.story.resources.prop.PrayerFlagsResource\"",
-    "replacement" : "name=\"FLAG_01\">\\s*<declaringClass name=\"org.lgna.story.resources.prop.PrayerFlagsResource\""
+    "replacement" : "name=\"FLAG_01\"> <declaringClass name=\"org.lgna.story.resources.prop.PrayerFlagsResource\""
   }, {
     "pattern" : "name=\"FLAG_2\">\\s*<declaringClass name=\"org.lgna.story.resources.prop.PrayerFlagsResource\"",
-    "replacement" : "name=\"FLAG_02\">\\s*<declaringClass name=\"org.lgna.story.resources.prop.PrayerFlagsResource\""
+    "replacement" : "name=\"FLAG_02\"> <declaringClass name=\"org.lgna.story.resources.prop.PrayerFlagsResource\""
   }, {
     "pattern" : "name=\"FLAG_3\">\\s*<declaringClass name=\"org.lgna.story.resources.prop.PrayerFlagsResource\"",
-    "replacement" : "name=\"FLAG_03\">\\s*<declaringClass name=\"org.lgna.story.resources.prop.PrayerFlagsResource\""
+    "replacement" : "name=\"FLAG_03\"> <declaringClass name=\"org.lgna.story.resources.prop.PrayerFlagsResource\""
   }, {
     "pattern" : "name=\"FLAG_4\">\\s*<declaringClass name=\"org.lgna.story.resources.prop.PrayerFlagsResource\"",
-    "replacement" : "name=\"FLAG_04\">\\s*<declaringClass name=\"org.lgna.story.resources.prop.PrayerFlagsResource\""
+    "replacement" : "name=\"FLAG_04\"> <declaringClass name=\"org.lgna.story.resources.prop.PrayerFlagsResource\""
   }, {
     "pattern" : "name=\"STRING_3\">\\s*<declaringClass name=\"org.lgna.story.resources.prop.PrayerFlagsResource\"",
-    "replacement" : "name=\"STRING_2\">\\s*<declaringClass name=\"org.lgna.story.resources.prop.PrayerFlagsResource\""
+    "replacement" : "name=\"STRING_2\"> <declaringClass name=\"org.lgna.story.resources.prop.PrayerFlagsResource\""
   }, {
     "pattern" : "name=\"FLAG_10\">\\s*<declaringClass name=\"org.lgna.story.resources.prop.PrayerFlagsResource\"",
-    "replacement" : "name=\"FLAG_10\">\\s*<declaringClass name=\"org.lgna.story.resources.prop.PrayerFlagsResource\""
+    "replacement" : "name=\"FLAG_10\"> <declaringClass name=\"org.lgna.story.resources.prop.PrayerFlagsResource\""
   }, {
     "pattern" : "name=\"FLAG_11\">\\s*<declaringClass name=\"org.lgna.story.resources.prop.PrayerFlagsResource\"",
-    "replacement" : "name=\"FLAG_11\">\\s*<declaringClass name=\"org.lgna.story.resources.prop.PrayerFlagsResource\""
+    "replacement" : "name=\"FLAG_11\"> <declaringClass name=\"org.lgna.story.resources.prop.PrayerFlagsResource\""
   }, {
     "pattern" : "name=\"FLAG_12\">\\s*<declaringClass name=\"org.lgna.story.resources.prop.PrayerFlagsResource\"",
-    "replacement" : "name=\"FLAG_12\">\\s*<declaringClass name=\"org.lgna.story.resources.prop.PrayerFlagsResource\""
+    "replacement" : "name=\"FLAG_12\"> <declaringClass name=\"org.lgna.story.resources.prop.PrayerFlagsResource\""
   }, {
     "pattern" : "name=\"FLAG_13\">\\s*<declaringClass name=\"org.lgna.story.resources.prop.PrayerFlagsResource\"",
-    "replacement" : "name=\"FLAG_13\">\\s*<declaringClass name=\"org.lgna.story.resources.prop.PrayerFlagsResource\""
+    "replacement" : "name=\"FLAG_13\"> <declaringClass name=\"org.lgna.story.resources.prop.PrayerFlagsResource\""
   }, {
     "pattern" : "name=\"FLAG_14\">\\s*<declaringClass name=\"org.lgna.story.resources.prop.PrayerFlagsResource\"",
-    "replacement" : "name=\"FLAG_14\">\\s*<declaringClass name=\"org.lgna.story.resources.prop.PrayerFlagsResource\""
+    "replacement" : "name=\"FLAG_14\"> <declaringClass name=\"org.lgna.story.resources.prop.PrayerFlagsResource\""
   }, {
     "pattern" : "name=\"TAIL_5\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.YaliResource\"",
-    "replacement" : "name=\"TAIL_4\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.YaliResource\""
+    "replacement" : "name=\"TAIL_4\"> <declaringClass name=\"org.lgna.story.resources.quadruped.YaliResource\""
   }, {
     "pattern" : "name=\"TAIL_5\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.DalmatianResource\"",
-    "replacement" : "name=\"TAIL_4\">\\s*<declaringClass name=\"org.lgna.story.resources.quadruped.DalmatianResource\""
+    "replacement" : "name=\"TAIL_4\"> <declaringClass name=\"org.lgna.story.resources.quadruped.DalmatianResource\""
   } ]
 }, {
   "version" : "3.2.108.0.0",

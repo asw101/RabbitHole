@@ -100,13 +100,37 @@ public class TextMigration extends AbstractMigration {
 
   private final Pair[] pairs;
 
-  public TextMigration(Version resultVersion, String... values) {
+  public TextMigration(Version resultVersion) {
+    this(resultVersion, new TextMigrationRule[0]);
+  }
+
+  public TextMigration(Version resultVersion, TextMigrationRule... rules) {
     super(resultVersion);
-    assert (values.length % 2) == 0 : values.length;
-    this.pairs = new Pair[values.length / 2];
+    this.pairs = new Pair[rules.length];
     for (int i = 0; i < this.pairs.length; i++) {
-      this.pairs[i] = new Pair(values[i * 2], values[(i * 2) + 1]);
+      TextMigrationRule rule = rules[i];
+      this.pairs[i] = new Pair(rule.getPattern(), rule.getReplacement());
     }
+    sanityCheck();
+  }
+
+  @Deprecated
+  public TextMigration(Version resultVersion, String... values) {
+    this(resultVersion, rulesFrom(values));
+  }
+
+  private static TextMigrationRule[] rulesFrom(String... values) {
+    if ((values.length % 2) != 0) {
+      throw new IllegalArgumentException("Text migration string pairs require an even value count: " + values.length);
+    }
+    TextMigrationRule[] rules = new TextMigrationRule[values.length / 2];
+    for (int i = 0; i < rules.length; i++) {
+      rules[i] = TextMigrationRule.replace(values[i * 2], values[(i * 2) + 1]);
+    }
+    return rules;
+  }
+
+  private void sanityCheck() {
     if (IS_SANITY_CHECKING_DESIRED) {
       Logger.outln("sanity checking " + this.pairs.length);
       for (int i = 0; i < this.pairs.length; i++) {

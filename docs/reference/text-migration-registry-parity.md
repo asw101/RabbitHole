@@ -11,7 +11,7 @@ them in parity.
 | --- | --- | --- |
 | `TextMigrationRegistry` | `core/story-api-migration/src/main/java/org/lgna/project/migration/` | Runtime assembler for all text migrations. It loads JSON by default and can use legacy registries for characterization and regeneration. |
 | `TextMigrationJsonLoader` | `core/story-api-migration/src/main/java/org/lgna/project/migration/` | Loads `migrations/text-migrations.json` from the classpath and converts entries to `TextMigration` instances in file order. |
-| Legacy registries | `TextMigrationRegistrySmallVersions`, `TextMigrationRegistryV3134`, `TextMigrationRegistryV3159`, `TextMigrationRegistryLateVersions` | Authoritative Java definitions used as the source for loader parity checks and JSON generation. |
+| Legacy registries | `TextMigrationRegistrySmallVersions`, `TextMigrationRegistryV3134`, `TextMigrationRegistryV3159`, `TextMigrationRegistryLateVersions` | Authoritative Java definitions used as the source for loader parity checks and JSON generation. Replacement definitions use explicit `TextMigrationRule` entries rather than positional string pairs. |
 | `text-migrations.json` | `core/story-api-migration/src/main/resources/migrations/` | Generated runtime migration table. It must match the legacy registry generated JSON exactly and must be changed only through the explicit generator write path. |
 | Parity test support | `TextMigrationParityTestSupport` | Test-only canonical extraction of ordered migration source/replacement pairs from runtime JSON, generated JSON, and legacy registry classes. |
 | Parity tests | `TextMigrationRegistryTest`, `TextMigrationJsonLoaderTest`, `TextMigrationJsonGeneratorTest` | Characterization suite that protects order, count, version boundaries, loader pair parity, loader edge cases, strict generated JSON drift detection, and generator parity. |
@@ -47,6 +47,14 @@ The legacy registry sequence is authoritative for parity:
 preserves that order and performs the full ordered source/replacement pair
 comparison against the same concatenated legacy sequence. `TextMigrationJsonLoaderTest`
 performs the same classpath JSON parity check and covers loader edge cases.
+
+Legacy Java registry edits should add one `TextMigrationRule` per replacement.
+Use the snippet helpers such as `createMoreSpecificFieldRule(...)` and
+`createJointIdRule(...)` when a rule is generated from Alice resource metadata;
+use `TextMigrationRule.replace(pattern, replacement)` for direct regex/text
+entries and for cross-class snippet combinations where the pattern and
+replacement intentionally reference different resource classes. Do not add raw
+positional pattern/replacement strings to `TextMigration` constructors.
 
 ## JSON format
 

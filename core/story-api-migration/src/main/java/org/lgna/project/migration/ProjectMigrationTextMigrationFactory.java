@@ -44,106 +44,78 @@ package org.lgna.project.migration;
 
 import org.lgna.project.Version;
 
-import static org.lgna.project.migration.ProjectMigrationTextSnippets.createMoreSpecificFieldPattern;
-import static org.lgna.project.migration.ProjectMigrationTextSnippets.createMoreSpecificFieldReplacement;
+import static org.lgna.project.migration.ProjectMigrationTextSnippets.createMoreSpecificFieldRule;
 
 final class ProjectMigrationTextMigrationFactory {
   static TextMigration createVersion3_2_110TextMigration() {
     return new TextMigration(
         new Version("3.2.110.0.0"),
 
-        createMoreSpecificFieldPattern("OVAL", "org.lgna.story.resources.prop.SandDunesResource"),
-        createMoreSpecificFieldReplacement("OVAL_DESERT", "org.lgna.story.resources.prop.SandDunesResource"),
+        createMoreSpecificFieldRule("OVAL", "OVAL_DESERT", "org.lgna.story.resources.prop.SandDunesResource"),
 
-        createMoreSpecificFieldPattern("CRESCENT", "org.lgna.story.resources.prop.SandDunesResource"),
-        createMoreSpecificFieldReplacement("CRESCENT_DESERT", "org.lgna.story.resources.prop.SandDunesResource"),
+        createMoreSpecificFieldRule("CRESCENT", "CRESCENT_DESERT", "org.lgna.story.resources.prop.SandDunesResource"),
 
-        createMoreSpecificFieldPattern("BLOB", "org.lgna.story.resources.prop.SandDunesResource"),
-        createMoreSpecificFieldReplacement("BLOB_DESERT", "org.lgna.story.resources.prop.SandDunesResource"),
+        createMoreSpecificFieldRule("BLOB", "BLOB_DESERT", "org.lgna.story.resources.prop.SandDunesResource"),
 
 
-        createMoreSpecificFieldPattern("ARCHES", "org.lgna.story.resources.prop.AncientTempleBlockResource"),
-        createMoreSpecificFieldReplacement("ARCHES_INDIA_BRICK_D", "org.lgna.story.resources.prop.AncientTempleBlockResource"),
+        createMoreSpecificFieldRule("ARCHES", "ARCHES_INDIA_BRICK_D", "org.lgna.story.resources.prop.AncientTempleBlockResource"),
 
-        createMoreSpecificFieldPattern("PASSAGE", "org.lgna.story.resources.prop.AncientTempleBlockResource"),
-        createMoreSpecificFieldReplacement("PASSAGE_INDIA_BRICK_D", "org.lgna.story.resources.prop.AncientTempleBlockResource"),
+        createMoreSpecificFieldRule("PASSAGE", "PASSAGE_INDIA_BRICK_D", "org.lgna.story.resources.prop.AncientTempleBlockResource"),
 
-        createMoreSpecificFieldPattern("SHELF", "org.lgna.story.resources.prop.AncientTempleBlockResource"),
-        createMoreSpecificFieldReplacement("SHELF_INDIA_BRICK_D", "org.lgna.story.resources.prop.AncientTempleBlockResource"),
+        createMoreSpecificFieldRule("SHELF", "SHELF_INDIA_BRICK_D", "org.lgna.story.resources.prop.AncientTempleBlockResource"),
 
-        createMoreSpecificFieldPattern("SOLID", "org.lgna.story.resources.prop.AncientTempleBlockResource"),
-        createMoreSpecificFieldReplacement("SOLID_INDIA_BRICK_D", "org.lgna.story.resources.prop.AncientTempleBlockResource"),
+        createMoreSpecificFieldRule("SOLID", "SOLID_INDIA_BRICK_D", "org.lgna.story.resources.prop.AncientTempleBlockResource"),
 
 
-        createMoreSpecificFieldPattern("END", "org.lgna.story.resources.prop.AncientTemplePieceResource"),
-        createMoreSpecificFieldReplacement("END_INDIA_BRICK_D", "org.lgna.story.resources.prop.AncientTemplePieceResource"),
+        createMoreSpecificFieldRule("END", "END_INDIA_BRICK_D", "org.lgna.story.resources.prop.AncientTemplePieceResource"),
 
-        createMoreSpecificFieldPattern("LEDGE", "org.lgna.story.resources.prop.AncientTemplePieceResource"),
-        createMoreSpecificFieldReplacement("LEDGE_INDIA_BRICK_D", "org.lgna.story.resources.prop.AncientTemplePieceResource"),
+        createMoreSpecificFieldRule("LEDGE", "LEDGE_INDIA_BRICK_D", "org.lgna.story.resources.prop.AncientTemplePieceResource"),
 
-        createMoreSpecificFieldPattern("LEDGE_AND_STAIRS", "org.lgna.story.resources.prop.AncientTemplePieceResource"),
-        createMoreSpecificFieldReplacement("LEDGE_AND_STAIRS_INDIA_BRICK_D", "org.lgna.story.resources.prop.AncientTemplePieceResource"),
+        createMoreSpecificFieldRule("LEDGE_AND_STAIRS", "LEDGE_AND_STAIRS_INDIA_BRICK_D", "org.lgna.story.resources.prop.AncientTemplePieceResource"),
 
-        createMoreSpecificFieldPattern("PLAZA", "org.lgna.story.resources.prop.AncientTemplePieceResource"),
-        createMoreSpecificFieldReplacement("PLAZA_INDIA_BRICK_D", "org.lgna.story.resources.prop.AncientTemplePieceResource"),
+        createMoreSpecificFieldRule("PLAZA", "PLAZA_INDIA_BRICK_D", "org.lgna.story.resources.prop.AncientTemplePieceResource"),
 
-        createMoreSpecificFieldPattern("ROOM", "org.lgna.story.resources.prop.AncientTemplePieceResource"),
-        createMoreSpecificFieldReplacement("ROOM_INDIA_BRICK_D", "org.lgna.story.resources.prop.AncientTemplePieceResource"),
+        createMoreSpecificFieldRule("ROOM", "ROOM_INDIA_BRICK_D", "org.lgna.story.resources.prop.AncientTemplePieceResource"),
 
-        createMoreSpecificFieldPattern("STACK", "org.lgna.story.resources.prop.AncientTemplePieceResource"),
-        createMoreSpecificFieldReplacement("STACK_INDIA_BRICK_D", "org.lgna.story.resources.prop.AncientTemplePieceResource"),
+        createMoreSpecificFieldRule("STACK", "STACK_INDIA_BRICK_D", "org.lgna.story.resources.prop.AncientTemplePieceResource"),
 
-        createMoreSpecificFieldPattern("STAIRS", "org.lgna.story.resources.prop.AncientTemplePieceResource"),
-        createMoreSpecificFieldReplacement("STAIRS_INDIA_BRICK_D", "org.lgna.story.resources.prop.AncientTemplePieceResource"),
+        createMoreSpecificFieldRule("STAIRS", "STAIRS_INDIA_BRICK_D", "org.lgna.story.resources.prop.AncientTemplePieceResource"),
 
 
-        createMoreSpecificFieldPattern("DEFAULT", "org.lgna.story.resources.prop.AncientTempleArchResource"),
-        createMoreSpecificFieldReplacement("INDIA_BRICK_D", "org.lgna.story.resources.prop.AncientTempleArchResource"),
+        createMoreSpecificFieldRule("DEFAULT", "INDIA_BRICK_D", "org.lgna.story.resources.prop.AncientTempleArchResource"),
 
 
-        createMoreSpecificFieldPattern("DEFAULT", "org.lgna.story.resources.prop.AncientTemplePillarResource"),
-        createMoreSpecificFieldReplacement("INDIA_BRICK_D", "org.lgna.story.resources.prop.AncientTemplePillarResource"),
+        createMoreSpecificFieldRule("DEFAULT", "INDIA_BRICK_D", "org.lgna.story.resources.prop.AncientTemplePillarResource"),
 
 
-        createMoreSpecificFieldPattern("DEFAULT", "org.lgna.story.resources.prop.AncientTempleWallResource"),
-        createMoreSpecificFieldReplacement("INDIA_BRICK_D", "org.lgna.story.resources.prop.AncientTempleWallResource"),
+        createMoreSpecificFieldRule("DEFAULT", "INDIA_BRICK_D", "org.lgna.story.resources.prop.AncientTempleWallResource"),
 
 
-        createMoreSpecificFieldPattern("DEFAULT", "org.lgna.story.resources.prop.AncientTempleWellResource"),
-        createMoreSpecificFieldReplacement("INDIA_BRICK_D", "org.lgna.story.resources.prop.AncientTempleWellResource"),
+        createMoreSpecificFieldRule("DEFAULT", "INDIA_BRICK_D", "org.lgna.story.resources.prop.AncientTempleWellResource"),
 
 
-        createMoreSpecificFieldPattern("NO_WATER", "org.lgna.story.resources.prop.WaterTankResource"),
-        createMoreSpecificFieldReplacement("NO_WATER_INDIA_WATER_TANK", "org.lgna.story.resources.prop.WaterTankResource"),
+        createMoreSpecificFieldRule("NO_WATER", "NO_WATER_INDIA_WATER_TANK", "org.lgna.story.resources.prop.WaterTankResource"),
 
-        createMoreSpecificFieldPattern("WATER", "org.lgna.story.resources.prop.WaterTankResource"),
-        createMoreSpecificFieldReplacement("WATER_INDIA_WATER_TANK", "org.lgna.story.resources.prop.WaterTankResource"),
+        createMoreSpecificFieldRule("WATER", "WATER_INDIA_WATER_TANK", "org.lgna.story.resources.prop.WaterTankResource"),
 
 
-        createMoreSpecificFieldPattern("DEFAULT", "org.lgna.story.resources.prop.WaterTankPillarResource"),
-        createMoreSpecificFieldReplacement("INDIA_WATER_TANK", "org.lgna.story.resources.prop.WaterTankPillarResource"),
+        createMoreSpecificFieldRule("DEFAULT", "INDIA_WATER_TANK", "org.lgna.story.resources.prop.WaterTankPillarResource"),
 
 
-        createMoreSpecificFieldPattern("DEFAULT", "org.lgna.story.resources.prop.WaterTankShrineResource"),
-        createMoreSpecificFieldReplacement("INDIA_WATER_TANK", "org.lgna.story.resources.prop.WaterTankShrineResource"),
+        createMoreSpecificFieldRule("DEFAULT", "INDIA_WATER_TANK", "org.lgna.story.resources.prop.WaterTankShrineResource"),
 
 
-        createMoreSpecificFieldPattern("DEFAULT", "org.lgna.story.resources.prop.WaterTankTowerResource"),
-        createMoreSpecificFieldReplacement("INDIA_WATER_TANK", "org.lgna.story.resources.prop.WaterTankTowerResource"),
+        createMoreSpecificFieldRule("DEFAULT", "INDIA_WATER_TANK", "org.lgna.story.resources.prop.WaterTankTowerResource"),
 
 
-        createMoreSpecificFieldPattern("ARCH", "org.lgna.story.resources.prop.WaterTankWallResource"),
-        createMoreSpecificFieldReplacement("ARCH_INDIA_WATER_TANK", "org.lgna.story.resources.prop.WaterTankWallResource"),
+        createMoreSpecificFieldRule("ARCH", "ARCH_INDIA_WATER_TANK", "org.lgna.story.resources.prop.WaterTankWallResource"),
 
-        createMoreSpecificFieldPattern("CIRCLE", "org.lgna.story.resources.prop.WaterTankWallResource"),
-        createMoreSpecificFieldReplacement("CIRCLE_INDIA_WATER_TANK", "org.lgna.story.resources.prop.WaterTankWallResource"),
+        createMoreSpecificFieldRule("CIRCLE", "CIRCLE_INDIA_WATER_TANK", "org.lgna.story.resources.prop.WaterTankWallResource"),
 
 
-        createMoreSpecificFieldPattern("NO_WATER", "org.lgna.story.resources.prop.WaterTankWellResource"),
-        createMoreSpecificFieldReplacement("NO_WATER_INDIA_WATER_TANK", "org.lgna.story.resources.prop.WaterTankWellResource"),
+        createMoreSpecificFieldRule("NO_WATER", "NO_WATER_INDIA_WATER_TANK", "org.lgna.story.resources.prop.WaterTankWellResource"),
 
-        createMoreSpecificFieldPattern("WATER", "org.lgna.story.resources.prop.WaterTankWellResource"),
-        createMoreSpecificFieldReplacement("WATER_INDIA_WATER_TANK", "org.lgna.story.resources.prop.WaterTankWellResource")
+        createMoreSpecificFieldRule("WATER", "WATER_INDIA_WATER_TANK", "org.lgna.story.resources.prop.WaterTankWellResource")
         );
   }
 
