@@ -12,6 +12,9 @@ public final class TextMigrationRule {
 
   private TextMigrationRule(String pattern, String replacement) {
     this.pattern = Objects.requireNonNull(pattern, "pattern");
+    if (this.pattern.isEmpty()) {
+      throw new IllegalArgumentException("pattern must not be empty");
+    }
     this.replacement = replacement;
   }
 

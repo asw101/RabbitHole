@@ -796,8 +796,6 @@ final class TextMigrationRegistryLateVersions {
           createJointIdRule("RIGHT_2", "RIGHT_1", "prop.NavajoBlanketResource"),
           createJointIdRule("RIGHT_3", "RIGHT_2", "prop.NavajoBlanketResource"),
 
-          //createJointIdPattern("STRING_1", "prop.PrayerFlagsResource"),
-          //createJointIdReplacement("STRING_1"),
           createJointIdRule("FLAG_5", "FLAG_05", "prop.PrayerFlagsResource"),
           createJointIdRule("FLAG_6", "FLAG_06", "prop.PrayerFlagsResource"),
           createJointIdRule("FLAG_7", "FLAG_07", "prop.PrayerFlagsResource"),

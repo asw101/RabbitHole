@@ -153,7 +153,7 @@ final class ProjectMigrationTextSnippets {
     sb.append("name=\"");
     sb.append(fieldName);
     sb.append("\">");
-    sb.append(PATTERN_WHITESPACE);
+    sb.append(whitespace);
     sb.append("<declaringClass name=\"org.lgna.story.resources.");
     sb.append(subPackageAndClassName);
     sb.append("\"");
@@ -165,7 +165,7 @@ final class ProjectMigrationTextSnippets {
   }
 
   private static String createJointIdReplacement(String nextFieldName, String subPackageAndClassName) {
-    return createJointIdString(nextFieldName, subPackageAndClassName, PATTERN_WHITESPACE);
+    return createJointIdString(nextFieldName, subPackageAndClassName, REPLACEMENT_WHITESPACE);
   }
 
   static TextMigrationRule createJointIdRule(String previousFieldName, String nextFieldName, String subPackageAndClassName) {

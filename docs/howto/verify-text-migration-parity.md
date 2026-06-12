@@ -35,6 +35,7 @@ Run this workflow when a change touches any of these files:
 
 ```text
 core/story-api-migration/src/main/java/org/lgna/project/migration/TextMigration*.java
+core/story-api-migration/src/main/java/org/lgna/project/migration/ProjectMigrationText*.java
 core/story-api-migration/src/main/resources/migrations/text-migrations.json
 core/story-api-migration/src/test/java/org/lgna/project/migration/TextMigration*.java
 ```

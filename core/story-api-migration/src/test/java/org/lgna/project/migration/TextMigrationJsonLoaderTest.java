@@ -121,6 +121,12 @@ public class TextMigrationJsonLoaderTest {
   }
 
   @Test
+  public void jsonLoaderRejectsEmptyPatternField() {
+    assertThrows(IllegalArgumentException.class, () -> TextMigrationParityTestSupport.parseJson("["
+        + "{\"version\":\"3.1.1.0.0\",\"replacements\":[{\"pattern\":\"\",\"replacement\":\"modern\"}]}]"));
+  }
+
+  @Test
   public void jsonLoaderSurfacesInvalidPatternField() {
     assertThrows(PatternSyntaxException.class, () -> TextMigrationParityTestSupport.parseJson("["
         + "{\"version\":\"3.1.1.0.0\",\"replacements\":[{\"pattern\":\"[\",\"replacement\":\"modern\"}]}]"));

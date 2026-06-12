@@ -362,7 +362,7 @@ final class TextMigrationRegistryV3159 {
           createMoreSpecificFieldRule("SHRINE_LANTERN", "DEFAULT", "org.lgna.story.resources.prop.ShrineLanternResource"),
 
           replace(createMoreSpecificFieldPattern("PIRATE_SHIP", "org.lgna.story.resources.prop.PirateShipResource"),
-              createMoreSpecificFieldPattern("DEFAULT", "org.lgna.story.resources.prop.PirateShipPropResource")),
+              createMoreSpecificFieldReplacement("DEFAULT", "org.lgna.story.resources.prop.PirateShipPropResource")),
 
           createMoreSpecificFieldRule("TEA_TABLE", "DEFAULT", "org.lgna.story.resources.prop.TeaTableResource"),
 
