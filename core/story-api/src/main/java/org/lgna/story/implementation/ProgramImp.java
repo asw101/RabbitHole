@@ -66,6 +66,7 @@ import java.awt.Paint;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.lang.reflect.Constructor;
+import java.util.Objects;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 
@@ -75,50 +76,107 @@ import java.util.concurrent.CyclicBarrier;
 public abstract class ProgramImp {
   // Hack for Netbeans plugin to operate without IDE localization
   private static final String DEFAULT_SPEED_FORMAT = "speed: %dx";
-  private static Object ACCEPTABLE_HACK_FOR_NOW_classForNextInstanceLock = new Object();
-  private static Class<? extends ProgramImp> ACCEPTABLE_HACK_FOR_NOW_classForNextInstance;
-  private static Class<?>[] ACCEPTABLE_HACK_FOR_NOW_bonusParameterTypes;
-  private static Object[] ACCEPTABLE_HACK_FOR_NOW_bonusArguments;
+  private static final ThreadLocal<FactoryScope> factoryScope = new ThreadLocal<>();
+  private static final ThreadLocal<Factory> factoryForNextInstance = new ThreadLocal<>();
 
-  public static void ACCEPTABLE_HACK_FOR_NOW_setClassForNextInstance(Class<? extends ProgramImp> classForNextInstance, Class<?>[] bonusParameterTypes, Object[] bonusArguments) {
-    synchronized (ACCEPTABLE_HACK_FOR_NOW_classForNextInstanceLock) {
-      assert ACCEPTABLE_HACK_FOR_NOW_classForNextInstance == null : ACCEPTABLE_HACK_FOR_NOW_classForNextInstance;
-      assert ACCEPTABLE_HACK_FOR_NOW_bonusParameterTypes == null : ACCEPTABLE_HACK_FOR_NOW_bonusParameterTypes;
-      assert ACCEPTABLE_HACK_FOR_NOW_bonusArguments == null : ACCEPTABLE_HACK_FOR_NOW_bonusArguments;
-      ACCEPTABLE_HACK_FOR_NOW_classForNextInstance = classForNextInstance;
-      ACCEPTABLE_HACK_FOR_NOW_bonusParameterTypes = bonusParameterTypes;
-      ACCEPTABLE_HACK_FOR_NOW_bonusArguments = bonusArguments;
+  @FunctionalInterface
+  public interface Factory {
+    ProgramImp create(SProgram abstraction);
+  }
+
+  public static final class FactoryScope implements AutoCloseable {
+    private final Factory factory;
+    private final FactoryScope previous;
+    private boolean closed;
+
+    private FactoryScope(Factory factory) {
+      this.factory = Objects.requireNonNull(factory, "factory");
+      if (factoryForNextInstance.get() != null) {
+        throw new IllegalStateException("ProgramImp one-shot factory is already set for the next instance on this thread.");
+      }
+      this.previous = factoryScope.get();
+      factoryScope.set(this);
+    }
+
+    private ProgramImp create(SProgram abstraction) {
+      return Objects.requireNonNull(this.factory.create(abstraction), "ProgramImp factory returned null.");
+    }
+
+    @Override
+    public void close() {
+      if (this.closed) {
+        return;
+      }
+      if (factoryScope.get() != this) {
+        throw new IllegalStateException("ProgramImp factory scopes must be closed in last-in-first-out order.");
+      }
+      this.closed = true;
+      if (this.previous != null) {
+        factoryScope.set(this.previous);
+      } else {
+        factoryScope.remove();
+      }
     }
   }
 
+  public static FactoryScope useFactory(Factory factory) {
+    return new FactoryScope(factory);
+  }
+
+  @Deprecated
+  public static void ACCEPTABLE_HACK_FOR_NOW_setClassForNextInstance(Class<? extends ProgramImp> classForNextInstance, Class<?>[] bonusParameterTypes, Object[] bonusArguments) {
+    Objects.requireNonNull(classForNextInstance, "classForNextInstance");
+    Objects.requireNonNull(bonusParameterTypes, "bonusParameterTypes");
+    Objects.requireNonNull(bonusArguments, "bonusArguments");
+    if (bonusParameterTypes.length != bonusArguments.length) {
+      throw new IllegalArgumentException("bonusParameterTypes and bonusArguments must have the same length.");
+    }
+    if (factoryScope.get() != null) {
+      throw new IllegalStateException("ProgramImp scoped factory is active on this thread.");
+    }
+    if (factoryForNextInstance.get() != null) {
+      throw new IllegalStateException("ProgramImp factory already set for the next instance on this thread.");
+    }
+    Class<?>[] parameterTypes = bonusParameterTypes.clone();
+    Object[] arguments = bonusArguments.clone();
+    factoryForNextInstance.set(abstraction -> createInstance(classForNextInstance, parameterTypes, arguments, abstraction));
+  }
+
+  @Deprecated
   public static void ACCEPTABLE_HACK_FOR_NOW_setClassForNextInstance(Class<? extends ProgramImp> classForNextInstance) {
     ACCEPTABLE_HACK_FOR_NOW_setClassForNextInstance(classForNextInstance, new Class<?>[] {}, new Object[] {});
   }
 
   public static ProgramImp createInstance(SProgram abstraction) {
-    ProgramImp rv;
-    synchronized (ACCEPTABLE_HACK_FOR_NOW_classForNextInstanceLock) {
-      if (ACCEPTABLE_HACK_FOR_NOW_classForNextInstance != null) {
-
-        Class<?>[] parameterTypes = new Class<?>[ACCEPTABLE_HACK_FOR_NOW_bonusParameterTypes.length + 1];
-        parameterTypes[0] = SProgram.class;
-        System.arraycopy(ACCEPTABLE_HACK_FOR_NOW_bonusParameterTypes, 0, parameterTypes, 1, ACCEPTABLE_HACK_FOR_NOW_bonusParameterTypes.length);
-
-        Object[] arguments = new Object[ACCEPTABLE_HACK_FOR_NOW_bonusArguments.length + 1];
-        arguments[0] = abstraction;
-        System.arraycopy(ACCEPTABLE_HACK_FOR_NOW_bonusArguments, 0, arguments, 1, ACCEPTABLE_HACK_FOR_NOW_bonusArguments.length);
-
-        Constructor<? extends ProgramImp> cnstrctr = ReflectionUtilities.getConstructor(ACCEPTABLE_HACK_FOR_NOW_classForNextInstance, parameterTypes);
-        assert cnstrctr != null : ACCEPTABLE_HACK_FOR_NOW_classForNextInstance;
-        rv = ReflectionUtilities.newInstance(cnstrctr, arguments);
-        ACCEPTABLE_HACK_FOR_NOW_classForNextInstance = null;
-        ACCEPTABLE_HACK_FOR_NOW_bonusParameterTypes = null;
-        ACCEPTABLE_HACK_FOR_NOW_bonusArguments = null;
-      } else {
-        rv = new DefaultProgramImp(abstraction);
-      }
+    FactoryScope scope = factoryScope.get();
+    if (scope != null) {
+      return scope.create(abstraction);
     }
-    return rv;
+
+    Factory nextFactory = factoryForNextInstance.get();
+    if (nextFactory != null) {
+      factoryForNextInstance.remove();
+      return nextFactory.create(abstraction);
+    }
+    return new DefaultProgramImp(abstraction);
+  }
+
+  private static ProgramImp createInstance(Class<? extends ProgramImp> classForNextInstance, Class<?>[] bonusParameterTypes, Object[] bonusArguments, SProgram abstraction) {
+    Class<?>[] parameterTypes = new Class<?>[bonusParameterTypes.length + 1];
+    parameterTypes[0] = SProgram.class;
+    System.arraycopy(bonusParameterTypes, 0, parameterTypes, 1, bonusParameterTypes.length);
+
+    Object[] arguments = new Object[bonusArguments.length + 1];
+    arguments[0] = abstraction;
+    System.arraycopy(bonusArguments, 0, arguments, 1, bonusArguments.length);
+
+    Constructor<? extends ProgramImp> cnstrctr;
+    try {
+      cnstrctr = ReflectionUtilities.getConstructor(classForNextInstance, parameterTypes);
+    } catch (RuntimeException re) {
+      throw new IllegalArgumentException("No ProgramImp constructor found for " + classForNextInstance.getName(), re);
+    }
+    return ReflectionUtilities.newInstance(cnstrctr, arguments);
   }
 
   private static class ToggleFullScreenAction extends AbstractAction {

@@ -32,22 +32,21 @@ public class ProgramImpTest {
 
   @Test
   public void staticFactoryCreatesInjectedClass() {
-    ProgramImp.ACCEPTABLE_HACK_FOR_NOW_setClassForNextInstance(TestProgramImp.class);
-    SProgram program = new SProgram();
-    assertTrue("Should create TestProgramImp via static factory",
-        program.getImplementation() instanceof TestProgramImp);
+    try (ProgramImp.FactoryScope ignored = ProgramImp.useFactory(TestProgramImp::new)) {
+      SProgram program = new SProgram();
+      assertTrue("Should create TestProgramImp via scoped factory",
+          program.getImplementation() instanceof TestProgramImp);
+    }
   }
 
   @Test
   public void staticFactoryCleansUpAfterCreation() {
-    ProgramImp.ACCEPTABLE_HACK_FOR_NOW_setClassForNextInstance(TestProgramImp.class);
-    new SProgram();
-    // Second creation without setting class should use DefaultProgramImp
-    // but DefaultProgramImp needs a display, so we just verify state was cleaned
-    // by setting and creating again
+    try (ProgramImp.FactoryScope ignored = ProgramImp.useFactory(TestProgramImp::new)) {
+      new SProgram();
+    }
     ProgramImp.ACCEPTABLE_HACK_FOR_NOW_setClassForNextInstance(TestProgramImp.class);
     SProgram second = new SProgram();
-    assertTrue("Second injection should also work",
+    assertTrue("Legacy one-shot injection should work after scoped factory closes",
         second.getImplementation() instanceof TestProgramImp);
   }
 
@@ -61,6 +60,120 @@ public class ProgramImpTest {
     assertTrue("Should create TestProgramImpWithBonus",
         program.getImplementation() instanceof TestProgramImpWithBonus);
     assertEquals("bonus", ((TestProgramImpWithBonus) program.getImplementation()).bonusValue);
+  }
+
+  @Test
+  public void scopedFactoryRestoresOuterScope() {
+    try (ProgramImp.FactoryScope outer = ProgramImp.useFactory(TestProgramImp::new)) {
+      assertTrue(new SProgram().getImplementation() instanceof TestProgramImp);
+      try (ProgramImp.FactoryScope inner = ProgramImp.useFactory(program -> new TestProgramImpWithBonus(program, "inner"))) {
+        SProgram innerProgram = new SProgram();
+        assertTrue(innerProgram.getImplementation() instanceof TestProgramImpWithBonus);
+        assertEquals("inner", ((TestProgramImpWithBonus) innerProgram.getImplementation()).bonusValue);
+      }
+      assertTrue("Outer factory should be restored after inner closes",
+          new SProgram().getImplementation() instanceof TestProgramImp);
+    }
+  }
+
+  @Test
+  public void scopedFactoryIsThreadLocal() throws Exception {
+    final ProgramImp[] workerImp = new ProgramImp[1];
+    final Throwable[] workerFailure = new Throwable[1];
+    try (ProgramImp.FactoryScope ignored = ProgramImp.useFactory(TestProgramImp::new)) {
+      Thread worker = new Thread(() -> {
+        try {
+          ProgramImp.ACCEPTABLE_HACK_FOR_NOW_setClassForNextInstance(
+              TestProgramImpWithBonus.class,
+              new Class<?>[] {String.class},
+              new Object[] {"worker"});
+          workerImp[0] = new SProgram().getImplementation();
+        } catch (Throwable t) {
+          workerFailure[0] = t;
+        }
+      });
+      worker.start();
+      worker.join();
+
+      if (workerFailure[0] != null) {
+        throw new AssertionError(workerFailure[0]);
+      }
+      assertTrue(new SProgram().getImplementation() instanceof TestProgramImp);
+    }
+    assertTrue(workerImp[0] instanceof TestProgramImpWithBonus);
+    assertEquals("worker", ((TestProgramImpWithBonus) workerImp[0]).bonusValue);
+  }
+
+  @Test
+  public void legacyOneShotFactoryCleansUpAfterConstructorFailure() {
+    ProgramImp.ACCEPTABLE_HACK_FOR_NOW_setClassForNextInstance(MissingProgramConstructorImp.class);
+    try {
+      new SProgram();
+    } catch (IllegalArgumentException expected) {
+      assertTrue(expected.getMessage().contains(MissingProgramConstructorImp.class.getName()));
+      ProgramImp.ACCEPTABLE_HACK_FOR_NOW_setClassForNextInstance(TestProgramImp.class);
+      assertTrue(new SProgram().getImplementation() instanceof TestProgramImp);
+      return;
+    }
+    org.junit.Assert.fail("Missing constructor should fail explicitly before cleanup is verified");
+  }
+
+  @Test
+  public void legacyOneShotFactoryIsConsumedBeforeConstructorRuns() {
+    ReentrantProgramImp.nestedImp = null;
+    ProgramImp.ACCEPTABLE_HACK_FOR_NOW_setClassForNextInstance(ReentrantProgramImp.class);
+    SProgram program = new SProgram();
+    assertTrue(program.getImplementation() instanceof ReentrantProgramImp);
+    assertTrue("Constructor should be able to use a separate one-shot factory for nested program creation",
+        ReentrantProgramImp.nestedImp instanceof TestProgramImp);
+  }
+
+  @Test
+  public void legacyOneShotFactoryRejectsMismatchedBonusArrays() {
+    try {
+      ProgramImp.ACCEPTABLE_HACK_FOR_NOW_setClassForNextInstance(
+          TestProgramImpWithBonus.class,
+          new Class<?>[] {String.class},
+          new Object[] {});
+    } catch (IllegalArgumentException expected) {
+      return;
+    }
+    org.junit.Assert.fail("Mismatched bonus parameter and argument arrays should fail before storing factory state");
+  }
+
+  @Test
+  public void legacyOneShotFactoryRejectsActiveScopedFactory() {
+    try (ProgramImp.FactoryScope ignored = ProgramImp.useFactory(TestProgramImp::new)) {
+      try {
+        ProgramImp.ACCEPTABLE_HACK_FOR_NOW_setClassForNextInstance(TestProgramImp.class);
+      } catch (IllegalStateException expected) {
+        return;
+      }
+      org.junit.Assert.fail("Legacy one-shot factory should not be queued while scoped factory is active");
+    }
+  }
+
+  @Test
+  public void scopedFactoryRejectsPendingLegacyOneShotFactory() {
+    ProgramImp.ACCEPTABLE_HACK_FOR_NOW_setClassForNextInstance(TestProgramImp.class);
+    try {
+      ProgramImp.useFactory(TestProgramImp::new);
+    } catch (IllegalStateException expected) {
+      assertTrue(new SProgram().getImplementation() instanceof TestProgramImp);
+      return;
+    }
+    org.junit.Assert.fail("Scoped factory should reject pending legacy one-shot factory");
+  }
+
+  @Test
+  public void scopedFactoryRejectsNullProgramImpResult() {
+    try (ProgramImp.FactoryScope ignored = ProgramImp.useFactory(program -> null)) {
+      new SProgram();
+    } catch (NullPointerException expected) {
+      assertEquals("ProgramImp factory returned null.", expected.getMessage());
+      return;
+    }
+    org.junit.Assert.fail("Factory returning null should fail at the factory boundary");
   }
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -249,6 +362,32 @@ public class ProgramImpTest {
     @Override
     public Animator getAnimator() {
       return animator;
+    }
+  }
+
+  public static class MissingProgramConstructorImp extends ProgramImp {
+    public MissingProgramConstructorImp() {
+      super(null, null);
+    }
+
+    @Override
+    public Animator getAnimator() {
+      return new FakeAnimator();
+    }
+  }
+
+  public static class ReentrantProgramImp extends ProgramImp {
+    static ProgramImp nestedImp;
+
+    public ReentrantProgramImp(SProgram abstraction) {
+      super(abstraction, null);
+      ProgramImp.ACCEPTABLE_HACK_FOR_NOW_setClassForNextInstance(TestProgramImp.class);
+      nestedImp = new SProgram().getImplementation();
+    }
+
+    @Override
+    public Animator getAnimator() {
+      return new FakeAnimator();
     }
   }
 
