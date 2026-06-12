@@ -180,8 +180,9 @@ public class StorytellingSceneEditor extends AbstractSceneEditor {
 
   @Override
   protected UserInstance createProgramInstance() {
-    ProgramImp.ACCEPTABLE_HACK_FOR_NOW_setClassForNextInstance(SceneEditorProgramImp.class);
-    return super.createProgramInstance();
+    try (ProgramImp.FactoryScope ignored = ProgramImp.useFactory(SceneEditorProgramImp::new)) {
+      return super.createProgramInstance();
+    }
   }
 
   void setSelectedInstance(InstanceFactory instanceFactory) {

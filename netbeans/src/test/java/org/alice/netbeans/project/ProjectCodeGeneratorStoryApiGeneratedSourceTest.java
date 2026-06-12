@@ -114,8 +114,10 @@ public class ProjectCodeGeneratorStoryApiGeneratedSourceTest {
       Class<?> programClass = Class.forName("Program", true, classLoader);
       var constructor = programClass.getDeclaredConstructor();
       constructor.setAccessible(true);
-      ProgramImp.ACCEPTABLE_HACK_FOR_NOW_setClassForNextInstance(HeadlessProgramImp.class);
-      SProgram program = (SProgram) constructor.newInstance();
+      SProgram program;
+      try (ProgramImp.FactoryScope ignored = ProgramImp.useFactory(HeadlessProgramImp::new)) {
+        program = (SProgram) constructor.newInstance();
+      }
 
       // Direct configureStory invocation characterizes generated runtime state without launching rendering.
       var configureStory = programClass.getDeclaredMethod("configureStory");
