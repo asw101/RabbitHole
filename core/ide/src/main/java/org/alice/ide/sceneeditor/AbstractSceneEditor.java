@@ -66,6 +66,7 @@ import org.lgna.project.ast.Statement;
 import org.lgna.project.ast.StatementListProperty;
 import org.lgna.project.ast.UserField;
 import org.lgna.project.ast.UserType;
+import org.lgna.project.virtualmachine.SceneEditorVmSession;
 import org.lgna.project.virtualmachine.UserInstance;
 import org.lgna.project.virtualmachine.VirtualMachine;
 import org.lgna.story.SProgram;
@@ -177,7 +178,7 @@ public abstract class AbstractSceneEditor extends BorderPanel {
   }
 
   public UserField getFieldForInstanceInJavaVM(Object javaInstance) {
-    return getActiveSceneInstance().ACCEPTABLE_HACK_FOR_SCENE_EDITOR_getFieldForInstanceInJava(javaInstance);
+    return this.getActiveSceneVmSession().getFieldForJavaInstance(javaInstance);
   }
 
   public Object getInstanceInJavaVMForField(AbstractField field) {
@@ -242,14 +243,15 @@ public abstract class AbstractSceneEditor extends BorderPanel {
   }
 
   public void executeStatements(Statement... statements) {
-    for (Statement statement : statements) {
-      this.getVirtualMachine().ACCEPTABLE_HACK_FOR_SCENE_EDITOR_executeStatement(this.getActiveSceneInstance(), statement);
+    if (statements.length == 0) {
+      return;
     }
+    this.getActiveSceneVmSession().executeStatements(statements);
   }
 
   public void addField(UserType<?> declaringType, UserField field, int index, Statement... statements) {
     assert declaringType == this.getActiveSceneType() : declaringType;
-    this.getVirtualMachine().ACCEPTABLE_HACK_FOR_SCENE_EDITOR_initializeField(this.getActiveSceneInstance(), field);
+    this.getActiveSceneVmSession().initializeField(field);
     SProgram program = this.getProgramInstanceInJava();
     double prevSimulationSpeedFactor = program.getSimulationSpeedFactor();
     program.setSimulationSpeedFactor(Double.POSITIVE_INFINITY);
@@ -306,6 +308,10 @@ public abstract class AbstractSceneEditor extends BorderPanel {
     return this.mapSceneFieldToInstance.get(this.getActiveSceneField());
   }
 
+  private SceneEditorVmSession getActiveSceneVmSession() {
+    return SceneEditorVmSession.forScene(this.getActiveSceneInstance());
+  }
+
   public <T extends EntityImp> T getActiveSceneImplementation() {
     SThing entity = getInstanceInJavaVMForField(getActiveSceneField(), SThing.class);
     if (entity != null) {
@@ -327,7 +333,7 @@ public abstract class AbstractSceneEditor extends BorderPanel {
     assert sceneObject != null;
     assert sceneObject instanceof UserInstance;
     UserInstance sceneInstance = (UserInstance) sceneObject;
-    sceneInstance.ensureInverseMapExists();
+    SceneEditorVmSession.forScene(sceneInstance).prepareFieldLookup();
     mapSceneFieldToInstance.put(sceneField, sceneInstance);
     sceneFieldListSelectionState.addItem(sceneField);
   }
