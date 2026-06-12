@@ -213,10 +213,7 @@ final class VmStatementExecutor {
     try {
       @SuppressWarnings("unused") Object unused = vm.evaluate(expressionStatement.expression.getValue());
     } catch (LgnaVmMethodInvocationException e) {
-      if (vm.isForRunning()) {
-        throw e;
-      }
-      vm.handleSceneEditorMethodInvocationException(e);
+      vm.handleMethodInvocationException(e);
     }
   }
 
