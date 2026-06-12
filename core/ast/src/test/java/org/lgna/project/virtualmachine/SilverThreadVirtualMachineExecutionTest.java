@@ -15,7 +15,9 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Silver thread test proving the VM recursive method-invocation execution path
@@ -194,7 +196,7 @@ public class SilverThreadVirtualMachineExecutionTest {
   // --- isValid guard edge case ---
 
   @Test
-  public void vmSkipsInvalidMethodInvocationButStillFiresExpressionStatementEvents() {
+  public void vmThrowsContextForInvalidMethodInvocationAfterExpressionStatementEvents() {
     // Helper NOT added to type → isValid() returns false (getDeclaringType() == null)
     UserMethod orphanHelper = VmTestSupport.createStaticProcedure("orphanHelper",
         new BlockStatement(new Comment("should not execute")));
@@ -212,8 +214,13 @@ public class SilverThreadVirtualMachineExecutionTest {
         new BlockStatement(callStatement));
     type.methods.add(entryMethod);
 
-    // Should not throw — VM logs severe and skips
-    vm.ENTRY_POINT_invoke(null, entryMethod);
+    try {
+      vm.ENTRY_POINT_invoke(null, entryMethod);
+      fail("Invalid method invocation should throw a contextual VM exception");
+    } catch (LgnaVmMethodInvocationException e) {
+      assertSame(invalidCall, e.getMethodInvocation());
+      assertSame(orphanHelper, e.getMethod());
+    }
 
     // Only the entry body events fire; helper body is never entered
     List<String> expected = Arrays.asList(
@@ -222,7 +229,7 @@ public class SilverThreadVirtualMachineExecutionTest {
         "executed:ExpressionStatement",
         "executed:BlockStatement");
 
-    assertEquals("Invalid method invocation should be skipped, yielding only 4 events",
+    assertEquals("Invalid method invocation should still complete enclosing statement events before propagating",
         expected, listener.statementEvents);
   }
 

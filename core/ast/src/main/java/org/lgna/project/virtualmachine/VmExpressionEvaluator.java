@@ -340,6 +340,7 @@ final class VmExpressionEvaluator {
     if (methodInvocation.isValid()) {
       AbstractMethod method = methodInvocation.method.getValue();
       Object[] allArguments = this.evaluateArguments(method, methodInvocation.requiredArguments, methodInvocation.variableArguments, methodInvocation.keyedArguments);
+      Object[] contextArguments = allArguments.clone();
       int parameterCount = method.getRequiredParameters().size();
       if (method.getVariableLengthParameter() != null) {
         parameterCount += 1;
@@ -349,18 +350,15 @@ final class VmExpressionEvaluator {
       }
       assert parameterCount == allArguments.length : method.getName();
       Object target = this.evaluate(methodInvocation.expression.getValue());
-
       try {
         return vm.invoke(target, method, allArguments);
-      } catch (Throwable e) {
-        if (!vm.isStopped) {
-          Logger.severe("The method invocation threw an error. Continuing past.", methodInvocation.method.getValue(), e);
-        }
-        return null;
+      } catch (LgnaVmMethodInvocationException e) {
+        throw e;
+      } catch (RuntimeException e) {
+        throw new LgnaVmMethodInvocationException(vm, methodInvocation, target, method, contextArguments, e);
       }
     } else {
-      Logger.severe("The method invocation is not valid. Continuing past.", methodInvocation.method.getValue());
-      return null;
+      throw new LgnaVmMethodInvocationException(vm, methodInvocation);
     }
   }
 

@@ -210,7 +210,14 @@ final class VmStatementExecutor {
   }
 
   private void executeExpressionStatement(ExpressionStatement expressionStatement, VirtualMachineListener[] listeners) {
-    @SuppressWarnings("unused") Object unused = vm.evaluate(expressionStatement.expression.getValue());
+    try {
+      @SuppressWarnings("unused") Object unused = vm.evaluate(expressionStatement.expression.getValue());
+    } catch (LgnaVmMethodInvocationException e) {
+      if (vm.isForRunning()) {
+        throw e;
+      }
+      vm.handleSceneEditorMethodInvocationException(e);
+    }
   }
 
   void excecuteForEachLoop(AbstractForEachLoop forEachInLoop, Object[] array, VirtualMachineListener[] listeners) throws ReturnException {

@@ -6,10 +6,8 @@ import org.lgna.project.ast.BlockStatement;
 import org.lgna.project.ast.BooleanLiteral;
 import org.lgna.project.ast.Comment;
 import org.lgna.project.ast.Expression;
-import org.lgna.project.ast.ExpressionStatement;
 import org.lgna.project.ast.IntegerLiteral;
 import org.lgna.project.ast.JavaType;
-import org.lgna.project.ast.MethodInvocation;
 import org.lgna.project.ast.NamedUserType;
 import org.lgna.project.ast.NullLiteral;
 import org.lgna.project.ast.RelationalInfixExpression;
@@ -160,36 +158,6 @@ public class VmErrorHandlingCharacterizationTest {
     long commentEvents = listener.statementEvents.stream()
         .filter(e -> e.contains("Comment")).count();
     assertEquals("Disabled Comment should produce no events", 0, commentEvents);
-  }
-
-  // --- Invalid method invocation → Logger.severe, returns null ---
-
-  @Test
-  public void invalidMethodInvocationReturnsNullAndContinues() {
-    VmTestSupport.RecordingListener listener = new VmTestSupport.RecordingListener();
-    vm.addVirtualMachineListener(listener);
-
-    // Create an orphan method NOT added to type → isValid() returns false
-    UserMethod orphan = new UserMethod("orphan", Void.TYPE,
-        new UserParameter[0], new BlockStatement(new Comment("unreachable")));
-    orphan.isStatic.setValue(true);
-    // Deliberately NOT adding to type
-
-    MethodInvocation invalidCall = new MethodInvocation(new NullLiteral(), orphan);
-    ExpressionStatement callStmt = new ExpressionStatement(invalidCall);
-
-    UserMethod entry = new UserMethod("entry", Void.TYPE,
-        new UserParameter[0], new BlockStatement(callStmt));
-    entry.isStatic.setValue(true);
-    type.methods.add(entry);
-
-    // Should not throw — VM logs Logger.severe and returns null
-    vm.ENTRY_POINT_invoke(null, entry);
-
-    // Orphan's body Comment should NOT fire
-    long commentEvents = listener.statementEvents.stream()
-        .filter(e -> e.equals("executing:Comment")).count();
-    assertEquals("Invalid method body should not execute", 0, commentEvents);
   }
 
   // --- Null while-loop condition → LgnaVmNullPointerException ---
