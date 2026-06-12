@@ -50,6 +50,7 @@ import edu.cmu.cs.dennisc.javax.swing.option.Dialogs;
 import org.alice.ide.declarationseditor.TypeMenu;
 import org.alice.ide.instancefactory.croquet.InstanceFactoryFillIn;
 import org.alice.ide.uricontent.FileProjectLoader;
+import org.alice.ide.uricontent.ProjectLoadOutcome;
 import org.alice.ide.uricontent.UriProjectLoader;
 import org.lgna.croquet.CancelException;
 import org.lgna.croquet.history.UserActivity;
@@ -83,9 +84,9 @@ final class ProjectLoader {
     if (uriProjectLoader != null) {
       application.showWaitCursor();
       cleanupForNextProject();
-      uriProjectLoader.deliverContentOnEventDispatchThread(proj -> {
+      uriProjectLoader.deliverLoadOutcomeOnEventDispatchThread(outcome -> {
         try {
-          projectLoaded(activity, proj, isLoadingBackups, isMainProjectCorrupted, unloadableFiles);
+          projectLoaded(activity, outcome, isLoadingBackups, isMainProjectCorrupted, unloadableFiles);
         } catch (RuntimeException re) {
           handleProjectLoadException(re, activity);
         } finally {
@@ -100,25 +101,63 @@ final class ProjectLoader {
     InstanceFactoryFillIn.reset();
   }
 
-  private void projectLoaded(UserActivity activity, Project project, boolean isLoadingBackups,
+  private void projectLoaded(UserActivity activity, ProjectLoadOutcome outcome, boolean isLoadingBackups,
                              boolean isMainProjectCorrupted, Set<String> unloadableFiles) {
-    File saved = UriUtilities.getFile(application.getUri());
+    if (outcome == null) {
+      throw new IllegalStateException("Project loader returned no load outcome.");
+    }
 
-    if (saved != null && !application.getProjectFileUtilities().isProject(saved)) {
+    RuntimeException loadException = getRuntimeException(outcome);
+    if (loadException != null) {
+      throw loadException;
+    }
+
+    boolean failed = outcome.getKind() == ProjectLoadOutcome.Kind.FAILURE;
+    File saved = UriUtilities.getFile(application.getUri());
+    File projectFile = projectFileForOutcome(outcome, saved);
+
+    if (projectFile != null && !application.getProjectFileUtilities().isProject(projectFile)) {
       return;
     }
 
     boolean isBackup = application.getUriProjectLoader().isBackup();
 
-    if (project == null) {
-      handleProjectLoadError(saved, activity, isBackup, isLoadingBackups, isMainProjectCorrupted, unloadableFiles);
+    if (failed) {
+      if (projectFile == null) {
+        throw new IllegalStateException("Project load failed without a project file.");
+      }
+      if (!shouldUseBackupRecovery(application.getUriProjectLoader().isNewProject())) {
+        application.setUriProjectLoader(null);
+        activity.cancel();
+        showNewProjectOperation();
+        return;
+      }
+      handleProjectLoadError(projectFile, activity, isBackup, isLoadingBackups, isMainProjectCorrupted, unloadableFiles);
     } else {
-      handleProjectLoadSuccess(project, saved, activity, isBackup, isLoadingBackups, isMainProjectCorrupted, unloadableFiles);
+      handleProjectLoadSuccess(outcome.getProject(), projectFile, activity, isBackup, isLoadingBackups, isMainProjectCorrupted, unloadableFiles);
     }
   }
 
+  static File projectFileForOutcome(ProjectLoadOutcome outcome, File saved) {
+    if (outcome.getKind() == ProjectLoadOutcome.Kind.FAILURE) {
+      return outcome.getFile() != null ? outcome.getFile() : saved;
+    }
+    return saved != null ? saved : outcome.getFile();
+  }
+
+  static boolean shouldUseBackupRecovery(boolean isNewProject) {
+    return !isNewProject;
+  }
+
+  private RuntimeException getRuntimeException(ProjectLoadOutcome outcome) {
+    Exception exception = outcome.getException();
+    return outcome.getStatus() == ProjectLoadOutcome.Status.RUNTIME_EXCEPTION && exception instanceof RuntimeException
+        ? (RuntimeException) exception
+        : null;
+  }
+
   private void handleProjectLoadError(File projectFile, UserActivity activity, boolean isBackup,
-                                      boolean isLoadingBackups, boolean isMainProjectCorrupted,
+                                     boolean isLoadingBackups, boolean isMainProjectCorrupted,
                                       Set<String> unloadableFiles) {
     Path backupPath = application.getProjectFileUtilities().appropriateBackupDirectory(projectFile);
     File backupDir = backupPath != null
@@ -135,7 +174,9 @@ final class ProjectLoader {
     }
 
     File mainProject = application.getUriProjectLoader().getMainProjectFile();
-    LocalDateTime projectModifiedTime = FileUtilities.getModifiedDateTime(mainProject);
+    LocalDateTime projectModifiedTime = mainProject != null
+        ? FileUtilities.getModifiedDateTime(mainProject)
+        : null;
     File backup = application.getBackupManager().getNextBackup(projectModifiedTime, backupDir, isMainProjectCorrupted, unloadableFiles);
 
     application.setUriProjectLoader(null);
@@ -150,13 +191,13 @@ final class ProjectLoader {
       case SHOW_BACKUP_LOAD_ERROR -> application.getBackupProjectOperation().showBackupLoadErrorDialog();
       case PROMPT_LOAD_BACKUP -> {
         accepted = application.getBackupProjectOperation().showProjectLoadErrorAndLoadBackupDialog(
-            mainProject.getName(), plan.getFailedBackupName(), isBackup);
+            projectDisplayName(mainProject, projectFile), plan.getFailedBackupName(), isBackup);
       }
       case SHOW_UNSAVED_BACKUPS_LOAD_ERROR -> {
         application.getBackupProjectOperation().showUnsavedBackupsLoadErrorDialog();
       }
       case SHOW_PROJECT_AND_ALL_BACKUPS_LOAD_ERROR -> {
-        application.getBackupProjectOperation().showProjectAndAllBackupsLoadErrorDialog(mainProject.getName());
+        application.getBackupProjectOperation().showProjectAndAllBackupsLoadErrorDialog(projectDisplayName(mainProject, projectFile));
       }
       case PROMPT_LOAD_MAIN_PROJECT -> {
         accepted = application.getBackupProjectOperation().showProjectLoadRecentBackupsErrorAndLoadMainDialog(projectFile.getName());
@@ -172,17 +213,24 @@ final class ProjectLoader {
           isMainProjectCorrupted,
           unloadableFiles);
     } else if (dispatch.getLoadTarget() == ProjectLoadFailureDispatchPlan.LoadTarget.MAIN_PROJECT) {
-      loadProject(
-          application.newProjectActivity(),
-          new FileProjectLoader(mainProject, makeVrReady),
-          false,
-          isMainProjectCorrupted,
-          unloadableFiles);
+      if (mainProject != null) {
+        loadProject(
+            application.newProjectActivity(),
+            new FileProjectLoader(mainProject, makeVrReady),
+            false,
+            isMainProjectCorrupted,
+            unloadableFiles);
+      }
     }
 
     if (dispatch.shouldShowNewProject()) {
       showNewProjectOperation();
     }
+  }
+
+  private String projectDisplayName(File preferred, File fallback) {
+    File displayFile = preferred != null ? preferred : fallback;
+    return displayFile != null ? displayFile.getName() : "project";
   }
 
   private void handleProjectLoadSuccess(Project project, File projectFile, UserActivity activity, boolean isBackup,
@@ -222,7 +270,12 @@ final class ProjectLoader {
   }
 
   void handleProjectLoadException(RuntimeException re, UserActivity activity) {
-    URI uri = application.getUri();
+    URI uri = null;
+    try {
+      uri = application.getUri();
+    } catch (RuntimeException uriException) {
+      re.addSuppressed(uriException);
+    }
     var message = new StringBuilder("Errors reported in " + uri);
     Throwable cause = re;
     Logger.throwable(re, uri);

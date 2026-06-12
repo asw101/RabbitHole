@@ -1,8 +1,10 @@
 package org.alice.ide;
 
+import org.alice.ide.uricontent.ProjectLoadOutcome;
 import org.junit.Test;
 
 import java.io.File;
+import java.io.IOException;
 
 import static org.junit.Assert.*;
 
@@ -185,5 +187,68 @@ public class ProjectLoaderTest {
   public void loadTarget_allValuesExist() {
     ProjectLoadFailureDispatchPlan.LoadTarget[] targets = ProjectLoadFailureDispatchPlan.LoadTarget.values();
     assertEquals(3, targets.length);
+  }
+
+  @Test
+  public void projectFileForOutcome_successUsesSaveTargetBeforeDiagnosticFile() {
+    File sourceProject = new File("source.a3p");
+    File saveTarget = new File("source VR.a3p");
+    ProjectLoadOutcome outcome = ProjectLoadOutcome.success(
+        new org.lgna.project.Project(programType("LoadedProgram"), org.lgna.project.Project.SceneCameraType.WindowCamera),
+        sourceProject);
+
+    assertEquals(saveTarget, ProjectLoader.projectFileForOutcome(outcome, saveTarget));
+  }
+
+  @Test
+  public void projectFileForOutcome_failureUsesDiagnosticFileBeforeSaveTarget() {
+    File failedBackup = new File("backup.a3p");
+    File saveTarget = new File("world.a3p");
+    ProjectLoadOutcome outcome = ProjectLoadOutcome.ioFailure(failedBackup, new IOException("broken"));
+
+    assertEquals(failedBackup, ProjectLoader.projectFileForOutcome(outcome, saveTarget));
+  }
+
+  @Test
+  public void backupRecoveryIsOnlyForExistingProjectLoads() {
+    assertTrue(ProjectLoader.shouldUseBackupRecovery(false));
+    assertFalse(ProjectLoader.shouldUseBackupRecovery(true));
+  }
+
+  @Test
+  public void headlessFailureOutcomeRoutesBackupLookupToDiagnosticFile() {
+    File loaderFile = new File("original.a3p");
+    File failedBackup = new File("failed-backup.a3p");
+    File routedFile = ProjectLoader.projectFileForOutcome(
+        ProjectLoadOutcome.ioFailure(failedBackup, new IOException("broken")),
+        loaderFile);
+
+    assertEquals(failedBackup, routedFile);
+    assertTrue(ProjectLoader.shouldUseBackupRecovery(false));
+
+    ProjectLoadFailurePlan plan = ProjectLoadFailurePlan.choose(
+        true, true, true, false, null, routedFile);
+    assertEquals(ProjectLoadFailurePlan.Action.SHOW_PROJECT_AND_ALL_BACKUPS_LOAD_ERROR, plan.getAction());
+  }
+
+  @Test
+  public void headlessNewProjectFailureSkipsBackupRecoveryAndShowsNewProject() {
+    File starterFile = new File("starter.a3p");
+    ProjectLoadOutcome outcome = ProjectLoadOutcome.ioFailure(starterFile, new IOException("broken"));
+
+    assertEquals(starterFile, ProjectLoader.projectFileForOutcome(outcome, null));
+    assertFalse(ProjectLoader.shouldUseBackupRecovery(true));
+
+    ProjectLoadFailureDispatchPlan dispatch = ProjectLoadFailureDispatchPlan.afterUserChoice(
+        ProjectLoadFailurePlan.Action.SHOW_UNSAVED_BACKUPS_LOAD_ERROR, false);
+    assertEquals(ProjectLoadFailureDispatchPlan.LoadTarget.NONE, dispatch.getLoadTarget());
+    assertTrue(dispatch.shouldShowNewProject());
+  }
+
+  private static org.lgna.project.ast.NamedUserType programType(String name) {
+    org.lgna.project.ast.NamedUserType type = new org.lgna.project.ast.NamedUserType();
+    type.name.setValue(name);
+    type.superType.setValue(org.lgna.project.ast.JavaType.getInstance(org.lgna.story.SProgram.class));
+    return type;
   }
 }

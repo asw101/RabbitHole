@@ -50,6 +50,7 @@ import org.lgna.project.Project;
 
 import java.io.File;
 import java.net.URI;
+import java.util.function.Consumer;
 
 import static edu.cmu.cs.dennisc.java.io.FileUtilities.getExtension;
 import static org.alice.ide.ProjectFileUtilities.BACKUP_EXTENSION;
@@ -87,6 +88,35 @@ public abstract class UriProjectLoader extends UriContentLoader<Project> {
   }
 
   public abstract boolean isNewProject();
+
+  public ProjectLoadOutcome loadOutcome() {
+    Project project = load();
+    return project != null
+        ? ProjectLoadOutcome.success(project)
+        : ProjectLoadOutcome.unknownFailure(null);
+  }
+
+  public synchronized void deliverLoadOutcomeOnEventDispatchThread(Consumer<ProjectLoadOutcome> observer) {
+    deliverContentOnEventDispatchThread(this::loadOutcomeSafely, observer);
+  }
+
+  private ProjectLoadOutcome loadOutcomeSafely() {
+    try {
+      return loadOutcome();
+    } catch (RuntimeException re) {
+      return ProjectLoadOutcome.runtimeException(fileFromUri(re), re);
+    }
+  }
+
+  private File fileFromUri(RuntimeException loadException) {
+    try {
+      URI uri = getUri();
+      return uri != null ? UriUtilities.getFile(uri) : null;
+    } catch (RuntimeException re) {
+      loadException.addSuppressed(re);
+      return null;
+    }
+  }
 
   // If true the project expects to be saved but has not yet.
   // Defaults to false.
