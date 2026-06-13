@@ -9,11 +9,13 @@ import org.lgna.project.ast.Expression;
 import org.lgna.project.ast.ExpressionStatement;
 import org.lgna.project.ast.IntegerLiteral;
 import org.lgna.project.ast.JavaMethod;
+import org.lgna.project.ast.LocalDeclarationStatement;
 import org.lgna.project.ast.ManagementLevel;
 import org.lgna.project.ast.MethodInvocation;
 import org.lgna.project.ast.NamedUserType;
 import org.lgna.project.ast.StringLiteral;
 import org.lgna.project.ast.UserField;
+import org.lgna.project.ast.UserLocal;
 import org.lgna.project.ast.UserMethod;
 
 import java.util.Arrays;
@@ -152,6 +154,28 @@ public class SceneEditorVmBehaviorCharacterizationTest {
         "executing:BlockStatement",
         "executing:ExpressionStatement",
         "executed:ExpressionStatement",
+        "executing:Comment",
+        "executed:Comment",
+        "executed:BlockStatement"),
+        listener.statementEvents);
+  }
+
+  @Test
+  public void sceneEditorLocalDeclarationContinuesPastInitializerInvocationError() {
+    vm.setForSceneEditor();
+    UserInstance instance = vm.ENTRY_POINT_createInstance(type);
+    VmTestSupport.RecordingListener listener = new VmTestSupport.RecordingListener();
+    vm.addVirtualMachineListener(listener);
+    UserLocal local = new UserLocal("brokenLocal", Object.class, false);
+
+    vm.ACCEPTABLE_HACK_FOR_SCENE_EDITOR_executeStatement(instance, new BlockStatement(
+        new LocalDeclarationStatement(local, failingInvocation()),
+        new Comment("still executes")));
+
+    assertEquals(Arrays.asList(
+        "executing:BlockStatement",
+        "executing:LocalDeclarationStatement",
+        "executed:LocalDeclarationStatement",
         "executing:Comment",
         "executed:Comment",
         "executed:BlockStatement"),

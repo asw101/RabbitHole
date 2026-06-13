@@ -370,7 +370,13 @@ final class VmStatementExecutor {
   }
 
   private void executeLocalDeclarationStatement(LocalDeclarationStatement localDeclarationStatement, VirtualMachineListener[] listeners) {
-    vm.pushLocal(localDeclarationStatement.local.getValue(), vm.evaluate(localDeclarationStatement.initializer.getValue()));
+    Object value;
+    try {
+      value = vm.evaluate(localDeclarationStatement.initializer.getValue());
+    } catch (LgnaVmMethodInvocationException e) {
+      value = vm.handleMethodInvocationException(e);
+    }
+    vm.pushLocal(localDeclarationStatement.local.getValue(), value);
     //handle pop on exit of owning block statement
   }
 }
