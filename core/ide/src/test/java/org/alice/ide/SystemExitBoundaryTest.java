@@ -21,7 +21,8 @@ public class SystemExitBoundaryTest {
       "core/ide/src/main/java/org/alice/tools/EatmePlaceObject.java",
       "core/ide/src/main/java/org/alice/tools/EatmeEditProcedure.java",
       "core/ide/src/main/java/org/alice/tools/EatmeReopenProject.java",
-      "core/ide/src/main/java/org/alice/tools/EatmeRunWorld.java");
+      "core/ide/src/main/java/org/alice/tools/EatmeRunWorld.java",
+      "core/ide/src/main/java/org/alice/tools/EatmeObjectTransformWorkflow.java");
 
   @Test
   public void productionSystemExitCallsAreRestrictedToApprovedEntryPoints() throws IOException {
