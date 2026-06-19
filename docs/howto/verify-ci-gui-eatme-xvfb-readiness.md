@@ -1,12 +1,13 @@
 ---
 title: Verify CI GUI, Eatme, and Xvfb Readiness
 description: How to verify GUI-capable CI dependency resolution, Eatme wrappers, and outside-in Xvfb evidence tracking.
-last_updated: 2026-06-10
+last_updated: 2026-06-19
 review_schedule: quarterly
 owner: maintainers
 doc_type: howto
 related:
   - ../reference/ci-gui-eatme-xvfb-validation.md
+  - ../tools-eatme-object-transform.md
 ---
 
 # Verify CI GUI, Eatme, and Xvfb Readiness
@@ -89,11 +90,46 @@ test -s qa/outside-in/alice-desktop/evidence/eatme-local/place/placed-project.a3
 test -s qa/outside-in/alice-desktop/evidence/eatme-local/place/scene.diff.json
 ```
 
-The checked-in starter project is sufficient for object placement. The other
-Eatme wrappers require a fixture project that already contains the named
-zero-argument scene method; the repository does not currently ship a stable
-selector fixture for manual CLI use. For selector wrappers, the maintained
-runnable verification is the focused Java test suite:
+Verify the deterministic `tools/eatme-object-transform`
+objects-first full path under Xvfb:
+
+```bash
+rm -rf qa/outside-in/alice-desktop/evidence/eatme-local/object-transform
+
+scripts/validate-gui-with-xvfb.sh \
+  --timeout-seconds 1800 \
+  --expect success \
+  -- \
+  env NODE_OPTIONS=--max-old-space-size=32768 \
+    JAVA_TOOL_OPTIONS=-Djava.awt.headless=false \
+    tools/eatme-object-transform \
+      --source-project core/resources/src/application/resources/starter-projects/magicMinimum.a3p \
+      --out-dir qa/outside-in/alice-desktop/evidence/eatme-local/object-transform \
+      --timeout-seconds 300 \
+      --json
+```
+
+Inspect the workflow evidence:
+
+```bash
+python3 -m json.tool \
+  qa/outside-in/alice-desktop/evidence/eatme-local/object-transform/object-transform-workflow.json
+
+grep '^outcome=passed$' \
+  qa/outside-in/alice-desktop/evidence/eatme-local/object-transform/status.txt
+
+test -s qa/outside-in/alice-desktop/evidence/eatme-local/object-transform/reopen/reopened.a3p
+```
+
+The checked-in starter project is sufficient for object placement and is the
+planned input for the full object-transform workflow. That workflow treats
+`--source-project` as read-only; transformed, placed, edited, saved, and reopened
+`.a3p` files are written only under `--out-dir`.
+
+The other standalone selector wrappers require a fixture project that already
+contains the named zero-argument scene method; the repository does not currently
+ship a stable selector fixture for manual CLI use. For selector wrappers, the
+maintained runnable verification is the focused Java test suite:
 
 ```bash
 mvn -DincludeSims=false -Dinstall4j.skip \
@@ -232,6 +268,7 @@ execution.
 | --- | --- | --- |
 | JogAmp CI mitigation | GUI and NetBeans Maven logs showing JOGL/GlueGen resolution through an approved repository, mirror, or cache path that is not solely `jogamp.org`, with no TLS or checksum bypass. | "GL-capable CI dependency resolution no longer depends on `jogamp.org` as the only availability point." |
 | Eatme wrappers/API | Package precondition plus `Eatme*Test` results and wrapper JSON/artifacts for the changed seam. | "The Eatme wrapper/API seam produces bounded evidence for the selected project operation." |
+| Eatme object-transform workflow | Xvfb-backed `tools/eatme-object-transform` run, `object-transform-workflow.json`, `status.txt` with `outcome=passed`, and transform/place/edit/run/save/reopen artifacts. | "The deterministic objects-first path produced bounded evidence through save and reopen." |
 | Xvfb scenario evidence semantics | Scenario validation, runner contract tests, and representative `status.txt` evidence for executed and non-executed outcomes. | "Outside-in runner evidence distinguishes execution, skips, blockers, and manual evidence requirements." |
 
 Do not use dependency-resolution, Eatme, or runner-status evidence to claim full
@@ -279,3 +316,26 @@ scene.eatmeFirstLessonStep
 
 Selectors outside `scene.<methodName>` or methods missing from the project are
 validation failures.
+
+### `eatme-object-transform` fails before writing workflow evidence
+
+Check whether the failure happened before `--out-dir` became writable:
+
+```bash
+test -d qa/outside-in/alice-desktop/evidence/eatme-local/object-transform
+test -w qa/outside-in/alice-desktop/evidence/eatme-local/object-transform
+```
+
+If `object-transform-workflow-failure.json` exists, treat it as the result:
+
+```bash
+python3 -m json.tool \
+  qa/outside-in/alice-desktop/evidence/eatme-local/object-transform/object-transform-workflow-failure.json
+cat qa/outside-in/alice-desktop/evidence/eatme-local/object-transform/status.txt
+```
+
+Do not wait for missing artifacts indefinitely. A timeout, missing artifact,
+display preflight error, invalid project, output directory failure, artifact
+write failure, save failure, or reopen failure is an explicit failed workflow
+result. Keep the Xvfb wrapper timeout as an outer bound around
+`--timeout-seconds` because GUI operations may not interrupt cleanly in-process.

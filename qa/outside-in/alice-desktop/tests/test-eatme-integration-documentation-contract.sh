@@ -11,9 +11,12 @@ docs_index="$REPO_ROOT/docs/index.md"
 readiness_howto="$REPO_ROOT/docs/howto/verify-ci-gui-eatme-xvfb-readiness.md"
 validation_reference="$REPO_ROOT/docs/reference/ci-gui-eatme-xvfb-validation.md"
 reopen_doc="$REPO_ROOT/docs/tools-eatme-reopen-project.md"
+object_transform_doc="$REPO_ROOT/docs/tools-eatme-object-transform.md"
 
 assert_file_exists "$reopen_doc" "Eatme reopen tool documentation is checked in"
+assert_file_exists "$object_transform_doc" "Eatme object-transform workflow documentation is checked in"
 assert_literal_in_file "$docs_index" "./tools-eatme-reopen-project.md" "Eatme reopen tool documentation is discoverable from docs index"
+assert_literal_in_file "$docs_index" "./tools-eatme-object-transform.md" "Eatme object-transform workflow documentation is discoverable from docs index"
 assert_literal_in_file "$docs_index" "./howto/verify-ci-gui-eatme-xvfb-readiness.md" "Eatme verification how-to is discoverable from docs index"
 assert_literal_in_file "$docs_index" "./reference/ci-gui-eatme-xvfb-validation.md" "Eatme validation reference is discoverable from docs index"
 
@@ -22,7 +25,8 @@ for wrapper in \
   eatme-edit-procedure \
   eatme-run-world \
   eatme-save-project \
-  eatme-reopen-project
+  eatme-reopen-project \
+  eatme-object-transform
 do
   tool_path="$REPO_ROOT/tools/$wrapper"
   assert_file_exists "$tool_path" "$wrapper wrapper is checked in"
@@ -38,6 +42,10 @@ assert_contains "$reopen_doc" 'Schema: `eatme\.alice-project-reopen-result/v1`' 
 assert_contains "$reopen_doc" 'Schema: `eatme\.alice-project-reopen-artifact/v1`' "reopen doc names bounded reopen evidence schema"
 assert_contains "$reopen_doc" 'Schema: `eatme\.alice-project-reopen-state/v1`' "reopen doc names reopened state evidence schema"
 assert_contains "$reopen_doc" 'mvn -DincludeSims=false -Dinstall4j\.skip clean package -DskipTests' "reopen doc states the package precondition"
+assert_contains "$object_transform_doc" 'Schema: `eatme\.object-transform-workflow-result/v1`' "object-transform doc names stdout result schema"
+assert_contains "$object_transform_doc" 'object-transform-workflow-failure\.json' "object-transform doc names failure evidence"
+assert_contains "$object_transform_doc" 'transform/object-transform\.json' "object-transform doc names transform evidence"
+assert_contains "$object_transform_doc" 'reopen/reopened\.a3p' "object-transform doc names reopen evidence"
 assert_contains "$validation_reference" 'Do not claim full first-lesson completion|Do not claim full first-lesson completion, grading, creative assessment' "Eatme evidence boundaries prevent overclaiming"
 
 finish

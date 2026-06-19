@@ -1,7 +1,7 @@
 ---
 title: System.exit Allowlist
 description: Target exact production call sites approved to terminate the JVM directly in RabbitHole.
-last_updated: 2026-06-10
+last_updated: 2026-06-19
 review_schedule: quarterly
 owner: modernization
 doc_type: reference
@@ -63,6 +63,7 @@ boundary test until that specific call site is added.
 | `core/ide/src/main/java/org/alice/tools/EatmeEditProcedure.java` | `EatmeEditProcedure.main(String[] args)` non-zero status branch | `System.exit(status)` | The edit-procedure command-line tool returns success normally and exits the process for existing non-zero statuses emitted by `run(...)`. |
 | `core/ide/src/main/java/org/alice/tools/EatmeReopenProject.java` | `EatmeReopenProject.main(String[] args)` non-zero status branch | `System.exit(status)` | The reopen-project command-line tool returns success normally and exits the process for existing non-zero statuses emitted by `run(...)`. |
 | `core/ide/src/main/java/org/alice/tools/EatmeRunWorld.java` | `EatmeRunWorld.main(String[] args)` non-zero status branch | `System.exit(status)` | The run-world command-line tool returns success normally and exits the process for existing non-zero statuses emitted by `run(...)`. |
+| `core/ide/src/main/java/org/alice/tools/EatmeObjectTransformWorkflow.java` | `EatmeObjectTransformWorkflow.main(String[] args)` non-zero status branch | `System.exit(status)` | The object-transform workflow command-line tool returns success normally and exits the process for existing non-zero statuses emitted by `run(...)`. |
 
 ## Target scanner behavior
 
