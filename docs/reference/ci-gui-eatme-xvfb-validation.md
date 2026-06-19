@@ -21,6 +21,7 @@ runtime behavior or classroom-facing project semantics.
 | --- | --- |
 | JogAmp dependency resolution | GUI and NetBeans lanes resolve JOGL and GlueGen without depending on a single transient `jogamp.org` availability point. |
 | Eatme tooling | Repository-owned wrappers launch the Java Eatme entry points with the packaged Alice classpath and write bounded JSON evidence. |
+| Eatme object-transform workflow | `tools/eatme-object-transform` provides one deterministic objects-first validation across transform, placement, edit, run, save, and reopen. |
 | Xvfb evidence tracking | Outside-in scenarios distinguish real execution, gated skips, prepare-only skips, blocked evidence, and manual evidence requirements. |
 | Default open asset workflow | The focused `core/ide` Xvfb integration test places, visibly renders, manipulates, saves, reopens, and runs `alice-gallery://animals/bunny` with `-DincludeSims=false`. |
 
@@ -30,6 +31,7 @@ runtime behavior or classroom-facing project semantics.
 | --- | --- | --- | --- |
 | JogAmp CI mitigation | Maven logs from `headed-ubuntu-xvfb` and `package-netbeans` showing JOGL/GlueGen resolution through `.github/maven/jogamp-ci-settings.xml`, plus no TLS/checksum bypasses. | CI dependency resolution for GL-capable lanes mirrors `jogamp.org` to an approved HTTPS repository instead of treating `jogamp.org` as the only availability point. | Do not claim visible rendering correctness, classroom behavior changes, or full desktop validation from dependency-resolution evidence alone. |
 | Eatme wrappers/API | Wrapper package precondition, focused `Eatme*Test` results, JSON stdout, and bounded evidence artifacts for the wrapper under test. | The named Eatme seam produced its scoped proof artifact for the selected project/method/object. | Do not claim full first-lesson completion, grading, creative assessment, broad UI automation, or rendering correctness. |
+| Eatme object-transform workflow | Xvfb-backed `tools/eatme-object-transform` run, `object-transform-workflow.json`, `status.txt`, and required transform/place/edit/run/save/reopen artifacts. | The deterministic objects-first path completed through project save and reopen without hanging and left bounded evidence. | Do not claim broad desktop rendering correctness, human UI coverage, grading behavior, or arbitrary object workflows. |
 | Xvfb scenario evidence semantics | Scenario validation, runner contract tests, `status.txt`, `command.log` when executed, and blocker/checklist artifacts when not executed. | The runner correctly distinguishes executed success, failed execution, gated skips, blocked evidence, and manual evidence requirements. | Do not report `gated-not-run`, `blocked`, or `manual-evidence-required` as passing GUI execution. |
 
 ## Maven dependency resolution target
@@ -181,6 +183,8 @@ mvn -DincludeSims=false -Dinstall4j.skip clean package -DskipTests
 
 If the package step has not populated `alice-ide/target/lib/`, wrappers exit
 with code `2` and explain which package step is missing.
+After that package preflight passes, wrappers forward `"$@"` unchanged to the
+Java entry point and preserve the Java process exit code.
 
 ### Wrapper API
 
@@ -191,6 +195,7 @@ with code `2` and explain which package step is missing.
 | `tools/eatme-run-world` | `org.alice.tools.EatmeRunWorld` | `--project`, `--run-selector`, `--evidence-dir`, `--json` | `world-run.json`, `runtime.log` |
 | `tools/eatme-save-project` | `org.alice.tools.EatmeSaveProject` | `--project`, `--save-selector`, `--evidence-dir`, `--json` | `saved-project.a3p`, `project-save.json` |
 | `tools/eatme-reopen-project` | `org.alice.tools.EatmeReopenProject` | `--saved-project`, `--reopen-selector`, `--evidence-dir`, `--json` | `reopened.a3p`, `reopen-evidence.json`, `reopened-state.json` |
+| `tools/eatme-object-transform` | `org.alice.tools.EatmeObjectTransformWorkflow` | `--source-project`, `--out-dir`, `--json`; optional `--timeout-seconds` | `object-transform-workflow.json`, `status.txt`, transform/place/edit/run/save/reopen artifacts |
 
 Selector arguments use `scene.<methodName>` and the method name must match
 `[A-Za-z_][A-Za-z0-9_]*`. Missing methods are validation errors, not successful
@@ -222,6 +227,109 @@ Eatme evidence is intentionally narrow.
 | World run | The selected scene method was invoked by the Eatme runtime proof path and runtime logs were captured. | Full desktop playback, rendering correctness, or physical user interaction. |
 | Save | The selected scene method survived a headless project persistence write. | Save As coverage, native dialog coverage, or all save variants. |
 | Reopen | The saved project can be read again and the selected scene method survives the round trip. | Full project interaction, rendering correctness, or UI reopen workflows. |
+| Object-transform workflow | A deterministic objects-first path completed transform, placement, edit, run, save, and reopen with all required artifacts present. | Arbitrary gallery object coverage, broad desktop rendering correctness, grading, or human UI interaction. |
+
+## Eatme object-transform workflow contract
+
+The planned object-transform workflow is the bounded end-to-end Eatme path:
+
+```bash
+tools/eatme-object-transform \
+  --source-project core/resources/src/application/resources/starter-projects/magicMinimum.a3p \
+  --out-dir qa/outside-in/alice-desktop/evidence/eatme-object-transform-ci \
+  --timeout-seconds 300 \
+  --json
+```
+
+The workflow treats `--source-project` as read-only. All generated evidence and
+mutated `.a3p` files are written only under `--out-dir`.
+
+Run it under Xvfb for GUI-backed validation:
+
+```bash
+scripts/validate-gui-with-xvfb.sh \
+  --timeout-seconds 1800 \
+  --expect success \
+  -- \
+  env NODE_OPTIONS=--max-old-space-size=32768 \
+    JAVA_TOOL_OPTIONS=-Djava.awt.headless=false \
+    tools/eatme-object-transform \
+      --source-project core/resources/src/application/resources/starter-projects/magicMinimum.a3p \
+      --out-dir qa/outside-in/alice-desktop/evidence/eatme-object-transform-ci \
+      --timeout-seconds 300 \
+      --json
+```
+
+Do not parse `scripts/validate-gui-with-xvfb.sh` stdout as pure JSON. The Xvfb
+harness may write launcher output; pipeline consumers should read
+`object-transform-workflow.json` from `--out-dir` after the command exits.
+
+Required success artifacts:
+
+| Artifact | Purpose |
+| --- | --- |
+| `object-transform-workflow.json` | Final success result using schema `eatme.object-transform-workflow-result/v1`. |
+| `status.txt` | Outside-in status with `outcome=passed`. |
+| `transform/object-transform.json` | Deterministic object transform evidence. |
+| `transform/transformed-project.a3p` | Project after deterministic transform setup. |
+| `placement/placement.json` | Object placement evidence. |
+| `placement/scene.diff.json` | Scene diff evidence from placement. |
+| `placement/placed-project.a3p` | Project after placement. |
+| `edit/first-lesson-code-editor-action-proof.json` | Procedure edit proof. |
+| `edit/edited-project.a3p` | Project after procedure edit. |
+| `run/world-run.json` | Run proof for the deterministic selector. |
+| `run/runtime.log` | Runtime log captured by the run step. |
+| `save/project-save.json` | Save proof. |
+| `save/saved-project.a3p` | Saved project artifact. |
+| `reopen/reopen-evidence.json` | Reopen proof. |
+| `reopen/reopened-state.json` | State verification after reopen. |
+| `reopen/reopened.a3p` | Reopened project artifact. |
+
+Failure artifacts:
+
+| Artifact | Purpose |
+| --- | --- |
+| `object-transform-workflow-failure.json` | Final failure result using schema `eatme.object-transform-workflow-failure/v1`. |
+| `status.txt` | Outside-in status with `outcome=failed`. |
+| `<failed-step>/step-failure.json` | Step-local failure detail when the failed step had begun. |
+
+JSON and status artifacts use safe writes: write to a temporary file in the same
+directory, flush, then move into the final artifact name. `status.txt` with
+`outcome=passed` is written only after every required artifact exists, is
+non-empty, and has passed workflow verification.
+
+Every step is bounded by `--timeout-seconds`. Xvfb-backed runs still need an
+outer process timeout, because Swing and Croquet work may not interrupt cleanly
+inside the Java process.
+
+Failure kinds are stable strings:
+
+| `failure_kind` | Meaning |
+| --- | --- |
+| `argument-error` | Required arguments were missing, malformed, or unexpected. |
+| `package-preflight` | `alice-ide/target/lib` was missing before Java launch. |
+| `source-project-validation` | `--source-project` was missing, unreadable, not a regular `.a3p`, or otherwise invalid. |
+| `output-directory-failure` | `--out-dir` could not be created, canonicalized, or proven writable. |
+| `display-preflight` | Required GUI display state was unavailable. |
+| `timeout` | A bounded step exceeded `--timeout-seconds`. |
+| `transform-failure` | Deterministic object transform failed. |
+| `placement-failure` | Object placement or placement evidence failed. |
+| `edit-failure` | Procedure edit or edit proof failed. |
+| `run-failure` | World run or runtime evidence failed. |
+| `save-failure` | Project save or save evidence failed. |
+| `reopen-failure` | Project reopen or reopened-state verification failed. |
+| `missing-artifact` | A required artifact was absent or empty after a step. |
+| `artifact-write-failure` | JSON, status, project, log, or failure evidence could not be safely written. |
+| `exception` | Unexpected runtime exception not covered by a narrower category. |
+
+`package-preflight` and `output-directory-failure` may be reported only on
+stderr when the wrapper or preflight cannot establish a trustworthy `--out-dir`
+for JSON evidence.
+
+Missing evidence, invalid source projects, output directory failures, display
+preflight failures, artifact write failures, save failures, reopen failures, and
+timeouts are explicit failures. They must not be represented as pending work,
+successful evidence, or indefinite waits.
 
 ## Validation commands
 
@@ -241,6 +349,20 @@ mvn -DincludeSims=false -Dinstall4j.skip \
 Run the focused Eatme test command under Xvfb when changes affect
 display-gated edit-procedure behavior; otherwise those tests may be skipped by
 headless JUnit assumptions.
+
+Run the object-transform full-path test under Xvfb when changing object
+placement, procedure edit, run, save, reopen, timeout, or evidence semantics:
+
+```bash
+scripts/validate-gui-with-xvfb.sh \
+  --timeout-seconds 1800 \
+  --expect success \
+  -- \
+  mvn -DincludeSims=false -Dinstall4j.skip \
+    -pl core/ide -am test \
+    -Djava.awt.headless=false \
+    -Dtest=EatmeObjectTransformWorkflowXvfbTest
+```
 
 Run GUI-capable validation when changing Xvfb, GL dependency resolution, or
 NetBeans package behavior:

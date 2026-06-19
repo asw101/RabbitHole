@@ -16,6 +16,7 @@ expectations.
 - [Architecture](./architecture.md)
 - [Testing](./testing.md)
 - [Verify CI GUI, Eatme, and Xvfb Readiness](./howto/verify-ci-gui-eatme-xvfb-readiness.md)
+- [Eatme Object Transform Workflow](./tools-eatme-object-transform.md)
 - [Eatme Reopen Project Tool](./tools-eatme-reopen-project.md)
 - [Generated source validation](./reference/generated-source-validation.md)
 - [Verify Text Migration Registry Parity](./howto/verify-text-migration-parity.md)
@@ -42,7 +43,7 @@ expectations.
 - how the text-only RabbitHole baseline parity snapshots catch generated-output drift
 - how the dual-baseline replay harness compares RabbitHole against a local preserved Alice baseline when configured
 - how reusable code requests UI prompts without opening Swing dialogs in headless contexts
-- how GUI-capable CI lanes, Eatme wrappers, and Xvfb outside-in evidence are verified
+- how GUI-capable CI lanes, Eatme wrappers, the deterministic object-transform workflow, and Xvfb outside-in evidence are verified
 - how normalized open COLLADA assets flow through Java model loading to `SkeletonVisual`, `.glb`, `.a3r`, and `.a3t` output
 
 ## Documentation map
@@ -53,6 +54,7 @@ expectations.
 - [Architecture](./architecture.md)
 - [Testing](./testing.md)
 - [Verify CI GUI, Eatme, and Xvfb Readiness](./howto/verify-ci-gui-eatme-xvfb-readiness.md)
+- [Eatme Object Transform Workflow](./tools-eatme-object-transform.md)
 - [Eatme Reopen Project Tool](./tools-eatme-reopen-project.md)
 - [Generated source validation](./reference/generated-source-validation.md)
 - [Verify Text Migration Registry Parity](./howto/verify-text-migration-parity.md)
@@ -101,6 +103,7 @@ expectations.
 - [Generated Source Validation](./reference/generated-source-validation.md)
 - [JavaFX Xvfb Launcher Reference](./reference/javafx-xvfb-launcher.md)
 - [CI GUI, Eatme, and Xvfb Validation](./reference/ci-gui-eatme-xvfb-validation.md)
+- [Eatme Object Transform Workflow](./tools-eatme-object-transform.md)
 - [Eatme Reopen Project Tool](./tools-eatme-reopen-project.md)
 - [Modernization Scorecard Generator](./reference/modernization-scorecard-generator.md)
 - [Merge-ready Evidence Generator](./reference/merge-ready-evidence-generator.md)
