@@ -57,6 +57,7 @@ WORKFLOWS = {
         "maven_fragments": [
             "mvn --settings .github/maven/jogamp-ci-settings.xml -U -Dinstall4j.skip -Dcheckstyle.skip -Dmaven.test.failure.ignore=true -Dmdep.skip=true -Pcoverage verify",
             "Coverage Maven command failed; retrying",
+            "scripts/ci-duration-note.sh \"Coverage Maven attempt ${attempt}\" -- mvn",
         ],
         "dependent_steps": [
             "Summarize and gate line coverage",
@@ -72,6 +73,7 @@ WORKFLOWS = {
         "maven_fragments": [
             "mvn --settings .github/maven/jogamp-ci-settings.xml -U -Dinstall4j.skip -Dcheckstyle.skip -Dmdep.skip=true -pl netbeans -am clean package -DskipTests",
             "NetBeans package Maven command failed; retrying",
+            "scripts/ci-duration-note.sh \"NetBeans package Maven attempt ${attempt}\" -- mvn",
         ],
         "dependent_steps": [
             "Verify NetBeans package artifacts",
