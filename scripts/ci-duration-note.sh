@@ -14,6 +14,22 @@ error() {
   printf '[ci-duration] ERROR: %s\n' "$*" >&2
 }
 
+github_escape() {
+  local value="$1"
+  value="${value//'%'/'%25'}"
+  value="${value//$'\r'/'%0D'}"
+  value="${value//$'\n'/'%0A'}"
+  printf '%s' "${value}"
+}
+
+markdown_cell_escape() {
+  local value="$1"
+  value="${value//$'\r'/' '}"
+  value="${value//$'\n'/' '}"
+  value="${value//'|'/'\|'}"
+  printf '%s' "${value}"
+}
+
 if (($# < 3)); then
   usage >&2
   exit 2
@@ -51,15 +67,27 @@ else
   outcome="failed"
 fi
 
-printf '::notice title=CI duration::%s %s in %ss\n' "${label}" "${outcome}" "${elapsed_seconds}"
+notice_label="$(github_escape "${label}")"
+summary_label="$(markdown_cell_escape "${label}")"
+
+printf '::notice title=CI duration::%s %s in %ss\n' "${notice_label}" "${outcome}" "${elapsed_seconds}"
 
 if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
-  {
-    printf '### CI duration\n\n'
-    printf '| Step | Outcome | Seconds |\n'
-    printf '| --- | --- | ---: |\n'
-    printf '| %s | %s | %s |\n' "${label}" "${outcome}" "${elapsed_seconds}"
-  } >> "${GITHUB_STEP_SUMMARY}"
+  summary_dir="$(dirname -- "${GITHUB_STEP_SUMMARY}")"
+  if [[ (-e "${GITHUB_STEP_SUMMARY}" && ! -w "${GITHUB_STEP_SUMMARY}") || ! -d "${summary_dir}" || ! -w "${summary_dir}" ]]; then
+    printf '[ci-duration] WARNING: could not write GitHub step summary: %s\n' "${GITHUB_STEP_SUMMARY}" >&2
+  else
+    if ! {
+      if ! grep -Fq '| Step | Outcome | Seconds |' "${GITHUB_STEP_SUMMARY}" 2>/dev/null; then
+        printf '### CI duration\n\n'
+        printf '| Step | Outcome | Seconds |\n'
+        printf '| --- | --- | ---: |\n'
+      fi
+      printf '| %s | %s | %s |\n' "${summary_label}" "${outcome}" "${elapsed_seconds}"
+    } >> "${GITHUB_STEP_SUMMARY}"; then
+      printf '[ci-duration] WARNING: could not write GitHub step summary: %s\n' "${GITHUB_STEP_SUMMARY}" >&2
+    fi
+  fi
 fi
 
 exit "${status}"
