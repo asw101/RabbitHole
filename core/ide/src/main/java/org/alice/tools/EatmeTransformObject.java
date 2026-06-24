@@ -26,7 +26,7 @@ public final class EatmeTransformObject {
   private static final String TRANSFORM_ARTIFACT = "object-transform.json";
   private static final String TRANSFORMED_PROJECT = "transformed-project.a3p";
   private static final String METHOD_NAME = "eatmeObjectTransformStep";
-  private static final String TRANSFORM_COMMENT = "eatme object transform proof";
+  private static final String TRANSFORM_COMMENT = "eatme object transform step";
   private static final TransformTarget DEFAULT_TARGET = new TransformTarget(1.5, 0.0, -2.0, 1.25);
 
   private EatmeTransformObject() {
