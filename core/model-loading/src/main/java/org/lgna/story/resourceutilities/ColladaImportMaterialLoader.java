@@ -27,6 +27,8 @@ import java.util.logging.Logger;
  */
 class ColladaImportMaterialLoader {
 
+  private static final Logger LOGGER = Logger.getLogger(ColladaImportMaterialLoader.class.getName());
+
   private final Logger logger;
 
   ColladaImportMaterialLoader(Logger logger) {
@@ -150,7 +152,8 @@ class ColladaImportMaterialLoader {
     try {
       tex = new BufferedImage(image.getWidth(), image.getHeight(), type);
     } catch (IllegalArgumentException e) {
-      e.printStackTrace();
+      LOGGER.log(Level.WARNING, "Cannot create Alice texture for image dimensions "
+          + image.getWidth() + "x" + image.getHeight(), e);
       return null;
     }
     int imageWidth = image.getWidth();

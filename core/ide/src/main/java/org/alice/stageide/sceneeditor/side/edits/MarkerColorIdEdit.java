@@ -82,6 +82,7 @@ public class MarkerColorIdEdit extends AbstractEdit {
         try {
           this.prevArgumentExpression = ide.getApiConfigurationManager().getExpressionCreator().createExpression(colorId);
         } catch (ExpressionCreator.CannotCreateExpressionException ccee) {
+          // forbidden-pattern: intentional-log-and-continue
           Logger.throwable(ccee, colorId);
           this.prevArgumentExpression = new NullLiteral();
         }

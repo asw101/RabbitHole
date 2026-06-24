@@ -21,6 +21,7 @@ import java.nio.DoubleBuffer;
 import java.util.*;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class AliceModelLoader {
@@ -169,7 +170,10 @@ public class AliceModelLoader {
           JointId id = (JointId) f.get(null);
           missingJoints.add(id);
         } catch (IllegalAccessException iae) {
-          iae.printStackTrace();
+          Logger.getLogger(AliceModelLoader.class.getName()).log(
+              Level.WARNING,
+              "Cannot inspect required joint field " + f.getName(),
+              iae);
         }
       }
     }
@@ -318,7 +322,10 @@ public class AliceModelLoader {
       JointedModelColladaImporter colladaImporter = new JointedModelColladaImporter(colladaModelFile, modelLogger);
       sv = colladaImporter.loadSkeletonVisual();
     } catch (ModelLoadingException e) {
-      e.printStackTrace();
+      Logger.getLogger(AliceModelLoader.class.getName()).log(
+          Level.WARNING,
+          "Cannot load Alice model from COLLADA file " + colladaModelFile,
+          e);
     }
     return sv;
   }

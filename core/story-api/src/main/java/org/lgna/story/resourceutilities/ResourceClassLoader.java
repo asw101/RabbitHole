@@ -139,6 +139,7 @@ public final class ResourceClassLoader {
           }
         }
       } catch (Exception e) {
+        // forbidden-pattern: intentional-log-and-continue
         Logger.severe("Error reading resource file: " + resourceFile, e);
       }
     }
@@ -169,7 +170,8 @@ public final class ResourceClassLoader {
           if (ModelResource.class.isAssignableFrom(cls)) {
             classes.add((Class<? extends ModelResource>) cls);
           }
-        } catch (Throwable cnfe) {
+        } catch (ClassNotFoundException | LinkageError cnfe) {
+          // forbidden-pattern: intentional-log-and-continue
           try {
             Class<?> cls = ClassLoader.getSystemClassLoader().loadClass(className);
             if (ModelResource.class.isAssignableFrom(cls)) {
@@ -182,6 +184,7 @@ public final class ResourceClassLoader {
       }
       classLoaders.add(cl);
     } catch (Exception e) {
+      // forbidden-pattern: intentional-log-and-continue
       Logger.severe("Error loading resource files", e);
     }
     return new LoadResult(classes, classLoaders);

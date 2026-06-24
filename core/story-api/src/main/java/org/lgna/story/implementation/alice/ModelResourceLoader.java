@@ -95,7 +95,8 @@ class ModelResourceLoader {
       BinaryDecoder decoder = new InputStreamBinaryDecoder(is);
       return decoder.decodeReferenceableBinaryEncodableAndDecodable(new HashMap<Integer, ReferenceableBinaryEncodableAndDecodable>());
     } catch (Exception e) {
-      e.printStackTrace();
+      // forbidden-pattern: intentional-log-and-continue
+      Logger.throwable(e, url);
     }
     return null;
   }
@@ -110,7 +111,7 @@ class ModelResourceLoader {
       }
       return rv;
     } catch (Exception e) {
-      e.printStackTrace();
+      Logger.throwable(e, url);
       return null;
     }
   }

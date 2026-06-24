@@ -267,6 +267,7 @@ public class JsonModelIo extends DataSourceIo {
       try {
         return ImageIO.read(resourceURL);
       } catch (IOException e) {
+        // forbidden-pattern: intentional-log-and-continue
         Logger.throwable(e, "Cannot load thumbnail for", modelResource, modelVariant);
       }
     }

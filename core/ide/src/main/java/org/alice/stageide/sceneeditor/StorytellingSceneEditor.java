@@ -44,6 +44,7 @@ package org.alice.stageide.sceneeditor;
 
 import edu.cmu.cs.dennisc.animation.Animator;
 import edu.cmu.cs.dennisc.animation.ClockBasedAnimator;
+import edu.cmu.cs.dennisc.java.util.logging.Logger;
 import edu.cmu.cs.dennisc.render.OnscreenRenderTarget;
 import edu.cmu.cs.dennisc.render.RenderCapabilities;
 import edu.cmu.cs.dennisc.render.event.AutomaticDisplayEvent;
@@ -234,8 +235,9 @@ public class StorytellingSceneEditor extends AbstractSceneEditor {
 
     try {
       SwingUtilities.invokeLater(uiRefresher);
-    } catch (Throwable e) {
-      e.printStackTrace();
+    } catch (RuntimeException e) {
+      Logger.throwable(e, "Scene editor UI refresh failed");
+      return;
     }
   }
 

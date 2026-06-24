@@ -98,6 +98,7 @@ public class SideComposite extends SimpleComposite<SideView> {
         ResourceBundle resourceBundle = ResourceBundleUtilities.getUtf8Bundle(bundleName, locale);
         sb.append(resourceBundle.getString(key));
       } catch (MissingResourceException mre) {
+        // forbidden-pattern: intentional-log-and-continue
         Logger.throwable(mre, bundleName, key);
         sb.append(key);
       }

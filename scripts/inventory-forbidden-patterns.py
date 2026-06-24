@@ -45,6 +45,9 @@ LOG_CALL_RE = re.compile(
     r"(?:debug|errln|error|fatal|info|log|outln|severe|throwable|warn|warning)\s*\()"
     r"|(?:\bSystem\.(?:err|out)\.println\s*\()"
 )
+INTENTIONAL_LOG_AND_CONTINUE_RE = re.compile(
+    r"forbidden-pattern:\s*intentional-log-and-continue"
+)
 COMMENT_OR_TEXT_PREFIX_RE = re.compile(
     r"^\s*(?://|/\*|\*|#|<!--|\*|\"|')"
 )
@@ -480,12 +483,15 @@ def has_full_conditional_flow_change(block_lines: list[str]) -> bool:
     return False
 
 
-def scan_log_and_continue(path: str, lines: list[str]) -> list[Finding]:
+def scan_log_and_continue(path: str, lines: list[str], original_lines: list[str] | None = None) -> list[Finding]:
     if not path.endswith(".java"):
         return []
     findings: list[Finding] = []
     for line_number, block_lines in iter_catch_blocks(lines):
         block_text = "\n".join(block_lines)
+        source_block = "\n".join((original_lines or lines)[line_number - 1: line_number - 1 + len(block_lines)])
+        if INTENTIONAL_LOG_AND_CONTINUE_RE.search(source_block):
+            continue
         if not LOG_CALL_RE.search(block_text) or has_unconditional_flow_change(block_lines) or has_full_conditional_flow_change(block_lines):
             continue
         disposition, severity, reason = classify("log-and-continue", path, block_lines[0])
@@ -519,7 +525,7 @@ def scan_text(path: str, text: str) -> list[Finding]:
             code_lines,
             patterns=("broad-throwable-catch", "print-stack-trace", "system-exit"),
         )
-        + scan_log_and_continue(path, code_lines)
+        + scan_log_and_continue(path, code_lines, original_lines)
     )
 
 

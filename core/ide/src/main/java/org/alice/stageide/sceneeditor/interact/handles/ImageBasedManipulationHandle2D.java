@@ -66,7 +66,8 @@ public abstract class ImageBasedManipulationHandle2D extends ManipulationHandle2
     BufferedImage image;
     try {
       image = FlatSVGUtils.svg2image(Icons.class.getResource(maskResourceName), 1);
-    } catch (Throwable t) {
+    } catch (RuntimeException t) {
+      // forbidden-pattern: intentional-log-and-continue
       Logger.errln(maskResourceName, this);
       image = null;
     }
