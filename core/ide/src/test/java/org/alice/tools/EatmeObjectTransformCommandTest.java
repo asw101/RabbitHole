@@ -33,6 +33,25 @@ public class EatmeObjectTransformCommandTest {
   }
 
   @Test
+  public void transformObjectWrapperFollowsEatmePhaseHookContract() throws Exception {
+    Path wrapper = repositoryRoot().resolve("tools/eatme-transform-object");
+
+    assertTrue("tools/eatme-transform-object must exist", Files.isRegularFile(wrapper));
+    assertTrue("tools/eatme-transform-object must be executable", Files.isExecutable(wrapper));
+
+    String script = Files.readString(wrapper, StandardCharsets.UTF_8);
+    assertTrue(script, script.startsWith("#!/usr/bin/env bash\n"));
+    assertTrue(script, script.contains("set -euo pipefail"));
+    assertTrue(script, script.contains("alice-ide/target/lib"));
+    assertTrue(script, script.contains("run the Alice package step before tools/eatme-transform-object"));
+    assertTrue(script, script.contains("-Dorg.alice.ide.rootDirectory=./core/resources/target/distribution"));
+    assertTrue(script, script.contains("-Dedu.cmu.cs.dennisc.java.util.logging.Logger.Level=WARNING"));
+    assertTrue(script, script.contains("-cp \"alice-ide/target/*:alice-ide/target/lib/*\""));
+    assertTrue(script, script.contains("org.alice.tools.EatmeTransformObject"));
+    assertTrue(script, script.contains("\"$@\""));
+  }
+
+  @Test
   public void wrapperFailsFastWhenPackagedLibDirectoryIsMissing() throws Exception {
     Path wrapper = repositoryRoot().resolve("tools/eatme-object-transform");
     assertTrue("tools/eatme-object-transform must exist", Files.isRegularFile(wrapper));
@@ -62,6 +81,41 @@ public class EatmeObjectTransformCommandTest {
       assertEquals(stderr, 2, process.exitValue());
       assertTrue(stderr, stderr.contains("alice-ide/target/lib is missing"));
       assertTrue(stderr, stderr.contains("tools/eatme-object-transform"));
+    } finally {
+      deleteRecursively(emptyWorkingDirectory);
+    }
+  }
+
+  @Test
+  public void transformObjectWrapperFailsFastWhenPackagedLibDirectoryIsMissing() throws Exception {
+    Path wrapper = repositoryRoot().resolve("tools/eatme-transform-object");
+    assertTrue("tools/eatme-transform-object must exist", Files.isRegularFile(wrapper));
+
+    Path emptyWorkingDirectory = Files.createTempDirectory("eatme-transform-object-wrapper-");
+    try {
+      Process process = new ProcessBuilder(
+          "bash",
+          wrapper.toAbsolutePath().toString(),
+          "--project", "source.a3p",
+          "--object-identifier", "alice-gallery://animals/bunny",
+          "--evidence-dir", "evidence",
+          "--json")
+          .directory(emptyWorkingDirectory.toFile())
+          .redirectOutput(ProcessBuilder.Redirect.PIPE)
+          .redirectError(ProcessBuilder.Redirect.PIPE)
+          .start();
+
+      if (!process.waitFor(10, TimeUnit.SECONDS)) {
+        process.destroyForcibly();
+        fail("wrapper package preflight must not hang when alice-ide/target/lib is missing");
+      }
+
+      String stdout = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+      String stderr = new String(process.getErrorStream().readAllBytes(), StandardCharsets.UTF_8);
+      assertEquals(stdout, "", stdout);
+      assertEquals(stderr, 2, process.exitValue());
+      assertTrue(stderr, stderr.contains("alice-ide/target/lib is missing"));
+      assertTrue(stderr, stderr.contains("tools/eatme-transform-object"));
     } finally {
       deleteRecursively(emptyWorkingDirectory);
     }

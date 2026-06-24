@@ -195,6 +195,7 @@ Java entry point and preserve the Java process exit code.
 | `tools/eatme-run-world` | `org.alice.tools.EatmeRunWorld` | `--project`, `--run-selector`, `--evidence-dir`, `--json` | `world-run.json`, `runtime.log` |
 | `tools/eatme-save-project` | `org.alice.tools.EatmeSaveProject` | `--project`, `--save-selector`, `--evidence-dir`, `--json` | `saved-project.a3p`, `project-save.json` |
 | `tools/eatme-reopen-project` | `org.alice.tools.EatmeReopenProject` | `--saved-project`, `--reopen-selector`, `--evidence-dir`, `--json` | `reopened.a3p`, `reopen-evidence.json`, `reopened-state.json` |
+| `tools/eatme-transform-object` | `org.alice.tools.EatmeTransformObject` | `--project`, `--object-identifier`, `--evidence-dir`, `--json`; optional `--target-position`, `--scale` | `transformed-project.a3p`, `object-transform.json` |
 | `tools/eatme-object-transform` | `org.alice.tools.EatmeObjectTransformWorkflow` | `--source-project`, `--out-dir`, `--json`; optional `--timeout-seconds` | `object-transform-workflow.json`, `status.txt`, transform/place/edit/run/save/reopen artifacts |
 
 Selector arguments use `scene.<methodName>` and the method name must match
