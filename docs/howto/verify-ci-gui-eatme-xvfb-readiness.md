@@ -44,6 +44,7 @@ mvn --settings .github/maven/jogamp-ci-settings.xml \
 Run the GUI Getting Started validation under the shared Xvfb harness:
 
 ```bash
+scripts/ci-duration-note.sh "Getting Started GUI validation under Xvfb" -- \
 scripts/validate-gui-with-xvfb.sh \
   --timeout-seconds 1800 \
   --expect success \
@@ -58,6 +59,9 @@ Maven resolution logs as evidence that JOGL and GlueGen resolved through
 `.github/maven/jogamp-ci-settings.xml`, which mirrors the `jogamp.org`
 repository ID to the approved SciJava HTTPS repository in CI. Passing headless
 validation alone is not enough to verify GL-capable dependency resolution.
+When a validation command is expected to be slow in CI, wrap it with
+`scripts/ci-duration-note.sh` so maintainers can see elapsed time in the Actions
+log without changing pass/fail semantics.
 
 ## Verify Eatme wrappers
 
@@ -111,6 +115,7 @@ objects-first full path under Xvfb:
 ```bash
 rm -rf qa/outside-in/alice-desktop/evidence/eatme-local/object-transform
 
+scripts/ci-duration-note.sh "Eatme object-transform workflow under Xvfb" -- \
 scripts/validate-gui-with-xvfb.sh \
   --timeout-seconds 1800 \
   --expect success \

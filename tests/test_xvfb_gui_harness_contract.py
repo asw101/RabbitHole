@@ -194,6 +194,8 @@ class XvfbGuiHarnessWorkflowContract(unittest.TestCase):
         test_job = workflow_job_block(workflow, "test")
 
         self.assertIn("scripts/validate-gui-with-xvfb.sh", headed_job)
+        self.assertIn("scripts/ci-duration-note.sh \"Getting Started GUI validation under Xvfb\"", headed_job)
+        self.assertIn("scripts/ci-duration-note.sh \"Default open 3D asset workflow under Xvfb\"", headed_job)
         self.assertIn("--timeout-seconds", headed_job)
         self.assertIn("RABBITHOLE_LAUNCH_TIMEOUT_SECONDS: '60'", headed_job)
         self.assertIn("RABBITHOLE_XVFB_VALIDATION_TIMEOUT_SECONDS", headed_job)

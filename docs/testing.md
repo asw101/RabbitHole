@@ -44,6 +44,7 @@ The headed Ubuntu GUI validation lane runs under Xvfb:
 ```bash
 xvfb_run="${{ steps.setup-xvfb.outputs.xvfb-run }}"
 RABBITHOLE_LAUNCH_TIMEOUT_SECONDS=60 \
+scripts/ci-duration-note.sh "Getting Started GUI validation under Xvfb" -- \
 scripts/validate-gui-with-xvfb.sh \
   --timeout-seconds "${RABBITHOLE_XVFB_VALIDATION_TIMEOUT_SECONDS:-7200}" \
   --expect success \
@@ -55,6 +56,7 @@ scripts/validate-gui-with-xvfb.sh \
 Focused default open 3D asset workflow validation under Xvfb:
 
 ```bash
+scripts/ci-duration-note.sh "Default open 3D asset workflow under Xvfb" -- \
 scripts/validate-gui-with-xvfb.sh \
   --timeout-seconds 1800 \
   --expect success \
@@ -73,6 +75,11 @@ scripts/validate-gui-with-xvfb.sh \
 This lane proves the bundled Bunny asset can be placed, rendered visibly,
 manipulated in 3D, saved, reopened, and run without Sims assets. See
 [Verify the Default Open 3D Asset Workflow](./howto/verify-default-open-3d-asset-workflow.md).
+
+Use `scripts/ci-duration-note.sh LABEL -- COMMAND [ARG...]` around slow CI
+validation commands when changing the package, coverage, or headed GUI lanes.
+The helper preserves the wrapped command exit status and emits a GitHub Actions
+duration notice plus a step-summary row when `GITHUB_STEP_SUMMARY` is available.
 
 Run the golden Alice project corpus validator:
 
