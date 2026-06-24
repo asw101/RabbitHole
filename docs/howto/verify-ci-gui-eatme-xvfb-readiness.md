@@ -90,6 +90,21 @@ test -s qa/outside-in/alice-desktop/evidence/eatme-local/place/placed-project.a3
 test -s qa/outside-in/alice-desktop/evidence/eatme-local/place/scene.diff.json
 ```
 
+Verify the per-phase `tools/eatme-transform-object` hook that Eatme invokes
+after object placement:
+
+```bash
+mkdir -p qa/outside-in/alice-desktop/evidence/eatme-local/transform
+
+tools/eatme-transform-object \
+  --project qa/outside-in/alice-desktop/evidence/eatme-local/place/placed-project.a3p \
+  --object-identifier alice-gallery://animals/bunny \
+  --target-position 1.5,0.0,-2.0 \
+  --scale 1.25 \
+  --evidence-dir qa/outside-in/alice-desktop/evidence/eatme-local/transform \
+  --json
+```
+
 Verify the deterministic `tools/eatme-object-transform`
 objects-first full path under Xvfb:
 

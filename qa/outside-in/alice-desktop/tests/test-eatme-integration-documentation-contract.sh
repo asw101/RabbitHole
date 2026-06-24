@@ -26,6 +26,7 @@ for wrapper in \
   eatme-run-world \
   eatme-save-project \
   eatme-reopen-project \
+  eatme-transform-object \
   eatme-object-transform
 do
   tool_path="$REPO_ROOT/tools/$wrapper"

@@ -522,6 +522,17 @@ After the package preflight passes, the wrapper forwards `"$@"` to
 `org.alice.tools.EatmeObjectTransformWorkflow` unchanged and exits with the Java
 process exit code.
 
+`tools/eatme-transform-object` is the per-phase transform hook consumed by the
+objects-first Eatme flow. It uses the same packaged-Alice launcher shape, accepts
+`--project`, `--object-identifier`, `--evidence-dir`, and `--json`; optional
+`--target-position x,y,z` and `--scale` override the default bounded target
+(`1.5,0.0,-2.0`, scale `1.25`). It emits
+`eatme.alice-object-transform-result/v1` with `object-transform.json` plus
+`transformed-project.a3p` under the supplied evidence directory. The artifact
+records the requested target transform as evidence and persists a scene method
+marker in the transformed project; it does not claim arbitrary visual rendering
+correctness.
+
 ### Environment
 
 | Variable or property | Required | Description |
