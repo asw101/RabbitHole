@@ -43,6 +43,7 @@
 package org.alice.ide.croquet.models.print;
 
 import edu.cmu.cs.dennisc.java.awt.print.PageFormatUtilities;
+import edu.cmu.cs.dennisc.java.util.logging.Logger;
 import org.alice.ide.IDE;
 import org.alice.ide.operations.InconsequentialActionOperation;
 import org.alice.ide.sceneeditor.AbstractSceneEditor;
@@ -71,7 +72,8 @@ public class PrintSceneEditorOperation extends InconsequentialActionOperation {
       try {
         job.print(printOptions);
       } catch (PrinterException pe) {
-        pe.printStackTrace();
+        Logger.throwable(pe, "Scene editor print failed");
+        return;
       }
     }
   }

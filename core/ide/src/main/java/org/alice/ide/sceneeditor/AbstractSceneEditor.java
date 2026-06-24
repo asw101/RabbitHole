@@ -204,7 +204,7 @@ public abstract class AbstractSceneEditor extends BorderPanel {
       } else {
         return null;
       }
-    } catch (Throwable t) {
+    } catch (RuntimeException t) {
       Logger.throwable(t);
       return null;
     }

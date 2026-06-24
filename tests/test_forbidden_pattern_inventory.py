@@ -81,6 +81,33 @@ class ForbiddenPatternInventoryTest(unittest.TestCase):
         self.assertEqual("high", log_findings[0].severity)
         self.assertEqual(("scene-editor",), log_findings[0].focus_areas)
 
+    def test_intentional_log_and_continue_annotation_suppresses_candidate(self) -> None:
+        inventory = load_inventory()
+
+        findings = inventory.scan_text(
+            "core/ide/src/main/java/org/alice/stageide/sceneeditor/SceneEditor.java",
+            textwrap.dedent(
+                """\
+                class SceneEditor {
+                  void open() {
+                    try {
+                      run();
+                    } catch (Exception ex) {
+                      // forbidden-pattern: intentional-log-and-continue
+                      logger.warning("best effort scene editor setup", ex);
+                      repairUi();
+                    }
+                  }
+                }
+                """
+            ),
+        )
+
+        self.assertEqual(
+            [],
+            [finding for finding in findings if finding.pattern == "log-and-continue"],
+        )
+
     def test_capital_logger_severe_catch_blocks_are_log_and_continue_candidates(self) -> None:
         inventory = load_inventory()
 

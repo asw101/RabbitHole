@@ -349,7 +349,8 @@ public class SetUpMethodGenerator {
                   : getExpressionCreator().createExpression(value);
               statements.add(AstUtilities.createMethodInvocationStatement(SetUpMethodGenerator.createInstanceExpression(isThis, field), setter, expression));
             } catch (ExpressionCreator.CannotCreateExpressionException ccee) {
-              Logger.severe("cannot create expression for: " + value);
+              // forbidden-pattern: intentional-log-and-continue
+              Logger.throwable(ccee, "cannot create expression for", value);
             }
           } else if (SetUpMethodGeneratorLogic.shouldLogMissingSetter(getter.getName(), isThis)) {
             Logger.warning("setter is null for: " + getter);
@@ -425,7 +426,8 @@ public class SetUpMethodGenerator {
               Object[] values;
               try {
                 values = sceneInstance.getVM().ENTRY_POINT_evaluate(sceneInstance, new Expression[] {getJointExpression});
-              } catch (Throwable t) {
+              } catch (RuntimeException t) {
+                // forbidden-pattern: intentional-log-and-continue
                 Logger.errln("set up method generator failed:", getJointExpression);
                 values = new Object[0];
               }

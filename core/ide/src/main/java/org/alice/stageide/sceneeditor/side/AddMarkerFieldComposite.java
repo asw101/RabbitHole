@@ -42,6 +42,7 @@
  *******************************************************************************/
 package org.alice.stageide.sceneeditor.side;
 
+import edu.cmu.cs.dennisc.java.util.logging.Logger;
 import org.alice.ide.ast.ExpressionCreator;
 import org.alice.ide.ast.ExpressionCreator.CannotCreateExpressionException;
 import org.alice.ide.ast.declaration.AddManagedFieldComposite;
@@ -87,7 +88,8 @@ public abstract class AddMarkerFieldComposite extends AddPredeterminedValueTypeM
       Expression colorExpresion = StageIDE.getActiveInstance().getApiConfigurationManager().getExpressionCreator().createExpression(initialMarkerColor);
       this.colorIdState.setValueTransactionlessly(colorExpresion);
     } catch (ExpressionCreator.CannotCreateExpressionException ccee) {
-      ccee.printStackTrace();
+      // forbidden-pattern: intentional-log-and-continue
+      Logger.throwable(ccee, initialMarkerColor);
     }
     super.handlePreShowDialog(dialog);
   }
@@ -121,13 +123,15 @@ public abstract class AddMarkerFieldComposite extends AddPredeterminedValueTypeM
       Statement orientationStatement = SetUpMethodGenerator.createOrientationStatement(false, field, new Orientation(initialMarkerTransform.orientation()));
       rv.addDoStatement(orientationStatement);
     } catch (CannotCreateExpressionException ccee) {
-      ccee.printStackTrace();
+      // forbidden-pattern: intentional-log-and-continue
+      Logger.throwable(ccee, field, initialMarkerTransform.orientation());
     }
     try {
       Statement positionStatement = SetUpMethodGenerator.createPositionStatement(false, field, new Position(initialMarkerTransform.translation()));
       rv.addDoStatement(positionStatement);
     } catch (CannotCreateExpressionException ccee) {
-      ccee.printStackTrace();
+      // forbidden-pattern: intentional-log-and-continue
+      Logger.throwable(ccee, field, initialMarkerTransform.translation());
     }
     return rv;
   }

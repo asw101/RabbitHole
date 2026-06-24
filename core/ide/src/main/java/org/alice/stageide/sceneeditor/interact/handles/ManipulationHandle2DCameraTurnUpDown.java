@@ -64,6 +64,7 @@ public class ManipulationHandle2DCameraTurnUpDown extends ImageBasedManipulation
       try {
         icon = new FlatSVGIcon(Icons.class.getResource(resourceString));
       } catch (Exception e) {
+        // forbidden-pattern: intentional-log-and-continue
         Logger.errln("cannot load", resourceString, this);
         icon = null;
       }

@@ -136,6 +136,7 @@ final class ModelManifestResourceData {
         manifest.rootJoints.add(jointId.toString());
       }
     } catch (NoSuchMethodException e) {
+      // forbidden-pattern: intentional-log-and-continue
       Logger.info("No getRootJointIds found on model " + manifest.description.name);
     } catch (InvocationTargetException | IllegalAccessException e) {
       throw new IllegalStateException("Unable to read root joints for model " + manifest.description.name, e);
