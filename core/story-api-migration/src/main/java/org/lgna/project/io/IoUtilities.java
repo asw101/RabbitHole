@@ -130,6 +130,9 @@ public abstract class IoUtilities {
   private static ProjectIo.ProjectReader readerForContainer(ZipEntryContainer container, String expectedFileType) throws IOException {
     Manifest manifest = readManifest(container);
     validateJsonArchiveManifestMetadata(manifest, expectedFileType);
+    if (HybridProjectIo.isHybridArchive(manifest, container)) {
+      return HybridProjectIo.reader(container);
+    }
     if (isReadableJsonArchive(manifest)) {
       return JsonProjectIo.reader(container);
     }
@@ -189,8 +192,7 @@ public abstract class IoUtilities {
   }
 
   private static ProjectIo.ProjectWriter latestReadbleWriter() {
-    //TODO replace with JSON variant
-    return XmlProjectIo.writer();
+    return HybridProjectIo.writer();
   }
 
   private static ProjectIo.ProjectWriter playerWriter() {

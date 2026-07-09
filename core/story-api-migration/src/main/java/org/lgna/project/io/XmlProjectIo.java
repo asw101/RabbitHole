@@ -78,9 +78,9 @@ import java.util.zip.ZipOutputStream;
 
 public class XmlProjectIo implements ProjectIo {
 
-  private static final String PROGRAM_TYPE_ENTRY_NAME = "programType.xml";
-  private static final String TYPE_ENTRY_NAME = "type.xml";
-  private static final String RESOURCES_ENTRY_NAME = "resources.xml";
+  static final String PROGRAM_TYPE_ENTRY_NAME = "programType.xml";
+  static final String TYPE_ENTRY_NAME = "type.xml";
+  static final String RESOURCES_ENTRY_NAME = "resources.xml";
 
   private static final String XML_RESOURCE_TAG_NAME = "resource";
 

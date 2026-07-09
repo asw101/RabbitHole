@@ -84,14 +84,14 @@ public class HistoricalArchiveRoundTripCharacterizationTest {
 
     IoUtilities.writeType(typeArchive, generatedType);
 
-    assertXmlTypeArchiveFacts(typeArchive);
+    assertXmlTypeArchiveFacts(typeArchive, "GeneratedHistoricalType");
     TypeResourcesPair firstRead = IoUtilities.readType(typeArchive);
     assertTypeFacts(firstRead, "GeneratedHistoricalType", imageResource);
 
     File roundTripArchive = temporaryFolder.newFile("generated-historical-type-roundtrip.a3c");
     IoUtilities.writeType(roundTripArchive, firstRead.getType());
 
-    assertXmlTypeArchiveFacts(roundTripArchive);
+    assertXmlTypeArchiveFacts(roundTripArchive, "GeneratedHistoricalType");
     TypeResourcesPair secondRead = IoUtilities.readType(roundTripArchive);
     assertTypeFacts(secondRead, "GeneratedHistoricalType", imageResource);
   }
@@ -1165,7 +1165,7 @@ public class HistoricalArchiveRoundTripCharacterizationTest {
     assertEquals("Synthetic archive should fail on its declared XML version", 3.0, thrown.getVersion(), 0.0);
   }
 
-  private static void assertXmlTypeArchiveFacts(File archive) throws Exception {
+  private static void assertXmlTypeArchiveFacts(File archive, String expectedTypeName) throws Exception {
     try (ZipFile zipFile = new ZipFile(archive)) {
       ZipEntry versionEntry = zipFile.getEntry(ProjectIo.VERSION_ENTRY_NAME);
       assertNotNull("Generated .a3c archives should declare a version", versionEntry);
@@ -1174,8 +1174,14 @@ public class HistoricalArchiveRoundTripCharacterizationTest {
       assertNotNull("Generated .a3c archives should contain resource metadata", zipFile.getEntry("resources.xml"));
       assertNotNull("Generated .a3c archives should contain generated image data",
           zipFile.getEntry("resources/historical-type-texture.png"));
-      assertNull("Generated .a3c fixtures intentionally exercise XML fallback rather than JSON manifest loading",
+      assertNotNull("Hybrid .a3c archives should also contain the Tweedle manifest",
           zipFile.getEntry(ProjectIo.MANIFEST_ENTRY_NAME));
+      assertNotNull("Hybrid .a3c archives should also contain the Tweedle source payload",
+          zipFile.getEntry("src/" + expectedTypeName + ".twe"));
+      Manifest manifest = readTypeManifest(zipFile);
+      assertEquals(IoUtilities.TYPE_EXTENSION, manifest.metadata.fileType);
+      assertTrue("Hybrid .a3c manifest should reference the Tweedle type source",
+          containsTypeReference(manifest, expectedTypeName));
     }
   }
 
@@ -1196,7 +1202,7 @@ public class HistoricalArchiveRoundTripCharacterizationTest {
           zipFile.getEntry("resources.xml"));
       assertNotNull("Generated .a3p archives should contain generated image data",
           zipFile.getEntry("resources/" + expectedResource.getName()));
-      assertNull("Generated .a3p fixtures intentionally exercise XML fallback despite manifest.json",
+      assertNotNull("Hybrid .a3p archives should also carry the Tweedle source payload alongside XML",
           zipFile.getEntry("src/" + expectedProgramName + ".twe"));
 
       ProjectManifest manifest = readProjectManifest(zipFile);
@@ -1204,7 +1210,18 @@ public class HistoricalArchiveRoundTripCharacterizationTest {
       assertEquals(IoUtilities.PROJECT_EXTENSION, manifest.metadata.fileType);
       assertEquals(Manifest.ProjectType.World, manifest.metadata.identifier.type);
       assertEquals(expectedSceneCameraType, manifest.projectStructure.sceneCameraType);
+      assertTrue("Hybrid .a3p manifest should reference the Tweedle program source",
+          containsTypeReference(manifest, expectedProgramName));
     }
+  }
+
+  private static boolean containsTypeReference(Manifest manifest, String typeName) {
+    for (ResourceReference resourceReference : manifest.resources) {
+      if (resourceReference instanceof TypeReference typeReference && typeName.equals(typeReference.name)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private static void assertTypeFacts(TypeResourcesPair typeResourcesPair, String expectedTypeName, ImageResource expectedResource) {
