@@ -59,6 +59,16 @@ fallback.
 4. **Resource-typed method parameters** (`SandDunes` → `TerrainResource`,
    `WaterTank` → `WaterTankResource`). Method parameters whose type is a resource
    enum/type are not yet resolved by the decoder.
+5. **Comments** (any type containing a `Comment` statement). The Tweedle grammar
+   routes `//` line comments and `/* … */` block comments to the lexer's hidden
+   channel, so a `Comment` node the encoder emits is dropped on parse. Rather than
+   decode to an AST that is silently missing the comment, the decoder now rejects
+   comment-bearing source. This gap is not exercised by `indiaMinimum.a3p`; it is
+   characterized separately by `TweedleCommentDecodeGapTest`
+   (`core/ast/src/test/java/org/alice/serialization/tweedle/TweedleCommentDecodeGapTest.java`).
+   Closing it requires a first-class comment representation in
+   `org.alice.tweedle.ast` (and grammar support in the `tweedle-lang` submodule),
+   which is out of scope for the hybrid export work.
 
 ## Next fixtures to add
 
