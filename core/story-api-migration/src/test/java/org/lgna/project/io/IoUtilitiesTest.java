@@ -217,6 +217,29 @@ public class IoUtilitiesTest {
   }
 
   @Test
+  public void hybridTypeTweedlePayloadIsBoundedToTheExportedType() throws Exception {
+    NamedUserType referencedType = sceneType("ReferencedScene");
+    NamedUserType exportedType = programType("BoundedGalleryType");
+    UserField field = new UserField();
+    field.name.setValue("referencedScene");
+    field.valueType.setValue(referencedType);
+    exportedType.fields.add(field);
+    File typeFile = temporaryFolder.newFile("bounded-gallery-type.a3c");
+
+    IoUtilities.writeType(typeFile, exportedType);
+
+    try (ZipFile zipFile = new ZipFile(typeFile)) {
+      TypeManifest manifest = readTypeManifest(zipFile);
+      assertNotNull(findTypeReference(manifest, exportedType.getName()));
+      assertNull(findTypeReference(manifest, referencedType.getName()));
+      assertNull(zipFile.getEntry("src/" + referencedType.getName() + ".twe"));
+      String source = readZipEntryText(zipFile, "src/" + exportedType.getName() + ".twe");
+      assertTrue(source.contains(referencedType.getName()));
+      assertFalse(source.contains("class " + referencedType.getName()));
+    }
+  }
+
+  @Test
   public void hybridProjectWithImageResourceRoundTripsAndRepointsManifest() throws Exception {
     ImageResource imageResource = new ImageResource(
         new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB),
@@ -268,6 +291,67 @@ public class IoUtilitiesTest {
     Project readProject = IoUtilities.readProject(corruptedFile);
     assertNotNull(readProject.getProgramType());
     assertEquals(programName, readProject.getProgramType().getName());
+  }
+
+  @Test
+  public void hybridProjectFallbackDiscardsAllPartialTweedleTypes() throws Exception {
+    NamedUserType sceneType = sceneType("FallbackScene");
+    NamedUserType programType = programType("FallbackProgram");
+    UserField sceneField = new UserField();
+    sceneField.name.setValue("scene");
+    sceneField.valueType.setValue(sceneType);
+    programType.fields.add(sceneField);
+    Set<NamedUserType> namedUserTypes = new HashSet<>();
+    namedUserTypes.add(sceneType);
+    Project project = new Project(
+        programType,
+        namedUserTypes,
+        new HashSet<>(),
+        Project.SceneCameraType.WindowCamera);
+    File projectFile = temporaryFolder.newFile("hybrid-partial-fallback.a3p");
+    IoUtilities.writeProject(projectFile, project);
+
+    File corruptedFile = temporaryFolder.newFile("hybrid-partial-fallback-rewritten.a3p");
+    rewriteZipEntry(
+        projectFile,
+        corruptedFile,
+        "src/" + sceneType.getName() + ".twe",
+        "not valid Tweedle".getBytes(StandardCharsets.UTF_8));
+
+    Project readProject = IoUtilities.readProject(corruptedFile);
+    NamedUserType readScene = namedUserTypeNamed(readProject, sceneType.getName());
+    assertEquals(programType.getId(), readProject.getProgramType().getId());
+    assertEquals(sceneType.getId(), readScene.getId());
+    assertSame(readScene, onlyField(readProject.getProgramType()).getValueType());
+  }
+
+  @Test
+  public void fullyDecodableHybridProjectDoesNotReadXmlAstPayload() throws Exception {
+    String programName = "TweedleOnlyReadProgram";
+    Project project = new Project(programType(programName), Project.SceneCameraType.WindowCamera);
+    File projectFile = temporaryFolder.newFile("hybrid-tweedle-read.a3p");
+    IoUtilities.writeProject(projectFile, project);
+
+    File corruptedFile = temporaryFolder.newFile("hybrid-tweedle-read-rewritten.a3p");
+    rewriteZipEntry(
+        projectFile,
+        corruptedFile,
+        XmlProjectIo.PROGRAM_TYPE_ENTRY_NAME,
+        "not XML".getBytes(StandardCharsets.UTF_8));
+
+    Project readProject = IoUtilities.readProject(corruptedFile);
+    assertEquals(programName, readProject.getProgramType().getName());
+  }
+
+  @Test
+  public void hybridVrReadyReadUsesCompleteXmlMigrationPath() throws Exception {
+    Project project = new Project(programType("VrReadyProgram"), Project.SceneCameraType.WindowCamera);
+    File projectFile = temporaryFolder.newFile("hybrid-vr-ready.a3p");
+    IoUtilities.writeProject(projectFile, project);
+
+    Project readProject = IoUtilities.projectReader(projectFile).readProject(true);
+
+    assertEquals(Project.SceneCameraType.VRHeadset, sceneCameraType(readProject));
   }
 
   @Test

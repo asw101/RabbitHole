@@ -370,9 +370,12 @@ final class HybridProjectIo {
 
     @Override
     public Project readProject(boolean makeVrReady) throws IOException, VersionNotSupportedException {
+      if (makeVrReady) {
+        return xmlReader.readProject(true);
+      }
       Throwable tweedleIssue;
       try {
-        Project project = tweedleReader.readProject(makeVrReady);
+        Project project = tweedleReader.readProject(false);
         if (declaredResourcesRecovered(project.getResources())) {
           return project;
         }

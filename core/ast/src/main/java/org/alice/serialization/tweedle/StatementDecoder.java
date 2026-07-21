@@ -55,15 +55,19 @@ class StatementDecoder {
       if (statement instanceof LocalVariableDeclaration localVariableDeclaration) {
         LocalDeclarationStatement localStatement =
             decodeLocalDeclarationStatement(constructor.getName(), localVariableDeclaration, parameters, locals, fields);
-        statements.add(localStatement);
+        statements.add(preserveEnabledState(statement, localStatement));
         locals.add(localStatement.local.getValue());
       } else if (statement instanceof org.alice.tweedle.ast.ExpressionStatement expressionStatement
           && expressionStatement.getExpression() instanceof org.alice.tweedle.ast.AssignmentExpression assignment) {
-        statements.add(decodeConstructorAssignmentStatement(constructor, assignment, parameters, locals, fields));
+        statements.add(preserveEnabledState(
+            statement,
+            decodeConstructorAssignmentStatement(constructor, assignment, parameters, locals, fields)));
       } else if (statement instanceof org.alice.tweedle.ast.ExpressionStatement expressionStatement
           && expressionStatement.getExpression() instanceof MethodCallExpression methodCall) {
-        statements.add(decodeZeroArgumentSameClassMethodCallStatement(
-            declaringType, constructor.getName(), methodCall, zeroArgumentMethods));
+        statements.add(preserveEnabledState(
+            statement,
+            decodeZeroArgumentSameClassMethodCallStatement(
+                declaringType, constructor.getName(), methodCall, zeroArgumentMethods)));
       } else {
         throw unsupportedConstructorBody(constructor);
       }
@@ -98,27 +102,37 @@ class StatementDecoder {
       if (statement instanceof LocalVariableDeclaration localVariableDeclaration) {
         LocalDeclarationStatement localStatement =
             decodeLocalDeclarationStatement(method.getName(), localVariableDeclaration, allParameters, locals, fields);
-        statements.add(localStatement);
+        statements.add(preserveEnabledState(statement, localStatement));
         locals.add(localStatement.local.getValue());
       } else if (statement instanceof org.alice.tweedle.ast.ExpressionStatement expressionStatement
           && expressionStatement.getExpression() instanceof org.alice.tweedle.ast.AssignmentExpression assignment) {
-        statements.add(decodeMethodAssignmentStatement(method, assignment, allParameters, locals, fields));
+        statements.add(preserveEnabledState(
+            statement,
+            decodeMethodAssignmentStatement(method, assignment, allParameters, locals, fields)));
       } else if (statement instanceof org.alice.tweedle.ast.ConditionalStatement conditionalStatement) {
-        statements.add(decodeIfStatement(
-            method, allParameters, locals, fields, declaringType, zeroArgumentMethods, conditionalStatement));
+        statements.add(preserveEnabledState(
+            statement,
+            decodeIfStatement(
+                method, allParameters, locals, fields, declaringType, zeroArgumentMethods, conditionalStatement)));
       } else if (statement instanceof org.alice.tweedle.ast.WhileLoop whileLoop) {
         if (returnType != JavaType.VOID_TYPE) {
           throw new UnsupportedTweedleDecodeException(
               "Tweedle while loops are only supported in void methods by the AST decoder: " + method.getName());
         }
-        statements.add(decodeWhileLoop(method, allParameters, locals, fields, whileLoop));
+        statements.add(preserveEnabledState(
+            statement,
+            decodeWhileLoop(method, allParameters, locals, fields, whileLoop)));
       } else if (statement instanceof org.alice.tweedle.ast.ExpressionStatement expressionStatement
           && expressionStatement.getExpression() instanceof MethodCallExpression methodCall) {
-        statements.add(decodeZeroArgumentSameClassMethodCallStatement(
-            declaringType, method.getName(), methodCall, zeroArgumentMethods));
+        statements.add(preserveEnabledState(
+            statement,
+            decodeZeroArgumentSameClassMethodCallStatement(
+                declaringType, method.getName(), methodCall, zeroArgumentMethods)));
       } else if (statement instanceof org.alice.tweedle.ast.ReturnStatement returnStatement
           && i == body.size() - 1) {
-        statements.add(decodeReturnStatement(method, returnType, allParameters, locals, fields, returnStatement));
+        statements.add(preserveEnabledState(
+            statement,
+            decodeReturnStatement(method, returnType, allParameters, locals, fields, returnStatement)));
       } else {
         throw unsupportedMethodBody(method);
       }
@@ -199,10 +213,14 @@ class StatementDecoder {
       }
       TweedleExpression expression = expressionStatement.getExpression();
       if (expression instanceof org.alice.tweedle.ast.AssignmentExpression assignment) {
-        decoded.add(decodeMethodAssignmentStatement(method, assignment, parameters, locals, fields));
+        decoded.add(preserveEnabledState(
+            statement,
+            decodeMethodAssignmentStatement(method, assignment, parameters, locals, fields)));
       } else if (expression instanceof MethodCallExpression methodCall) {
-        decoded.add(decodeZeroArgumentSameClassMethodCallStatement(
-            declaringType, method.getName(), methodCall, zeroArgumentMethods));
+        decoded.add(preserveEnabledState(
+            statement,
+            decodeZeroArgumentSameClassMethodCallStatement(
+                declaringType, method.getName(), methodCall, zeroArgumentMethods)));
       } else {
         throw unsupportedSimpleIfBody(method);
       }
@@ -220,7 +238,9 @@ class StatementDecoder {
     for (TweedleStatement statement : statements) {
       if (statement instanceof org.alice.tweedle.ast.ExpressionStatement expressionStatement
           && expressionStatement.getExpression() instanceof org.alice.tweedle.ast.AssignmentExpression assignment) {
-        decoded.add(decodeMethodAssignmentStatement(method, assignment, parameters, locals, fields));
+        decoded.add(preserveEnabledState(
+            statement,
+            decodeMethodAssignmentStatement(method, assignment, parameters, locals, fields)));
       } else {
         throw new UnsupportedTweedleDecodeException(
             "Only assignment statements are supported in Tweedle if/else bodies by the AST decoder: "
@@ -255,7 +275,9 @@ class StatementDecoder {
     for (TweedleStatement statement : statements) {
       if (statement instanceof org.alice.tweedle.ast.ExpressionStatement expressionStatement
           && expressionStatement.getExpression() instanceof org.alice.tweedle.ast.AssignmentExpression assignment) {
-        decoded.add(decodeMethodAssignmentStatement(method, assignment, parameters, locals, fields));
+        decoded.add(preserveEnabledState(
+            statement,
+            decodeMethodAssignmentStatement(method, assignment, parameters, locals, fields)));
       } else {
         throw new UnsupportedTweedleDecodeException(
             "Only assignment statements are supported in Tweedle while loop bodies by the AST decoder: "
@@ -410,6 +432,11 @@ class StatementDecoder {
     Expression expression =
         expressionDecoder.decodeMethodReturnExpression(method, returnType, allParameters, locals, fields, returnStatement.getExpression());
     return new org.lgna.project.ast.ReturnStatement(returnType, expression);
+  }
+
+  private static <T extends Statement> T preserveEnabledState(TweedleStatement source, T decoded) {
+    decoded.isEnabled.setValue(source.isEnabled());
+    return decoded;
   }
 
   private UnsupportedTweedleDecodeException unsupportedMethodBody(TweedleMethod method) {
