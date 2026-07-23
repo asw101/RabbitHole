@@ -178,11 +178,13 @@ public class Decoder {
     AbstractType<?, ?, ?> returnType = resolveReturnType(method.getType());
     UserParameter[] allParameters = decodeAllParameters(
         method.getRequiredParameters(), method.getOptionalParameters(), "method parameter");
-    return new UserMethod(
+    UserMethod userMethod = new UserMethod(
         method.getName(),
         returnType,
         allParameters,
         new BlockStatement());
+    userMethod.isStatic.setValue(method.isStatic());
+    return userMethod;
   }
 
   // -- Package-private services used by delegates --
