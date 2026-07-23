@@ -344,6 +344,82 @@ public class IoUtilitiesTest {
   }
 
   @Test
+  public void hybridProjectWithGenericResourceFallsBackToXmlYetRecoversResource() throws Exception {
+    // A resource that is neither an image nor audio (the only two resource types the
+    // Tweedle reader reconstructs) is written to resources.xml by the XML side but is
+    // NOT recovered by the Tweedle read. The reader's resource-completeness gate must
+    // therefore route the whole archive through the XML fallback so the resource is
+    // not silently dropped. The program type itself decodes via Tweedle (see
+    // fullyDecodableHybridProjectDoesNotReadXmlAstPayload), so the generic resource is
+    // the sole reason the XML payload is required here.
+    String programName = "GenericResourceHostProgram";
+    TestResource genericResource =
+        new TestResource("note.txt", "text/plain", "generic-resource".getBytes(StandardCharsets.UTF_8));
+    Project project = new Project(programType(programName), Project.SceneCameraType.WindowCamera);
+    project.addResource(genericResource);
+    File projectFile = temporaryFolder.newFile("hybrid-generic-resource.a3p");
+    IoUtilities.writeProject(projectFile, project);
+
+    // The archive is a genuine hybrid (both payloads present); the generic resource
+    // lives only in the XML resources.xml, not in the Tweedle manifest.
+    try (ZipFile zipFile = new ZipFile(projectFile)) {
+      assertNotNull(zipFile.getEntry("src/" + programName + ".twe"));
+      assertNotNull(zipFile.getEntry("programType.xml"));
+      assertNotNull(zipFile.getEntry("resources.xml"));
+    }
+
+    // Uncorrupted: the resource round-trips (via the XML fallback path).
+    Project readProject = IoUtilities.readProject(projectFile);
+    Resource recovered = resourcesById(readProject).get(genericResource.getId());
+    assertNotNull("Generic resource must survive the hybrid round-trip", recovered);
+    assertEquals(TestResource.class, recovered.getClass());
+    assertArrayEquals(genericResource.getData(), recovered.getData());
+
+    // Corrupting the XML payload proves the read genuinely depends on it: unlike the
+    // resource-free case, a Tweedle-only read cannot satisfy this archive.
+    File corruptedFile = temporaryFolder.newFile("hybrid-generic-resource-rewritten.a3p");
+    rewriteZipEntry(
+        projectFile,
+        corruptedFile,
+        XmlProjectIo.PROGRAM_TYPE_ENTRY_NAME,
+        "not XML".getBytes(StandardCharsets.UTF_8));
+    assertThrows(IOException.class, () -> IoUtilities.readProject(corruptedFile));
+  }
+
+  @Test
+  public void hybridProjectManifestDoesNotLeakPlayerLibraryPrerequisite() throws Exception {
+    // The Tweedle side of a hybrid archive is produced by JsonProjectIo.writeProject via
+    // Project.createExportManifest(), which is the .a3w PLAYER manifest and injects the
+    // "SceneGraphLibrary" player prerequisite. That prerequisite is meaningless for a
+    // readable .a3c/.a3p and the hybrid merge must strip it (HybridProjectIo.mergeManifest).
+    String programName = "PrerequisiteProgram";
+    Project project = new Project(programType(programName), Project.SceneCameraType.WindowCamera);
+
+    // Baseline: the standalone Tweedle player writer DOES emit the library prerequisite.
+    File playerFile = temporaryFolder.newFile("prerequisite-player.a3w");
+    try (FileOutputStream outputStream = new FileOutputStream(playerFile)) {
+      JsonProjectIo.writer().writeProject(outputStream, project, new DataSource[0]);
+    }
+    try (ZipFile zipFile = new ZipFile(playerFile)) {
+      ProjectManifest playerManifest = readProjectManifest(zipFile);
+      assertTrue(
+          "Player (.a3w) manifest is expected to declare the SceneGraphLibrary prerequisite",
+          playerManifest.prerequisites.stream().anyMatch(identifier -> "SceneGraphLibrary".equals(identifier.name)));
+    }
+
+    // Hybrid .a3p: the merged manifest must NOT carry the player prerequisite.
+    File projectFile = temporaryFolder.newFile("prerequisite-hybrid.a3p");
+    IoUtilities.writeProject(projectFile, project);
+    try (ZipFile zipFile = new ZipFile(projectFile)) {
+      ProjectManifest manifest = readProjectManifest(zipFile);
+      assertEquals(IoUtilities.PROJECT_EXTENSION, manifest.metadata.fileType);
+      assertTrue(
+          "Hybrid .a3p manifest must not leak the .a3w player prerequisite",
+          manifest.prerequisites.isEmpty());
+    }
+  }
+
+  @Test
   public void hybridVrReadyReadUsesCompleteXmlMigrationPath() throws Exception {
     Project project = new Project(programType("VrReadyProgram"), Project.SceneCameraType.WindowCamera);
     File projectFile = temporaryFolder.newFile("hybrid-vr-ready.a3p");

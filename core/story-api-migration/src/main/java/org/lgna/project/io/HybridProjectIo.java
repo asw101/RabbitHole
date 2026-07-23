@@ -247,6 +247,14 @@ final class HybridProjectIo {
         base.resources = tweedle.resources;
       }
       base.metadata.fileType = fileType;
+      // Normalize prerequisites to empty for the readable .a3c/.a3p formats. The
+      // Tweedle side is produced by JsonProjectIo.writeProject via
+      // Project.createExportManifest(), which is the .a3w *player* manifest and
+      // injects the "SceneGraphLibrary" player prerequisite; that prerequisite is
+      // meaningless for a hybrid class/project archive and must not leak into it.
+      // The XML side (createSaveManifest/createProjectManifest) never sets
+      // prerequisites, and nothing on the read path consumes them for these
+      // formats, so clearing is a safe, deliberate normalization.
       base.prerequisites = new ArrayList<>();
       return ManifestEncoderDecoder.toJson(base).getBytes(StandardCharsets.UTF_8);
     } catch (IOException e) {

@@ -94,3 +94,33 @@ Tweedle-decoded and XML-decoded types into a single project cannot preserve the
 object identity that cross-type references rely on. As the gaps in this backlog
 are closed, more archives will be read entirely from Tweedle with no behavior
 change required in the reader.
+
+## Resource recovery and the completeness gate
+
+The reader's second fallback trigger — "did not recover every declared resource"
+— deserves an explicit note, because it is a *resource* gap rather than a
+*decoder* gap and it will not close as the table above shrinks.
+
+- The Tweedle reader (`JsonProjectIo.readResource`) reconstructs **only**
+  `ImageReference`/`AudioReference` entries; any other `ResourceReference` yields
+  `null`. The hybrid writer's `repointResourceReferences` likewise repoints only
+  image/audio references.
+- `XmlProjectIo.writeResources` writes **every** `org.lgna.common.Resource` in the
+  project (by class name + UUID) into `resources.xml`.
+- Today the only concrete `Resource` subclasses are `ImageResource` and
+  `AudioResource` (`core/util/.../org/lgna/common/resources/`), and **both** are
+  recovered and repointed. So for all currently-shipping resource types the
+  completeness gate never falsely fires — image/audio archives can be read
+  entirely from Tweedle once their types decode.
+- The gate is therefore a **forward-looking guard**: if a future non-image/audio
+  `Resource` subtype is added (or a generic resource reaches `resources.xml`), any
+  archive carrying it is routed through the complete XML payload so the resource
+  is never silently dropped. This is characterized by
+  `IoUtilitiesTest.hybridProjectWithGenericResourceFallsBackToXmlYetRecoversResource`
+  (using the test-only `TestResource`), which proves such an archive round-trips
+  via the XML fallback and genuinely depends on the XML payload.
+- Gallery *model* references (bipeds, props, terrain — e.g. `TerrainResource`,
+  `WaterTankResource`) are **not** `org.lgna.common.Resource` blobs in
+  `resources.xml`; they are AST types/parameters handled by the decoder, and so
+  appear in this document as decoder gaps (rows above), not resource-recovery
+  gaps.
