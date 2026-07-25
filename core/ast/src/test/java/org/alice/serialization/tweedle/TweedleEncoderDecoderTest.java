@@ -43,6 +43,7 @@ import org.lgna.project.ast.WhileLoop;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThrows;
@@ -340,6 +341,24 @@ public class TweedleEncoderDecoderTest {
     assertEquals("initialize", method.getName());
     assertSame(JavaType.VOID_TYPE, method.getReturnType());
     assertTrue(method.getRequiredParameters().isEmpty());
+  }
+
+  @Test
+  public void decodeStaticMethodPreservesStaticModifier() throws Exception {
+    NamedUserType type = decodeUserType("class SyntheticType { static void main() { } }");
+
+    assertEquals(1, type.getDeclaredMethods().size());
+    UserMethod method = type.getDeclaredMethods().get(0);
+    assertEquals("main", method.getName());
+    assertTrue("static modifier must survive Tweedle decode", method.isStatic());
+  }
+
+  @Test
+  public void decodeInstanceMethodRemainsNonStatic() throws Exception {
+    NamedUserType type = decodeUserType("class SyntheticType { void initialize() { } }");
+
+    UserMethod method = type.getDeclaredMethods().get(0);
+    assertFalse("instance method must not gain a static modifier on decode", method.isStatic());
   }
 
   @Test

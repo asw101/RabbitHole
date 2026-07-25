@@ -7,6 +7,7 @@ entries:
   programType.xml
   resources.xml
   resources/baseline-texture.png
+  src/Program.twe
   version.txt
 
 manifest:
@@ -18,4 +19,5 @@ manifest:
   prerequisites:
     <none>
   resources:
-    <none>
+    Program:TypeReference
+    baseline-texture.png:ImageReference

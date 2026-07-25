@@ -85,9 +85,14 @@ public class Decoder {
   }
 
   public AbstractNode decode(String document) {
+    TweedleUnlinkedParser parser = new TweedleUnlinkedParser();
+    if (parser.sourceContainsComments(document)) {
+      throw new UnsupportedTweedleDecodeException(
+          "Tweedle comments are not yet supported by the AST decoder.");
+    }
     TweedleType tweedleType;
     try {
-      tweedleType = new TweedleUnlinkedParser().parseType(document);
+      tweedleType = parser.parseType(document);
     } catch (TweedleLinkException e) {
       throw new UnsupportedTweedleDecodeException(
           "Tweedle type uses linked members that the AST decoder does not support.",
@@ -173,11 +178,13 @@ public class Decoder {
     AbstractType<?, ?, ?> returnType = resolveReturnType(method.getType());
     UserParameter[] allParameters = decodeAllParameters(
         method.getRequiredParameters(), method.getOptionalParameters(), "method parameter");
-    return new UserMethod(
+    UserMethod userMethod = new UserMethod(
         method.getName(),
         returnType,
         allParameters,
         new BlockStatement());
+    userMethod.isStatic.setValue(method.isStatic());
+    return userMethod;
   }
 
   // -- Package-private services used by delegates --
