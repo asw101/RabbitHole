@@ -12,7 +12,8 @@ import java.util.Set;
  * archive whose authoritative XML payload preserves the original name.
  */
 final class TweedleIdentifiers {
-  private TweedleIdentifiers() {}
+  private TweedleIdentifiers() {
+  }
 
   // Words that the Tweedle grammar reserves; a user-authored name emitted verbatim (a type or
   // method name) that collides with one of these cannot round-trip through Tweedle source.
