@@ -24,6 +24,7 @@ import org.lgna.project.ast.WhileLoop;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
@@ -85,6 +86,32 @@ public class StatementDecoderBoundaryTest {
     LocalDeclarationStatement local = (LocalDeclarationStatement) method.body.getValue().statements.get(0);
     assertEquals("temp", local.local.getValue().getName());
     assertTrue(method.body.getValue().statements.get(1) instanceof ReturnStatement);
+  }
+
+  @Test
+  public void disabledStatementsRemainDisabledAtEveryDecodedDepth() throws Exception {
+    NamedUserType type = decodeUserType("""
+        class SyntheticType {
+          WholeNumber count <- 0;
+          SyntheticType() { *< count <- 4; >* }
+          void update(Boolean flag) {
+            *< count <- 1; >*
+            if (flag) { *< count <- 2; >* } else { *< count <- 3; >* }
+            while (flag) { *< count <- 5; >* }
+          }
+        }
+        """);
+
+    UserMethod method = type.getDeclaredMethods().get(0);
+    assertFalse(method.body.getValue().statements.get(0).isEnabled.getValue());
+    ConditionalStatement conditional = (ConditionalStatement) method.body.getValue().statements.get(1);
+    assertFalse(conditional.booleanExpressionBodyPairs.get(0).body.getValue()
+        .statements.get(0).isEnabled.getValue());
+    assertFalse(conditional.elseBody.getValue().statements.get(0).isEnabled.getValue());
+    WhileLoop whileLoop = (WhileLoop) method.body.getValue().statements.get(2);
+    assertFalse(whileLoop.body.getValue().statements.get(0).isEnabled.getValue());
+    NamedUserConstructor constructor = (NamedUserConstructor) type.getDeclaredConstructors().get(0);
+    assertFalse(constructor.body.getValue().statements.get(0).isEnabled.getValue());
   }
 
   // ═══════════════════════════════════════════════════════════════════════════

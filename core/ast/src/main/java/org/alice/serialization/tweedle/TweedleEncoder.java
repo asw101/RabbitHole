@@ -65,6 +65,7 @@ public class TweedleEncoder extends SourceCodeGenerator {
 
   @Override
   protected void appendClassHeader(NamedUserType userType) {
+    TweedleIdentifiers.requireEncodable(userType.getName(), "type");
     getCodeStringBuilder().append("class ").append(tweedleTypeName(userType.getName())).append(" extends ").append(userType.getSuperType().getName());
     // TODO Only show for models and replace with resource identifier
     //    if (userType.isModel())
@@ -106,6 +107,9 @@ public class TweedleEncoder extends SourceCodeGenerator {
     }
     processTypeName(method.getReturnType());
     appendSpace();
+    if (method.isUserAuthored()) {
+      TweedleIdentifiers.requireEncodable(method.getName(), "method");
+    }
     appendString(method.getName());
     appendParameters(method);
   }
@@ -313,6 +317,7 @@ public class TweedleEncoder extends SourceCodeGenerator {
   protected String identifierName(AbstractDeclaration variable) {
     final String varName = super.identifierName(variable);
     if (variable.isUserAuthored() && !TweedleEncoderData.systemIdentifiers.contains(varName)) {
+      TweedleIdentifiers.requirePrefixable(varName, "declaration");
       return USER_PREFIX + varName;
     } else {
       return varName;

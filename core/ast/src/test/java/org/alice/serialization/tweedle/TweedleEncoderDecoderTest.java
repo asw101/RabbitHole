@@ -2,6 +2,7 @@ package org.alice.serialization.tweedle;
 
 /** Audit note: this characterization-heavy test is ~2395 LOC and should be split into focused suites in a future refactoring. */
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.lgna.common.resources.AudioResource;
 import org.lgna.common.resources.ImageResource;
@@ -43,6 +44,7 @@ import org.lgna.project.ast.WhileLoop;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThrows;
@@ -340,6 +342,24 @@ public class TweedleEncoderDecoderTest {
     assertEquals("initialize", method.getName());
     assertSame(JavaType.VOID_TYPE, method.getReturnType());
     assertTrue(method.getRequiredParameters().isEmpty());
+  }
+
+  @Test
+  public void decodeStaticMethodPreservesStaticModifier() throws Exception {
+    NamedUserType type = decodeUserType("class SyntheticType { static void main() { } }");
+
+    assertEquals(1, type.getDeclaredMethods().size());
+    UserMethod method = type.getDeclaredMethods().get(0);
+    assertEquals("main", method.getName());
+    assertTrue("static modifier must survive Tweedle decode", method.isStatic());
+  }
+
+  @Test
+  public void decodeInstanceMethodRemainsNonStatic() throws Exception {
+    NamedUserType type = decodeUserType("class SyntheticType { void initialize() { } }");
+
+    UserMethod method = type.getDeclaredMethods().get(0);
+    assertFalse("instance method must not gain a static modifier on decode", method.isStatic());
   }
 
   @Test
@@ -1427,25 +1447,43 @@ public class TweedleEncoderDecoderTest {
   }
 
   @Test
-  public void decodeClassWithArgumentBearingExplicitThisMethodCallReportsUnsupportedBoundary() {
+  public void argumentBearingExplicitThisMethodCallDecodeCreatesMethodInvocation() throws Exception {
+    NamedUserType type = decodeUserType("""
+        class SyntheticType {
+          void caller() { this.helper(value: 1); }
+          void helper(WholeNumber value) { }
+        }
+        """);
+
+    UserMethod caller = userMethodNamed(type, "caller");
+    UserMethod helper = userMethodNamed(type, "helper");
+    MethodInvocation invocation = onlyMethodInvocation(caller);
+    assertTrue(invocation.expression.getValue() instanceof ThisExpression);
+    assertSame(helper, invocation.method.getValue());
+    assertEquals(1, invocation.requiredArguments.size());
+    assertSame(helper.getRequiredParameters().get(0), invocation.requiredArguments.get(0).parameter.getValue());
+    assertTrue(invocation.variableArguments.isEmpty());
+    assertTrue(invocation.keyedArguments.isEmpty());
+  }
+
+  @Test
+  public void argumentBearingImplicitSameClassCallWithUnknownMethodReportsUnsupportedBoundary() {
     UnsupportedTweedleDecodeException thrown = assertThrows(
         UnsupportedTweedleDecodeException.class,
         () -> coder.decode("""
             class SyntheticType {
-              void caller() { this.helper(value: 1); }
-              void helper(WholeNumber value) { }
+              void caller() { missing(value: 1); }
             }
             """));
-
-    assertTrue(thrown.getMessage().contains("argument-bearing explicit this method calls"));
-    assertTrue(thrown.getMessage().contains("caller.this.helper"));
+    assertTrue(thrown.getMessage(), thrown.getMessage().contains("argument-bearing explicit this method calls"));
+    assertTrue(thrown.getMessage(), thrown.getMessage().contains("caller.missing"));
   }
 
   @Test
-  public void zeroArgumentThisMethodCallDecodeRejectsArgumentBearingCall() {
+  public void argumentBearingSameClassCallWithMismatchedLabelReportsUnsupportedBoundary() {
     assertUnsupportedArgumentBearingExplicitThisMethodCallDecode("""
         class SyntheticType {
-          void caller() { this.helper(value: 1); }
+          void caller() { this.helper(other: 1); }
           void helper(WholeNumber value) { }
         }
         """, "caller.this.helper");
@@ -1458,6 +1496,47 @@ public class TweedleEncoderDecoderTest {
           void caller() { this.missing(value: 1); }
         }
         """, "caller.this.missing");
+  }
+
+  // ── WS1 pin-tests: inherited/library resource-setter resolution ──────────
+  // Design record: docs/tweedle-inherited-resolution-spec.md. These pin the
+  // single dominant corpus gap — all 168 arg-bearing corpus fallbacks are the
+  // inherited call this.setJointedModelResource(resource: <galleryNode>), which
+  // same-class resolution (#1007) cannot reach. NO corpus-coverage is claimed.
+
+  @Test
+  public void inheritedArgumentBearingResourceSetterCurrentlyReportsUnsupportedBoundary() {
+    // Characterizes TODAY's loud fallback: setJointedModelResource is not
+    // declared on the user type (it is inherited from the gallery-model
+    // supertype), so same-class label-set resolution finds zero candidates and
+    // the decoder raises the argument-bearing explicit-this boundary.
+    assertUnsupportedArgumentBearingExplicitThisMethodCallDecode("""
+        class SyntheticModel {
+          void setup() { this.setJointedModelResource(resource: 1); }
+        }
+        """, "setup.this.setJointedModelResource");
+  }
+
+  @Ignore("Pins DESIRED inherited/library resolution + resource-arg decode; not yet"
+      + " implemented and entangled with the headless gallery-resolution wall —"
+      + " see docs/tweedle-inherited-resolution-spec.md")
+  @Test
+  public void inheritedArgumentBearingResourceSetterDecodesToInvocationDesired() throws Exception {
+    // DESIRED: the decoder ascends the supertype/library hierarchy, matches the
+    // inherited setJointedModelResource by its required-parameter label set
+    // {resource}, decodes the gallery-node resource argument, and emits a bound
+    // MethodInvocation targeting the inherited method.
+    NamedUserType type = decodeUserType("""
+        class SyntheticModel extends SJointedModel {
+          void setup() { this.setJointedModelResource(resource: TerrainResource.SAND_DUNES); }
+        }
+        """);
+
+    UserMethod setup = userMethodNamed(type, "setup");
+    MethodInvocation invocation = onlyMethodInvocation(setup);
+    assertTrue(invocation.expression.getValue() instanceof ThisExpression);
+    assertEquals("setJointedModelResource", invocation.method.getValue().getName());
+    assertEquals(1, invocation.requiredArguments.size());
   }
 
   @Test
@@ -1560,13 +1639,18 @@ public class TweedleEncoderDecoderTest {
   }
 
   @Test
-  public void implicitSameClassMethodCallDecodeRejectsArgumentBearingCall() {
-    assertUnsupportedImplicitSameClassMethodCallDecode("""
+  public void implicitSameClassMethodCallDecodeCreatesArgumentBearingMethodInvocation() throws Exception {
+    NamedUserType type = decodeUserType("""
         class SyntheticType {
           void caller() { helper(value: 1); }
           void helper(WholeNumber value) { }
         }
-        """, "caller.helper");
+        """);
+
+    MethodInvocation invocation = onlyMethodInvocation(userMethodNamed(type, "caller"));
+    assertTrue(invocation.expression.getValue() instanceof ThisExpression);
+    assertSame(userMethodNamed(type, "helper"), invocation.method.getValue());
+    assertEquals(1, invocation.requiredArguments.size());
   }
 
   @Test
@@ -1634,13 +1718,21 @@ public class TweedleEncoderDecoderTest {
   }
 
   @Test
-  public void zeroArgumentThisMethodCallInConstructorDecodeRejectsArgumentBearingCall() {
-    assertUnsupportedArgumentBearingExplicitThisMethodCallDecode("""
+  public void argumentBearingThisMethodCallInConstructorDecodeCreatesMethodInvocation() throws Exception {
+    NamedUserType type = decodeUserType("""
         class SyntheticType {
           SyntheticType() { this.helper(value: 1); }
           void helper(WholeNumber value) { }
         }
-        """, "SyntheticType.this.helper");
+        """);
+
+    NamedUserConstructor constructor = (NamedUserConstructor) type.getDeclaredConstructors().get(0);
+    assertEquals(1, constructor.body.getValue().statements.size());
+    ExpressionStatement stmt = (ExpressionStatement) constructor.body.getValue().statements.get(0);
+    MethodInvocation invocation = (MethodInvocation) stmt.expression.getValue();
+    assertTrue(invocation.expression.getValue() instanceof ThisExpression);
+    assertSame(userMethodNamed(type, "helper"), invocation.method.getValue());
+    assertEquals(1, invocation.requiredArguments.size());
   }
 
   @Test
@@ -2080,15 +2172,24 @@ public class TweedleEncoderDecoderTest {
   }
 
   @Test
-  public void decodeClassWithArgumentBearingThisMethodCallInIfBodyReportsUnsupportedBoundary() {
-    assertUnsupportedArgumentBearingExplicitThisMethodCallDecode("""
+  public void argumentBearingThisMethodCallInIfBodyDecodeCreatesMethodInvocation() throws Exception {
+    NamedUserType type = decodeUserType("""
         class SyntheticType {
           void run(Boolean flag) {
             if (flag) { this.helper(value: 1); }
           }
           void helper(WholeNumber value) { }
         }
-        """, "run.this.helper");
+        """);
+
+    UserMethod run = userMethodNamed(type, "run");
+    ConditionalStatement conditional = (ConditionalStatement) run.body.getValue().statements.get(0);
+    BlockStatement thenBody = conditional.booleanExpressionBodyPairs.get(0).body.getValue();
+    assertEquals(1, thenBody.statements.size());
+    ExpressionStatement stmt = (ExpressionStatement) thenBody.statements.get(0);
+    MethodInvocation invocation = (MethodInvocation) stmt.expression.getValue();
+    assertSame(userMethodNamed(type, "helper"), invocation.method.getValue());
+    assertEquals(1, invocation.requiredArguments.size());
   }
 
   @Test
@@ -2165,6 +2266,15 @@ public class TweedleEncoderDecoderTest {
         .filter(method -> name.equals(method.getName()))
         .findFirst()
         .orElseThrow(() -> new AssertionError("Missing method: " + name));
+  }
+
+  private static MethodInvocation onlyMethodInvocation(UserMethod method) {
+    BlockStatement body = method.body.getValue();
+    assertEquals(1, body.statements.size());
+    assertTrue(body.statements.get(0) instanceof ExpressionStatement);
+    ExpressionStatement statement = (ExpressionStatement) body.statements.get(0);
+    assertTrue(statement.expression.getValue() instanceof MethodInvocation);
+    return (MethodInvocation) statement.expression.getValue();
   }
 
   private void assertUnsupportedZeroArgumentThisMethodCallDecode(String source, String expectedDetail) {

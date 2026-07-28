@@ -139,7 +139,15 @@ public class IoUtilitiesTest {
       assertEquals(editedProgramName, saveManifest.description.name);
       assertEquals(IoUtilities.PROJECT_EXTENSION, saveManifest.metadata.fileType);
       assertEquals(Project.SceneCameraType.WindowCamera, saveManifest.projectStructure.sceneCameraType);
-      assertTrue(saveManifest.resources.isEmpty());
+      TypeReference savedProgramReference = null;
+      for (ResourceReference resourceReference : saveManifest.resources) {
+        if (resourceReference instanceof TypeReference typeReference && editedProgramName.equals(typeReference.name)) {
+          savedProgramReference = typeReference;
+        }
+      }
+      assertNotNull(savedProgramReference);
+      assertEquals("src/" + editedProgramName + ".twe", savedProgramReference.file);
+      assertNotNull(zipFile.getEntry(savedProgramReference.file));
       assertNotNull(zipFile.getEntry("programType.xml"));
     }
 
@@ -163,6 +171,332 @@ public class IoUtilitiesTest {
       assertEquals("src/" + editedProgramName + ".twe", editedProgramReference.file);
       assertNotNull(zipFile.getEntry(editedProgramReference.file));
       assertTrue(readZipEntryText(zipFile, editedProgramReference.file).contains("class " + editedProgramName));
+    }
+  }
+
+  @Test
+  public void hybridProjectArchiveWritesBothXmlAndTweedlePayloads() throws Exception {
+    String programName = "HybridStructureProgram";
+    Project project = new Project(programType(programName), Project.SceneCameraType.WindowCamera);
+    File projectFile = temporaryFolder.newFile("hybrid-structure.a3p");
+
+    IoUtilities.writeProject(projectFile, project);
+
+    try (ZipFile zipFile = new ZipFile(projectFile)) {
+      assertNotNull(zipFile.getEntry(ProjectIo.VERSION_ENTRY_NAME));
+      assertNotNull(zipFile.getEntry("programType.xml"));
+      assertNotNull(zipFile.getEntry(ProjectIo.MANIFEST_ENTRY_NAME));
+      assertNotNull(zipFile.getEntry("src/" + programName + ".twe"));
+
+      ProjectManifest manifest = readProjectManifest(zipFile);
+      assertEquals(IoUtilities.PROJECT_EXTENSION, manifest.metadata.fileType);
+      TypeReference programReference = findTypeReference(manifest, programName);
+      assertNotNull(programReference);
+      assertEquals("src/" + programName + ".twe", programReference.file);
+      assertTrue(readZipEntryText(zipFile, "src/" + programName + ".twe").contains("class " + programName));
+    }
+  }
+
+  @Test
+  public void hybridTypeArchiveWritesBothXmlAndTweedlePayloads() throws Exception {
+    String typeName = "HybridStructureType";
+    File typeFile = temporaryFolder.newFile("hybrid-structure.a3c");
+
+    IoUtilities.writeType(typeFile, programType(typeName));
+
+    try (ZipFile zipFile = new ZipFile(typeFile)) {
+      assertNotNull(zipFile.getEntry(ProjectIo.VERSION_ENTRY_NAME));
+      assertNotNull(zipFile.getEntry("type.xml"));
+      assertNotNull(zipFile.getEntry(ProjectIo.MANIFEST_ENTRY_NAME));
+      assertNotNull(zipFile.getEntry("src/" + typeName + ".twe"));
+
+      TypeManifest manifest = readTypeManifest(zipFile);
+      assertEquals(IoUtilities.TYPE_EXTENSION, manifest.metadata.fileType);
+      assertNotNull(findTypeReference(manifest, typeName));
+    }
+  }
+
+  @Test
+  public void hybridProjectManifestRecordsBoundedTypeDependencies() throws Exception {
+    NamedUserType sceneType = sceneType("DependencyScene");
+    NamedUserType programType = programType("DependencyProgram");
+    UserField sceneField = new UserField();
+    sceneField.name.setValue("scene");
+    sceneField.valueType.setValue(sceneType);
+    programType.fields.add(sceneField);
+    Set<NamedUserType> namedUserTypes = new HashSet<>();
+    namedUserTypes.add(sceneType);
+    Project project = new Project(
+        programType,
+        namedUserTypes,
+        new HashSet<>(),
+        Project.SceneCameraType.WindowCamera);
+    File projectFile = temporaryFolder.newFile("hybrid-dependencies.a3p");
+
+    IoUtilities.writeProject(projectFile, project);
+
+    try (ZipFile zipFile = new ZipFile(projectFile)) {
+      ProjectManifest manifest = readProjectManifest(zipFile);
+
+      TypeReference programReference = findTypeReference(manifest, "DependencyProgram");
+      assertNotNull(programReference);
+      assertNotNull(
+          "A type that references another user type must record it in the manifest dependency list",
+          programReference.dependencies);
+      assertTrue(
+          "Program's bounded dependencies must include the referenced scene type",
+          programReference.dependencies.contains("DependencyScene"));
+      assertFalse(
+          "A type must not list itself as a dependency",
+          programReference.dependencies.contains("DependencyProgram"));
+
+      TypeReference sceneReference = findTypeReference(manifest, "DependencyScene");
+      assertNotNull(sceneReference);
+      assertNull(
+          "A type with no user-type references must omit the dependencies field",
+          sceneReference.dependencies);
+    }
+  }
+
+  @Test
+  public void hybridTypeTweedlePayloadIsBoundedToTheExportedType() throws Exception {
+    NamedUserType referencedType = sceneType("ReferencedScene");
+    NamedUserType exportedType = programType("BoundedGalleryType");
+    UserField field = new UserField();
+    field.name.setValue("referencedScene");
+    field.valueType.setValue(referencedType);
+    exportedType.fields.add(field);
+    File typeFile = temporaryFolder.newFile("bounded-gallery-type.a3c");
+
+    IoUtilities.writeType(typeFile, exportedType);
+
+    try (ZipFile zipFile = new ZipFile(typeFile)) {
+      TypeManifest manifest = readTypeManifest(zipFile);
+      assertNotNull(findTypeReference(manifest, exportedType.getName()));
+      assertNull(findTypeReference(manifest, referencedType.getName()));
+      assertNull(zipFile.getEntry("src/" + referencedType.getName() + ".twe"));
+      String source = readZipEntryText(zipFile, "src/" + exportedType.getName() + ".twe");
+      assertTrue(source.contains(referencedType.getName()));
+      assertFalse(source.contains("class " + referencedType.getName()));
+    }
+  }
+
+  @Test
+  public void hybridProjectWithImageResourceRoundTripsAndRepointsManifest() throws Exception {
+    ImageResource imageResource = new ImageResource(
+        new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB),
+        "hybrid-image.png",
+        "png");
+    Project project = new Project(
+        programTypeReferencingImageResource("ImageResourceHost", imageResource),
+        Project.SceneCameraType.WindowCamera);
+    project.addResource(imageResource);
+    File projectFile = temporaryFolder.newFile("hybrid-image-resource.a3p");
+
+    IoUtilities.writeProject(projectFile, project);
+
+    try (ZipFile zipFile = new ZipFile(projectFile)) {
+      ProjectManifest manifest = readProjectManifest(zipFile);
+      ImageReference imageReference = null;
+      for (ResourceReference resourceReference : manifest.resources) {
+        if ((resourceReference instanceof ImageReference candidate)
+            && imageResource.getId().equals(candidate.uuid)) {
+          imageReference = candidate;
+        }
+      }
+      assertNotNull(imageReference);
+      assertNotNull(
+          "Manifest image reference should be repointed to an existing archive resource binary",
+          zipFile.getEntry(imageReference.file));
+      assertArrayEquals(imageResource.getData(), readZipEntryBytes(zipFile, imageReference.file));
+    }
+
+    Project readProject = IoUtilities.readProject(projectFile);
+    Resource recovered = resourcesById(readProject).get(imageResource.getId());
+    assertSafeReadbackResource(recovered, "hybrid-image.png", imageResource.getData());
+  }
+
+  @Test
+  public void hybridProjectReadFallsBackToXmlWhenTweedleSourceIsUnreadable() throws Exception {
+    String programName = "CorruptTweedleProgram";
+    Project project = new Project(programType(programName), Project.SceneCameraType.WindowCamera);
+    File projectFile = temporaryFolder.newFile("hybrid-corrupt-source.a3p");
+    IoUtilities.writeProject(projectFile, project);
+
+    File corruptedFile = temporaryFolder.newFile("hybrid-corrupt-source-rewritten.a3p");
+    rewriteZipEntry(
+        projectFile,
+        corruptedFile,
+        "src/" + programName + ".twe",
+        "this is not valid tweedle source {{{".getBytes(StandardCharsets.UTF_8));
+
+    Project readProject = IoUtilities.readProject(corruptedFile);
+    assertNotNull(readProject.getProgramType());
+    assertEquals(programName, readProject.getProgramType().getName());
+  }
+
+  @Test
+  public void hybridProjectFallbackDiscardsAllPartialTweedleTypes() throws Exception {
+    NamedUserType sceneType = sceneType("FallbackScene");
+    NamedUserType programType = programType("FallbackProgram");
+    UserField sceneField = new UserField();
+    sceneField.name.setValue("scene");
+    sceneField.valueType.setValue(sceneType);
+    programType.fields.add(sceneField);
+    Set<NamedUserType> namedUserTypes = new HashSet<>();
+    namedUserTypes.add(sceneType);
+    Project project = new Project(
+        programType,
+        namedUserTypes,
+        new HashSet<>(),
+        Project.SceneCameraType.WindowCamera);
+    File projectFile = temporaryFolder.newFile("hybrid-partial-fallback.a3p");
+    IoUtilities.writeProject(projectFile, project);
+
+    File corruptedFile = temporaryFolder.newFile("hybrid-partial-fallback-rewritten.a3p");
+    rewriteZipEntry(
+        projectFile,
+        corruptedFile,
+        "src/" + sceneType.getName() + ".twe",
+        "not valid Tweedle".getBytes(StandardCharsets.UTF_8));
+
+    Project readProject = IoUtilities.readProject(corruptedFile);
+    NamedUserType readScene = namedUserTypeNamed(readProject, sceneType.getName());
+    assertEquals(programType.getId(), readProject.getProgramType().getId());
+    assertEquals(sceneType.getId(), readScene.getId());
+    assertSame(readScene, onlyField(readProject.getProgramType()).getValueType());
+  }
+
+  @Test
+  public void fullyDecodableHybridProjectDoesNotReadXmlAstPayload() throws Exception {
+    String programName = "TweedleOnlyReadProgram";
+    Project project = new Project(programType(programName), Project.SceneCameraType.WindowCamera);
+    File projectFile = temporaryFolder.newFile("hybrid-tweedle-read.a3p");
+    IoUtilities.writeProject(projectFile, project);
+
+    File corruptedFile = temporaryFolder.newFile("hybrid-tweedle-read-rewritten.a3p");
+    rewriteZipEntry(
+        projectFile,
+        corruptedFile,
+        XmlProjectIo.PROGRAM_TYPE_ENTRY_NAME,
+        "not XML".getBytes(StandardCharsets.UTF_8));
+
+    Project readProject = IoUtilities.readProject(corruptedFile);
+    assertEquals(programName, readProject.getProgramType().getName());
+  }
+
+  @Test
+  public void hybridProjectWithGenericResourceFallsBackToXmlYetRecoversResource() throws Exception {
+    // A resource that is neither an image nor audio (the only two resource types the
+    // Tweedle reader reconstructs) is written to resources.xml by the XML side but is
+    // NOT recovered by the Tweedle read. The reader's resource-completeness gate must
+    // therefore route the whole archive through the XML fallback so the resource is
+    // not silently dropped. The program type itself decodes via Tweedle (see
+    // fullyDecodableHybridProjectDoesNotReadXmlAstPayload), so the generic resource is
+    // the sole reason the XML payload is required here.
+    String programName = "GenericResourceHostProgram";
+    TestResource genericResource =
+        new TestResource("note.txt", "text/plain", "generic-resource".getBytes(StandardCharsets.UTF_8));
+    Project project = new Project(programType(programName), Project.SceneCameraType.WindowCamera);
+    project.addResource(genericResource);
+    File projectFile = temporaryFolder.newFile("hybrid-generic-resource.a3p");
+    IoUtilities.writeProject(projectFile, project);
+
+    // The archive is a genuine hybrid (both payloads present); the generic resource
+    // lives only in the XML resources.xml, not in the Tweedle manifest.
+    try (ZipFile zipFile = new ZipFile(projectFile)) {
+      assertNotNull(zipFile.getEntry("src/" + programName + ".twe"));
+      assertNotNull(zipFile.getEntry("programType.xml"));
+      assertNotNull(zipFile.getEntry("resources.xml"));
+    }
+
+    // Uncorrupted: the resource round-trips (via the XML fallback path).
+    Project readProject = IoUtilities.readProject(projectFile);
+    Resource recovered = resourcesById(readProject).get(genericResource.getId());
+    assertNotNull("Generic resource must survive the hybrid round-trip", recovered);
+    assertEquals(TestResource.class, recovered.getClass());
+    assertArrayEquals(genericResource.getData(), recovered.getData());
+
+    // Corrupting the XML payload proves the read genuinely depends on it: unlike the
+    // resource-free case, a Tweedle-only read cannot satisfy this archive.
+    File corruptedFile = temporaryFolder.newFile("hybrid-generic-resource-rewritten.a3p");
+    rewriteZipEntry(
+        projectFile,
+        corruptedFile,
+        XmlProjectIo.PROGRAM_TYPE_ENTRY_NAME,
+        "not XML".getBytes(StandardCharsets.UTF_8));
+    assertThrows(IOException.class, () -> IoUtilities.readProject(corruptedFile));
+  }
+
+  @Test
+  public void hybridProjectManifestDoesNotLeakPlayerLibraryPrerequisite() throws Exception {
+    // The Tweedle side of a hybrid archive is produced by JsonProjectIo.writeProject via
+    // Project.createExportManifest(), which is the .a3w PLAYER manifest and injects the
+    // "SceneGraphLibrary" player prerequisite. That prerequisite is meaningless for a
+    // readable .a3c/.a3p and the hybrid merge must strip it (HybridProjectIo.mergeManifest).
+    String programName = "PrerequisiteProgram";
+    Project project = new Project(programType(programName), Project.SceneCameraType.WindowCamera);
+
+    // Baseline: the standalone Tweedle player writer DOES emit the library prerequisite.
+    File playerFile = temporaryFolder.newFile("prerequisite-player.a3w");
+    try (FileOutputStream outputStream = new FileOutputStream(playerFile)) {
+      JsonProjectIo.writer().writeProject(outputStream, project, new DataSource[0]);
+    }
+    try (ZipFile zipFile = new ZipFile(playerFile)) {
+      ProjectManifest playerManifest = readProjectManifest(zipFile);
+      assertTrue(
+          "Player (.a3w) manifest is expected to declare the SceneGraphLibrary prerequisite",
+          playerManifest.prerequisites.stream().anyMatch(identifier -> "SceneGraphLibrary".equals(identifier.name)));
+    }
+
+    // Hybrid .a3p: the merged manifest must NOT carry the player prerequisite.
+    File projectFile = temporaryFolder.newFile("prerequisite-hybrid.a3p");
+    IoUtilities.writeProject(projectFile, project);
+    try (ZipFile zipFile = new ZipFile(projectFile)) {
+      ProjectManifest manifest = readProjectManifest(zipFile);
+      assertEquals(IoUtilities.PROJECT_EXTENSION, manifest.metadata.fileType);
+      assertTrue(
+          "Hybrid .a3p manifest must not leak the .a3w player prerequisite",
+          manifest.prerequisites.isEmpty());
+    }
+  }
+
+  @Test
+  public void hybridVrReadyReadUsesCompleteXmlMigrationPath() throws Exception {
+    Project project = new Project(programType("VrReadyProgram"), Project.SceneCameraType.WindowCamera);
+    File projectFile = temporaryFolder.newFile("hybrid-vr-ready.a3p");
+    IoUtilities.writeProject(projectFile, project);
+
+    Project readProject = IoUtilities.projectReader(projectFile).readProject(true);
+
+    assertEquals(Project.SceneCameraType.VRHeadset, sceneCameraType(readProject));
+  }
+
+  @Test
+  public void hybridProjectWriteStaysHybridWhenCallerSuppliesManifestDataSource() throws Exception {
+    String programName = "IdeSaveProgram";
+    Project project = new Project(programType(programName), Project.SceneCameraType.WindowCamera);
+    // Mirror the IDE save path, which passes its own manifest.json (and a thumbnail) as data sources.
+    DataSource callerManifest = new ByteArrayDataSource(
+        ProjectIo.MANIFEST_ENTRY_NAME,
+        ManifestEncoderDecoder.toJson(project.createSaveManifest()));
+    DataSource thumbnail = new ByteArrayDataSource(
+        "thumbnail.png",
+        "fake-thumbnail".getBytes(StandardCharsets.UTF_8));
+    File projectFile = temporaryFolder.newFile("hybrid-ide-save.a3p");
+
+    IoUtilities.writeProject(projectFile, project, callerManifest, thumbnail);
+
+    try (ZipFile zipFile = new ZipFile(projectFile)) {
+      // The Tweedle payload must still be present — a caller manifest.json must not
+      // silently degrade the archive to XML-only.
+      assertNotNull(zipFile.getEntry("src/" + programName + ".twe"));
+      assertNotNull(zipFile.getEntry("programType.xml"));
+      // The caller's thumbnail is preserved via the XML side.
+      assertNotNull(zipFile.getEntry("thumbnail.png"));
+      ProjectManifest manifest = readProjectManifest(zipFile);
+      assertEquals(programName, manifest.description.name);
+      assertNotNull(findTypeReference(manifest, programName));
     }
   }
 
@@ -1345,7 +1679,10 @@ public class IoUtilitiesTest {
   @Test
   public void missingTypeManifestUsesXmlTypeFallback() throws Exception {
     File typeFile = temporaryFolder.newFile("xml-type-without-manifest.a3c");
-    IoUtilities.writeType(typeFile, programType("LegacyType"));
+    try (FileOutputStream outputStream = new FileOutputStream(typeFile)) {
+      ProjectIo.ProjectWriter xmlWriter = XmlProjectIo.writer();
+      xmlWriter.writeType(outputStream, programType("LegacyType"), new DataSource[0]);
+    }
 
     try (ZipFile zipFile = new ZipFile(typeFile)) {
       assertNull(zipFile.getEntry(ProjectIo.MANIFEST_ENTRY_NAME));
@@ -2349,6 +2686,28 @@ public class IoUtilitiesTest {
       writeZipEntry(zipOutputStream, "resources.xml", resourcesXml);
       if (resourceData != null) {
         writeZipEntry(zipOutputStream, resourceEntryName, resourceData);
+      }
+    }
+  }
+
+  private static TypeReference findTypeReference(Manifest manifest, String typeName) {
+    for (ResourceReference resourceReference : manifest.resources) {
+      if (resourceReference instanceof TypeReference typeReference && typeName.equals(typeReference.name)) {
+        return typeReference;
+      }
+    }
+    return null;
+  }
+
+  private static void rewriteZipEntry(File source, File destination, String entryToReplace, byte[] newContent)
+      throws Exception {
+    try (ZipFile zipFile = new ZipFile(source);
+        ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(destination))) {
+      for (ZipEntry entry : java.util.Collections.list(zipFile.entries())) {
+        byte[] content = entry.getName().equals(entryToReplace)
+            ? newContent
+            : readZipEntryBytes(zipFile, entry.getName());
+        writeZipEntry(zipOutputStream, entry.getName(), content);
       }
     }
   }

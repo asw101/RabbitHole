@@ -25,6 +25,26 @@ public class TweedleUnlinkedParser {
     return new TypeVisitor().visit(tweedleParserForSource(sourceForType).typeDeclaration());
   }
 
+  /**
+   * Reports whether the given Tweedle source contains any block or line comments.
+   *
+   * <p>The Tweedle grammar sends {@code /* *&#47;} and {@code //} comments to the
+   * hidden channel, so they are discarded during parsing and never surface as
+   * statements. Callers that must round-trip an AST faithfully (e.g. the AST
+   * decoder) use this to detect that a comment would be silently dropped.
+   */
+  public boolean sourceContainsComments(String source) {
+    TweedleLexer lexer = new TweedleLexer(CharStreams.fromString(source));
+    lexer.removeErrorListeners();
+    for (Token token : lexer.getAllTokens()) {
+      int tokenType = token.getType();
+      if (tokenType == TweedleLexer.COMMENT || tokenType == TweedleLexer.LINE_COMMENT) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   TweedleStatement parseStatement(String sourceForExpression) {
     return new StatementVisitor(this).visit(tweedleParserForSource(sourceForExpression).blockStatement());
   }
