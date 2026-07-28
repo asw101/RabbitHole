@@ -91,6 +91,7 @@ expectations.
 - [Replace Test Sleeps with Deterministic Waits](./howto/replace-test-sleeps.md)
 - [Verify Generated Source Validation](./howto/verify-generated-source-validation.md)
 - [Verify CI GUI, Eatme, and Xvfb Readiness](./howto/verify-ci-gui-eatme-xvfb-readiness.md)
+- [Verify PGP Signatures of Maven Artifacts](./howto/run-pgpverify.md)
 
 ### Tutorials
 
